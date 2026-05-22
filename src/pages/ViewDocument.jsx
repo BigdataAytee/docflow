@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { format } from "date-fns";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import SignaturePad from "../components/SignaturePad";
+import LetterheadTemplate from "../components/LetterheadTemplate";
 
 const TYPE_LABELS = {
   invoice: "INVOICE", quotation: "QUOTATION", receipt: "RECEIPT",
@@ -102,7 +103,10 @@ export default function ViewDocument() {
         </div>
       )}
 
-      <UnifiedTemplate doc={doc} onSaveManagerSig={saveManagerSig} onSaveCustomerSig={saveCustomerSig} />
+      {doc.type === "letterhead"
+        ? <LetterheadTemplate doc={doc} onSaveManagerSig={saveManagerSig} onSaveCustomerSig={saveCustomerSig} />
+        : <UnifiedTemplate doc={doc} onSaveManagerSig={saveManagerSig} onSaveCustomerSig={saveCustomerSig} />
+      }
     </div>
   );
 }
