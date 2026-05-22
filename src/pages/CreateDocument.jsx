@@ -161,7 +161,8 @@ export default function CreateDocument() {
             </div>
           </div>
 
-          {/* Line Items */}
+          {/* Line Items — hidden for letterhead */}
+          {docType !== "letterhead" && (
           <div className="bg-card rounded-xl border border-border p-6">
             <h3 className="font-semibold mb-4">Line Items</h3>
             <div className="space-y-3">
@@ -195,11 +196,22 @@ export default function CreateDocument() {
               <Plus className="h-3 w-3 mr-1" /> Add Item
             </Button>
           </div>
+          )}
 
           {/* Notes */}
           <div className="bg-card rounded-xl border border-border p-6 space-y-4">
-            <div><Label>Notes / Message to Customer</Label><Textarea value={form.notes} onChange={e => setForm(f => ({ ...f, notes: e.target.value }))} rows={2} placeholder="e.g. Thanks for your business." /></div>
-            <div><Label>{"Terms & Conditions"}</Label><Textarea value={form.terms} onChange={e => setForm(f => ({ ...f, terms: e.target.value }))} rows={2} /></div>
+            {docType === "letterhead" ? (
+              <>
+                <div><Label>Subject / Re:</Label><Input value={form.terms_label !== "Due on Receipt" ? form.terms_label : ""} onChange={e => setForm(f => ({ ...f, terms_label: e.target.value }))} placeholder="e.g. Notice of Payment, Appointment Letter..." /></div>
+                <div><Label>Letter Body</Label><Textarea value={form.notes} onChange={e => setForm(f => ({ ...f, notes: e.target.value }))} rows={12} placeholder="Dear Sir/Madam,&#10;&#10;Write your letter content here..." /></div>
+                <div><Label>Complimentary Close</Label><Textarea value={form.terms} onChange={e => setForm(f => ({ ...f, terms: e.target.value }))} rows={2} placeholder="e.g. Yours faithfully," /></div>
+              </>
+            ) : (
+              <>
+                <div><Label>Notes / Message to Customer</Label><Textarea value={form.notes} onChange={e => setForm(f => ({ ...f, notes: e.target.value }))} rows={2} placeholder="e.g. Thanks for your business." /></div>
+                <div><Label>{"Terms & Conditions"}</Label><Textarea value={form.terms} onChange={e => setForm(f => ({ ...f, terms: e.target.value }))} rows={2} /></div>
+              </>
+            )}
             <div><Label>Payment Instructions</Label><Textarea value={form.payment_instructions} onChange={e => setForm(f => ({ ...f, payment_instructions: e.target.value }))} rows={2} /></div>
           </div>
 

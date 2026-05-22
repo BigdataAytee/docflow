@@ -51,6 +51,7 @@ export default function ViewDocument() {
   if (!doc) return <div className="text-center py-12 text-muted-foreground">Document not found</div>;
 
   const isWaybill = doc.type === "waybill" || doc.type === "delivery_note";
+  const isLetterhead = doc.type === "letterhead";
   const sym = CURRENCY_SYMBOLS[doc.currency] || doc.currency || "₦";
   const curr = doc.currency || "NGN";
 
@@ -94,7 +95,9 @@ export default function ViewDocument() {
         </div>
       )}
 
-      {isWaybill ? (
+      {isLetterhead ? (
+        <LetterheadTemplate doc={doc} />
+      ) : isWaybill ? (
         <WaybillTemplate doc={doc} sym={sym} curr={curr} clientSig={clientSig} setClientSig={setClientSig} />
       ) : (
         <ZohoTemplate doc={doc} sym={sym} curr={curr} clientSig={clientSig} setClientSig={setClientSig} />
@@ -273,6 +276,99 @@ function ZohoTemplate({ doc, sym, curr, clientSig, setClientSig }) {
             </div>
           </div>
         </div>
+      </div>
+    </div>
+  );
+}
+
+function LetterheadTemplate({ doc }) {
+  const today = doc.issue_date ? format(new Date(doc.issue_date), "dd MMMM yyyy") : format(new Date(), "dd MMMM yyyy");
+
+  return (
+    <div className="bg-white border border-gray-200 shadow-sm rounded-lg overflow-hidden" style={{ fontFamily: "'Georgia', 'Times New Roman', serif", minHeight: 900 }}>
+      {/* Letterhead Header */}
+      <div className="border-b-4 border-primary px-12 py-7">
+        <div className="flex justify-between items-start">
+          <div className="flex items-start gap-5">
+            {doc.logo_url ? (
+              <img src={doc.logo_url} alt="Logo" className="h-20 w-auto object-contain" style={{ maxWidth: 160 }} />
+            ) : null}
+            <div>
+              {doc.company_name && <h1 className="text-2xl font-extrabold text-gray-900 tracking-tight" style={{ fontFamily: "'Helvetica Neue', Arial, sans-serif" }}>{doc.company_name}</h1>}
+              {doc.company_address && <p className="text-gray-500 text-xs mt-1 whitespace-pre-line leading-relaxed">{doc.company_address}</p>}
+            </div>
+          </div>
+          <div className="text-right text-xs text-gray-500 space-y-1 pt-1">
+            {doc.company_phone && <p>📞 {doc.company_phone}</p>}
+            {doc.company_email && <p>✉ {doc.company_email}</p>}
+            {doc.company_website && <p>🌐 {doc.company_website}</p>}
+          </div>
+        </div>
+      </div>
+
+      {/* Document Body */}
+      <div className="px-14 py-10">
+        {/* Date + Reference */}
+        <div className="flex justify-between items-start mb-8">
+          <div className="text-sm text-gray-600">
+            {doc.customer_name && (
+              <div className="mb-4">
+                <p className="text-xs text-gray-400 uppercase tracking-widest mb-1">To</p>
+                <p className="font-semibold text-gray-800">{doc.customer_name}</p>
+                {doc.customer_address && <p className="text-gray-500 text-xs whitespace-pre-line mt-0.5">{doc.customer_address}</p>}
+                {doc.customer_email && <p className="text-gray-500 text-xs">{doc.customer_email}</p>}
+              </div>
+            )}
+          </div>
+          <div className="text-right text-sm">
+            <p className="text-gray-500">Date: <span className="text-gray-800 font-medium">{today}</span></p>
+            {doc.number && <p className="text-gray-500 mt-1">Ref: <span className="text-gray-800 font-medium">{doc.number}</span></p>}
+          </div>
+        </div>
+
+        {/* Subject line */}
+        {doc.terms_label && doc.terms_label !== "Due on Receipt" && (
+          <div className="mb-6">
+            <p className="font-bold text-gray-900 underline text-sm">Re: {doc.terms_label}</p>
+          </div>
+        )}
+
+        {/* Letter body */}
+        <div className="text-gray-800 text-sm leading-loose min-h-64 whitespace-pre-wrap" style={{ lineHeight: 2 }}>
+          {doc.notes || (
+            <span className="text-gray-300 italic">Letter content goes here...</span>
+          )}
+        </div>
+
+        {/* Closing */}
+        {doc.terms && (
+          <div className="mt-10 text-sm text-gray-700">
+            <p>{doc.terms}</p>
+          </div>
+        )}
+
+        {/* Signature block */}
+        <div className="mt-16">
+          {doc.manager_signature ? (
+            <div>
+              <img src={doc.manager_signature} alt="Signature" className="h-14 object-contain mb-1" />
+            </div>
+          ) : (
+            <div className="h-14" />
+          )}
+          <div className="border-t border-gray-400 pt-2 w-56">
+            <p className="font-semibold text-gray-800 text-sm">{doc.company_name || "Authorized Signatory"}</p>
+            {doc.company_name && <p className="text-xs text-gray-500">{doc.company_name}</p>}
+          </div>
+        </div>
+      </div>
+
+      {/* Letterhead Footer */}
+      <div className="border-t-2 border-primary mx-12 mt-8" />
+      <div className="bg-gray-50 px-12 py-4 text-center">
+        <p className="text-xs text-gray-500">
+          {[doc.company_name, doc.company_address?.split("\n")[0], doc.company_phone, doc.company_email, doc.company_website].filter(Boolean).join("  ·  ")}
+        </p>
       </div>
     </div>
   );
