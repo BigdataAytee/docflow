@@ -1,7 +1,8 @@
 import { useState, useEffect, useMemo } from "react";
 import { base44 } from "@/api/base44Client";
 import { useNavigate, Link } from "react-router-dom";
-import { Plus, Trash2, ArrowLeft } from "lucide-react";
+import { Plus, Trash2, ArrowLeft, Settings2 } from "lucide-react";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -60,6 +61,9 @@ export default function CreateDocument() {
   const [customers, setCustomers] = useState([]);
   const [saving, setSaving] = useState(false);
   const [managerSig, setManagerSig] = useState(null);
+  const [numPrefix, setNumPrefix] = useState("");
+  const [numSeq, setNumSeq] = useState("");
+  const [numOpen, setNumOpen] = useState(false);
 
   const [form, setForm] = useState({
     type: docType,
@@ -106,7 +110,10 @@ export default function CreateDocument() {
     base44.entities.Document.list("-created_date", 1).then(docs => {
       const prefix = docType === "invoice" ? "INV" : docType === "quotation" ? "QUO" : docType === "receipt" ? "REC" : docType === "purchase_order" ? "PO" : docType === "credit_note" ? "CN" : "DOC";
       const num = docs.length > 0 ? parseInt((docs[0].number || "0").replace(/\D/g, "") || "0") + 1 : 1;
-      setForm(f => ({ ...f, number: `${prefix}-${String(num).padStart(4, "0")}` }));
+      const seq = String(num).padStart(4, "0");
+      setNumPrefix(prefix);
+      setNumSeq(seq);
+      setForm(f => ({ ...f, number: `${prefix}-${seq}` }));
     });
   }, [docType]);
 
@@ -167,7 +174,57 @@ export default function CreateDocument() {
           <div className="bg-card rounded-xl border border-border p-6 space-y-4">
             <h3 className="font-semibold text-sm text-muted-foreground uppercase tracking-wider">Document Info</h3>
             <div className="grid grid-cols-2 gap-4">
-              <div><Label>Document Number</Label><Input value={form.number} onChange={e => setForm(f => ({ ...f, number: e.target.value }))} /></div>
+              <div>
+                <Label>Document Number</Label>
+                <div className="relative">
+                  <Input
+                    value={form.number}
+                    onChange={e => setForm(f => ({ ...f, number: e.target.value }))}
+                    className="pr-9"
+                  />
+                  <Popover open={numOpen} onOpenChange={setNumOpen}>
+                    <PopoverTrigger asChild>
+                      <button
+                        type="button"
+                        className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                        title="Customize number format"
+                      >
+                        <Settings2 className="h-4 w-4" />
+                      </button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-64 p-4" align="end">
+                      <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">Customize Document Number</p>
+                      <div className="space-y-3">
+                        <div>
+                          <Label className="text-xs">Prefix</Label>
+                          <Input
+                            value={numPrefix}
+                            onChange={e => {
+                              setNumPrefix(e.target.value);
+                              setForm(f => ({ ...f, number: `${e.target.value}-${numSeq}` }));
+                            }}
+                            placeholder="e.g. INV"
+                            className="h-8 text-sm mt-1"
+                          />
+                        </div>
+                        <div>
+                          <Label className="text-xs">Number</Label>
+                          <Input
+                            value={numSeq}
+                            onChange={e => {
+                              setNumSeq(e.target.value);
+                              setForm(f => ({ ...f, number: `${numPrefix}-${e.target.value}` }));
+                            }}
+                            placeholder="e.g. 0001"
+                            className="h-8 text-sm mt-1"
+                          />
+                        </div>
+                        <p className="text-xs text-muted-foreground">Preview: <span className="font-mono font-semibold text-foreground">{numPrefix}-{numSeq}</span></p>
+                      </div>
+                    </PopoverContent>
+                  </Popover>
+                </div>
+              </div>
               <div>
                 <Label>Currency</Label>
                 <Select value={form.currency} onValueChange={v => setForm(f => ({ ...f, currency: v }))}>
