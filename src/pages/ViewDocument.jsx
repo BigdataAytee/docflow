@@ -300,7 +300,7 @@ function UnifiedTemplate({ doc, onSaveManagerSig, onSaveCustomerSig }) {
         )}
 
         {/* Signatures */}
-        <div className="border-t border-gray-200 pt-8 mt-6 grid grid-cols-2 gap-12">
+        <div className={`border-t border-gray-200 pt-8 mt-6 grid gap-12 ${doc.type === 'waybill' ? 'grid-cols-2' : 'grid-cols-1 max-w-xs'}`}>
           <div>
             <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-3">Authorized Signatory</p>
             {doc.manager_signature ? (
@@ -319,10 +319,9 @@ function UnifiedTemplate({ doc, onSaveManagerSig, onSaveCustomerSig }) {
             )}
           </div>
 
+          {doc.type === 'waybill' && (
           <div>
-            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-3">
-              {doc.type === "waybill" || doc.type === "delivery_note" ? "Receiver Signature" : "Customer Signature"}
-            </p>
+            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-3">Receiver Signature</p>
             {doc.customer_signature ? (
               <div>
                 <img src={doc.customer_signature} alt="Customer Signature" className="h-16 object-contain mb-2" />
@@ -338,6 +337,7 @@ function UnifiedTemplate({ doc, onSaveManagerSig, onSaveCustomerSig }) {
               </div>
             )}
           </div>
+          )}
         </div>
       </div>
 
