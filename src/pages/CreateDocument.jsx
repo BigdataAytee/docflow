@@ -169,9 +169,9 @@ export default function CreateDocument() {
             <div className="grid grid-cols-2 gap-4">
               <div><Label>Document Number</Label><Input value={form.number} onChange={(e) => setForm((f) => ({ ...f, number: e.target.value }))} /></div>
               <div>
-                <Label className="hidden">Currency</Label>
+                
                 <Select value={form.currency} onValueChange={(v) => setForm((f) => ({ ...f, currency: v }))}>
-                  <SelectTrigger className="hidden"><SelectValue /></SelectTrigger>
+                  
                   <SelectContent>
                     {CURRENCIES.map((c) => <SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>)}
                   </SelectContent>
@@ -188,7 +188,7 @@ export default function CreateDocument() {
               </div>
               <div><Label>Terms</Label><Input value={form.terms_label} onChange={(e) => setForm((f) => ({ ...f, terms_label: e.target.value }))} placeholder="Due on Receipt" /></div>
               <div><Label>Issue Date</Label><Input type="date" value={form.issue_date} onChange={(e) => setForm((f) => ({ ...f, issue_date: e.target.value }))} /></div>
-              <div className="hidden"><Label>Due Date</Label><Input type="date" value={form.due_date} onChange={(e) => setForm((f) => ({ ...f, due_date: e.target.value }))} /></div>
+              
             </div>
           </div>
 
@@ -265,21 +265,21 @@ export default function CreateDocument() {
                 <div>
                   <Label className="mb-2 block">Letter Body</Label>
                   <div className="rounded-lg overflow-hidden border border-gray-300 shadow-sm">
-                    <div className="bg-gray-100 border-b border-gray-300 px-2 py-1 hidden">
-                      <span className="text-xs text-gray-500 font-medium">✏️ Document Editor</span>
-                    </div>
-                    <div style={{ background: "#e8e8e8", padding: "16px 8px" }} className="hidden">
-                      <div style={{ background: "#fff", margin: "0 auto", maxWidth: 680, boxShadow: "0 1px 4px rgba(0,0,0,0.15)", minHeight: 400 }} className="hidden">
-                        <ReactQuill
-                        value={form.notes}
-                        onChange={(val) => setForm((f) => ({ ...f, notes: val }))}
-                        theme="snow"
-                        modules={LETTER_MODULES}
-                        formats={LETTER_FORMATS}
-                        style={{ fontFamily: "'Times New Roman', serif", fontSize: 14 }} />
-                      
-                      </div>
-                    </div>
+                    
+
+                  
+                    
+
+
+
+
+
+
+
+
+
+
+                  
                   </div>
                 </div>
                 <div><Label>Complimentary Close</Label><Textarea value={form.terms} onChange={(e) => setForm((f) => ({ ...f, terms: e.target.value }))} rows={2} placeholder="e.g. Yours faithfully," /></div>
