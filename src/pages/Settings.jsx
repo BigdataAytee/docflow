@@ -61,8 +61,22 @@ export default function Settings() {
   const save = async () => {
     setSaving(true);
     await base44.auth.updateMe(form);
+
+    // Sync company info + logo to ALL existing documents
+    const docs = await base44.entities.Document.list("-created_date", 500);
+    await Promise.all(docs.map(doc =>
+      base44.entities.Document.update(doc.id, {
+        logo_url: form.logo_url,
+        company_name: form.company_name,
+        company_email: form.company_email,
+        company_phone: form.company_phone,
+        company_address: form.company_address,
+        company_website: form.company_website,
+      })
+    ));
+
     setSaving(false);
-    toast.success("Settings saved");
+    toast.success("Settings saved and applied to all documents");
   };
 
   const update = (k, v) => setForm(p => ({ ...p, [k]: v }));
