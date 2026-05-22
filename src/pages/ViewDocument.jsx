@@ -59,6 +59,11 @@ export default function ViewDocument() {
     setDoc(prev => ({ ...prev, customer_signature: sig }));
   };
 
+  const saveNotes = async (notes) => {
+    await base44.entities.Document.update(docId, { notes });
+    setDoc(prev => ({ ...prev, notes }));
+  };
+
   const handleDelete = async () => {
     await base44.entities.Document.delete(docId);
     navigate("/documents");
@@ -104,7 +109,7 @@ export default function ViewDocument() {
       )}
 
       {doc.type === "letterhead"
-        ? <LetterheadTemplate doc={doc} onSaveManagerSig={saveManagerSig} onSaveCustomerSig={saveCustomerSig} />
+        ? <LetterheadTemplate doc={doc} onSaveManagerSig={saveManagerSig} onSaveCustomerSig={saveCustomerSig} onSaveNotes={saveNotes} />
         : <UnifiedTemplate doc={doc} onSaveManagerSig={saveManagerSig} onSaveCustomerSig={saveCustomerSig} />
       }
     </div>

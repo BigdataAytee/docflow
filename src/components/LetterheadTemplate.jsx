@@ -1,8 +1,42 @@
+import { useState } from "react";
 import { format } from "date-fns";
 import SignaturePad from "./SignaturePad";
+import ReactQuill from "react-quill";
+import { Button } from "@/components/ui/button";
+import { PencilLine, Check, X } from "lucide-react";
 
-export default function LetterheadTemplate({ doc, onSaveManagerSig, onSaveCustomerSig }) {
-  const today = doc.issue_date ? format(new Date(doc.issue_date), "do MMMM, yyyy") : format(new Date(), "do MMMM, yyyy");
+const QUILL_MODULES = {
+  toolbar: [
+    [{ font: ["", "serif", "monospace"] }],
+    [{ header: [1, 2, 3, false] }],
+    ["bold", "italic", "underline", "strike"],
+    [{ color: [] }, { background: [] }],
+    [{ align: [] }],
+    [{ list: "ordered" }, { list: "bullet" }],
+    [{ indent: "-1" }, { indent: "+1" }],
+    ["blockquote"],
+    ["link"],
+    ["clean"],
+  ],
+};
+
+export default function LetterheadTemplate({ doc, onSaveManagerSig, onSaveCustomerSig, onSaveNotes }) {
+  const [editing, setEditing] = useState(false);
+  const [draftNotes, setDraftNotes] = useState(doc.notes || "");
+
+  const today = doc.issue_date
+    ? format(new Date(doc.issue_date), "do MMMM, yyyy")
+    : format(new Date(), "do MMMM, yyyy");
+
+  const handleSaveNotes = () => {
+    onSaveNotes && onSaveNotes(draftNotes);
+    setEditing(false);
+  };
+
+  const handleCancelEdit = () => {
+    setDraftNotes(doc.notes || "");
+    setEditing(false);
+  };
 
   return (
     <div
@@ -10,7 +44,7 @@ export default function LetterheadTemplate({ doc, onSaveManagerSig, onSaveCustom
       style={{ fontFamily: "'Times New Roman', Georgia, serif", minHeight: "29.7cm" }}
     >
       {/* ===== TOP HEADER BAR ===== */}
-      <div style={{ background: "#1e293b", padding: "0" }}>
+      <div style={{ background: "#1e293b" }}>
         <div style={{ display: "flex", alignItems: "stretch", minHeight: 100 }}>
           {/* Logo box */}
           <div style={{
@@ -20,7 +54,7 @@ export default function LetterheadTemplate({ doc, onSaveManagerSig, onSaveCustom
             alignItems: "center",
             justifyContent: "center",
             minWidth: 160,
-            borderRight: "4px solid #f59e0b"
+            borderRight: "4px solid #f59e0b",
           }}>
             {doc.logo_url
               ? <img src={doc.logo_url} alt="Logo" style={{ height: 64, maxWidth: 140, objectFit: "contain" }} />
@@ -28,7 +62,7 @@ export default function LetterheadTemplate({ doc, onSaveManagerSig, onSaveCustom
             }
           </div>
 
-          {/* Company name + tagline */}
+          {/* Company name */}
           <div style={{ flex: 1, padding: "20px 32px", display: "flex", flexDirection: "column", justifyContent: "center" }}>
             <div style={{ color: "#fff", fontSize: 26, fontWeight: 900, letterSpacing: 2, textTransform: "uppercase", fontFamily: "Arial, sans-serif" }}>
               {doc.company_name || "Your Company Name"}
@@ -40,31 +74,24 @@ export default function LetterheadTemplate({ doc, onSaveManagerSig, onSaveCustom
             )}
           </div>
 
-          {/* RC / Registration box (right) */}
+          {/* Contact */}
           <div style={{ padding: "20px 28px", display: "flex", flexDirection: "column", justifyContent: "center", alignItems: "flex-end", gap: 4 }}>
             {doc.company_phone && (
-              <div style={{ color: "#f59e0b", fontSize: 13, fontFamily: "Arial, sans-serif", fontWeight: 600 }}>
-                ✆ {doc.company_phone}
-              </div>
+              <div style={{ color: "#f59e0b", fontSize: 13, fontFamily: "Arial, sans-serif", fontWeight: 600 }}>✆ {doc.company_phone}</div>
             )}
             {doc.company_email && (
-              <div style={{ color: "#94a3b8", fontSize: 12, fontFamily: "Arial, sans-serif" }}>
-                ✉ {doc.company_email}
-              </div>
+              <div style={{ color: "#94a3b8", fontSize: 12, fontFamily: "Arial, sans-serif" }}>✉ {doc.company_email}</div>
             )}
             {doc.company_website && (
-              <div style={{ color: "#94a3b8", fontSize: 12, fontFamily: "Arial, sans-serif" }}>
-                🌐 {doc.company_website}
-              </div>
+              <div style={{ color: "#94a3b8", fontSize: 12, fontFamily: "Arial, sans-serif" }}>🌐 {doc.company_website}</div>
             )}
           </div>
         </div>
-
         {/* Accent strip */}
         <div style={{ background: "#f59e0b", height: 6 }} />
       </div>
 
-      {/* ===== DOCUMENT TITLE BAND ===== */}
+      {/* ===== TITLE BAND ===== */}
       <div style={{ background: "#f8fafc", borderBottom: "1px solid #e2e8f0", padding: "10px 40px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
         <div style={{ fontFamily: "Arial, sans-serif", fontWeight: 800, fontSize: 13, letterSpacing: 3, textTransform: "uppercase", color: "#1e293b" }}>
           {doc.terms_label && doc.terms_label !== "Due on Receipt" ? doc.terms_label : "Official Correspondence"}
@@ -94,15 +121,54 @@ export default function LetterheadTemplate({ doc, onSaveManagerSig, onSaveCustom
           Dear {doc.customer_name ? doc.customer_name.split(" ")[0] : "Sir/Madam"},
         </div>
 
-        {/* Letter body — rich text from QuillEditor */}
-        <div
-          className="prose prose-sm max-w-none"
-          style={{ fontSize: 14, lineHeight: 2, color: "#1e293b", fontFamily: "'Times New Roman', serif", minHeight: 300 }}
-          dangerouslySetInnerHTML={{ __html: doc.notes || "<p><em>No content written.</em></p>" }}
-        />
+        {/* ===== LETTER BODY — EDITABLE ===== */}
+        <div className="relative group">
+          {!editing ? (
+            <div>
+              {/* Static display */}
+              <div
+                className="prose prose-sm max-w-none"
+                style={{ fontSize: 14, lineHeight: 2, color: "#1e293b", fontFamily: "'Times New Roman', serif", minHeight: 200 }}
+                dangerouslySetInnerHTML={{ __html: doc.notes || "<p><em>Click the edit button to start writing...</em></p>" }}
+              />
+              {/* Edit button (hidden on print) */}
+              <button
+                className="print:hidden absolute top-0 right-0 opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1.5 bg-slate-800 text-white text-xs px-3 py-1.5 rounded-md"
+                onClick={() => { setDraftNotes(doc.notes || ""); setEditing(true); }}
+              >
+                <PencilLine className="h-3 w-3" /> Edit Letter
+              </button>
+            </div>
+          ) : (
+            <div className="print:hidden">
+              {/* Rich Text Editor */}
+              <div className="border border-slate-300 rounded-lg overflow-hidden shadow-sm">
+                {/* Editor toolbar label */}
+                <div className="bg-slate-800 text-white text-xs px-4 py-2 flex items-center justify-between">
+                  <span className="font-semibold tracking-wide">✏️ Letter Body Editor</span>
+                  <div className="flex gap-2">
+                    <Button size="sm" variant="ghost" className="h-6 text-white hover:text-white hover:bg-white/20 text-xs px-2" onClick={handleCancelEdit}>
+                      <X className="h-3 w-3 mr-1" /> Cancel
+                    </Button>
+                    <Button size="sm" className="h-6 bg-amber-500 hover:bg-amber-400 text-white text-xs px-3" onClick={handleSaveNotes}>
+                      <Check className="h-3 w-3 mr-1" /> Save
+                    </Button>
+                  </div>
+                </div>
+                <ReactQuill
+                  value={draftNotes}
+                  onChange={setDraftNotes}
+                  theme="snow"
+                  modules={QUILL_MODULES}
+                  style={{ minHeight: 320, fontFamily: "'Times New Roman', serif", fontSize: 14 }}
+                />
+              </div>
+            </div>
+          )}
+        </div>
 
         {/* Complimentary close */}
-        <div style={{ marginTop: 28, fontFamily: "'Times New Roman', serif", fontSize: 14, color: "#1e293b" }}>
+        <div style={{ marginTop: 36, fontFamily: "'Times New Roman', serif", fontSize: 14, color: "#1e293b" }}>
           Yours faithfully,
         </div>
         <div style={{ marginTop: 4, fontSize: 12, color: "#64748b", fontFamily: "Arial, sans-serif", marginBottom: 8 }}>
@@ -111,8 +177,7 @@ export default function LetterheadTemplate({ doc, onSaveManagerSig, onSaveCustom
 
         {/* Signature blocks */}
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 48, marginTop: 24, paddingTop: 24, borderTop: "1px solid #e2e8f0" }}>
-
-          {/* Manager/Company signature */}
+          {/* Manager signature */}
           <div>
             <div style={{ fontSize: 10, fontFamily: "Arial, sans-serif", color: "#94a3b8", textTransform: "uppercase", letterSpacing: 1.5, marginBottom: 10, fontWeight: 700 }}>
               Authorized Signatory
