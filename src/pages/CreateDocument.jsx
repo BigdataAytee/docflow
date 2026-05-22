@@ -117,11 +117,19 @@ export default function CreateDocument() {
                 </Select>
               </div>
               <div>
-                <Label>Issue Date</Label>
-                <Input type="date" value={form.issue_date} onChange={e => setForm(f => ({ ...f, issue_date: e.target.value }))} />
+                <Label>Currency</Label>
+                <Select value={form.currency} onValueChange={v => setForm(f => ({ ...f, currency: v }))}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="USD">🇺🇸 USD — US Dollar</SelectItem>
+                    <SelectItem value="EUR">🇪🇺 EUR — Euro</SelectItem>
+                    <SelectItem value="GBP">🇬🇧 GBP — British Pound</SelectItem>
+                    <SelectItem value="NGN">🇳🇬 NGN — Nigerian Naira</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
               <div>
-                <Label>Due Date</Label>
+                <Label>Issue Date</Label>
                 <Input type="date" value={form.due_date} onChange={e => setForm(f => ({ ...f, due_date: e.target.value }))} />
               </div>
             </div>
