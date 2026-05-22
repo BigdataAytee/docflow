@@ -1,12 +1,13 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { base44 } from "@/api/base44Client";
 import { useNavigate, Link } from "react-router-dom";
-import { Plus, Trash2, ArrowLeft } from "lucide-react";
+import { Plus, Trash2, ArrowLeft, Upload, ImageIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import SignaturePad from "../components/SignaturePad";
 
 const typeLabels = {
   invoice: "Invoice", quotation: "Quotation", receipt: "Receipt",
@@ -14,13 +15,25 @@ const typeLabels = {
   purchase_order: "Purchase Order", credit_note: "Credit Note",
 };
 
+const CURRENCIES = [
+  { value: "NGN", label: "₦ NGN — Nigerian Naira" },
+  { value: "USD", label: "$ USD — US Dollar" },
+  { value: "EUR", label: "€ EUR — Euro" },
+  { value: "GBP", label: "£ GBP — British Pound" },
+];
+
 export default function CreateDocument() {
   const navigate = useNavigate();
   const params = new URLSearchParams(window.location.search);
   const docType = params.get("type") || "invoice";
+  const logoInputRef = useRef(null);
 
   const [customers, setCustomers] = useState([]);
   const [saving, setSaving] = useState(false);
+  const [logoPreview, setLogoPreview] = useState(null);
+  const [uploadingLogo, setUploadingLogo] = useState(false);
+  const [managerSig, setManagerSig] = useState(null);
+
   const [form, setForm] = useState({
     type: docType,
     number: "",
@@ -28,19 +41,38 @@ export default function CreateDocument() {
     customer_name: "",
     customer_email: "",
     customer_address: "",
-    currency: "USD",
-    tax_rate: 0,
+    currency: "NGN",
+    tax_rate: 7.5,
     shipping: 0,
     notes: "",
     terms: "",
+    terms_label: "Due on Receipt",
     payment_instructions: "",
     due_date: "",
     issue_date: new Date().toISOString().split("T")[0],
+    logo_url: "",
+    company_name: "",
+    company_email: "",
+    company_phone: "",
+    company_address: "",
+    company_website: "",
   });
   const [items, setItems] = useState([{ description: "", quantity: 1, unit_price: 0, discount: 0 }]);
 
   useEffect(() => {
     base44.entities.Customer.list("-created_date", 100).then(setCustomers);
+    base44.auth.me().then(user => {
+      if (user) setForm(f => ({
+        ...f,
+        company_name: user.company_name || user.full_name || "",
+        company_email: user.company_email || user.email || "",
+        company_phone: user.company_phone || "",
+        company_address: user.company_address || "",
+        company_website: user.company_website || "",
+        logo_url: user.logo_url || "",
+      }));
+      if (user?.logo_url) setLogoPreview(user.logo_url);
+    });
     base44.entities.Document.list("-created_date", 1).then(docs => {
       const prefix = docType === "invoice" ? "INV" : docType === "quotation" ? "QUO" : docType === "receipt" ? "REC" : docType === "purchase_order" ? "PO" : docType === "credit_note" ? "CN" : "DOC";
       const num = docs.length > 0 ? parseInt((docs[0].number || "0").replace(/\D/g, "") || "0") + 1 : 1;
@@ -48,16 +80,24 @@ export default function CreateDocument() {
     });
   }, [docType]);
 
-  const selectCustomer = (id) => {
-    const c = customers.find(x => x.id === id);
-    if (c) {
-      setForm(f => ({ ...f, customer_id: id, customer_name: c.full_name, customer_email: c.email || "", customer_address: c.billing_address || "", currency: c.currency || "USD" }));
-    }
+  const handleLogoChange = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    setUploadingLogo(true);
+    const reader = new FileReader();
+    reader.onload = (ev) => setLogoPreview(ev.target.result);
+    reader.readAsDataURL(file);
+    const { file_url } = await base44.integrations.Core.UploadFile({ file });
+    setForm(f => ({ ...f, logo_url: file_url }));
+    setUploadingLogo(false);
   };
 
-  const updateItem = (i, key, val) => {
-    setItems(prev => prev.map((item, idx) => idx === i ? { ...item, [key]: val } : item));
+  const selectCustomer = (id) => {
+    const c = customers.find(x => x.id === id);
+    if (c) setForm(f => ({ ...f, customer_id: id, customer_name: c.full_name, customer_email: c.email || "", customer_address: c.billing_address || "", currency: c.currency || "NGN" }));
   };
+
+  const updateItem = (i, key, val) => setItems(prev => prev.map((item, idx) => idx === i ? { ...item, [key]: val } : item));
 
   const calcs = useMemo(() => {
     const lineItems = items.map(it => {
@@ -76,6 +116,7 @@ export default function CreateDocument() {
     const doc = {
       ...form,
       status,
+      manager_signature: managerSig || "",
       items: calcs.lineItems,
       subtotal: calcs.subtotal,
       tax_amount: calcs.taxAmt,
@@ -89,6 +130,8 @@ export default function CreateDocument() {
     navigate(`/documents/${created.id}`);
   };
 
+  const sym = CURRENCIES.find(c => c.value === form.currency)?.label.split(" ")[0] || "₦";
+
   return (
     <div className="max-w-5xl mx-auto">
       <div className="flex items-center gap-3 mb-6">
@@ -101,11 +144,53 @@ export default function CreateDocument() {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2 space-y-6">
+
+          {/* Company & Logo */}
           <div className="bg-card rounded-xl border border-border p-6 space-y-4">
+            <h3 className="font-semibold text-sm text-muted-foreground uppercase tracking-wider">Company Details</h3>
+            <div className="flex gap-5 items-start">
+              {/* Logo upload */}
+              <div className="flex-shrink-0">
+                <div
+                  onClick={() => logoInputRef.current?.click()}
+                  className="w-24 h-24 rounded-xl border-2 border-dashed border-border flex items-center justify-center cursor-pointer hover:border-primary hover:bg-primary/5 transition-all overflow-hidden bg-gray-50"
+                >
+                  {logoPreview ? (
+                    <img src={logoPreview} alt="Logo" className="w-full h-full object-contain" />
+                  ) : (
+                    <div className="text-center text-muted-foreground">
+                      <ImageIcon className="h-6 w-6 mx-auto mb-1" />
+                      <p className="text-xs">Logo</p>
+                    </div>
+                  )}
+                </div>
+                <input ref={logoInputRef} type="file" accept="image/*" className="hidden" onChange={handleLogoChange} />
+                {uploadingLogo && <p className="text-xs text-primary mt-1 text-center">Uploading...</p>}
+                {logoPreview && <button onClick={() => { setLogoPreview(null); setForm(f => ({ ...f, logo_url: "" })); }} className="text-xs text-muted-foreground hover:text-destructive mt-1 block text-center w-full">Remove</button>}
+              </div>
+              <div className="flex-1 grid grid-cols-2 gap-3">
+                <div><Label className="text-xs">Company Name</Label><Input value={form.company_name} onChange={e => setForm(f => ({ ...f, company_name: e.target.value }))} /></div>
+                <div><Label className="text-xs">Email</Label><Input value={form.company_email} onChange={e => setForm(f => ({ ...f, company_email: e.target.value }))} /></div>
+                <div><Label className="text-xs">Phone</Label><Input value={form.company_phone} onChange={e => setForm(f => ({ ...f, company_phone: e.target.value }))} /></div>
+                <div><Label className="text-xs">Website</Label><Input value={form.company_website} onChange={e => setForm(f => ({ ...f, company_website: e.target.value }))} /></div>
+                <div className="col-span-2"><Label className="text-xs">Address</Label><Input value={form.company_address} onChange={e => setForm(f => ({ ...f, company_address: e.target.value }))} /></div>
+              </div>
+            </div>
+          </div>
+
+          {/* Document Info */}
+          <div className="bg-card rounded-xl border border-border p-6 space-y-4">
+            <h3 className="font-semibold text-sm text-muted-foreground uppercase tracking-wider">Document Info</h3>
             <div className="grid grid-cols-2 gap-4">
+              <div><Label>Document Number</Label><Input value={form.number} onChange={e => setForm(f => ({ ...f, number: e.target.value }))} /></div>
               <div>
-                <Label>Document Number</Label>
-                <Input value={form.number} onChange={e => setForm(f => ({ ...f, number: e.target.value }))} />
+                <Label>Currency</Label>
+                <Select value={form.currency} onValueChange={v => setForm(f => ({ ...f, currency: v }))}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {CURRENCIES.map(c => <SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>)}
+                  </SelectContent>
+                </Select>
               </div>
               <div>
                 <Label>Customer</Label>
@@ -116,25 +201,13 @@ export default function CreateDocument() {
                   </SelectContent>
                 </Select>
               </div>
-              <div>
-                <Label>Currency</Label>
-                <Select value={form.currency} onValueChange={v => setForm(f => ({ ...f, currency: v }))}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="USD">🇺🇸 USD — US Dollar</SelectItem>
-                    <SelectItem value="EUR">🇪🇺 EUR — Euro</SelectItem>
-                    <SelectItem value="GBP">🇬🇧 GBP — British Pound</SelectItem>
-                    <SelectItem value="NGN">🇳🇬 NGN — Nigerian Naira</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div>
-                <Label>Issue Date</Label>
-                <Input type="date" value={form.due_date} onChange={e => setForm(f => ({ ...f, due_date: e.target.value }))} />
-              </div>
+              <div><Label>Terms</Label><Input value={form.terms_label} onChange={e => setForm(f => ({ ...f, terms_label: e.target.value }))} placeholder="Due on Receipt" /></div>
+              <div><Label>Issue Date</Label><Input type="date" value={form.issue_date} onChange={e => setForm(f => ({ ...f, issue_date: e.target.value }))} /></div>
+              <div><Label>Due Date</Label><Input type="date" value={form.due_date} onChange={e => setForm(f => ({ ...f, due_date: e.target.value }))} /></div>
             </div>
           </div>
 
+          {/* Line Items */}
           <div className="bg-card rounded-xl border border-border p-6">
             <h3 className="font-semibold mb-4">Line Items</h3>
             <div className="space-y-3">
@@ -149,7 +222,7 @@ export default function CreateDocument() {
                     <Input type="number" value={item.quantity} onChange={e => updateItem(i, "quantity", +e.target.value)} />
                   </div>
                   <div className="col-span-2">
-                    {i === 0 && <Label className="text-xs">Price</Label>}
+                    {i === 0 && <Label className="text-xs">Rate</Label>}
                     <Input type="number" value={item.unit_price} onChange={e => updateItem(i, "unit_price", +e.target.value)} />
                   </div>
                   <div className="col-span-2">
@@ -169,24 +242,32 @@ export default function CreateDocument() {
             </Button>
           </div>
 
+          {/* Notes */}
           <div className="bg-card rounded-xl border border-border p-6 space-y-4">
-            <div><Label>Notes</Label><Textarea value={form.notes} onChange={e => setForm(f => ({ ...f, notes: e.target.value }))} rows={2} placeholder="Any notes for the customer..." /></div>
+            <div><Label>Notes / Message to Customer</Label><Textarea value={form.notes} onChange={e => setForm(f => ({ ...f, notes: e.target.value }))} rows={2} placeholder="e.g. Thanks for your business." /></div>
             <div><Label>{"Terms & Conditions"}</Label><Textarea value={form.terms} onChange={e => setForm(f => ({ ...f, terms: e.target.value }))} rows={2} /></div>
             <div><Label>Payment Instructions</Label><Textarea value={form.payment_instructions} onChange={e => setForm(f => ({ ...f, payment_instructions: e.target.value }))} rows={2} /></div>
           </div>
+
+          {/* Manager Signature */}
+          <div className="bg-card rounded-xl border border-border p-6">
+            <h3 className="font-semibold mb-4">Manager / Authorized Signature</h3>
+            <p className="text-xs text-muted-foreground mb-3">Sign here using mouse or stylus. This signature will appear on the final document.</p>
+            <SignaturePad label="Manager Signature" onSave={setManagerSig} />
+          </div>
         </div>
 
+        {/* Summary Sidebar */}
         <div className="space-y-6">
           <div className="bg-card rounded-xl border border-border p-6 sticky top-8">
             <h3 className="font-semibold mb-4">Summary</h3>
             <div className="space-y-3 text-sm">
-              <div className="flex justify-between"><span className="text-muted-foreground">Subtotal</span><span className="font-medium">${calcs.subtotal.toFixed(2)}</span></div>
+              <div className="flex justify-between"><span className="text-muted-foreground">Subtotal</span><span className="font-medium">{sym}{calcs.subtotal.toLocaleString("en", { minimumFractionDigits: 2 })}</span></div>
               <div className="flex items-center justify-between gap-2">
-                <span className="text-muted-foreground">Tax</span>
+                <span className="text-muted-foreground">VAT %</span>
                 <div className="flex items-center gap-1">
                   <Input type="number" className="w-16 h-8 text-xs" value={form.tax_rate} onChange={e => setForm(f => ({ ...f, tax_rate: +e.target.value }))} />
-                  <span className="text-xs text-muted-foreground">%</span>
-                  <span className="font-medium ml-2">${calcs.taxAmt.toFixed(2)}</span>
+                  <span className="font-medium">{sym}{calcs.taxAmt.toLocaleString("en", { minimumFractionDigits: 2 })}</span>
                 </div>
               </div>
               <div className="flex items-center justify-between gap-2">
@@ -194,8 +275,12 @@ export default function CreateDocument() {
                 <Input type="number" className="w-24 h-8 text-xs text-right" value={form.shipping} onChange={e => setForm(f => ({ ...f, shipping: +e.target.value }))} />
               </div>
               <div className="border-t border-border pt-3 flex justify-between">
-                <span className="font-semibold">Total</span>
-                <span className="text-xl font-bold text-primary">${calcs.total.toFixed(2)}</span>
+                <span className="font-bold">Total</span>
+                <span className="text-xl font-black text-primary">{sym}{calcs.total.toLocaleString("en", { minimumFractionDigits: 2 })}</span>
+              </div>
+              <div className="flex justify-between text-muted-foreground">
+                <span>Balance Due</span>
+                <span className="font-semibold text-foreground">{form.currency}{calcs.total.toLocaleString("en", { minimumFractionDigits: 2 })}</span>
               </div>
             </div>
             <div className="mt-6 space-y-2">

@@ -49,6 +49,39 @@
       "type": "string",
       "title": "Customer Address"
     },
+    "logo_url": {
+      "type": "string",
+      "title": "Company Logo URL"
+    },
+    "company_name": {
+      "type": "string",
+      "title": "Company Name"
+    },
+    "company_email": {
+      "type": "string",
+      "title": "Company Email"
+    },
+    "company_phone": {
+      "type": "string",
+      "title": "Company Phone"
+    },
+    "company_address": {
+      "type": "string",
+      "title": "Company Address"
+    },
+    "company_website": {
+      "type": "string",
+      "title": "Company Website"
+    },
+    "manager_signature": {
+      "type": "string",
+      "title": "Manager Signature"
+    },
+    "terms_label": {
+      "type": "string",
+      "title": "Terms Label",
+      "default": "Due on Receipt"
+    },
     "items": {
       "type": "array",
       "title": "Line Items",
@@ -76,70 +109,56 @@
     },
     "subtotal": {
       "type": "number",
-      "title": "Subtotal",
       "default": 0
     },
     "tax_rate": {
       "type": "number",
-      "title": "Tax Rate (%)",
       "default": 0
     },
     "tax_amount": {
       "type": "number",
-      "title": "Tax Amount",
       "default": 0
     },
     "discount_total": {
       "type": "number",
-      "title": "Total Discount",
       "default": 0
     },
     "shipping": {
       "type": "number",
-      "title": "Shipping",
       "default": 0
     },
     "total": {
       "type": "number",
-      "title": "Total",
       "default": 0
     },
     "paid_amount": {
       "type": "number",
-      "title": "Paid Amount",
       "default": 0
     },
     "balance_due": {
       "type": "number",
-      "title": "Balance Due",
       "default": 0
     },
     "currency": {
       "type": "string",
-      "title": "Currency",
-      "default": "USD"
+      "default": "NGN"
     },
     "due_date": {
       "type": "string",
-      "format": "date-time",
-      "title": "Due Date"
+      "format": "date-time"
     },
     "issue_date": {
       "type": "string",
-      "format": "date-time",
-      "title": "Issue Date"
+      "format": "date-time"
     },
     "notes": {
-      "type": "string",
-      "title": "Notes"
+      "type": "string"
     },
     "terms": {
-      "type": "string",
-      "title": "Terms & Conditions"
+      "type": "string"
     },
     "payment_instructions": {
-      "type": "string",
-      "title": "Payment Instructions"
+      "type": "string"
     }
   },
   "required": [
