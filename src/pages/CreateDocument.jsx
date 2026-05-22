@@ -265,11 +265,11 @@ export default function CreateDocument() {
                 <div>
                   <Label className="mb-2 block">Letter Body</Label>
                   <div className="rounded-lg overflow-hidden border border-gray-300 shadow-sm">
-                    <div className="bg-gray-100 border-b border-gray-300 px-2 py-1">
+                    <div className="bg-gray-100 border-b border-gray-300 px-2 py-1 hidden">
                       <span className="text-xs text-gray-500 font-medium">✏️ Document Editor</span>
                     </div>
-                    <div style={{ background: "#e8e8e8", padding: "16px 8px" }}>
-                      <div style={{ background: "#fff", margin: "0 auto", maxWidth: 680, boxShadow: "0 1px 4px rgba(0,0,0,0.15)", minHeight: 400 }}>
+                    <div style={{ background: "#e8e8e8", padding: "16px 8px" }} className="hidden">
+                      <div style={{ background: "#fff", margin: "0 auto", maxWidth: 680, boxShadow: "0 1px 4px rgba(0,0,0,0.15)", minHeight: 400 }} className="hidden">
                         <ReactQuill
                         value={form.notes}
                         onChange={(val) => setForm((f) => ({ ...f, notes: val }))}
