@@ -1,0 +1,63 @@
+{
+  "name": "Customer",
+  "type": "object",
+  "properties": {
+    "full_name": {
+      "type": "string",
+      "title": "Full Name"
+    },
+    "company_name": {
+      "type": "string",
+      "title": "Company Name"
+    },
+    "email": {
+      "type": "string",
+      "format": "email",
+      "title": "Email"
+    },
+    "phone": {
+      "type": "string",
+      "title": "Phone"
+    },
+    "billing_address": {
+      "type": "string",
+      "title": "Billing Address"
+    },
+    "shipping_address": {
+      "type": "string",
+      "title": "Shipping Address"
+    },
+    "tax_number": {
+      "type": "string",
+      "title": "Tax/VAT Number"
+    },
+    "country": {
+      "type": "string",
+      "title": "Country"
+    },
+    "currency": {
+      "type": "string",
+      "title": "Currency",
+      "default": "USD"
+    },
+    "notes": {
+      "type": "string",
+      "title": "Notes"
+    },
+    "is_favorite": {
+      "type": "boolean",
+      "title": "Favorite",
+      "default": false
+    },
+    "tags": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "title": "Tags"
+    }
+  },
+  "required": [
+    "full_name"
+  ]
+}

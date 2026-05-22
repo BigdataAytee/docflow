@@ -1,0 +1,150 @@
+{
+  "name": "Document",
+  "type": "object",
+  "properties": {
+    "type": {
+      "type": "string",
+      "enum": [
+        "invoice",
+        "quotation",
+        "receipt",
+        "waybill",
+        "delivery_note",
+        "purchase_order",
+        "credit_note"
+      ],
+      "title": "Document Type"
+    },
+    "number": {
+      "type": "string",
+      "title": "Document Number"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "draft",
+        "sent",
+        "paid",
+        "overdue",
+        "cancelled",
+        "accepted",
+        "rejected"
+      ],
+      "title": "Status",
+      "default": "draft"
+    },
+    "customer_id": {
+      "type": "string",
+      "title": "Customer ID"
+    },
+    "customer_name": {
+      "type": "string",
+      "title": "Customer Name"
+    },
+    "customer_email": {
+      "type": "string",
+      "title": "Customer Email"
+    },
+    "customer_address": {
+      "type": "string",
+      "title": "Customer Address"
+    },
+    "items": {
+      "type": "array",
+      "title": "Line Items",
+      "items": {
+        "type": "object",
+        "properties": {
+          "description": {
+            "type": "string"
+          },
+          "quantity": {
+            "type": "number"
+          },
+          "unit_price": {
+            "type": "number"
+          },
+          "discount": {
+            "type": "number",
+            "default": 0
+          },
+          "amount": {
+            "type": "number"
+          }
+        }
+      }
+    },
+    "subtotal": {
+      "type": "number",
+      "title": "Subtotal",
+      "default": 0
+    },
+    "tax_rate": {
+      "type": "number",
+      "title": "Tax Rate (%)",
+      "default": 0
+    },
+    "tax_amount": {
+      "type": "number",
+      "title": "Tax Amount",
+      "default": 0
+    },
+    "discount_total": {
+      "type": "number",
+      "title": "Total Discount",
+      "default": 0
+    },
+    "shipping": {
+      "type": "number",
+      "title": "Shipping",
+      "default": 0
+    },
+    "total": {
+      "type": "number",
+      "title": "Total",
+      "default": 0
+    },
+    "paid_amount": {
+      "type": "number",
+      "title": "Paid Amount",
+      "default": 0
+    },
+    "balance_due": {
+      "type": "number",
+      "title": "Balance Due",
+      "default": 0
+    },
+    "currency": {
+      "type": "string",
+      "title": "Currency",
+      "default": "USD"
+    },
+    "due_date": {
+      "type": "string",
+      "format": "date-time",
+      "title": "Due Date"
+    },
+    "issue_date": {
+      "type": "string",
+      "format": "date-time",
+      "title": "Issue Date"
+    },
+    "notes": {
+      "type": "string",
+      "title": "Notes"
+    },
+    "terms": {
+      "type": "string",
+      "title": "Terms & Conditions"
+    },
+    "payment_instructions": {
+      "type": "string",
+      "title": "Payment Instructions"
+    }
+  },
+  "required": [
+    "type",
+    "number",
+    "customer_name"
+  ]
+}
