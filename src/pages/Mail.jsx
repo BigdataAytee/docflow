@@ -3,7 +3,7 @@ import { base44 } from "@/api/base44Client";
 import {
   Send, Mail as MailIcon, Loader2, Search, Pencil, X,
   ChevronDown, Trash2, RefreshCw, Star, Inbox, Clock,
-  ArrowLeft, AlertOctagon, FileText, Tag, Menu
+  ArrowLeft, AlertOctagon, FileText, Tag, Menu, Paperclip
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -33,20 +33,19 @@ function Avatar({ name, email }) {
 }
 
 const FOLDERS = [
-  { id: "inbox",   label: "Inbox",   icon: Inbox,        count: 0 },
-  { id: "starred", label: "Starred", icon: Star,         count: 0 },
-  { id: "snoozed", label: "Snoozed", icon: Clock,        count: 0 },
-  { id: "sent",    label: "Sent",    icon: Send,         count: null },
-  { id: "drafts",  label: "Drafts",  icon: FileText,     count: 0 },
-  { id: "spam",    label: "Spam",    icon: AlertOctagon, count: 0 },
-  { id: "trash",   label: "Trash",   icon: Trash2,       count: 0 },
-  { id: "labels",  label: "Labels",  icon: Tag,          count: 0 },
+  { id: "inbox",   label: "Inbox",   icon: Inbox },
+  { id: "starred", label: "Starred", icon: Star },
+  { id: "snoozed", label: "Snoozed", icon: Clock },
+  { id: "sent",    label: "Sent",    icon: Send },
+  { id: "drafts",  label: "Drafts",  icon: FileText },
+  { id: "spam",    label: "Spam",    icon: AlertOctagon },
+  { id: "trash",   label: "Trash",   icon: Trash2 },
+  { id: "labels",  label: "Labels",  icon: Tag },
 ];
 
 function MailSidebar({ folder, setFolder, sentCount, onCompose, onClose }) {
   return (
     <div className="flex flex-col h-full bg-white py-2">
-      {/* Compose */}
       <div className="px-3 mb-2">
         <button
           onClick={() => { onCompose(); onClose && onClose(); }}
@@ -56,12 +55,9 @@ function MailSidebar({ folder, setFolder, sentCount, onCompose, onClose }) {
           Compose
         </button>
       </div>
-
-      {/* Folders */}
       <nav className="flex-1 overflow-y-auto px-2 space-y-0.5">
         {FOLDERS.map(f => {
           const Icon = f.icon;
-          const count = f.id === "sent" ? sentCount : f.count;
           const active = folder === f.id;
           return (
             <button
@@ -73,7 +69,9 @@ function MailSidebar({ folder, setFolder, sentCount, onCompose, onClose }) {
             >
               <Icon className={`h-4 w-4 shrink-0 ${active ? "text-blue-700" : "text-gray-500"}`} />
               <span className="flex-1 text-left">{f.label}</span>
-              {count > 0 && <span className="text-xs font-bold text-gray-600">{count}</span>}
+              {f.id === "sent" && sentCount > 0 && (
+                <span className="text-xs font-bold text-gray-500">{sentCount}</span>
+              )}
             </button>
           );
         })}
@@ -82,34 +80,82 @@ function MailSidebar({ folder, setFolder, sentCount, onCompose, onClose }) {
   );
 }
 
+/* ── Compose form fields ── */
 function ComposeFields({ form, setForm, customers, selectCustomer }) {
   return (
-    <div className="flex flex-col flex-1 min-h-0">
-      <div className="flex items-center border-b border-gray-200 px-4">
-        <span className="text-xs text-gray-500 w-14 shrink-0">To</span>
-        <div className="flex-1 flex items-center gap-1">
-          <Input value={form.to_email} onChange={e => setForm(f => ({ ...f, to_email: e.target.value }))}
-            placeholder="Recipients" className="border-0 shadow-none focus-visible:ring-0 px-0 h-10 text-sm" />
-          <Select value={form.customer_id} onValueChange={selectCustomer}>
-            <SelectTrigger className="w-7 h-7 border-0 shadow-none px-0 text-gray-400">
-              <ChevronDown className="h-3.5 w-3.5" />
-            </SelectTrigger>
-            <SelectContent align="end" className="max-h-52">
-              {customers.map(c => (
-                <SelectItem key={c.id} value={c.id}>{c.full_name}{c.email ? ` <${c.email}>` : ""}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
+    <div className="flex flex-col flex-1 overflow-hidden">
+      {/* To row */}
+      <div className="flex items-center border-b border-gray-200 px-4 shrink-0">
+        <span className="text-xs text-gray-500 w-12 shrink-0">To</span>
+        <Input
+          value={form.to_email}
+          onChange={e => setForm(f => ({ ...f, to_email: e.target.value }))}
+          placeholder="Recipients"
+          className="border-0 shadow-none focus-visible:ring-0 px-1 h-10 text-sm flex-1"
+        />
+        <Select value={form.customer_id} onValueChange={selectCustomer}>
+          <SelectTrigger className="w-7 h-7 border-0 shadow-none px-0 text-gray-400 shrink-0">
+            <ChevronDown className="h-3.5 w-3.5" />
+          </SelectTrigger>
+          <SelectContent align="end" className="max-h-52">
+            {customers.map(c => (
+              <SelectItem key={c.id} value={c.id}>{c.full_name}{c.email ? ` <${c.email}>` : ""}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </div>
-      <div className="flex items-center border-b border-gray-200 px-4">
-        <span className="text-xs text-gray-500 w-14 shrink-0">Subject</span>
-        <Input value={form.subject} onChange={e => setForm(f => ({ ...f, subject: e.target.value }))}
-          placeholder="Subject" className="border-0 shadow-none focus-visible:ring-0 px-0 h-10 text-sm flex-1" />
+      {/* Subject row */}
+      <div className="flex items-center border-b border-gray-200 px-4 shrink-0">
+        <span className="text-xs text-gray-500 w-12 shrink-0">Subject</span>
+        <Input
+          value={form.subject}
+          onChange={e => setForm(f => ({ ...f, subject: e.target.value }))}
+          placeholder="Subject"
+          className="border-0 shadow-none focus-visible:ring-0 px-1 h-10 text-sm flex-1"
+        />
       </div>
-      <Textarea value={form.body} onChange={e => setForm(f => ({ ...f, body: e.target.value }))}
+      {/* Body */}
+      <textarea
+        value={form.body}
+        onChange={e => setForm(f => ({ ...f, body: e.target.value }))}
         placeholder="Write your message..."
-        className="flex-1 resize-none border-0 shadow-none focus-visible:ring-0 rounded-none text-sm px-4 py-3 min-h-0" />
+        className="flex-1 resize-none text-sm px-4 py-3 outline-none border-0 min-h-0"
+        style={{ fontFamily: "inherit" }}
+      />
+    </div>
+  );
+}
+
+/* ── Compose toolbar (send + attach + discard) ── */
+function ComposeToolbar({ onSend, onClose, sending, disabled }) {
+  return (
+    <div className="flex items-center justify-between px-3 py-2.5 border-t border-gray-200 bg-white shrink-0">
+      <div className="flex items-center gap-2">
+        <Button
+          size="sm"
+          onClick={onSend}
+          disabled={sending || disabled}
+          className="rounded-full px-5"
+        >
+          {sending
+            ? <><Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" />Sending…</>
+            : <><Send className="h-3.5 w-3.5 mr-1.5" />Send</>}
+        </Button>
+        <label
+          className="p-2 hover:bg-gray-100 rounded-full cursor-pointer text-gray-500 transition-colors"
+          title="Attach file"
+        >
+          <Paperclip className="h-4 w-4" />
+          <input type="file" className="hidden" />
+        </label>
+      </div>
+      <button
+        onClick={onClose}
+        className="p-2 text-gray-400 hover:text-gray-700 hover:bg-gray-100 rounded-full transition-colors"
+        title="Discard"
+      >
+        <Trash2 className="h-4 w-4" />
+      </button>
     </div>
   );
 }
@@ -132,47 +178,61 @@ function ComposeWindow({ customers, onSend, onClose }) {
     onClose();
   };
 
+  const disabled = !form.to_email || !form.subject || !form.body;
+
   return (
     <>
-      {/* Mobile full-screen */}
+      {/* ── Mobile: full-screen overlay ── */}
       <div className="fixed inset-0 z-50 flex flex-col bg-white sm:hidden">
+        {/* Header */}
         <div className="flex items-center justify-between px-4 py-3 bg-gray-800 text-white shrink-0">
-          <button onClick={onClose} className="p-1 hover:bg-white/20 rounded"><ArrowLeft className="h-5 w-5" /></button>
+          <button onClick={onClose} className="p-1 hover:bg-white/20 rounded-lg">
+            <ArrowLeft className="h-5 w-5" />
+          </button>
           <span className="text-sm font-semibold">New Message</span>
-          <Button size="sm" onClick={handleSend}
-            disabled={sending || !form.to_email || !form.subject || !form.body}
-            className="rounded-full px-4 h-8 text-xs bg-blue-500 hover:bg-blue-600">
+          <Button size="sm" onClick={handleSend} disabled={sending || disabled}
+            className="rounded-full px-4 h-8 text-xs bg-blue-500 hover:bg-blue-600 border-0">
             {sending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <><Send className="h-3.5 w-3.5 mr-1" />Send</>}
           </Button>
         </div>
-        <ComposeFields form={form} setForm={setForm} customers={customers} selectCustomer={selectCustomer} />
+        {/* Fields */}
+        <div className="flex-1 min-h-0 flex flex-col overflow-hidden">
+          <ComposeFields form={form} setForm={setForm} customers={customers} selectCustomer={selectCustomer} />
+        </div>
+        {/* Attachment bar */}
+        <div className="flex items-center gap-2 px-4 py-2 border-t border-gray-200 bg-white shrink-0">
+          <label className="p-2 hover:bg-gray-100 rounded-full cursor-pointer text-gray-500 flex items-center gap-2 text-xs" title="Attach file">
+            <Paperclip className="h-4 w-4" />
+            <span>Attach file</span>
+            <input type="file" className="hidden" />
+          </label>
+        </div>
       </div>
 
-      {/* Desktop floating */}
-      <div className={`hidden sm:flex fixed bottom-0 right-6 z-50 w-[500px] bg-white rounded-t-xl shadow-2xl border border-gray-300 flex-col transition-all ${minimized ? "h-11" : "h-[500px]"}`}>
-        <div className="flex items-center justify-between px-4 py-2.5 bg-gray-800 text-white rounded-t-xl cursor-pointer shrink-0"
-          onClick={() => setMinimized(m => !m)}>
+      {/* ── Desktop: floating window ── */}
+      <div className={`hidden sm:flex fixed bottom-0 right-6 z-50 w-[520px] rounded-t-xl shadow-2xl border border-gray-300 overflow-hidden flex-col bg-white transition-all duration-200 ${minimized ? "h-11" : "h-[490px]"}`}>
+        {/* Title bar */}
+        <div
+          className="flex items-center justify-between px-4 py-2.5 bg-gray-800 text-white cursor-pointer shrink-0"
+          onClick={() => setMinimized(m => !m)}
+        >
           <span className="text-sm font-semibold">New Message</span>
           <div className="flex items-center gap-1" onClick={e => e.stopPropagation()}>
             <button onClick={() => setMinimized(m => !m)} className="hover:bg-white/20 p-1 rounded">
               <ChevronDown className={`h-4 w-4 transition-transform ${minimized ? "rotate-180" : ""}`} />
             </button>
-            <button onClick={onClose} className="hover:bg-white/20 p-1 rounded"><X className="h-4 w-4" /></button>
+            <button onClick={onClose} className="hover:bg-white/20 p-1 rounded">
+              <X className="h-4 w-4" />
+            </button>
           </div>
         </div>
+
         {!minimized && (
           <>
-            <ComposeFields form={form} setForm={setForm} customers={customers} selectCustomer={selectCustomer} />
-            <div className="px-3 py-2.5 border-t border-gray-200 flex items-center justify-between shrink-0">
-              <Button size="sm" onClick={handleSend}
-                disabled={sending || !form.to_email || !form.subject || !form.body}
-                className="rounded-full px-5">
-                {sending ? <><Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" />Sending...</> : <><Send className="h-3.5 w-3.5 mr-1.5" />Send</>}
-              </Button>
-              <button onClick={onClose} className="p-2 text-gray-400 hover:text-gray-700 hover:bg-gray-100 rounded-full">
-                <Trash2 className="h-4 w-4" />
-              </button>
+            <div className="flex-1 min-h-0 overflow-hidden flex flex-col">
+              <ComposeFields form={form} setForm={setForm} customers={customers} selectCustomer={selectCustomer} />
             </div>
+            <ComposeToolbar onSend={handleSend} onClose={onClose} sending={sending} disabled={disabled} />
           </>
         )}
       </div>
@@ -272,14 +332,12 @@ export default function Mail() {
     <div className="flex bg-white rounded-xl border border-border overflow-hidden"
       style={{ height: "calc(100vh - 5rem)" }}>
 
-      {/* ── Desktop sidebar (always visible ≥ md) ── */}
-      <div className="hidden md:flex flex-col w-52 lg:w-60 shrink-0 border-r border-gray-200">
-        <div className="py-3 px-2">
-          <MailSidebar folder={folder} setFolder={setFolder} sentCount={sent.length} onCompose={() => setComposing(true)} />
-        </div>
+      {/* Desktop sidebar */}
+      <div className="hidden md:flex flex-col w-52 lg:w-60 shrink-0 border-r border-gray-200 overflow-y-auto">
+        <MailSidebar folder={folder} setFolder={setFolder} sentCount={sent.length} onCompose={() => setComposing(true)} />
       </div>
 
-      {/* ── Mobile sidebar drawer ── */}
+      {/* Mobile sidebar drawer */}
       {sidebarOpen && (
         <div className="fixed inset-0 z-50 flex md:hidden">
           <div className="absolute inset-0 bg-black/40" onClick={() => setSidebarOpen(false)} />
@@ -298,15 +356,13 @@ export default function Mail() {
         </div>
       )}
 
-      {/* ── Main area ── */}
+      {/* Main area */}
       <div className="flex flex-col flex-1 min-w-0">
         {/* Top bar */}
         <div className="flex items-center gap-2 px-3 py-2 border-b border-gray-200 shrink-0 bg-white">
-          {/* Mobile: hamburger */}
           <button onClick={() => setSidebarOpen(true)} className="md:hidden p-1.5 hover:bg-gray-100 rounded-full">
             <Menu className="h-5 w-5 text-gray-600" />
           </button>
-          {/* Search */}
           <div className="flex-1 max-w-2xl">
             <div className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-gray-400" />
@@ -318,14 +374,13 @@ export default function Mail() {
           <button onClick={handleRefresh} className="p-1.5 hover:bg-gray-100 rounded-full">
             <RefreshCw className={`h-4 w-4 text-gray-500 ${refreshing ? "animate-spin" : ""}`} />
           </button>
-          {/* Mobile compose shortcut */}
           <button onClick={() => setComposing(true)}
             className="md:hidden p-2 bg-blue-500 hover:bg-blue-600 text-white rounded-full">
             <Pencil className="h-4 w-4" />
           </button>
         </div>
 
-        {/* Folder label row */}
+        {/* Folder label */}
         {!selected && (
           <div className="flex items-center justify-between px-4 py-2 border-b border-gray-100 bg-gray-50 shrink-0">
             <span className="text-sm font-semibold text-gray-700 capitalize">{folderLabel}</span>
@@ -333,7 +388,7 @@ export default function Mail() {
           </div>
         )}
 
-        {/* Content: list OR detail */}
+        {/* Content */}
         <div className="flex flex-1 min-h-0">
           {selected ? (
             <div className="flex-1 min-w-0">
@@ -349,9 +404,6 @@ export default function Mail() {
                 <div className="flex flex-col items-center justify-center h-full py-20 text-gray-400 px-6">
                   <MailIcon className="h-14 w-14 opacity-10 mb-3" />
                   <p className="text-sm font-medium">{search ? "No results found" : `No messages in ${folderLabel}`}</p>
-                  {folder !== "sent" && !search && (
-                    <p className="text-xs mt-1 text-center">Messages will appear here when available</p>
-                  )}
                   {folder === "sent" && !search && (
                     <button onClick={() => setComposing(true)}
                       className="mt-4 flex items-center gap-2 text-blue-600 hover:underline text-sm">
@@ -363,7 +415,7 @@ export default function Mail() {
                 <div className="divide-y divide-gray-100">
                   {filtered.map(m => (
                     <button key={m.id} onClick={() => setSelected(m)}
-                      className="w-full text-left px-4 py-3 hover:bg-blue-50/60 active:bg-blue-100 transition-colors flex items-start gap-3 group">
+                      className="w-full text-left px-4 py-3 hover:bg-blue-50/60 active:bg-blue-100 transition-colors flex items-start gap-3">
                       <Avatar name={m.to_name} email={m.to_email} />
                       <div className="flex-1 min-w-0">
                         <div className="flex items-baseline justify-between gap-2 mb-0.5">
@@ -371,7 +423,7 @@ export default function Mail() {
                           <span className="text-[11px] text-gray-400 shrink-0">{formatTime(m.created_date)}</span>
                         </div>
                         <p className="text-xs font-medium text-gray-700 truncate">{m.subject}</p>
-                        <p className="text-xs text-gray-400 truncate mt-0.5 leading-relaxed">{(m.body || "").slice(0, 90)}</p>
+                        <p className="text-xs text-gray-400 truncate mt-0.5">{(m.body || "").slice(0, 90)}</p>
                       </div>
                       {m.status === "failed" && (
                         <span className="shrink-0 mt-1 text-[10px] bg-red-50 text-red-500 px-1.5 py-0.5 rounded font-medium">Failed</span>
