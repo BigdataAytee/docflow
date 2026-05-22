@@ -18,6 +18,7 @@ import Documents from './pages/Documents';
 import CreateDocument from './pages/CreateDocument';
 import ViewDocument from './pages/ViewDocument';
 import Settings from './pages/Settings';
+import Mail from './pages/Mail';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -57,6 +58,7 @@ const AuthenticatedApp = () => {
           <Route path="/documents/new" element={<CreateDocument />} />
           <Route path="/documents/:docId" element={<ViewDocument />} />
           <Route path="/settings" element={<Settings />} />
+          <Route path="/mail" element={<Mail />} />
         </Route>
       </Route>
       <Route path="*" element={<PageNotFound />} />

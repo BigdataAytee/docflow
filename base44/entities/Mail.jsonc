@@ -1,0 +1,40 @@
+{
+  "name": "Mail",
+  "type": "object",
+  "properties": {
+    "to_email": {
+      "type": "string",
+      "title": "To Email"
+    },
+    "to_name": {
+      "type": "string",
+      "title": "To Name"
+    },
+    "subject": {
+      "type": "string",
+      "title": "Subject"
+    },
+    "body": {
+      "type": "string",
+      "title": "Body"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "sent",
+        "failed"
+      ],
+      "title": "Status",
+      "default": "sent"
+    },
+    "customer_id": {
+      "type": "string",
+      "title": "Customer ID"
+    }
+  },
+  "required": [
+    "to_email",
+    "subject",
+    "body"
+  ]
+}
