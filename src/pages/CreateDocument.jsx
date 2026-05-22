@@ -191,6 +191,7 @@ export default function CreateDocument() {
   const sym = CURRENCIES.find(c => c.value === form.currency)?.label.split(" ")[0] || "₦";
   const pdfRef = useRef(null);
   const [generatingPdf, setGeneratingPdf] = useState(false);
+  const [showPdfPreview, setShowPdfPreview] = useState(false);
 
   const handleDownloadPdf = async () => {
     if (!pdfRef.current) return;
@@ -451,14 +452,38 @@ export default function CreateDocument() {
               <Button variant="outline" className="w-full" onClick={() => handleSave("sent")} disabled={saving || !form.customer_name}>
                 Save &amp; Send
               </Button>
-              <Button variant="ghost" className="w-full" onClick={handleDownloadPdf} disabled={generatingPdf}>
+              <Button variant="ghost" className="w-full" onClick={() => setShowPdfPreview(true)}>
                 <FileDown className="h-4 w-4 mr-1" />
-                {generatingPdf ? "Generating..." : "Preview & Download PDF"}
+                Preview &amp; Download PDF
               </Button>
             </div>
           </div>
         </div>
       </div>
+      {/* PDF Preview Modal */}
+      {showPdfPreview && (
+        <div className="fixed inset-0 z-50 bg-black/60 flex flex-col" onClick={() => setShowPdfPreview(false)}>
+          <div className="flex items-center justify-between px-6 py-3 bg-white border-b shrink-0" onClick={e => e.stopPropagation()}>
+            <div>
+              <p className="font-semibold text-sm">Document Preview</p>
+              <p className="text-xs text-muted-foreground">{form.number || "Draft"}</p>
+            </div>
+            <div className="flex items-center gap-2">
+              <Button size="sm" onClick={handleDownloadPdf} disabled={generatingPdf}>
+                <FileDown className="h-4 w-4 mr-1" />
+                {generatingPdf ? "Generating..." : "Download PDF"}
+              </Button>
+              <button className="p-2 hover:bg-muted rounded-lg text-muted-foreground" onClick={() => setShowPdfPreview(false)}>✕</button>
+            </div>
+          </div>
+          <div className="flex-1 overflow-auto bg-gray-100 p-6" onClick={e => e.stopPropagation()}>
+            <div className="max-w-3xl mx-auto">
+              <DocumentPreview form={form} items={calcs.lineItems} calcs={calcs} sym={sym} docType={form.type || docType} />
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Hidden full-size preview for PDF generation */}
       <div style={{ position: "absolute", left: "-9999px", top: 0, width: 760 }}>
         <div ref={pdfRef}>
