@@ -59,6 +59,7 @@ const CURRENCIES = [
 export default function CreateDocument() {
   const navigate = useNavigate();
   const params = new URLSearchParams(window.location.search);
+  const editId = params.get("edit") || null;
   const docType = params.get("type") || "invoice";
   const [customers, setCustomers] = useState([]);
   const [saving, setSaving] = useState(false);
@@ -96,30 +97,41 @@ export default function CreateDocument() {
 
   useEffect(() => {
     base44.entities.Customer.list("-created_date", 100).then(setCustomers);
-    base44.auth.me().then(user => {
-      if (user) setForm(f => ({
-        ...f,
-        company_name: user.company_name || user.full_name || "",
-        company_email: user.company_email || user.email || "",
-        company_phone: user.company_phone || "",
-        company_address: user.company_address || "",
-        company_website: user.company_website || "",
-        logo_url: user.logo_url || "",
-        currency: user.default_currency || "NGN",
-        tax_rate: user.default_tax_rate ?? 7.5,
-        terms: user.default_terms || "",
-        payment_instructions: user.default_payment_instructions || "",
-      }));
-    });
-    base44.entities.Document.list("-created_date", 1).then(docs => {
-      const prefix = docType === "invoice" ? "INV" : docType === "quotation" ? "QUO" : docType === "receipt" ? "REC" : docType === "purchase_order" ? "PO" : docType === "credit_note" ? "CN" : "DOC";
-      const num = docs.length > 0 ? parseInt((docs[0].number || "0").replace(/\D/g, "") || "0") + 1 : 1;
-      const seq = String(num).padStart(4, "0");
-      setNumPrefix(prefix);
-      setNumSeq(seq);
-      setForm(f => ({ ...f, number: `${prefix}-${seq}` }));
-    });
-  }, [docType]);
+    if (editId) {
+      // Edit mode: load existing document
+      base44.entities.Document.get(editId).then(doc => {
+        const { items: docItems, ...rest } = doc;
+        setForm(f => ({ ...f, ...rest, issue_date: rest.issue_date ? rest.issue_date.split("T")[0] : f.issue_date, due_date: rest.due_date ? rest.due_date.split("T")[0] : "" }));
+        if (docItems && docItems.length > 0) setItems(docItems);
+        const parts = (rest.number || "").split("-");
+        if (parts.length >= 2) { setNumPrefix(parts[0]); setNumSeq(parts.slice(1).join("-")); }
+      });
+    } else {
+      base44.auth.me().then(user => {
+        if (user) setForm(f => ({
+          ...f,
+          company_name: user.company_name || user.full_name || "",
+          company_email: user.company_email || user.email || "",
+          company_phone: user.company_phone || "",
+          company_address: user.company_address || "",
+          company_website: user.company_website || "",
+          logo_url: user.logo_url || "",
+          currency: user.default_currency || "NGN",
+          tax_rate: user.default_tax_rate ?? 7.5,
+          terms: user.default_terms || "",
+          payment_instructions: user.default_payment_instructions || "",
+        }));
+      });
+      base44.entities.Document.list("-created_date", 1).then(docs => {
+        const prefix = docType === "invoice" ? "INV" : docType === "quotation" ? "QUO" : docType === "receipt" ? "REC" : docType === "purchase_order" ? "PO" : docType === "credit_note" ? "CN" : "DOC";
+        const num = docs.length > 0 ? parseInt((docs[0].number || "0").replace(/\D/g, "") || "0") + 1 : 1;
+        const seq = String(num).padStart(4, "0");
+        setNumPrefix(prefix);
+        setNumSeq(seq);
+        setForm(f => ({ ...f, number: `${prefix}-${seq}` }));
+      });
+    }
+  }, [docType, editId]);
 
   const selectCustomer = (id) => {
     if (id === "__add_new__") { setShowAddCustomer(true); return; }
@@ -155,18 +167,23 @@ export default function CreateDocument() {
     const doc = {
       ...form,
       status,
-      manager_signature: managerSig || "",
       items: calcs.lineItems,
       subtotal: calcs.subtotal,
       tax_amount: calcs.taxAmt,
       total: calcs.total,
       balance_due: calcs.total,
-      paid_amount: 0,
       issue_date: form.issue_date ? new Date(form.issue_date).toISOString() : new Date().toISOString(),
       due_date: form.due_date ? new Date(form.due_date).toISOString() : undefined,
     };
-    const created = await base44.entities.Document.create(doc);
-    navigate(`/documents/${created.id}`);
+    if (editId) {
+      await base44.entities.Document.update(editId, doc);
+      navigate(`/documents/${editId}`);
+    } else {
+      doc.manager_signature = managerSig || "";
+      doc.paid_amount = 0;
+      const created = await base44.entities.Document.create(doc);
+      navigate(`/documents/${created.id}`);
+    }
   };
 
   const sym = CURRENCIES.find(c => c.value === form.currency)?.label.split(" ")[0] || "₦";
@@ -176,8 +193,8 @@ export default function CreateDocument() {
       <div className="flex items-center gap-3 mb-6">
         <Link to="/documents" className="p-2 hover:bg-muted rounded-lg"><ArrowLeft className="h-4 w-4" /></Link>
         <div>
-          <h1 className="text-2xl font-bold">New {typeLabels[docType]}</h1>
-          <p className="text-sm text-muted-foreground">Fill in the details below</p>
+          <h1 className="text-2xl font-bold">{editId ? `Edit ${typeLabels[form.type || docType]}` : `New ${typeLabels[docType]}`}</h1>
+          <p className="text-sm text-muted-foreground">{editId ? "Update the document details below" : "Fill in the details below"}</p>
         </div>
       </div>
 
