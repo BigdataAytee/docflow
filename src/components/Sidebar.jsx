@@ -1,6 +1,6 @@
 import { Link, useLocation } from "react-router-dom";
 import { LayoutDashboard, Users, FileText, Settings, Plus, ChevronDown, LogOut, Mail, LayoutGrid } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 
@@ -27,12 +27,23 @@ const docTypes = [
 export default function Sidebar({ onClose }) {
   const location = useLocation();
   const [showCreate, setShowCreate] = useState(false);
+  const [companyName, setCompanyName] = useState("");
+  const [companyEmail, setCompanyEmail] = useState("");
+
+  useEffect(() => {
+    base44.auth.me().then(user => {
+      if (user) {
+        setCompanyName(user.company_name || user.full_name || "");
+        setCompanyEmail(user.company_email || user.email || "");
+      }
+    });
+  }, []);
 
   return (
     <aside className="h-full w-64 bg-sidebar text-sidebar-foreground flex flex-col">
       <div className="p-6 pb-4">
-        <h1 className="text-lg font-bold text-white tracking-tight">DocFlow</h1>
-        <p className="text-xs text-sidebar-foreground/50 mt-0.5">Business Documents</p>
+        <h1 className="text-lg font-bold text-white tracking-tight">{companyName || "My Business"}</h1>
+        <p className="text-xs text-sidebar-foreground/50 mt-0.5">{companyEmail}</p>
       </div>
 
       <div className="px-3 mb-4">

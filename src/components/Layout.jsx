@@ -1,10 +1,18 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Outlet } from "react-router-dom";
 import Sidebar from "./Sidebar";
 import { Menu } from "lucide-react";
+import { base44 } from "@/api/base44Client";
 
 export default function Layout() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [companyName, setCompanyName] = useState("");
+
+  useEffect(() => {
+    base44.auth.me().then(user => {
+      if (user) setCompanyName(user.company_name || user.full_name || "");
+    });
+  }, []);
 
   return (
     <div className="min-h-screen bg-background flex">
@@ -30,7 +38,7 @@ export default function Layout() {
           <button onClick={() => setSidebarOpen(true)} className="text-white p-1.5 rounded-lg hover:bg-white/10">
             <Menu className="h-5 w-5" />
           </button>
-          <span className="text-white font-bold text-base tracking-tight">DocFlow</span>
+          <span className="text-white font-bold text-base tracking-tight">{companyName || "My Business"}</span>
         </div>
 
         <div className="p-4 md:p-6 lg:p-8 flex-1">

@@ -343,7 +343,7 @@ export default function Mail() {
           <div className="absolute inset-0 bg-black/40" onClick={() => setSidebarOpen(false)} />
           <div className="relative w-64 bg-white h-full shadow-xl flex flex-col">
             <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200">
-              <span className="font-bold text-gray-800">DocFlow Mail</span>
+              <span className="font-bold text-gray-800">Mail</span>
               <button onClick={() => setSidebarOpen(false)} className="p-1 hover:bg-gray-100 rounded-full">
                 <X className="h-4 w-4" />
               </button>
