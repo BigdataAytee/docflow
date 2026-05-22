@@ -14,12 +14,6 @@ const TYPE_LABELS = {
   letterhead: "LETTER",
 };
 
-const TYPE_ACCENTS = {
-  invoice: "#4F46E5", quotation: "#0891b2", receipt: "#059669",
-  waybill: "#1e293b", delivery_note: "#1e293b",
-  purchase_order: "#b45309", credit_note: "#dc2626", letterhead: "#4F46E5",
-};
-
 const STATUS_COLORS = {
   draft: "bg-gray-100 text-gray-500", sent: "bg-blue-50 text-blue-600",
   paid: "bg-emerald-50 text-emerald-600", overdue: "bg-red-50 text-red-600",
@@ -29,9 +23,15 @@ const STATUS_COLORS = {
 
 const CURRENCY_SYMBOLS = { NGN: "₦", USD: "$", EUR: "€", GBP: "£" };
 
-// Type-specific labels
-const AMOUNT_LABEL = { receipt: "Amount Paid", credit_note: "Amount Credited", quotation: "Quoted Amount", purchase_order: "Order Total" };
-const CUSTOMER_LABEL = { purchase_order: "Vendor", waybill: "Receiver", delivery_note: "Receiver", letterhead: "Addressed To" };
+const AMOUNT_LABEL = {
+  receipt: "Amount Paid", credit_note: "Amount Credited",
+  quotation: "Quoted Amount", purchase_order: "Order Total",
+};
+
+const CUSTOMER_LABEL = {
+  purchase_order: "Vendor", waybill: "Receiver",
+  delivery_note: "Receiver", letterhead: "Addressed To",
+};
 
 export default function ViewDocument() {
   const { docId } = useParams();
@@ -98,9 +98,7 @@ export default function ViewDocument() {
             <p className="text-sm font-semibold text-amber-800">What's next?</p>
             <p className="text-xs text-amber-700">Send this document to your customer or mark it as Sent.</p>
           </div>
-          <div className="flex gap-2">
-            <Button size="sm" onClick={() => updateStatus("sent")}><Send className="h-3 w-3 mr-1.5" />Mark as Sent</Button>
-          </div>
+          <Button size="sm" onClick={() => updateStatus("sent")}><Send className="h-3 w-3 mr-1.5" />Mark as Sent</Button>
         </div>
       )}
 
@@ -113,25 +111,24 @@ function UnifiedTemplate({ doc, onSaveManagerSig, onSaveCustomerSig }) {
   const items = doc.items || [];
   const sym = CURRENCY_SYMBOLS[doc.currency] || doc.currency || "₦";
   const curr = doc.currency || "NGN";
-  const accent = TYPE_ACCENTS[doc.type] || "#4F46E5";
   const fmtAmt = (n) => `${(n || 0).toLocaleString("en", { minimumFractionDigits: 2 })}`;
   const fmtCurr = (n) => `${curr} ${fmtAmt(n)}`;
   const isLetter = doc.type === "letterhead";
-  const showFinancials = !isLetter;
   const customerLabel = CUSTOMER_LABEL[doc.type] || "Bill To";
   const amountLabel = AMOUNT_LABEL[doc.type] || "Balance Due";
 
   return (
-    <div className="bg-white border border-gray-200 shadow-sm rounded-lg overflow-hidden print:shadow-none print:border-0" style={{ fontFamily: "'Helvetica Neue', Arial, sans-serif" }}>
+    <div className="bg-white border border-gray-300 shadow-sm rounded-lg overflow-hidden print:shadow-none print:border-0"
+      style={{ fontFamily: "'Helvetica Neue', Arial, sans-serif" }}>
 
       {/* Header */}
-      <div style={{ borderTop: `5px solid ${accent}` }} className="px-12 py-8">
+      <div className="px-12 pt-10 pb-6 border-b border-gray-200">
         <div className="flex justify-between items-start">
           {/* Logo + Company */}
           <div className="flex-1">
             {doc.logo_url
-              ? <img src={doc.logo_url} alt="Logo" className="h-16 w-auto object-contain mb-3" style={{ maxWidth: 180 }} />
-              : <div className="h-16 w-40 bg-gray-50 rounded-lg flex items-center justify-center text-gray-300 text-xs border border-dashed border-gray-200 mb-3">No Logo</div>
+              ? <img src={doc.logo_url} alt="Logo" className="h-16 w-auto object-contain mb-4" style={{ maxWidth: 180 }} />
+              : <div className="h-8" />
             }
             {doc.company_name && <p className="font-black text-gray-900 text-base">{doc.company_name}</p>}
             {doc.company_address && <p className="text-gray-500 text-xs whitespace-pre-line mt-0.5 leading-relaxed">{doc.company_address}</p>}
@@ -140,13 +137,13 @@ function UnifiedTemplate({ doc, onSaveManagerSig, onSaveCustomerSig }) {
             {doc.company_website && <p className="text-gray-500 text-xs">{doc.company_website}</p>}
           </div>
 
-          {/* Document type + number + amount */}
-          <div className="text-right ml-8">
-            <h1 className="font-black tracking-widest text-gray-800" style={{ fontSize: 30, color: accent }}>{TYPE_LABELS[doc.type]}</h1>
-            <p className="text-gray-400 text-sm font-mono mt-1">{doc.number}</p>
-            {showFinancials && (
-              <div className="mt-4 rounded-xl px-5 py-3 text-right" style={{ background: `${accent}12`, border: `1px solid ${accent}30` }}>
-                <p className="text-xs font-semibold uppercase tracking-wider" style={{ color: accent }}>{amountLabel}</p>
+          {/* Doc type + number + amount */}
+          <div className="text-right ml-8 flex flex-col items-end gap-2">
+            <h1 className="text-4xl font-black tracking-widest text-gray-800">{TYPE_LABELS[doc.type]}</h1>
+            <p className="text-gray-400 text-sm font-mono">{doc.number}</p>
+            {!isLetter && (
+              <div className="mt-2 border border-gray-300 rounded-lg px-5 py-3 bg-gray-50 min-w-[180px] text-right">
+                <p className="text-xs text-gray-400 uppercase tracking-wider font-medium">{amountLabel}</p>
                 <p className="text-2xl font-black text-gray-900 mt-0.5">{fmtCurr(doc.balance_due || doc.total)}</p>
               </div>
             )}
@@ -154,39 +151,30 @@ function UnifiedTemplate({ doc, onSaveManagerSig, onSaveCustomerSig }) {
         </div>
       </div>
 
-      {/* Divider */}
-      <div style={{ height: 2, background: `linear-gradient(to right, ${accent}, ${accent}22)` }} />
-
-      {/* From / To / Dates */}
-      <div className="px-12 py-6 grid grid-cols-3 gap-8 bg-gray-50/60">
-        {/* From */}
+      {/* From / To / Dates strip */}
+      <div className="px-12 py-5 grid grid-cols-3 gap-8 bg-gray-50 border-b border-gray-200">
         <div>
-          <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">From</p>
+          <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-2">From</p>
           <p className="font-semibold text-gray-800 text-sm">{doc.company_name || "—"}</p>
           {doc.company_address && <p className="text-gray-500 text-xs whitespace-pre-line mt-0.5">{doc.company_address}</p>}
           {doc.company_email && <p className="text-gray-500 text-xs mt-0.5">{doc.company_email}</p>}
-          {doc.company_phone && <p className="text-gray-500 text-xs">{doc.company_phone}</p>}
         </div>
-
-        {/* To */}
         <div>
-          <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">{customerLabel}</p>
+          <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-2">{customerLabel}</p>
           <p className="font-semibold text-gray-800 text-sm">{doc.customer_name || "—"}</p>
           {doc.customer_address && <p className="text-gray-500 text-xs whitespace-pre-line mt-0.5">{doc.customer_address}</p>}
           {doc.customer_email && <p className="text-gray-500 text-xs mt-0.5">{doc.customer_email}</p>}
         </div>
-
-        {/* Dates */}
         <div className="text-right">
           {doc.issue_date && (
             <div className="mb-2">
-              <p className="text-xs text-gray-400 uppercase tracking-wider">Date</p>
+              <p className="text-[10px] text-gray-400 uppercase tracking-wider font-semibold">Date</p>
               <p className="font-semibold text-gray-700 text-sm">{format(new Date(doc.issue_date), "dd MMM yyyy")}</p>
             </div>
           )}
           {doc.due_date && (
             <div className="mb-2">
-              <p className="text-xs text-gray-400 uppercase tracking-wider">
+              <p className="text-[10px] text-gray-400 uppercase tracking-wider font-semibold">
                 {doc.type === "purchase_order" ? "Required By" : doc.type === "quotation" ? "Valid Until" : "Due Date"}
               </p>
               <p className="font-semibold text-gray-700 text-sm">{format(new Date(doc.due_date), "dd MMM yyyy")}</p>
@@ -194,37 +182,37 @@ function UnifiedTemplate({ doc, onSaveManagerSig, onSaveCustomerSig }) {
           )}
           {doc.terms_label && !isLetter && (
             <div>
-              <p className="text-xs text-gray-400 uppercase tracking-wider">Terms</p>
+              <p className="text-[10px] text-gray-400 uppercase tracking-wider font-semibold">Terms</p>
               <p className="text-gray-700 text-sm">{doc.terms_label}</p>
             </div>
           )}
         </div>
       </div>
 
-      {/* Content area */}
+      {/* Main content */}
       <div className="px-12 py-8">
         {isLetter ? (
-          /* Letter body */
           <div>
             {doc.terms_label && doc.terms_label !== "Due on Receipt" && (
-              <p className="font-bold text-gray-900 underline text-sm mb-5">Re: {doc.terms_label}</p>
+              <p className="font-bold text-gray-900 text-sm mb-6 underline">Re: {doc.terms_label}</p>
             )}
-            <div className="text-gray-700 text-sm whitespace-pre-wrap min-h-56" style={{ lineHeight: 2 }}>
-              {doc.notes || <span className="text-gray-300 italic">No content</span>}
-            </div>
+            <div
+              className="text-gray-700 text-sm min-h-56 prose prose-sm max-w-none"
+              style={{ lineHeight: 1.9 }}
+              dangerouslySetInnerHTML={{ __html: doc.notes || "<p>No content</p>" }}
+            />
             {doc.terms && <p className="mt-8 text-sm text-gray-600">{doc.terms}</p>}
           </div>
         ) : (
-          /* Items table */
           <>
-            <table className="w-full text-sm mb-2">
+            <table className="w-full text-sm">
               <thead>
-                <tr style={{ borderBottom: `2px solid ${accent}` }} className="text-xs uppercase tracking-wider text-gray-400">
-                  <th className="pb-3 text-left w-8">#</th>
-                  <th className="pb-3 text-left">Description</th>
-                  <th className="pb-3 text-right px-4">Qty</th>
-                  <th className="pb-3 text-right px-4">Rate</th>
-                  <th className="pb-3 text-right">Amount</th>
+                <tr className="border-b-2 border-gray-800 text-xs uppercase tracking-wider text-gray-500">
+                  <th className="pb-3 text-left w-8 font-semibold">#</th>
+                  <th className="pb-3 text-left font-semibold">Description</th>
+                  <th className="pb-3 text-right px-4 font-semibold">Qty</th>
+                  <th className="pb-3 text-right px-4 font-semibold">Rate</th>
+                  <th className="pb-3 text-right font-semibold">Amount</th>
                 </tr>
               </thead>
               <tbody>
@@ -244,45 +232,56 @@ function UnifiedTemplate({ doc, onSaveManagerSig, onSaveCustomerSig }) {
             </table>
 
             {/* Totals */}
-            <div className="flex justify-end mt-4 mb-8">
-              <div className="w-72 text-sm space-y-2">
+            <div className="flex justify-end mt-6 mb-8">
+              <div className="w-72 text-sm space-y-1.5">
                 <div className="flex justify-between py-1"><span className="text-gray-400">Subtotal</span><span className="text-gray-700">{fmtAmt(doc.subtotal)}</span></div>
-                {doc.tax_amount > 0 && <div className="flex justify-between py-1"><span className="text-gray-400">VAT ({doc.tax_rate}%)</span><span className="text-gray-700">{fmtAmt(doc.tax_amount)}</span></div>}
-                {doc.shipping > 0 && <div className="flex justify-between py-1"><span className="text-gray-400">Shipping</span><span className="text-gray-700">{fmtAmt(doc.shipping)}</span></div>}
-                {doc.paid_amount > 0 && <div className="flex justify-between py-1 text-emerald-600"><span>Payment Made</span><span>(-) {fmtCurr(doc.paid_amount)}</span></div>}
-                <div className="flex justify-between py-3 border-t-2" style={{ borderColor: accent }}>
+                {doc.tax_amount > 0 && (
+                  <div className="flex justify-between py-1"><span className="text-gray-400">VAT ({doc.tax_rate}%)</span><span className="text-gray-700">{fmtAmt(doc.tax_amount)}</span></div>
+                )}
+                {doc.shipping > 0 && (
+                  <div className="flex justify-between py-1"><span className="text-gray-400">Shipping</span><span className="text-gray-700">{fmtAmt(doc.shipping)}</span></div>
+                )}
+                {doc.paid_amount > 0 && (
+                  <div className="flex justify-between py-1 text-emerald-600"><span>Payment Made</span><span>(-) {fmtCurr(doc.paid_amount)}</span></div>
+                )}
+                <div className="flex justify-between py-3 border-t-2 border-gray-800">
                   <span className="font-black text-gray-900 uppercase text-sm">{amountLabel}</span>
-                  <span className="font-black text-lg" style={{ color: accent }}>{fmtCurr(doc.balance_due || doc.total)}</span>
+                  <span className="font-black text-gray-900 text-lg">{fmtCurr(doc.balance_due || doc.total)}</span>
                 </div>
               </div>
             </div>
 
-            {/* Notes / Terms / Payment */}
             {(doc.notes || doc.terms || doc.payment_instructions) && (
-              <div className="border-t border-gray-100 pt-6 mb-8 space-y-4 text-sm text-gray-600">
+              <div className="border-t border-gray-200 pt-6 mb-8 space-y-4 text-sm text-gray-600">
                 {doc.notes && <p>{doc.notes}</p>}
-                {doc.terms && <div><p className="text-xs text-gray-400 uppercase tracking-wider mb-1">Terms &amp; Conditions</p><p>{doc.terms}</p></div>}
-                {doc.payment_instructions && <div><p className="text-xs text-gray-400 uppercase tracking-wider mb-1">Payment Instructions</p><p>{doc.payment_instructions}</p></div>}
+                {doc.terms && (
+                  <div>
+                    <p className="text-[10px] text-gray-400 uppercase tracking-wider font-semibold mb-1">Terms &amp; Conditions</p>
+                    <p>{doc.terms}</p>
+                  </div>
+                )}
+                {doc.payment_instructions && (
+                  <div>
+                    <p className="text-[10px] text-gray-400 uppercase tracking-wider font-semibold mb-1">Payment Instructions</p>
+                    <p>{doc.payment_instructions}</p>
+                  </div>
+                )}
               </div>
             )}
           </>
         )}
 
         {/* Signatures */}
-        <div className="border-t border-gray-200 pt-8 mt-8 grid grid-cols-2 gap-12">
-          {/* Manager Signature */}
+        <div className="border-t border-gray-200 pt-8 mt-6 grid grid-cols-2 gap-12">
           <div>
-            <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-3">Authorized Signatory</p>
+            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-3">Authorized Signatory</p>
             {doc.manager_signature ? (
               <div>
                 <img src={doc.manager_signature} alt="Manager Signature" className="h-16 object-contain mb-2" />
-                <div className="border-t border-gray-300 pt-1">
+                <div className="border-t border-gray-400 pt-1.5">
                   <p className="text-xs text-gray-500">{doc.company_name || "Company"}</p>
                 </div>
-                <button
-                  className="text-xs text-primary mt-1 hover:underline print:hidden"
-                  onClick={() => onSaveManagerSig("")}
-                >Re-sign</button>
+                <button className="text-xs text-primary mt-1.5 hover:underline print:hidden" onClick={() => onSaveManagerSig("")}>Re-sign</button>
               </div>
             ) : (
               <div className="print:hidden">
@@ -292,21 +291,17 @@ function UnifiedTemplate({ doc, onSaveManagerSig, onSaveCustomerSig }) {
             )}
           </div>
 
-          {/* Customer Signature */}
           <div>
-            <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-3">
+            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-3">
               {doc.type === "waybill" || doc.type === "delivery_note" ? "Receiver Signature" : "Customer Signature"}
             </p>
             {doc.customer_signature ? (
               <div>
                 <img src={doc.customer_signature} alt="Customer Signature" className="h-16 object-contain mb-2" />
-                <div className="border-t border-gray-300 pt-1">
+                <div className="border-t border-gray-400 pt-1.5">
                   <p className="text-xs text-gray-500">{doc.customer_name}</p>
                 </div>
-                <button
-                  className="text-xs text-primary mt-1 hover:underline print:hidden"
-                  onClick={() => onSaveCustomerSig("")}
-                >Re-sign</button>
+                <button className="text-xs text-primary mt-1.5 hover:underline print:hidden" onClick={() => onSaveCustomerSig("")}>Re-sign</button>
               </div>
             ) : (
               <div className="print:hidden">
@@ -319,7 +314,7 @@ function UnifiedTemplate({ doc, onSaveManagerSig, onSaveCustomerSig }) {
       </div>
 
       {/* Footer */}
-      <div style={{ background: `${accent}08`, borderTop: `1px solid ${accent}20` }} className="px-12 py-4 text-center">
+      <div className="px-12 py-4 bg-gray-50 border-t border-gray-200 text-center">
         <p className="text-xs text-gray-400">
           {[doc.company_name, doc.company_phone, doc.company_email, doc.company_website].filter(Boolean).join("  ·  ")}
         </p>

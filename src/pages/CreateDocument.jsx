@@ -9,6 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import SignaturePad from "../components/SignaturePad";
 import DocumentPreview from "../components/DocumentPreview";
+import ReactQuill from "react-quill";
 
 const typeLabels = {
   invoice: "Invoice", quotation: "Quotation", receipt: "Receipt",
@@ -232,7 +233,27 @@ export default function CreateDocument() {
             {docType === "letterhead" ? (
               <>
                 <div><Label>Subject / Re:</Label><Input value={form.terms_label !== "Due on Receipt" ? form.terms_label : ""} onChange={e => setForm(f => ({ ...f, terms_label: e.target.value }))} placeholder="e.g. Notice of Payment, Appointment Letter..." /></div>
-                <div><Label>Letter Body</Label><Textarea value={form.notes} onChange={e => setForm(f => ({ ...f, notes: e.target.value }))} rows={12} placeholder="Dear Sir/Madam,&#10;&#10;Write your letter content here..." /></div>
+                <div>
+                  <Label className="mb-2 block">Letter Body</Label>
+                  <div className="border border-input rounded-md overflow-hidden">
+                    <ReactQuill
+                      value={form.notes}
+                      onChange={val => setForm(f => ({ ...f, notes: val }))}
+                      theme="snow"
+                      style={{ minHeight: 300 }}
+                      modules={{
+                        toolbar: [
+                          [{ header: [1, 2, 3, false] }],
+                          ['bold', 'italic', 'underline', 'strike'],
+                          [{ list: 'ordered' }, { list: 'bullet' }],
+                          [{ indent: '-1' }, { indent: '+1' }],
+                          [{ align: [] }],
+                          ['clean']
+                        ]
+                      }}
+                    />
+                  </div>
+                </div>
                 <div><Label>Complimentary Close</Label><Textarea value={form.terms} onChange={e => setForm(f => ({ ...f, terms: e.target.value }))} rows={2} placeholder="e.g. Yours faithfully," /></div>
               </>
             ) : (
