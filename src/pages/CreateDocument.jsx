@@ -9,7 +9,36 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import SignaturePad from "../components/SignaturePad";
 import DocumentPreview from "../components/DocumentPreview";
-import ReactQuill from "react-quill";
+import ReactQuill, { Quill } from "react-quill";
+
+// Register fonts and sizes for Word-like experience
+const Font = Quill.import("formats/font");
+Font.whitelist = ["arial", "times-new-roman", "georgia", "courier-new", "trebuchet", "verdana"];
+Quill.register(Font, true);
+const Size = Quill.import("attributors/style/size");
+Size.whitelist = ["10px","11px","12px","14px","16px","18px","20px","24px","28px","32px","36px"];
+Quill.register(Size, true);
+
+const LETTER_MODULES = {
+  toolbar: [
+    [{ font: ["arial","times-new-roman","georgia","courier-new","trebuchet","verdana"] }],
+    [{ size: ["10px","11px","12px","14px","16px","18px","20px","24px","28px","32px","36px"] }],
+    [{ header: [1,2,3,4,false] }],
+    ["bold","italic","underline","strike"],
+    [{ color: [] },{ background: [] }],
+    [{ align: [] }],
+    [{ list: "ordered" },{ list: "bullet" }],
+    [{ indent: "-1" },{ indent: "+1" }],
+    ["blockquote","link"],
+    ["clean"],
+  ],
+};
+
+const LETTER_FORMATS = [
+  "font","size","header","bold","italic","underline","strike",
+  "color","background","align","list","bullet","indent",
+  "blockquote","link",
+];
 
 const typeLabels = {
   invoice: "Invoice", quotation: "Quotation", receipt: "Receipt",
@@ -235,23 +264,22 @@ export default function CreateDocument() {
                 <div><Label>Subject / Re:</Label><Input value={form.terms_label !== "Due on Receipt" ? form.terms_label : ""} onChange={e => setForm(f => ({ ...f, terms_label: e.target.value }))} placeholder="e.g. Notice of Payment, Appointment Letter..." /></div>
                 <div>
                   <Label className="mb-2 block">Letter Body</Label>
-                  <div className="border border-input rounded-md overflow-hidden">
-                    <ReactQuill
-                      value={form.notes}
-                      onChange={val => setForm(f => ({ ...f, notes: val }))}
-                      theme="snow"
-                      style={{ minHeight: 300 }}
-                      modules={{
-                        toolbar: [
-                          [{ header: [1, 2, 3, false] }],
-                          ['bold', 'italic', 'underline', 'strike'],
-                          [{ list: 'ordered' }, { list: 'bullet' }],
-                          [{ indent: '-1' }, { indent: '+1' }],
-                          [{ align: [] }],
-                          ['clean']
-                        ]
-                      }}
-                    />
+                  <div className="rounded-lg overflow-hidden border border-gray-300 shadow-sm">
+                    <div className="bg-gray-100 border-b border-gray-300 px-2 py-1">
+                      <span className="text-xs text-gray-500 font-medium">✏️ Document Editor</span>
+                    </div>
+                    <div style={{ background: "#e8e8e8", padding: "16px 8px" }}>
+                      <div style={{ background: "#fff", margin: "0 auto", maxWidth: 680, boxShadow: "0 1px 4px rgba(0,0,0,0.15)", minHeight: 400 }}>
+                        <ReactQuill
+                          value={form.notes}
+                          onChange={val => setForm(f => ({ ...f, notes: val }))}
+                          theme="snow"
+                          modules={LETTER_MODULES}
+                          formats={LETTER_FORMATS}
+                          style={{ fontFamily: "'Times New Roman', serif", fontSize: 14 }}
+                        />
+                      </div>
+                    </div>
                   </div>
                 </div>
                 <div><Label>Complimentary Close</Label><Textarea value={form.terms} onChange={e => setForm(f => ({ ...f, terms: e.target.value }))} rows={2} placeholder="e.g. Yours faithfully," /></div>

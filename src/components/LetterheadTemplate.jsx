@@ -1,24 +1,38 @@
 import { useState } from "react";
 import { format } from "date-fns";
 import SignaturePad from "./SignaturePad";
-import ReactQuill from "react-quill";
+import ReactQuill, { Quill } from "react-quill";
 import { Button } from "@/components/ui/button";
 import { PencilLine, Check, X } from "lucide-react";
 
+// Register fonts & sizes (safe to re-register)
+const _Font = Quill.import("formats/font");
+_Font.whitelist = ["arial","times-new-roman","georgia","courier-new","trebuchet","verdana"];
+Quill.register(_Font, true);
+const _Size = Quill.import("attributors/style/size");
+_Size.whitelist = ["10px","11px","12px","14px","16px","18px","20px","24px","28px","32px","36px"];
+Quill.register(_Size, true);
+
 const QUILL_MODULES = {
   toolbar: [
-    [{ font: ["", "serif", "monospace"] }],
-    [{ header: [1, 2, 3, false] }],
-    ["bold", "italic", "underline", "strike"],
-    [{ color: [] }, { background: [] }],
+    [{ font: ["arial","times-new-roman","georgia","courier-new","trebuchet","verdana"] }],
+    [{ size: ["10px","11px","12px","14px","16px","18px","20px","24px","28px","32px","36px"] }],
+    [{ header: [1,2,3,4,false] }],
+    ["bold","italic","underline","strike"],
+    [{ color: [] },{ background: [] }],
     [{ align: [] }],
-    [{ list: "ordered" }, { list: "bullet" }],
-    [{ indent: "-1" }, { indent: "+1" }],
-    ["blockquote"],
-    ["link"],
+    [{ list: "ordered" },{ list: "bullet" }],
+    [{ indent: "-1" },{ indent: "+1" }],
+    ["blockquote","link"],
     ["clean"],
   ],
 };
+
+const QUILL_FORMATS = [
+  "font","size","header","bold","italic","underline","strike",
+  "color","background","align","list","bullet","indent",
+  "blockquote","link",
+];
 
 export default function LetterheadTemplate({ doc, onSaveManagerSig, onSaveCustomerSig, onSaveNotes }) {
   const [editing, setEditing] = useState(false);
@@ -141,11 +155,10 @@ export default function LetterheadTemplate({ doc, onSaveManagerSig, onSaveCustom
             </div>
           ) : (
             <div className="print:hidden">
-              {/* Rich Text Editor */}
-              <div className="border border-slate-300 rounded-lg overflow-hidden shadow-sm">
-                {/* Editor toolbar label */}
+              {/* Rich Text Editor — Word-like environment */}
+              <div className="rounded-lg overflow-hidden border border-gray-300 shadow-sm">
                 <div className="bg-slate-800 text-white text-xs px-4 py-2 flex items-center justify-between">
-                  <span className="font-semibold tracking-wide">✏️ Letter Body Editor</span>
+                  <span className="font-semibold tracking-wide">✏️ Document Editor</span>
                   <div className="flex gap-2">
                     <Button size="sm" variant="ghost" className="h-6 text-white hover:text-white hover:bg-white/20 text-xs px-2" onClick={handleCancelEdit}>
                       <X className="h-3 w-3 mr-1" /> Cancel
@@ -155,13 +168,18 @@ export default function LetterheadTemplate({ doc, onSaveManagerSig, onSaveCustom
                     </Button>
                   </div>
                 </div>
-                <ReactQuill
-                  value={draftNotes}
-                  onChange={setDraftNotes}
-                  theme="snow"
-                  modules={QUILL_MODULES}
-                  style={{ minHeight: 320, fontFamily: "'Times New Roman', serif", fontSize: 14 }}
-                />
+                <div style={{ background: "#e8e8e8", padding: "12px 8px" }}>
+                  <div style={{ background: "#fff", margin: "0 auto", maxWidth: "100%", boxShadow: "0 1px 4px rgba(0,0,0,0.15)", minHeight: 360 }}>
+                    <ReactQuill
+                      value={draftNotes}
+                      onChange={setDraftNotes}
+                      theme="snow"
+                      modules={QUILL_MODULES}
+                      formats={QUILL_FORMATS}
+                      style={{ fontFamily: "'Times New Roman', serif", fontSize: 14 }}
+                    />
+                  </div>
+                </div>
               </div>
             </div>
           )}
