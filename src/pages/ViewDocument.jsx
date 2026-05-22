@@ -11,6 +11,7 @@ const typeLabels = {
   invoice: "INVOICE", quotation: "QUOTATION", receipt: "RECEIPT",
   waybill: "WAYBILL", delivery_note: "DELIVERY NOTE",
   purchase_order: "PURCHASE ORDER", credit_note: "CREDIT NOTE",
+  letterhead: "LETTERHEAD",
 };
 
 const statusColors = {

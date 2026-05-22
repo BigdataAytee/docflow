@@ -11,7 +11,8 @@
         "waybill",
         "delivery_note",
         "purchase_order",
-        "credit_note"
+        "credit_note",
+        "letterhead"
       ],
       "title": "Document Type"
     },

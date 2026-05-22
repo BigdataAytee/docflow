@@ -1,7 +1,7 @@
-import { useState, useEffect, useMemo, useRef } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { base44 } from "@/api/base44Client";
 import { useNavigate, Link } from "react-router-dom";
-import { Plus, Trash2, ArrowLeft, Upload, ImageIcon } from "lucide-react";
+import { Plus, Trash2, ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -26,12 +26,8 @@ export default function CreateDocument() {
   const navigate = useNavigate();
   const params = new URLSearchParams(window.location.search);
   const docType = params.get("type") || "invoice";
-  const logoInputRef = useRef(null);
-
   const [customers, setCustomers] = useState([]);
   const [saving, setSaving] = useState(false);
-  const [logoPreview, setLogoPreview] = useState(null);
-  const [uploadingLogo, setUploadingLogo] = useState(false);
   const [managerSig, setManagerSig] = useState(null);
 
   const [form, setForm] = useState({
@@ -70,8 +66,11 @@ export default function CreateDocument() {
         company_address: user.company_address || "",
         company_website: user.company_website || "",
         logo_url: user.logo_url || "",
+        currency: user.default_currency || "NGN",
+        tax_rate: user.default_tax_rate ?? 7.5,
+        terms: user.default_terms || "",
+        payment_instructions: user.default_payment_instructions || "",
       }));
-      if (user?.logo_url) setLogoPreview(user.logo_url);
     });
     base44.entities.Document.list("-created_date", 1).then(docs => {
       const prefix = docType === "invoice" ? "INV" : docType === "quotation" ? "QUO" : docType === "receipt" ? "REC" : docType === "purchase_order" ? "PO" : docType === "credit_note" ? "CN" : "DOC";
@@ -79,18 +78,6 @@ export default function CreateDocument() {
       setForm(f => ({ ...f, number: `${prefix}-${String(num).padStart(4, "0")}` }));
     });
   }, [docType]);
-
-  const handleLogoChange = async (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-    setUploadingLogo(true);
-    const reader = new FileReader();
-    reader.onload = (ev) => setLogoPreview(ev.target.result);
-    reader.readAsDataURL(file);
-    const { file_url } = await base44.integrations.Core.UploadFile({ file });
-    setForm(f => ({ ...f, logo_url: file_url }));
-    setUploadingLogo(false);
-  };
 
   const selectCustomer = (id) => {
     const c = customers.find(x => x.id === id);
@@ -144,39 +131,6 @@ export default function CreateDocument() {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2 space-y-6">
-
-          {/* Company & Logo */}
-          <div className="bg-card rounded-xl border border-border p-6 space-y-4">
-            <h3 className="font-semibold text-sm text-muted-foreground uppercase tracking-wider">Company Details</h3>
-            <div className="flex gap-5 items-start">
-              {/* Logo upload */}
-              <div className="flex-shrink-0">
-                <div
-                  onClick={() => logoInputRef.current?.click()}
-                  className="w-24 h-24 rounded-xl border-2 border-dashed border-border flex items-center justify-center cursor-pointer hover:border-primary hover:bg-primary/5 transition-all overflow-hidden bg-gray-50"
-                >
-                  {logoPreview ? (
-                    <img src={logoPreview} alt="Logo" className="w-full h-full object-contain" />
-                  ) : (
-                    <div className="text-center text-muted-foreground">
-                      <ImageIcon className="h-6 w-6 mx-auto mb-1" />
-                      <p className="text-xs">Logo</p>
-                    </div>
-                  )}
-                </div>
-                <input ref={logoInputRef} type="file" accept="image/*" className="hidden" onChange={handleLogoChange} />
-                {uploadingLogo && <p className="text-xs text-primary mt-1 text-center">Uploading...</p>}
-                {logoPreview && <button onClick={() => { setLogoPreview(null); setForm(f => ({ ...f, logo_url: "" })); }} className="text-xs text-muted-foreground hover:text-destructive mt-1 block text-center w-full">Remove</button>}
-              </div>
-              <div className="flex-1 grid grid-cols-2 gap-3">
-                <div><Label className="text-xs">Company Name</Label><Input value={form.company_name} onChange={e => setForm(f => ({ ...f, company_name: e.target.value }))} /></div>
-                <div><Label className="text-xs">Email</Label><Input value={form.company_email} onChange={e => setForm(f => ({ ...f, company_email: e.target.value }))} /></div>
-                <div><Label className="text-xs">Phone</Label><Input value={form.company_phone} onChange={e => setForm(f => ({ ...f, company_phone: e.target.value }))} /></div>
-                <div><Label className="text-xs">Website</Label><Input value={form.company_website} onChange={e => setForm(f => ({ ...f, company_website: e.target.value }))} /></div>
-                <div className="col-span-2"><Label className="text-xs">Address</Label><Input value={form.company_address} onChange={e => setForm(f => ({ ...f, company_address: e.target.value }))} /></div>
-              </div>
-            </div>
-          </div>
 
           {/* Document Info */}
           <div className="bg-card rounded-xl border border-border p-6 space-y-4">
