@@ -1,7 +1,9 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
+import html2canvas from "html2canvas";
+import jsPDF from "jspdf";
 import { base44 } from "@/api/base44Client";
 import { useNavigate, Link } from "react-router-dom";
-import { Plus, Trash2, ArrowLeft, Settings2 } from "lucide-react";
+import { Plus, Trash2, ArrowLeft, Settings2, FileDown } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -187,6 +189,21 @@ export default function CreateDocument() {
   };
 
   const sym = CURRENCIES.find(c => c.value === form.currency)?.label.split(" ")[0] || "₦";
+  const pdfRef = useRef(null);
+  const [generatingPdf, setGeneratingPdf] = useState(false);
+
+  const handleDownloadPdf = async () => {
+    if (!pdfRef.current) return;
+    setGeneratingPdf(true);
+    const canvas = await html2canvas(pdfRef.current, { scale: 2, useCORS: true, logging: false });
+    const imgData = canvas.toDataURL("image/png");
+    const pdf = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
+    const pageWidth = pdf.internal.pageSize.getWidth();
+    const pageHeight = (canvas.height * pageWidth) / canvas.width;
+    pdf.addImage(imgData, "PNG", 0, 0, pageWidth, pageHeight);
+    pdf.save(`${form.number || "document"}.pdf`);
+    setGeneratingPdf(false);
+  };
 
   return (
     <div className="max-w-5xl mx-auto">
@@ -434,8 +451,18 @@ export default function CreateDocument() {
               <Button variant="outline" className="w-full" onClick={() => handleSave("sent")} disabled={saving || !form.customer_name}>
                 Save &amp; Send
               </Button>
+              <Button variant="ghost" className="w-full" onClick={handleDownloadPdf} disabled={generatingPdf}>
+                <FileDown className="h-4 w-4 mr-1" />
+                {generatingPdf ? "Generating..." : "Preview & Download PDF"}
+              </Button>
             </div>
           </div>
+        </div>
+      </div>
+      {/* Hidden full-size preview for PDF generation */}
+      <div style={{ position: "absolute", left: "-9999px", top: 0, width: 760 }}>
+        <div ref={pdfRef}>
+          <DocumentPreview form={form} items={calcs.lineItems} calcs={calcs} sym={sym} docType={form.type || docType} />
         </div>
       </div>
     </div>
