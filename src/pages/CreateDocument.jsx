@@ -179,8 +179,8 @@ export default function CreateDocument() {
                 <div className="relative">
                   <Input
                     value={form.number}
-                    onChange={e => setForm(f => ({ ...f, number: e.target.value }))}
-                    className="pr-9"
+                    readOnly
+                    className="pr-9 cursor-default bg-muted/40"
                   />
                   <Popover open={numOpen} onOpenChange={setNumOpen}>
                     <PopoverTrigger asChild>
@@ -220,6 +220,13 @@ export default function CreateDocument() {
                           />
                         </div>
                         <p className="text-xs text-muted-foreground">Preview: <span className="font-mono font-semibold text-foreground">{numPrefix}-{numSeq}</span></p>
+                        <button
+                          type="button"
+                          className="w-full mt-1 bg-primary text-primary-foreground text-xs font-semibold py-1.5 rounded-md hover:bg-primary/90 transition-colors"
+                          onClick={() => setNumOpen(false)}
+                        >
+                          Save
+                        </button>
                       </div>
                     </PopoverContent>
                   </Popover>
