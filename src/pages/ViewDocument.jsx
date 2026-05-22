@@ -1,37 +1,43 @@
 import { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useParams, Link, useNavigate } from "react-router-dom";
-import { ArrowLeft, Trash2, Printer, Send, CheckCircle } from "lucide-react";
+import { ArrowLeft, Trash2, Printer, Send } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { format } from "date-fns";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import SignaturePad from "../components/SignaturePad";
 
-const typeLabels = {
+const TYPE_LABELS = {
   invoice: "INVOICE", quotation: "QUOTATION", receipt: "RECEIPT",
   waybill: "WAYBILL", delivery_note: "DELIVERY NOTE",
   purchase_order: "PURCHASE ORDER", credit_note: "CREDIT NOTE",
-  letterhead: "LETTERHEAD",
+  letterhead: "LETTER",
 };
 
-const statusColors = {
-  draft: "bg-gray-100 text-gray-500",
-  sent: "bg-blue-50 text-blue-600",
-  paid: "bg-emerald-50 text-emerald-600",
-  overdue: "bg-red-50 text-red-600",
-  cancelled: "bg-gray-100 text-gray-500",
-  accepted: "bg-emerald-50 text-emerald-600",
+const TYPE_ACCENTS = {
+  invoice: "#4F46E5", quotation: "#0891b2", receipt: "#059669",
+  waybill: "#1e293b", delivery_note: "#1e293b",
+  purchase_order: "#b45309", credit_note: "#dc2626", letterhead: "#4F46E5",
+};
+
+const STATUS_COLORS = {
+  draft: "bg-gray-100 text-gray-500", sent: "bg-blue-50 text-blue-600",
+  paid: "bg-emerald-50 text-emerald-600", overdue: "bg-red-50 text-red-600",
+  cancelled: "bg-gray-100 text-gray-500", accepted: "bg-emerald-50 text-emerald-600",
   rejected: "bg-red-50 text-red-600",
 };
 
 const CURRENCY_SYMBOLS = { NGN: "₦", USD: "$", EUR: "€", GBP: "£" };
+
+// Type-specific labels
+const AMOUNT_LABEL = { receipt: "Amount Paid", credit_note: "Amount Credited", quotation: "Quoted Amount", purchase_order: "Order Total" };
+const CUSTOMER_LABEL = { purchase_order: "Vendor", waybill: "Receiver", delivery_note: "Receiver", letterhead: "Addressed To" };
 
 export default function ViewDocument() {
   const { docId } = useParams();
   const navigate = useNavigate();
   const [doc, setDoc] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [clientSig, setClientSig] = useState(null);
 
   useEffect(() => {
     base44.entities.Document.get(docId).then(d => { setDoc(d); setLoading(false); });
@@ -42,6 +48,16 @@ export default function ViewDocument() {
     setDoc(prev => ({ ...prev, status }));
   };
 
+  const saveManagerSig = async (sig) => {
+    await base44.entities.Document.update(docId, { manager_signature: sig });
+    setDoc(prev => ({ ...prev, manager_signature: sig }));
+  };
+
+  const saveCustomerSig = async (sig) => {
+    await base44.entities.Document.update(docId, { customer_signature: sig });
+    setDoc(prev => ({ ...prev, customer_signature: sig }));
+  };
+
   const handleDelete = async () => {
     await base44.entities.Document.delete(docId);
     navigate("/documents");
@@ -49,11 +65,6 @@ export default function ViewDocument() {
 
   if (loading) return <div className="flex items-center justify-center h-64"><div className="w-8 h-8 border-4 border-primary/20 border-t-primary rounded-full animate-spin" /></div>;
   if (!doc) return <div className="text-center py-12 text-muted-foreground">Document not found</div>;
-
-  const isWaybill = doc.type === "waybill" || doc.type === "delivery_note";
-  const isLetterhead = doc.type === "letterhead";
-  const sym = CURRENCY_SYMBOLS[doc.currency] || doc.currency || "₦";
-  const curr = doc.currency || "NGN";
 
   return (
     <div className="max-w-4xl mx-auto">
@@ -63,9 +74,9 @@ export default function ViewDocument() {
           <Link to="/documents" className="p-2 hover:bg-muted rounded-lg"><ArrowLeft className="h-4 w-4" /></Link>
           <div>
             <h1 className="text-xl font-bold">{doc.number}</h1>
-            <p className="text-xs text-muted-foreground">{typeLabels[doc.type]}</p>
+            <p className="text-xs text-muted-foreground">{TYPE_LABELS[doc.type]}</p>
           </div>
-          <span className={`px-2.5 py-1 rounded-full text-xs font-medium capitalize ${statusColors[doc.status]}`}>{doc.status}</span>
+          <span className={`px-2.5 py-1 rounded-full text-xs font-medium capitalize ${STATUS_COLORS[doc.status]}`}>{doc.status}</span>
         </div>
         <div className="flex items-center gap-2">
           <Select value={doc.status} onValueChange={updateStatus}>
@@ -81,796 +92,237 @@ export default function ViewDocument() {
         </div>
       </div>
 
-      {/* Status action banner */}
       {doc.status === "draft" && (
         <div className="print:hidden mb-4 bg-amber-50 border border-amber-200 rounded-xl px-5 py-3 flex items-center justify-between">
           <div>
-            <p className="text-sm font-semibold text-amber-800">✦ WHAT'S NEXT?</p>
-            <p className="text-xs text-amber-700">Send this {typeLabels[doc.type].toLowerCase()} to your customer or mark it as Sent.</p>
+            <p className="text-sm font-semibold text-amber-800">What's next?</p>
+            <p className="text-xs text-amber-700">Send this document to your customer or mark it as Sent.</p>
           </div>
           <div className="flex gap-2">
-            <Button size="sm" onClick={() => updateStatus("sent")}><Send className="h-3 w-3 mr-1.5" />Send Invoice</Button>
-            <Button size="sm" variant="outline" onClick={() => updateStatus("sent")}>Mark As Sent</Button>
+            <Button size="sm" onClick={() => updateStatus("sent")}><Send className="h-3 w-3 mr-1.5" />Mark as Sent</Button>
           </div>
         </div>
       )}
 
-      {isLetterhead ? (
-        <LetterheadTemplate doc={doc} />
-      ) : isWaybill ? (
-        <WaybillTemplate doc={doc} sym={sym} curr={curr} clientSig={clientSig} setClientSig={setClientSig} />
-      ) : doc.type === "quotation" ? (
-        <QuotationTemplate doc={doc} sym={sym} curr={curr} />
-      ) : doc.type === "receipt" ? (
-        <ReceiptTemplate doc={doc} sym={sym} curr={curr} />
-      ) : doc.type === "purchase_order" ? (
-        <PurchaseOrderTemplate doc={doc} sym={sym} curr={curr} />
-      ) : doc.type === "credit_note" ? (
-        <CreditNoteTemplate doc={doc} sym={sym} curr={curr} />
-      ) : (
-        <ZohoTemplate doc={doc} sym={sym} curr={curr} />
-      )}
+      <UnifiedTemplate doc={doc} onSaveManagerSig={saveManagerSig} onSaveCustomerSig={saveCustomerSig} />
     </div>
   );
 }
 
-function ZohoTemplate({ doc, sym, curr }) {
+function UnifiedTemplate({ doc, onSaveManagerSig, onSaveCustomerSig }) {
   const items = doc.items || [];
-  const fmtAmt = (n) => `${(n || 0).toLocaleString("en", { minimumFractionDigits: 2 })}`;
-  const fmtCurr = (n) => `${curr}${fmtAmt(n)}`;
-
-  return (
-    <div className="bg-white border border-gray-200 shadow-sm rounded-lg overflow-hidden" style={{ fontFamily: "'Helvetica Neue', Arial, sans-serif" }}>
-      {/* Draft watermark */}
-      {doc.status === "draft" && (
-        <div className="absolute pointer-events-none" style={{ top: 120, left: 30, transform: "rotate(-30deg)", opacity: 0.08, fontSize: 80, fontWeight: 900, color: "#000", zIndex: 0 }}>Draft</div>
-      )}
-
-      <div className="relative px-12 py-10">
-        {/* Header: Logo left | Doc type + number + balance right */}
-        <div className="flex justify-between items-start mb-10">
-          <div className="flex-1">
-            {doc.logo_url ? (
-              <img src={doc.logo_url} alt="Company Logo" className="h-28 w-auto object-contain" style={{ maxWidth: 200 }} />
-            ) : (
-              <div className="h-28 w-40 bg-gray-100 rounded-lg flex items-center justify-center text-gray-400 text-xs">No Logo</div>
-            )}
-          </div>
-          <div className="text-right">
-            <h1 className="text-5xl font-light text-gray-700 tracking-wide">{typeLabels[doc.type]}</h1>
-            <p className="text-gray-500 mt-2 text-sm font-medium">{doc.number}</p>
-            <div className="mt-3">
-              <p className="text-gray-500 text-xs">Balance Due</p>
-              <p className="text-2xl font-extrabold text-gray-900">{fmtCurr(doc.balance_due || doc.total)}</p>
-            </div>
-          </div>
-        </div>
-
-        {/* Company info */}
-        <div className="mb-8">
-          {doc.company_name && <p className="font-bold text-gray-900 text-base">{doc.company_name}</p>}
-          {doc.company_address && <p className="text-gray-600 text-sm whitespace-pre-line">{doc.company_address}</p>}
-          {doc.company_phone && <p className="text-gray-600 text-sm">{doc.company_phone}</p>}
-          {doc.company_email && <p className="text-gray-600 text-sm">{doc.company_email}</p>}
-          {doc.company_website && <p className="text-gray-600 text-sm">{doc.company_website}</p>}
-        </div>
-
-        {/* Bill To + Dates */}
-        <div className="flex justify-between items-start mb-8">
-          <div className="flex-1">
-            {doc.customer_name && (
-              <div>
-                <p className="text-xs text-gray-400 uppercase tracking-wider mb-1">Bill To</p>
-                <p className="font-semibold text-gray-800 text-sm">{doc.customer_name}</p>
-                {doc.customer_address && <p className="text-gray-500 text-xs whitespace-pre-line mt-0.5">{doc.customer_address}</p>}
-                {doc.customer_email && <p className="text-gray-500 text-xs">{doc.customer_email}</p>}
-              </div>
-            )}
-          </div>
-          <div className="text-right space-y-1.5 text-sm min-w-[260px]">
-            {doc.issue_date && (
-              <div className="flex justify-between gap-8">
-                <span className="text-gray-400">{doc.type === "invoice" ? "Invoice Date" : "Date"} :</span>
-                <span className="text-gray-700">{format(new Date(doc.issue_date), "dd MMM yyyy")}</span>
-              </div>
-            )}
-            {doc.terms_label && (
-              <div className="flex justify-between gap-8">
-                <span className="text-gray-400">Terms :</span>
-                <span className="text-gray-700">{doc.terms_label}</span>
-              </div>
-            )}
-            {doc.due_date && (
-              <div className="flex justify-between gap-8">
-                <span className="text-gray-400">Due Date :</span>
-                <span className="text-gray-700">{format(new Date(doc.due_date), "dd MMM yyyy")}</span>
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* Items Table */}
-        <table className="w-full mb-0 text-sm">
-          <thead>
-            <tr className="border-b border-t border-gray-200 text-gray-400 text-xs uppercase tracking-wider">
-              <th className="py-2.5 text-left font-medium w-8">#</th>
-              <th className="py-2.5 text-left font-medium">Description</th>
-              <th className="py-2.5 text-right font-medium px-4">Qty</th>
-              <th className="py-2.5 text-right font-medium px-4">Rate</th>
-              <th className="py-2.5 text-right font-medium">Amount</th>
-            </tr>
-          </thead>
-          <tbody>
-            {items.map((item, i) => (
-              <tr key={i} className="border-b border-gray-100">
-                <td className="py-3 text-gray-400">{i + 1}</td>
-                <td className="py-3 text-gray-800">{item.description}</td>
-                <td className="py-3 text-right px-4 text-gray-600">{(item.quantity || 0).toFixed(2)}</td>
-                <td className="py-3 text-right px-4 text-gray-600">{fmtAmt(item.unit_price)}</td>
-                <td className="py-3 text-right text-gray-800 font-medium">{fmtAmt(item.amount)}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-
-        {/* Totals */}
-        <div className="flex justify-end mt-6 mb-8">
-          <div className="w-72 text-sm space-y-2">
-            <div className="flex justify-between py-1">
-              <span className="text-gray-500">Sub Total</span>
-              <span className="text-gray-800">{fmtAmt(doc.subtotal)}</span>
-            </div>
-            {doc.tax_amount > 0 && (
-              <div className="flex justify-between py-1">
-                <span className="text-gray-500">VAT ({doc.tax_rate}%)</span>
-                <span className="text-gray-800">{fmtAmt(doc.tax_amount)}</span>
-              </div>
-            )}
-            {doc.shipping > 0 && (
-              <div className="flex justify-between py-1">
-                <span className="text-gray-500">Shipping</span>
-                <span className="text-gray-800">{fmtAmt(doc.shipping)}</span>
-              </div>
-            )}
-            <div className="flex justify-between py-2 border-t border-gray-200">
-              <span className="font-bold text-gray-900">Total</span>
-              <span className="font-bold text-gray-900">{fmtCurr(doc.total)}</span>
-            </div>
-            {doc.paid_amount > 0 && (
-              <div className="flex justify-between py-1 text-emerald-600">
-                <span>Payment Made</span>
-                <span>(-) {fmtCurr(doc.paid_amount)}</span>
-              </div>
-            )}
-            <div className="flex justify-between py-2 border-t border-gray-300">
-              <span className="font-bold text-gray-900">Balance Due</span>
-              <span className="font-bold text-gray-900 text-base">{fmtCurr(doc.balance_due || doc.total)}</span>
-            </div>
-          </div>
-        </div>
-
-        {/* Notes / Terms */}
-        {(doc.notes || doc.terms || doc.payment_instructions) && (
-          <div className="border-t border-gray-100 pt-6 mb-8 space-y-3 text-sm text-gray-600">
-            {doc.notes && <p>{doc.notes}</p>}
-            {doc.terms && <div><p className="text-xs text-gray-400 uppercase tracking-wider mb-1">{"Terms & Conditions"}</p><p>{doc.terms}</p></div>}
-            {doc.payment_instructions && <div><p className="text-xs text-gray-400 uppercase tracking-wider mb-1">Payment Instructions</p><p>{doc.payment_instructions}</p></div>}
-          </div>
-        )}
-
-        {/* Authorized Signatory */}
-        <div className="border-t border-gray-200 pt-8">
-          <div className="w-64">
-            <p className="text-xs text-gray-400 uppercase tracking-wider mb-3">Authorized Signatory</p>
-            {doc.manager_signature ? (
-              <img src={doc.manager_signature} alt="Signature" className="h-14 object-contain mb-2" />
-            ) : (
-              <div className="h-14" />
-            )}
-            <div className="border-t border-gray-300 pt-1">
-              <p className="text-xs text-gray-500">{doc.company_name || "Company"}</p>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function QuotationTemplate({ doc, sym, curr }) {
-  const items = doc.items || [];
+  const sym = CURRENCY_SYMBOLS[doc.currency] || doc.currency || "₦";
+  const curr = doc.currency || "NGN";
+  const accent = TYPE_ACCENTS[doc.type] || "#4F46E5";
   const fmtAmt = (n) => `${(n || 0).toLocaleString("en", { minimumFractionDigits: 2 })}`;
   const fmtCurr = (n) => `${curr} ${fmtAmt(n)}`;
-  const validDays = 30;
+  const isLetter = doc.type === "letterhead";
+  const showFinancials = !isLetter;
+  const customerLabel = CUSTOMER_LABEL[doc.type] || "Bill To";
+  const amountLabel = AMOUNT_LABEL[doc.type] || "Balance Due";
 
   return (
-    <div className="bg-white border border-gray-200 shadow-sm rounded-lg overflow-hidden" style={{ fontFamily: "'Helvetica Neue', Arial, sans-serif" }}>
-      {/* Teal header */}
-      <div className="bg-cyan-700 text-white px-12 py-8 flex justify-between items-start">
+    <div className="bg-white border border-gray-200 shadow-sm rounded-lg overflow-hidden print:shadow-none print:border-0" style={{ fontFamily: "'Helvetica Neue', Arial, sans-serif" }}>
+
+      {/* Header */}
+      <div style={{ borderTop: `5px solid ${accent}` }} className="px-12 py-8">
+        <div className="flex justify-between items-start">
+          {/* Logo + Company */}
+          <div className="flex-1">
+            {doc.logo_url
+              ? <img src={doc.logo_url} alt="Logo" className="h-16 w-auto object-contain mb-3" style={{ maxWidth: 180 }} />
+              : <div className="h-16 w-40 bg-gray-50 rounded-lg flex items-center justify-center text-gray-300 text-xs border border-dashed border-gray-200 mb-3">No Logo</div>
+            }
+            {doc.company_name && <p className="font-black text-gray-900 text-base">{doc.company_name}</p>}
+            {doc.company_address && <p className="text-gray-500 text-xs whitespace-pre-line mt-0.5 leading-relaxed">{doc.company_address}</p>}
+            {doc.company_phone && <p className="text-gray-500 text-xs mt-0.5">{doc.company_phone}</p>}
+            {doc.company_email && <p className="text-gray-500 text-xs">{doc.company_email}</p>}
+            {doc.company_website && <p className="text-gray-500 text-xs">{doc.company_website}</p>}
+          </div>
+
+          {/* Document type + number + amount */}
+          <div className="text-right ml-8">
+            <h1 className="font-black tracking-widest text-gray-800" style={{ fontSize: 30, color: accent }}>{TYPE_LABELS[doc.type]}</h1>
+            <p className="text-gray-400 text-sm font-mono mt-1">{doc.number}</p>
+            {showFinancials && (
+              <div className="mt-4 rounded-xl px-5 py-3 text-right" style={{ background: `${accent}12`, border: `1px solid ${accent}30` }}>
+                <p className="text-xs font-semibold uppercase tracking-wider" style={{ color: accent }}>{amountLabel}</p>
+                <p className="text-2xl font-black text-gray-900 mt-0.5">{fmtCurr(doc.balance_due || doc.total)}</p>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Divider */}
+      <div style={{ height: 2, background: `linear-gradient(to right, ${accent}, ${accent}22)` }} />
+
+      {/* From / To / Dates */}
+      <div className="px-12 py-6 grid grid-cols-3 gap-8 bg-gray-50/60">
+        {/* From */}
         <div>
-          {doc.logo_url
-            ? <img src={doc.logo_url} alt="Logo" className="h-14 object-contain mb-3" />
-            : <div className="h-14" />}
-          <h2 className="text-lg font-bold">{doc.company_name}</h2>
-          {doc.company_address && <p className="text-cyan-200 text-xs mt-1 whitespace-pre-line">{doc.company_address}</p>}
-          {doc.company_phone && <p className="text-cyan-200 text-xs">{doc.company_phone}</p>}
-          {doc.company_email && <p className="text-cyan-200 text-xs">{doc.company_email}</p>}
-        </div>
-        <div className="text-right">
-          <h1 className="text-5xl font-light tracking-widest">QUOTATION</h1>
-          <p className="text-cyan-200 text-sm mt-1 font-mono">{doc.number}</p>
-          <div className="mt-4 bg-white/15 rounded-lg px-5 py-3">
-            <p className="text-xs text-cyan-200 uppercase tracking-wider">Quoted Amount</p>
-            <p className="text-3xl font-black">{fmtCurr(doc.total)}</p>
-          </div>
-        </div>
-      </div>
-
-      {/* Validity banner */}
-      <div className="bg-cyan-50 border-b border-cyan-100 px-12 py-3 flex items-center justify-between">
-        <p className="text-xs text-cyan-700 font-semibold">⏱ This quotation is valid for {validDays} days from the issue date.</p>
-        {doc.issue_date && <p className="text-xs text-cyan-600">Issued: {format(new Date(doc.issue_date), "dd MMM yyyy")}</p>}
-      </div>
-
-      <div className="px-12 py-8">
-        {/* Quote To */}
-        {doc.customer_name && (
-          <div className="mb-8">
-            <p className="text-xs text-gray-400 uppercase tracking-wider mb-1">Quotation For</p>
-            <p className="font-bold text-gray-800 text-base">{doc.customer_name}</p>
-            {doc.customer_address && <p className="text-gray-500 text-sm whitespace-pre-line mt-0.5">{doc.customer_address}</p>}
-            {doc.customer_email && <p className="text-gray-500 text-sm">{doc.customer_email}</p>}
-          </div>
-        )}
-
-        {/* Items table */}
-        <table className="w-full text-sm mb-6">
-          <thead>
-            <tr className="bg-cyan-700 text-white text-xs uppercase tracking-wider">
-              <th className="py-3 px-4 text-left rounded-tl-md">#</th>
-              <th className="py-3 px-4 text-left">Description</th>
-              <th className="py-3 px-4 text-right">Qty</th>
-              <th className="py-3 px-4 text-right">Unit Price</th>
-              <th className="py-3 px-4 text-right rounded-tr-md">Amount</th>
-            </tr>
-          </thead>
-          <tbody>
-            {items.map((item, i) => (
-              <tr key={i} className={i % 2 === 0 ? "bg-white" : "bg-cyan-50/40"}>
-                <td className="py-3 px-4 text-gray-400">{i + 1}</td>
-                <td className="py-3 px-4 text-gray-800">{item.description}</td>
-                <td className="py-3 px-4 text-right text-gray-600">{(item.quantity || 0).toFixed(2)}</td>
-                <td className="py-3 px-4 text-right text-gray-600">{fmtAmt(item.unit_price)}</td>
-                <td className="py-3 px-4 text-right font-semibold text-gray-800">{fmtAmt(item.amount)}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-
-        {/* Totals */}
-        <div className="flex justify-end mb-8">
-          <div className="w-72 text-sm space-y-2">
-            <div className="flex justify-between py-1"><span className="text-gray-500">Subtotal</span><span>{fmtAmt(doc.subtotal)}</span></div>
-            {doc.tax_amount > 0 && <div className="flex justify-between py-1"><span className="text-gray-500">VAT ({doc.tax_rate}%)</span><span>{fmtAmt(doc.tax_amount)}</span></div>}
-            {doc.shipping > 0 && <div className="flex justify-between py-1"><span className="text-gray-500">Shipping</span><span>{fmtAmt(doc.shipping)}</span></div>}
-            <div className="flex justify-between py-3 border-t-2 border-cyan-700">
-              <span className="font-black text-gray-900 uppercase text-sm">Total</span>
-              <span className="font-black text-cyan-700 text-lg">{fmtCurr(doc.total)}</span>
-            </div>
-          </div>
-        </div>
-
-        {/* Notes */}
-        {(doc.notes || doc.terms) && (
-          <div className="border-t border-gray-100 pt-5 text-sm space-y-3 text-gray-600">
-            {doc.notes && <p>{doc.notes}</p>}
-            {doc.terms && <div><p className="text-xs text-gray-400 uppercase tracking-wider mb-1">Terms &amp; Conditions</p><p>{doc.terms}</p></div>}
-          </div>
-        )}
-
-        {/* Acceptance block */}
-        <div className="mt-10 border-t border-gray-200 pt-8 grid grid-cols-2 gap-10">
-          <div>
-            <p className="text-xs text-gray-400 uppercase tracking-wider mb-3">Prepared By</p>
-            {doc.manager_signature && <img src={doc.manager_signature} alt="Signature" className="h-12 object-contain mb-2" />}
-            <div className="border-t border-gray-300 pt-1 w-56">
-              <p className="text-xs text-gray-500">{doc.company_name}</p>
-            </div>
-          </div>
-          <div>
-            <p className="text-xs text-gray-400 uppercase tracking-wider mb-3">Customer Acceptance</p>
-            <div className="h-12" />
-            <div className="border-t border-gray-300 pt-1 w-56">
-              <p className="text-xs text-gray-500">{doc.customer_name} · Date: ___________</p>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function ReceiptTemplate({ doc, sym, curr }) {
-  const items = doc.items || [];
-  const fmtAmt = (n) => `${(n || 0).toLocaleString("en", { minimumFractionDigits: 2 })}`;
-  const fmtCurr = (n) => `${curr} ${fmtAmt(n)}`;
-
-  return (
-    <div className="bg-white border border-gray-200 shadow-sm rounded-lg overflow-hidden" style={{ fontFamily: "'Helvetica Neue', Arial, sans-serif" }}>
-      {/* Green confirmation header */}
-      <div className="bg-emerald-700 text-white px-12 py-10 text-center">
-        <div className="inline-flex items-center justify-center w-16 h-16 bg-white/20 rounded-full mb-4">
-          <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-        </div>
-        <h1 className="text-3xl font-black tracking-wide">PAYMENT RECEIVED</h1>
-        <p className="text-emerald-200 mt-1 text-sm font-mono">{doc.number}</p>
-        <div className="mt-4 inline-block bg-white/15 rounded-xl px-8 py-3">
-          <p className="text-xs text-emerald-200 uppercase tracking-widest mb-1">Amount Paid</p>
-          <p className="text-4xl font-black">{fmtCurr(doc.total)}</p>
-        </div>
-      </div>
-
-      {/* Company + Customer */}
-      <div className="px-12 py-6 flex justify-between items-start border-b border-gray-100">
-        <div>
-          {doc.logo_url && <img src={doc.logo_url} alt="Logo" className="h-10 object-contain mb-2" />}
-          <p className="font-bold text-gray-800">{doc.company_name}</p>
+          <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">From</p>
+          <p className="font-semibold text-gray-800 text-sm">{doc.company_name || "—"}</p>
           {doc.company_address && <p className="text-gray-500 text-xs whitespace-pre-line mt-0.5">{doc.company_address}</p>}
+          {doc.company_email && <p className="text-gray-500 text-xs mt-0.5">{doc.company_email}</p>}
           {doc.company_phone && <p className="text-gray-500 text-xs">{doc.company_phone}</p>}
         </div>
-        <div className="text-right">
-          <p className="text-xs text-gray-400 uppercase tracking-wider mb-1">Receipt To</p>
-          <p className="font-bold text-gray-800">{doc.customer_name}</p>
-          {doc.customer_email && <p className="text-gray-500 text-xs">{doc.customer_email}</p>}
-          {doc.issue_date && <p className="text-gray-500 text-xs mt-1">{format(new Date(doc.issue_date), "dd MMM yyyy")}</p>}
-        </div>
-      </div>
 
-      {/* Items */}
-      <div className="px-12 py-6">
-        <table className="w-full text-sm mb-6">
-          <thead>
-            <tr className="border-b-2 border-emerald-600 text-xs uppercase tracking-wider text-gray-400">
-              <th className="pb-2.5 text-left">Description</th>
-              <th className="pb-2.5 text-right">Qty</th>
-              <th className="pb-2.5 text-right">Rate</th>
-              <th className="pb-2.5 text-right">Amount</th>
-            </tr>
-          </thead>
-          <tbody>
-            {items.map((item, i) => (
-              <tr key={i} className="border-b border-gray-100">
-                <td className="py-3 text-gray-800">{item.description}</td>
-                <td className="py-3 text-right text-gray-500">{(item.quantity || 0).toFixed(2)}</td>
-                <td className="py-3 text-right text-gray-500">{fmtAmt(item.unit_price)}</td>
-                <td className="py-3 text-right font-semibold text-gray-800">{fmtAmt(item.amount)}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-
-        <div className="flex justify-end mb-6">
-          <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-5 w-72 text-sm space-y-2">
-            <div className="flex justify-between"><span className="text-gray-500">Subtotal</span><span>{fmtAmt(doc.subtotal)}</span></div>
-            {doc.tax_amount > 0 && <div className="flex justify-between"><span className="text-gray-500">VAT ({doc.tax_rate}%)</span><span>{fmtAmt(doc.tax_amount)}</span></div>}
-            {doc.shipping > 0 && <div className="flex justify-between"><span className="text-gray-500">Shipping</span><span>{fmtAmt(doc.shipping)}</span></div>}
-            <div className="flex justify-between border-t-2 border-emerald-600 pt-3 font-black text-base">
-              <span>Total Paid</span><span className="text-emerald-700">{fmtCurr(doc.total)}</span>
-            </div>
-          </div>
-        </div>
-
-        {doc.payment_instructions && (
-          <div className="bg-gray-50 rounded-lg p-4 text-sm text-gray-600 mb-4">
-            <p className="text-xs text-gray-400 uppercase tracking-wider mb-1">Payment Details</p>
-            <p>{doc.payment_instructions}</p>
-          </div>
-        )}
-
-        {doc.notes && <p className="text-sm text-gray-500 italic text-center">{doc.notes}</p>}
-
-        <div className="mt-8 pt-6 border-t border-gray-100 flex justify-between">
-          <div>
-            <p className="text-xs text-gray-400 uppercase tracking-wider mb-3">Issued By</p>
-            {doc.manager_signature && <img src={doc.manager_signature} alt="Signature" className="h-12 object-contain mb-2" />}
-            <div className="border-t border-gray-300 pt-1 w-48">
-              <p className="text-xs text-gray-500">{doc.company_name}</p>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function PurchaseOrderTemplate({ doc, sym, curr }) {
-  const items = doc.items || [];
-  const fmtAmt = (n) => `${(n || 0).toLocaleString("en", { minimumFractionDigits: 2 })}`;
-  const fmtCurr = (n) => `${curr} ${fmtAmt(n)}`;
-
-  return (
-    <div className="bg-white border border-gray-200 shadow-sm rounded-lg overflow-hidden" style={{ fontFamily: "'Helvetica Neue', Arial, sans-serif" }}>
-      {/* Amber PO header */}
-      <div style={{ background: "#92400e" }} className="text-white px-12 py-6 flex justify-between items-center">
+        {/* To */}
         <div>
-          {doc.logo_url && <img src={doc.logo_url} alt="Logo" className="h-12 object-contain mb-2" />}
-          <p className="font-black text-lg">{doc.company_name}</p>
-          {doc.company_address && <p className="text-amber-200 text-xs whitespace-pre-line mt-1">{doc.company_address}</p>}
+          <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">{customerLabel}</p>
+          <p className="font-semibold text-gray-800 text-sm">{doc.customer_name || "—"}</p>
+          {doc.customer_address && <p className="text-gray-500 text-xs whitespace-pre-line mt-0.5">{doc.customer_address}</p>}
+          {doc.customer_email && <p className="text-gray-500 text-xs mt-0.5">{doc.customer_email}</p>}
         </div>
+
+        {/* Dates */}
         <div className="text-right">
-          <h1 className="text-4xl font-black tracking-widest">PURCHASE</h1>
-          <h1 className="text-4xl font-black tracking-widest">ORDER</h1>
-          <div className="mt-3 bg-white/20 rounded-lg px-4 py-2">
-            <p className="text-xs text-amber-200 uppercase tracking-wider">PO Number</p>
-            <p className="text-xl font-black font-mono">{doc.number}</p>
-          </div>
-        </div>
-      </div>
-
-      {/* Dates strip */}
-      <div className="bg-amber-50 border-b border-amber-100 px-12 py-3 flex gap-10 text-xs">
-        {doc.issue_date && <div><span className="text-amber-700 font-semibold">Order Date: </span><span className="text-gray-600">{format(new Date(doc.issue_date), "dd MMM yyyy")}</span></div>}
-        {doc.due_date && <div><span className="text-amber-700 font-semibold">Required By: </span><span className="text-gray-600">{format(new Date(doc.due_date), "dd MMM yyyy")}</span></div>}
-        {doc.terms_label && <div><span className="text-amber-700 font-semibold">Payment Terms: </span><span className="text-gray-600">{doc.terms_label}</span></div>}
-      </div>
-
-      {/* Vendor + Ship To */}
-      <div className="grid grid-cols-2 divide-x divide-gray-200 border-b border-gray-200">
-        <div className="px-12 py-6">
-          <p className="text-xs font-black text-gray-400 uppercase tracking-widest mb-2">Vendor</p>
-          <p className="font-bold text-gray-800 text-base">{doc.customer_name}</p>
-          {doc.customer_address && <p className="text-gray-500 text-sm whitespace-pre-line mt-1">{doc.customer_address}</p>}
-          {doc.customer_email && <p className="text-gray-500 text-sm">{doc.customer_email}</p>}
-        </div>
-        <div className="px-12 py-6">
-          <p className="text-xs font-black text-gray-400 uppercase tracking-widest mb-2">Ship To / Bill To</p>
-          <p className="font-bold text-gray-800 text-base">{doc.company_name}</p>
-          {doc.company_address && <p className="text-gray-500 text-sm whitespace-pre-line mt-1">{doc.company_address}</p>}
-        </div>
-      </div>
-
-      {/* Items */}
-      <div className="px-12 py-6">
-        <table className="w-full text-sm mb-6">
-          <thead>
-            <tr style={{ background: "#92400e" }} className="text-white text-xs uppercase tracking-wider">
-              <th className="py-3 px-3 text-left">#</th>
-              <th className="py-3 px-3 text-left">Item Description</th>
-              <th className="py-3 px-3 text-right">Qty</th>
-              <th className="py-3 px-3 text-right">Unit Price</th>
-              <th className="py-3 px-3 text-right">Total</th>
-            </tr>
-          </thead>
-          <tbody>
-            {items.map((item, i) => (
-              <tr key={i} className={`border-b border-gray-100 ${i % 2 === 0 ? "" : "bg-amber-50/30"}`}>
-                <td className="py-3 px-3 text-gray-400">{i + 1}</td>
-                <td className="py-3 px-3 text-gray-800">{item.description}</td>
-                <td className="py-3 px-3 text-right text-gray-600">{(item.quantity || 0).toFixed(2)}</td>
-                <td className="py-3 px-3 text-right text-gray-600">{fmtAmt(item.unit_price)}</td>
-                <td className="py-3 px-3 text-right font-semibold text-gray-800">{fmtAmt(item.amount)}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-
-        <div className="flex justify-end mb-8">
-          <div className="w-72 text-sm space-y-2">
-            <div className="flex justify-between py-1"><span className="text-gray-500">Subtotal</span><span>{fmtAmt(doc.subtotal)}</span></div>
-            {doc.tax_amount > 0 && <div className="flex justify-between py-1"><span className="text-gray-500">VAT ({doc.tax_rate}%)</span><span>{fmtAmt(doc.tax_amount)}</span></div>}
-            {doc.shipping > 0 && <div className="flex justify-between py-1"><span className="text-gray-500">Shipping</span><span>{fmtAmt(doc.shipping)}</span></div>}
-            <div className="flex justify-between py-3 font-black text-base" style={{ borderTop: "2px solid #92400e" }}>
-              <span>Order Total</span>
-              <span style={{ color: "#92400e" }}>{fmtCurr(doc.total)}</span>
+          {doc.issue_date && (
+            <div className="mb-2">
+              <p className="text-xs text-gray-400 uppercase tracking-wider">Date</p>
+              <p className="font-semibold text-gray-700 text-sm">{format(new Date(doc.issue_date), "dd MMM yyyy")}</p>
             </div>
-          </div>
-        </div>
-
-        {(doc.notes || doc.terms) && (
-          <div className="border-t border-gray-100 pt-5 mb-6 text-sm space-y-2 text-gray-600">
-            {doc.notes && <p>{doc.notes}</p>}
-            {doc.terms && <div><p className="text-xs text-gray-400 uppercase tracking-wider mb-1">Terms</p><p>{doc.terms}</p></div>}
-          </div>
-        )}
-
-        {/* Approval block */}
-        <div className="border-t border-gray-200 pt-8 grid grid-cols-2 gap-10">
-          <div>
-            <p className="text-xs text-gray-400 uppercase tracking-wider mb-3">Prepared By</p>
-            {doc.manager_signature && <img src={doc.manager_signature} alt="Signature" className="h-12 object-contain mb-2" />}
-            <div className="border-t border-gray-300 pt-1 w-48"><p className="text-xs text-gray-500">{doc.company_name} · Date: ___________</p></div>
-          </div>
-          <div>
-            <p className="text-xs text-gray-400 uppercase tracking-wider mb-3">Approved By</p>
-            <div className="h-12" />
-            <div className="border-t border-gray-300 pt-1 w-48"><p className="text-xs text-gray-500">Name: ___________________ · Date: ___________</p></div>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function CreditNoteTemplate({ doc, sym, curr }) {
-  const items = doc.items || [];
-  const fmtAmt = (n) => `${(n || 0).toLocaleString("en", { minimumFractionDigits: 2 })}`;
-  const fmtCurr = (n) => `${curr} ${fmtAmt(n)}`;
-
-  return (
-    <div className="bg-white border border-gray-200 shadow-sm rounded-lg overflow-hidden" style={{ fontFamily: "'Helvetica Neue', Arial, sans-serif" }}>
-      {/* Red credit header */}
-      <div className="bg-red-700 text-white px-12 py-8">
-        <div className="flex justify-between items-start">
-          <div>
-            {doc.logo_url ? <img src={doc.logo_url} alt="Logo" className="h-14 object-contain mb-3" /> : <div className="h-14" />}
-            <p className="font-black text-lg">{doc.company_name}</p>
-            {doc.company_address && <p className="text-red-200 text-xs whitespace-pre-line mt-1">{doc.company_address}</p>}
-          </div>
-          <div className="text-right">
-            <h1 className="text-5xl font-light tracking-widest">CREDIT</h1>
-            <h1 className="text-5xl font-light tracking-widest">NOTE</h1>
-            <p className="text-red-200 text-sm font-mono mt-1">{doc.number}</p>
-          </div>
-        </div>
-        <div className="mt-6 flex justify-between items-end">
-          <div className="bg-white/15 rounded-xl px-6 py-3">
-            <p className="text-xs text-red-200 uppercase tracking-widest mb-1">Amount Credited</p>
-            <p className="text-4xl font-black">{fmtCurr(doc.total)}</p>
-          </div>
-          <div className="text-right text-sm">
-            {doc.issue_date && <p className="text-red-200">Date: {format(new Date(doc.issue_date), "dd MMM yyyy")}</p>}
-          </div>
-        </div>
-      </div>
-
-      {/* Customer */}
-      <div className="px-12 py-6 border-b border-gray-100 bg-red-50/30 flex justify-between">
-        <div>
-          <p className="text-xs text-gray-400 uppercase tracking-wider mb-1">Credit Issued To</p>
-          <p className="font-bold text-gray-800">{doc.customer_name}</p>
-          {doc.customer_address && <p className="text-gray-500 text-sm whitespace-pre-line mt-0.5">{doc.customer_address}</p>}
-          {doc.customer_email && <p className="text-gray-500 text-sm">{doc.customer_email}</p>}
-        </div>
-        {doc.terms_label && (
-          <div className="text-right">
-            <p className="text-xs text-gray-400 uppercase tracking-wider mb-1">Reason</p>
-            <p className="text-gray-700 font-medium">{doc.terms_label}</p>
-          </div>
-        )}
-      </div>
-
-      {/* Items */}
-      <div className="px-12 py-6">
-        <table className="w-full text-sm mb-6">
-          <thead>
-            <tr className="bg-red-700 text-white text-xs uppercase tracking-wider">
-              <th className="py-3 px-4 text-left">#</th>
-              <th className="py-3 px-4 text-left">Description</th>
-              <th className="py-3 px-4 text-right">Qty</th>
-              <th className="py-3 px-4 text-right">Rate</th>
-              <th className="py-3 px-4 text-right">Amount</th>
-            </tr>
-          </thead>
-          <tbody>
-            {items.map((item, i) => (
-              <tr key={i} className={`border-b border-gray-100 ${i % 2 === 0 ? "" : "bg-red-50/30"}`}>
-                <td className="py-3 px-4 text-gray-400">{i + 1}</td>
-                <td className="py-3 px-4 text-gray-800">{item.description}</td>
-                <td className="py-3 px-4 text-right text-gray-600">{(item.quantity || 0).toFixed(2)}</td>
-                <td className="py-3 px-4 text-right text-gray-600">{fmtAmt(item.unit_price)}</td>
-                <td className="py-3 px-4 text-right font-semibold text-gray-800">{fmtAmt(item.amount)}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-
-        <div className="flex justify-end mb-8">
-          <div className="border border-red-200 rounded-xl p-5 w-72 text-sm space-y-2 bg-red-50/40">
-            <div className="flex justify-between"><span className="text-gray-500">Subtotal</span><span>{fmtAmt(doc.subtotal)}</span></div>
-            {doc.tax_amount > 0 && <div className="flex justify-between"><span className="text-gray-500">VAT ({doc.tax_rate}%)</span><span>{fmtAmt(doc.tax_amount)}</span></div>}
-            <div className="flex justify-between border-t-2 border-red-600 pt-3 font-black text-base">
-              <span>Total Credit</span><span className="text-red-700">{fmtCurr(doc.total)}</span>
+          )}
+          {doc.due_date && (
+            <div className="mb-2">
+              <p className="text-xs text-gray-400 uppercase tracking-wider">
+                {doc.type === "purchase_order" ? "Required By" : doc.type === "quotation" ? "Valid Until" : "Due Date"}
+              </p>
+              <p className="font-semibold text-gray-700 text-sm">{format(new Date(doc.due_date), "dd MMM yyyy")}</p>
             </div>
-          </div>
-        </div>
-
-        {(doc.notes || doc.terms) && (
-          <div className="border-t border-gray-100 pt-5 mb-6 text-sm space-y-2 text-gray-600">
-            {doc.notes && <p>{doc.notes}</p>}
-            {doc.terms && <div><p className="text-xs text-gray-400 uppercase tracking-wider mb-1">Terms</p><p>{doc.terms}</p></div>}
-          </div>
-        )}
-
-        <div className="border-t border-gray-200 pt-8">
-          <p className="text-xs text-gray-400 uppercase tracking-wider mb-3">Authorized By</p>
-          {doc.manager_signature && <img src={doc.manager_signature} alt="Signature" className="h-12 object-contain mb-2" />}
-          <div className="border-t border-gray-300 pt-1 w-56">
-            <p className="text-xs text-gray-500">{doc.company_name}</p>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function LetterheadTemplate({ doc }) {
-  const today = doc.issue_date ? format(new Date(doc.issue_date), "dd MMMM yyyy") : format(new Date(), "dd MMMM yyyy");
-
-  return (
-    <div className="bg-white border border-gray-200 shadow-sm rounded-lg overflow-hidden" style={{ fontFamily: "'Georgia', 'Times New Roman', serif", minHeight: 900 }}>
-      {/* Letterhead Header */}
-      <div className="border-b-4 border-primary px-12 py-7">
-        <div className="flex justify-between items-start">
-          <div className="flex items-start gap-5">
-            {doc.logo_url ? (
-              <img src={doc.logo_url} alt="Logo" className="h-20 w-auto object-contain" style={{ maxWidth: 160 }} />
-            ) : null}
+          )}
+          {doc.terms_label && !isLetter && (
             <div>
-              {doc.company_name && <h1 className="text-2xl font-extrabold text-gray-900 tracking-tight" style={{ fontFamily: "'Helvetica Neue', Arial, sans-serif" }}>{doc.company_name}</h1>}
-              {doc.company_address && <p className="text-gray-500 text-xs mt-1 whitespace-pre-line leading-relaxed">{doc.company_address}</p>}
+              <p className="text-xs text-gray-400 uppercase tracking-wider">Terms</p>
+              <p className="text-gray-700 text-sm">{doc.terms_label}</p>
             </div>
-          </div>
-          <div className="text-right text-xs text-gray-500 space-y-1 pt-1">
-            {doc.company_phone && <p>📞 {doc.company_phone}</p>}
-            {doc.company_email && <p>✉ {doc.company_email}</p>}
-            {doc.company_website && <p>🌐 {doc.company_website}</p>}
-          </div>
+          )}
         </div>
       </div>
 
-      {/* Document Body */}
-      <div className="px-14 py-10">
-        {/* Date + Reference */}
-        <div className="flex justify-between items-start mb-8">
-          <div className="text-sm text-gray-600">
-            {doc.customer_name && (
-              <div className="mb-4">
-                <p className="text-xs text-gray-400 uppercase tracking-widest mb-1">To</p>
-                <p className="font-semibold text-gray-800">{doc.customer_name}</p>
-                {doc.customer_address && <p className="text-gray-500 text-xs whitespace-pre-line mt-0.5">{doc.customer_address}</p>}
-                {doc.customer_email && <p className="text-gray-500 text-xs">{doc.customer_email}</p>}
+      {/* Content area */}
+      <div className="px-12 py-8">
+        {isLetter ? (
+          /* Letter body */
+          <div>
+            {doc.terms_label && doc.terms_label !== "Due on Receipt" && (
+              <p className="font-bold text-gray-900 underline text-sm mb-5">Re: {doc.terms_label}</p>
+            )}
+            <div className="text-gray-700 text-sm whitespace-pre-wrap min-h-56" style={{ lineHeight: 2 }}>
+              {doc.notes || <span className="text-gray-300 italic">No content</span>}
+            </div>
+            {doc.terms && <p className="mt-8 text-sm text-gray-600">{doc.terms}</p>}
+          </div>
+        ) : (
+          /* Items table */
+          <>
+            <table className="w-full text-sm mb-2">
+              <thead>
+                <tr style={{ borderBottom: `2px solid ${accent}` }} className="text-xs uppercase tracking-wider text-gray-400">
+                  <th className="pb-3 text-left w-8">#</th>
+                  <th className="pb-3 text-left">Description</th>
+                  <th className="pb-3 text-right px-4">Qty</th>
+                  <th className="pb-3 text-right px-4">Rate</th>
+                  <th className="pb-3 text-right">Amount</th>
+                </tr>
+              </thead>
+              <tbody>
+                {items.map((item, i) => (
+                  <tr key={i} className="border-b border-gray-100">
+                    <td className="py-3 text-gray-400">{i + 1}</td>
+                    <td className="py-3 text-gray-800">{item.description}</td>
+                    <td className="py-3 text-right px-4 text-gray-500">{(item.quantity || 0).toFixed(2)}</td>
+                    <td className="py-3 text-right px-4 text-gray-500">{fmtAmt(item.unit_price)}</td>
+                    <td className="py-3 text-right font-semibold text-gray-800">{fmtAmt(item.amount)}</td>
+                  </tr>
+                ))}
+                {items.length === 0 && (
+                  <tr><td colSpan={5} className="py-8 text-center text-gray-300 text-xs">No items</td></tr>
+                )}
+              </tbody>
+            </table>
+
+            {/* Totals */}
+            <div className="flex justify-end mt-4 mb-8">
+              <div className="w-72 text-sm space-y-2">
+                <div className="flex justify-between py-1"><span className="text-gray-400">Subtotal</span><span className="text-gray-700">{fmtAmt(doc.subtotal)}</span></div>
+                {doc.tax_amount > 0 && <div className="flex justify-between py-1"><span className="text-gray-400">VAT ({doc.tax_rate}%)</span><span className="text-gray-700">{fmtAmt(doc.tax_amount)}</span></div>}
+                {doc.shipping > 0 && <div className="flex justify-between py-1"><span className="text-gray-400">Shipping</span><span className="text-gray-700">{fmtAmt(doc.shipping)}</span></div>}
+                {doc.paid_amount > 0 && <div className="flex justify-between py-1 text-emerald-600"><span>Payment Made</span><span>(-) {fmtCurr(doc.paid_amount)}</span></div>}
+                <div className="flex justify-between py-3 border-t-2" style={{ borderColor: accent }}>
+                  <span className="font-black text-gray-900 uppercase text-sm">{amountLabel}</span>
+                  <span className="font-black text-lg" style={{ color: accent }}>{fmtCurr(doc.balance_due || doc.total)}</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Notes / Terms / Payment */}
+            {(doc.notes || doc.terms || doc.payment_instructions) && (
+              <div className="border-t border-gray-100 pt-6 mb-8 space-y-4 text-sm text-gray-600">
+                {doc.notes && <p>{doc.notes}</p>}
+                {doc.terms && <div><p className="text-xs text-gray-400 uppercase tracking-wider mb-1">Terms &amp; Conditions</p><p>{doc.terms}</p></div>}
+                {doc.payment_instructions && <div><p className="text-xs text-gray-400 uppercase tracking-wider mb-1">Payment Instructions</p><p>{doc.payment_instructions}</p></div>}
+              </div>
+            )}
+          </>
+        )}
+
+        {/* Signatures */}
+        <div className="border-t border-gray-200 pt-8 mt-8 grid grid-cols-2 gap-12">
+          {/* Manager Signature */}
+          <div>
+            <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-3">Authorized Signatory</p>
+            {doc.manager_signature ? (
+              <div>
+                <img src={doc.manager_signature} alt="Manager Signature" className="h-16 object-contain mb-2" />
+                <div className="border-t border-gray-300 pt-1">
+                  <p className="text-xs text-gray-500">{doc.company_name || "Company"}</p>
+                </div>
+                <button
+                  className="text-xs text-primary mt-1 hover:underline print:hidden"
+                  onClick={() => onSaveManagerSig("")}
+                >Re-sign</button>
+              </div>
+            ) : (
+              <div className="print:hidden">
+                <SignaturePad label="" onSave={onSaveManagerSig} />
+                <p className="text-xs text-gray-400 mt-1">{doc.company_name || "Company"}</p>
               </div>
             )}
           </div>
-          <div className="text-right text-sm">
-            <p className="text-gray-500">Date: <span className="text-gray-800 font-medium">{today}</span></p>
-            {doc.number && <p className="text-gray-500 mt-1">Ref: <span className="text-gray-800 font-medium">{doc.number}</span></p>}
-          </div>
-        </div>
 
-        {/* Subject line */}
-        {doc.terms_label && doc.terms_label !== "Due on Receipt" && (
-          <div className="mb-6">
-            <p className="font-bold text-gray-900 underline text-sm">Re: {doc.terms_label}</p>
-          </div>
-        )}
-
-        {/* Letter body */}
-        <div className="text-gray-800 text-sm leading-loose min-h-64 whitespace-pre-wrap" style={{ lineHeight: 2 }}>
-          {doc.notes || (
-            <span className="text-gray-300 italic">Letter content goes here...</span>
-          )}
-        </div>
-
-        {/* Closing */}
-        {doc.terms && (
-          <div className="mt-10 text-sm text-gray-700">
-            <p>{doc.terms}</p>
-          </div>
-        )}
-
-        {/* Signature block */}
-        <div className="mt-16">
-          {doc.manager_signature ? (
-            <div>
-              <img src={doc.manager_signature} alt="Signature" className="h-14 object-contain mb-1" />
-            </div>
-          ) : (
-            <div className="h-14" />
-          )}
-          <div className="border-t border-gray-400 pt-2 w-56">
-            <p className="font-semibold text-gray-800 text-sm">{doc.company_name || "Authorized Signatory"}</p>
-            {doc.company_name && <p className="text-xs text-gray-500">{doc.company_name}</p>}
+          {/* Customer Signature */}
+          <div>
+            <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-3">
+              {doc.type === "waybill" || doc.type === "delivery_note" ? "Receiver Signature" : "Customer Signature"}
+            </p>
+            {doc.customer_signature ? (
+              <div>
+                <img src={doc.customer_signature} alt="Customer Signature" className="h-16 object-contain mb-2" />
+                <div className="border-t border-gray-300 pt-1">
+                  <p className="text-xs text-gray-500">{doc.customer_name}</p>
+                </div>
+                <button
+                  className="text-xs text-primary mt-1 hover:underline print:hidden"
+                  onClick={() => onSaveCustomerSig("")}
+                >Re-sign</button>
+              </div>
+            ) : (
+              <div className="print:hidden">
+                <SignaturePad label="" onSave={onSaveCustomerSig} />
+                <p className="text-xs text-gray-400 mt-1">{doc.customer_name}</p>
+              </div>
+            )}
           </div>
         </div>
       </div>
 
-      {/* Letterhead Footer */}
-      <div className="border-t-2 border-primary mx-12 mt-8" />
-      <div className="bg-gray-50 px-12 py-4 text-center">
-        <p className="text-xs text-gray-500">
-          {[doc.company_name, doc.company_address?.split("\n")[0], doc.company_phone, doc.company_email, doc.company_website].filter(Boolean).join("  ·  ")}
+      {/* Footer */}
+      <div style={{ background: `${accent}08`, borderTop: `1px solid ${accent}20` }} className="px-12 py-4 text-center">
+        <p className="text-xs text-gray-400">
+          {[doc.company_name, doc.company_phone, doc.company_email, doc.company_website].filter(Boolean).join("  ·  ")}
         </p>
-      </div>
-    </div>
-  );
-}
-
-function WaybillTemplate({ doc, sym, curr, clientSig, setClientSig }) {
-  const items = doc.items || [];
-  const fmtAmt = (n) => `${(n || 0).toLocaleString("en", { minimumFractionDigits: 2 })}`;
-  const fmtCurr = (n) => `${curr}${fmtAmt(n)}`;
-
-  return (
-    <div className="bg-white border-2 border-gray-800 rounded-lg overflow-hidden" style={{ fontFamily: "'Helvetica Neue', Arial, sans-serif" }}>
-      <div className="bg-gray-900 text-white px-8 py-5 flex justify-between items-center">
-        <div>
-          {doc.logo_url && <img src={doc.logo_url} alt="Logo" className="h-12 w-auto object-contain mb-2" />}
-          <h2 className="text-xl font-black">{doc.company_name || "Company"}</h2>
-          {doc.company_phone && <p className="text-gray-400 text-sm">{doc.company_phone}</p>}
-        </div>
-        <div className="text-right">
-          <p className="text-4xl font-black tracking-widest">WAYBILL</p>
-          <p className="text-gray-400 font-mono text-lg mt-1">{doc.number}</p>
-        </div>
-      </div>
-
-      <div className="grid grid-cols-2 divide-x-2 divide-gray-800 border-b-2 border-gray-800">
-        <div className="px-6 py-5">
-          <p className="text-xs font-black text-gray-500 uppercase tracking-widest mb-2">Sender</p>
-          <p className="font-black text-base">{doc.company_name}</p>
-          {doc.company_address && <p className="text-sm text-gray-600 mt-1 whitespace-pre-line">{doc.company_address}</p>}
-        </div>
-        <div className="px-6 py-5">
-          <p className="text-xs font-black text-gray-500 uppercase tracking-widest mb-2">Receiver</p>
-          <p className="font-black text-base">{doc.customer_name}</p>
-          {doc.customer_address && <p className="text-sm text-gray-600 mt-1 whitespace-pre-line">{doc.customer_address}</p>}
-          {doc.customer_email && <p className="text-sm text-gray-600">{doc.customer_email}</p>}
-        </div>
-      </div>
-
-      <table className="w-full text-sm border-b-2 border-gray-800">
-        <thead>
-          <tr className="bg-gray-100 border-b-2 border-gray-800">
-            <th className="px-5 py-3 text-left font-black text-xs uppercase">#</th>
-            <th className="px-5 py-3 text-left font-black text-xs uppercase">Description of Goods</th>
-            <th className="px-5 py-3 text-right font-black text-xs uppercase">Qty</th>
-            <th className="px-5 py-3 text-right font-black text-xs uppercase">Rate</th>
-            <th className="px-5 py-3 text-right font-black text-xs uppercase">Amount</th>
-          </tr>
-        </thead>
-        <tbody>
-          {items.map((item, i) => (
-            <tr key={i} className="border-b border-gray-200">
-              <td className="px-5 py-3 text-gray-500">{i + 1}</td>
-              <td className="px-5 py-3 font-medium">{item.description}</td>
-              <td className="px-5 py-3 text-right">{(item.quantity || 0).toFixed(2)}</td>
-              <td className="px-5 py-3 text-right">{fmtAmt(item.unit_price)}</td>
-              <td className="px-5 py-3 text-right font-bold">{fmtAmt(item.amount)}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-
-      <div className="grid grid-cols-2 divide-x-2 divide-gray-800 border-b-2 border-gray-800">
-        <div className="px-6 py-5 space-y-2 text-sm">
-          <div className="flex justify-between"><span className="text-gray-500">Sub Total</span><span>{fmtAmt(doc.subtotal)}</span></div>
-          {doc.tax_amount > 0 && <div className="flex justify-between"><span className="text-gray-500">VAT ({doc.tax_rate}%)</span><span>{fmtAmt(doc.tax_amount)}</span></div>}
-          <div className="flex justify-between border-t-2 border-gray-800 pt-2 font-black">
-            <span className="uppercase">Total</span>
-            <span>{fmtCurr(doc.total)}</span>
-          </div>
-        </div>
-        <div className="px-6 py-5 text-sm text-gray-600">
-          {doc.notes && <p className="mb-2"><strong className="text-gray-800">Note:</strong> {doc.notes}</p>}
-          {doc.issue_date && <p><strong className="text-gray-800">Date:</strong> {format(new Date(doc.issue_date), "dd MMM yyyy")}</p>}
-        </div>
-      </div>
-
-      <div className="grid grid-cols-2 divide-x-2 divide-gray-800">
-        <div className="px-6 py-5">
-          <p className="text-xs font-black text-gray-400 uppercase tracking-widest mb-3">Dispatcher Signature</p>
-          {doc.manager_signature ? (
-            <img src={doc.manager_signature} alt="Manager Signature" className="h-16 object-contain mb-2" />
-          ) : (
-            <div className="h-16" />
-          )}
-          <div className="border-t border-gray-400 pt-1"><p className="text-xs text-gray-500">{doc.company_name} · Date: ___________</p></div>
-        </div>
-        <div className="px-6 py-5">
-          <SignaturePad label="Receiver Signature" onSave={setClientSig} />
-          <div className="border-t border-gray-400 pt-1 mt-2"><p className="text-xs text-gray-500">{doc.customer_name} · Date: ___________</p></div>
-        </div>
       </div>
     </div>
   );

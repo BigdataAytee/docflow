@@ -78,6 +78,10 @@
       "type": "string",
       "title": "Manager Signature"
     },
+    "customer_signature": {
+      "type": "string",
+      "title": "Customer Signature"
+    },
     "terms_label": {
       "type": "string",
       "title": "Terms Label",
