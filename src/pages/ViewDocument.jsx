@@ -41,7 +41,25 @@ export default function ViewDocument() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    base44.entities.Document.get(docId).then(d => { setDoc(d); setLoading(false); });
+    Promise.all([
+      base44.entities.Document.get(docId),
+      base44.auth.me(),
+    ]).then(([d, user]) => {
+      // Always overlay current settings company info onto the document
+      if (user) {
+        d = {
+          ...d,
+          logo_url: user.logo_url || d.logo_url || "",
+          company_name: user.company_name || d.company_name || "",
+          company_email: user.company_email || user.email || d.company_email || "",
+          company_phone: user.company_phone || d.company_phone || "",
+          company_address: user.company_address || d.company_address || "",
+          company_website: user.company_website || d.company_website || "",
+        };
+      }
+      setDoc(d);
+      setLoading(false);
+    });
   }, [docId]);
 
   const updateStatus = async (status) => {
