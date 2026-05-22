@@ -1,5 +1,5 @@
 import { Link, useLocation } from "react-router-dom";
-import { LayoutDashboard, Users, FileText, Settings, Plus, ChevronDown, LogOut, Mail } from "lucide-react";
+import { LayoutDashboard, Users, FileText, Settings, Plus, ChevronDown, LogOut, Mail, LayoutGrid } from "lucide-react";
 import { useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
@@ -9,6 +9,7 @@ const navItems = [
   { label: "Documents", icon: FileText, path: "/documents" },
   { label: "Customers", icon: Users, path: "/customers" },
   { label: "Mail", icon: Mail, path: "/mail" },
+  { label: "Apps & Tools", icon: LayoutGrid, path: "/apps" },
   { label: "Settings", icon: Settings, path: "/settings" },
 ];
 
