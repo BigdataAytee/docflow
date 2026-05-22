@@ -9,6 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import CustomerForm from "../components/CustomerForm";
 import SignaturePad from "../components/SignaturePad";
 import DocumentPreview from "../components/DocumentPreview";
 import ReactQuill, { Quill } from "react-quill";
@@ -63,7 +64,6 @@ export default function CreateDocument() {
   const [saving, setSaving] = useState(false);
   const [managerSig, setManagerSig] = useState(null);
   const [showAddCustomer, setShowAddCustomer] = useState(false);
-  const [newCustomer, setNewCustomer] = useState({ full_name: "", company_name: "", email: "", phone: "", billing_address: "" });
   const [savingCustomer, setSavingCustomer] = useState(false);
   const [numPrefix, setNumPrefix] = useState("");
   const [numSeq, setNumSeq] = useState("");
@@ -127,13 +127,11 @@ export default function CreateDocument() {
     if (c) setForm(f => ({ ...f, customer_id: id, customer_name: c.full_name, customer_email: c.email || "", customer_address: c.billing_address || "", currency: c.currency || "NGN" }));
   };
 
-  const handleAddCustomer = async () => {
-    if (!newCustomer.full_name) return;
+  const handleAddCustomer = async (data) => {
     setSavingCustomer(true);
-    const created = await base44.entities.Customer.create(newCustomer);
+    const created = await base44.entities.Customer.create(data);
     setCustomers(prev => [created, ...prev]);
     selectCustomer(created.id);
-    setNewCustomer({ full_name: "", company_name: "", email: "", phone: "", billing_address: "" });
     setSavingCustomer(false);
     setShowAddCustomer(false);
   };
@@ -272,17 +270,13 @@ export default function CreateDocument() {
 
               {/* Add Customer Dialog */}
               <Dialog open={showAddCustomer} onOpenChange={setShowAddCustomer}>
-                <DialogContent className="max-w-md">
+                <DialogContent className="max-w-lg">
                   <DialogHeader><DialogTitle>Add New Customer</DialogTitle></DialogHeader>
-                  <div className="space-y-3 mt-2">
-                    <div><Label>Full Name *</Label><Input value={newCustomer.full_name} onChange={e => setNewCustomer(p => ({ ...p, full_name: e.target.value }))} placeholder="John Doe" /></div>
-                    <div><Label>Company Name</Label><Input value={newCustomer.company_name} onChange={e => setNewCustomer(p => ({ ...p, company_name: e.target.value }))} placeholder="Acme Ltd" /></div>
-                    <div><Label>Email</Label><Input type="email" value={newCustomer.email} onChange={e => setNewCustomer(p => ({ ...p, email: e.target.value }))} placeholder="john@example.com" /></div>
-                    <div><Label>Phone</Label><Input value={newCustomer.phone} onChange={e => setNewCustomer(p => ({ ...p, phone: e.target.value }))} placeholder="+234..." /></div>
-                    <div><Label>Billing Address</Label><Textarea value={newCustomer.billing_address} onChange={e => setNewCustomer(p => ({ ...p, billing_address: e.target.value }))} rows={2} /></div>
-                    <Button className="w-full" onClick={handleAddCustomer} disabled={savingCustomer || !newCustomer.full_name}>
-                      {savingCustomer ? "Saving..." : "Save Customer"}
-                    </Button>
+                  <div className="mt-2">
+                    <CustomerForm
+                      onSave={handleAddCustomer}
+                      onCancel={() => setShowAddCustomer(false)}
+                    />
                   </div>
                 </DialogContent>
               </Dialog>
