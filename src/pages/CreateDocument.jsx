@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import SignaturePad from "../components/SignaturePad";
+import DocumentPreview from "../components/DocumentPreview";
 
 const typeLabels = {
   invoice: "Invoice", quotation: "Quotation", receipt: "Receipt",
@@ -198,6 +199,34 @@ export default function CreateDocument() {
           </div>
           )}
 
+          {/* Totals (hidden for letterhead) */}
+          {docType !== "letterhead" && (
+            <div className="bg-card rounded-xl border border-border p-6">
+              <h3 className="font-semibold mb-4">Totals</h3>
+              <div className="space-y-3 text-sm">
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-muted-foreground">Subtotal</span>
+                  <span className="font-medium">{sym}{calcs.subtotal.toLocaleString("en", { minimumFractionDigits: 2 })}</span>
+                </div>
+                <div className="flex items-center justify-between gap-2">
+                  <Label className="text-muted-foreground font-normal">VAT %</Label>
+                  <div className="flex items-center gap-2">
+                    <Input type="number" className="w-20 h-8 text-xs" value={form.tax_rate} onChange={e => setForm(f => ({ ...f, tax_rate: +e.target.value }))} />
+                    <span className="text-muted-foreground text-xs w-24 text-right">{sym}{calcs.taxAmt.toLocaleString("en", { minimumFractionDigits: 2 })}</span>
+                  </div>
+                </div>
+                <div className="flex items-center justify-between gap-2">
+                  <Label className="text-muted-foreground font-normal">Shipping</Label>
+                  <Input type="number" className="w-32 h-8 text-xs text-right" value={form.shipping} onChange={e => setForm(f => ({ ...f, shipping: +e.target.value }))} />
+                </div>
+                <div className="border-t border-border pt-3 flex justify-between">
+                  <span className="font-bold">Total</span>
+                  <span className="text-xl font-black text-primary">{sym}{calcs.total.toLocaleString("en", { minimumFractionDigits: 2 })}</span>
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* Notes */}
           <div className="bg-card rounded-xl border border-border p-6 space-y-4">
             {docType === "letterhead" ? (
@@ -223,38 +252,27 @@ export default function CreateDocument() {
           </div>
         </div>
 
-        {/* Summary Sidebar */}
-        <div className="space-y-6">
-          <div className="bg-card rounded-xl border border-border p-6 sticky top-8">
-            <h3 className="font-semibold mb-4">Summary</h3>
-            <div className="space-y-3 text-sm">
-              <div className="flex justify-between"><span className="text-muted-foreground">Subtotal</span><span className="font-medium">{sym}{calcs.subtotal.toLocaleString("en", { minimumFractionDigits: 2 })}</span></div>
-              <div className="flex items-center justify-between gap-2">
-                <span className="text-muted-foreground">VAT %</span>
-                <div className="flex items-center gap-1">
-                  <Input type="number" className="w-16 h-8 text-xs" value={form.tax_rate} onChange={e => setForm(f => ({ ...f, tax_rate: +e.target.value }))} />
-                  <span className="font-medium">{sym}{calcs.taxAmt.toLocaleString("en", { minimumFractionDigits: 2 })}</span>
-                </div>
-              </div>
-              <div className="flex items-center justify-between gap-2">
-                <span className="text-muted-foreground">Shipping</span>
-                <Input type="number" className="w-24 h-8 text-xs text-right" value={form.shipping} onChange={e => setForm(f => ({ ...f, shipping: +e.target.value }))} />
-              </div>
-              <div className="border-t border-border pt-3 flex justify-between">
-                <span className="font-bold">Total</span>
-                <span className="text-xl font-black text-primary">{sym}{calcs.total.toLocaleString("en", { minimumFractionDigits: 2 })}</span>
-              </div>
-              <div className="flex justify-between text-muted-foreground">
-                <span>Balance Due</span>
-                <span className="font-semibold text-foreground">{form.currency}{calcs.total.toLocaleString("en", { minimumFractionDigits: 2 })}</span>
+        {/* Live Preview Sidebar */}
+        <div className="space-y-4">
+          <div className="bg-card rounded-xl border border-border overflow-hidden">
+            <div className="px-4 py-3 border-b border-border flex items-center justify-between">
+              <h3 className="font-semibold text-sm">Live Preview</h3>
+              <span className="text-xs text-muted-foreground capitalize">{typeLabels[docType]}</span>
+            </div>
+            <div className="overflow-hidden" style={{ height: 460 }}>
+              <div style={{ transform: "scale(0.42)", transformOrigin: "top left", width: 760, pointerEvents: "none" }}>
+                <DocumentPreview form={form} items={calcs.lineItems} calcs={calcs} sym={sym} docType={docType} />
               </div>
             </div>
-            <div className="mt-6 space-y-2">
+          </div>
+
+          <div className="bg-card rounded-xl border border-border p-5 sticky top-8">
+            <div className="space-y-2">
               <Button className="w-full" onClick={() => handleSave("draft")} disabled={saving || !form.customer_name}>
                 {saving ? "Saving..." : "Save as Draft"}
               </Button>
               <Button variant="outline" className="w-full" onClick={() => handleSave("sent")} disabled={saving || !form.customer_name}>
-                {"Save & Send"}
+                Save &amp; Send
               </Button>
             </div>
           </div>
