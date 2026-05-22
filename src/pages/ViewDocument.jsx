@@ -75,7 +75,7 @@ export default function ViewDocument() {
   return (
     <div className="max-w-4xl mx-auto">
       {/* Toolbar */}
-      <div className="flex items-center justify-between mb-5 print:hidden">
+      <div className="flex flex-wrap items-center justify-between gap-3 mb-5 print:hidden">
         <div className="flex items-center gap-3">
           <Link to="/documents" className="p-2 hover:bg-muted rounded-lg"><ArrowLeft className="h-4 w-4" /></Link>
           <div>
@@ -84,7 +84,7 @@ export default function ViewDocument() {
           </div>
           <span className={`px-2.5 py-1 rounded-full text-xs font-medium capitalize ${STATUS_COLORS[doc.status]}`}>{doc.status}</span>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <Select value={doc.status} onValueChange={updateStatus}>
             <SelectTrigger className="w-[130px] h-8 text-xs"><SelectValue /></SelectTrigger>
             <SelectContent>

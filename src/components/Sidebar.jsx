@@ -24,12 +24,12 @@ const docTypes = [
   { label: "Credit Note", value: "credit_note" },
 ];
 
-export default function Sidebar() {
+export default function Sidebar({ onClose }) {
   const location = useLocation();
   const [showCreate, setShowCreate] = useState(false);
 
   return (
-    <aside className="fixed left-0 top-0 bottom-0 w-64 bg-sidebar text-sidebar-foreground flex flex-col z-50">
+    <aside className="h-full w-64 bg-sidebar text-sidebar-foreground flex flex-col">
       <div className="p-6 pb-4">
         <h1 className="text-lg font-bold text-white tracking-tight">DocFlow</h1>
         <p className="text-xs text-sidebar-foreground/50 mt-0.5">Business Documents</p>
@@ -50,7 +50,7 @@ export default function Sidebar() {
                 <Link
                   key={dt.value}
                   to={`/documents/new?type=${dt.value}`}
-                  onClick={() => setShowCreate(false)}
+                  onClick={() => { setShowCreate(false); onClose && onClose(); }}
                   className="block px-4 py-2.5 text-sm hover:bg-sidebar-primary/20 text-sidebar-foreground transition-colors"
                 >
                   {dt.label}
@@ -68,6 +68,7 @@ export default function Sidebar() {
             <Link
               key={item.path}
               to={item.path}
+              onClick={() => onClose && onClose()}
               className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all ${
                 active
                   ? "bg-sidebar-accent text-white"

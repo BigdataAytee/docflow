@@ -54,7 +54,7 @@ export default function Mail() {
         <p className="text-sm text-muted-foreground">Compose and send emails to your customers</p>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-5 gap-4 lg:gap-6">
 
         {/* Compose */}
         <div className="lg:col-span-3 bg-card border border-border rounded-xl overflow-hidden">

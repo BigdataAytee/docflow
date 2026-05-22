@@ -50,7 +50,7 @@ export default function Apps() {
         {APP_CATEGORIES.map(cat => (
           <div key={cat.category}>
             <h2 className="text-xs font-bold text-muted-foreground uppercase tracking-widest mb-3">{cat.category}</h2>
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+            <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-6 gap-2 sm:gap-3">
               {cat.apps.map(app => (
                 <a
                   key={app.name}
