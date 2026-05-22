@@ -100,13 +100,13 @@ export default function ViewDocument() {
       ) : isWaybill ? (
         <WaybillTemplate doc={doc} sym={sym} curr={curr} clientSig={clientSig} setClientSig={setClientSig} />
       ) : (
-        <ZohoTemplate doc={doc} sym={sym} curr={curr} clientSig={clientSig} setClientSig={setClientSig} />
+        <ZohoTemplate doc={doc} sym={sym} curr={curr} />
       )}
     </div>
   );
 }
 
-function ZohoTemplate({ doc, sym, curr, clientSig, setClientSig }) {
+function ZohoTemplate({ doc, sym, curr }) {
   const items = doc.items || [];
   const fmtAmt = (n) => `${(n || 0).toLocaleString("en", { minimumFractionDigits: 2 })}`;
   const fmtCurr = (n) => `${curr}${fmtAmt(n)}`;
@@ -250,29 +250,17 @@ function ZohoTemplate({ doc, sym, curr, clientSig, setClientSig }) {
           </div>
         )}
 
-        {/* Signatures */}
-        <div className="border-t border-gray-200 pt-8 grid grid-cols-2 gap-10">
-          {/* Manager signature (saved from editor) */}
-          <div>
+        {/* Authorized Signatory */}
+        <div className="border-t border-gray-200 pt-8">
+          <div className="w-64">
             <p className="text-xs text-gray-400 uppercase tracking-wider mb-3">Authorized Signatory</p>
             {doc.manager_signature ? (
-              <div>
-                <img src={doc.manager_signature} alt="Manager Signature" className="h-16 object-contain mb-2" />
-                <div className="border-t border-gray-300 pt-1">
-                  <p className="text-xs text-gray-500">{doc.company_name || "Company"}</p>
-                </div>
-              </div>
+              <img src={doc.manager_signature} alt="Signature" className="h-14 object-contain mb-2" />
             ) : (
-              <div className="border-t border-gray-300 pt-1 mt-16">
-                <p className="text-xs text-gray-500">{doc.company_name || "Company"}</p>
-              </div>
+              <div className="h-14" />
             )}
-          </div>
-          {/* Customer signature pad */}
-          <div>
-            <SignaturePad label="Customer Signature" onSave={setClientSig} />
-            <div className="border-t border-gray-300 pt-1 mt-2">
-              <p className="text-xs text-gray-500">{doc.customer_name}</p>
+            <div className="border-t border-gray-300 pt-1">
+              <p className="text-xs text-gray-500">{doc.company_name || "Company"}</p>
             </div>
           </div>
         </div>
