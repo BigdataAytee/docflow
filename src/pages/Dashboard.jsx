@@ -14,6 +14,11 @@ const statusColors = {
   rejected: "bg-red-50 text-red-600",
 };
 
+const CURRENCY_SYMBOLS = {
+  NGN: "₦", USD: "$", EUR: "€", GBP: "£", GHS: "₵", KES: "KSh", ZAR: "R",
+};
+const sym = (code) => CURRENCY_SYMBOLS[code] || code || "₦";
+
 const typeLabels = {
   invoice: "Invoice", quotation: "Quotation", receipt: "Receipt",
   waybill: "Waybill", delivery_note: "Delivery Note",
@@ -65,7 +70,7 @@ export default function Dashboard() {
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
         <StatCard icon={FileText} label="Total Documents" value={documents.length} color="text-blue-600 bg-blue-50" />
         <StatCard icon={DollarSign} label="Revenue" value={`₦${totalRevenue.toLocaleString()}`} color="text-emerald-600 bg-emerald-50" />
-        <StatCard icon={Clock} label="Pending" value={`₦${pendingAmount.toLocaleString()}`} sub={`${pending.length} docs`} color="text-amber-600 bg-amber-50" />
+        <StatCard icon={Clock} label="Pending" value={`₦${pendingAmount.toLocaleString()}`} sub={`${pending.length} doc${pending.length !== 1 ? "s" : ""}`} color="text-amber-600 bg-amber-50" />
         <StatCard icon={Users} label="Customers" value={customers.length} color="text-purple-600 bg-purple-50" />
       </div>
 
@@ -105,7 +110,7 @@ export default function Dashboard() {
                         <p className="text-xs text-muted-foreground">{typeLabels[doc.type] || doc.type}</p>
                       </td>
                       <td className="px-6 py-4 text-sm text-foreground">{doc.customer_name}</td>
-                      <td className="px-6 py-4 text-sm font-medium">{doc.currency || "₦"}{(doc.total || 0).toLocaleString()}</td>
+                      <td className="px-6 py-4 text-sm font-medium">{sym(doc.currency)}{(doc.total || 0).toLocaleString()}</td>
                       <td className="px-6 py-4">
                         <span className={`inline-flex px-2.5 py-1 rounded-full text-xs font-medium capitalize ${statusColors[doc.status] || "bg-gray-100 text-gray-600"}`}>{doc.status}</span>
                       </td>
@@ -131,7 +136,7 @@ export default function Dashboard() {
                     <p className="text-xs text-muted-foreground truncate">{doc.customer_name}</p>
                     <p className="text-xs text-muted-foreground mt-0.5">{typeLabels[doc.type]} · {doc.created_date ? format(new Date(doc.created_date), "d MMM yyyy") : "-"}</p>
                   </div>
-                  <span className="text-sm font-bold text-foreground shrink-0">{doc.currency || "₦"}{(doc.total || 0).toLocaleString()}</span>
+                  <span className="text-sm font-bold text-foreground shrink-0">{sym(doc.currency)}{(doc.total || 0).toLocaleString()}</span>
                 </Link>
               ))}
             </div>
