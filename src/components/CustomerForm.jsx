@@ -25,7 +25,7 @@ export default function CustomerForm({ initial, onSave, onCancel }) {
   const update = (k, v) => setForm(p => ({ ...p, [k]: v }));
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 overflow-y-auto flex-1 pr-1">
       <div className="grid grid-cols-2 gap-4">
         <div><Label>Full Name *</Label><Input value={form.full_name} onChange={e => update("full_name", e.target.value)} /></div>
         <div><Label>Company</Label><Input value={form.company_name} onChange={e => update("company_name", e.target.value)} /></div>

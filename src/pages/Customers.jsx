@@ -189,7 +189,7 @@ export default function Customers() {
       </div>
 
       <Dialog open={showForm} onOpenChange={setShowForm}>
-        <DialogContent className="max-w-lg w-[95vw]">
+        <DialogContent className="max-w-lg w-[95vw] max-h-[90vh] flex flex-col">
           <DialogHeader><DialogTitle>{editing ? "Edit Customer" : "Add Customer"}</DialogTitle></DialogHeader>
           <CustomerForm initial={editing} onSave={handleSave} onCancel={() => setShowForm(false)} />
         </DialogContent>
