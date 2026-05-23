@@ -20,24 +20,18 @@ const typeLabels = {
   purchase_order: "Purchase Order", credit_note: "Credit Note",
 };
 
-const CURRENCY_SYMBOLS = { NGN: "₦", USD: "$", EUR: "€", GBP: "£", GHS: "₵", KES: "KSh", ZAR: "R", CAD: "CA$", AUD: "A$" };
-const getCurrSym = (code) => CURRENCY_SYMBOLS[code] || code || "₦";
-
 export default function Dashboard() {
   const [documents, setDocuments] = useState([]);
   const [customers, setCustomers] = useState([]);
-  const [defaultCurrency, setDefaultCurrency] = useState("NGN");
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     Promise.all([
       base44.entities.Document.list("-created_date", 50),
       base44.entities.Customer.list("-created_date", 50),
-      base44.auth.me(),
-    ]).then(([docs, custs, user]) => {
+    ]).then(([docs, custs]) => {
       setDocuments(docs);
       setCustomers(custs);
-      if (user?.default_currency) setDefaultCurrency(user.default_currency);
       setLoading(false);
     });
   }, []);
@@ -48,10 +42,7 @@ export default function Dashboard() {
     </div>
   );
 
-  const sym = getCurrSym(defaultCurrency);
-
-  const paidDocs = documents.filter(d => d.status === "paid");
-  const totalRevenue = paidDocs.reduce((s, d) => s + (d.total || 0), 0);
+  const totalRevenue = documents.filter(d => d.status === "paid").reduce((s, d) => s + (d.total || 0), 0);
   const pending = documents.filter(d => d.status === "sent" || d.status === "overdue");
   const pendingAmount = pending.reduce((s, d) => s + (d.balance_due || d.total || 0), 0);
   const recentDocs = documents.slice(0, 5);
@@ -73,8 +64,8 @@ export default function Dashboard() {
       {/* Stats — 2 cols on mobile, 4 on desktop */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
         <StatCard icon={FileText} label="Total Documents" value={documents.length} color="text-blue-600 bg-blue-50" />
-        <StatCard icon={DollarSign} label="Revenue" value={`${sym}${totalRevenue.toLocaleString()}`} color="text-emerald-600 bg-emerald-50" />
-        <StatCard icon={Clock} label="Pending" value={`${sym}${pendingAmount.toLocaleString()}`} sub={`${pending.length} docs`} color="text-amber-600 bg-amber-50" />
+        <StatCard icon={DollarSign} label="Revenue" value={`₦${totalRevenue.toLocaleString()}`} color="text-emerald-600 bg-emerald-50" />
+        <StatCard icon={Clock} label="Pending" value={`₦${pendingAmount.toLocaleString()}`} sub={`${pending.length} docs`} color="text-amber-600 bg-amber-50" />
         <StatCard icon={Users} label="Customers" value={customers.length} color="text-purple-600 bg-purple-50" />
       </div>
 
