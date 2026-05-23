@@ -1,7 +1,7 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { base44 } from "@/api/base44Client";
 import { useParams, Link, useNavigate } from "react-router-dom";
-import { ArrowLeft, Trash2, Printer, Send, Pencil, Share2 } from "lucide-react";
+import { ArrowLeft, Trash2, Printer, Send, Pencil, Share2, FileDown } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { format } from "date-fns";
@@ -40,6 +40,9 @@ export default function ViewDocument() {
   const navigate = useNavigate();
   const [doc, setDoc] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [showPdfPreview, setShowPdfPreview] = useState(false);
+  const [generatingPdf, setGeneratingPdf] = useState(false);
+  const pdfRef = useRef(null);
 
   useEffect(() => {
     Promise.all([
@@ -83,6 +86,19 @@ export default function ViewDocument() {
     setDoc(prev => ({ ...prev, notes }));
   };
 
+  const handleDownloadPdf = async () => {
+    setGeneratingPdf(true);
+    const html2canvas = (await import("html2canvas")).default;
+    const { jsPDF } = await import("jspdf");
+    const element = pdfRef.current;
+    const canvas = await html2canvas(element, { scale: 2, useCORS: true, backgroundColor: "#ffffff" });
+    const imgData = canvas.toDataURL("image/png");
+    const pdf = new jsPDF({ orientation: "portrait", unit: "px", format: [canvas.width / 2, canvas.height / 2] });
+    pdf.addImage(imgData, "PNG", 0, 0, canvas.width / 2, canvas.height / 2);
+    pdf.save(`${doc.number || "document"}.pdf`);
+    setGeneratingPdf(false);
+  };
+
   const handleDelete = async () => {
     await base44.entities.Document.delete(docId);
     navigate("/documents");
@@ -118,6 +134,7 @@ export default function ViewDocument() {
               <Share2 className="h-4 w-4" /><span className="hidden sm:inline">Share for Signature</span>
             </Button>
           )}
+          <Button variant="outline" size="sm" onClick={() => setShowPdfPreview(true)}><FileDown className="h-4 w-4" /><span className="hidden sm:inline">Download PDF</span></Button>
           <Button variant="outline" size="sm" onClick={() => window.print()}><Printer className="h-4 w-4" /></Button>
           <Button variant="outline" size="sm" className="text-destructive" onClick={handleDelete}><Trash2 className="h-4 w-4" /></Button>
         </div>
@@ -137,6 +154,32 @@ export default function ViewDocument() {
         ? <LetterheadTemplate doc={doc} onSaveManagerSig={saveManagerSig} onSaveCustomerSig={saveCustomerSig} onSaveNotes={saveNotes} />
         : <UnifiedTemplate doc={doc} onSaveManagerSig={saveManagerSig} onSaveCustomerSig={saveCustomerSig} />
       }
+
+      {/* PDF Preview Modal */}
+      {showPdfPreview && (
+        <div className="fixed inset-0 z-50 bg-black/60 flex flex-col" onClick={() => setShowPdfPreview(false)}>
+          <div className="flex items-center justify-between px-6 py-3 bg-white border-b shrink-0" onClick={e => e.stopPropagation()}>
+            <div>
+              <p className="font-semibold text-sm">Document Preview</p>
+              <p className="text-xs text-muted-foreground">{doc.number}</p>
+            </div>
+            <div className="flex items-center gap-2">
+              <Button size="sm" onClick={handleDownloadPdf} disabled={generatingPdf}>
+                <FileDown className="h-4 w-4 mr-1" />
+                {generatingPdf ? "Generating..." : "Download PDF"}
+              </Button>
+              <button className="p-2 hover:bg-muted rounded-lg text-muted-foreground" onClick={() => setShowPdfPreview(false)}>✕</button>
+            </div>
+          </div>
+          <div className="flex-1 overflow-auto bg-gray-100 p-6" onClick={e => e.stopPropagation()}>
+            <div className="max-w-4xl mx-auto">
+              <div ref={pdfRef}>
+                <UnifiedTemplate doc={doc} onSaveManagerSig={saveManagerSig} onSaveCustomerSig={saveCustomerSig} />
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
