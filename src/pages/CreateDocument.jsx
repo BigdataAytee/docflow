@@ -422,9 +422,9 @@ export default function CreateDocument() {
                 <FileDown className="h-4 w-4 mr-1" />
                 Preview &amp; Download PDF
               </Button>
-              <Button variant="ghost" className="w-full" onClick={handleSharePdf} disabled={generatingPdf}>
+              <Button variant="ghost" className="w-full" onClick={() => setShowPdfPreview(true)}>
                 <Upload className="h-4 w-4 mr-1" />
-                {generatingPdf ? "Generating..." : "Share PDF"}
+                Share PDF
               </Button>
             </div>
           </div>
@@ -456,6 +456,10 @@ export default function CreateDocument() {
               <Button size="sm" onClick={handleDownloadPdf} disabled={generatingPdf}>
                 <FileDown className="h-4 w-4 mr-1" />
                 {generatingPdf ? "Generating..." : "Download PDF"}
+              </Button>
+              <Button size="sm" variant="outline" onClick={handleSharePdf} disabled={generatingPdf}>
+                <Upload className="h-4 w-4 mr-1" />
+                {generatingPdf ? "Generating..." : "Share PDF"}
               </Button>
               <button className="p-2 hover:bg-muted rounded-lg text-muted-foreground" onClick={() => setShowPdfPreview(false)}>✕</button>
             </div>
