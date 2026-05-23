@@ -164,7 +164,7 @@ function UnifiedTemplate({ doc, onSaveManagerSig, onSaveCustomerSig }) {
               ? <img src={doc.logo_url} alt="Logo" className="h-48 w-auto object-contain mb-4" style={{ maxWidth: 400 }} />
               : <div className="h-8" />
             }
-            {doc.company_name && <p className="font-black text-gray-900 text-2xl">{doc.company_name}</p>}
+            {doc.company_name && <p className="font-black text-gray-900 text-2xl whitespace-nowrap">{doc.company_name}</p>}
           </div>
 
           {/* Doc type + number + amount */}
@@ -240,10 +240,10 @@ function UnifiedTemplate({ doc, onSaveManagerSig, onSaveCustomerSig }) {
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b-2 border-gray-800 text-xs uppercase tracking-wider text-gray-500">
-                  <th className="pb-3 text-left w-8 font-semibold">#</th>
+                  <th className="pb-3 text-left w-8 font-semibold">S/N</th>
                   <th className="pb-3 text-left font-semibold">Description</th>
                   <th className="pb-3 text-right px-4 font-semibold">Qty</th>
-                  <th className="pb-3 text-right px-4 font-semibold">Rate</th>
+                  <th className="pb-3 text-right px-4 font-semibold">Unit Price</th>
                   <th className="pb-3 text-right font-semibold">Amount</th>
                 </tr>
               </thead>
