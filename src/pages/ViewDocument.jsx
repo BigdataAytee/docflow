@@ -216,7 +216,7 @@ function UnifiedTemplate({ doc, onSaveManagerSig, onSaveCustomerSig, isPdf = fal
           <div className="text-right ml-8 flex flex-col items-end gap-2">
             <h1 className="text-4xl font-black tracking-widest text-gray-800">{TYPE_LABELS[doc.type]}</h1>
             <p className="text-gray-400 text-sm font-mono">{doc.number}</p>
-            {!isLetter && (
+            {!isLetter && doc.type !== 'waybill' && (
               <div className="mt-2 border border-gray-300 rounded-lg px-5 py-3 bg-gray-50 min-w-[180px] text-right">
                 <p className="text-xs text-gray-400 uppercase tracking-wider font-medium">{amountLabel}</p>
                 <p className="text-2xl font-black text-gray-900 mt-0.5">{fmtCurr(doc.balance_due || doc.total)}</p>
@@ -301,6 +301,7 @@ function UnifiedTemplate({ doc, onSaveManagerSig, onSaveCustomerSig, isPdf = fal
             </table>
 
             {/* Totals */}
+            {doc.type !== 'waybill' && (
             <div className="flex justify-end mt-6 mb-8">
               <div className="w-72 text-sm space-y-1.5">
                 <div className="flex justify-between py-1"><span className="text-gray-400">Subtotal</span><span className="text-gray-700">{fmtAmt(doc.subtotal)}</span></div>
@@ -319,6 +320,7 @@ function UnifiedTemplate({ doc, onSaveManagerSig, onSaveCustomerSig, isPdf = fal
                 </div>
               </div>
             </div>
+            )}
 
             {(doc.notes || doc.terms || doc.payment_instructions) && (
               <div className="border-t border-gray-200 pt-6 mb-8 space-y-4 text-sm text-gray-600">
