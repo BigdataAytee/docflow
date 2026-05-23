@@ -9,13 +9,11 @@ import { format } from "date-fns";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import SignaturePad from "../components/SignaturePad";
 import { buildTheme } from "../components/TemplateSelector";
-import LetterheadTemplate from "../components/LetterheadTemplate";
 
 const TYPE_LABELS = {
   invoice: "INVOICE", quotation: "QUOTATION", receipt: "RECEIPT",
   waybill: "WAYBILL", delivery_note: "DELIVERY NOTE",
   purchase_order: "PURCHASE ORDER", credit_note: "CREDIT NOTE",
-  letterhead: "LETTER",
 };
 
 const STATUS_COLORS = {
@@ -25,16 +23,13 @@ const STATUS_COLORS = {
   rejected: "bg-red-50 text-red-600",
 };
 
-const CURRENCY_SYMBOLS = { NGN: "₦", USD: "$", EUR: "€", GBP: "£" };
-
 const AMOUNT_LABEL = {
   receipt: "Amount Paid", credit_note: "Amount Credited",
   quotation: "Quoted Amount", purchase_order: "Order Total",
 };
 
 const CUSTOMER_LABEL = {
-  purchase_order: "Vendor", waybill: "Ship To",
-  delivery_note: "Ship To", letterhead: "Addressed To",
+  purchase_order: "Vendor", waybill: "Ship To", delivery_note: "Ship To",
 };
 
 export default function ViewDocument() {
@@ -84,11 +79,6 @@ export default function ViewDocument() {
     setDoc(prev => ({ ...prev, customer_signature: sig }));
   };
 
-  const saveNotes = async (notes) => {
-    await base44.entities.Document.update(docId, { notes });
-    setDoc(prev => ({ ...prev, notes }));
-  };
-
   const handleDownloadPdf = async () => {
     setGeneratingPdf(true);
     const html2canvas = (await import("html2canvas")).default;
@@ -114,7 +104,6 @@ export default function ViewDocument() {
     <div className="max-w-4xl mx-auto">
       {/* Toolbar */}
       <div className="flex items-center justify-between gap-2 mb-5 print:hidden">
-        {/* Left: back + title */}
         <div className="flex items-center gap-2 min-w-0">
           <Link to="/documents" className="p-2 hover:bg-muted rounded-lg shrink-0"><ArrowLeft className="h-4 w-4" /></Link>
           <div className="min-w-0">
@@ -124,9 +113,7 @@ export default function ViewDocument() {
           <span className={`px-2 py-0.5 rounded-full text-xs font-medium capitalize shrink-0 ${STATUS_COLORS[doc.status]}`}>{doc.status}</span>
         </div>
 
-        {/* Actions */}
         <div className="flex items-center gap-1.5 shrink-0">
-          {/* Status selector — desktop only */}
           <div className="hidden md:block">
             <Select value={doc.status} onValueChange={updateStatus}>
               <SelectTrigger className="w-[120px] h-8 text-xs"><SelectValue /></SelectTrigger>
@@ -137,28 +124,22 @@ export default function ViewDocument() {
               </SelectContent>
             </Select>
           </div>
-          {/* Edit — always visible */}
           <Button variant="outline" size="sm" className="h-9 px-3" onClick={() => navigate(`/documents/new?edit=${docId}`)}>
             <Pencil className="h-4 w-4" /><span className="hidden sm:inline ml-1.5">Edit</span>
           </Button>
-          {/* Download — desktop */}
           <Button variant="outline" size="sm" className="hidden md:flex h-9" onClick={() => setShowPdfPreview(true)}>
             <FileDown className="h-4 w-4" /><span className="ml-1.5">PDF</span>
           </Button>
-          {/* Overflow menu */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="outline" size="icon" className="h-9 w-9"><MoreVertical className="h-4 w-4" /></Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-52">
-              {/* Status submenu on mobile */}
               <div className="md:hidden px-2 py-1.5">
                 <p className="text-xs text-muted-foreground mb-1.5">Change Status</p>
                 {["draft","sent","paid","overdue","cancelled","accepted","rejected"].map(s => (
                   <button key={s} onClick={() => updateStatus(s)}
-                    className={`block w-full text-left px-2 py-1 rounded text-xs capitalize hover:bg-muted ${
-                      doc.status === s ? "font-bold text-primary" : ""
-                    }`}>{s}</button>
+                    className={`block w-full text-left px-2 py-1 rounded text-xs capitalize hover:bg-muted ${doc.status === s ? "font-bold text-primary" : ""}`}>{s}</button>
                 ))}
               </div>
               <DropdownMenuSeparator className="md:hidden" />
@@ -197,15 +178,10 @@ export default function ViewDocument() {
         </div>
       )}
 
-      {/* Document body — scrollable horizontally on mobile */}
       <div className="overflow-x-auto -mx-4 md:mx-0 px-4 md:px-0">
-        {doc.type === "letterhead"
-          ? <LetterheadTemplate doc={doc} onSaveManagerSig={saveManagerSig} onSaveCustomerSig={saveCustomerSig} onSaveNotes={saveNotes} />
-          : <UnifiedTemplate doc={doc} onSaveManagerSig={saveManagerSig} onSaveCustomerSig={saveCustomerSig} />
-        }
+        <UnifiedTemplate doc={doc} onSaveManagerSig={saveManagerSig} onSaveCustomerSig={saveCustomerSig} />
       </div>
 
-      {/* PDF Preview Modal */}
       {showPdfPreview && (
         <div className="fixed inset-0 z-50 bg-black/60 flex flex-col" onClick={() => setShowPdfPreview(false)}>
           <div className="flex items-center justify-between px-6 py-3 bg-white border-b shrink-0" onClick={e => e.stopPropagation()}>
@@ -239,7 +215,6 @@ function UnifiedTemplate({ doc, onSaveManagerSig, onSaveCustomerSig, isPdf = fal
   const curr = doc.currency || "NGN";
   const fmtAmt = (n) => `${(n || 0).toLocaleString("en", { minimumFractionDigits: 2 })}`;
   const fmtCurr = (n) => `${curr} ${fmtAmt(n)}`;
-  const isLetter = doc.type === "letterhead";
   const customerLabel = CUSTOMER_LABEL[doc.type] || "Sold To";
   const amountLabel = AMOUNT_LABEL[doc.type] || "Balance Due";
   const T = buildTheme(doc.template || "classic", doc.template_color || "slate");
@@ -262,11 +237,10 @@ function UnifiedTemplate({ doc, onSaveManagerSig, onSaveCustomerSig, isPdf = fal
               {doc.company_address && <p className="text-xs whitespace-pre-line" style={{ color: T.headerColor, opacity: 0.7 }}>{doc.company_address}</p>}
             </div>
           </div>
-
           <div className="text-right ml-8 flex flex-col items-end gap-2">
             <h1 className="text-4xl font-black tracking-widest" style={{ color: T.docTitleColor }}>{TYPE_LABELS[doc.type]}</h1>
             <p className="text-sm font-mono" style={{ color: T.headerColor, opacity: 0.6 }}>{doc.number}</p>
-            {!isLetter && doc.type !== 'waybill' && (
+            {doc.type !== 'waybill' && (
               <div className="mt-2 rounded-lg px-5 py-3 min-w-[180px] text-right" style={{ background: isColoredHeader ? "rgba(255,255,255,0.15)" : "#f8fafc", border: `1px solid ${isColoredHeader ? "rgba(255,255,255,0.25)" : "#e2e8f0"}` }}>
                 <p className="text-xs uppercase tracking-wider font-medium" style={{ color: isColoredHeader ? "rgba(255,255,255,0.7)" : undefined }}>{amountLabel}</p>
                 <p className="text-2xl font-black mt-0.5" style={{ color: isColoredHeader ? "#ffffff" : "#111827" }}>{fmtCurr(doc.balance_due || doc.total)}</p>
@@ -299,7 +273,7 @@ function UnifiedTemplate({ doc, onSaveManagerSig, onSaveCustomerSig, isPdf = fal
               <p className="font-semibold text-gray-700 text-sm">{format(new Date(doc.due_date), "dd MMM yyyy")}</p>
             </div>
           )}
-          {doc.terms_label && !isLetter && (
+          {doc.terms_label && (
             <div>
               <p className="text-[10px] text-gray-400 uppercase tracking-wider font-semibold">Terms</p>
               <p className="text-gray-700 text-sm">{doc.terms_label}</p>
@@ -310,74 +284,58 @@ function UnifiedTemplate({ doc, onSaveManagerSig, onSaveCustomerSig, isPdf = fal
 
       {/* Main content */}
       <div className="px-12 py-8">
-        {isLetter ? (
-          <div>
-            {doc.terms_label && doc.terms_label !== "Due on Receipt" && (
-              <p className="font-bold text-gray-900 text-sm mb-6 underline">Re: {doc.terms_label}</p>
+        <table className="w-full text-sm">
+          <thead>
+            <tr className="text-xs uppercase tracking-wider" style={{ borderBottom: `2px solid ${T.accentColor}`, background: T.tableHeaderBg, color: T.tableHeaderColor }}>
+              <th className="pb-3 text-left w-8 font-semibold">S/N</th>
+              <th className="pb-3 text-left font-semibold">Description</th>
+              <th className="pb-3 text-right px-4 font-semibold">Qty</th>
+              {doc.type !== 'waybill' && <th className="pb-3 text-right px-4 font-semibold">Unit Price</th>}
+              {doc.type !== 'waybill' && <th className="pb-3 text-right font-semibold">Amount</th>}
+            </tr>
+          </thead>
+          <tbody>
+            {items.map((item, i) => (
+              <tr key={i} className="border-b border-gray-100">
+                <td className="py-3 text-gray-400">{i + 1}</td>
+                <td className="py-3 text-gray-800">{item.description}</td>
+                <td className="py-3 text-right px-4 text-gray-500">{(item.quantity || 0).toFixed(2)}</td>
+                {doc.type !== 'waybill' && <td className="py-3 text-right px-4 text-gray-500">{fmtAmt(item.unit_price)}</td>}
+                {doc.type !== 'waybill' && <td className="py-3 text-right font-semibold text-gray-800">{fmtAmt(item.amount)}</td>}
+              </tr>
+            ))}
+            {items.length === 0 && (
+              <tr><td colSpan={5} className="py-8 text-center text-gray-300 text-xs">No items</td></tr>
             )}
-            <div
-              className="text-gray-700 text-sm min-h-56 prose prose-sm max-w-none"
-              style={{ lineHeight: 1.9 }}
-              dangerouslySetInnerHTML={{ __html: doc.notes || "<p>No content</p>" }}
-            />
-            {doc.terms && <p className="mt-8 text-sm text-gray-600">{doc.terms}</p>}
-          </div>
-        ) : (
-          <>
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="text-xs uppercase tracking-wider" style={{ borderBottom: `2px solid ${T.accentColor}`, background: T.tableHeaderBg, color: T.tableHeaderColor }}>
-                <th className="pb-3 text-left w-8 font-semibold">S/N</th>
-                <th className="pb-3 text-left font-semibold">Description</th>
-                <th className="pb-3 text-right px-4 font-semibold">Qty</th>
-                {doc.type !== 'waybill' && <th className="pb-3 text-right px-4 font-semibold">Unit Price</th>}
-                {doc.type !== 'waybill' && <th className="pb-3 text-right font-semibold">Amount</th>}
-                </tr>
-              </thead>
-              <tbody>
-                {items.map((item, i) => (
-                  <tr key={i} className="border-b border-gray-100">
-                    <td className="py-3 text-gray-400">{i + 1}</td>
-                    <td className="py-3 text-gray-800">{item.description}</td>
-                    <td className="py-3 text-right px-4 text-gray-500">{(item.quantity || 0).toFixed(2)}</td>
-                    {doc.type !== 'waybill' && <td className="py-3 text-right px-4 text-gray-500">{fmtAmt(item.unit_price)}</td>}
-                    {doc.type !== 'waybill' && <td className="py-3 text-right font-semibold text-gray-800">{fmtAmt(item.amount)}</td>}
-                  </tr>
-                ))}
-                {items.length === 0 && (
-                  <tr><td colSpan={5} className="py-8 text-center text-gray-300 text-xs">No items</td></tr>
-                )}
-              </tbody>
-            </table>
+          </tbody>
+        </table>
 
-            {/* Totals */}
-            {doc.type !== 'waybill' && (
-            <div className="flex justify-end mt-6 mb-8">
-              <div className="w-72 text-sm space-y-1.5">
-                <div className="flex justify-between py-1"><span className="text-gray-400">Subtotal</span><span className="text-gray-700">{fmtAmt(doc.subtotal)}</span></div>
-                {doc.tax_amount > 0 && (
-                  <div className="flex justify-between py-1"><span className="text-gray-400">VAT ({doc.tax_rate}%)</span><span className="text-gray-700">{fmtAmt(doc.tax_amount)}</span></div>
-                )}
-                {doc.shipping > 0 && (
-                  <div className="flex justify-between py-1"><span className="text-gray-400">Shipping</span><span className="text-gray-700">{fmtAmt(doc.shipping)}</span></div>
-                )}
-                {doc.paid_amount > 0 && (
-                  <div className="flex justify-between py-1 text-emerald-600"><span>Payment Made</span><span>(-) {fmtCurr(doc.paid_amount)}</span></div>
-                )}
-                <div className="flex justify-between py-3" style={{ borderTop: `2px solid ${T.totalBorder}` }}>
-                  <span className="font-black text-gray-900 uppercase text-sm">{amountLabel}</span>
-                  <span className="font-black text-gray-900 text-lg">{fmtCurr(doc.balance_due || doc.total)}</span>
-                </div>
+        {/* Totals */}
+        {doc.type !== 'waybill' && (
+          <div className="flex justify-end mt-6 mb-8">
+            <div className="w-72 text-sm space-y-1.5">
+              <div className="flex justify-between py-1"><span className="text-gray-400">Subtotal</span><span className="text-gray-700">{fmtAmt(doc.subtotal)}</span></div>
+              {doc.tax_amount > 0 && (
+                <div className="flex justify-between py-1"><span className="text-gray-400">VAT ({doc.tax_rate}%)</span><span className="text-gray-700">{fmtAmt(doc.tax_amount)}</span></div>
+              )}
+              {doc.shipping > 0 && (
+                <div className="flex justify-between py-1"><span className="text-gray-400">Shipping</span><span className="text-gray-700">{fmtAmt(doc.shipping)}</span></div>
+              )}
+              {doc.paid_amount > 0 && (
+                <div className="flex justify-between py-1 text-emerald-600"><span>Payment Made</span><span>(-) {fmtCurr(doc.paid_amount)}</span></div>
+              )}
+              <div className="flex justify-between py-3" style={{ borderTop: `2px solid ${T.totalBorder}` }}>
+                <span className="font-black text-gray-900 uppercase text-sm">{amountLabel}</span>
+                <span className="font-black text-gray-900 text-lg">{fmtCurr(doc.balance_due || doc.total)}</span>
               </div>
             </div>
-            )}
+          </div>
+        )}
 
-            {doc.notes && (
-              <div className="border-t border-gray-200 pt-6 mb-8 text-sm text-gray-600">
-                <p>{doc.notes}</p>
-              </div>
-            )}
-          </>
+        {doc.notes && (
+          <div className="border-t border-gray-200 pt-6 mb-8 text-sm text-gray-600">
+            <p>{doc.notes}</p>
+          </div>
         )}
 
         {/* Signatures */}
@@ -443,9 +401,8 @@ function UnifiedTemplate({ doc, onSaveManagerSig, onSaveCustomerSig, isPdf = fal
           )}
         </div>
 
-        {/* Payment Detail */}
         {doc.payment_instructions && (
-          <div className="border-t border-gray-200 px-12 py-6">
+          <div className="border-t border-gray-200 pt-6 mt-6">
             <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-2">Payment Detail</p>
             <p className="text-sm text-gray-700 whitespace-pre-line">{doc.payment_instructions}</p>
           </div>
@@ -459,7 +416,6 @@ function UnifiedTemplate({ doc, onSaveManagerSig, onSaveCustomerSig, isPdf = fal
         </p>
       </div>
 
-      {/* Business tagline */}
       {doc.document_tagline && (
         <div className="px-12 py-5 text-center">
           <p className="text-xs text-gray-400 italic tracking-wide">{doc.document_tagline}</p>
