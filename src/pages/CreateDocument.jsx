@@ -3,7 +3,7 @@ import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
 import { base44 } from "@/api/base44Client";
 import { useNavigate, Link } from "react-router-dom";
-import { Plus, Trash2, ArrowLeft, Settings2, FileDown } from "lucide-react";
+import { Plus, Trash2, ArrowLeft, Settings2, FileDown, Upload } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -171,16 +171,37 @@ export default function CreateDocument() {
   const template = "classic";
   const templateColor = "slate";
 
-  const handleDownloadPdf = async () => {
-    if (!pdfRef.current) return;
-    setGeneratingPdf(true);
+  const generatePdfBlob = async () => {
     const canvas = await html2canvas(pdfRef.current, { scale: 2, useCORS: true, logging: false });
     const imgData = canvas.toDataURL("image/png");
     const pdf = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
     const pageWidth = pdf.internal.pageSize.getWidth();
     const pageHeight = (canvas.height * pageWidth) / canvas.width;
     pdf.addImage(imgData, "PNG", 0, 0, pageWidth, pageHeight);
-    pdf.save(`${form.number || "document"}.pdf`);
+    return pdf.output("blob");
+  };
+
+  const handleDownloadPdf = async () => {
+    if (!pdfRef.current) return;
+    setGeneratingPdf(true);
+    const blob = await generatePdfBlob();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url; a.download = `${form.number || "document"}.pdf`;
+    a.click(); URL.revokeObjectURL(url);
+    setGeneratingPdf(false);
+  };
+
+  const handleSharePdf = async () => {
+    if (!pdfRef.current) return;
+    setGeneratingPdf(true);
+    const blob = await generatePdfBlob();
+    const file = new File([blob], `${form.number || "document"}.pdf`, { type: "application/pdf" });
+    if (navigator.canShare && navigator.canShare({ files: [file] })) {
+      await navigator.share({ files: [file], title: form.number, text: `${form.number} — ${form.customer_name}` });
+    } else {
+      alert("Sharing is not supported on this device/browser");
+    }
     setGeneratingPdf(false);
   };
 
@@ -400,6 +421,10 @@ export default function CreateDocument() {
               <Button variant="ghost" className="w-full" onClick={() => setShowPdfPreview(true)}>
                 <FileDown className="h-4 w-4 mr-1" />
                 Preview &amp; Download PDF
+              </Button>
+              <Button variant="ghost" className="w-full" onClick={handleSharePdf} disabled={generatingPdf}>
+                <Upload className="h-4 w-4 mr-1" />
+                {generatingPdf ? "Generating..." : "Share PDF"}
               </Button>
             </div>
           </div>
