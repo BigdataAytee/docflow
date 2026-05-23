@@ -73,8 +73,7 @@ export default function CreateDocument() {
         const { items: docItems, ...rest } = doc;
         setForm(f => ({ ...f, ...rest, issue_date: rest.issue_date ? rest.issue_date.split("T")[0] : f.issue_date, due_date: rest.due_date ? rest.due_date.split("T")[0] : "" }));
         if (docItems && docItems.length > 0) setItems(docItems);
-        if (rest.template) setTemplate(rest.template);
-        if (rest.template_color) setTemplateColor(rest.template_color);
+
         const parts = (rest.number || "").split("-");
         if (parts.length >= 2) { setNumPrefix(parts[0]); setNumSeq(parts.slice(1).join("-")); }
       });
@@ -93,8 +92,7 @@ export default function CreateDocument() {
           terms: user.default_terms || "",
           payment_instructions: user.default_payment_instructions || "",
         }));
-        setTemplate(user.default_template || "classic");
-        setTemplateColor(user.default_template_color || "slate");
+
       });
       base44.entities.Document.list("-created_date", 1).then(docs => {
         const prefix = docType === "invoice" ? "INV" : docType === "quotation" ? "QUO" : docType === "receipt" ? "REC" : docType === "waybill" ? "WB" : "DOC";
@@ -167,8 +165,8 @@ export default function CreateDocument() {
   const pdfRef = useRef(null);
   const [generatingPdf, setGeneratingPdf] = useState(false);
   const [showPdfPreview, setShowPdfPreview] = useState(false);
-  const [template, setTemplate] = useState("classic");
-  const [templateColor, setTemplateColor] = useState("slate");
+  const template = "classic";
+  const templateColor = "slate";
 
   const handleDownloadPdf = async () => {
     if (!pdfRef.current) return;
