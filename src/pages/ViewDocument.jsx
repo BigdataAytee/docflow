@@ -161,7 +161,7 @@ function UnifiedTemplate({ doc, onSaveManagerSig, onSaveCustomerSig }) {
           {/* Logo + Company Name only */}
           <div className="flex-1">
             {doc.logo_url
-              ? <img src={doc.logo_url} alt="Logo" className="h-16 w-auto object-contain mb-4" style={{ maxWidth: 180 }} />
+              ? <img src={doc.logo_url} alt="Logo" className="h-32 w-auto object-contain mb-4" style={{ maxWidth: 280 }} />
               : <div className="h-8" />
             }
             {doc.company_name && <p className="font-black text-gray-900 text-base">{doc.company_name}</p>}
