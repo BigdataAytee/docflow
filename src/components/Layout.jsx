@@ -1,15 +1,14 @@
 import { useState, useEffect } from "react";
 import { Outlet, Link, useLocation } from "react-router-dom";
 import Sidebar from "./Sidebar";
-import { Menu, LayoutDashboard, FileText, Users, Mail, Settings } from "lucide-react";
+import { Menu, FileText, Users, Mail, Settings } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 
 const bottomNavItems = [
-  { label: "Home",      icon: LayoutDashboard, path: "/" },
-  { label: "Documents", icon: FileText,         path: "/documents" },
-  { label: "Customers", icon: Users,            path: "/customers" },
-  { label: "Mail",      icon: Mail,             path: "/mail" },
-  { label: "Settings",  icon: Settings,         path: "/settings" },
+  { label: "Documents", icon: FileText,  path: "/documents" },
+  { label: "Customers", icon: Users,     path: "/customers" },
+  { label: "Mail",      icon: Mail,      path: "/mail" },
+  { label: "Settings",  icon: Settings,  path: "/settings" },
 ];
 
 export default function Layout() {

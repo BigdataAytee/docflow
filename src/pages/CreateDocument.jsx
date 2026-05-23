@@ -244,6 +244,10 @@ export default function CreateDocument() {
                     <SelectItem value="__add_new__" className="text-primary font-semibold border-t border-border mt-1 pt-2">＋ Add New Customer</SelectItem>
                   </SelectContent>
                 </Select>
+                {!form.customer_id && (
+                  <Input className="mt-2" placeholder="Or type customer name manually" value={form.customer_name}
+                    onChange={e => setForm(f => ({ ...f, customer_name: e.target.value }))} />
+                )}
               </div>
 
               <Dialog open={showAddCustomer} onOpenChange={setShowAddCustomer}>
@@ -263,29 +267,48 @@ export default function CreateDocument() {
           {/* Line Items */}
           <div className="bg-card rounded-xl border border-border p-6">
             <h3 className="font-semibold mb-4">Line Items</h3>
+            {/* Desktop table header */}
+            <div className="hidden sm:grid grid-cols-12 gap-2 mb-1">
+              <div className="col-span-5 text-xs font-medium text-muted-foreground">Description</div>
+              <div className="col-span-2 text-xs font-medium text-muted-foreground">Qty</div>
+              {docType !== 'waybill' && <div className="col-span-2 text-xs font-medium text-muted-foreground">Unit Price</div>}
+              {docType !== 'waybill' && <div className="col-span-2 text-xs font-medium text-muted-foreground">Disc %</div>}
+            </div>
             <div className="space-y-3">
               {items.map((item, i) => (
-                <div key={i} className="grid grid-cols-12 gap-2 items-end">
-                  <div className="col-span-5">
-                    {i === 0 && <Label className="text-xs">Description</Label>}
-                    <Input value={item.description} onChange={e => updateItem(i, "description", e.target.value)} placeholder="Item description" />
+                <div key={i}>
+                  {/* Mobile card layout */}
+                  <div className="sm:hidden bg-muted/30 rounded-lg p-3 space-y-2">
+                    <div className="flex items-center gap-2">
+                      <Input value={item.description} onChange={e => updateItem(i, "description", e.target.value)} placeholder="Item description" className="flex-1" />
+                      <Button variant="ghost" size="icon" className="shrink-0" onClick={() => setItems(prev => prev.filter((_, idx) => idx !== i))} disabled={items.length === 1}>
+                        <Trash2 className="h-4 w-4 text-muted-foreground" />
+                      </Button>
+                    </div>
+                    {docType !== 'waybill' ? (
+                      <div className="grid grid-cols-3 gap-2">
+                        <div><Label className="text-xs text-muted-foreground">Qty</Label><Input type="number" value={item.quantity} onChange={e => updateItem(i, "quantity", +e.target.value)} className="mt-1" /></div>
+                        <div><Label className="text-xs text-muted-foreground">Unit Price</Label><Input type="number" value={item.unit_price} onChange={e => updateItem(i, "unit_price", +e.target.value)} className="mt-1" /></div>
+                        <div><Label className="text-xs text-muted-foreground">Disc %</Label><Input type="number" value={item.discount} onChange={e => updateItem(i, "discount", +e.target.value)} className="mt-1" /></div>
+                      </div>
+                    ) : (
+                      <div><Label className="text-xs text-muted-foreground">Qty</Label><Input type="number" value={item.quantity} onChange={e => updateItem(i, "quantity", +e.target.value)} className="mt-1 w-28" /></div>
+                    )}
+                    {docType !== 'waybill' && (
+                      <div className="text-right text-xs font-semibold text-foreground">{sym}{((item.quantity || 0) * (item.unit_price || 0) * (1 - (item.discount || 0) / 100)).toLocaleString("en", { minimumFractionDigits: 2 })}</div>
+                    )}
                   </div>
-                  <div className="col-span-2">
-                    {i === 0 && <Label className="text-xs">Qty</Label>}
-                    <Input type="number" value={item.quantity} onChange={e => updateItem(i, "quantity", +e.target.value)} />
-                  </div>
-                  <div className="col-span-2">
-                    {i === 0 && <Label className="text-xs">Unit Price</Label>}
-                    <Input type="number" value={item.unit_price} onChange={e => updateItem(i, "unit_price", +e.target.value)} />
-                  </div>
-                  <div className="col-span-2">
-                    {i === 0 && <Label className="text-xs">Disc %</Label>}
-                    <Input type="number" value={item.discount} onChange={e => updateItem(i, "discount", +e.target.value)} />
-                  </div>
-                  <div className="col-span-1">
-                    <Button variant="ghost" size="icon" onClick={() => setItems(prev => prev.filter((_, idx) => idx !== i))} disabled={items.length === 1}>
-                      <Trash2 className="h-4 w-4 text-muted-foreground" />
-                    </Button>
+                  {/* Desktop row layout */}
+                  <div className="hidden sm:grid grid-cols-12 gap-2 items-center">
+                    <div className="col-span-5"><Input value={item.description} onChange={e => updateItem(i, "description", e.target.value)} placeholder="Item description" /></div>
+                    <div className="col-span-2"><Input type="number" value={item.quantity} onChange={e => updateItem(i, "quantity", +e.target.value)} /></div>
+                    {docType !== 'waybill' && <div className="col-span-2"><Input type="number" value={item.unit_price} onChange={e => updateItem(i, "unit_price", +e.target.value)} /></div>}
+                    {docType !== 'waybill' && <div className="col-span-2"><Input type="number" value={item.discount} onChange={e => updateItem(i, "discount", +e.target.value)} /></div>}
+                    <div className="col-span-1">
+                      <Button variant="ghost" size="icon" onClick={() => setItems(prev => prev.filter((_, idx) => idx !== i))} disabled={items.length === 1}>
+                        <Trash2 className="h-4 w-4 text-muted-foreground" />
+                      </Button>
+                    </div>
                   </div>
                 </div>
               ))}

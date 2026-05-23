@@ -1,7 +1,10 @@
 import { useState, useEffect, useRef } from "react";
 import { base44 } from "@/api/base44Client";
 import { Link, useNavigate } from "react-router-dom";
-import { Search, FileText, Plus, ChevronDown } from "lucide-react";
+import { Search, FileText, Plus, ChevronDown, ArrowRight } from "lucide-react";
+
+const currencySymbols = { NGN: "₦", USD: "$", EUR: "€", GBP: "£" };
+const sym = (currency) => currencySymbols[currency] || currency || "₦";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { format } from "date-fns";
@@ -119,9 +122,27 @@ export default function Documents() {
         </div>
 
         {filtered.length === 0 ? (
-          <div className="p-12 text-center text-muted-foreground">
-            <FileText className="h-10 w-10 mx-auto mb-3 opacity-30" />
-            <p className="text-sm">No documents found</p>
+          <div className="p-12 text-center">
+            <FileText className="h-12 w-12 mx-auto mb-4 text-muted-foreground/30" />
+            {documents.length === 0 ? (
+              <>
+                <p className="font-semibold text-foreground mb-1">No documents yet</p>
+                <p className="text-sm text-muted-foreground mb-5">Create your first invoice, quotation, receipt, or waybill.</p>
+                <div className="flex flex-wrap justify-center gap-2">
+                  {docTypes.map(dt => (
+                    <button key={dt.value} onClick={() => navigate(`/documents/new?type=${dt.value}`)}
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-border hover:border-primary hover:text-primary text-sm transition-colors">
+                      <Plus className="h-3.5 w-3.5" /> {dt.label}
+                    </button>
+                  ))}
+                </div>
+              </>
+            ) : (
+              <>
+                <p className="font-medium text-foreground mb-1">No results match your filters</p>
+                <p className="text-sm text-muted-foreground">Try adjusting your search or filter criteria.</p>
+              </>
+            )}
           </div>
         ) : (
           <>
@@ -145,7 +166,7 @@ export default function Documents() {
                         <p className="text-xs text-muted-foreground">{typeLabels[doc.type]}</p>
                       </td>
                       <td className="px-6 py-4 text-sm">{doc.customer_name}</td>
-                      <td className="px-6 py-4 text-sm font-medium">{doc.currency || "₦"}{(doc.total || 0).toLocaleString()}</td>
+                      <td className="px-6 py-4 text-sm font-medium">{sym(doc.currency)}{(doc.total || 0).toLocaleString("en", { minimumFractionDigits: 2 })}</td>
                       <td className="px-6 py-4">
                         <span className={`inline-flex px-2.5 py-1 rounded-full text-xs font-medium capitalize ${statusColors[doc.status]}`}>{doc.status}</span>
                       </td>
@@ -174,7 +195,7 @@ export default function Documents() {
                     </p>
                   </div>
                   <div className="text-right shrink-0">
-                    <p className="text-sm font-bold text-foreground">{doc.currency || "₦"}{(doc.total || 0).toLocaleString()}</p>
+                    <p className="text-sm font-bold text-foreground">{sym(doc.currency)}{(doc.total || 0).toLocaleString("en", { minimumFractionDigits: 2 })}</p>
                   </div>
                 </Link>
               ))}

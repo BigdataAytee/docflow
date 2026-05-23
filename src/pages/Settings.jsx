@@ -4,8 +4,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
-import { ImageIcon } from "lucide-react";
+import { ImageIcon, CheckCircle2 } from "lucide-react";
 
 export default function Settings() {
   const logoInputRef = useRef(null);
@@ -133,18 +134,21 @@ export default function Settings() {
         <div className="border-t border-border pt-6">
           <h2 className="font-semibold mb-4">Document Defaults</h2>
           <div className="grid grid-cols-2 gap-4">
-            <div><Label>Default Currency</Label>
-              <select value={form.default_currency} onChange={e => update("default_currency", e.target.value)} className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm">
-                <option value="NGN">₦ NGN — Nigerian Naira</option>
-                <option value="USD">$ USD — US Dollar</option>
-                <option value="EUR">€ EUR — Euro</option>
-                <option value="GBP">£ GBP — British Pound</option>
-              </select>
+            <div>
+              <Label>Default Currency</Label>
+              <Select value={form.default_currency} onValueChange={v => update("default_currency", v)}>
+                <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="NGN">₦ NGN — Nigerian Naira</SelectItem>
+                  <SelectItem value="USD">$ USD — US Dollar</SelectItem>
+                  <SelectItem value="EUR">€ EUR — Euro</SelectItem>
+                  <SelectItem value="GBP">£ GBP — British Pound</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
-            <div><Label>Default VAT Rate (%)</Label><Input type="number" value={form.default_tax_rate} onChange={e => update("default_tax_rate", +e.target.value)} /></div>
+            <div><Label>Default VAT Rate (%)</Label><Input type="number" value={form.default_tax_rate} onChange={e => update("default_tax_rate", +e.target.value)} className="mt-1" /></div>
           </div>
-          <div className="mt-4"><Label>{"Default Terms & Conditions"}</Label><Textarea value={form.default_terms} onChange={e => update("default_terms", e.target.value)} rows={3} /></div>
-          <div className="mt-4"><Label>Default Payment Instructions</Label><Textarea value={form.default_payment_instructions} onChange={e => update("default_payment_instructions", e.target.value)} rows={3} /></div>
+          <div className="mt-4"><Label>Default Payment Instructions</Label><p className="text-xs text-muted-foreground mb-1.5">Bank details, account number, etc. Shown on invoices and quotations.</p><Textarea value={form.default_payment_instructions} onChange={e => update("default_payment_instructions", e.target.value)} rows={3} /></div>
           <div className="mt-4"><Label>Footer Contact Line</Label><p className="text-xs text-muted-foreground mb-1.5">Displayed at the bottom of every document (e.g. phone · email · website).</p><Input value={form.footer_contact_line} onChange={e => update("footer_contact_line", e.target.value)} placeholder="e.g. 07423182811  ·  admin@dynamicrenaissance.org  ·  www.dynamicrenaissance.org" /></div>
           <div className="mt-4"><Label>Document Tagline</Label><p className="text-xs text-muted-foreground mb-1.5">A short sentence displayed at the bottom of every document.</p><Input value={form.document_tagline} onChange={e => update("document_tagline", e.target.value)} placeholder="e.g. Thank you for your business — we look forward to serving you again." /></div>
         </div>
