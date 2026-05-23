@@ -31,8 +31,8 @@ const AMOUNT_LABEL = {
 };
 
 const CUSTOMER_LABEL = {
-  purchase_order: "Vendor", waybill: "Receiver",
-  delivery_note: "Receiver", letterhead: "Addressed To",
+  purchase_order: "Vendor", waybill: "Ship To",
+  delivery_note: "Ship To", letterhead: "Addressed To",
 };
 
 export default function ViewDocument() {
@@ -49,7 +49,6 @@ export default function ViewDocument() {
       base44.entities.Document.get(docId),
       base44.auth.me(),
     ]).then(([d, user]) => {
-      // Always overlay current settings company info onto the document
       if (user) {
         d = {
           ...d,
@@ -186,12 +185,11 @@ export default function ViewDocument() {
 
 function UnifiedTemplate({ doc, onSaveManagerSig, onSaveCustomerSig, isPdf = false }) {
   const items = doc.items || [];
-  const sym = CURRENCY_SYMBOLS[doc.currency] || doc.currency || "₦";
   const curr = doc.currency || "NGN";
   const fmtAmt = (n) => `${(n || 0).toLocaleString("en", { minimumFractionDigits: 2 })}`;
   const fmtCurr = (n) => `${curr} ${fmtAmt(n)}`;
   const isLetter = doc.type === "letterhead";
-  const customerLabel = CUSTOMER_LABEL[doc.type] || "Bill To";
+  const customerLabel = CUSTOMER_LABEL[doc.type] || "Sold To";
   const amountLabel = AMOUNT_LABEL[doc.type] || "Balance Due";
 
   return (
@@ -201,16 +199,20 @@ function UnifiedTemplate({ doc, onSaveManagerSig, onSaveCustomerSig, isPdf = fal
       {/* Header */}
       <div className="px-12 pt-10 pb-6 border-b border-gray-200">
         <div className="flex justify-between items-start">
-          {/* Logo + Company Name only */}
           <div className="flex-1">
             {doc.logo_url
               ? <img src={doc.logo_url} alt="Logo" className="h-48 w-auto object-contain mb-4" style={{ maxWidth: 400 }} />
               : <div className="h-8" />
             }
             {doc.company_name && <p className="font-black text-gray-900 text-2xl whitespace-nowrap">{doc.company_name}</p>}
+            <div className="mt-2 space-y-0.5">
+              {doc.company_address && <p className="text-gray-500 text-xs whitespace-pre-line">{doc.company_address}</p>}
+              {doc.company_phone && <p className="text-gray-500 text-xs">{doc.company_phone}</p>}
+              {doc.company_email && <p className="text-gray-500 text-xs">{doc.company_email}</p>}
+              {doc.company_website && <p className="text-gray-500 text-xs">{doc.company_website}</p>}
+            </div>
           </div>
 
-          {/* Doc type + number + amount */}
           <div className="text-right ml-8 flex flex-col items-end gap-2">
             <h1 className="text-4xl font-black tracking-widest text-gray-800">{TYPE_LABELS[doc.type]}</h1>
             <p className="text-gray-400 text-sm font-mono">{doc.number}</p>
@@ -224,16 +226,8 @@ function UnifiedTemplate({ doc, onSaveManagerSig, onSaveCustomerSig, isPdf = fal
         </div>
       </div>
 
-      {/* From / To / Dates strip */}
-      <div className="px-12 py-5 grid grid-cols-3 gap-8 bg-gray-50 border-b border-gray-200">
-        <div>
-          <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-2">Bill From</p>
-          <p className="font-semibold text-gray-800 text-sm">{doc.company_name || "—"}</p>
-          {doc.company_address && <p className="text-gray-500 text-xs whitespace-pre-line mt-0.5">{doc.company_address}</p>}
-          {doc.company_phone && <p className="text-gray-500 text-xs mt-0.5">{doc.company_phone}</p>}
-          {doc.company_email && <p className="text-gray-500 text-xs mt-0.5">{doc.company_email}</p>}
-          {doc.company_website && <p className="text-gray-500 text-xs mt-0.5">{doc.company_website}</p>}
-        </div>
+      {/* Sold To / Dates strip */}
+      <div className="px-12 py-5 grid grid-cols-2 gap-8 bg-gray-50 border-b border-gray-200">
         <div>
           <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-2">{customerLabel}</p>
           <p className="font-semibold text-gray-800 text-sm">{doc.customer_name || "—"}</p>
@@ -378,34 +372,34 @@ function UnifiedTemplate({ doc, onSaveManagerSig, onSaveCustomerSig, isPdf = fal
           </div>
 
           {doc.type === 'waybill' && (
-          <div>
-            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-3">Receiver Signature</p>
-            {isPdf ? (
-              <div>
-                {doc.customer_signature
-                  ? <img src={doc.customer_signature} alt="Customer Signature" className="h-16 object-contain mb-2" />
-                  : <div style={{ height: 64, borderBottom: "1px solid #9ca3af", marginBottom: 4 }} />
-                }
-                <p className="text-xs text-gray-500 mt-1">{doc.customer_name}</p>
-              </div>
-            ) : doc.customer_signature ? (
-              <div>
-                <img src={doc.customer_signature} alt="Customer Signature" className="h-16 object-contain mb-2" />
-                <div className="border-t border-gray-400 pt-1.5">
-                  <p className="text-xs text-gray-500">{doc.customer_name}</p>
+            <div>
+              <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-3">Receiver Signature</p>
+              {isPdf ? (
+                <div>
+                  {doc.customer_signature
+                    ? <img src={doc.customer_signature} alt="Customer Signature" className="h-16 object-contain mb-2" />
+                    : <div style={{ height: 64, borderBottom: "1px solid #9ca3af", marginBottom: 4 }} />
+                  }
+                  <p className="text-xs text-gray-500 mt-1">{doc.customer_name}</p>
                 </div>
-                <button className="text-xs text-primary mt-1.5 hover:underline print:hidden" onClick={() => onSaveCustomerSig("")}>Re-sign</button>
-              </div>
-            ) : (
-              <div>
-                <div className="print:hidden">
-                  <SignaturePad label="" onSave={onSaveCustomerSig} />
+              ) : doc.customer_signature ? (
+                <div>
+                  <img src={doc.customer_signature} alt="Customer Signature" className="h-16 object-contain mb-2" />
+                  <div className="border-t border-gray-400 pt-1.5">
+                    <p className="text-xs text-gray-500">{doc.customer_name}</p>
+                  </div>
+                  <button className="text-xs text-primary mt-1.5 hover:underline print:hidden" onClick={() => onSaveCustomerSig("")}>Re-sign</button>
                 </div>
-                <div className="hidden print:block h-16 border-b border-gray-400 mb-1" />
-                <p className="text-xs text-gray-500 mt-1">{doc.customer_name}</p>
-              </div>
-            )}
-          </div>
+              ) : (
+                <div>
+                  <div className="print:hidden">
+                    <SignaturePad label="" onSave={onSaveCustomerSig} />
+                  </div>
+                  <div className="hidden print:block h-16 border-b border-gray-400 mb-1" />
+                  <p className="text-xs text-gray-500 mt-1">{doc.customer_name}</p>
+                </div>
+              )}
+            </div>
           )}
         </div>
       </div>
