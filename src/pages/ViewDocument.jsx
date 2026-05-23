@@ -158,17 +158,13 @@ function UnifiedTemplate({ doc, onSaveManagerSig, onSaveCustomerSig }) {
       {/* Header */}
       <div className="px-12 pt-10 pb-6 border-b border-gray-200">
         <div className="flex justify-between items-start">
-          {/* Logo + Company */}
+          {/* Logo + Company Name only */}
           <div className="flex-1">
             {doc.logo_url
               ? <img src={doc.logo_url} alt="Logo" className="h-16 w-auto object-contain mb-4" style={{ maxWidth: 180 }} />
               : <div className="h-8" />
             }
             {doc.company_name && <p className="font-black text-gray-900 text-base">{doc.company_name}</p>}
-            {doc.company_address && <p className="text-gray-500 text-xs whitespace-pre-line mt-0.5 leading-relaxed">{doc.company_address}</p>}
-            {doc.company_phone && <p className="text-gray-500 text-xs mt-0.5">{doc.company_phone}</p>}
-            {doc.company_email && <p className="text-gray-500 text-xs">{doc.company_email}</p>}
-            {doc.company_website && <p className="text-gray-500 text-xs">{doc.company_website}</p>}
           </div>
 
           {/* Doc type + number + amount */}
@@ -188,10 +184,12 @@ function UnifiedTemplate({ doc, onSaveManagerSig, onSaveCustomerSig }) {
       {/* From / To / Dates strip */}
       <div className="px-12 py-5 grid grid-cols-3 gap-8 bg-gray-50 border-b border-gray-200">
         <div>
-          <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-2">From</p>
+          <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-2">Bill From</p>
           <p className="font-semibold text-gray-800 text-sm">{doc.company_name || "—"}</p>
           {doc.company_address && <p className="text-gray-500 text-xs whitespace-pre-line mt-0.5">{doc.company_address}</p>}
+          {doc.company_phone && <p className="text-gray-500 text-xs mt-0.5">{doc.company_phone}</p>}
           {doc.company_email && <p className="text-gray-500 text-xs mt-0.5">{doc.company_email}</p>}
+          {doc.company_website && <p className="text-gray-500 text-xs mt-0.5">{doc.company_website}</p>}
         </div>
         <div>
           <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-2">{customerLabel}</p>
