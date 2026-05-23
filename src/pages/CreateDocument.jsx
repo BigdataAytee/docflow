@@ -347,7 +347,7 @@ export default function CreateDocument() {
                     <Input type="number" value={item.quantity} onChange={e => updateItem(i, "quantity", +e.target.value)} />
                   </div>
                   <div className="col-span-2">
-                    {i === 0 && <Label className="text-xs">Rate</Label>}
+                    {i === 0 && <Label className="text-xs">Unit Price</Label>}
                     <Input type="number" value={item.unit_price} onChange={e => updateItem(i, "unit_price", +e.target.value)} />
                   </div>
                   <div className="col-span-2">
