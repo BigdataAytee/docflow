@@ -174,7 +174,7 @@ export default function ViewDocument() {
           <div className="flex-1 overflow-auto bg-gray-100 p-6" onClick={e => e.stopPropagation()}>
             <div className="max-w-4xl mx-auto">
               <div ref={pdfRef}>
-                <UnifiedTemplate doc={doc} onSaveManagerSig={saveManagerSig} onSaveCustomerSig={saveCustomerSig} />
+                <UnifiedTemplate doc={doc} onSaveManagerSig={saveManagerSig} onSaveCustomerSig={saveCustomerSig} isPdf={true} />
               </div>
             </div>
           </div>
@@ -184,7 +184,7 @@ export default function ViewDocument() {
   );
 }
 
-function UnifiedTemplate({ doc, onSaveManagerSig, onSaveCustomerSig }) {
+function UnifiedTemplate({ doc, onSaveManagerSig, onSaveCustomerSig, isPdf = false }) {
   const items = doc.items || [];
   const sym = CURRENCY_SYMBOLS[doc.currency] || doc.currency || "₦";
   const curr = doc.currency || "NGN";
@@ -350,7 +350,15 @@ function UnifiedTemplate({ doc, onSaveManagerSig, onSaveCustomerSig }) {
         <div className={`border-t border-gray-200 pt-8 mt-6 grid gap-12 ${doc.type === 'waybill' ? 'grid-cols-2' : 'grid-cols-1 max-w-xs'}`}>
           <div>
             <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-3">Manager's Signature</p>
-            {doc.manager_signature ? (
+            {isPdf ? (
+              <div>
+                {doc.manager_signature
+                  ? <img src={doc.manager_signature} alt="Manager Signature" className="h-16 object-contain mb-2" />
+                  : <div style={{ height: 64, borderBottom: "1px solid #9ca3af", marginBottom: 4 }} />
+                }
+                <p className="text-xs text-gray-500 mt-1">{doc.company_name || "Company"}</p>
+              </div>
+            ) : doc.manager_signature ? (
               <div>
                 <img src={doc.manager_signature} alt="Manager Signature" className="h-16 object-contain mb-2" />
                 <div className="border-t border-gray-400 pt-1.5">
@@ -372,7 +380,15 @@ function UnifiedTemplate({ doc, onSaveManagerSig, onSaveCustomerSig }) {
           {doc.type === 'waybill' && (
           <div>
             <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-3">Receiver Signature</p>
-            {doc.customer_signature ? (
+            {isPdf ? (
+              <div>
+                {doc.customer_signature
+                  ? <img src={doc.customer_signature} alt="Customer Signature" className="h-16 object-contain mb-2" />
+                  : <div style={{ height: 64, borderBottom: "1px solid #9ca3af", marginBottom: 4 }} />
+                }
+                <p className="text-xs text-gray-500 mt-1">{doc.customer_name}</p>
+              </div>
+            ) : doc.customer_signature ? (
               <div>
                 <img src={doc.customer_signature} alt="Customer Signature" className="h-16 object-contain mb-2" />
                 <div className="border-t border-gray-400 pt-1.5">
