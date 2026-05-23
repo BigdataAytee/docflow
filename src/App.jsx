@@ -12,7 +12,7 @@ import Login from './pages/Login';
 import Register from './pages/Register';
 import ForgotPassword from './pages/ForgotPassword';
 import ResetPassword from './pages/ResetPassword';
-import Dashboard from './pages/Dashboard';
+
 import Customers from './pages/Customers';
 import Documents from './pages/Documents';
 import CreateDocument from './pages/CreateDocument';
@@ -55,7 +55,7 @@ const AuthenticatedApp = () => {
       <Route path="/reset-password" element={<ResetPassword />} />
       <Route element={<ProtectedRoute unauthenticatedElement={<Navigate to="/login" replace />} />}>
         <Route element={<Layout />}>
-          <Route path="/" element={<Dashboard />} />
+          <Route path="/" element={<Navigate to="/documents" replace />} />
           <Route path="/customers" element={<Customers />} />
           <Route path="/documents" element={<Documents />} />
           <Route path="/documents/new" element={<CreateDocument />} />

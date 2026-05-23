@@ -1,11 +1,10 @@
 import { Link, useLocation } from "react-router-dom";
-import { LayoutDashboard, Users, FileText, Settings, Plus, ChevronDown, LogOut, Mail, LayoutGrid } from "lucide-react";
+import { Users, FileText, Settings, Plus, ChevronDown, LogOut, Mail, LayoutGrid } from "lucide-react";
 import { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 
 const navItems = [
-  { label: "Dashboard", icon: LayoutDashboard, path: "/" },
   { label: "Documents", icon: FileText, path: "/documents" },
   { label: "Customers", icon: Users, path: "/customers" },
   { label: "Mail", icon: Mail, path: "/mail" },
