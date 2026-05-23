@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { format } from "date-fns";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import SignaturePad from "../components/SignaturePad";
+import { TEMPLATES } from "../components/TemplateSelector";
 import LetterheadTemplate from "../components/LetterheadTemplate";
 
 const TYPE_LABELS = {
@@ -193,32 +194,34 @@ function UnifiedTemplate({ doc, onSaveManagerSig, onSaveCustomerSig, isPdf = fal
   const isLetter = doc.type === "letterhead";
   const customerLabel = CUSTOMER_LABEL[doc.type] || "Sold To";
   const amountLabel = AMOUNT_LABEL[doc.type] || "Balance Due";
+  const T = TEMPLATES[doc.template || "classic"] || TEMPLATES.classic;
+  const isColoredHeader = T.headerBg !== "#ffffff" && T.headerBg !== "#fffbeb";
 
   return (
     <div className="bg-white border border-gray-300 shadow-sm rounded-lg overflow-hidden print:shadow-none print:border-0"
-      style={{ fontFamily: "'Helvetica Neue', Arial, sans-serif" }}>
+      style={{ fontFamily: T.font }}>
 
       {/* Header */}
-      <div className="px-12 pt-10 pb-6 border-b border-gray-200">
+      <div className="px-12 pt-10 pb-6" style={{ background: T.headerBg, borderBottom: `2px solid ${T.accentColor}` }}>
         <div className="flex justify-between items-start">
           <div className="flex-1">
             {doc.logo_url
               ? <img src={doc.logo_url} alt="Logo" className="h-48 w-auto object-contain mb-4" style={{ maxWidth: 400 }} />
               : <div className="h-8" />
             }
-            {doc.company_name && <p className="font-black text-gray-900 text-2xl whitespace-nowrap">{doc.company_name}</p>}
+            {doc.company_name && <p className="font-black text-2xl whitespace-nowrap" style={{ color: T.headerColor }}>{doc.company_name}</p>}
             <div className="mt-2 space-y-0.5">
-              {doc.company_address && <p className="text-gray-500 text-xs whitespace-pre-line">{doc.company_address}</p>}
+              {doc.company_address && <p className="text-xs whitespace-pre-line" style={{ color: T.headerColor, opacity: 0.7 }}>{doc.company_address}</p>}
             </div>
           </div>
 
           <div className="text-right ml-8 flex flex-col items-end gap-2">
-            <h1 className="text-4xl font-black tracking-widest text-gray-800">{TYPE_LABELS[doc.type]}</h1>
-            <p className="text-gray-400 text-sm font-mono">{doc.number}</p>
+            <h1 className="text-4xl font-black tracking-widest" style={{ color: T.docTitleColor }}>{TYPE_LABELS[doc.type]}</h1>
+            <p className="text-sm font-mono" style={{ color: T.headerColor, opacity: 0.6 }}>{doc.number}</p>
             {!isLetter && doc.type !== 'waybill' && (
-              <div className="mt-2 border border-gray-300 rounded-lg px-5 py-3 bg-gray-50 min-w-[180px] text-right">
-                <p className="text-xs text-gray-400 uppercase tracking-wider font-medium">{amountLabel}</p>
-                <p className="text-2xl font-black text-gray-900 mt-0.5">{fmtCurr(doc.balance_due || doc.total)}</p>
+              <div className="mt-2 rounded-lg px-5 py-3 min-w-[180px] text-right" style={{ background: isColoredHeader ? "rgba(255,255,255,0.15)" : "#f8fafc", border: `1px solid ${isColoredHeader ? "rgba(255,255,255,0.25)" : "#e2e8f0"}` }}>
+                <p className="text-xs uppercase tracking-wider font-medium" style={{ color: isColoredHeader ? "rgba(255,255,255,0.7)" : undefined }}>{amountLabel}</p>
+                <p className="text-2xl font-black mt-0.5" style={{ color: isColoredHeader ? "#ffffff" : "#111827" }}>{fmtCurr(doc.balance_due || doc.total)}</p>
               </div>
             )}
           </div>
@@ -226,9 +229,9 @@ function UnifiedTemplate({ doc, onSaveManagerSig, onSaveCustomerSig, isPdf = fal
       </div>
 
       {/* Sold To / Dates strip */}
-      <div className="px-12 py-5 grid grid-cols-2 gap-8 bg-gray-50 border-b border-gray-200">
+      <div className="px-12 py-5 grid grid-cols-2 gap-8" style={{ background: T.stripBg, borderBottom: `1px solid ${T.stripBorder}` }}>
         <div>
-          <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-2">{customerLabel}</p>
+          <p className="text-[10px] font-bold uppercase tracking-widest mb-2" style={{ color: T.tableHeaderColor }}>{customerLabel}</p>
           <p className="font-semibold text-gray-800 text-sm">{doc.customer_name || "—"}</p>
           {doc.customer_address && <p className="text-gray-500 text-xs whitespace-pre-line mt-0.5">{doc.customer_address}</p>}
           {doc.customer_email && <p className="text-gray-500 text-xs mt-0.5">{doc.customer_email}</p>}
@@ -243,7 +246,7 @@ function UnifiedTemplate({ doc, onSaveManagerSig, onSaveCustomerSig, isPdf = fal
           {doc.due_date && (
             <div className="mb-2">
               <p className="text-[10px] text-gray-400 uppercase tracking-wider font-semibold">
-                {doc.type === "purchase_order" ? "Required By" : doc.type === "quotation" ? "Valid Until" : "Due Date"}
+                <span style={{ color: T.tableHeaderColor }}>{doc.type === "purchase_order" ? "Required By" : doc.type === "quotation" ? "Valid Until" : "Due Date"}</span>
               </p>
               <p className="font-semibold text-gray-700 text-sm">{format(new Date(doc.due_date), "dd MMM yyyy")}</p>
             </div>
@@ -275,12 +278,12 @@ function UnifiedTemplate({ doc, onSaveManagerSig, onSaveCustomerSig, isPdf = fal
           <>
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b-2 border-gray-800 text-xs uppercase tracking-wider text-gray-500">
-                  <th className="pb-3 text-left w-8 font-semibold">S/N</th>
-                  <th className="pb-3 text-left font-semibold">Description</th>
-                  <th className="pb-3 text-right px-4 font-semibold">Qty</th>
-                  {doc.type !== 'waybill' && <th className="pb-3 text-right px-4 font-semibold">Unit Price</th>}
-                  {doc.type !== 'waybill' && <th className="pb-3 text-right font-semibold">Amount</th>}
+                <tr className="text-xs uppercase tracking-wider" style={{ borderBottom: `2px solid ${T.accentColor}`, background: T.tableHeaderBg, color: T.tableHeaderColor }}>
+                <th className="pb-3 text-left w-8 font-semibold">S/N</th>
+                <th className="pb-3 text-left font-semibold">Description</th>
+                <th className="pb-3 text-right px-4 font-semibold">Qty</th>
+                {doc.type !== 'waybill' && <th className="pb-3 text-right px-4 font-semibold">Unit Price</th>}
+                {doc.type !== 'waybill' && <th className="pb-3 text-right font-semibold">Amount</th>}
                 </tr>
               </thead>
               <tbody>
@@ -313,7 +316,7 @@ function UnifiedTemplate({ doc, onSaveManagerSig, onSaveCustomerSig, isPdf = fal
                 {doc.paid_amount > 0 && (
                   <div className="flex justify-between py-1 text-emerald-600"><span>Payment Made</span><span>(-) {fmtCurr(doc.paid_amount)}</span></div>
                 )}
-                <div className="flex justify-between py-3 border-t-2 border-gray-800">
+                <div className="flex justify-between py-3" style={{ borderTop: `2px solid ${T.totalBorder}` }}>
                   <span className="font-black text-gray-900 uppercase text-sm">{amountLabel}</span>
                   <span className="font-black text-gray-900 text-lg">{fmtCurr(doc.balance_due || doc.total)}</span>
                 </div>

@@ -14,6 +14,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import CustomerForm from "../components/CustomerForm";
 import SignaturePad from "../components/SignaturePad";
 import DocumentPreview from "../components/DocumentPreview";
+import TemplateSelector from "../components/TemplateSelector";
 import ReactQuill, { Quill } from "react-quill";
 
 // Register fonts and sizes for Word-like experience
@@ -169,6 +170,7 @@ export default function CreateDocument() {
     setSaving(true);
     const doc = {
       ...form,
+      template,
       status,
       items: calcs.lineItems,
       subtotal: calcs.subtotal,
@@ -194,6 +196,7 @@ export default function CreateDocument() {
   const pdfRef = useRef(null);
   const [generatingPdf, setGeneratingPdf] = useState(false);
   const [showPdfPreview, setShowPdfPreview] = useState(false);
+  const [template, setTemplate] = useState("classic");
 
   const handleDownloadPdf = async () => {
     if (!pdfRef.current) return;
@@ -442,13 +445,16 @@ export default function CreateDocument() {
         {/* Live Preview Sidebar */}
         <div className="space-y-4">
           <div className="bg-card rounded-xl border border-border overflow-hidden">
-            <div className="px-4 py-3 border-b border-border flex items-center justify-between">
-              <h3 className="font-semibold text-sm">Live Preview</h3>
-              <span className="text-xs text-muted-foreground capitalize">{typeLabels[docType]}</span>
+            <div className="px-4 py-3 border-b border-border">
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="font-semibold text-sm">Live Preview</h3>
+                <span className="text-xs text-muted-foreground capitalize">{typeLabels[docType]}</span>
+              </div>
+              <TemplateSelector value={template} onChange={setTemplate} />
             </div>
             <div className="overflow-hidden" style={{ height: 460 }}>
               <div style={{ transform: "scale(0.42)", transformOrigin: "top left", width: 760, pointerEvents: "none" }}>
-                <DocumentPreview form={form} items={calcs.lineItems} calcs={calcs} sym={sym} docType={docType} />
+                <DocumentPreview form={form} items={calcs.lineItems} calcs={calcs} sym={sym} docType={docType} template={template} />
               </div>
             </div>
           </div>
@@ -487,7 +493,7 @@ export default function CreateDocument() {
           </div>
           <div className="flex-1 overflow-auto bg-gray-100 p-6" onClick={e => e.stopPropagation()}>
             <div className="max-w-3xl mx-auto">
-              <DocumentPreview form={form} items={calcs.lineItems} calcs={calcs} sym={sym} docType={form.type || docType} managerSig={managerSig} customerSig={customerSig} />
+              <DocumentPreview form={form} items={calcs.lineItems} calcs={calcs} sym={sym} docType={form.type || docType} managerSig={managerSig} customerSig={customerSig} template={template} />
               </div>
               </div>
               </div>
@@ -496,7 +502,7 @@ export default function CreateDocument() {
               {/* Hidden full-size preview for PDF generation */}
       <div style={{ position: "absolute", left: "-9999px", top: 0, width: 760 }}>
         <div ref={pdfRef}>
-          <DocumentPreview form={form} items={calcs.lineItems} calcs={calcs} sym={sym} docType={form.type || docType} managerSig={managerSig} customerSig={customerSig} />
+          <DocumentPreview form={form} items={calcs.lineItems} calcs={calcs} sym={sym} docType={form.type || docType} managerSig={managerSig} customerSig={customerSig} template={template} />
         </div>
       </div>
     </div>

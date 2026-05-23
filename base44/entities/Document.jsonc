@@ -34,6 +34,18 @@
       "title": "Status",
       "default": "draft"
     },
+    "template": {
+      "type": "string",
+      "enum": [
+        "classic",
+        "modern",
+        "minimal",
+        "bold",
+        "elegant"
+      ],
+      "title": "Template",
+      "default": "classic"
+    },
     "customer_id": {
       "type": "string",
       "title": "Customer ID"
