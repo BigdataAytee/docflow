@@ -59,6 +59,7 @@ export default function ViewDocument() {
           company_address: user.company_address || d.company_address || "",
           company_website: user.company_website || d.company_website || "",
           document_tagline: user.document_tagline || "",
+          footer_contact_line: user.footer_contact_line || "",
         };
       }
       setDoc(d);
@@ -208,9 +209,6 @@ function UnifiedTemplate({ doc, onSaveManagerSig, onSaveCustomerSig, isPdf = fal
             {doc.company_name && <p className="font-black text-gray-900 text-2xl whitespace-nowrap">{doc.company_name}</p>}
             <div className="mt-2 space-y-0.5">
               {doc.company_address && <p className="text-gray-500 text-xs whitespace-pre-line">{doc.company_address}</p>}
-              {doc.company_phone && <p className="text-gray-500 text-xs">{doc.company_phone}</p>}
-              {doc.company_email && <p className="text-gray-500 text-xs">{doc.company_email}</p>}
-              {doc.company_website && <p className="text-gray-500 text-xs">{doc.company_website}</p>}
             </div>
           </div>
 
@@ -406,7 +404,7 @@ function UnifiedTemplate({ doc, onSaveManagerSig, onSaveCustomerSig, isPdf = fal
       {/* Footer */}
       <div className="px-12 py-4 bg-gray-50 border-t border-gray-200 text-center">
         <p className="text-xs text-gray-400">
-          {[doc.company_name, doc.company_phone, doc.company_email, doc.company_website].filter(Boolean).join("  ·  ")}
+          {doc.footer_contact_line || [doc.company_phone, doc.company_email, doc.company_website].filter(Boolean).join("  ·  ")}
         </p>
       </div>
 
