@@ -447,8 +447,8 @@ export default function CreateDocument() {
           </div>
         </div>
 
-        {/* Live Preview Sidebar */}
-        <div className="space-y-4">
+        {/* Live Preview Sidebar — hidden on mobile */}
+        <div className="hidden lg:block space-y-4">
           <div className="bg-card rounded-xl border border-border overflow-hidden">
             <div className="px-4 py-3 border-b border-border">
               <div className="flex items-center justify-between">
@@ -477,6 +477,19 @@ export default function CreateDocument() {
               </Button>
             </div>
           </div>
+        </div>
+
+        {/* Mobile sticky bottom action bar */}
+        <div className="lg:hidden fixed bottom-14 left-0 right-0 z-30 bg-card border-t border-border px-4 py-3 flex gap-2 shadow-lg">
+          <Button variant="outline" size="sm" className="flex-1" onClick={() => setShowPdfPreview(true)} disabled={saving}>
+            <FileDown className="h-4 w-4 mr-1" /> Preview
+          </Button>
+          <Button variant="outline" size="sm" className="flex-1" onClick={() => handleSave("draft")} disabled={saving || !form.customer_name}>
+            {saving ? "Saving..." : "Draft"}
+          </Button>
+          <Button size="sm" className="flex-1" onClick={() => handleSave("sent")} disabled={saving || !form.customer_name}>
+            Save &amp; Send
+          </Button>
         </div>
       </div>
       {/* PDF Preview Modal */}

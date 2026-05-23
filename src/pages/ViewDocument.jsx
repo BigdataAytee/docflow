@@ -1,7 +1,8 @@
 import { useState, useEffect, useRef } from "react";
 import { base44 } from "@/api/base44Client";
 import { useParams, Link, useNavigate } from "react-router-dom";
-import { ArrowLeft, Trash2, Printer, Send, Pencil, Share2, FileDown } from "lucide-react";
+import { ArrowLeft, Trash2, Printer, Send, Pencil, Share2, FileDown, MoreVertical } from "lucide-react";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { format } from "date-fns";
@@ -112,33 +113,77 @@ export default function ViewDocument() {
   return (
     <div className="max-w-4xl mx-auto">
       {/* Toolbar */}
-      <div className="flex flex-wrap items-center justify-between gap-3 mb-5 print:hidden">
-        <div className="flex items-center gap-3">
-          <Link to="/documents" className="p-2 hover:bg-muted rounded-lg"><ArrowLeft className="h-4 w-4" /></Link>
-          <div>
-            <h1 className="text-xl font-bold">{doc.number}</h1>
-            <p className="text-xs text-muted-foreground">{TYPE_LABELS[doc.type]}</p>
+      <div className="flex items-center justify-between gap-2 mb-5 print:hidden">
+        {/* Left: back + title */}
+        <div className="flex items-center gap-2 min-w-0">
+          <Link to="/documents" className="p-2 hover:bg-muted rounded-lg shrink-0"><ArrowLeft className="h-4 w-4" /></Link>
+          <div className="min-w-0">
+            <h1 className="text-base md:text-xl font-bold truncate">{doc.number}</h1>
+            <p className="text-xs text-muted-foreground hidden sm:block">{TYPE_LABELS[doc.type]}</p>
           </div>
-          <span className={`px-2.5 py-1 rounded-full text-xs font-medium capitalize ${STATUS_COLORS[doc.status]}`}>{doc.status}</span>
+          <span className={`px-2 py-0.5 rounded-full text-xs font-medium capitalize shrink-0 ${STATUS_COLORS[doc.status]}`}>{doc.status}</span>
         </div>
-        <div className="flex flex-wrap items-center gap-2">
-          <Select value={doc.status} onValueChange={updateStatus}>
-            <SelectTrigger className="w-[130px] h-8 text-xs"><SelectValue /></SelectTrigger>
-            <SelectContent>
-              {["draft","sent","paid","overdue","cancelled","accepted","rejected"].map(s => (
-                <SelectItem key={s} value={s} className="capitalize text-xs">{s}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          <Button variant="outline" size="sm" onClick={() => navigate(`/documents/new?edit=${docId}`)}><Pencil className="h-4 w-4" /><span className="hidden sm:inline">Edit</span></Button>
-          {doc.type === 'waybill' && (
-            <Button variant="outline" size="sm" onClick={() => { navigator.clipboard.writeText(`${window.location.origin}/waybill-sign?id=${docId}`); toast.success('Signature link copied!'); }}>
-              <Share2 className="h-4 w-4" /><span className="hidden sm:inline">Share for Signature</span>
-            </Button>
-          )}
-          <Button variant="outline" size="sm" onClick={() => setShowPdfPreview(true)}><FileDown className="h-4 w-4" /><span className="hidden sm:inline">Download PDF</span></Button>
-          <Button variant="outline" size="sm" onClick={() => window.print()}><Printer className="h-4 w-4" /></Button>
-          <Button variant="outline" size="sm" className="text-destructive" onClick={handleDelete}><Trash2 className="h-4 w-4" /></Button>
+
+        {/* Actions */}
+        <div className="flex items-center gap-1.5 shrink-0">
+          {/* Status selector — desktop only */}
+          <div className="hidden md:block">
+            <Select value={doc.status} onValueChange={updateStatus}>
+              <SelectTrigger className="w-[120px] h-8 text-xs"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                {["draft","sent","paid","overdue","cancelled","accepted","rejected"].map(s => (
+                  <SelectItem key={s} value={s} className="capitalize text-xs">{s}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          {/* Edit — always visible */}
+          <Button variant="outline" size="sm" className="h-9 px-3" onClick={() => navigate(`/documents/new?edit=${docId}`)}>
+            <Pencil className="h-4 w-4" /><span className="hidden sm:inline ml-1.5">Edit</span>
+          </Button>
+          {/* Download — desktop */}
+          <Button variant="outline" size="sm" className="hidden md:flex h-9" onClick={() => setShowPdfPreview(true)}>
+            <FileDown className="h-4 w-4" /><span className="ml-1.5">PDF</span>
+          </Button>
+          {/* Overflow menu */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" size="icon" className="h-9 w-9"><MoreVertical className="h-4 w-4" /></Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-52">
+              {/* Status submenu on mobile */}
+              <div className="md:hidden px-2 py-1.5">
+                <p className="text-xs text-muted-foreground mb-1.5">Change Status</p>
+                {["draft","sent","paid","overdue","cancelled","accepted","rejected"].map(s => (
+                  <button key={s} onClick={() => updateStatus(s)}
+                    className={`block w-full text-left px-2 py-1 rounded text-xs capitalize hover:bg-muted ${
+                      doc.status === s ? "font-bold text-primary" : ""
+                    }`}>{s}</button>
+                ))}
+              </div>
+              <DropdownMenuSeparator className="md:hidden" />
+              <DropdownMenuItem onClick={() => setShowPdfPreview(true)}>
+                <FileDown className="h-4 w-4 mr-2" /> Download PDF
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => window.print()}>
+                <Printer className="h-4 w-4 mr-2" /> Print
+              </DropdownMenuItem>
+              {doc.type === "waybill" && (
+                <DropdownMenuItem onClick={() => { navigator.clipboard.writeText(`${window.location.origin}/waybill-sign?id=${docId}`); toast.success("Link copied!"); }}>
+                  <Share2 className="h-4 w-4 mr-2" /> Copy Signature Link
+                </DropdownMenuItem>
+              )}
+              {doc.status === "draft" && (
+                <DropdownMenuItem onClick={() => updateStatus("sent")}>
+                  <Send className="h-4 w-4 mr-2" /> Mark as Sent
+                </DropdownMenuItem>
+              )}
+              <DropdownMenuSeparator />
+              <DropdownMenuItem className="text-destructive" onClick={handleDelete}>
+                <Trash2 className="h-4 w-4 mr-2" /> Delete
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </div>
 
@@ -152,10 +197,13 @@ export default function ViewDocument() {
         </div>
       )}
 
-      {doc.type === "letterhead"
-        ? <LetterheadTemplate doc={doc} onSaveManagerSig={saveManagerSig} onSaveCustomerSig={saveCustomerSig} onSaveNotes={saveNotes} />
-        : <UnifiedTemplate doc={doc} onSaveManagerSig={saveManagerSig} onSaveCustomerSig={saveCustomerSig} />
-      }
+      {/* Document body — scrollable horizontally on mobile */}
+      <div className="overflow-x-auto -mx-4 md:mx-0 px-4 md:px-0">
+        {doc.type === "letterhead"
+          ? <LetterheadTemplate doc={doc} onSaveManagerSig={saveManagerSig} onSaveCustomerSig={saveCustomerSig} onSaveNotes={saveNotes} />
+          : <UnifiedTemplate doc={doc} onSaveManagerSig={saveManagerSig} onSaveCustomerSig={saveCustomerSig} />
+        }
+      </div>
 
       {/* PDF Preview Modal */}
       {showPdfPreview && (

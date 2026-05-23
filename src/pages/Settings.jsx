@@ -173,8 +173,9 @@ export default function Settings() {
           {/* Live mini preview */}
           <div className="mt-5">
             <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-2">Preview</p>
-            <div className="rounded-xl border border-border overflow-hidden bg-gray-50 flex items-start justify-center p-3">
-              <div style={{ transform: "scale(0.38)", transformOrigin: "top left", width: 760, pointerEvents: "none" }}>
+            <div className="rounded-xl border border-border overflow-hidden bg-gray-50"
+              style={{ height: Math.round(1040 * 0.38) + 24, position: "relative" }}>
+              <div style={{ transform: "scale(0.38)", transformOrigin: "top left", width: 760, pointerEvents: "none", position: "absolute", top: 12, left: 12 }}>
                 <DocumentPreview
                   form={{
                     company_name: form.company_name || "Your Company",
@@ -203,8 +204,6 @@ export default function Settings() {
                 />
               </div>
             </div>
-            {/* Scale placeholder to match actual rendered height */}
-            <div style={{ height: Math.round(1040 * 0.38) }} className="-mt-1" />
           </div>
         </div>
 

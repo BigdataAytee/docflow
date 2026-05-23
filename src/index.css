@@ -83,9 +83,31 @@
 @layer base {
   * {
     @apply border-border outline-ring/50;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  html {
+    scroll-behavior: smooth;
+    -webkit-text-size-adjust: 100%;
   }
 
   body {
     @apply bg-background text-foreground;
+    font-size: clamp(14px, 1.5vw, 16px);
+    line-height: 1.6;
+    overflow-x: hidden;
+  }
+
+  button, a, [role="button"] {
+    touch-action: manipulation;
+  }
+
+  input, textarea, select {
+    font-size: 16px; /* prevents iOS auto-zoom */
+  }
+
+  /* Smooth momentum scrolling on iOS */
+  .overflow-y-auto, .overflow-auto {
+    -webkit-overflow-scrolling: touch;
   }
 }

@@ -1,8 +1,16 @@
 import { useState, useEffect } from "react";
-import { Outlet } from "react-router-dom";
+import { Outlet, Link, useLocation } from "react-router-dom";
 import Sidebar from "./Sidebar";
-import { Menu } from "lucide-react";
+import { Menu, LayoutDashboard, FileText, Users, Mail, Settings } from "lucide-react";
 import { base44 } from "@/api/base44Client";
+
+const bottomNavItems = [
+  { label: "Home",      icon: LayoutDashboard, path: "/" },
+  { label: "Documents", icon: FileText,         path: "/documents" },
+  { label: "Customers", icon: Users,            path: "/customers" },
+  { label: "Mail",      icon: Mail,             path: "/mail" },
+  { label: "Settings",  icon: Settings,         path: "/settings" },
+];
 
 export default function Layout() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -14,10 +22,12 @@ export default function Layout() {
     });
   }, []);
 
+  const location = useLocation();
+
   return (
     <div className="min-h-screen bg-background flex">
       {/* Desktop sidebar */}
-      <div className="hidden lg:block w-64 shrink-0">
+      <div className="hidden lg:flex lg:flex-col w-64 shrink-0 fixed left-0 top-0 bottom-0 z-30">
         <Sidebar />
       </div>
 
@@ -25,26 +35,49 @@ export default function Layout() {
       {sidebarOpen && (
         <div className="fixed inset-0 z-50 lg:hidden">
           <div className="absolute inset-0 bg-black/50" onClick={() => setSidebarOpen(false)} />
-          <div className="absolute left-0 top-0 bottom-0 w-64 z-10">
+          <div className="absolute left-0 top-0 bottom-0 w-72 z-10 shadow-2xl">
             <Sidebar onClose={() => setSidebarOpen(false)} />
           </div>
         </div>
       )}
 
       {/* Main content */}
-      <main className="flex-1 min-w-0 min-h-screen flex flex-col">
+      <main className="flex-1 min-w-0 min-h-screen flex flex-col lg:ml-64">
         {/* Mobile top bar */}
-        <div className="lg:hidden sticky top-0 z-40 flex items-center gap-3 px-4 py-3 bg-sidebar border-b border-sidebar-border">
-          <button onClick={() => setSidebarOpen(true)} className="text-white p-1.5 rounded-lg hover:bg-white/10">
+        <div className="lg:hidden sticky top-0 z-40 flex items-center gap-3 px-4 h-14 bg-sidebar border-b border-sidebar-border">
+          <button
+            onClick={() => setSidebarOpen(true)}
+            className="text-white p-2 rounded-lg hover:bg-white/10 active:bg-white/20 min-w-[40px] min-h-[40px] flex items-center justify-center"
+          >
             <Menu className="h-5 w-5" />
           </button>
-          <span className="text-white font-bold text-base tracking-tight">{companyName || "My Business"}</span>
+          <span className="text-white font-bold text-base tracking-tight flex-1 truncate">{companyName || "My Business"}</span>
         </div>
 
-        <div className="p-4 md:p-6 lg:p-8 flex-1">
+        {/* Page content — bottom padding for mobile nav bar */}
+        <div className="flex-1 p-4 md:p-6 lg:p-8 pb-24 lg:pb-8">
           <Outlet />
         </div>
       </main>
+
+      {/* Mobile Bottom Navigation */}
+      <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-sidebar border-t border-sidebar-border flex safe-area-inset-bottom">
+        {bottomNavItems.map(item => {
+          const active = location.pathname === item.path || (item.path !== "/" && location.pathname.startsWith(item.path));
+          return (
+            <Link
+              key={item.path}
+              to={item.path}
+              className={`flex-1 flex flex-col items-center justify-center py-2 gap-0.5 min-h-[56px] transition-colors ${
+                active ? "text-white" : "text-sidebar-foreground/50"
+              }`}
+            >
+              <item.icon className={`h-5 w-5 ${active ? "text-sidebar-primary" : ""}`} />
+              <span className="text-[10px] font-medium tracking-wide">{item.label}</span>
+            </Link>
+          );
+        })}
+      </nav>
     </div>
   );
 }
