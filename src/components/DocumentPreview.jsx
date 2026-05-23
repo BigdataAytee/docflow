@@ -94,9 +94,9 @@ function ClassicDoc({ form, items, calcs, sym, docType, managerSig, customerSig,
           <div style={{ fontSize: 30, fontWeight: 900, letterSpacing: 3, color: T.docTitleColor }}>{label}</div>
           <div style={{ fontSize: 12, color: T.headerColor, opacity: 0.5, marginTop: 4, fontFamily: "monospace" }}>{form.number || "—"}</div>
           {docType !== "waybill" && (
-            <div style={{ marginTop: 10, background: isColoredHeader ? "rgba(255,255,255,0.15)" : "#f8fafc", border: `1px solid ${isColoredHeader ? "rgba(255,255,255,0.2)" : "#e2e8f0"}`, borderRadius: 6, padding: "6px 14px", display: "inline-block" }}>
-              <div style={{ fontSize: 8, color: isColoredHeader ? "rgba(255,255,255,0.65)" : "#94a3b8", textTransform: "uppercase", letterSpacing: 1 }}>{amountLabel}</div>
-              <div style={{ fontSize: 20, fontWeight: 900, color: isColoredHeader ? "#fff" : "#111827", marginTop: 2 }}>{sym}{fmt(calcs?.total || 0)}</div>
+            <div style={{ marginTop: 10, background: T.accentColor, borderRadius: 6, padding: "6px 14px", display: "inline-block" }}>
+              <div style={{ fontSize: 8, color: "rgba(255,255,255,0.8)", textTransform: "uppercase", letterSpacing: 1 }}>{amountLabel}</div>
+              <div style={{ fontSize: 20, fontWeight: 900, color: "#ffffff", marginTop: 2 }}>{sym}{fmt(calcs?.total || 0)}</div>
             </div>
           )}
         </div>
