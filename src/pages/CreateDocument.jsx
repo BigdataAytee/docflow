@@ -66,6 +66,7 @@ export default function CreateDocument() {
   const [customers, setCustomers] = useState([]);
   const [saving, setSaving] = useState(false);
   const [managerSig, setManagerSig] = useState(null);
+  const [customerSig, setCustomerSig] = useState(null);
   const [showAddCustomer, setShowAddCustomer] = useState(false);
   const [savingCustomer, setSavingCustomer] = useState(false);
   const [numPrefix, setNumPrefix] = useState("");
@@ -182,6 +183,7 @@ export default function CreateDocument() {
       navigate(`/documents/${editId}`);
     } else {
       doc.manager_signature = managerSig || "";
+      doc.customer_signature = customerSig || "";
       doc.paid_amount = 0;
       const created = await base44.entities.Document.create(doc);
       navigate(`/documents/${created.id}`);
@@ -428,6 +430,15 @@ export default function CreateDocument() {
             <p className="text-xs text-muted-foreground mb-3">Sign here using mouse or stylus. This signature will appear on the final document.</p>
             <SignaturePad label="Manager Signature" onSave={setManagerSig} />
           </div>
+
+          {/* Customer Signature — waybill only */}
+          {(docType === "waybill" || form.type === "waybill") && (
+            <div className="bg-card rounded-xl border border-border p-6">
+              <h3 className="font-semibold mb-4">Customer Signature</h3>
+              <p className="text-xs text-muted-foreground mb-3">Customer signs here to acknowledge receipt. This will appear on the final document.</p>
+              <SignaturePad label="Customer Signature" onSave={setCustomerSig} />
+            </div>
+          )}
         </div>
 
         {/* Live Preview Sidebar */}
@@ -478,7 +489,7 @@ export default function CreateDocument() {
           </div>
           <div className="flex-1 overflow-auto bg-gray-100 p-6" onClick={e => e.stopPropagation()}>
             <div className="max-w-3xl mx-auto">
-              <DocumentPreview form={form} items={calcs.lineItems} calcs={calcs} sym={sym} docType={form.type || docType} managerSig={managerSig} />
+              <DocumentPreview form={form} items={calcs.lineItems} calcs={calcs} sym={sym} docType={form.type || docType} managerSig={managerSig} customerSig={customerSig} />
               </div>
               </div>
               </div>
@@ -487,7 +498,7 @@ export default function CreateDocument() {
               {/* Hidden full-size preview for PDF generation */}
       <div style={{ position: "absolute", left: "-9999px", top: 0, width: 760 }}>
         <div ref={pdfRef}>
-          <DocumentPreview form={form} items={calcs.lineItems} calcs={calcs} sym={sym} docType={form.type || docType} managerSig={managerSig} />
+          <DocumentPreview form={form} items={calcs.lineItems} calcs={calcs} sym={sym} docType={form.type || docType} managerSig={managerSig} customerSig={customerSig} />
         </div>
       </div>
     </div>
