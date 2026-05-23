@@ -105,9 +105,7 @@ export default function CreateDocument() {
     }
   }, [docType, editId]);
 
-  useEffect(() => {
-    if (numPrefix || numSeq) setForm(f => ({ ...f, number: `${numPrefix}-${numSeq}` }));
-  }, [numPrefix, numSeq]);
+
 
   const selectCustomer = (id) => {
     if (id === "__add_new__") { setShowAddCustomer(true); return; }
@@ -218,11 +216,11 @@ export default function CreateDocument() {
                       <div className="space-y-3">
                         <div>
                          <Label className="text-xs">Prefix</Label>
-                         <Input value={numPrefix} onChange={e => setNumPrefix(e.target.value)} placeholder="e.g. INV" className="h-8 text-sm mt-1" />
+                         <Input value={numPrefix} onChange={e => { setNumPrefix(e.target.value); setForm(f => ({ ...f, number: `${e.target.value}-${numSeq}` })); }} placeholder="e.g. INV" className="h-8 text-sm mt-1" />
                         </div>
                         <div>
                          <Label className="text-xs">Number</Label>
-                         <Input value={numSeq} onChange={e => setNumSeq(e.target.value)} placeholder="e.g. 0001" className="h-8 text-sm mt-1" />
+                         <Input value={numSeq} onChange={e => { setNumSeq(e.target.value); setForm(f => ({ ...f, number: `${numPrefix}-${e.target.value}` })); }} placeholder="e.g. 0001" className="h-8 text-sm mt-1" />
                         </div>
                         <p className="text-xs text-muted-foreground">Preview: <span className="font-mono font-semibold text-foreground">{numPrefix}-{numSeq}</span></p>
                         <button type="button" className="w-full mt-1 bg-primary text-primary-foreground text-xs font-semibold py-1.5 rounded-md hover:bg-primary/90 transition-colors" onClick={() => setNumOpen(false)}>Save</button>
