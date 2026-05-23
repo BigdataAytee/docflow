@@ -147,7 +147,6 @@ export default function DocumentPreview({ form, items, calcs, sym, docType, mana
             {!(customerSig || form.customer_signature) && <div style={{ height: 56 }} />}
             <div style={{ borderTop: "1px solid #94a3b8", paddingTop: 4 }}>
               <div style={{ fontSize: 9, color: "#94a3b8", textTransform: "uppercase", letterSpacing: 1 }}>Customer's Signature</div>
-              {form.customer_name && <div style={{ fontSize: 11, color: "#475569", marginTop: 2 }}>{form.customer_name}</div>}
             </div>
           </div>
         </div>
