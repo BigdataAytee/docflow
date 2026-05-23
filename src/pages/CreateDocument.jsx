@@ -14,36 +14,6 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import CustomerForm from "../components/CustomerForm";
 import SignaturePad from "../components/SignaturePad";
 import DocumentPreview from "../components/DocumentPreview";
-import ReactQuill, { Quill } from "react-quill";
-
-// Register fonts and sizes for Word-like experience
-const Font = Quill.import("formats/font");
-Font.whitelist = ["arial", "times-new-roman", "georgia", "courier-new", "trebuchet", "verdana"];
-Quill.register(Font, true);
-const Size = Quill.import("attributors/style/size");
-Size.whitelist = ["10px","11px","12px","14px","16px","18px","20px","24px","28px","32px","36px"];
-Quill.register(Size, true);
-
-const LETTER_MODULES = {
-  toolbar: [
-    [{ font: ["arial","times-new-roman","georgia","courier-new","trebuchet","verdana"] }],
-    [{ size: ["10px","11px","12px","14px","16px","18px","20px","24px","28px","32px","36px"] }],
-    [{ header: [1,2,3,4,false] }],
-    ["bold","italic","underline","strike"],
-    [{ color: [] },{ background: [] }],
-    [{ align: [] }],
-    [{ list: "ordered" },{ list: "bullet" }],
-    [{ indent: "-1" },{ indent: "+1" }],
-    ["blockquote","link"],
-    ["clean"],
-  ],
-};
-
-const LETTER_FORMATS = [
-  "font","size","header","bold","italic","underline","strike",
-  "color","background","align","list","bullet","indent",
-  "blockquote","link",
-];
 
 const typeLabels = {
   invoice: "Invoice", quotation: "Quotation", receipt: "Receipt",
@@ -101,7 +71,6 @@ export default function CreateDocument() {
   useEffect(() => {
     base44.entities.Customer.list("-created_date", 100).then(setCustomers);
     if (editId) {
-      // Edit mode: load existing document
       base44.entities.Document.get(editId).then(doc => {
         const { items: docItems, ...rest } = doc;
         setForm(f => ({ ...f, ...rest, issue_date: rest.issue_date ? rest.issue_date.split("T")[0] : f.issue_date, due_date: rest.due_date ? rest.due_date.split("T")[0] : "" }));
@@ -236,18 +205,10 @@ export default function CreateDocument() {
               <div>
                 <Label>Document Number</Label>
                 <div className="relative">
-                  <Input
-                    value={form.number}
-                    readOnly
-                    className="pr-9 cursor-default bg-muted/40"
-                  />
+                  <Input value={form.number} readOnly className="pr-9 cursor-default bg-muted/40" />
                   <Popover open={numOpen} onOpenChange={setNumOpen}>
                     <PopoverTrigger asChild>
-                      <button
-                        type="button"
-                        className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
-                        title="Customize number format"
-                      >
+                      <button type="button" className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors" title="Customize number format">
                         <Settings2 className="h-4 w-4" />
                       </button>
                     </PopoverTrigger>
@@ -256,36 +217,14 @@ export default function CreateDocument() {
                       <div className="space-y-3">
                         <div>
                           <Label className="text-xs">Prefix</Label>
-                          <Input
-                            value={numPrefix}
-                            onChange={e => {
-                              setNumPrefix(e.target.value);
-                              setForm(f => ({ ...f, number: `${e.target.value}-${numSeq}` }));
-                            }}
-                            placeholder="e.g. INV"
-                            className="h-8 text-sm mt-1"
-                          />
+                          <Input value={numPrefix} onChange={e => { setNumPrefix(e.target.value); setForm(f => ({ ...f, number: `${e.target.value}-${numSeq}` })); }} placeholder="e.g. INV" className="h-8 text-sm mt-1" />
                         </div>
                         <div>
                           <Label className="text-xs">Number</Label>
-                          <Input
-                            value={numSeq}
-                            onChange={e => {
-                              setNumSeq(e.target.value);
-                              setForm(f => ({ ...f, number: `${numPrefix}-${e.target.value}` }));
-                            }}
-                            placeholder="e.g. 0001"
-                            className="h-8 text-sm mt-1"
-                          />
+                          <Input value={numSeq} onChange={e => { setNumSeq(e.target.value); setForm(f => ({ ...f, number: `${numPrefix}-${e.target.value}` })); }} placeholder="e.g. 0001" className="h-8 text-sm mt-1" />
                         </div>
                         <p className="text-xs text-muted-foreground">Preview: <span className="font-mono font-semibold text-foreground">{numPrefix}-{numSeq}</span></p>
-                        <button
-                          type="button"
-                          className="w-full mt-1 bg-primary text-primary-foreground text-xs font-semibold py-1.5 rounded-md hover:bg-primary/90 transition-colors"
-                          onClick={() => setNumOpen(false)}
-                        >
-                          Save
-                        </button>
+                        <button type="button" className="w-full mt-1 bg-primary text-primary-foreground text-xs font-semibold py-1.5 rounded-md hover:bg-primary/90 transition-colors" onClick={() => setNumOpen(false)}>Save</button>
                       </div>
                     </PopoverContent>
                   </Popover>
@@ -306,22 +245,16 @@ export default function CreateDocument() {
                   <SelectTrigger><SelectValue placeholder="Select customer" /></SelectTrigger>
                   <SelectContent>
                     {customers.map(c => <SelectItem key={c.id} value={c.id}>{c.full_name}{c.company_name ? ` — ${c.company_name}` : ""}</SelectItem>)}
-                    <SelectItem value="__add_new__" className="text-primary font-semibold border-t border-border mt-1 pt-2">
-                      ＋ Add New Customer
-                    </SelectItem>
+                    <SelectItem value="__add_new__" className="text-primary font-semibold border-t border-border mt-1 pt-2">＋ Add New Customer</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
 
-              {/* Add Customer Dialog */}
               <Dialog open={showAddCustomer} onOpenChange={setShowAddCustomer}>
                 <DialogContent className="max-w-lg">
                   <DialogHeader><DialogTitle>Add New Customer</DialogTitle></DialogHeader>
                   <div className="mt-2">
-                    <CustomerForm
-                      onSave={handleAddCustomer}
-                      onCancel={() => setShowAddCustomer(false)}
-                    />
+                    <CustomerForm onSave={handleAddCustomer} onCancel={() => setShowAddCustomer(false)} />
                   </div>
                 </DialogContent>
               </Dialog>
@@ -331,8 +264,7 @@ export default function CreateDocument() {
             </div>
           </div>
 
-          {/* Line Items — hidden for letterhead */}
-          {docType !== "letterhead" && (
+          {/* Line Items */}
           <div className="bg-card rounded-xl border border-border p-6">
             <h3 className="font-semibold mb-4">Line Items</h3>
             <div className="space-y-3">
@@ -366,69 +298,37 @@ export default function CreateDocument() {
               <Plus className="h-3 w-3 mr-1" /> Add Item
             </Button>
           </div>
-          )}
 
-          {/* Totals (hidden for letterhead) */}
-          {docType !== "letterhead" && (
-            <div className="bg-card rounded-xl border border-border p-6">
-              <h3 className="font-semibold mb-4">Totals</h3>
-              <div className="space-y-3 text-sm">
-                <div className="flex items-center justify-between gap-2">
-                  <span className="text-muted-foreground">Subtotal</span>
-                  <span className="font-medium">{sym}{calcs.subtotal.toLocaleString("en", { minimumFractionDigits: 2 })}</span>
-                </div>
-                <div className="flex items-center justify-between gap-2">
-                  <Label className="text-muted-foreground font-normal">VAT %</Label>
-                  <div className="flex items-center gap-2">
-                    <Input type="number" className="w-20 h-8 text-xs" value={form.tax_rate} onChange={e => setForm(f => ({ ...f, tax_rate: +e.target.value }))} />
-                    <span className="text-muted-foreground text-xs w-24 text-right">{sym}{calcs.taxAmt.toLocaleString("en", { minimumFractionDigits: 2 })}</span>
-                  </div>
-                </div>
-                <div className="flex items-center justify-between gap-2">
-                  <Label className="text-muted-foreground font-normal">Shipping</Label>
-                  <Input type="number" className="w-32 h-8 text-xs text-right" value={form.shipping} onChange={e => setForm(f => ({ ...f, shipping: +e.target.value }))} />
-                </div>
-                <div className="border-t border-border pt-3 flex justify-between">
-                  <span className="font-bold">Total</span>
-                  <span className="text-xl font-black text-primary">{sym}{calcs.total.toLocaleString("en", { minimumFractionDigits: 2 })}</span>
+          {/* Totals */}
+          <div className="bg-card rounded-xl border border-border p-6">
+            <h3 className="font-semibold mb-4">Totals</h3>
+            <div className="space-y-3 text-sm">
+              <div className="flex items-center justify-between gap-2">
+                <span className="text-muted-foreground">Subtotal</span>
+                <span className="font-medium">{sym}{calcs.subtotal.toLocaleString("en", { minimumFractionDigits: 2 })}</span>
+              </div>
+              <div className="flex items-center justify-between gap-2">
+                <Label className="text-muted-foreground font-normal">VAT %</Label>
+                <div className="flex items-center gap-2">
+                  <Input type="number" className="w-20 h-8 text-xs" value={form.tax_rate} onChange={e => setForm(f => ({ ...f, tax_rate: +e.target.value }))} />
+                  <span className="text-muted-foreground text-xs w-24 text-right">{sym}{calcs.taxAmt.toLocaleString("en", { minimumFractionDigits: 2 })}</span>
                 </div>
               </div>
+              <div className="flex items-center justify-between gap-2">
+                <Label className="text-muted-foreground font-normal">Shipping</Label>
+                <Input type="number" className="w-32 h-8 text-xs text-right" value={form.shipping} onChange={e => setForm(f => ({ ...f, shipping: +e.target.value }))} />
+              </div>
+              <div className="border-t border-border pt-3 flex justify-between">
+                <span className="font-bold">Total</span>
+                <span className="text-xl font-black text-primary">{sym}{calcs.total.toLocaleString("en", { minimumFractionDigits: 2 })}</span>
+              </div>
             </div>
-          )}
+          </div>
 
           {/* Notes */}
           <div className="bg-card rounded-xl border border-border p-6 space-y-4">
-            {docType === "letterhead" ? (
-              <>
-                <div><Label>Subject / Re:</Label><Input value={form.terms_label !== "Due on Receipt" ? form.terms_label : ""} onChange={e => setForm(f => ({ ...f, terms_label: e.target.value }))} placeholder="e.g. Notice of Payment, Appointment Letter..." /></div>
-                <div>
-                  <Label className="mb-2 block">Letter Body</Label>
-                  <div className="rounded-lg overflow-hidden border border-gray-300 shadow-sm">
-                    <div className="bg-gray-100 border-b border-gray-300 px-2 py-1">
-                      <span className="text-xs text-gray-500 font-medium">✏️ Document Editor</span>
-                    </div>
-                    <div style={{ background: "#e8e8e8", padding: "16px 8px" }}>
-                      <div style={{ background: "#fff", margin: "0 auto", maxWidth: 680, boxShadow: "0 1px 4px rgba(0,0,0,0.15)", minHeight: 400 }}>
-                        <ReactQuill
-                          value={form.notes}
-                          onChange={val => setForm(f => ({ ...f, notes: val }))}
-                          theme="snow"
-                          modules={LETTER_MODULES}
-                          formats={LETTER_FORMATS}
-                          style={{ fontFamily: "'Times New Roman', serif", fontSize: 14 }}
-                        />
-                      </div>
-                    </div>
-                  </div>
-                </div>
-                <div><Label>Complimentary Close</Label><Textarea value={form.terms} onChange={e => setForm(f => ({ ...f, terms: e.target.value }))} rows={2} placeholder="e.g. Yours faithfully," /></div>
-              </>
-            ) : (
-              <>
-                <div><Label>Notes / Message to Customer</Label><Textarea value={form.notes} onChange={e => setForm(f => ({ ...f, notes: e.target.value }))} rows={2} placeholder="e.g. Thanks for your business." /></div>
-                <div><Label>{"Terms & Conditions"}</Label><Textarea value={form.terms} onChange={e => setForm(f => ({ ...f, terms: e.target.value }))} rows={2} /></div>
-              </>
-            )}
+            <div><Label>Notes / Message to Customer</Label><Textarea value={form.notes} onChange={e => setForm(f => ({ ...f, notes: e.target.value }))} rows={2} placeholder="e.g. Thanks for your business." /></div>
+            <div><Label>{"Terms & Conditions"}</Label><Textarea value={form.terms} onChange={e => setForm(f => ({ ...f, terms: e.target.value }))} rows={2} /></div>
             <div><Label>Payment Instructions</Label><Textarea value={form.payment_instructions} onChange={e => setForm(f => ({ ...f, payment_instructions: e.target.value }))} rows={2} /></div>
           </div>
 
@@ -441,11 +341,11 @@ export default function CreateDocument() {
 
           {/* Customer Signature — waybill only */}
           {docType === "waybill" && (
-          <div className="bg-card rounded-xl border border-border p-6">
-            <h3 className="font-semibold mb-4">Customer Signature</h3>
-            <p className="text-xs text-muted-foreground mb-3">Customer signs here to acknowledge receipt. This will appear on the final document.</p>
-            <SignaturePad label="Customer Signature" onSave={setCustomerSig} />
-          </div>
+            <div className="bg-card rounded-xl border border-border p-6">
+              <h3 className="font-semibold mb-4">Customer Signature</h3>
+              <p className="text-xs text-muted-foreground mb-3">Customer signs here to acknowledge receipt. This will appear on the final document.</p>
+              <SignaturePad label="Customer Signature" onSave={setCustomerSig} />
+            </div>
           )}
         </div>
 
@@ -494,6 +394,7 @@ export default function CreateDocument() {
           </Button>
         </div>
       </div>
+
       {/* PDF Preview Modal */}
       {showPdfPreview && (
         <div className="fixed inset-0 z-50 bg-black/60 flex flex-col" onClick={() => setShowPdfPreview(false)}>
@@ -513,12 +414,12 @@ export default function CreateDocument() {
           <div className="flex-1 overflow-auto bg-gray-100 p-6" onClick={e => e.stopPropagation()}>
             <div className="max-w-3xl mx-auto">
               <DocumentPreview form={form} items={calcs.lineItems} calcs={calcs} sym={sym} docType={form.type || docType} managerSig={managerSig} customerSig={customerSig} template={template} templateColor={templateColor} />
-              </div>
-              </div>
-              </div>
-              )}
+            </div>
+          </div>
+        </div>
+      )}
 
-              {/* Hidden full-size preview for PDF generation */}
+      {/* Hidden full-size preview for PDF generation */}
       <div style={{ position: "absolute", left: "-9999px", top: 0, width: 760 }}>
         <div ref={pdfRef}>
           <DocumentPreview form={form} items={calcs.lineItems} calcs={calcs} sym={sym} docType={form.type || docType} managerSig={managerSig} customerSig={customerSig} template={template} templateColor={templateColor} />
