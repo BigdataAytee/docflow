@@ -1,12 +1,10 @@
 import { buildTheme } from "./TemplateSelector";
 
 const TYPE_LABELS = {
-  invoice: "INVOICE", quotation: "QUOTATION", receipt: "RECEIPT",
-  purchase_order: "PURCHASE ORDER", credit_note: "CREDIT NOTE",
-  waybill: "WAYBILL", delivery_note: "DELIVERY NOTE",
+  invoice: "INVOICE", quotation: "QUOTATION", receipt: "RECEIPT", waybill: "WAYBILL",
 };
-const BILL_TO_LABEL = { purchase_order: "VENDOR", waybill: "SHIP TO", delivery_note: "SHIP TO" };
-const AMOUNT_LABEL  = { receipt: "AMOUNT RECEIVED", credit_note: "AMOUNT CREDITED", quotation: "QUOTED AMOUNT", purchase_order: "ORDER TOTAL" };
+const BILL_TO_LABEL = { waybill: "SHIP TO" };
+const AMOUNT_LABEL  = { receipt: "AMOUNT RECEIVED", quotation: "QUOTED AMOUNT" };
 
 const fmt = (n) => (n || 0).toLocaleString("en", { minimumFractionDigits: 2 });
 

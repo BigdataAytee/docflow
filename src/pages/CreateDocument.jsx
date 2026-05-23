@@ -16,9 +16,7 @@ import SignaturePad from "../components/SignaturePad";
 import DocumentPreview from "../components/DocumentPreview";
 
 const typeLabels = {
-  invoice: "Invoice", quotation: "Quotation", receipt: "Receipt",
-  waybill: "Waybill", delivery_note: "Delivery Note",
-  purchase_order: "Purchase Order", credit_note: "Credit Note",
+  invoice: "Invoice", quotation: "Quotation", receipt: "Receipt", waybill: "Waybill",
 };
 
 const CURRENCIES = [
@@ -99,7 +97,7 @@ export default function CreateDocument() {
         setTemplateColor(user.default_template_color || "slate");
       });
       base44.entities.Document.list("-created_date", 1).then(docs => {
-        const prefix = docType === "invoice" ? "INV" : docType === "quotation" ? "QUO" : docType === "receipt" ? "REC" : docType === "purchase_order" ? "PO" : docType === "credit_note" ? "CN" : "DOC";
+        const prefix = docType === "invoice" ? "INV" : docType === "quotation" ? "QUO" : docType === "receipt" ? "REC" : docType === "waybill" ? "WB" : "DOC";
         const num = docs.length > 0 ? parseInt((docs[0].number || "0").replace(/\D/g, "") || "0") + 1 : 1;
         const seq = String(num).padStart(4, "0");
         setNumPrefix(prefix);

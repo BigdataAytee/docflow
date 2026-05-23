@@ -20,9 +20,7 @@ const CURRENCY_SYMBOLS = {
 const sym = (code) => CURRENCY_SYMBOLS[code] || code || "₦";
 
 const typeLabels = {
-  invoice: "Invoice", quotation: "Quotation", receipt: "Receipt",
-  waybill: "Waybill", delivery_note: "Delivery Note",
-  purchase_order: "Purchase Order", credit_note: "Credit Note",
+  invoice: "Invoice", quotation: "Quotation", receipt: "Receipt", waybill: "Waybill",
 };
 
 export default function Dashboard() {

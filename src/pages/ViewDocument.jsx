@@ -11,9 +11,7 @@ import SignaturePad from "../components/SignaturePad";
 import { buildTheme } from "../components/TemplateSelector";
 
 const TYPE_LABELS = {
-  invoice: "INVOICE", quotation: "QUOTATION", receipt: "RECEIPT",
-  waybill: "WAYBILL", delivery_note: "DELIVERY NOTE",
-  purchase_order: "PURCHASE ORDER", credit_note: "CREDIT NOTE",
+  invoice: "INVOICE", quotation: "QUOTATION", receipt: "RECEIPT", waybill: "WAYBILL",
 };
 
 const STATUS_COLORS = {
@@ -24,12 +22,11 @@ const STATUS_COLORS = {
 };
 
 const AMOUNT_LABEL = {
-  receipt: "Amount Paid", credit_note: "Amount Credited",
-  quotation: "Quoted Amount", purchase_order: "Order Total",
+  receipt: "Amount Paid", quotation: "Quoted Amount",
 };
 
 const CUSTOMER_LABEL = {
-  purchase_order: "Vendor", waybill: "Ship To", delivery_note: "Ship To",
+  waybill: "Ship To",
 };
 
 export default function ViewDocument() {
@@ -268,7 +265,7 @@ function UnifiedTemplate({ doc, onSaveManagerSig, onSaveCustomerSig, isPdf = fal
           {doc.due_date && (
             <div className="mb-2">
               <p className="text-[10px] text-gray-400 uppercase tracking-wider font-semibold">
-                <span style={{ color: T.tableHeaderColor }}>{doc.type === "purchase_order" ? "Required By" : doc.type === "quotation" ? "Valid Until" : "Due Date"}</span>
+                <span style={{ color: T.tableHeaderColor }}>{doc.type === "quotation" ? "Valid Until" : "Due Date"}</span>
               </p>
               <p className="font-semibold text-gray-700 text-sm">{format(new Date(doc.due_date), "dd MMM yyyy")}</p>
             </div>

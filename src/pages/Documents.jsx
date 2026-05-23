@@ -7,9 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { format } from "date-fns";
 
 const typeLabels = {
-  invoice: "Invoice", quotation: "Quotation", receipt: "Receipt",
-  waybill: "Waybill", delivery_note: "Delivery Note",
-  purchase_order: "Purchase Order", credit_note: "Credit Note",
+  invoice: "Invoice", quotation: "Quotation", receipt: "Receipt", waybill: "Waybill",
 };
 
 const statusColors = {

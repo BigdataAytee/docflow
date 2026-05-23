@@ -8,10 +8,7 @@
         "invoice",
         "quotation",
         "receipt",
-        "waybill",
-        "delivery_note",
-        "purchase_order",
-        "credit_note"
+        "waybill"
       ],
       "title": "Document Type"
     },
