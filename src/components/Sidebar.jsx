@@ -18,10 +18,6 @@ const docTypes = [
   { label: "Quotation", value: "quotation" },
   { label: "Receipt", value: "receipt" },
   { label: "Waybill", value: "waybill" },
-  { label: "Letterhead", value: "letterhead" },
-  { label: "Purchase Order", value: "purchase_order" },
-  { label: "Delivery Note", value: "delivery_note" },
-  { label: "Credit Note", value: "credit_note" },
 ];
 
 export default function Sidebar({ onClose }) {
