@@ -23,6 +23,7 @@ export default function Settings() {
     default_tax_rate: 7.5,
     default_terms: "",
     default_payment_instructions: "",
+    document_tagline: "",
   });
 
   useEffect(() => {
@@ -40,6 +41,7 @@ export default function Settings() {
           default_tax_rate: user.default_tax_rate ?? 7.5,
           default_terms: user.default_terms || "",
           default_payment_instructions: user.default_payment_instructions || "",
+          document_tagline: user.document_tagline || "",
         }));
         if (user.logo_url) setLogoPreview(user.logo_url);
       }
@@ -141,6 +143,7 @@ export default function Settings() {
           </div>
           <div className="mt-4"><Label>{"Default Terms & Conditions"}</Label><Textarea value={form.default_terms} onChange={e => update("default_terms", e.target.value)} rows={3} /></div>
           <div className="mt-4"><Label>Default Payment Instructions</Label><Textarea value={form.default_payment_instructions} onChange={e => update("default_payment_instructions", e.target.value)} rows={3} /></div>
+          <div className="mt-4"><Label>Document Tagline</Label><p className="text-xs text-muted-foreground mb-1.5">A short sentence displayed at the bottom of every document.</p><Input value={form.document_tagline} onChange={e => update("document_tagline", e.target.value)} placeholder="e.g. Thank you for your business — we look forward to serving you again." /></div>
         </div>
 
         <Button onClick={save} disabled={saving}>{saving ? "Saving..." : "Save Settings"}</Button>

@@ -58,6 +58,7 @@ export default function ViewDocument() {
           company_phone: user.company_phone || d.company_phone || "",
           company_address: user.company_address || d.company_address || "",
           company_website: user.company_website || d.company_website || "",
+          document_tagline: user.document_tagline || "",
         };
       }
       setDoc(d);
@@ -410,11 +411,11 @@ function UnifiedTemplate({ doc, onSaveManagerSig, onSaveCustomerSig, isPdf = fal
       </div>
 
       {/* Business tagline */}
-      <div className="px-12 py-5 text-center">
-        <p className="text-xs text-gray-400 italic tracking-wide">
-          Thank you for your business — we look forward to serving you again.
-        </p>
-      </div>
+      {doc.document_tagline && (
+        <div className="px-12 py-5 text-center">
+          <p className="text-xs text-gray-400 italic tracking-wide">{doc.document_tagline}</p>
+        </div>
+      )}
     </div>
   );
 }
