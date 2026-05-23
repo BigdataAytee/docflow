@@ -127,27 +127,29 @@ export default function DocumentPreview({ form, items, calcs, sym, docType, mana
         </>
       )}
 
-      {/* Signatures row */}
-      {((managerSig || form.manager_signature) || (docType === "waybill" && (customerSig || form.customer_signature))) && (
-        <div style={{ display: "flex", gap: 32, padding: "20px 32px", borderTop: "1px solid #e2e8f0" }}>
-          {(managerSig || form.manager_signature) && (
-            <div>
+      {/* Signatures row — always shown for printing */}
+      {!isLetter && (
+        <div style={{ display: "flex", gap: 48, padding: "20px 32px", borderTop: "1px solid #e2e8f0" }}>
+          <div style={{ minWidth: 180 }}>
+            {(managerSig || form.manager_signature) && (
               <img src={managerSig || form.manager_signature} alt="Manager Signature" style={{ height: 56, objectFit: "contain", display: "block", marginBottom: 6 }} />
-              <div style={{ borderTop: "1px solid #94a3b8", paddingTop: 4, minWidth: 160 }}>
-                <div style={{ fontSize: 9, color: "#94a3b8", textTransform: "uppercase", letterSpacing: 1 }}>Manager's Signature</div>
-                {form.company_name && <div style={{ fontSize: 11, color: "#475569", marginTop: 2 }}>{form.company_name}</div>}
-              </div>
+            )}
+            {!(managerSig || form.manager_signature) && <div style={{ height: 56 }} />}
+            <div style={{ borderTop: "1px solid #94a3b8", paddingTop: 4 }}>
+              <div style={{ fontSize: 9, color: "#94a3b8", textTransform: "uppercase", letterSpacing: 1 }}>Manager's Signature</div>
+              {form.company_name && <div style={{ fontSize: 11, color: "#475569", marginTop: 2 }}>{form.company_name}</div>}
             </div>
-          )}
-          {docType === "waybill" && (customerSig || form.customer_signature) && (
-            <div>
+          </div>
+          <div style={{ minWidth: 180 }}>
+            {(customerSig || form.customer_signature) && (
               <img src={customerSig || form.customer_signature} alt="Customer Signature" style={{ height: 56, objectFit: "contain", display: "block", marginBottom: 6 }} />
-              <div style={{ borderTop: "1px solid #94a3b8", paddingTop: 4, minWidth: 160 }}>
-                <div style={{ fontSize: 9, color: "#94a3b8", textTransform: "uppercase", letterSpacing: 1 }}>Customer's Signature</div>
-                {form.customer_name && <div style={{ fontSize: 11, color: "#475569", marginTop: 2 }}>{form.customer_name}</div>}
-              </div>
+            )}
+            {!(customerSig || form.customer_signature) && <div style={{ height: 56 }} />}
+            <div style={{ borderTop: "1px solid #94a3b8", paddingTop: 4 }}>
+              <div style={{ fontSize: 9, color: "#94a3b8", textTransform: "uppercase", letterSpacing: 1 }}>Customer's Signature</div>
+              {form.customer_name && <div style={{ fontSize: 11, color: "#475569", marginTop: 2 }}>{form.customer_name}</div>}
             </div>
-          )}
+          </div>
         </div>
       )}
 
