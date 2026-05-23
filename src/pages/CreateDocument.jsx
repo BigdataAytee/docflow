@@ -142,6 +142,7 @@ export default function CreateDocument() {
     setSaving(true);
     const doc = {
       ...form,
+      number: numPrefix && numSeq ? `${numPrefix}-${numSeq}` : form.number,
       template,
       template_color: templateColor,
       status,
