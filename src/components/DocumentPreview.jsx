@@ -20,12 +20,11 @@ export default function DocumentPreview({ form, items, calcs, sym, docType, mana
     <div style={{ width: 760, background: "#fff", border: "1px solid #e2e8f0", borderRadius: 8, overflow: "hidden", fontFamily: "'Helvetica Neue', Arial, sans-serif", minHeight: 1040 }}>
       {/* Header band */}
       <div style={{ borderBottom: "2px solid #1e293b", padding: "20px 32px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-        <div>
+        <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-start" }}>
           {form.logo_url
-            ? <img src={form.logo_url} alt="logo" style={{ height: 44, objectFit: "contain", marginBottom: 6 }} />
-            : <div style={{ height: 44 }} />}
-          <div style={{ fontWeight: 800, fontSize: 16, color: "#1e293b" }}>{form.company_name || "Your Company"}</div>
-          {form.company_phone && <div style={{ fontSize: 11, color: "#94a3b8", marginTop: 2 }}>{form.company_phone}</div>}
+            ? <img src={form.logo_url} alt="logo" style={{ height: 72, objectFit: "contain", marginBottom: 8 }} />
+            : <div style={{ height: 72 }} />}
+          <div style={{ fontWeight: 900, fontSize: 20, color: "#1e293b" }}>{form.company_name || "Your Company"}</div>
         </div>
         <div style={{ textAlign: "right" }}>
           <div style={{ fontSize: 28, fontWeight: 900, letterSpacing: 2, color: "#1e293b" }}>{cfg.label}</div>
@@ -41,8 +40,15 @@ export default function DocumentPreview({ form, items, calcs, sym, docType, mana
         </div>
       </div>
 
-      {/* Customer strip */}
-      <div style={{ borderBottom: "1px solid #e2e8f0" }}>
+      {/* Bill From / Bill To strip */}
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", borderBottom: "1px solid #e2e8f0" }}>
+        <div style={{ padding: "18px 32px", borderRight: "1px solid #e2e8f0" }}>
+          <div style={{ fontSize: 9, color: "#94a3b8", textTransform: "uppercase", letterSpacing: 1, marginBottom: 6, fontWeight: 700 }}>Bill From</div>
+          {form.company_address && <div style={{ fontSize: 11, color: "#475569", marginBottom: 2, whiteSpace: "pre-line" }}>{form.company_address}</div>}
+          {form.company_phone && <div style={{ fontSize: 11, color: "#64748b", marginBottom: 2 }}>{form.company_phone}</div>}
+          {form.company_email && <div style={{ fontSize: 11, color: "#64748b", marginBottom: 2 }}>{form.company_email}</div>}
+          {form.company_website && <div style={{ fontSize: 11, color: "#64748b" }}>{form.company_website}</div>}
+        </div>
         <div style={{ padding: "18px 32px" }}>
           <div style={{ fontSize: 9, color: "#94a3b8", textTransform: "uppercase", letterSpacing: 1, marginBottom: 6 }}>
             {docType === "purchase_order" ? "Vendor" : isLetter ? "To" : "Bill To"}
