@@ -50,7 +50,7 @@ export default function CustomerForm({ initial, onSave, onCancel }) {
       {/* Ship To */}
       <div className="border border-gray-200 rounded-lg p-4 space-y-3">
         <div className="flex items-center justify-between">
-          <p className="text-xs font-bold text-gray-500 uppercase tracking-wider">Ship To</p>
+          <p className="text-xs font-bold text-gray-500 uppercase tracking-wider">To</p>
           <button
             type="button"
             className="text-xs text-primary hover:underline"
