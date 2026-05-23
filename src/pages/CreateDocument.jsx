@@ -325,7 +325,9 @@ export default function CreateDocument() {
           <div className="bg-card rounded-xl border border-border p-6 space-y-4">
             <div><Label>Notes / Message to Customer</Label><Textarea value={form.notes} onChange={e => setForm(f => ({ ...f, notes: e.target.value }))} rows={2} placeholder="e.g. Thanks for your business." /></div>
             <div><Label>{"Terms & Conditions"}</Label><Textarea value={form.terms} onChange={e => setForm(f => ({ ...f, terms: e.target.value }))} rows={2} /></div>
-            <div><Label>Payment Instructions</Label><Textarea value={form.payment_instructions} onChange={e => setForm(f => ({ ...f, payment_instructions: e.target.value }))} rows={2} /></div>
+            {!['receipt', 'waybill'].includes(docType) && (
+              <div><Label>Payment Instructions</Label><Textarea value={form.payment_instructions} onChange={e => setForm(f => ({ ...f, payment_instructions: e.target.value }))} rows={2} /></div>
+            )}
           </div>
 
           {/* Manager Signature */}

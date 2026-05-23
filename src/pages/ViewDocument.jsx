@@ -398,7 +398,7 @@ function UnifiedTemplate({ doc, onSaveManagerSig, onSaveCustomerSig, isPdf = fal
           )}
         </div>
 
-        {doc.payment_instructions && (
+        {doc.payment_instructions && !['receipt', 'waybill'].includes(doc.type) && (
           <div className="border-t border-gray-200 pt-6 mt-6">
             <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-2">Payment Detail</p>
             <p className="text-sm text-gray-700 whitespace-pre-line">{doc.payment_instructions}</p>
