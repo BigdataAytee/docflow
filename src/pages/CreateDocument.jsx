@@ -478,16 +478,16 @@ export default function CreateDocument() {
           </div>
           <div className="flex-1 overflow-auto bg-gray-100 p-6" onClick={e => e.stopPropagation()}>
             <div className="max-w-3xl mx-auto">
-              <DocumentPreview form={form} items={calcs.lineItems} calcs={calcs} sym={sym} docType={form.type || docType} />
-            </div>
-          </div>
-        </div>
-      )}
+              <DocumentPreview form={form} items={calcs.lineItems} calcs={calcs} sym={sym} docType={form.type || docType} managerSig={managerSig} />
+              </div>
+              </div>
+              </div>
+              )}
 
-      {/* Hidden full-size preview for PDF generation */}
+              {/* Hidden full-size preview for PDF generation */}
       <div style={{ position: "absolute", left: "-9999px", top: 0, width: 760 }}>
         <div ref={pdfRef}>
-          <DocumentPreview form={form} items={calcs.lineItems} calcs={calcs} sym={sym} docType={form.type || docType} />
+          <DocumentPreview form={form} items={calcs.lineItems} calcs={calcs} sym={sym} docType={form.type || docType} managerSig={managerSig} />
         </div>
       </div>
     </div>

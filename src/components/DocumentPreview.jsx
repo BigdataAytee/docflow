@@ -11,7 +11,7 @@ const TYPE_CONFIG = {
 
 const fmt = (n) => (n || 0).toLocaleString("en", { minimumFractionDigits: 2 });
 
-export default function DocumentPreview({ form, items, calcs, sym, docType }) {
+export default function DocumentPreview({ form, items, calcs, sym, docType, managerSig }) {
   const cfg = TYPE_CONFIG[docType] || TYPE_CONFIG.invoice;
   const isLetter = docType === "letterhead";
   const lineItems = items || [];
@@ -41,19 +41,15 @@ export default function DocumentPreview({ form, items, calcs, sym, docType }) {
         </div>
       </div>
 
-      {/* Company + Customer strip */}
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", borderBottom: "1px solid #e2e8f0" }}>
-        <div style={{ padding: "18px 32px", borderRight: "1px solid #e2e8f0" }}>
-          <div style={{ fontSize: 9, color: "#94a3b8", textTransform: "uppercase", letterSpacing: 1, marginBottom: 6, fontWeight: 700 }}>From</div>
-          <div style={{ fontSize: 12, color: "#475569" }}>{form.company_address || "—"}</div>
-          {form.company_email && <div style={{ fontSize: 11, color: "#94a3b8", marginTop: 3 }}>{form.company_email}</div>}
-        </div>
+      {/* Customer strip */}
+      <div style={{ borderBottom: "1px solid #e2e8f0" }}>
         <div style={{ padding: "18px 32px" }}>
           <div style={{ fontSize: 9, color: "#94a3b8", textTransform: "uppercase", letterSpacing: 1, marginBottom: 6 }}>
             {docType === "purchase_order" ? "Vendor" : isLetter ? "To" : "Bill To"}
           </div>
           <div style={{ fontSize: 13, fontWeight: 700, color: "#1e293b" }}>{form.customer_name || "—"}</div>
           {form.customer_address && <div style={{ fontSize: 11, color: "#64748b", marginTop: 3, whiteSpace: "pre-line" }}>{form.customer_address}</div>}
+          {form.customer_email && <div style={{ fontSize: 11, color: "#94a3b8", marginTop: 3 }}>{form.customer_email}</div>}
         </div>
       </div>
 
@@ -122,6 +118,17 @@ export default function DocumentPreview({ form, items, calcs, sym, docType }) {
             </div>
           </div>
         </>
+      )}
+
+      {/* Manager Signature */}
+      {(managerSig || form.manager_signature) && (
+        <div style={{ padding: "20px 32px", borderTop: "1px solid #e2e8f0" }}>
+          <img src={managerSig || form.manager_signature} alt="Manager Signature" style={{ height: 56, objectFit: "contain", display: "block", marginBottom: 6 }} />
+          <div style={{ borderTop: "1px solid #94a3b8", paddingTop: 4, display: "inline-block", minWidth: 160 }}>
+            <div style={{ fontSize: 9, color: "#94a3b8", textTransform: "uppercase", letterSpacing: 1 }}>Manager's Signature</div>
+            {form.company_name && <div style={{ fontSize: 11, color: "#475569", marginTop: 2 }}>{form.company_name}</div>}
+          </div>
+        </div>
       )}
 
       {/* Notes bar */}

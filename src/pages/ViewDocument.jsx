@@ -302,7 +302,7 @@ function UnifiedTemplate({ doc, onSaveManagerSig, onSaveCustomerSig }) {
         {/* Signatures */}
         <div className={`border-t border-gray-200 pt-8 mt-6 grid gap-12 ${doc.type === 'waybill' ? 'grid-cols-2' : 'grid-cols-1 max-w-xs'}`}>
           <div>
-            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-3">Authorized Signatory</p>
+            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-3">Manager's Signature</p>
             {doc.manager_signature ? (
               <div>
                 <img src={doc.manager_signature} alt="Manager Signature" className="h-16 object-contain mb-2" />
