@@ -22,8 +22,8 @@ export default function DocumentPreview({ form, items, calcs, sym, docType, mana
       <div style={{ borderBottom: "2px solid #1e293b", padding: "20px 32px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
         <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-start" }}>
           {form.logo_url
-            ? <img src={form.logo_url} alt="logo" style={{ height: 96, objectFit: "contain", marginBottom: 8 }} />
-            : <div style={{ height: 96 }} />}
+            ? <img src={form.logo_url} alt="logo" style={{ height: 120, maxWidth: 220, objectFit: "contain", marginBottom: 10, display: "block" }} />
+            : <div style={{ height: 120 }} />}
           <div style={{ fontWeight: 900, fontSize: 20, color: "#1e293b" }}>{form.company_name || "Your Company"}</div>
         </div>
         <div style={{ textAlign: "right" }}>
