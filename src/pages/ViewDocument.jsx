@@ -82,8 +82,20 @@ export default function ViewDocument() {
     const element = pdfRef.current;
     const canvas = await html2canvas(element, { scale: 2, useCORS: true, backgroundColor: "#ffffff" });
     const imgData = canvas.toDataURL("image/png");
-    const pdf = new jsPDF({ orientation: "portrait", unit: "px", format: [canvas.width / 2, canvas.height / 2] });
-    pdf.addImage(imgData, "PNG", 0, 0, canvas.width / 2, canvas.height / 2);
+    const pdf = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
+    const pageWidthMm = pdf.internal.pageSize.getWidth();
+    const pageHeightMm = pdf.internal.pageSize.getHeight();
+    const imgHeightMm = (canvas.height / canvas.width) * pageWidthMm;
+    let remaining = imgHeightMm;
+    let yPos = 0;
+    pdf.addImage(imgData, "PNG", 0, yPos, pageWidthMm, imgHeightMm);
+    remaining -= pageHeightMm;
+    while (remaining > 0) {
+      yPos -= pageHeightMm;
+      pdf.addPage();
+      pdf.addImage(imgData, "PNG", 0, yPos, pageWidthMm, imgHeightMm);
+      remaining -= pageHeightMm;
+    }
     return pdf.output("blob");
   };
 
@@ -228,7 +240,7 @@ export default function ViewDocument() {
           </div>
           <div className="flex-1 overflow-auto bg-gray-100 p-6" onClick={e => e.stopPropagation()}>
             <div className="max-w-4xl mx-auto">
-              <div ref={pdfRef}>
+              <div ref={pdfRef} style={{ width: 794 }}>
                 <UnifiedTemplate doc={doc} onSaveManagerSig={saveManagerSig} onSaveCustomerSig={saveCustomerSig} isPdf={true} />
               </div>
             </div>

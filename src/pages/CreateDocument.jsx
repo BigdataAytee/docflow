@@ -175,9 +175,19 @@ export default function CreateDocument() {
     const canvas = await html2canvas(pdfRef.current, { scale: 2, useCORS: true, logging: false });
     const imgData = canvas.toDataURL("image/png");
     const pdf = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
-    const pageWidth = pdf.internal.pageSize.getWidth();
-    const pageHeight = (canvas.height * pageWidth) / canvas.width;
-    pdf.addImage(imgData, "PNG", 0, 0, pageWidth, pageHeight);
+    const pageWidthMm = pdf.internal.pageSize.getWidth();
+    const pageHeightMm = pdf.internal.pageSize.getHeight();
+    const imgHeightMm = (canvas.height / canvas.width) * pageWidthMm;
+    let remaining = imgHeightMm;
+    let yPos = 0;
+    pdf.addImage(imgData, "PNG", 0, yPos, pageWidthMm, imgHeightMm);
+    remaining -= pageHeightMm;
+    while (remaining > 0) {
+      yPos -= pageHeightMm;
+      pdf.addPage();
+      pdf.addImage(imgData, "PNG", 0, yPos, pageWidthMm, imgHeightMm);
+      remaining -= pageHeightMm;
+    }
     return pdf.output("blob");
   };
 
@@ -409,7 +419,7 @@ export default function CreateDocument() {
               </div>
             </div>
             <div className="overflow-hidden" style={{ height: 460 }}>
-              <div style={{ transform: "scale(0.42)", transformOrigin: "top left", width: 760, pointerEvents: "none" }}>
+              <div style={{ transform: "scale(0.40)", transformOrigin: "top left", width: 794, pointerEvents: "none" }}>
                 <DocumentPreview form={form} items={calcs.lineItems} calcs={calcs} sym={sym} docType={docType} template={template} templateColor={templateColor} />
               </div>
             </div>
@@ -478,7 +488,7 @@ export default function CreateDocument() {
       )}
 
       {/* Hidden full-size preview for PDF generation */}
-      <div style={{ position: "absolute", left: "-9999px", top: 0, width: 760 }}>
+      <div style={{ position: "absolute", left: "-9999px", top: 0, width: 794 }}>
         <div ref={pdfRef}>
           <DocumentPreview form={form} items={calcs.lineItems} calcs={calcs} sym={sym} docType={form.type || docType} managerSig={managerSig} customerSig={customerSig} template={template} templateColor={templateColor} />
         </div>

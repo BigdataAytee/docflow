@@ -83,7 +83,7 @@ function ClassicDoc({ form, items, calcs, sym, docType, managerSig, customerSig,
   const isColoredHeader = T.headerBg !== "#ffffff" && T.headerBg !== "#fffbeb";
 
   return (
-    <div style={{ background: "#fff", minHeight: 1040 }}>
+    <div style={{ background: "#fff", minHeight: 1123 }}>
       <div style={{ background: T.headerBg, borderBottom: `2px solid ${T.accentColor}`, padding: "24px 32px", display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
         <div>
           {form.logo_url ? <img src={form.logo_url} alt="logo" style={{ height: 110, maxWidth: 200, objectFit: "contain", display: "block", marginBottom: 8 }} /> : <div style={{ height: 8 }} />}
@@ -135,7 +135,7 @@ function ModernDoc({ form, items, calcs, sym, docType, managerSig, customerSig, 
   const billToLabel = BILL_TO_LABEL[docType] || "BILL TO";
   const amountLabel = AMOUNT_LABEL[docType] || "BALANCE DUE";
   return (
-    <div style={{ background: "#fff", minHeight: 1040 }}>
+    <div style={{ background: "#fff", minHeight: 1123 }}>
       <div style={{ background: T.headerBg, padding: "0" }}>
         <div style={{ padding: "28px 36px 0", display: "flex", alignItems: "flex-end", justifyContent: "space-between" }}>
           <div style={{ flex: 1 }}>
@@ -190,7 +190,7 @@ function MinimalDoc({ form, items, calcs, sym, docType, managerSig, customerSig,
   const billToLabel = BILL_TO_LABEL[docType] || "BILL TO";
   const amountLabel = AMOUNT_LABEL[docType] || "BALANCE DUE";
   return (
-    <div style={{ background: "#fff", minHeight: 1040 }}>
+    <div style={{ background: "#fff", minHeight: 1123 }}>
       <div style={{ height: 4, background: T.accentColor }} />
       <div style={{ padding: "28px 40px 18px", display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
         <div>
@@ -243,7 +243,7 @@ function BoldDoc({ form, items, calcs, sym, docType, managerSig, customerSig, T 
   const rightBorder = isColoredHeader ? T.accentColor : T.stripBorder;
 
   return (
-    <div style={{ background: "#fff", minHeight: 1040 }}>
+    <div style={{ background: "#fff", minHeight: 1123 }}>
       <div style={{ display: "grid", gridTemplateColumns: "55% 45%" }}>
         <div style={{ background: T.headerBg, padding: "32px 32px", minHeight: 200, display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
           <div>
@@ -292,7 +292,7 @@ function ElegantDoc({ form, items, calcs, sym, docType, managerSig, customerSig,
   const billToLabel = BILL_TO_LABEL[docType] || "BILL TO";
   const amountLabel = AMOUNT_LABEL[docType] || "BALANCE DUE";
   return (
-    <div style={{ background: "#fff", minHeight: 1040 }}>
+    <div style={{ background: "#fff", minHeight: 1123 }}>
       <div style={{ height: 2, background: T.accentColor }} />
       <div style={{ height: 2, background: T.accentColor, margin: "3px 0 0", opacity: 0.3 }} />
       <div style={{ padding: "28px 40px 20px", textAlign: "center", borderBottom: `1px solid ${T.stripBorder}` }}>
@@ -358,7 +358,7 @@ export default function DocumentPreview({ form, items, calcs, sym, docType, mana
   const layout = template || form?.template || "classic";
 
   return (
-    <div style={{ width: 760, border: "1px solid #e2e8f0", borderRadius: 8, overflow: "hidden", fontFamily: T.font }}>
+    <div style={{ width: 794, border: "1px solid #e2e8f0", borderRadius: 8, overflow: "hidden", fontFamily: T.font }}>
       {layout === "modern"  && <ModernDoc  {...shared} />}
       {layout === "minimal" && <MinimalDoc {...shared} />}
       {layout === "bold"    && <BoldDoc    {...shared} />}
