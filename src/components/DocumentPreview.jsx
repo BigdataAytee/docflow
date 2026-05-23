@@ -117,7 +117,7 @@ function ClassicDoc({ form, items, calcs, sym, docType, managerSig, customerSig,
       <div style={{ display: "flex", gap: 28, padding: "10px 32px", borderBottom: `1px solid ${T.stripBorder}`, fontSize: 11, background: "#fff" }}>
         {form.issue_date && <div><span style={{ color: "#94a3b8" }}>Date: </span><span style={{ fontWeight: 600, color: "#334155" }}>{form.issue_date}</span></div>}
         {form.due_date && <div><span style={{ color: "#94a3b8" }}>Due: </span><span style={{ fontWeight: 600, color: "#334155" }}>{form.due_date}</span></div>}
-        {form.terms_label && <div><span style={{ color: "#94a3b8" }}>Terms: </span><span style={{ color: "#334155" }}>{form.terms_label}</span></div>}
+
       </div>
       <ItemsTable items={items} docType={docType} T={T} />
       {docType !== "waybill" && <TotalsBlock calcs={calcs} form={form} sym={sym} T={T} amountLabel={amountLabel} />}
@@ -218,7 +218,7 @@ function MinimalDoc({ form, items, calcs, sym, docType, managerSig, customerSig,
           <div style={{ marginLeft: "auto", textAlign: "right" }}>
             <div style={{ fontSize: 8, fontWeight: 700, letterSpacing: 2, color: T.accentColor, textTransform: "uppercase", marginBottom: 5 }}>{amountLabel}</div>
             <div style={{ fontSize: 28, fontWeight: 900, color: "#111827" }}>{sym}{fmt(calcs?.total || 0)}</div>
-            {form.terms_label && <div style={{ fontSize: 9, color: "#9ca3af", marginTop: 3 }}>{form.terms_label}</div>}
+
           </div>
         )}
       </div>
@@ -322,7 +322,7 @@ function ElegantDoc({ form, items, calcs, sym, docType, managerSig, customerSig,
           <div style={{ fontSize: 8, fontWeight: 700, letterSpacing: 2, color: T.tableHeaderColor, textTransform: "uppercase", marginBottom: 6 }}>Details</div>
           {form.issue_date && <div style={{ fontSize: 10, color: "#6b7280" }}>Issued: {form.issue_date}</div>}
           {form.due_date && <div style={{ fontSize: 10, color: "#6b7280", marginTop: 2 }}>Due: {form.due_date}</div>}
-          {form.terms_label && <div style={{ fontSize: 10, color: "#9ca3af", marginTop: 2, fontStyle: "italic" }}>{form.terms_label}</div>}
+
           {docType !== "waybill" && (
             <div style={{ marginTop: 8 }}>
               <div style={{ fontSize: 8, color: T.tableHeaderColor, textTransform: "uppercase", letterSpacing: 1 }}>{amountLabel}</div>

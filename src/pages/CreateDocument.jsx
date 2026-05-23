@@ -287,7 +287,7 @@ export default function CreateDocument() {
                   </div>
                 </DialogContent>
               </Dialog>
-              <div><Label>Terms</Label><Input value={form.terms_label} onChange={e => setForm(f => ({ ...f, terms_label: e.target.value }))} placeholder="Due on Receipt" /></div>
+
               <div><Label>Issue Date</Label><Input type="date" value={form.issue_date} onChange={e => setForm(f => ({ ...f, issue_date: e.target.value }))} /></div>
               <div><Label>Due Date</Label><Input type="date" value={form.due_date} onChange={e => setForm(f => ({ ...f, due_date: e.target.value }))} /></div>
             </div>
