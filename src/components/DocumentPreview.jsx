@@ -56,7 +56,8 @@ function TotalsBlock({ calcs, form, sym, T, amountLabel }) {
   );
 }
 
-function Sigs({ managerSig, customerSig, form, T }) {
+function Sigs({ managerSig, customerSig, form, T, docType }) {
+  const showCustomer = docType === "waybill";
   return (
     <div style={{ display: "flex", gap: 40, padding: "16px 28px", borderTop: "1px solid #e2e8f0" }}>
       <div style={{ minWidth: 160 }}>
@@ -66,12 +67,14 @@ function Sigs({ managerSig, customerSig, form, T }) {
           {form?.company_name && <div style={{ fontSize: 10, color: "#475569", marginTop: 1 }}>{form.company_name}</div>}
         </div>
       </div>
+      {showCustomer && (
       <div style={{ minWidth: 160 }}>
         {(customerSig || form?.customer_signature) ? <img src={customerSig || form.customer_signature} alt="" style={{ height: 48, objectFit: "contain", display: "block", marginBottom: 4 }} /> : <div style={{ height: 48 }} />}
         <div style={{ borderTop: `1px solid ${T.accentColor}`, paddingTop: 3 }}>
           <div style={{ fontSize: 8, color: T.tableHeaderColor, textTransform: "uppercase", letterSpacing: 1 }}>Customer's Signature</div>
         </div>
       </div>
+      )}
     </div>
   );
 }
@@ -128,7 +131,7 @@ function ClassicDoc({ form, items, calcs, sym, docType, managerSig, customerSig,
       {/* Body */}
       {isLetter ? <div style={{ padding: "28px 32px", minHeight: 400, fontSize: 12, color: "#334155", lineHeight: 2 }} dangerouslySetInnerHTML={{ __html: form.notes || "<p>Letter content...</p>" }} />
         : <><ItemsTable items={items} docType={docType} T={T} />{docType !== "waybill" && <TotalsBlock calcs={calcs} form={form} sym={sym} T={T} amountLabel={amountLabel} />}</>}
-      {!isLetter && <Sigs managerSig={managerSig} customerSig={customerSig} form={form} T={T} />}
+      {!isLetter && <Sigs managerSig={managerSig} customerSig={customerSig} form={form} T={T} docType={docType} />}
       <div style={{ padding: "10px 32px", background: T.stripBg, borderTop: `1px solid ${T.stripBorder}`, textAlign: "center", fontSize: 9, color: T.tableHeaderColor }}>
         {[form.company_phone, form.company_email, form.company_website].filter(Boolean).join("  ·  ")}
       </div>
@@ -190,7 +193,7 @@ function ModernDoc({ form, items, calcs, sym, docType, managerSig, customerSig, 
       {/* Body */}
       {isLetter ? <div style={{ padding: "28px 36px", minHeight: 400, fontSize: 12, color: "#334155", lineHeight: 2 }} dangerouslySetInnerHTML={{ __html: form.notes || "<p>Letter content...</p>" }} />
         : <><ItemsTable items={items} docType={docType} T={T} />{docType !== "waybill" && <TotalsBlock calcs={calcs} form={form} sym={sym} T={T} amountLabel={amountLabel} />}</>}
-      {!isLetter && <Sigs managerSig={managerSig} customerSig={customerSig} form={form} T={T} />}
+      {!isLetter && <Sigs managerSig={managerSig} customerSig={customerSig} form={form} T={T} docType={docType} />}
       <div style={{ height: 6, background: T.accentColor }} />
       <div style={{ padding: "8px 36px", background: T.stripBg, textAlign: "center", fontSize: 9, color: T.tableHeaderColor }}>
         {[form.company_phone, form.company_email, form.company_website].filter(Boolean).join("  ·  ")}
@@ -249,7 +252,7 @@ function MinimalDoc({ form, items, calcs, sym, docType, managerSig, customerSig,
       {/* Body */}
       {isLetter ? <div style={{ padding: "28px 40px", minHeight: 400, fontSize: 12, color: "#374151", lineHeight: 2 }} dangerouslySetInnerHTML={{ __html: form.notes || "<p>Letter content...</p>" }} />
         : <><ItemsTable items={items} docType={docType} T={T} />{docType !== "waybill" && <TotalsBlock calcs={calcs} form={form} sym={sym} T={T} amountLabel={amountLabel} />}</>}
-      {!isLetter && <Sigs managerSig={managerSig} customerSig={customerSig} form={form} T={T} />}
+      {!isLetter && <Sigs managerSig={managerSig} customerSig={customerSig} form={form} T={T} docType={docType} />}
       <div style={{ padding: "10px 40px", borderTop: "1px solid #f3f4f6", textAlign: "center", fontSize: 9, color: "#d1d5db", letterSpacing: 1 }}>
         {[form.company_phone, form.company_email, form.company_website].filter(Boolean).join("  ·  ")}
       </div>
@@ -308,7 +311,7 @@ function BoldDoc({ form, items, calcs, sym, docType, managerSig, customerSig, T 
       {/* Body */}
       {isLetter ? <div style={{ padding: "28px 32px", minHeight: 400, fontSize: 12, color: "#334155", lineHeight: 2 }} dangerouslySetInnerHTML={{ __html: form.notes || "<p>Letter content...</p>" }} />
         : <><ItemsTable items={items} docType={docType} T={T} />{docType !== "waybill" && <TotalsBlock calcs={calcs} form={form} sym={sym} T={T} amountLabel={amountLabel} />}</>}
-      {!isLetter && <Sigs managerSig={managerSig} customerSig={customerSig} form={form} T={T} />}
+      {!isLetter && <Sigs managerSig={managerSig} customerSig={customerSig} form={form} T={T} docType={docType} />}
       <div style={{ height: 4, background: T.accentColor }} />
       <div style={{ padding: "8px 32px", background: T.stripBg, textAlign: "center", fontSize: 9, color: T.tableHeaderColor }}>
         {[form.company_phone, form.company_email, form.company_website].filter(Boolean).join("  ·  ")}
@@ -376,7 +379,7 @@ function ElegantDoc({ form, items, calcs, sym, docType, managerSig, customerSig,
       {/* Body */}
       {isLetter ? <div style={{ padding: "28px 40px", minHeight: 400, fontSize: 12, color: "#374151", lineHeight: 2 }} dangerouslySetInnerHTML={{ __html: form.notes || "<p>Letter content...</p>" }} />
         : <><ItemsTable items={items} docType={docType} T={T} />{docType !== "waybill" && <TotalsBlock calcs={calcs} form={form} sym={sym} T={T} amountLabel={amountLabel} />}</>}
-      {!isLetter && <Sigs managerSig={managerSig} customerSig={customerSig} form={form} T={T} />}
+      {!isLetter && <Sigs managerSig={managerSig} customerSig={customerSig} form={form} T={T} docType={docType} />}
 
       {/* Decorative footer */}
       <div style={{ padding: "12px 40px", textAlign: "center", borderTop: `1px solid ${T.stripBorder}` }}>

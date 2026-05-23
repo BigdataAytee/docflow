@@ -439,12 +439,14 @@ export default function CreateDocument() {
             <SignaturePad label="Manager Signature" onSave={setManagerSig} />
           </div>
 
-          {/* Customer Signature */}
+          {/* Customer Signature — waybill only */}
+          {docType === "waybill" && (
           <div className="bg-card rounded-xl border border-border p-6">
             <h3 className="font-semibold mb-4">Customer Signature</h3>
             <p className="text-xs text-muted-foreground mb-3">Customer signs here to acknowledge receipt. This will appear on the final document.</p>
             <SignaturePad label="Customer Signature" onSave={setCustomerSig} />
           </div>
+          )}
         </div>
 
         {/* Live Preview Sidebar — hidden on mobile */}
