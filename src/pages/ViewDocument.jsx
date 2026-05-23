@@ -322,21 +322,9 @@ function UnifiedTemplate({ doc, onSaveManagerSig, onSaveCustomerSig, isPdf = fal
             </div>
             )}
 
-            {(doc.notes || doc.terms || doc.payment_instructions) && (
-              <div className="border-t border-gray-200 pt-6 mb-8 space-y-4 text-sm text-gray-600">
-                {doc.notes && <p>{doc.notes}</p>}
-                {doc.terms && (
-                  <div>
-                    <p className="text-[10px] text-gray-400 uppercase tracking-wider font-semibold mb-1">Terms &amp; Conditions</p>
-                    <p>{doc.terms}</p>
-                  </div>
-                )}
-                {doc.payment_instructions && (
-                  <div>
-                    <p className="text-[10px] text-gray-400 uppercase tracking-wider font-semibold mb-1">Payment Instructions</p>
-                    <p>{doc.payment_instructions}</p>
-                  </div>
-                )}
+            {doc.notes && (
+              <div className="border-t border-gray-200 pt-6 mb-8 text-sm text-gray-600">
+                <p>{doc.notes}</p>
               </div>
             )}
           </>
@@ -404,6 +392,14 @@ function UnifiedTemplate({ doc, onSaveManagerSig, onSaveCustomerSig, isPdf = fal
             </div>
           )}
         </div>
+
+        {/* Payment Detail */}
+        {doc.payment_instructions && (
+          <div className="border-t border-gray-200 px-12 py-6">
+            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-2">Payment Detail</p>
+            <p className="text-sm text-gray-700 whitespace-pre-line">{doc.payment_instructions}</p>
+          </div>
+        )}
       </div>
 
       {/* Footer */}
