@@ -408,6 +408,13 @@ function UnifiedTemplate({ doc, onSaveManagerSig, onSaveCustomerSig, isPdf = fal
           {[doc.company_name, doc.company_phone, doc.company_email, doc.company_website].filter(Boolean).join("  ·  ")}
         </p>
       </div>
+
+      {/* Business tagline */}
+      <div className="px-12 py-5 text-center">
+        <p className="text-xs text-gray-400 italic tracking-wide">
+          Thank you for your business — we look forward to serving you again.
+        </p>
+      </div>
     </div>
   );
 }
