@@ -42,9 +42,21 @@ export default function Dashboard() {
     </div>
   );
 
-  const totalRevenue = documents.filter(d => d.status === "paid").reduce((s, d) => s + (d.total || 0), 0);
+  const CURRENCY_SYMBOLS = { NGN: "₦", USD: "$", EUR: "€", GBP: "£", GHS: "₵", KES: "KSh", ZAR: "R", CAD: "CA$", AUD: "A$" };
+  const getCurrSym = (code) => CURRENCY_SYMBOLS[code] || code || "₦";
+
+  const paidDocs = documents.filter(d => d.status === "paid");
+  const totalRevenue = paidDocs.reduce((s, d) => s + (d.total || 0), 0);
+  // pick most common currency among paid docs
+  const revCurrCount = paidDocs.reduce((acc, d) => { const c = d.currency || "NGN"; acc[c] = (acc[c] || 0) + 1; return acc; }, {});
+  const revCurrency = Object.keys(revCurrCount).sort((a, b) => revCurrCount[b] - revCurrCount[a])[0] || "NGN";
+  const revSym = getCurrSym(revCurrency);
+
   const pending = documents.filter(d => d.status === "sent" || d.status === "overdue");
   const pendingAmount = pending.reduce((s, d) => s + (d.balance_due || d.total || 0), 0);
+  const pendCurrCount = pending.reduce((acc, d) => { const c = d.currency || "NGN"; acc[c] = (acc[c] || 0) + 1; return acc; }, {});
+  const pendCurrency = Object.keys(pendCurrCount).sort((a, b) => pendCurrCount[b] - pendCurrCount[a])[0] || "NGN";
+  const pendSym = getCurrSym(pendCurrency);
   const recentDocs = documents.slice(0, 5);
 
   return (
@@ -64,8 +76,8 @@ export default function Dashboard() {
       {/* Stats — 2 cols on mobile, 4 on desktop */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
         <StatCard icon={FileText} label="Total Documents" value={documents.length} color="text-blue-600 bg-blue-50" />
-        <StatCard icon={DollarSign} label="Revenue" value={`₦${totalRevenue.toLocaleString()}`} color="text-emerald-600 bg-emerald-50" />
-        <StatCard icon={Clock} label="Pending" value={`₦${pendingAmount.toLocaleString()}`} sub={`${pending.length} docs`} color="text-amber-600 bg-amber-50" />
+        <StatCard icon={DollarSign} label="Revenue" value={`${revSym}${totalRevenue.toLocaleString()}`} color="text-emerald-600 bg-emerald-50" />
+        <StatCard icon={Clock} label="Pending" value={`${pendSym}${pendingAmount.toLocaleString()}`} sub={`${pending.length} docs`} color="text-amber-600 bg-amber-50" />
         <StatCard icon={Users} label="Customers" value={customers.length} color="text-purple-600 bg-purple-50" />
       </div>
 
