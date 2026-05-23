@@ -1,4 +1,4 @@
-import { TEMPLATES } from "./TemplateSelector";
+import { buildTheme } from "./TemplateSelector";
 
 const TYPE_CONFIG = {
   invoice:        { label: "INVOICE" },
@@ -13,11 +13,11 @@ const TYPE_CONFIG = {
 
 const fmt = (n) => (n || 0).toLocaleString("en", { minimumFractionDigits: 2 });
 
-export default function DocumentPreview({ form, items, calcs, sym, docType, managerSig, customerSig, template }) {
+export default function DocumentPreview({ form, items, calcs, sym, docType, managerSig, customerSig, template, templateColor }) {
   const cfg = TYPE_CONFIG[docType] || TYPE_CONFIG.invoice;
   const isLetter = docType === "letterhead";
   const lineItems = items || [];
-  const T = TEMPLATES[template || form?.template || "classic"] || TEMPLATES.classic;
+  const T = buildTheme(template || form?.template || "classic", templateColor || form?.template_color || "slate");
 
   const isColoredHeader = T.headerBg !== "#ffffff" && T.headerBg !== "#fffbeb";
 

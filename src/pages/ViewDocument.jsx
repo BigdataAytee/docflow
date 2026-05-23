@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { format } from "date-fns";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import SignaturePad from "../components/SignaturePad";
-import { TEMPLATES } from "../components/TemplateSelector";
+import { buildTheme } from "../components/TemplateSelector";
 import LetterheadTemplate from "../components/LetterheadTemplate";
 
 const TYPE_LABELS = {
@@ -194,7 +194,7 @@ function UnifiedTemplate({ doc, onSaveManagerSig, onSaveCustomerSig, isPdf = fal
   const isLetter = doc.type === "letterhead";
   const customerLabel = CUSTOMER_LABEL[doc.type] || "Sold To";
   const amountLabel = AMOUNT_LABEL[doc.type] || "Balance Due";
-  const T = TEMPLATES[doc.template || "classic"] || TEMPLATES.classic;
+  const T = buildTheme(doc.template || "classic", doc.template_color || "slate");
   const isColoredHeader = T.headerBg !== "#ffffff" && T.headerBg !== "#fffbeb";
 
   return (

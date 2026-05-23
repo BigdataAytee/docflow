@@ -43,8 +43,13 @@
         "bold",
         "elegant"
       ],
-      "title": "Template",
+      "title": "Layout Template",
       "default": "classic"
+    },
+    "template_color": {
+      "type": "string",
+      "title": "Color Scheme",
+      "default": "slate"
     },
     "customer_id": {
       "type": "string",

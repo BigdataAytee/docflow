@@ -107,6 +107,8 @@ export default function CreateDocument() {
         const { items: docItems, ...rest } = doc;
         setForm(f => ({ ...f, ...rest, issue_date: rest.issue_date ? rest.issue_date.split("T")[0] : f.issue_date, due_date: rest.due_date ? rest.due_date.split("T")[0] : "" }));
         if (docItems && docItems.length > 0) setItems(docItems);
+        if (rest.template) setTemplate(rest.template);
+        if (rest.template_color) setTemplateColor(rest.template_color);
         const parts = (rest.number || "").split("-");
         if (parts.length >= 2) { setNumPrefix(parts[0]); setNumSeq(parts.slice(1).join("-")); }
       });
@@ -171,6 +173,7 @@ export default function CreateDocument() {
     const doc = {
       ...form,
       template,
+      template_color: templateColor,
       status,
       items: calcs.lineItems,
       subtotal: calcs.subtotal,
@@ -197,6 +200,7 @@ export default function CreateDocument() {
   const [generatingPdf, setGeneratingPdf] = useState(false);
   const [showPdfPreview, setShowPdfPreview] = useState(false);
   const [template, setTemplate] = useState("classic");
+  const [templateColor, setTemplateColor] = useState("slate");
 
   const handleDownloadPdf = async () => {
     if (!pdfRef.current) return;
@@ -450,11 +454,11 @@ export default function CreateDocument() {
                 <h3 className="font-semibold text-sm">Live Preview</h3>
                 <span className="text-xs text-muted-foreground capitalize">{typeLabels[docType]}</span>
               </div>
-              <TemplateSelector value={template} onChange={setTemplate} />
+              <TemplateSelector layout={template} color={templateColor} onLayoutChange={setTemplate} onColorChange={setTemplateColor} />
             </div>
             <div className="overflow-hidden" style={{ height: 460 }}>
               <div style={{ transform: "scale(0.42)", transformOrigin: "top left", width: 760, pointerEvents: "none" }}>
-                <DocumentPreview form={form} items={calcs.lineItems} calcs={calcs} sym={sym} docType={docType} template={template} />
+                <DocumentPreview form={form} items={calcs.lineItems} calcs={calcs} sym={sym} docType={docType} template={template} templateColor={templateColor} />
               </div>
             </div>
           </div>
@@ -493,7 +497,7 @@ export default function CreateDocument() {
           </div>
           <div className="flex-1 overflow-auto bg-gray-100 p-6" onClick={e => e.stopPropagation()}>
             <div className="max-w-3xl mx-auto">
-              <DocumentPreview form={form} items={calcs.lineItems} calcs={calcs} sym={sym} docType={form.type || docType} managerSig={managerSig} customerSig={customerSig} template={template} />
+              <DocumentPreview form={form} items={calcs.lineItems} calcs={calcs} sym={sym} docType={form.type || docType} managerSig={managerSig} customerSig={customerSig} template={template} templateColor={templateColor} />
               </div>
               </div>
               </div>
@@ -502,7 +506,7 @@ export default function CreateDocument() {
               {/* Hidden full-size preview for PDF generation */}
       <div style={{ position: "absolute", left: "-9999px", top: 0, width: 760 }}>
         <div ref={pdfRef}>
-          <DocumentPreview form={form} items={calcs.lineItems} calcs={calcs} sym={sym} docType={form.type || docType} managerSig={managerSig} customerSig={customerSig} template={template} />
+          <DocumentPreview form={form} items={calcs.lineItems} calcs={calcs} sym={sym} docType={form.type || docType} managerSig={managerSig} customerSig={customerSig} template={template} templateColor={templateColor} />
         </div>
       </div>
     </div>
