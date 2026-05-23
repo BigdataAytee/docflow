@@ -280,8 +280,8 @@ function UnifiedTemplate({ doc, onSaveManagerSig, onSaveCustomerSig, isPdf = fal
                   <th className="pb-3 text-left w-8 font-semibold">S/N</th>
                   <th className="pb-3 text-left font-semibold">Description</th>
                   <th className="pb-3 text-right px-4 font-semibold">Qty</th>
-                  <th className="pb-3 text-right px-4 font-semibold">Unit Price</th>
-                  <th className="pb-3 text-right font-semibold">Amount</th>
+                  {doc.type !== 'waybill' && <th className="pb-3 text-right px-4 font-semibold">Unit Price</th>}
+                  {doc.type !== 'waybill' && <th className="pb-3 text-right font-semibold">Amount</th>}
                 </tr>
               </thead>
               <tbody>
@@ -290,8 +290,8 @@ function UnifiedTemplate({ doc, onSaveManagerSig, onSaveCustomerSig, isPdf = fal
                     <td className="py-3 text-gray-400">{i + 1}</td>
                     <td className="py-3 text-gray-800">{item.description}</td>
                     <td className="py-3 text-right px-4 text-gray-500">{(item.quantity || 0).toFixed(2)}</td>
-                    <td className="py-3 text-right px-4 text-gray-500">{fmtAmt(item.unit_price)}</td>
-                    <td className="py-3 text-right font-semibold text-gray-800">{fmtAmt(item.amount)}</td>
+                    {doc.type !== 'waybill' && <td className="py-3 text-right px-4 text-gray-500">{fmtAmt(item.unit_price)}</td>}
+                    {doc.type !== 'waybill' && <td className="py-3 text-right font-semibold text-gray-800">{fmtAmt(item.amount)}</td>}
                   </tr>
                 ))}
                 {items.length === 0 && (
