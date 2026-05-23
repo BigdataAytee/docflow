@@ -316,9 +316,12 @@ function UnifiedTemplate({ doc, onSaveManagerSig, onSaveCustomerSig }) {
                 <button className="text-xs text-primary mt-1.5 hover:underline print:hidden" onClick={() => onSaveManagerSig("")}>Re-sign</button>
               </div>
             ) : (
-              <div className="print:hidden">
-                <SignaturePad label="" onSave={onSaveManagerSig} />
-                <p className="text-xs text-gray-400 mt-1">{doc.company_name || "Company"}</p>
+              <div>
+                <div className="print:hidden">
+                  <SignaturePad label="" onSave={onSaveManagerSig} />
+                </div>
+                <div className="hidden print:block h-16 border-b border-gray-400 mb-1" />
+                <p className="text-xs text-gray-500 mt-1">{doc.company_name || "Company"}</p>
               </div>
             )}
           </div>
@@ -335,9 +338,12 @@ function UnifiedTemplate({ doc, onSaveManagerSig, onSaveCustomerSig }) {
                 <button className="text-xs text-primary mt-1.5 hover:underline print:hidden" onClick={() => onSaveCustomerSig("")}>Re-sign</button>
               </div>
             ) : (
-              <div className="print:hidden">
-                <SignaturePad label="" onSave={onSaveCustomerSig} />
-                <p className="text-xs text-gray-400 mt-1">{doc.customer_name}</p>
+              <div>
+                <div className="print:hidden">
+                  <SignaturePad label="" onSave={onSaveCustomerSig} />
+                </div>
+                <div className="hidden print:block h-16 border-b border-gray-400 mb-1" />
+                <p className="text-xs text-gray-500 mt-1">{doc.customer_name}</p>
               </div>
             )}
           </div>
