@@ -5,7 +5,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
-import { ImageIcon } from "lucide-react";
+import { ImageIcon, Palette } from "lucide-react";
+import TemplateSelector from "../components/TemplateSelector";
+import DocumentPreview from "../components/DocumentPreview";
 
 export default function Settings() {
   const logoInputRef = useRef(null);
@@ -25,6 +27,8 @@ export default function Settings() {
     default_payment_instructions: "",
     document_tagline: "",
     footer_contact_line: "",
+    default_template: "classic",
+    default_template_color: "slate",
   });
 
   useEffect(() => {
@@ -44,6 +48,8 @@ export default function Settings() {
           default_payment_instructions: user.default_payment_instructions || "",
           document_tagline: user.document_tagline || "",
           footer_contact_line: user.footer_contact_line || "",
+          default_template: user.default_template || "classic",
+          default_template_color: user.default_template_color || "slate",
         }));
         if (user.logo_url) setLogoPreview(user.logo_url);
       }
@@ -147,6 +153,59 @@ export default function Settings() {
           <div className="mt-4"><Label>Default Payment Instructions</Label><Textarea value={form.default_payment_instructions} onChange={e => update("default_payment_instructions", e.target.value)} rows={3} /></div>
           <div className="mt-4"><Label>Footer Contact Line</Label><p className="text-xs text-muted-foreground mb-1.5">Displayed at the bottom of every document (e.g. phone · email · website).</p><Input value={form.footer_contact_line} onChange={e => update("footer_contact_line", e.target.value)} placeholder="e.g. 07423182811  ·  admin@dynamicrenaissance.org  ·  www.dynamicrenaissance.org" /></div>
           <div className="mt-4"><Label>Document Tagline</Label><p className="text-xs text-muted-foreground mb-1.5">A short sentence displayed at the bottom of every document.</p><Input value={form.document_tagline} onChange={e => update("document_tagline", e.target.value)} placeholder="e.g. Thank you for your business — we look forward to serving you again." /></div>
+        </div>
+
+        {/* Document Appearance */}
+        <div className="border-t border-border pt-6">
+          <div className="flex items-center gap-2 mb-1">
+            <Palette className="h-4 w-4 text-muted-foreground" />
+            <h2 className="font-semibold">Document Appearance</h2>
+          </div>
+          <p className="text-xs text-muted-foreground mb-5">Choose the default layout and colour scheme for all new documents. You can still override this per document.</p>
+
+          <TemplateSelector
+            layout={form.default_template}
+            color={form.default_template_color}
+            onLayoutChange={v => update("default_template", v)}
+            onColorChange={v => update("default_template_color", v)}
+          />
+
+          {/* Live mini preview */}
+          <div className="mt-5">
+            <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-2">Preview</p>
+            <div className="rounded-xl border border-border overflow-hidden bg-gray-50 flex items-start justify-center p-3">
+              <div style={{ transform: "scale(0.38)", transformOrigin: "top left", width: 760, pointerEvents: "none" }}>
+                <DocumentPreview
+                  form={{
+                    company_name: form.company_name || "Your Company",
+                    company_address: form.company_address || "123 Business Street",
+                    company_email: form.company_email,
+                    logo_url: form.logo_url,
+                    customer_name: "Sample Customer",
+                    customer_address: "456 Client Avenue",
+                    number: "INV-0001",
+                    issue_date: "2026-01-01",
+                    due_date: "2026-01-31",
+                    terms_label: "Net 30",
+                    tax_rate: form.default_tax_rate ?? 7.5,
+                    shipping: 0,
+                    currency: form.default_currency || "NGN",
+                  }}
+                  items={[
+                    { description: "Professional Services", quantity: 2, unit_price: 50000, discount: 0, amount: 100000 },
+                    { description: "Monthly Retainer", quantity: 1, unit_price: 75000, discount: 5, amount: 71250 },
+                  ]}
+                  calcs={{ subtotal: 171250, taxAmt: 12843, total: 184093, lineItems: [] }}
+                  sym={form.default_currency === "USD" ? "$" : form.default_currency === "EUR" ? "€" : form.default_currency === "GBP" ? "£" : "₦"}
+                  docType="invoice"
+                  template={form.default_template}
+                  templateColor={form.default_template_color}
+                />
+              </div>
+            </div>
+            {/* Scale placeholder to match actual rendered height */}
+            <div style={{ height: Math.round(1040 * 0.38) }} className="-mt-1" />
+          </div>
         </div>
 
         <Button onClick={save} disabled={saving}>{saving ? "Saving..." : "Save Settings"}</Button>

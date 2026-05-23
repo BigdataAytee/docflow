@@ -14,7 +14,6 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import CustomerForm from "../components/CustomerForm";
 import SignaturePad from "../components/SignaturePad";
 import DocumentPreview from "../components/DocumentPreview";
-import TemplateSelector from "../components/TemplateSelector";
 import ReactQuill, { Quill } from "react-quill";
 
 // Register fonts and sizes for Word-like experience
@@ -127,6 +126,8 @@ export default function CreateDocument() {
           terms: user.default_terms || "",
           payment_instructions: user.default_payment_instructions || "",
         }));
+        setTemplate(user.default_template || "classic");
+        setTemplateColor(user.default_template_color || "slate");
       });
       base44.entities.Document.list("-created_date", 1).then(docs => {
         const prefix = docType === "invoice" ? "INV" : docType === "quotation" ? "QUO" : docType === "receipt" ? "REC" : docType === "purchase_order" ? "PO" : docType === "credit_note" ? "CN" : "DOC";
@@ -450,11 +451,10 @@ export default function CreateDocument() {
         <div className="space-y-4">
           <div className="bg-card rounded-xl border border-border overflow-hidden">
             <div className="px-4 py-3 border-b border-border">
-              <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center justify-between">
                 <h3 className="font-semibold text-sm">Live Preview</h3>
                 <span className="text-xs text-muted-foreground capitalize">{typeLabels[docType]}</span>
               </div>
-              <TemplateSelector layout={template} color={templateColor} onLayoutChange={setTemplate} onColorChange={setTemplateColor} />
             </div>
             <div className="overflow-hidden" style={{ height: 460 }}>
               <div style={{ transform: "scale(0.42)", transformOrigin: "top left", width: 760, pointerEvents: "none" }}>
