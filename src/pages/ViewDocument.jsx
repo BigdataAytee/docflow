@@ -1,7 +1,8 @@
 import { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useParams, Link, useNavigate } from "react-router-dom";
-import { ArrowLeft, Trash2, Printer, Send, Pencil } from "lucide-react";
+import { ArrowLeft, Trash2, Printer, Send, Pencil, Share2 } from "lucide-react";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { format } from "date-fns";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -112,6 +113,11 @@ export default function ViewDocument() {
             </SelectContent>
           </Select>
           <Button variant="outline" size="sm" onClick={() => navigate(`/documents/new?edit=${docId}`)}><Pencil className="h-4 w-4" /><span className="hidden sm:inline">Edit</span></Button>
+          {doc.type === 'waybill' && (
+            <Button variant="outline" size="sm" onClick={() => { navigator.clipboard.writeText(`${window.location.origin}/waybill-sign?id=${docId}`); toast.success('Signature link copied!'); }}>
+              <Share2 className="h-4 w-4" /><span className="hidden sm:inline">Share for Signature</span>
+            </Button>
+          )}
           <Button variant="outline" size="sm" onClick={() => window.print()}><Printer className="h-4 w-4" /></Button>
           <Button variant="outline" size="sm" className="text-destructive" onClick={handleDelete}><Trash2 className="h-4 w-4" /></Button>
         </div>

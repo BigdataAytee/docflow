@@ -20,6 +20,7 @@ import ViewDocument from './pages/ViewDocument';
 import Settings from './pages/Settings';
 import Mail from './pages/Mail';
 import Apps from './pages/Apps';
+import WaybillSign from './pages/WaybillSign';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -47,6 +48,7 @@ const AuthenticatedApp = () => {
   // Render the main app
   return (
     <Routes>
+      <Route path="/waybill-sign" element={<WaybillSign />} />
       <Route path="/login" element={<Login />} />
       <Route path="/register" element={<Register />} />
       <Route path="/forgot-password" element={<ForgotPassword />} />
