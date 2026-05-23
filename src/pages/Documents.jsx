@@ -1,7 +1,7 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { base44 } from "@/api/base44Client";
-import { Link } from "react-router-dom";
-import { Search, FileText, Plus } from "lucide-react";
+import { Link, useNavigate } from "react-router-dom";
+import { Search, FileText, Plus, ChevronDown } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { format } from "date-fns";
@@ -20,12 +20,28 @@ const statusColors = {
   rejected: "bg-red-50 text-red-600",
 };
 
+const docTypes = [
+  { label: "Invoice", value: "invoice" },
+  { label: "Quotation", value: "quotation" },
+  { label: "Receipt", value: "receipt" },
+  { label: "Waybill", value: "waybill" },
+];
+
 export default function Documents() {
   const [documents, setDocuments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [typeFilter, setTypeFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
+  const [showDropdown, setShowDropdown] = useState(false);
+  const dropdownRef = useRef(null);
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    const handleClick = (e) => { if (dropdownRef.current && !dropdownRef.current.contains(e.target)) setShowDropdown(false); };
+    document.addEventListener("mousedown", handleClick);
+    return () => document.removeEventListener("mousedown", handleClick);
+  }, []);
 
   useEffect(() => {
     base44.entities.Document.list("-created_date", 200).then(d => { setDocuments(d); setLoading(false); });
@@ -52,10 +68,27 @@ export default function Documents() {
           <h1 className="text-xl md:text-2xl font-bold">Documents</h1>
           <p className="text-sm text-muted-foreground mt-0.5">{documents.length} total documents</p>
         </div>
-        <Link to="/documents/new?type=invoice"
-          className="inline-flex items-center gap-2 bg-primary text-primary-foreground px-4 py-2.5 rounded-lg text-sm font-medium hover:bg-primary/90 transition-colors">
-          <Plus className="h-4 w-4" /> New Document
-        </Link>
+        <div className="relative" ref={dropdownRef}>
+          <button
+            onClick={() => setShowDropdown(!showDropdown)}
+            className="inline-flex items-center gap-2 bg-primary text-primary-foreground px-4 py-2.5 rounded-lg text-sm font-medium hover:bg-primary/90 transition-colors"
+          >
+            <Plus className="h-4 w-4" /> New Document <ChevronDown className={`h-3.5 w-3.5 transition-transform ${showDropdown ? "rotate-180" : ""}`} />
+          </button>
+          {showDropdown && (
+            <div className="absolute right-0 mt-1 w-44 bg-card border border-border rounded-lg shadow-lg overflow-hidden z-20">
+              {docTypes.map(dt => (
+                <button
+                  key={dt.value}
+                  onClick={() => { navigate(`/documents/new?type=${dt.value}`); setShowDropdown(false); }}
+                  className="block w-full text-left px-4 py-2.5 text-sm hover:bg-muted transition-colors"
+                >
+                  {dt.label}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Filters */}
