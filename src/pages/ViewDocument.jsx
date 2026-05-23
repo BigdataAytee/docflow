@@ -104,7 +104,12 @@ export default function ViewDocument() {
     if (navigator.canShare && navigator.canShare({ files: [file] })) {
       await navigator.share({ files: [file], title: doc.number, text: `${doc.number} — ${doc.customer_name}` });
     } else {
-      toast.error("Sharing is not supported on this device/browser");
+      // Fallback: download the PDF instead
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url; a.download = `${doc.number || "document"}.pdf`;
+      a.click(); URL.revokeObjectURL(url);
+      toast.info("Direct sharing is only available on mobile browsers. The PDF has been downloaded instead — you can manually share it from your files.");
     }
     setGeneratingPdf(false);
   };

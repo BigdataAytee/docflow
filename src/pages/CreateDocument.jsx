@@ -200,7 +200,12 @@ export default function CreateDocument() {
     if (navigator.canShare && navigator.canShare({ files: [file] })) {
       await navigator.share({ files: [file], title: form.number, text: `${form.number} — ${form.customer_name}` });
     } else {
-      alert("Sharing is not supported on this device/browser");
+      // Fallback: download the PDF instead
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url; a.download = `${form.number || "document"}.pdf`;
+      a.click(); URL.revokeObjectURL(url);
+      alert("Direct sharing is only available on mobile browsers. The PDF has been downloaded instead — you can manually share it from your files.");
     }
     setGeneratingPdf(false);
   };
