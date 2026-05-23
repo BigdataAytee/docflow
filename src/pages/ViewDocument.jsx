@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { base44 } from "@/api/base44Client";
 import { useParams, Link, useNavigate } from "react-router-dom";
-import { ArrowLeft, Trash2, Printer, Send, Pencil, Share2, FileDown, MoreVertical } from "lucide-react";
+import { ArrowLeft, Trash2, Printer, Send, Pencil, Share2, FileDown, MoreVertical, Upload } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -76,8 +76,7 @@ export default function ViewDocument() {
     setDoc(prev => ({ ...prev, customer_signature: sig }));
   };
 
-  const handleDownloadPdf = async () => {
-    setGeneratingPdf(true);
+  const generatePdfBlob = async () => {
     const html2canvas = (await import("html2canvas")).default;
     const { jsPDF } = await import("jspdf");
     const element = pdfRef.current;
@@ -85,7 +84,28 @@ export default function ViewDocument() {
     const imgData = canvas.toDataURL("image/png");
     const pdf = new jsPDF({ orientation: "portrait", unit: "px", format: [canvas.width / 2, canvas.height / 2] });
     pdf.addImage(imgData, "PNG", 0, 0, canvas.width / 2, canvas.height / 2);
-    pdf.save(`${doc.number || "document"}.pdf`);
+    return pdf.output("blob");
+  };
+
+  const handleDownloadPdf = async () => {
+    setGeneratingPdf(true);
+    const blob = await generatePdfBlob();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url; a.download = `${doc.number || "document"}.pdf`;
+    a.click(); URL.revokeObjectURL(url);
+    setGeneratingPdf(false);
+  };
+
+  const handleSharePdf = async () => {
+    setGeneratingPdf(true);
+    const blob = await generatePdfBlob();
+    const file = new File([blob], `${doc.number || "document"}.pdf`, { type: "application/pdf" });
+    if (navigator.canShare && navigator.canShare({ files: [file] })) {
+      await navigator.share({ files: [file], title: doc.number, text: `${doc.number} — ${doc.customer_name}` });
+    } else {
+      toast.error("Sharing is not supported on this device/browser");
+    }
     setGeneratingPdf(false);
   };
 
@@ -143,6 +163,9 @@ export default function ViewDocument() {
               <DropdownMenuItem onClick={() => setShowPdfPreview(true)}>
                 <FileDown className="h-4 w-4 mr-2" /> Download PDF
               </DropdownMenuItem>
+              <DropdownMenuItem onClick={handleSharePdf} disabled={generatingPdf}>
+                <Upload className="h-4 w-4 mr-2" /> Share PDF
+              </DropdownMenuItem>
               <DropdownMenuItem onClick={() => window.print()}>
                 <Printer className="h-4 w-4 mr-2" /> Print
               </DropdownMenuItem>
@@ -187,6 +210,10 @@ export default function ViewDocument() {
               <p className="text-xs text-muted-foreground">{doc.number}</p>
             </div>
             <div className="flex items-center gap-2">
+              <Button size="sm" variant="outline" onClick={handleSharePdf} disabled={generatingPdf}>
+                <Upload className="h-4 w-4 mr-1" />
+                Share
+              </Button>
               <Button size="sm" onClick={handleDownloadPdf} disabled={generatingPdf}>
                 <FileDown className="h-4 w-4 mr-1" />
                 {generatingPdf ? "Generating..." : "Download PDF"}
