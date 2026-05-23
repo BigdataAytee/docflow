@@ -23,6 +23,22 @@
       "type": "string",
       "title": "Billing Address"
     },
+    "shipping_name": {
+      "type": "string",
+      "title": "Shipping Name"
+    },
+    "shipping_company": {
+      "type": "string",
+      "title": "Shipping Company"
+    },
+    "shipping_email": {
+      "type": "string",
+      "title": "Shipping Email"
+    },
+    "shipping_phone": {
+      "type": "string",
+      "title": "Shipping Phone"
+    },
     "shipping_address": {
       "type": "string",
       "title": "Shipping Address"

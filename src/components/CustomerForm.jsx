@@ -11,6 +11,10 @@ export default function CustomerForm({ initial, onSave, onCancel }) {
     email: initial?.email || "",
     phone: initial?.phone || "",
     billing_address: initial?.billing_address || "",
+    shipping_name: initial?.shipping_name || "",
+    shipping_company: initial?.shipping_company || "",
+    shipping_email: initial?.shipping_email || "",
+    shipping_phone: initial?.shipping_phone || "",
     shipping_address: initial?.shipping_address || "",
     tax_number: initial?.tax_number || "",
     country: initial?.country || "",
@@ -30,20 +34,40 @@ export default function CustomerForm({ initial, onSave, onCancel }) {
         <div><Label>Country</Label><Input value={form.country} onChange={e => update("country", e.target.value)} /></div>
         <div><Label>Tax/VAT Number</Label><Input value={form.tax_number} onChange={e => update("tax_number", e.target.value)} /></div>
       </div>
-      <div><Label>Sold To Address (Billing)</Label><Textarea value={form.billing_address} onChange={e => update("billing_address", e.target.value)} rows={2} /></div>
-      <div>
-        <div className="flex items-center justify-between mb-1">
-          <Label>Ship To Address</Label>
+
+      {/* Sold To */}
+      <div className="border border-gray-200 rounded-lg p-4 space-y-3">
+        <p className="text-xs font-bold text-gray-500 uppercase tracking-wider">Sold To</p>
+        <div className="grid grid-cols-2 gap-3">
+          <div><Label>Name</Label><Input value={form.full_name} onChange={e => update("full_name", e.target.value)} /></div>
+          <div><Label>Company</Label><Input value={form.company_name} onChange={e => update("company_name", e.target.value)} /></div>
+          <div><Label>Email</Label><Input type="email" value={form.email} onChange={e => update("email", e.target.value)} /></div>
+          <div><Label>Phone</Label><Input value={form.phone} onChange={e => update("phone", e.target.value)} /></div>
+        </div>
+        <div><Label>Address</Label><Textarea value={form.billing_address} onChange={e => update("billing_address", e.target.value)} rows={2} /></div>
+      </div>
+
+      {/* Ship To */}
+      <div className="border border-gray-200 rounded-lg p-4 space-y-3">
+        <div className="flex items-center justify-between">
+          <p className="text-xs font-bold text-gray-500 uppercase tracking-wider">Ship To</p>
           <button
             type="button"
             className="text-xs text-primary hover:underline"
-            onClick={() => update("shipping_address", form.billing_address)}
+            onClick={() => setForm(p => ({ ...p, shipping_name: p.full_name, shipping_company: p.company_name, shipping_email: p.email, shipping_phone: p.phone, shipping_address: p.billing_address }))}
           >
             Copy from Sold To
           </button>
         </div>
-        <Textarea value={form.shipping_address} onChange={e => update("shipping_address", e.target.value)} rows={2} />
+        <div className="grid grid-cols-2 gap-3">
+          <div><Label>Name</Label><Input value={form.shipping_name} onChange={e => update("shipping_name", e.target.value)} /></div>
+          <div><Label>Company</Label><Input value={form.shipping_company} onChange={e => update("shipping_company", e.target.value)} /></div>
+          <div><Label>Email</Label><Input type="email" value={form.shipping_email} onChange={e => update("shipping_email", e.target.value)} /></div>
+          <div><Label>Phone</Label><Input value={form.shipping_phone} onChange={e => update("shipping_phone", e.target.value)} /></div>
+        </div>
+        <div><Label>Address</Label><Textarea value={form.shipping_address} onChange={e => update("shipping_address", e.target.value)} rows={2} /></div>
       </div>
+
       <div><Label>Notes</Label><Textarea value={form.notes} onChange={e => update("notes", e.target.value)} rows={2} /></div>
       <div className="flex justify-end gap-3 pt-2">
         <Button variant="outline" onClick={onCancel}>Cancel</Button>
