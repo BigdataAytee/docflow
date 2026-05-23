@@ -210,13 +210,13 @@ export default function ViewDocument() {
               <p className="text-xs text-muted-foreground">{doc.number}</p>
             </div>
             <div className="flex items-center gap-2">
-              <Button size="sm" variant="outline" onClick={handleSharePdf} disabled={generatingPdf}>
-                <Upload className="h-4 w-4 mr-1" />
-                Share
-              </Button>
               <Button size="sm" onClick={handleDownloadPdf} disabled={generatingPdf}>
                 <FileDown className="h-4 w-4 mr-1" />
                 {generatingPdf ? "Generating..." : "Download PDF"}
+              </Button>
+              <Button size="sm" variant="outline" onClick={handleSharePdf} disabled={generatingPdf}>
+                <Upload className="h-4 w-4 mr-1" />
+                Share
               </Button>
               <button className="p-2 hover:bg-muted rounded-lg text-muted-foreground" onClick={() => setShowPdfPreview(false)}>✕</button>
             </div>
