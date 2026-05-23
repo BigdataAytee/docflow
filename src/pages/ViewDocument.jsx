@@ -270,12 +270,7 @@ function UnifiedTemplate({ doc, onSaveManagerSig, onSaveCustomerSig, isPdf = fal
               <p className="font-semibold text-gray-700 text-sm">{format(new Date(doc.due_date), "dd MMM yyyy")}</p>
             </div>
           )}
-          {doc.terms_label && (
-            <div>
-              <p className="text-[10px] text-gray-400 uppercase tracking-wider font-semibold">Terms</p>
-              <p className="text-gray-700 text-sm">{doc.terms_label}</p>
-            </div>
-          )}
+
         </div>
       </div>
 
