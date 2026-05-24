@@ -83,7 +83,7 @@ export default function ViewDocument() {
     const html2canvas = (await import("html2canvas")).default;
     const { jsPDF } = await import("jspdf");
     const element = pdfRef.current;
-    const canvas = await html2canvas(element, { scale: 1.5, useCORS: true, backgroundColor: "#ffffff" });
+    const canvas = await html2canvas(element, { scale: 1.5, useCORS: true, backgroundColor: "#ffffff", width: 794, windowWidth: 794 });
     const imgData = canvas.toDataURL("image/jpeg", 0.88);
     const pdf = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
     const pageWidthMm = pdf.internal.pageSize.getWidth();
@@ -243,7 +243,7 @@ export default function ViewDocument() {
           </div>
           <div className="flex-1 overflow-auto bg-gray-100 p-6" onClick={e => e.stopPropagation()}>
             <div className="max-w-4xl mx-auto">
-              <div ref={pdfRef}>
+              <div ref={pdfRef} style={{ width: 794 }}>
                 <DocumentPreview
                   form={doc}
                   items={doc.items || []}

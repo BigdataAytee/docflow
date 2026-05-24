@@ -172,7 +172,7 @@ export default function CreateDocument() {
   const templateColor = "slate";
 
   const generatePdfBlob = async () => {
-    const canvas = await html2canvas(pdfRef.current, { scale: 1.5, useCORS: true, logging: false, backgroundColor: "#ffffff" });
+    const canvas = await html2canvas(pdfRef.current, { scale: 1.5, useCORS: true, logging: false, backgroundColor: "#ffffff", width: 794, windowWidth: 794 });
     const imgData = canvas.toDataURL("image/jpeg", 0.88);
     const pdf = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
     const pageWidthMm = pdf.internal.pageSize.getWidth();
@@ -481,7 +481,7 @@ export default function CreateDocument() {
           </div>
           <div className="flex-1 overflow-auto bg-gray-100 p-6" onClick={e => e.stopPropagation()}>
             <div className="max-w-3xl mx-auto">
-              <div ref={pdfRef}>
+              <div ref={pdfRef} style={{ width: 794 }}>
                 <DocumentPreview form={form} items={calcs.lineItems} calcs={calcs} sym={sym} docType={form.type || docType} managerSig={managerSig} customerSig={customerSig} template={template} templateColor={templateColor} />
               </div>
             </div>
