@@ -169,7 +169,6 @@ export default function CreateDocument() {
 
   // Auto-save logic
   useEffect(() => {
-    if (!form.customer_name && items.every(it => !it.description)) return;
     if (autoSaveTimerRef.current) clearTimeout(autoSaveTimerRef.current);
     autoSaveTimerRef.current = setTimeout(async () => {
       setAutoSaveStatus("saving");
