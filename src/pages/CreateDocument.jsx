@@ -140,20 +140,7 @@ export default function CreateDocument() {
   const handleSave = async (status = "draft") => {
     if (autoSaveTimerRef.current) clearTimeout(autoSaveTimerRef.current);
     setSaving(true);
-    const doc = {
-      ...form,
-      number: numPrefix && numSeq ? `${numPrefix}-${numSeq}` : form.number,
-      template,
-      template_color: templateColor,
-      status,
-      items: calcs.lineItems,
-      subtotal: calcs.subtotal,
-      tax_amount: calcs.taxAmt,
-      total: calcs.total,
-      balance_due: calcs.total,
-      issue_date: form.issue_date ? new Date(form.issue_date).toISOString() : new Date().toISOString(),
-      due_date: form.due_date ? new Date(form.due_date).toISOString() : undefined,
-    };
+    const doc = buildDocPayload(status);
     const targetId = draftIdRef.current || editId;
     if (targetId) {
       await base44.entities.Document.update(targetId, doc);
@@ -172,20 +159,7 @@ export default function CreateDocument() {
     if (autoSaveTimerRef.current) clearTimeout(autoSaveTimerRef.current);
     autoSaveTimerRef.current = setTimeout(async () => {
       setAutoSaveStatus("saving");
-      const docData = {
-        ...form,
-        number: numPrefix && numSeq ? `${numPrefix}-${numSeq}` : form.number,
-        template: "classic",
-        template_color: "slate",
-        status: "draft",
-        items: calcs.lineItems,
-        subtotal: calcs.subtotal,
-        tax_amount: calcs.taxAmt,
-        total: calcs.total,
-        balance_due: calcs.total,
-        issue_date: form.issue_date ? new Date(form.issue_date).toISOString() : new Date().toISOString(),
-        due_date: form.due_date ? new Date(form.due_date).toISOString() : undefined,
-      };
+      const docData = buildDocPayload("draft");
       if (draftIdRef.current) {
         await base44.entities.Document.update(draftIdRef.current, docData);
       } else {
@@ -202,6 +176,30 @@ export default function CreateDocument() {
   }, [form, items, managerSig, customerSig]);
 
   const sym = CURRENCIES.find(c => c.value === form.currency)?.label.split(" ")[0] || "₦";
+
+  const buildDocPayload = (status) => ({
+    ...form,
+    number: numPrefix && numSeq ? `${numPrefix}-${numSeq}` : form.number,
+    template: "classic",
+    template_color: "slate",
+    status,
+    tax_rate: parseFloat(form.tax_rate) || 0,
+    shipping: parseFloat(form.shipping) || 0,
+    items: calcs.lineItems.map(it => ({
+      ...it,
+      quantity: parseFloat(it.quantity) || 0,
+      unit_price: parseFloat(it.unit_price) || 0,
+      discount: parseFloat(it.discount) || 0,
+      amount: parseFloat(it.amount) || 0,
+    })),
+    subtotal: calcs.subtotal,
+    tax_amount: calcs.taxAmt,
+    total: calcs.total,
+    balance_due: calcs.total,
+    issue_date: form.issue_date ? new Date(form.issue_date).toISOString() : new Date().toISOString(),
+    due_date: form.due_date ? new Date(form.due_date).toISOString() : undefined,
+  });
+
   const pdfRef = useRef(null);
   const [generatingPdf, setGeneratingPdf] = useState(false);
   const [showPdfPreview, setShowPdfPreview] = useState(false);
