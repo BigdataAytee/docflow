@@ -47,7 +47,10 @@ export default function Documents() {
   }, []);
 
   useEffect(() => {
-    base44.entities.Document.list("-created_date", 200).then(d => { setDocuments(d); setLoading(false); });
+    base44.auth.me().then(user => {
+      if (!user) return;
+      base44.entities.Document.filter({ created_by: user.email }, "-created_date", 200).then(d => { setDocuments(d); setLoading(false); });
+    });
   }, []);
 
   const filtered = documents.filter(d => {

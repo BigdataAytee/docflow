@@ -287,9 +287,11 @@ export default function Mail() {
 
   const load = async () => {
     setLoading(true);
+    const user = await base44.auth.me();
+    if (!user) { setLoading(false); return; }
     const [c, s] = await Promise.all([
-      base44.entities.Customer.list("-created_date", 100),
-      base44.entities.Mail.list("-created_date", 100),
+      base44.entities.Customer.filter({ created_by: user.email }, "-created_date", 100),
+      base44.entities.Mail.filter({ created_by: user.email }, "-created_date", 100),
     ]);
     setCustomers(c);
     setSent(s);
@@ -300,8 +302,11 @@ export default function Mail() {
 
   const handleRefresh = async () => {
     setRefreshing(true);
-    const s = await base44.entities.Mail.list("-created_date", 100);
-    setSent(s);
+    const user = await base44.auth.me();
+    if (user) {
+      const s = await base44.entities.Mail.filter({ created_by: user.email }, "-created_date", 100);
+      setSent(s);
+    }
     setRefreshing(false);
   };
 
@@ -312,8 +317,11 @@ export default function Mail() {
     } catch {
       await base44.entities.Mail.create({ ...form, status: "failed" });
     }
-    const updated = await base44.entities.Mail.list("-created_date", 100);
-    setSent(updated);
+    const user = await base44.auth.me();
+    if (user) {
+      const updated = await base44.entities.Mail.filter({ created_by: user.email }, "-created_date", 100);
+      setSent(updated);
+    }
   };
 
   const displayMails = folder === "sent" ? sent : [];

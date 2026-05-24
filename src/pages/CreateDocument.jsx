@@ -67,7 +67,9 @@ export default function CreateDocument() {
   const [items, setItems] = useState([{ description: "", quantity: 1, unit_price: 0, discount: 0 }]);
 
   useEffect(() => {
-    base44.entities.Customer.list("-created_date", 100).then(setCustomers);
+    base44.auth.me().then(user => {
+      if (user) base44.entities.Customer.filter({ created_by: user.email }, "-created_date", 100).then(setCustomers);
+    });
     if (editId) {
       base44.entities.Document.get(editId).then(doc => {
         const { items: docItems, ...rest } = doc;

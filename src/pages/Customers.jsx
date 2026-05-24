@@ -15,7 +15,10 @@ export default function Customers() {
   const [editing, setEditing] = useState(null);
 
   const load = () => {
-    base44.entities.Customer.list("-created_date", 100).then(c => { setCustomers(c); setLoading(false); });
+    base44.auth.me().then(user => {
+      if (!user) return;
+      base44.entities.Customer.filter({ created_by: user.email }, "-created_date", 100).then(c => { setCustomers(c); setLoading(false); });
+    });
   };
   useEffect(load, []);
 
