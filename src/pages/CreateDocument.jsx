@@ -98,7 +98,8 @@ export default function CreateDocument() {
         }));
       });
       base44.entities.Document.list("-created_date", 1).then(docs => {
-        const prefix = docType === "invoice" ? "INV" : docType === "quotation" ? "QUO" : docType === "receipt" ? "REC" : docType === "waybill" ? "WB" : "DOC";
+        const savedPrefix = localStorage.getItem(`docPrefix_${docType}`);
+        const prefix = savedPrefix || (docType === "invoice" ? "INV" : docType === "quotation" ? "QUO" : docType === "receipt" ? "REC" : docType === "waybill" ? "WB" : "DOC");
         const num = docs.length > 0 ? parseInt((docs[0].number || "0").replace(/\D/g, "") || "0") + 1 : 1;
         const seq = String(num).padStart(4, "0");
         setNumPrefix(prefix);
@@ -254,7 +255,13 @@ export default function CreateDocument() {
     setGeneratingPdf(false);
   };
 
-  const previewScale = Math.min(1, (Math.min(window.innerWidth, 826) - 32) / 794);
+  const [viewportWidth, setViewportWidth] = useState(window.innerWidth);
+  useEffect(() => {
+    const onResize = () => setViewportWidth(window.innerWidth);
+    window.addEventListener("resize", onResize);
+    return () => window.removeEventListener("resize", onResize);
+  }, []);
+  const previewScale = Math.min(1, (Math.min(viewportWidth, 826) - 32) / 794);
 
   return (
     <div className="max-w-5xl mx-auto pb-32 lg:pb-0">
@@ -292,7 +299,7 @@ export default function CreateDocument() {
                       <div className="space-y-3">
                         <div>
                           <Label className="text-xs">Prefix</Label>
-                          <Input value={numPrefix} onChange={e => { setNumPrefix(e.target.value); setForm(f => ({ ...f, number: `${e.target.value}-${numSeq}` })); }} placeholder="e.g. INV" className="h-8 text-sm mt-1" />
+                          <Input value={numPrefix} onChange={e => { setNumPrefix(e.target.value); localStorage.setItem(`docPrefix_${docType}`, e.target.value); setForm(f => ({ ...f, number: `${e.target.value}-${numSeq}` })); }} placeholder="e.g. INV" className="h-8 text-sm mt-1" />
                         </div>
                         <div>
                           <Label className="text-xs">Number</Label>
@@ -519,8 +526,8 @@ export default function CreateDocument() {
           </div>
           <div className="flex-1 overflow-auto bg-gray-100" onClick={e => e.stopPropagation()}>
             <div className="flex justify-center p-4">
-              <div style={{ width: 794 * previewScale }}>
-                <div style={{ width: 794, transformOrigin: "top left", transform: `scale(${previewScale})` }}>
+              <div style={{ width: 794 * previewScale, minHeight: 1123 * previewScale, overflow: "hidden" }}>
+                <div style={{ width: 794, transformOrigin: "top left", transform: `scale(${previewScale})`, display: "block" }}>
                   <div ref={pdfRef} style={{ width: 794 }}>
                     <DocumentPreview
                       form={form}
