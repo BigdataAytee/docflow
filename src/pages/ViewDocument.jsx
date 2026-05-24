@@ -283,7 +283,7 @@ function UnifiedTemplate({ doc, onSaveManagerSig, onSaveCustomerSig, isPdf = fal
             <p className="text-sm font-mono" style={{ color: T.headerColor, opacity: 0.6 }}>{doc.number}</p>
             {doc.type !== 'waybill' && (
               <div className="mt-2 rounded-lg px-5 py-3 min-w-[180px] text-right" style={{ background: isColoredHeader ? "rgba(255,255,255,0.15)" : "#f8fafc", border: `1px solid ${isColoredHeader ? "rgba(255,255,255,0.25)" : "#e2e8f0"}` }}>
-                <p className="text-xs uppercase tracking-wider font-medium" style={{ color: isColoredHeader ? "rgba(255,255,255,0.7)" : undefined }}>{amountLabel}</p>
+                <p className="text-xs uppercase tracking-wider font-medium" style={{ color: isColoredHeader ? "#ffffff" : "#64748b" }}>{amountLabel}</p>
                 <p className="text-2xl font-black mt-0.5" style={{ color: isColoredHeader ? "#ffffff" : "#111827" }}>{fmtCurr(doc.balance_due || doc.total)}</p>
               </div>
             )}
