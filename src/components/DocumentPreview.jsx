@@ -94,9 +94,9 @@ function ClassicDoc({ form, items, calcs, sym, docType, managerSig, customerSig,
           <div style={{ fontSize: 30, fontWeight: 900, letterSpacing: 3, color: T.docTitleColor }}>{label}</div>
           <div style={{ fontSize: 12, color: T.headerColor, opacity: 0.5, marginTop: 4, fontFamily: "monospace" }}>{form.number || "—"}</div>
           {docType !== "waybill" && (
-            <div style={{ marginTop: 10, background: isColoredHeader ? "rgba(255,255,255,0.15)" : "#f8fafc", border: `1px solid ${isColoredHeader ? "rgba(255,255,255,0.2)" : "#e2e8f0"}`, borderRadius: 6, padding: "6px 14px", display: "inline-block" }}>
-              <div style={{ fontSize: 8, color: isColoredHeader ? "#ffffff" : "#94a3b8", textTransform: "uppercase", letterSpacing: 1 }}>{amountLabel}</div>
-              <div style={{ fontSize: 20, fontWeight: 900, color: isColoredHeader ? "#ffffff" : "#111827", marginTop: 2 }}>{sym}{fmt(calcs?.total || 0)}</div>
+            <div style={{ marginTop: 12, borderTop: `2px solid ${isColoredHeader ? "rgba(255,255,255,0.35)" : T.accentColor}`, paddingTop: 8 }}>
+              <div style={{ fontSize: 9, color: isColoredHeader ? "rgba(255,255,255,0.75)" : "#94a3b8", textTransform: "uppercase", letterSpacing: 1 }}>{amountLabel}</div>
+              <div style={{ fontSize: 22, fontWeight: 900, color: isColoredHeader ? "#ffffff" : "#111827", marginTop: 2 }}>{sym}{fmt(calcs?.total || 0)}</div>
             </div>
           )}
         </div>
@@ -267,9 +267,9 @@ function BoldDoc({ form, items, calcs, sym, docType, managerSig, customerSig, T 
             {form.issue_date && <div style={{ fontSize: 10, color: "#94a3b8" }}>Date: <span style={{ fontWeight: 600, color: "#374151" }}>{form.issue_date}</span></div>}
             {form.due_date && <div style={{ fontSize: 10, color: "#94a3b8", marginTop: 2 }}>Due: <span style={{ fontWeight: 600, color: "#374151" }}>{form.due_date}</span></div>}
             {docType !== "waybill" && (
-              <div style={{ marginTop: 10, padding: "8px 14px", background: T.accentColor, borderRadius: 6, display: "inline-block", textAlign: "right" }}>
-                <div style={{ fontSize: 8, color: "rgba(255,255,255,0.75)", textTransform: "uppercase", letterSpacing: 1 }}>{amountLabel}</div>
-                <div style={{ fontSize: 22, fontWeight: 900, color: "#fff" }}>{sym}{fmt(calcs?.total || 0)}</div>
+              <div style={{ marginTop: 12, borderTop: "2px solid rgba(255,255,255,0.35)", paddingTop: 8, textAlign: "right" }}>
+                <div style={{ fontSize: 9, color: "rgba(255,255,255,0.75)", textTransform: "uppercase", letterSpacing: 1 }}>{amountLabel}</div>
+                <div style={{ fontSize: 22, fontWeight: 900, color: "#fff", marginTop: 2 }}>{sym}{fmt(calcs?.total || 0)}</div>
               </div>
             )}
           </div>
