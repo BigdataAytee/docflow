@@ -14,19 +14,19 @@ function ItemsTable({ items, docType, T }) {
     <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12 }}>
       <thead>
         <tr style={{ background: T.tableHeaderBg, borderBottom: `2px solid ${T.accentColor}` }}>
-          <th style={{ textAlign: "left", padding: "9px 28px", color: T.tableHeaderColor, fontSize: 9, textTransform: "uppercase", letterSpacing: 0.8, fontWeight: 700 }}>Description</th>
+          <th style={{ textAlign: "left", padding: "10px 48px 10px 48px", color: T.tableHeaderColor, fontSize: 9, textTransform: "uppercase", letterSpacing: 0.8, fontWeight: 700 }}>Description</th>
           <th style={{ textAlign: "right", padding: "9px 12px", color: T.tableHeaderColor, fontSize: 9, textTransform: "uppercase", letterSpacing: 0.8, fontWeight: 700 }}>Qty</th>
           {showPrice && <th style={{ textAlign: "right", padding: "9px 12px", color: T.tableHeaderColor, fontSize: 9, textTransform: "uppercase", letterSpacing: 0.8, fontWeight: 700 }}>Unit Price</th>}
-          {showPrice && <th style={{ textAlign: "right", padding: "9px 28px 9px 12px", color: T.tableHeaderColor, fontSize: 9, textTransform: "uppercase", letterSpacing: 0.8, fontWeight: 700 }}>Amount</th>}
+          {showPrice && <th style={{ textAlign: "right", padding: "10px 48px 10px 12px", color: T.tableHeaderColor, fontSize: 9, textTransform: "uppercase", letterSpacing: 0.8, fontWeight: 700 }}>Amount</th>}
         </tr>
       </thead>
       <tbody>
         {items.length > 0 ? items.map((item, i) => (
           <tr key={i} style={{ borderBottom: "1px solid #f1f5f9", background: i % 2 === 0 ? "transparent" : "#fafafa" }}>
-            <td style={{ padding: "10px 28px", color: "#334155" }}>{item.description || <span style={{ color: "#cbd5e1" }}>Item description</span>}</td>
+            <td style={{ padding: "11px 48px", color: "#334155" }}>{item.description || <span style={{ color: "#cbd5e1" }}>Item description</span>}</td>
             <td style={{ padding: "10px 12px", textAlign: "right", color: "#64748b" }}>{(item.quantity || 0).toFixed(2)}</td>
             {showPrice && <td style={{ padding: "10px 12px", textAlign: "right", color: "#64748b" }}>{fmt(item.unit_price)}</td>}
-            {showPrice && <td style={{ padding: "10px 28px 10px 12px", textAlign: "right", fontWeight: 600, color: "#1e293b" }}>{fmt(item.amount)}</td>}
+            {showPrice && <td style={{ padding: "11px 48px 11px 12px", textAlign: "right", fontWeight: 600, color: "#1e293b" }}>{fmt(item.amount)}</td>}
           </tr>
         )) : (
           <tr><td colSpan={4} style={{ padding: "24px 28px", color: "#cbd5e1", textAlign: "center", fontSize: 11 }}>No items added yet</td></tr>
@@ -39,7 +39,7 @@ function ItemsTable({ items, docType, T }) {
 function TotalsBlock({ calcs, form, sym, T, amountLabel }) {
   if (!calcs) return null;
   return (
-    <div style={{ display: "flex", justifyContent: "flex-end", padding: "14px 28px 20px" }}>
+    <div style={{ display: "flex", justifyContent: "flex-end", padding: "14px 48px 24px" }}>
       <div style={{ width: 260, fontSize: 12 }}>
         <div style={{ display: "flex", justifyContent: "space-between", padding: "4px 0", color: "#64748b" }}><span>Subtotal</span><span>{fmt(calcs.subtotal)}</span></div>
         {(calcs.taxAmt || 0) > 0 && <div style={{ display: "flex", justifyContent: "space-between", padding: "4px 0", color: "#64748b" }}><span>VAT ({form.tax_rate}%)</span><span>{fmt(calcs.taxAmt)}</span></div>}
@@ -55,7 +55,7 @@ function TotalsBlock({ calcs, form, sym, T, amountLabel }) {
 function Sigs({ managerSig, customerSig, form, T, docType }) {
   const showCustomer = docType === "waybill";
   return (
-    <div style={{ display: "flex", gap: 40, padding: "16px 28px", borderTop: "1px solid #e2e8f0" }}>
+    <div style={{ display: "flex", gap: 40, padding: "20px 48px", borderTop: "1px solid #e2e8f0" }}>
       <div style={{ minWidth: 160 }}>
         {(managerSig || form?.manager_signature) ? <img src={managerSig || form.manager_signature} alt="" style={{ height: 48, objectFit: "contain", display: "block", marginBottom: 4 }} /> : <div style={{ height: 48 }} />}
         <div style={{ borderTop: `1px solid ${T.accentColor}`, paddingTop: 3 }}>
@@ -84,7 +84,7 @@ function ClassicDoc({ form, items, calcs, sym, docType, managerSig, customerSig,
 
   return (
     <div style={{ background: "#fff", minHeight: 1123 }}>
-      <div style={{ background: T.headerBg, borderBottom: `2px solid ${T.accentColor}`, padding: "24px 32px", display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+      <div style={{ background: T.headerBg, borderBottom: `2px solid ${T.accentColor}`, padding: "36px 48px", display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
         <div>
           {form.logo_url ? <img src={form.logo_url} alt="logo" style={{ height: 110, maxWidth: 200, objectFit: "contain", display: "block", marginBottom: 8 }} /> : <div style={{ height: 8 }} />}
           <div style={{ fontWeight: 900, fontSize: 18, color: T.headerColor }}>{form.company_name || "Your Company"}</div>
@@ -102,19 +102,19 @@ function ClassicDoc({ form, items, calcs, sym, docType, managerSig, customerSig,
         </div>
       </div>
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", background: T.stripBg, borderBottom: `1px solid ${T.stripBorder}` }}>
-        <div style={{ padding: "16px 32px", borderRight: `1px solid ${T.stripBorder}` }}>
+        <div style={{ padding: "18px 48px", borderRight: `1px solid ${T.stripBorder}` }}>
           <div style={{ fontSize: 8, color: T.tableHeaderColor, textTransform: "uppercase", letterSpacing: 1.5, fontWeight: 700, marginBottom: 6 }}>From</div>
           <div style={{ fontSize: 12, fontWeight: 700, color: "#1e293b" }}>{form.company_name || "—"}</div>
           {form.company_email && <div style={{ fontSize: 10, color: "#64748b", marginTop: 3 }}>{form.company_email}</div>}
         </div>
-        <div style={{ padding: "16px 32px" }}>
+        <div style={{ padding: "18px 48px" }}>
           <div style={{ fontSize: 8, color: T.tableHeaderColor, textTransform: "uppercase", letterSpacing: 1.5, fontWeight: 700, marginBottom: 6 }}>{billToLabel}</div>
           <div style={{ fontSize: 12, fontWeight: 700, color: "#1e293b" }}>{form.customer_name || "—"}</div>
           {form.customer_address && <div style={{ fontSize: 10, color: "#64748b", marginTop: 3, whiteSpace: "pre-line" }}>{form.customer_address}</div>}
           {form.customer_email && <div style={{ fontSize: 10, color: "#94a3b8", marginTop: 2 }}>{form.customer_email}</div>}
         </div>
       </div>
-      <div style={{ display: "flex", gap: 28, padding: "10px 32px", borderBottom: `1px solid ${T.stripBorder}`, fontSize: 11, background: "#fff" }}>
+      <div style={{ display: "flex", gap: 28, padding: "12px 48px", borderBottom: `1px solid ${T.stripBorder}`, fontSize: 11, background: "#fff" }}>
         {form.issue_date && <div><span style={{ color: "#94a3b8" }}>Date: </span><span style={{ fontWeight: 600, color: "#334155" }}>{form.issue_date}</span></div>}
         {form.due_date && <div><span style={{ color: "#94a3b8" }}>Due: </span><span style={{ fontWeight: 600, color: "#334155" }}>{form.due_date}</span></div>}
 
@@ -122,7 +122,7 @@ function ClassicDoc({ form, items, calcs, sym, docType, managerSig, customerSig,
       <ItemsTable items={items} docType={docType} T={T} />
       {docType !== "waybill" && <TotalsBlock calcs={calcs} form={form} sym={sym} T={T} amountLabel={amountLabel} />}
       <Sigs managerSig={managerSig} customerSig={customerSig} form={form} T={T} docType={docType} />
-      <div style={{ padding: "10px 32px", background: T.stripBg, borderTop: `1px solid ${T.stripBorder}`, textAlign: "center", fontSize: 9, color: T.tableHeaderColor }}>
+      <div style={{ padding: "14px 48px", background: T.stripBg, borderTop: `1px solid ${T.stripBorder}`, textAlign: "center", fontSize: 9, color: T.tableHeaderColor }}>
         {[form.company_phone, form.company_email, form.company_website].filter(Boolean).join("  ·  ")}
       </div>
     </div>
