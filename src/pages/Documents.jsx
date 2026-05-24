@@ -203,38 +203,6 @@ export default function Documents() {
         </div>
       </div>
 
-      {/* Stats Cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
-        <StatCard
-          title="Total Revenue"
-          value={`${sym(primaryCurrency)}${stats.revenue.toLocaleString("en", { minimumFractionDigits: 0 })}`}
-          sub={`${stats.paidCount} paid documents`}
-          icon={DollarSign}
-          color="green"
-        />
-        <StatCard
-          title="Outstanding"
-          value={`${sym(primaryCurrency)}${stats.outstanding.toLocaleString("en", { minimumFractionDigits: 0 })}`}
-          sub="Awaiting payment"
-          icon={Clock}
-          color="blue"
-        />
-        <StatCard
-          title="Overdue"
-          value={`${sym(primaryCurrency)}${stats.overdue.toLocaleString("en", { minimumFractionDigits: 0 })}`}
-          sub="Needs attention"
-          icon={AlertCircle}
-          color="red"
-        />
-        <StatCard
-          title="This Month"
-          value={stats.thisMonth}
-          sub={`of ${documents.length} total documents`}
-          icon={TrendingUp}
-          color="slate"
-        />
-      </div>
-
       {/* Table Card */}
       <div className="bg-card rounded-2xl border border-border overflow-hidden">
         {/* Filter bar */}
