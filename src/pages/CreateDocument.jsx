@@ -59,6 +59,18 @@ export default function CreateDocument() {
     return () => window.removeEventListener("beforeunload", handler);
   }, [isDirty]);
 
+  // Intercept browser back button
+  useEffect(() => {
+    if (!isDirty) return;
+    history.pushState(null, "", window.location.href);
+    const handler = () => {
+      history.pushState(null, "", window.location.href); // re-push so back stays blocked
+      setShowLeaveModal(true);
+    };
+    window.addEventListener("popstate", handler);
+    return () => window.removeEventListener("popstate", handler);
+  }, [isDirty]);
+
 
 
   const [form, setForm] = useState({
@@ -157,6 +169,11 @@ export default function CreateDocument() {
     const total = subtotal + taxAmt + (parseFloat(form.shipping) || 0);
     return { lineItems, subtotal, taxAmt, total };
   }, [items, form.tax_rate, form.shipping]);
+
+  const handleBackClick = (e) => {
+    if (isDirty) { e.preventDefault(); setShowLeaveModal(true); }
+    else navigate("/documents");
+  };
 
   const handleSave = async (status = "draft") => {
     if (autoSaveTimerRef.current) clearTimeout(autoSaveTimerRef.current);
@@ -288,7 +305,7 @@ export default function CreateDocument() {
   return (
     <div className="max-w-5xl mx-auto pb-32 lg:pb-0">
       <div className="flex items-center gap-3 mb-6">
-        <Link to="/documents" className="p-2 hover:bg-muted rounded-lg"><ArrowLeft className="h-4 w-4" /></Link>
+        <button onClick={handleBackClick} className="p-2 hover:bg-muted rounded-lg"><ArrowLeft className="h-4 w-4" /></button>
         <div>
           <h1 className="text-2xl font-bold">{editId ? `Edit ${typeLabels[form.type || docType]}` : `New ${typeLabels[docType]}`}</h1>
           <div className="flex items-center gap-2">
@@ -525,6 +542,29 @@ export default function CreateDocument() {
           </Button>
         </div>
       </div>
+
+      {/* Leave confirmation modal */}
+      {showLeaveModal && (
+        <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4">
+          <div className="bg-card rounded-xl border border-border p-6 max-w-sm w-full shadow-xl space-y-4">
+            <div>
+              <h3 className="font-bold text-lg">Leave this page?</h3>
+              <p className="text-sm text-muted-foreground mt-1">You have unsaved changes. What would you like to do?</p>
+            </div>
+            <div className="flex flex-col gap-2">
+              <Button className="w-full" onClick={async () => { setShowLeaveModal(false); setIsDirty(false); await handleSave("draft"); }}>
+                Save as Draft &amp; Leave
+              </Button>
+              <Button variant="outline" className="w-full" onClick={() => { setShowLeaveModal(false); setIsDirty(false); navigate("/documents"); }}>
+                Discard &amp; Leave
+              </Button>
+              <Button variant="ghost" className="w-full" onClick={() => setShowLeaveModal(false)}>
+                Keep Editing
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* PDF Preview Modal */}
       {showPdfPreview && (
