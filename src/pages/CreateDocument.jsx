@@ -37,7 +37,8 @@ export default function CreateDocument() {
   const [customerSig, setCustomerSig] = useState(null);
   const [showAddCustomer, setShowAddCustomer] = useState(false);
   const [savingCustomer, setSavingCustomer] = useState(false);
-  const [numPrefix, setNumPrefix] = useState(() => localStorage.getItem(`docPrefix_${docType}`) || "");
+  const defaultPrefix = docType === "invoice" ? "INV" : docType === "quotation" ? "QUO" : docType === "receipt" ? "REC" : docType === "waybill" ? "WB" : "DOC";
+  const [numPrefix, setNumPrefix] = useState(() => localStorage.getItem(`docPrefix_${docType}`) || defaultPrefix);
   const [numSeq, setNumSeq] = useState("");
   const [numOpen, setNumOpen] = useState(false);
   const [autoSaveStatus, setAutoSaveStatus] = useState("");
