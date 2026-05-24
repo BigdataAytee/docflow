@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo, useRef } from "react";
 import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
 import { base44 } from "@/api/base44Client";
-import { useNavigate, Link } from "react-router-dom";
+import { useNavigate, Link, useBlocker } from "react-router-dom";
 import { Plus, Trash2, ArrowLeft, Settings2, FileDown, Upload } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
@@ -49,6 +49,26 @@ export default function CreateDocument() {
   }, [numPrefix, docType]); // "", "saving", "saved"
   const draftIdRef = useRef(editId || null);
   const autoSaveTimerRef = useRef(null);
+  const [isDirty, setIsDirty] = useState(false);
+  const [showLeaveModal, setShowLeaveModal] = useState(false);
+
+  // Mark dirty on any user change
+  useEffect(() => { setIsDirty(true); }, [form, items]);
+
+  // Warn on browser refresh / tab close
+  useEffect(() => {
+    const handler = (e) => { if (isDirty) { e.preventDefault(); e.returnValue = ""; } };
+    window.addEventListener("beforeunload", handler);
+    return () => window.removeEventListener("beforeunload", handler);
+  }, [isDirty]);
+
+  // Block in-app navigation
+  const blocker = useBlocker(({ currentLocation, nextLocation }) =>
+    isDirty && currentLocation.pathname !== nextLocation.pathname
+  );
+  useEffect(() => {
+    if (blocker.state === "blocked") setShowLeaveModal(true);
+  }, [blocker.state]);
 
   const [form, setForm] = useState({
     type: docType,
@@ -161,8 +181,10 @@ export default function CreateDocument() {
     }
   };
 
-  // Auto-save logic
+  // Auto-save logic — only if there is meaningful data
+  const hasMeaningfulData = form.customer_name || items.some(it => it.description);
   useEffect(() => {
+    if (!hasMeaningfulData) return;
     if (autoSaveTimerRef.current) clearTimeout(autoSaveTimerRef.current);
     autoSaveTimerRef.current = setTimeout(async () => {
       setAutoSaveStatus("saving");
@@ -509,6 +531,29 @@ export default function CreateDocument() {
           </Button>
         </div>
       </div>
+
+      {/* Leave confirmation modal */}
+      {showLeaveModal && (
+        <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4">
+          <div className="bg-card rounded-xl border border-border p-6 max-w-sm w-full shadow-xl space-y-4">
+            <div>
+              <h3 className="font-bold text-lg">Leave this page?</h3>
+              <p className="text-sm text-muted-foreground mt-1">You have unsaved changes. Would you like to save a draft before leaving?</p>
+            </div>
+            <div className="flex flex-col gap-2">
+              <Button className="w-full" onClick={async () => { setShowLeaveModal(false); await handleSave("draft"); blocker.proceed?.(); }}>
+                Save as Draft &amp; Leave
+              </Button>
+              <Button variant="outline" className="w-full" onClick={() => { setShowLeaveModal(false); setIsDirty(false); blocker.proceed?.(); }}>
+                Discard &amp; Leave
+              </Button>
+              <Button variant="ghost" className="w-full" onClick={() => { setShowLeaveModal(false); blocker.reset?.(); }}>
+                Keep Editing
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* PDF Preview Modal */}
       {showPdfPreview && (
