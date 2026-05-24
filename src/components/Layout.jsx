@@ -1,8 +1,9 @@
 import { useState, useEffect } from "react";
 import { Outlet, Link, useLocation } from "react-router-dom";
 import Sidebar from "./Sidebar";
-import { Menu, FileText, Users, Mail, Settings } from "lucide-react";
+import { Menu, FileText, Users, Mail, Settings, Search } from "lucide-react";
 import { base44 } from "@/api/base44Client";
+import CommandPalette from "./CommandPalette";
 
 const bottomNavItems = [
   { label: "Documents", icon: FileText,  path: "/documents" },
@@ -14,6 +15,18 @@ const bottomNavItems = [
 export default function Layout() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [companyName, setCompanyName] = useState("");
+  const [cmdOpen, setCmdOpen] = useState(false);
+
+  useEffect(() => {
+    const handler = (e) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === "k") {
+        e.preventDefault();
+        setCmdOpen(o => !o);
+      }
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, []);
 
   useEffect(() => {
     base44.auth.me().then(user => {
@@ -51,6 +64,9 @@ export default function Layout() {
             <Menu className="h-5 w-5" />
           </button>
           <span className="text-white font-bold text-base tracking-tight flex-1 truncate">{companyName || "My Business"}</span>
+          <button onClick={() => setCmdOpen(true)} className="text-white/60 hover:text-white p-2 rounded-lg hover:bg-white/10 transition-colors">
+            <Search className="h-4 w-4" />
+          </button>
         </div>
 
         {/* Page content — bottom padding for mobile nav bar */}
@@ -58,6 +74,8 @@ export default function Layout() {
           <Outlet />
         </div>
       </main>
+
+      <CommandPalette open={cmdOpen} onClose={() => setCmdOpen(false)} />
 
       {/* Mobile Bottom Navigation */}
       <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-sidebar border-t border-sidebar-border flex safe-area-inset-bottom">
