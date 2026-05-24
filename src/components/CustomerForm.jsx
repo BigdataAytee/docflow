@@ -33,7 +33,6 @@ export default function CustomerForm({ initial, onSave, onCancel }) {
         <div><Label>Email</Label><Input type="email" value={form.email} onChange={e => update("email", e.target.value)} /></div>
         <div><Label>Phone</Label><Input value={form.phone} onChange={e => update("phone", e.target.value)} /></div>
         <div><Label>Country</Label><Input value={form.country} onChange={e => update("country", e.target.value)} /></div>
-        <div><Label>Tax/VAT Number</Label><Input value={form.tax_number} onChange={e => update("tax_number", e.target.value)} /></div>
       </div>
 
       <div><Label>Address</Label><Textarea value={form.billing_address} onChange={e => update("billing_address", e.target.value)} rows={2} /></div>
