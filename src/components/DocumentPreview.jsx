@@ -24,7 +24,7 @@ function ItemsTable({ items, docType, T }) {
         {items.length > 0 ? items.map((item, i) => (
           <tr key={i} style={{ borderBottom: "1px solid #f1f5f9", background: i % 2 === 0 ? "transparent" : "#fafafa" }}>
             <td style={{ padding: "11px 48px", color: "#334155" }}>{item.description || <span style={{ color: "#cbd5e1" }}>Item description</span>}</td>
-            <td style={{ padding: "10px 12px", textAlign: "right", color: "#64748b" }}>{(item.quantity || 0).toFixed(2)}</td>
+            <td style={{ padding: "10px 12px", textAlign: "right", color: "#64748b" }}>{(parseFloat(item.quantity) || 0).toFixed(2)}</td>
             {showPrice && <td style={{ padding: "10px 12px", textAlign: "right", color: "#64748b" }}>{fmt(item.unit_price)}</td>}
             {showPrice && <td style={{ padding: "11px 48px 11px 12px", textAlign: "right", fontWeight: 600, color: "#1e293b" }}>{fmt(item.amount)}</td>}
           </tr>
