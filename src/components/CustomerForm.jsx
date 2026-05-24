@@ -25,7 +25,8 @@ export default function CustomerForm({ initial, onSave, onCancel }) {
   const update = (k, v) => setForm(p => ({ ...p, [k]: v }));
 
   return (
-    <div className="space-y-4 overflow-y-auto flex-1 pr-1">
+    <div className="flex flex-col gap-4">
+      <div className="space-y-4 overflow-y-auto max-h-[60vh] pr-1">
       <div className="grid grid-cols-2 gap-4">
         <div><Label>Full Name *</Label><Input value={form.full_name} onChange={e => update("full_name", e.target.value)} /></div>
         <div><Label>Company</Label><Input value={form.company_name} onChange={e => update("company_name", e.target.value)} /></div>
@@ -47,29 +48,10 @@ export default function CustomerForm({ initial, onSave, onCancel }) {
         <div><Label>Address</Label><Textarea value={form.billing_address} onChange={e => update("billing_address", e.target.value)} rows={2} /></div>
       </div>
 
-      {/* Ship To */}
-      <div className="border border-gray-200 rounded-lg p-4 space-y-3">
-        <div className="flex items-center justify-between">
-          <p className="text-xs font-bold text-gray-500 uppercase tracking-wider">To</p>
-          <button
-            type="button"
-            className="text-xs text-primary hover:underline"
-            onClick={() => setForm(p => ({ ...p, shipping_name: p.full_name, shipping_company: p.company_name, shipping_email: p.email, shipping_phone: p.phone, shipping_address: p.billing_address }))}
-          >
-            Copy from Sold To
-          </button>
-        </div>
-        <div className="grid grid-cols-2 gap-3">
-          <div><Label>Name</Label><Input value={form.shipping_name} onChange={e => update("shipping_name", e.target.value)} /></div>
-          <div><Label>Company</Label><Input value={form.shipping_company} onChange={e => update("shipping_company", e.target.value)} /></div>
-          <div><Label>Email</Label><Input type="email" value={form.shipping_email} onChange={e => update("shipping_email", e.target.value)} /></div>
-          <div><Label>Phone</Label><Input value={form.shipping_phone} onChange={e => update("shipping_phone", e.target.value)} /></div>
-        </div>
-        <div><Label>Address</Label><Textarea value={form.shipping_address} onChange={e => update("shipping_address", e.target.value)} rows={2} /></div>
-      </div>
 
       <div><Label>Notes</Label><Textarea value={form.notes} onChange={e => update("notes", e.target.value)} rows={2} /></div>
-      <div className="flex justify-end gap-3 pt-2">
+      </div>
+      <div className="flex justify-end gap-3 pt-2 border-t border-border">
         <Button variant="outline" onClick={onCancel}>Cancel</Button>
         <Button onClick={() => onSave(form)} disabled={!form.full_name}>Save Customer</Button>
       </div>
