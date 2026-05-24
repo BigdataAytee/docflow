@@ -37,10 +37,15 @@ export default function CreateDocument() {
   const [customerSig, setCustomerSig] = useState(null);
   const [showAddCustomer, setShowAddCustomer] = useState(false);
   const [savingCustomer, setSavingCustomer] = useState(false);
-  const [numPrefix, setNumPrefix] = useState("");
+  const [numPrefix, setNumPrefix] = useState(() => localStorage.getItem(`docPrefix_${docType}`) || "");
   const [numSeq, setNumSeq] = useState("");
   const [numOpen, setNumOpen] = useState(false);
-  const [autoSaveStatus, setAutoSaveStatus] = useState(""); // "", "saving", "saved"
+  const [autoSaveStatus, setAutoSaveStatus] = useState("");
+
+  // Always persist prefix changes to localStorage
+  useEffect(() => {
+    if (numPrefix) localStorage.setItem(`docPrefix_${docType}`, numPrefix);
+  }, [numPrefix, docType]); // "", "saving", "saved"
   const draftIdRef = useRef(editId || null);
   const autoSaveTimerRef = useRef(null);
 
@@ -299,7 +304,7 @@ export default function CreateDocument() {
                       <div className="space-y-3">
                         <div>
                           <Label className="text-xs">Prefix</Label>
-                          <Input value={numPrefix} onChange={e => { setNumPrefix(e.target.value); localStorage.setItem(`docPrefix_${docType}`, e.target.value); setForm(f => ({ ...f, number: `${e.target.value}-${numSeq}` })); }} placeholder="e.g. INV" className="h-8 text-sm mt-1" />
+                          <Input value={numPrefix} onChange={e => { setNumPrefix(e.target.value); setForm(f => ({ ...f, number: `${e.target.value}-${numSeq}` })); }} placeholder="e.g. INV" className="h-8 text-sm mt-1" />
                         </div>
                         <div>
                           <Label className="text-xs">Number</Label>
