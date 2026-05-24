@@ -52,9 +52,6 @@ export default function CreateDocument() {
   const [isDirty, setIsDirty] = useState(false);
   const [showLeaveModal, setShowLeaveModal] = useState(false);
 
-  // Mark dirty on any user change
-  useEffect(() => { setIsDirty(true); }, [form, items]);
-
   // Warn on browser refresh / tab close
   useEffect(() => {
     const handler = (e) => { if (isDirty) { e.preventDefault(); e.returnValue = ""; } };
@@ -94,6 +91,9 @@ export default function CreateDocument() {
     company_website: "",
   });
   const [items, setItems] = useState([{ description: "", quantity: "", unit_price: "", discount: "" }]);
+
+  // Mark dirty on any user change (must be after form/items are declared)
+  useEffect(() => { setIsDirty(true); }, [form, items]);
 
   useEffect(() => {
     base44.auth.me().then(user => {
