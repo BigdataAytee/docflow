@@ -223,7 +223,7 @@ export default function CreateDocument() {
   };
 
   return (
-    <div className="max-w-5xl mx-auto">
+    <div className="max-w-5xl mx-auto pb-32 lg:pb-0">
       <div className="flex items-center gap-3 mb-6">
         <Link to="/documents" className="p-2 hover:bg-muted rounded-lg"><ArrowLeft className="h-4 w-4" /></Link>
         <div>
@@ -420,8 +420,8 @@ export default function CreateDocument() {
                 <span className="text-xs text-muted-foreground capitalize">{typeLabels[docType]}</span>
               </div>
             </div>
-            <div className="overflow-hidden" style={{ height: 460 }}>
-              <div style={{ transform: "scale(0.40)", transformOrigin: "top left", width: 794, pointerEvents: "none" }}>
+            <div className="overflow-hidden" style={{ height: 460, width: "100%" }}>
+              <div style={{ transform: "scale(0.40)", transformOrigin: "top left", width: 794, pointerEvents: "none", position: "absolute" }}>
                 <DocumentPreview form={form} items={calcs.lineItems} calcs={calcs} sym={sym} docType={docType} template={template} templateColor={templateColor} />
               </div>
             </div>
