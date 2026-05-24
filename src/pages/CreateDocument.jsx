@@ -49,8 +49,8 @@ export default function CreateDocument() {
     customer_email: "",
     customer_address: "",
     currency: "NGN",
-    tax_rate: 7.5,
-    shipping: 0,
+    tax_rate: "",
+    shipping: "",
     notes: "",
     terms: "",
     terms_label: "Due on Receipt",
@@ -64,7 +64,7 @@ export default function CreateDocument() {
     company_address: "",
     company_website: "",
   });
-  const [items, setItems] = useState([{ description: "", quantity: 1, unit_price: 0, discount: 0 }]);
+  const [items, setItems] = useState([{ description: "", quantity: "", unit_price: "", discount: "" }]);
 
   useEffect(() => {
     base44.auth.me().then(user => {
@@ -90,7 +90,7 @@ export default function CreateDocument() {
           company_website: user.company_website || "",
           logo_url: user.logo_url || "",
           currency: user.default_currency || "NGN",
-          tax_rate: user.default_tax_rate ?? 7.5,
+          tax_rate: user.default_tax_rate ?? "",
           terms: user.default_terms || "",
           payment_instructions: user.default_payment_instructions || "",
         }));
@@ -354,7 +354,7 @@ export default function CreateDocument() {
                 </div>
               ))}
             </div>
-            <Button variant="outline" size="sm" className="mt-4" onClick={() => setItems(p => [...p, { description: "", quantity: 1, unit_price: 0, discount: 0 }])}>
+            <Button variant="outline" size="sm" className="mt-4" onClick={() => setItems(p => [...p, { description: "", quantity: "", unit_price: "", discount: "" }])}>
               <Plus className="h-3 w-3 mr-1" /> Add Item
             </Button>
           </div>
