@@ -80,20 +80,20 @@ export default function ViewDocument() {
     const html2canvas = (await import("html2canvas")).default;
     const { jsPDF } = await import("jspdf");
     const element = pdfRef.current;
-    const canvas = await html2canvas(element, { scale: 2, useCORS: true, backgroundColor: "#ffffff" });
-    const imgData = canvas.toDataURL("image/png");
+    const canvas = await html2canvas(element, { scale: 1.5, useCORS: true, backgroundColor: "#ffffff" });
+    const imgData = canvas.toDataURL("image/jpeg", 0.88);
     const pdf = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
     const pageWidthMm = pdf.internal.pageSize.getWidth();
     const pageHeightMm = pdf.internal.pageSize.getHeight();
     const imgHeightMm = (canvas.height / canvas.width) * pageWidthMm;
     let remaining = imgHeightMm;
     let yPos = 0;
-    pdf.addImage(imgData, "PNG", 0, yPos, pageWidthMm, imgHeightMm);
+    pdf.addImage(imgData, "JPEG", 0, yPos, pageWidthMm, imgHeightMm);
     remaining -= pageHeightMm;
     while (remaining > 0) {
       yPos -= pageHeightMm;
       pdf.addPage();
-      pdf.addImage(imgData, "PNG", 0, yPos, pageWidthMm, imgHeightMm);
+      pdf.addImage(imgData, "JPEG", 0, yPos, pageWidthMm, imgHeightMm);
       remaining -= pageHeightMm;
     }
     return pdf.output("blob");

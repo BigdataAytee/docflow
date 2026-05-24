@@ -172,20 +172,20 @@ export default function CreateDocument() {
   const templateColor = "slate";
 
   const generatePdfBlob = async () => {
-    const canvas = await html2canvas(pdfRef.current, { scale: 2, useCORS: true, logging: false });
-    const imgData = canvas.toDataURL("image/png");
+    const canvas = await html2canvas(pdfRef.current, { scale: 1.5, useCORS: true, logging: false, backgroundColor: "#ffffff" });
+    const imgData = canvas.toDataURL("image/jpeg", 0.88);
     const pdf = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
     const pageWidthMm = pdf.internal.pageSize.getWidth();
     const pageHeightMm = pdf.internal.pageSize.getHeight();
     const imgHeightMm = (canvas.height / canvas.width) * pageWidthMm;
     let remaining = imgHeightMm;
     let yPos = 0;
-    pdf.addImage(imgData, "PNG", 0, yPos, pageWidthMm, imgHeightMm);
+    pdf.addImage(imgData, "JPEG", 0, yPos, pageWidthMm, imgHeightMm);
     remaining -= pageHeightMm;
     while (remaining > 0) {
       yPos -= pageHeightMm;
       pdf.addPage();
-      pdf.addImage(imgData, "PNG", 0, yPos, pageWidthMm, imgHeightMm);
+      pdf.addImage(imgData, "JPEG", 0, yPos, pageWidthMm, imgHeightMm);
       remaining -= pageHeightMm;
     }
     return pdf.output("blob");
@@ -481,18 +481,15 @@ export default function CreateDocument() {
           </div>
           <div className="flex-1 overflow-auto bg-gray-100 p-6" onClick={e => e.stopPropagation()}>
             <div className="max-w-3xl mx-auto">
-              <DocumentPreview form={form} items={calcs.lineItems} calcs={calcs} sym={sym} docType={form.type || docType} managerSig={managerSig} customerSig={customerSig} template={template} templateColor={templateColor} />
+              <div ref={pdfRef}>
+                <DocumentPreview form={form} items={calcs.lineItems} calcs={calcs} sym={sym} docType={form.type || docType} managerSig={managerSig} customerSig={customerSig} template={template} templateColor={templateColor} />
+              </div>
             </div>
           </div>
         </div>
       )}
 
-      {/* Hidden full-size preview for PDF generation */}
-      <div style={{ position: "absolute", left: "-9999px", top: 0, width: 794 }}>
-        <div ref={pdfRef}>
-          <DocumentPreview form={form} items={calcs.lineItems} calcs={calcs} sym={sym} docType={form.type || docType} managerSig={managerSig} customerSig={customerSig} template={template} templateColor={templateColor} />
-        </div>
-      </div>
+
     </div>
   );
 }
