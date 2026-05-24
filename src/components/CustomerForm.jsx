@@ -36,18 +36,7 @@ export default function CustomerForm({ initial, onSave, onCancel }) {
         <div><Label>Tax/VAT Number</Label><Input value={form.tax_number} onChange={e => update("tax_number", e.target.value)} /></div>
       </div>
 
-      {/* Sold To */}
-      <div className="border border-gray-200 rounded-lg p-4 space-y-3">
-        <p className="text-xs font-bold text-gray-500 uppercase tracking-wider">Sold To</p>
-        <div className="grid grid-cols-2 gap-3">
-          <div><Label>Name</Label><Input value={form.full_name} onChange={e => update("full_name", e.target.value)} /></div>
-          <div><Label>Company</Label><Input value={form.company_name} onChange={e => update("company_name", e.target.value)} /></div>
-          <div><Label>Email</Label><Input type="email" value={form.email} onChange={e => update("email", e.target.value)} /></div>
-          <div><Label>Phone</Label><Input value={form.phone} onChange={e => update("phone", e.target.value)} /></div>
-        </div>
-        <div><Label>Address</Label><Textarea value={form.billing_address} onChange={e => update("billing_address", e.target.value)} rows={2} /></div>
-      </div>
-
+      <div><Label>Address</Label><Textarea value={form.billing_address} onChange={e => update("billing_address", e.target.value)} rows={2} /></div>
 
       <div><Label>Notes</Label><Textarea value={form.notes} onChange={e => update("notes", e.target.value)} rows={2} /></div>
       </div>
