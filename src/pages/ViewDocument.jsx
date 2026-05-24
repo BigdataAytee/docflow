@@ -9,6 +9,9 @@ import { format } from "date-fns";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import SignaturePad from "../components/SignaturePad";
 import { buildTheme } from "../components/TemplateSelector";
+import DocumentPreview from "../components/DocumentPreview";
+
+const CURRENCY_SYMBOLS = { NGN: "₦", USD: "$", GBP: "£", EUR: "€", GHS: "₵", KES: "KSh", ZAR: "R", CAD: "CA$", AUD: "A$" };
 
 const TYPE_LABELS = {
   invoice: "INVOICE", quotation: "QUOTATION", receipt: "RECEIPT", waybill: "WAYBILL",
@@ -240,8 +243,18 @@ export default function ViewDocument() {
           </div>
           <div className="flex-1 overflow-auto bg-gray-100 p-6" onClick={e => e.stopPropagation()}>
             <div className="max-w-4xl mx-auto">
-              <div ref={pdfRef} style={{ width: 794 }}>
-                <UnifiedTemplate doc={doc} onSaveManagerSig={saveManagerSig} onSaveCustomerSig={saveCustomerSig} isPdf={true} />
+              <div ref={pdfRef}>
+                <DocumentPreview
+                  form={doc}
+                  items={doc.items || []}
+                  calcs={{ subtotal: doc.subtotal, taxAmt: doc.tax_amount, total: doc.total }}
+                  sym={CURRENCY_SYMBOLS[doc.currency] || doc.currency || "₦"}
+                  docType={doc.type}
+                  managerSig={doc.manager_signature}
+                  customerSig={doc.customer_signature}
+                  template={doc.template || "classic"}
+                  templateColor={doc.template_color || "slate"}
+                />
               </div>
             </div>
           </div>
