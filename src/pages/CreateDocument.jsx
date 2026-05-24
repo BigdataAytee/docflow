@@ -40,6 +40,9 @@ export default function CreateDocument() {
   const [numPrefix, setNumPrefix] = useState("");
   const [numSeq, setNumSeq] = useState("");
   const [numOpen, setNumOpen] = useState(false);
+  const [autoSaveStatus, setAutoSaveStatus] = useState(""); // "", "saving", "saved"
+  const draftIdRef = useRef(editId || null);
+  const autoSaveTimerRef = useRef(null);
 
   const [form, setForm] = useState({
     type: docType,
@@ -135,6 +138,7 @@ export default function CreateDocument() {
   }, [items, form.tax_rate, form.shipping]);
 
   const handleSave = async (status = "draft") => {
+    if (autoSaveTimerRef.current) clearTimeout(autoSaveTimerRef.current);
     setSaving(true);
     const doc = {
       ...form,
@@ -150,9 +154,10 @@ export default function CreateDocument() {
       issue_date: form.issue_date ? new Date(form.issue_date).toISOString() : new Date().toISOString(),
       due_date: form.due_date ? new Date(form.due_date).toISOString() : undefined,
     };
-    if (editId) {
-      await base44.entities.Document.update(editId, doc);
-      navigate(`/documents/${editId}`);
+    const targetId = draftIdRef.current || editId;
+    if (targetId) {
+      await base44.entities.Document.update(targetId, doc);
+      navigate(`/documents/${targetId}`);
     } else {
       doc.manager_signature = managerSig || "";
       doc.customer_signature = customerSig || "";
@@ -161,6 +166,41 @@ export default function CreateDocument() {
       navigate(`/documents/${created.id}`);
     }
   };
+
+  // Auto-save logic
+  useEffect(() => {
+    if (!form.customer_name && items.every(it => !it.description)) return;
+    if (autoSaveTimerRef.current) clearTimeout(autoSaveTimerRef.current);
+    autoSaveTimerRef.current = setTimeout(async () => {
+      setAutoSaveStatus("saving");
+      const docData = {
+        ...form,
+        number: numPrefix && numSeq ? `${numPrefix}-${numSeq}` : form.number,
+        template: "classic",
+        template_color: "slate",
+        status: "draft",
+        items: calcs.lineItems,
+        subtotal: calcs.subtotal,
+        tax_amount: calcs.taxAmt,
+        total: calcs.total,
+        balance_due: calcs.total,
+        issue_date: form.issue_date ? new Date(form.issue_date).toISOString() : new Date().toISOString(),
+        due_date: form.due_date ? new Date(form.due_date).toISOString() : undefined,
+      };
+      if (draftIdRef.current) {
+        await base44.entities.Document.update(draftIdRef.current, docData);
+      } else {
+        docData.manager_signature = managerSig || "";
+        docData.customer_signature = customerSig || "";
+        docData.paid_amount = 0;
+        const created = await base44.entities.Document.create(docData);
+        draftIdRef.current = created.id;
+      }
+      setAutoSaveStatus("saved");
+      setTimeout(() => setAutoSaveStatus(""), 3000);
+    }, 6000);
+    return () => clearTimeout(autoSaveTimerRef.current);
+  }, [form, items, managerSig, customerSig]);
 
   const sym = CURRENCIES.find(c => c.value === form.currency)?.label.split(" ")[0] || "₦";
   const pdfRef = useRef(null);
@@ -225,7 +265,11 @@ export default function CreateDocument() {
         <Link to="/documents" className="p-2 hover:bg-muted rounded-lg"><ArrowLeft className="h-4 w-4" /></Link>
         <div>
           <h1 className="text-2xl font-bold">{editId ? `Edit ${typeLabels[form.type || docType]}` : `New ${typeLabels[docType]}`}</h1>
-          <p className="text-sm text-muted-foreground">{editId ? "Update the document details below" : "Fill in the details below"}</p>
+          <div className="flex items-center gap-2">
+            <p className="text-sm text-muted-foreground">{editId ? "Update the document details below" : "Fill in the details below"}</p>
+            {autoSaveStatus === "saving" && <span className="text-xs text-muted-foreground animate-pulse">Auto-saving…</span>}
+            {autoSaveStatus === "saved" && <span className="text-xs text-green-600 font-medium">✓ Draft saved</span>}
+          </div>
         </div>
       </div>
 
