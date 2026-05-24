@@ -75,7 +75,6 @@ export default function CreateDocument() {
         const { items: docItems, ...rest } = doc;
         setForm(f => ({ ...f, ...rest, issue_date: rest.issue_date ? rest.issue_date.split("T")[0] : f.issue_date, due_date: rest.due_date ? rest.due_date.split("T")[0] : "" }));
         if (docItems && docItems.length > 0) setItems(docItems);
-
         const parts = (rest.number || "").split("-");
         if (parts.length >= 2) { setNumPrefix(parts[0]); setNumSeq(parts.slice(1).join("-")); }
       });
@@ -94,7 +93,6 @@ export default function CreateDocument() {
           terms: user.default_terms || "",
           payment_instructions: user.default_payment_instructions || "",
         }));
-
       });
       base44.entities.Document.list("-created_date", 1).then(docs => {
         const prefix = docType === "invoice" ? "INV" : docType === "quotation" ? "QUO" : docType === "receipt" ? "REC" : docType === "waybill" ? "WB" : "DOC";
@@ -106,8 +104,6 @@ export default function CreateDocument() {
       });
     }
   }, [docType, editId]);
-
-
 
   const selectCustomer = (id) => {
     if (id === "__add_new__") { setShowAddCustomer(true); return; }
@@ -134,7 +130,7 @@ export default function CreateDocument() {
     });
     const subtotal = lineItems.reduce((s, i) => s + i.amount, 0);
     const taxAmt = subtotal * ((form.tax_rate || 0) / 100);
-    const total = subtotal + taxAmt + (form.shipping || 0);
+    const total = subtotal + taxAmt + (parseFloat(form.shipping) || 0);
     return { lineItems, subtotal, taxAmt, total };
   }, [items, form.tax_rate, form.shipping]);
 
@@ -212,7 +208,6 @@ export default function CreateDocument() {
     if (navigator.canShare && navigator.canShare({ files: [file] })) {
       await navigator.share({ files: [file], title: form.number, text: `${form.number} — ${form.customer_name}` });
     } else {
-      // Fallback: download the PDF instead
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url; a.download = `${form.number || "document"}.pdf`;
@@ -221,6 +216,8 @@ export default function CreateDocument() {
     }
     setGeneratingPdf(false);
   };
+
+  const previewScale = Math.min(1, (Math.min(window.innerWidth, 826) - 32) / 794);
 
   return (
     <div className="max-w-5xl mx-auto pb-32 lg:pb-0">
@@ -253,12 +250,12 @@ export default function CreateDocument() {
                       <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">Customize Document Number</p>
                       <div className="space-y-3">
                         <div>
-                         <Label className="text-xs">Prefix</Label>
-                         <Input value={numPrefix} onChange={e => { setNumPrefix(e.target.value); setForm(f => ({ ...f, number: `${e.target.value}-${numSeq}` })); }} placeholder="e.g. INV" className="h-8 text-sm mt-1" />
+                          <Label className="text-xs">Prefix</Label>
+                          <Input value={numPrefix} onChange={e => { setNumPrefix(e.target.value); setForm(f => ({ ...f, number: `${e.target.value}-${numSeq}` })); }} placeholder="e.g. INV" className="h-8 text-sm mt-1" />
                         </div>
                         <div>
-                         <Label className="text-xs">Number</Label>
-                         <Input value={numSeq} onChange={e => { setNumSeq(e.target.value); setForm(f => ({ ...f, number: `${numPrefix}-${e.target.value}` })); }} placeholder="e.g. 0001" className="h-8 text-sm mt-1" />
+                          <Label className="text-xs">Number</Label>
+                          <Input value={numSeq} onChange={e => { setNumSeq(e.target.value); setForm(f => ({ ...f, number: `${numPrefix}-${e.target.value}` })); }} placeholder="e.g. 0001" className="h-8 text-sm mt-1" />
                         </div>
                         <p className="text-xs text-muted-foreground">Preview: <span className="font-mono font-semibold text-foreground">{numPrefix}-{numSeq}</span></p>
                         <button type="button" className="w-full mt-1 bg-primary text-primary-foreground text-xs font-semibold py-1.5 rounded-md hover:bg-primary/90 transition-colors" onClick={() => setNumOpen(false)}>Save</button>
@@ -308,7 +305,6 @@ export default function CreateDocument() {
           {/* Line Items */}
           <div className="bg-card rounded-xl border border-border p-6">
             <h3 className="font-semibold mb-4">Line Items</h3>
-            {/* Desktop table header */}
             <div className="hidden sm:grid grid-cols-12 gap-2 mb-1">
               <div className="col-span-5 text-xs font-medium text-muted-foreground">Description</div>
               <div className="col-span-2 text-xs font-medium text-muted-foreground">Qty</div>
@@ -336,7 +332,7 @@ export default function CreateDocument() {
                       <div><Label className="text-xs text-muted-foreground">Qty</Label><Input value={item.quantity} onChange={e => updateItem(i, "quantity", e.target.value)} onFocus={e => e.target.select()} placeholder="0" className="mt-1 w-28" /></div>
                     )}
                     {docType !== 'waybill' && (
-                      <div className="text-right text-xs font-semibold text-foreground">{sym}{((item.quantity || 0) * (item.unit_price || 0) * (1 - (item.discount || 0) / 100)).toLocaleString("en", { minimumFractionDigits: 2 })}</div>
+                      <div className="text-right text-xs font-semibold text-foreground">{sym}{((parseFloat(item.quantity) || 0) * (parseFloat(item.unit_price) || 0) * (1 - (parseFloat(item.discount) || 0) / 100)).toLocaleString("en", { minimumFractionDigits: 2 })}</div>
                     )}
                   </div>
                   {/* Desktop row layout */}
@@ -388,7 +384,6 @@ export default function CreateDocument() {
           {/* Notes */}
           <div className="bg-card rounded-xl border border-border p-6 space-y-4">
             <div><Label>Notes / Message to Customer</Label><Textarea value={form.notes} onChange={e => setForm(f => ({ ...f, notes: e.target.value }))} rows={2} placeholder="e.g. Thanks for your business." /></div>
-
             {!['receipt', 'waybill'].includes(docType) && (
               <div><Label>Payment Instructions</Label><Textarea value={form.payment_instructions} onChange={e => setForm(f => ({ ...f, payment_instructions: e.target.value }))} rows={2} /></div>
             )}
@@ -481,17 +476,29 @@ export default function CreateDocument() {
               <button className="p-2 hover:bg-muted rounded-lg text-muted-foreground" onClick={() => setShowPdfPreview(false)}>✕</button>
             </div>
           </div>
-          <div className="flex-1 overflow-auto bg-gray-100 p-6" onClick={e => e.stopPropagation()}>
-            <div className="max-w-3xl mx-auto">
-              <div ref={pdfRef} style={{ width: 794 }}>
-                <DocumentPreview form={form} items={calcs.lineItems} calcs={calcs} sym={sym} docType={form.type || docType} managerSig={managerSig} customerSig={customerSig} template={template} templateColor={templateColor} />
+          <div className="flex-1 overflow-auto bg-gray-100" onClick={e => e.stopPropagation()}>
+            <div className="flex justify-center p-4">
+              <div style={{ width: 794 * previewScale }}>
+                <div style={{ width: 794, transformOrigin: "top left", transform: `scale(${previewScale})` }}>
+                  <div ref={pdfRef} style={{ width: 794 }}>
+                    <DocumentPreview
+                      form={form}
+                      items={calcs.lineItems}
+                      calcs={calcs}
+                      sym={sym}
+                      docType={form.type || docType}
+                      managerSig={managerSig}
+                      customerSig={customerSig}
+                      template={template}
+                      templateColor={templateColor}
+                    />
+                  </div>
+                </div>
               </div>
             </div>
           </div>
         </div>
       )}
-
-
     </div>
   );
 }
