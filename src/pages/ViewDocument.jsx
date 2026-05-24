@@ -90,7 +90,7 @@ export default function ViewDocument() {
     let yPos = 0;
     pdf.addImage(imgData, "JPEG", 0, yPos, pageWidthMm, imgHeightMm);
     remaining -= pageHeightMm;
-    while (remaining > 0) {
+    while (remaining > 15) {
       yPos -= pageHeightMm;
       pdf.addPage();
       pdf.addImage(imgData, "JPEG", 0, yPos, pageWidthMm, imgHeightMm);
@@ -278,13 +278,13 @@ function UnifiedTemplate({ doc, onSaveManagerSig, onSaveCustomerSig, isPdf = fal
               {doc.company_address && <p className="text-xs whitespace-pre-line" style={{ color: T.headerColor, opacity: 0.7 }}>{doc.company_address}</p>}
             </div>
           </div>
-          <div className="text-right ml-8 flex flex-col items-end gap-2">
-            <h1 className="text-4xl font-black tracking-widest" style={{ color: T.docTitleColor }}>{TYPE_LABELS[doc.type]}</h1>
-            <p className="text-sm font-mono" style={{ color: T.headerColor, opacity: 0.6 }}>{doc.number}</p>
+          <div style={{ textAlign: "right", marginLeft: 32, display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 8 }}>
+            <div style={{ fontSize: 36, fontWeight: 900, letterSpacing: 4, color: T.docTitleColor, lineHeight: 1 }}>{TYPE_LABELS[doc.type]}</div>
+            <div style={{ fontSize: 13, fontFamily: "monospace", color: T.headerColor, opacity: 0.6 }}>{doc.number}</div>
             {doc.type !== 'waybill' && (
-              <div className="mt-2 rounded-lg px-5 py-3 min-w-[180px] text-right" style={{ background: isColoredHeader ? "rgba(255,255,255,0.15)" : "#f8fafc", border: `1px solid ${isColoredHeader ? "rgba(255,255,255,0.25)" : "#e2e8f0"}` }}>
-                <p className="text-xs uppercase tracking-wider font-medium" style={{ color: isColoredHeader ? "#ffffff" : "#64748b" }}>{amountLabel}</p>
-                <p className="text-2xl font-black mt-0.5" style={{ color: isColoredHeader ? "#ffffff" : "#111827" }}>{fmtCurr(doc.balance_due || doc.total)}</p>
+              <div style={{ marginTop: 8, borderRadius: 8, padding: "12px 20px", minWidth: 180, textAlign: "right", background: isColoredHeader ? "rgba(255,255,255,0.15)" : "#f8fafc", border: `1px solid ${isColoredHeader ? "rgba(255,255,255,0.25)" : "#e2e8f0"}` }}>
+                <div style={{ fontSize: 10, textTransform: "uppercase", letterSpacing: "0.08em", fontWeight: 600, color: isColoredHeader ? "#ffffff" : "#64748b", marginBottom: 4 }}>{amountLabel}</div>
+                <div style={{ fontSize: 22, fontWeight: 900, color: isColoredHeader ? "#ffffff" : "#111827", lineHeight: 1 }}>{fmtCurr(doc.balance_due || doc.total)}</div>
               </div>
             )}
           </div>
