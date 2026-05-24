@@ -93,7 +93,7 @@ export default function ViewDocument() {
     let yPos = 0;
     pdf.addImage(imgData, "JPEG", 0, yPos, pageWidthMm, imgHeightMm);
     remaining -= pageHeightMm;
-    while (remaining > 15) {
+    while (remaining > 30) {
       yPos -= pageHeightMm;
       pdf.addPage();
       pdf.addImage(imgData, "JPEG", 0, yPos, pageWidthMm, imgHeightMm);
