@@ -328,12 +328,12 @@ export default function CreateDocument() {
                     </div>
                     {docType !== 'waybill' ? (
                       <div className="grid grid-cols-3 gap-2">
-                        <div><Label className="text-xs text-muted-foreground">Qty</Label><Input value={item.quantity} onChange={e => updateItem(i, "quantity", +e.target.value)} onFocus={e => e.target.select()} className="mt-1" /></div>
-                        <div><Label className="text-xs text-muted-foreground">Unit Price</Label><Input value={item.unit_price} onChange={e => updateItem(i, "unit_price", +e.target.value)} onFocus={e => e.target.select()} className="mt-1" /></div>
-                        <div><Label className="text-xs text-muted-foreground">Disc %</Label><Input value={item.discount} onChange={e => updateItem(i, "discount", +e.target.value)} onFocus={e => e.target.select()} className="mt-1" /></div>
+                        <div><Label className="text-xs text-muted-foreground">Qty</Label><Input value={item.quantity} onChange={e => updateItem(i, "quantity", e.target.value)} onFocus={e => e.target.select()} placeholder="0" className="mt-1" /></div>
+                        <div><Label className="text-xs text-muted-foreground">Unit Price</Label><Input value={item.unit_price} onChange={e => updateItem(i, "unit_price", e.target.value)} onFocus={e => e.target.select()} placeholder="0" className="mt-1" /></div>
+                        <div><Label className="text-xs text-muted-foreground">Disc %</Label><Input value={item.discount} onChange={e => updateItem(i, "discount", e.target.value)} onFocus={e => e.target.select()} placeholder="0" className="mt-1" /></div>
                       </div>
                     ) : (
-                      <div><Label className="text-xs text-muted-foreground">Qty</Label><Input value={item.quantity} onChange={e => updateItem(i, "quantity", +e.target.value)} onFocus={e => e.target.select()} className="mt-1 w-28" /></div>
+                      <div><Label className="text-xs text-muted-foreground">Qty</Label><Input value={item.quantity} onChange={e => updateItem(i, "quantity", e.target.value)} onFocus={e => e.target.select()} placeholder="0" className="mt-1 w-28" /></div>
                     )}
                     {docType !== 'waybill' && (
                       <div className="text-right text-xs font-semibold text-foreground">{sym}{((item.quantity || 0) * (item.unit_price || 0) * (1 - (item.discount || 0) / 100)).toLocaleString("en", { minimumFractionDigits: 2 })}</div>
@@ -342,9 +342,9 @@ export default function CreateDocument() {
                   {/* Desktop row layout */}
                   <div className="hidden sm:grid grid-cols-12 gap-2 items-center">
                     <div className="col-span-5"><Input value={item.description} onChange={e => updateItem(i, "description", e.target.value)} placeholder="Item description" /></div>
-                    <div className="col-span-2"><Input value={item.quantity} onChange={e => updateItem(i, "quantity", +e.target.value)} onFocus={e => e.target.select()} /></div>
-                    {docType !== 'waybill' && <div className="col-span-2"><Input value={item.unit_price} onChange={e => updateItem(i, "unit_price", +e.target.value)} onFocus={e => e.target.select()} /></div>}
-                    {docType !== 'waybill' && <div className="col-span-2"><Input value={item.discount} onChange={e => updateItem(i, "discount", +e.target.value)} onFocus={e => e.target.select()} /></div>}
+                    <div className="col-span-2"><Input value={item.quantity} onChange={e => updateItem(i, "quantity", e.target.value)} onFocus={e => e.target.select()} placeholder="0" /></div>
+                    {docType !== 'waybill' && <div className="col-span-2"><Input value={item.unit_price} onChange={e => updateItem(i, "unit_price", e.target.value)} onFocus={e => e.target.select()} placeholder="0" /></div>}
+                    {docType !== 'waybill' && <div className="col-span-2"><Input value={item.discount} onChange={e => updateItem(i, "discount", e.target.value)} onFocus={e => e.target.select()} placeholder="0" /></div>}
                     <div className="col-span-1">
                       <Button variant="ghost" size="icon" onClick={() => setItems(prev => prev.filter((_, idx) => idx !== i))} disabled={items.length === 1}>
                         <Trash2 className="h-4 w-4 text-muted-foreground" />
@@ -370,13 +370,13 @@ export default function CreateDocument() {
               <div className="flex items-center justify-between gap-2">
                 <Label className="text-muted-foreground font-normal">VAT %</Label>
                 <div className="flex items-center gap-2">
-                  <Input className="w-20 h-8 text-xs" value={form.tax_rate} onChange={e => setForm(f => ({ ...f, tax_rate: +e.target.value }))} onFocus={e => e.target.select()} />
+                  <Input className="w-20 h-8 text-xs" value={form.tax_rate} onChange={e => setForm(f => ({ ...f, tax_rate: e.target.value }))} onFocus={e => e.target.select()} placeholder="0" />
                   <span className="text-muted-foreground text-xs w-24 text-right">{sym}{calcs.taxAmt.toLocaleString("en", { minimumFractionDigits: 2 })}</span>
                 </div>
               </div>
               <div className="flex items-center justify-between gap-2">
                 <Label className="text-muted-foreground font-normal">Shipping</Label>
-                <Input className="w-32 h-8 text-xs text-right" value={form.shipping} onChange={e => setForm(f => ({ ...f, shipping: +e.target.value }))} onFocus={e => e.target.select()} />
+                <Input className="w-32 h-8 text-xs text-right" value={form.shipping} onChange={e => setForm(f => ({ ...f, shipping: e.target.value }))} onFocus={e => e.target.select()} placeholder="0" />
               </div>
               <div className="border-t border-border pt-3 flex justify-between">
                 <span className="font-bold">Total</span>
