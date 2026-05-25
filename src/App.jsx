@@ -21,6 +21,7 @@ import Settings from './pages/Settings';
 import Mail from './pages/Mail';
 import Apps from './pages/Apps';
 import WaybillSign from './pages/WaybillSign';
+import AdminDashboard from './pages/AdminDashboard';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -63,6 +64,7 @@ const AuthenticatedApp = () => {
           <Route path="/settings" element={<Settings />} />
           <Route path="/mail" element={<Mail />} />
           <Route path="/apps" element={<Apps />} />
+          <Route path="/admin" element={<AdminDashboard />} />
         </Route>
       </Route>
       <Route path="*" element={<PageNotFound />} />

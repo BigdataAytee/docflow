@@ -1,5 +1,5 @@
 import { Link, useLocation } from "react-router-dom";
-import { Users, FileText, Settings, Plus, ChevronDown, LogOut, Mail, LayoutGrid } from "lucide-react";
+import { Users, FileText, Settings, Plus, ChevronDown, LogOut, Mail, LayoutGrid, ShieldAlert } from "lucide-react";
 import { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
@@ -24,12 +24,14 @@ export default function Sidebar({ onClose }) {
   const [showCreate, setShowCreate] = useState(false);
   const [companyName, setCompanyName] = useState("");
   const [companyEmail, setCompanyEmail] = useState("");
+  const [isAdmin, setIsAdmin] = useState(false);
 
   useEffect(() => {
     base44.auth.me().then(user => {
       if (user) {
         setCompanyName(user.company_name || user.full_name || "");
         setCompanyEmail(user.company_email || user.email || "");
+        setIsAdmin(user.role === "admin");
       }
     });
   }, []);
@@ -68,6 +70,20 @@ export default function Sidebar({ onClose }) {
       </div>
 
       <nav className="flex-1 px-3 space-y-1">
+        {isAdmin && (
+          <Link
+            to="/admin"
+            onClick={() => onClose && onClose()}
+            className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all ${
+              location.pathname === "/admin"
+                ? "bg-sidebar-accent text-white"
+                : "text-sidebar-foreground/70 hover:text-white hover:bg-sidebar-accent/50"
+            }`}
+          >
+            <ShieldAlert className="h-4 w-4" />
+            Admin Dashboard
+          </Link>
+        )}
         {navItems.map(item => {
           const active = location.pathname === item.path || (item.path !== "/" && location.pathname.startsWith(item.path));
           return (
