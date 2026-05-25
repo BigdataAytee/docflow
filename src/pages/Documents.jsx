@@ -65,6 +65,48 @@ function StatCard({ title, value, sub, icon: Icon, trend, color }) {
   );
 }
 
+function UndoToast({ doc, startedAt, onUndo }) {
+  const [remaining, setRemaining] = useState(10);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      const elapsed = (Date.now() - startedAt) / 1000;
+      const left = Math.max(0, 10 - elapsed);
+      setRemaining(Math.ceil(left));
+      if (left <= 0) clearInterval(interval);
+    }, 200);
+    return () => clearInterval(interval);
+  }, [startedAt]);
+
+  const progress = (remaining / 10) * 100;
+
+  return (
+    <div className="pointer-events-auto bg-slate-900 text-white rounded-xl shadow-2xl px-4 py-3 flex items-center gap-3 w-full max-w-sm">
+      <div className="relative h-8 w-8 shrink-0">
+        <svg className="absolute inset-0 -rotate-90" viewBox="0 0 32 32">
+          <circle cx="16" cy="16" r="13" fill="none" stroke="rgba(255,255,255,0.15)" strokeWidth="3" />
+          <circle cx="16" cy="16" r="13" fill="none" stroke="#ef4444" strokeWidth="3"
+            strokeDasharray={`${2 * Math.PI * 13}`}
+            strokeDashoffset={`${2 * Math.PI * 13 * (1 - progress / 100)}`}
+            style={{ transition: "stroke-dashoffset 0.2s linear" }}
+          />
+        </svg>
+        <span className="absolute inset-0 flex items-center justify-center text-[10px] font-bold text-white">{remaining}</span>
+      </div>
+      <div className="flex-1 min-w-0">
+        <p className="text-sm font-medium">Document deleted</p>
+        <p className="text-xs text-white/50 truncate">{doc.number} · {doc.customer_name}</p>
+      </div>
+      <button
+        onClick={onUndo}
+        className="shrink-0 px-3 py-1.5 text-xs font-semibold bg-white text-slate-900 rounded-lg hover:bg-white/90 transition-colors"
+      >
+        Undo
+      </button>
+    </div>
+  );
+}
+
 function SkeletonRow() {
   return (
     <tr className="border-t border-border">
@@ -87,6 +129,7 @@ export default function Documents() {
   const [hoveredRow, setHoveredRow] = useState(null);
   const [sortCol, setSortCol] = useState("created_date");
   const [sortDir, setSortDir] = useState("desc");
+  const [pendingDeletes, setPendingDeletes] = useState([]); // { doc, timeoutId, startedAt }
   const dropdownRef = useRef(null);
   const navigate = useNavigate();
 
@@ -151,11 +194,24 @@ export default function Documents() {
     return result;
   }, [documents, search, typeFilter, statusFilter, sortCol, sortDir]);
 
-  const handleDelete = async (id, e) => {
+  const handleDelete = (doc, e) => {
     e.preventDefault(); e.stopPropagation();
-    if (!confirm("Delete this document?")) return;
-    await base44.entities.Document.delete(id);
-    setDocuments(prev => prev.filter(d => d.id !== id));
+    // Soft-remove from list immediately
+    setDocuments(prev => prev.filter(d => d.id !== doc.id));
+    // Schedule real delete after 10s
+    const timeoutId = setTimeout(async () => {
+      await base44.entities.Document.delete(doc.id);
+      setPendingDeletes(prev => prev.filter(p => p.doc.id !== doc.id));
+    }, 10000);
+    setPendingDeletes(prev => [...prev, { doc, timeoutId, startedAt: Date.now() }]);
+  };
+
+  const handleUndoDelete = (docId) => {
+    const entry = pendingDeletes.find(p => p.doc.id === docId);
+    if (!entry) return;
+    clearTimeout(entry.timeoutId);
+    setDocuments(prev => [...prev, entry.doc].sort((a, b) => new Date(b.created_date) - new Date(a.created_date)));
+    setPendingDeletes(prev => prev.filter(p => p.doc.id !== docId));
   };
 
   const SortIcon = ({ col }) => {
@@ -350,7 +406,7 @@ export default function Documents() {
                             className="h-7 w-7 flex items-center justify-center rounded-lg hover:bg-muted text-muted-foreground hover:text-foreground transition-colors" title="Edit">
                             <Pencil className="h-3.5 w-3.5" />
                           </Link>
-                          <button onClick={(e) => handleDelete(doc.id, e)}
+                          <button onClick={(e) => handleDelete(doc, e)}
                             className="h-7 w-7 flex items-center justify-center rounded-lg hover:bg-red-50 text-muted-foreground hover:text-red-600 transition-colors" title="Delete">
                             <Trash2 className="h-3.5 w-3.5" />
                           </button>
@@ -386,7 +442,19 @@ export default function Documents() {
           </>
         )}
 
-        {/* Footer count */}
+        {/* Undo Delete Toasts */}
+      <div className="fixed bottom-20 lg:bottom-6 left-1/2 -translate-x-1/2 z-50 flex flex-col gap-2 items-center pointer-events-none" style={{ minWidth: 320 }}>
+        {pendingDeletes.map(({ doc, startedAt }) => (
+          <UndoToast
+            key={doc.id}
+            doc={doc}
+            startedAt={startedAt}
+            onUndo={() => handleUndoDelete(doc.id)}
+          />
+        ))}
+      </div>
+
+      {/* Footer count */}
         {!loading && filtered.length > 0 && (
           <div className="px-5 py-3 border-t border-border flex items-center justify-between">
             <span className="text-xs text-muted-foreground">
