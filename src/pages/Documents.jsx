@@ -130,6 +130,7 @@ export default function Documents() {
   const [sortCol, setSortCol] = useState("created_date");
   const [sortDir, setSortDir] = useState("desc");
   const [pendingDeletes, setPendingDeletes] = useState([]); // { doc, timeoutId, startedAt }
+  const [confirmDeleteDoc, setConfirmDeleteDoc] = useState(null);
   const dropdownRef = useRef(null);
   const navigate = useNavigate();
 
@@ -196,9 +197,12 @@ export default function Documents() {
 
   const handleDelete = (doc, e) => {
     e.preventDefault(); e.stopPropagation();
-    // Soft-remove from list immediately
+    setConfirmDeleteDoc(doc);
+  };
+
+  const handleDeleteConfirmed = (doc) => {
+    setConfirmDeleteDoc(null);
     setDocuments(prev => prev.filter(d => d.id !== doc.id));
-    // Schedule real delete after 10s
     const timeoutId = setTimeout(async () => {
       await base44.entities.Document.delete(doc.id);
       setPendingDeletes(prev => prev.filter(p => p.doc.id !== doc.id));
@@ -442,7 +446,36 @@ export default function Documents() {
           </>
         )}
 
-        {/* Undo Delete Toasts */}
+        {/* Confirm Delete Modal */}
+      {confirmDeleteDoc && (
+        <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4" onClick={() => setConfirmDeleteDoc(null)}>
+          <div className="bg-card rounded-2xl border border-border shadow-2xl p-6 w-full max-w-sm" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-center h-12 w-12 rounded-full bg-red-50 border border-red-100 mx-auto mb-4">
+              <Trash2 className="h-5 w-5 text-red-500" />
+            </div>
+            <h3 className="text-base font-bold text-center text-foreground">Delete Document?</h3>
+            <p className="text-sm text-muted-foreground text-center mt-1.5 mb-5">
+              <span className="font-semibold text-foreground">{confirmDeleteDoc.number}</span> for <span className="font-semibold text-foreground">{confirmDeleteDoc.customer_name}</span> will be deleted. This can be undone within 10 seconds.
+            </p>
+            <div className="flex gap-2">
+              <button
+                onClick={() => setConfirmDeleteDoc(null)}
+                className="flex-1 px-4 py-2.5 rounded-xl border border-border text-sm font-semibold hover:bg-muted/50 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => handleDeleteConfirmed(confirmDeleteDoc)}
+                className="flex-1 px-4 py-2.5 rounded-xl bg-red-600 text-white text-sm font-semibold hover:bg-red-700 transition-colors"
+              >
+                Yes, Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Undo Delete Toasts */}
       <div className="fixed bottom-20 lg:bottom-6 left-1/2 -translate-x-1/2 z-50 flex flex-col gap-2 items-center pointer-events-none" style={{ minWidth: 320 }}>
         {pendingDeletes.map(({ doc, startedAt }) => (
           <UndoToast
