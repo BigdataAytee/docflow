@@ -11,22 +11,22 @@ const fmt = (n) => (n || 0).toLocaleString("en", { minimumFractionDigits: 2 });
 function ItemsTable({ items, docType, T }) {
   const showPrice = docType !== "waybill";
   return (
-    <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
+    <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 14 }}>
       <thead>
         <tr style={{ background: T.tableHeaderBg, borderBottom: `2px solid ${T.accentColor}` }}>
-          <th style={{ textAlign: "left", padding: "10px 48px 10px 48px", color: T.tableHeaderColor, fontSize: 9, textTransform: "uppercase", letterSpacing: 0.8, fontWeight: 700 }}>Description</th>
-          <th style={{ textAlign: "right", padding: "9px 12px", color: T.tableHeaderColor, fontSize: 9, textTransform: "uppercase", letterSpacing: 0.8, fontWeight: 700 }}>Qty</th>
-          {showPrice && <th style={{ textAlign: "right", padding: "9px 12px", color: T.tableHeaderColor, fontSize: 9, textTransform: "uppercase", letterSpacing: 0.8, fontWeight: 700 }}>Unit Price</th>}
-          {showPrice && <th style={{ textAlign: "right", padding: "10px 48px 10px 12px", color: T.tableHeaderColor, fontSize: 9, textTransform: "uppercase", letterSpacing: 0.8, fontWeight: 700 }}>Amount</th>}
+          <th style={{ textAlign: "left", padding: "12px 48px 12px 48px", color: T.tableHeaderColor, fontSize: 11, textTransform: "uppercase", letterSpacing: 0.8, fontWeight: 700 }}>Description</th>
+          <th style={{ textAlign: "right", padding: "11px 12px", color: T.tableHeaderColor, fontSize: 11, textTransform: "uppercase", letterSpacing: 0.8, fontWeight: 700 }}>Qty</th>
+          {showPrice && <th style={{ textAlign: "right", padding: "11px 12px", color: T.tableHeaderColor, fontSize: 11, textTransform: "uppercase", letterSpacing: 0.8, fontWeight: 700 }}>Unit Price</th>}
+          {showPrice && <th style={{ textAlign: "right", padding: "12px 48px 12px 12px", color: T.tableHeaderColor, fontSize: 11, textTransform: "uppercase", letterSpacing: 0.8, fontWeight: 700 }}>Amount</th>}
         </tr>
       </thead>
       <tbody>
         {items.length > 0 ? items.map((item, i) => (
           <tr key={i} style={{ borderBottom: "1px solid #e2e8f0", background: i % 2 === 0 ? "transparent" : "#f8fafc" }}>
-            <td style={{ padding: "13px 48px", color: "#1e293b", fontWeight: 500 }}>{item.description || <span style={{ color: "#cbd5e1" }}>Item description</span>}</td>
-            <td style={{ padding: "12px 12px", textAlign: "right", color: "#334155", fontWeight: 600 }}>{(parseFloat(item.quantity) || 0).toFixed(2)}</td>
-            {showPrice && <td style={{ padding: "12px 12px", textAlign: "right", color: "#334155", fontWeight: 500 }}>{fmt(item.unit_price)}</td>}
-            {showPrice && <td style={{ padding: "13px 48px 13px 12px", textAlign: "right", fontWeight: 700, color: "#0f172a", fontSize: 14 }}>{fmt(item.amount)}</td>}
+            <td style={{ padding: "14px 48px", color: "#1e293b", fontWeight: 500, fontSize: 14 }}>{item.description || <span style={{ color: "#cbd5e1" }}>Item description</span>}</td>
+            <td style={{ padding: "13px 12px", textAlign: "right", color: "#334155", fontWeight: 600, fontSize: 14 }}>{(parseFloat(item.quantity) || 0).toFixed(2)}</td>
+            {showPrice && <td style={{ padding: "13px 12px", textAlign: "right", color: "#334155", fontWeight: 500, fontSize: 14 }}>{fmt(item.unit_price)}</td>}
+            {showPrice && <td style={{ padding: "14px 48px 14px 12px", textAlign: "right", fontWeight: 700, color: "#0f172a", fontSize: 15 }}>{fmt(item.amount)}</td>}
           </tr>
         )) : (
           <tr><td colSpan={4} style={{ padding: "24px 28px", color: "#cbd5e1", textAlign: "center", fontSize: 11 }}>No items added yet</td></tr>
@@ -39,13 +39,13 @@ function ItemsTable({ items, docType, T }) {
 function TotalsBlock({ calcs, form, sym, T, amountLabel }) {
   if (!calcs) return null;
   return (
-    <div style={{ display: "flex", justifyContent: "flex-end", padding: "14px 48px 24px" }}>
-      <div style={{ width: 280, fontSize: 13 }}>
-        <div style={{ display: "flex", justifyContent: "space-between", padding: "5px 0", color: "#475569", fontWeight: 500 }}><span>Subtotal</span><span style={{ fontWeight: 600, color: "#1e293b" }}>{sym}{fmt(calcs.subtotal)}</span></div>
-        {(calcs.taxAmt || 0) > 0 && <div style={{ display: "flex", justifyContent: "space-between", padding: "5px 0", color: "#475569", fontWeight: 500 }}><span>VAT ({form.tax_rate}%)</span><span style={{ fontWeight: 600, color: "#1e293b" }}>{sym}{fmt(calcs.taxAmt)}</span></div>}
-        {(parseFloat(form.shipping) || 0) > 0 && <div style={{ display: "flex", justifyContent: "space-between", padding: "5px 0", color: "#475569", fontWeight: 500 }}><span>Shipping</span><span style={{ fontWeight: 600, color: "#1e293b" }}>{sym}{fmt(form.shipping)}</span></div>}
-        <div style={{ display: "flex", justifyContent: "space-between", padding: "12px 0 6px", borderTop: `2px solid ${T.totalBorder}`, marginTop: 8, fontWeight: 900, fontSize: 16, color: "#0f172a" }}>
-          <span>{amountLabel}</span><span style={{ color: T.accentColor }}>{sym}{fmt(calcs.total)}</span>
+    <div style={{ display: "flex", justifyContent: "flex-end", padding: "18px 48px 28px" }}>
+      <div style={{ width: 300, fontSize: 14 }}>
+        <div style={{ display: "flex", justifyContent: "space-between", padding: "7px 0", color: "#475569", fontWeight: 500 }}><span>Subtotal</span><span style={{ fontWeight: 600, color: "#1e293b" }}>{sym}{fmt(calcs.subtotal)}</span></div>
+        {(calcs.taxAmt || 0) > 0 && <div style={{ display: "flex", justifyContent: "space-between", padding: "7px 0", color: "#475569", fontWeight: 500 }}><span>VAT ({form.tax_rate}%)</span><span style={{ fontWeight: 600, color: "#1e293b" }}>{sym}{fmt(calcs.taxAmt)}</span></div>}
+        {(parseFloat(form.shipping) || 0) > 0 && <div style={{ display: "flex", justifyContent: "space-between", padding: "7px 0", color: "#475569", fontWeight: 500 }}><span>Shipping</span><span style={{ fontWeight: 600, color: "#1e293b" }}>{sym}{fmt(form.shipping)}</span></div>}
+        <div style={{ display: "flex", justifyContent: "space-between", padding: "14px 0 8px", borderTop: `2px solid ${T.totalBorder}`, marginTop: 10, fontWeight: 900, fontSize: 18, color: "#0f172a" }}>
+          <span style={{ fontSize: 16 }}>{amountLabel}</span><span style={{ color: T.accentColor, fontSize: 20 }}>{sym}{fmt(calcs.total)}</span>
         </div>
       </div>
     </div>

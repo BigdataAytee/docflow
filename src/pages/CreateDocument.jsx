@@ -247,7 +247,7 @@ export default function CreateDocument() {
   const templateColor = "slate";
 
   const generatePdfBlob = async () => {
-    const canvas = await html2canvas(pdfRef.current, { scale: 1.5, useCORS: true, logging: false, backgroundColor: "#ffffff", width: 794, windowWidth: 794 });
+    const canvas = await html2canvas(pdfRef.current, { scale: 2, useCORS: true, logging: false, backgroundColor: "#ffffff", width: 794, windowWidth: 794 });
     const imgData = canvas.toDataURL("image/jpeg", 0.88);
     const pdf = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
     const pageWidthMm = pdf.internal.pageSize.getWidth();
