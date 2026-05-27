@@ -7,21 +7,32 @@ export default function SignaturePad({ label = "Signature", onSave }) {
   const [drawing, setDrawing] = useState(false);
   const [hasSignature, setHasSignature] = useState(false);
   const [savedSig, setSavedSig] = useState(null);
+  const lastPos = useRef(null);
 
   const getPos = (e, canvas) => {
     const rect = canvas.getBoundingClientRect();
+    const scaleX = canvas.width / rect.width;
+    const scaleY = canvas.height / rect.height;
     const source = e.touches ? e.touches[0] : e;
-    return { x: source.clientX - rect.left, y: source.clientY - rect.top };
+    return {
+      x: (source.clientX - rect.left) * scaleX,
+      y: (source.clientY - rect.top) * scaleY,
+    };
   };
 
   const startDraw = (e) => {
     e.preventDefault();
     const canvas = canvasRef.current;
+    const pos = getPos(e, canvas);
     const ctx = canvas.getContext("2d");
-    const { x, y } = getPos(e, canvas);
+    // Draw a dot so single taps are visible
+    ctx.fillStyle = "#1e293b";
     ctx.beginPath();
-    ctx.moveTo(x, y);
+    ctx.arc(pos.x, pos.y, 1.2, 0, Math.PI * 2);
+    ctx.fill();
+    lastPos.current = pos;
     setDrawing(true);
+    setHasSignature(true);
   };
 
   const draw = (e) => {
@@ -29,17 +40,28 @@ export default function SignaturePad({ label = "Signature", onSave }) {
     e.preventDefault();
     const canvas = canvasRef.current;
     const ctx = canvas.getContext("2d");
+    const pos = getPos(e, canvas);
+    const prev = lastPos.current;
+    if (!prev) { lastPos.current = pos; return; }
+    // Smooth curve using quadratic bezier midpoint
+    const mx = (prev.x + pos.x) / 2;
+    const my = (prev.y + pos.y) / 2;
     ctx.strokeStyle = "#1e293b";
-    ctx.lineWidth = 2;
+    ctx.lineWidth = 1.8;
     ctx.lineCap = "round";
     ctx.lineJoin = "round";
-    const { x, y } = getPos(e, canvas);
-    ctx.lineTo(x, y);
+    ctx.beginPath();
+    ctx.moveTo((prev.x + mx) / 2, (prev.y + my) / 2);
+    ctx.quadraticCurveTo(prev.x, prev.y, mx, my);
     ctx.stroke();
+    lastPos.current = pos;
     setHasSignature(true);
   };
 
-  const stopDraw = () => setDrawing(false);
+  const stopDraw = () => {
+    setDrawing(false);
+    lastPos.current = null;
+  };
 
   const clear = () => {
     const canvas = canvasRef.current;
