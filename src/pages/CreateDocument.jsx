@@ -211,9 +211,12 @@ export default function CreateDocument() {
 
   const calcs = useMemo(() => {
     const lineItems = items.map(it => {
-      const amt = (parseFloat(it.quantity) || 0) * (parseFloat(it.unit_price) || 0);
-      const disc = amt * ((parseFloat(it.discount) || 0) / 100);
-      return { ...it, amount: amt - disc };
+      const qty = parseFloat(it.quantity) || 0;
+      const price = parseFloat(it.unit_price) || 0;
+      const disc = parseFloat(it.discount) || 0;
+      const amt = qty * price;
+      const discAmt = amt * (disc / 100);
+      return { ...it, quantity: qty, unit_price: price, discount: disc, amount: amt - discAmt };
     });
     const subtotal = lineItems.reduce((s, i) => s + i.amount, 0);
     const globalDiscAmt = subtotal * ((parseFloat(form.global_discount_rate) || 0) / 100);
