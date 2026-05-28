@@ -280,6 +280,8 @@ export default function CreateDocument() {
   const [generatingPdf, setGeneratingPdf] = useState(false);
   const [showPdfPreview, setShowPdfPreview] = useState(false);
   const [showInlineSigPad, setShowInlineSigPad] = useState(false);
+  const [sigStep, setSigStep] = useState("info"); // "info" | "sign"
+  const [receiverName, setReceiverName] = useState("");
   const [pdfMode, setPdfMode] = useState("soft"); // "soft" | "paper"
   const template = "classic";
   const templateColor = "slate";
@@ -363,7 +365,7 @@ export default function CreateDocument() {
     const receiverDate = now.toISOString().split("T")[0];
     const receiverTime = now.toTimeString().slice(0, 5);
     const sigUrl = await uploadSig(sig);
-    setForm(f => ({ ...f, receiver_date: receiverDate, receiver_time: receiverTime, delivery_signed_at: now.toISOString() }));
+    setForm(f => ({ ...f, receiver_name: receiverName, receiver_date: receiverDate, receiver_time: receiverTime, delivery_signed_at: now.toISOString() }));
     setCustomerSig(sigUrl);
     // Persist signed document to DB
     const signedPayload = { ...buildDocPayload("delivered"), receiver_date: receiverDate, receiver_time: receiverTime, delivery_signed_at: now.toISOString(), customer_signature: sigUrl, manager_signature: managerSig || "" };
@@ -914,8 +916,9 @@ export default function CreateDocument() {
           </div>
           {/* Inline Signature Capture Overlay */}
           {showInlineSigPad && (
-            <div className="fixed inset-0 z-[60] flex flex-col bg-black/80" onClick={() => setShowInlineSigPad(false)}>
+            <div className="fixed inset-0 z-[60] flex flex-col bg-black/80" onClick={() => { setShowInlineSigPad(false); setSigStep("info"); }}>
               <div className="mt-auto bg-white rounded-t-3xl shadow-2xl" style={{ maxHeight: "92dvh" }} onClick={e => e.stopPropagation()}>
+                {/* Header */}
                 <div className="bg-slate-900 text-white px-6 py-5 rounded-t-3xl">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
@@ -927,15 +930,45 @@ export default function CreateDocument() {
                         <p className="text-xs text-slate-400">{form.number || "Draft"} · {form.customer_name || "Receiver"}</p>
                       </div>
                     </div>
-                    <button onClick={() => setShowInlineSigPad(false)} className="p-2 hover:bg-slate-700 rounded-lg transition-colors">
+                    <button onClick={() => { setShowInlineSigPad(false); setSigStep("info"); }} className="p-2 hover:bg-slate-700 rounded-lg transition-colors">
                       <span className="text-lg leading-none">✕</span>
                     </button>
                   </div>
                 </div>
-                <div className="p-5 overflow-y-auto">
-                  <p className="text-xs text-muted-foreground mb-4 text-center">Sign below using your finger, mouse, or stylus. This will be permanently embedded into the PDF.</p>
-                  <SignaturePad label="Receiver Signature" onSave={handleSoftSigSave} />
-                </div>
+                {/* Step: Info */}
+                {sigStep === "info" && (
+                  <div className="p-5 space-y-4 overflow-y-auto">
+                    <div>
+                      <Label className="text-sm font-semibold">Receiver Full Name <span className="text-red-500">*</span></Label>
+                      <Input
+                        value={receiverName}
+                        onChange={e => setReceiverName(e.target.value)}
+                        placeholder="Enter receiver's full name"
+                        className="mt-1.5 h-11 text-base"
+                        autoFocus
+                      />
+                    </div>
+                    <Button
+                      className="w-full h-12 text-base font-bold bg-slate-900 hover:bg-slate-800 gap-2"
+                      disabled={!receiverName.trim()}
+                      onClick={() => setSigStep("sign")}
+                    >
+                      <PenLine className="h-5 w-5" /> Proceed to Sign
+                    </Button>
+                  </div>
+                )}
+                {/* Step: Sign */}
+                {sigStep === "sign" && (
+                  <div className="p-5 overflow-y-auto">
+                    <div className="flex items-center justify-between bg-slate-50 rounded-xl px-4 py-3 border border-slate-200 mb-4">
+                      <p className="text-sm font-bold text-slate-800">{receiverName}</p>
+                      <p className="text-xs text-slate-400">{new Date().toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" })}</p>
+                    </div>
+                    <p className="text-xs text-muted-foreground mb-3 text-center">Sign below using your finger, mouse, or stylus.</p>
+                    <SignaturePad label="Receiver Signature" onSave={handleSoftSigSave} />
+                    <button onClick={() => setSigStep("info")} className="w-full text-sm text-slate-400 hover:text-slate-600 transition-colors py-3">← Back to receiver details</button>
+                  </div>
+                )}
               </div>
             </div>
           )}
