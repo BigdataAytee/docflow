@@ -282,6 +282,32 @@ export default function ViewDocument() {
         </div>
       </div>
 
+      {doc.type === "waybill" && (
+        <div className="print:hidden mb-4 bg-white border border-border rounded-xl p-3 flex flex-wrap gap-2 items-center">
+          <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mr-1 hidden sm:inline">Waybill Actions</span>
+          <Button size="sm" variant="outline" onClick={() => { setPdfMode("paper"); setShowPdfPreview(true); }} className="gap-1.5">
+            <Printer className="h-3.5 w-3.5" />
+            <span className="hidden sm:inline">Paper Signage</span>
+            <span className="sm:hidden">Paper</span>
+          </Button>
+          <Button size="sm" variant="outline" onClick={() => { setPdfMode("soft"); setShowPdfPreview(true); }} className="gap-1.5 border-slate-700 text-slate-800 hover:bg-slate-900 hover:text-white">
+            <PenLine className="h-3.5 w-3.5" />
+            <span className="hidden sm:inline">Soft Signage PDF</span>
+            <span className="sm:hidden">Soft</span>
+          </Button>
+          <Button size="sm" onClick={() => setShowSignModal(true)} className="gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white border-0">
+            <PenLine className="h-3.5 w-3.5" />
+            <span className="hidden sm:inline">Receiver Sign</span>
+            <span className="sm:hidden">Sign</span>
+          </Button>
+          <Button size="sm" variant="outline" onClick={() => { navigator.clipboard.writeText(`${window.location.origin}/waybill-sign?id=${docId}`); toast.success("Signature link copied! Share with the receiver."); }} className="gap-1.5">
+            <Share2 className="h-3.5 w-3.5" />
+            <span className="hidden sm:inline">Request Signature</span>
+            <span className="sm:hidden">Request</span>
+          </Button>
+        </div>
+      )}
+
       {doc.status === "draft" && (
         <div className="print:hidden mb-4 bg-amber-50 border border-amber-200 rounded-xl px-5 py-3 flex items-center justify-between">
           <div>
