@@ -152,7 +152,7 @@ export default function CreateDocument() {
           payment_instructions: user.default_payment_instructions || "",
         }));
       });
-      base44.entities.Document.list("-created_date", 1).then(docs => {
+      base44.entities.Document.filter({ type: docType }, "-created_date", 1).then(docs => {
         const savedPrefix = localStorage.getItem(`docPrefix_${docType}`);
         const prefix = savedPrefix || (docType === "invoice" ? "INV" : docType === "quotation" ? "QUO" : docType === "receipt" ? "REC" : docType === "waybill" ? "WB" : "DOC");
         const num = docs.length > 0 ? parseInt((docs[0].number || "0").replace(/\D/g, "") || "0") + 1 : 1;
