@@ -10,6 +10,14 @@
       "type": "string",
       "title": "To Name"
     },
+    "from_email": {
+      "type": "string",
+      "title": "From Email"
+    },
+    "from_name": {
+      "type": "string",
+      "title": "From Name"
+    },
     "subject": {
       "type": "string",
       "title": "Subject"
@@ -22,10 +30,40 @@
       "type": "string",
       "enum": [
         "sent",
-        "failed"
+        "failed",
+        "draft"
       ],
       "title": "Status",
       "default": "sent"
+    },
+    "folder": {
+      "type": "string",
+      "enum": [
+        "sent",
+        "inbox",
+        "drafts",
+        "trash",
+        "spam"
+      ],
+      "title": "Folder",
+      "default": "sent"
+    },
+    "is_read": {
+      "type": "boolean",
+      "title": "Read",
+      "default": true
+    },
+    "is_starred": {
+      "type": "boolean",
+      "title": "Starred",
+      "default": false
+    },
+    "labels": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "title": "Labels"
     },
     "customer_id": {
       "type": "string",
