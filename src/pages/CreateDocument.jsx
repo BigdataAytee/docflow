@@ -391,7 +391,8 @@ export default function CreateDocument() {
   };
 
   const handleSoftSignage = async () => {
-    const doc = buildDocPayload("draft");
+    const status = customerSig ? "draft" : "to_be_delivered";
+    const doc = buildDocPayload(status);
     const targetId = draftIdRef.current || editId;
     if (targetId) {
       await base44.entities.Document.update(targetId, doc);

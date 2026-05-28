@@ -250,7 +250,8 @@ export default function ViewDocument() {
 
   const downloadSoftSignage = async () => {
     setShowPdfPreview(false);
-    await base44.entities.Document.update(docId, { status: "draft" });
+    const status = doc.customer_signature ? "draft" : "to_be_delivered";
+    await base44.entities.Document.update(docId, { status });
     toast.success("Waybill saved as draft.");
     navigate("/documents?type=waybill");
   };
