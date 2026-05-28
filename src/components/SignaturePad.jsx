@@ -23,13 +23,14 @@ export default function SignaturePad({ label = "Signature", onSave }) {
   const startDraw = (e) => {
     e.preventDefault();
     const canvas = canvasRef.current;
-    const pos = getPos(e, canvas);
     const ctx = canvas.getContext("2d");
-    // Draw a dot so single taps are visible
-    ctx.fillStyle = "#1d4ed8";
+    const pos = getPos(e, canvas);
+    ctx.strokeStyle = "#1d4ed8";
+    ctx.lineWidth = 3;
+    ctx.lineCap = "round";
+    ctx.lineJoin = "round";
     ctx.beginPath();
-    ctx.arc(pos.x, pos.y, 3.5, 0, Math.PI * 2);
-    ctx.fill();
+    ctx.moveTo(pos.x, pos.y);
     lastPos.current = pos;
     drawing.current = true;
     setHasSignature(true);
@@ -41,21 +42,11 @@ export default function SignaturePad({ label = "Signature", onSave }) {
     const canvas = canvasRef.current;
     const ctx = canvas.getContext("2d");
     const pos = getPos(e, canvas);
-    const prev = lastPos.current;
-    if (!prev) { lastPos.current = pos; return; }
-    // Smooth curve using quadratic bezier midpoint
-    const mx = (prev.x + pos.x) / 2;
-    const my = (prev.y + pos.y) / 2;
-    ctx.strokeStyle = "#1d4ed8";
-    ctx.lineWidth = 6;
-    ctx.lineCap = "round";
-    ctx.lineJoin = "round";
-    ctx.beginPath();
-    ctx.moveTo((prev.x + mx) / 2, (prev.y + my) / 2);
-    ctx.quadraticCurveTo(prev.x, prev.y, mx, my);
+    ctx.lineTo(pos.x, pos.y);
     ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(pos.x, pos.y);
     lastPos.current = pos;
-    setHasSignature(true);
   };
 
   const stopDraw = () => {
