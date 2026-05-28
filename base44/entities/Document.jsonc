@@ -21,11 +21,19 @@
       "enum": [
         "draft",
         "sent",
+        "viewed",
         "paid",
+        "partially_paid",
         "overdue",
         "cancelled",
         "accepted",
-        "rejected"
+        "rejected",
+        "pending",
+        "packed",
+        "dispatched",
+        "in_transit",
+        "delivered",
+        "returned"
       ],
       "title": "Status",
       "default": "draft"
@@ -136,6 +144,16 @@
     "tax_amount": {
       "type": "number",
       "default": 0
+    },
+    "global_discount_rate": {
+      "type": "number",
+      "default": 0,
+      "title": "Global Discount %"
+    },
+    "global_discount_amount": {
+      "type": "number",
+      "default": 0,
+      "title": "Global Discount Amount"
     },
     "discount_total": {
       "type": "number",
