@@ -195,6 +195,38 @@
     },
     "payment_instructions": {
       "type": "string"
+    },
+    "payment_method": {
+      "type": "string",
+      "enum": [
+        "Cash",
+        "Bank Transfer",
+        "POS",
+        "Credit Card",
+        "Mobile Money",
+        "Cheque"
+      ],
+      "title": "Payment Method"
+    },
+    "transaction_id": {
+      "type": "string",
+      "title": "Transaction ID"
+    },
+    "reference_number": {
+      "type": "string",
+      "title": "Reference Number"
+    },
+    "driver_name": {
+      "type": "string",
+      "title": "Driver Name"
+    },
+    "vehicle_number": {
+      "type": "string",
+      "title": "Vehicle Number"
+    },
+    "tracking_number": {
+      "type": "string",
+      "title": "Tracking Number"
     }
   },
   "required": [

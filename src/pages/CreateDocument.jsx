@@ -20,6 +20,14 @@ const typeLabels = {
   invoice: "Invoice", quotation: "Quotation", receipt: "Receipt", waybill: "Waybill",
 };
 
+// Per-type terminology config
+const DOC_LABELS = {
+  invoice:   { number: "Invoice Number",   issueDate: "Invoice Date",  dueDate: "Due Date",      customer: "Bill To",       customerAddr: "Billing Address",  items: "Line Items",               itemDesc: "Item Description",   itemQty: "Quantity",    notes: "Notes to Customer",    showTax: true,  showDisc: true,  showDue: true,  showPrices: true  },
+  quotation: { number: "Quotation Number", issueDate: "Issue Date",    dueDate: "Expiry Date",   customer: "Prepared For",  customerAddr: "Client Address",   items: "Proposed Items / Services", itemDesc: "Item / Service",     itemQty: "Est. Qty",    notes: "Notes",                showTax: true,  showDisc: true,  showDue: true,  showPrices: true  },
+  receipt:   { number: "Receipt Number",   issueDate: "Payment Date",  dueDate: null,            customer: "Received From", customerAddr: "Client Address",   items: "Payment For",               itemDesc: "Description of Payment",itemQty: "Quantity",    notes: "Notes",                showTax: false, showDisc: false, showDue: false, showPrices: true  },
+  waybill:   { number: "Waybill Number",   issueDate: "Dispatch Date", dueDate: "Delivery Date", customer: "Receiver",      customerAddr: "Delivery Address", items: "Goods Description",         itemDesc: "Goods / Items",      itemQty: "Qty Shipped", notes: "Delivery Instructions", showTax: false, showDisc: false, showDue: true,  showPrices: false },
+};
+
 const CURRENCIES = [
   { value: "NGN", label: "₦ NGN — Nigerian Naira" },
   { value: "USD", label: "$ USD — US Dollar" },
@@ -96,6 +104,12 @@ export default function CreateDocument() {
     terms_label: "Due on Receipt",
     global_discount_rate: "",
     payment_instructions: "",
+    payment_method: "",
+    transaction_id: "",
+    reference_number: "",
+    driver_name: "",
+    vehicle_number: "",
+    tracking_number: "",
     due_date: "",
     issue_date: new Date().toISOString().split("T")[0],
     logo_url: "",
@@ -315,6 +329,8 @@ export default function CreateDocument() {
   }, []);
   const previewScale = Math.min(1, (Math.min(viewportWidth, 826) - 32) / 794);
 
+  const L = DOC_LABELS[docType] || DOC_LABELS.invoice;
+
   return (
     <div className="max-w-5xl mx-auto pb-32 lg:pb-0">
       <div className="flex items-center gap-3 mb-6">
@@ -334,10 +350,10 @@ export default function CreateDocument() {
 
           {/* Document Info */}
           <div className="bg-card rounded-xl border border-border p-6 space-y-4">
-            <h3 className="font-semibold text-sm text-muted-foreground uppercase tracking-wider">Document Info</h3>
+            <h3 className="font-semibold text-sm text-muted-foreground uppercase tracking-wider">{typeLabels[docType]} Details</h3>
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <Label>Document Number</Label>
+                <Label>{L.number}</Label>
                 <div className="relative">
                   <Input value={form.number} readOnly className="pr-9 cursor-default bg-muted/40" />
                   <Popover open={numOpen} onOpenChange={setNumOpen}>
@@ -374,7 +390,7 @@ export default function CreateDocument() {
                 </Select>
               </div>
               <div>
-                <Label>Customer</Label>
+                <Label>{L.customer}</Label>
                 <Select value={form.customer_id} onValueChange={selectCustomer}>
                   <SelectTrigger><SelectValue placeholder="Select customer" /></SelectTrigger>
                   <SelectContent>
@@ -397,18 +413,50 @@ export default function CreateDocument() {
                 </DialogContent>
               </Dialog>
 
-              <div><Label>Issue Date</Label><Input type="date" value={form.issue_date} onChange={e => setForm(f => ({ ...f, issue_date: e.target.value }))} /></div>
-              <div><Label>Due Date</Label><Input type="date" value={form.due_date} onChange={e => setForm(f => ({ ...f, due_date: e.target.value }))} /></div>
+              <div><Label>{L.issueDate}</Label><Input type="date" value={form.issue_date} onChange={e => setForm(f => ({ ...f, issue_date: e.target.value }))} /></div>
+              {L.showDue && <div><Label>{L.dueDate}</Label><Input type="date" value={form.due_date} onChange={e => setForm(f => ({ ...f, due_date: e.target.value }))} /></div>}
             </div>
           </div>
 
+          {/* Receipt — Payment Details */}
+          {docType === "receipt" && (
+            <div className="bg-card rounded-xl border border-border p-6 space-y-4">
+              <h3 className="font-semibold text-sm text-muted-foreground uppercase tracking-wider">Payment Details</h3>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label>Payment Method</Label>
+                  <Select value={form.payment_method} onValueChange={v => setForm(f => ({ ...f, payment_method: v }))}>
+                    <SelectTrigger><SelectValue placeholder="Select method" /></SelectTrigger>
+                    <SelectContent>
+                      {["Cash","Bank Transfer","POS","Credit Card","Mobile Money","Cheque"].map(m => <SelectItem key={m} value={m}>{m}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div><Label>Transaction ID</Label><Input value={form.transaction_id} onChange={e => setForm(f => ({ ...f, transaction_id: e.target.value }))} placeholder="e.g. TXN-0012345" /></div>
+                <div className="col-span-2"><Label>Reference Number</Label><Input value={form.reference_number} onChange={e => setForm(f => ({ ...f, reference_number: e.target.value }))} placeholder="e.g. REF-2024-001" /></div>
+              </div>
+            </div>
+          )}
+
+          {/* Waybill — Logistics Details */}
+          {docType === "waybill" && (
+            <div className="bg-card rounded-xl border border-border p-6 space-y-4">
+              <h3 className="font-semibold text-sm text-muted-foreground uppercase tracking-wider">Logistics Details</h3>
+              <div className="grid grid-cols-2 gap-4">
+                <div><Label>Driver Name</Label><Input value={form.driver_name} onChange={e => setForm(f => ({ ...f, driver_name: e.target.value }))} placeholder="e.g. John Doe" /></div>
+                <div><Label>Vehicle Number</Label><Input value={form.vehicle_number} onChange={e => setForm(f => ({ ...f, vehicle_number: e.target.value }))} placeholder="e.g. LND-123-AB" /></div>
+                <div className="col-span-2"><Label>Tracking Number</Label><Input value={form.tracking_number} onChange={e => setForm(f => ({ ...f, tracking_number: e.target.value }))} placeholder="e.g. TRK-20240001" /></div>
+              </div>
+            </div>
+          )}
+
           {/* Line Items */}
           <div className="bg-card rounded-xl border border-border p-6">
-            <h3 className="font-semibold mb-4">Line Items</h3>
+            <h3 className="font-semibold mb-4">{L.items}</h3>
             <div className="hidden sm:grid grid-cols-12 gap-2 mb-1">
               <div className="col-span-1" />
-              <div className="col-span-4 text-xs font-medium text-muted-foreground">Description</div>
-              <div className="col-span-2 text-xs font-medium text-muted-foreground">Qty</div>
+              <div className="col-span-4 text-xs font-medium text-muted-foreground">{L.itemDesc}</div>
+              <div className="col-span-2 text-xs font-medium text-muted-foreground">{L.itemQty}</div>
               {docType !== 'waybill' && <div className="col-span-2 text-xs font-medium text-muted-foreground">Unit Price</div>}
               {docType !== 'waybill' && <div className="col-span-2 text-xs font-medium text-muted-foreground">Disc %</div>}
             </div>
@@ -476,61 +524,74 @@ export default function CreateDocument() {
           </div>
 
           {/* Totals */}
+          {docType !== "waybill" && (
           <div className="bg-card rounded-xl border border-border p-6">
-            <h3 className="font-semibold mb-4">Totals</h3>
+            <h3 className="font-semibold mb-4">{docType === "receipt" ? "Payment Summary" : "Totals"}</h3>
             <div className="space-y-3 text-sm">
               <div className="flex items-center justify-between gap-2">
                 <span className="text-muted-foreground">Subtotal</span>
                 <span className="font-medium">{sym}{calcs.subtotal.toLocaleString("en", { minimumFractionDigits: 2 })}</span>
               </div>
-              {docType !== 'waybill' && (
+              {L.showDisc && (
                 <div className="flex items-center justify-between gap-2">
-                  <Label className="text-muted-foreground font-normal">Global Disc %</Label>
+                  <Label className="text-muted-foreground font-normal">Global Discount %</Label>
                   <div className="flex items-center gap-2">
                     <Input className="w-20 h-8 text-xs" value={form.global_discount_rate} onChange={e => setForm(f => ({ ...f, global_discount_rate: e.target.value }))} onFocus={e => e.target.select()} placeholder="0" />
                     <span className="text-orange-600 text-xs w-24 text-right">-{sym}{calcs.globalDiscAmt.toLocaleString("en", { minimumFractionDigits: 2 })}</span>
                   </div>
                 </div>
               )}
-              <div className="flex items-center justify-between gap-2">
-                <Label className="text-muted-foreground font-normal">VAT %</Label>
-                <div className="flex items-center gap-2">
-                  <Input className="w-20 h-8 text-xs" value={form.tax_rate} onChange={e => setForm(f => ({ ...f, tax_rate: e.target.value }))} onFocus={e => e.target.select()} placeholder="0" />
-                  <span className="text-muted-foreground text-xs w-24 text-right">{sym}{calcs.taxAmt.toLocaleString("en", { minimumFractionDigits: 2 })}</span>
+              {L.showTax && (
+                <div className="flex items-center justify-between gap-2">
+                  <Label className="text-muted-foreground font-normal">VAT %</Label>
+                  <div className="flex items-center gap-2">
+                    <Input className="w-20 h-8 text-xs" value={form.tax_rate} onChange={e => setForm(f => ({ ...f, tax_rate: e.target.value }))} onFocus={e => e.target.select()} placeholder="0" />
+                    <span className="text-muted-foreground text-xs w-24 text-right">{sym}{calcs.taxAmt.toLocaleString("en", { minimumFractionDigits: 2 })}</span>
+                  </div>
                 </div>
-              </div>
-              <div className="flex items-center justify-between gap-2">
-                <Label className="text-muted-foreground font-normal">Shipping</Label>
-                <Input className="w-32 h-8 text-xs text-right" value={form.shipping} onChange={e => setForm(f => ({ ...f, shipping: e.target.value }))} onFocus={e => e.target.select()} placeholder="0" />
-              </div>
+              )}
+              {L.showTax && (
+                <div className="flex items-center justify-between gap-2">
+                  <Label className="text-muted-foreground font-normal">Shipping</Label>
+                  <Input className="w-32 h-8 text-xs text-right" value={form.shipping} onChange={e => setForm(f => ({ ...f, shipping: e.target.value }))} onFocus={e => e.target.select()} placeholder="0" />
+                </div>
+              )}
               <div className="border-t border-border pt-3 flex justify-between">
-                <span className="font-bold">Total</span>
+                <span className="font-bold">{docType === "receipt" ? "Amount Received" : "Total"}</span>
                 <span className="text-xl font-black text-primary">{sym}{calcs.total.toLocaleString("en", { minimumFractionDigits: 2 })}</span>
               </div>
             </div>
           </div>
+          )}
 
           {/* Notes */}
           <div className="bg-card rounded-xl border border-border p-6 space-y-4">
-            <div><Label>Notes / Message to Customer</Label><Textarea value={form.notes} onChange={e => setForm(f => ({ ...f, notes: e.target.value }))} rows={2} placeholder="e.g. Thanks for your business." /></div>
-            {!['receipt', 'waybill'].includes(docType) && (
-              <div><Label>Payment Instructions</Label><Textarea value={form.payment_instructions} onChange={e => setForm(f => ({ ...f, payment_instructions: e.target.value }))} rows={2} /></div>
+            <div>
+              <Label>{L.notes}</Label>
+              <Textarea value={form.notes} onChange={e => setForm(f => ({ ...f, notes: e.target.value }))} rows={2}
+                placeholder={docType === "waybill" ? "e.g. Handle with care. Deliver between 9am–5pm." : docType === "receipt" ? "e.g. Thank you for your payment." : "e.g. Thanks for your business."} />
+            </div>
+            {docType === "invoice" && (
+              <div><Label>Payment Instructions</Label><Textarea value={form.payment_instructions} onChange={e => setForm(f => ({ ...f, payment_instructions: e.target.value }))} rows={2} placeholder="e.g. Bank transfer to Account No. 0123456789" /></div>
+            )}
+            {docType === "quotation" && (
+              <div><Label>Terms &amp; Conditions</Label><Textarea value={form.terms} onChange={e => setForm(f => ({ ...f, terms: e.target.value }))} rows={2} placeholder="e.g. This quotation is valid for 30 days. Prices subject to change." /></div>
             )}
           </div>
 
-          {/* Manager Signature */}
+          {/* Primary Signature */}
           <div className="bg-card rounded-xl border border-border p-6">
-            <h3 className="font-semibold mb-4">Manager / Authorized Signature</h3>
+            <h3 className="font-semibold mb-4">{L.sig}</h3>
             <p className="text-xs text-muted-foreground mb-3">Sign here using mouse or stylus. This signature will appear on the final document.</p>
-            <SignaturePad label="Manager Signature" onSave={setManagerSig} />
+            <SignaturePad label={L.sig} onSave={setManagerSig} />
           </div>
 
-          {/* Customer Signature — waybill only */}
-          {docType === "waybill" && (
+          {/* Secondary Signature — waybill receiver or quotation acceptance */}
+          {(docType === "waybill" || docType === "quotation") && (
             <div className="bg-card rounded-xl border border-border p-6">
-              <h3 className="font-semibold mb-4">Customer Signature</h3>
-              <p className="text-xs text-muted-foreground mb-3">Customer signs here to acknowledge receipt. This will appear on the final document.</p>
-              <SignaturePad label="Customer Signature" onSave={setCustomerSig} />
+              <h3 className="font-semibold mb-4">{docType === "waybill" ? "Receiver Signature" : "Customer Acceptance Signature"}</h3>
+              <p className="text-xs text-muted-foreground mb-3">{docType === "waybill" ? "Receiver signs here to confirm goods received in good condition." : "Customer signs here to accept this quotation."}</p>
+              <SignaturePad label={docType === "waybill" ? "Receiver Signature" : "Acceptance Signature"} onSave={setCustomerSig} />
             </div>
           )}
         </div>
