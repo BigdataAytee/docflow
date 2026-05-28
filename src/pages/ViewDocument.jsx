@@ -277,7 +277,7 @@ export default function ViewDocument() {
       )}
 
       <div className="overflow-x-auto -mx-4 md:mx-0 px-4 md:px-0">
-        <UnifiedTemplate doc={doc} onSaveManagerSig={saveManagerSig} onSaveCustomerSig={saveCustomerSig} />
+        <UnifiedTemplate doc={doc} onSaveManagerSig={saveManagerSig} onSaveCustomerSig={saveCustomerSig} onOpenSignModal={() => setShowSignModal(true)} />
       </div>
 
       {showSignModal && doc.type === "waybill" && (
@@ -330,7 +330,7 @@ export default function ViewDocument() {
   );
 }
 
-function UnifiedTemplate({ doc, onSaveManagerSig, onSaveCustomerSig, isPdf = false }) {
+function UnifiedTemplate({ doc, onSaveManagerSig, onSaveCustomerSig, onOpenSignModal, isPdf = false }) {
   const items = doc.items || [];
   const curr = doc.currency || "NGN";
   const fmtAmt = (n) => `${(n || 0).toLocaleString("en", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
@@ -499,7 +499,7 @@ function UnifiedTemplate({ doc, onSaveManagerSig, onSaveCustomerSig, isPdf = fal
                   </div>
                   <div className="flex items-center gap-2 mt-2 print:hidden">
                     <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 text-xs font-semibold">✓ Delivered</span>
-                    <button className="text-xs text-primary hover:underline" onClick={() => setShowSignModal(true)}>Re-sign</button>
+                    <button className="text-xs text-primary hover:underline" onClick={onOpenSignModal}>Re-sign</button>
                   </div>
                   <div className="hidden print:block mt-1">
                     <span className="text-xs text-emerald-600 font-semibold">✓ Delivery Confirmed</span>
@@ -528,8 +528,6 @@ function UnifiedTemplate({ doc, onSaveManagerSig, onSaveCustomerSig, isPdf = fal
                   </div>
                 </div>
               )}
-            </div>
-          )}
             </div>
           )}
         </div>
