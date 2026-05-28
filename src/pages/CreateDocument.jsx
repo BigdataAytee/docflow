@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo, useRef } from "react";
 import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
 import { base44 } from "@/api/base44Client";
-import { useNavigate, Link, useBlocker } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { Plus, Trash2, ArrowLeft, Settings2, FileDown, Upload, GripVertical } from "lucide-react";
 import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -60,14 +60,24 @@ export default function CreateDocument() {
     return () => window.removeEventListener("beforeunload", handler);
   }, [isDirty]);
 
-  // Block all in-app navigation when dirty
-  const blocker = useBlocker(({ currentLocation, nextLocation }) =>
-    isDirty && currentLocation.pathname !== nextLocation.pathname
-  );
+  const [pendingNav, setPendingNav] = useState(null);
 
+  // Intercept all anchor clicks when dirty
   useEffect(() => {
-    if (blocker.state === "blocked") setShowLeaveModal(true);
-  }, [blocker.state]);
+    if (!isDirty) return;
+    const handler = (e) => {
+      const anchor = e.target.closest("a[href]");
+      if (!anchor) return;
+      const href = anchor.getAttribute("href");
+      if (!href || href.startsWith("http") || href.startsWith("mailto")) return;
+      e.preventDefault();
+      e.stopPropagation();
+      setPendingNav(href);
+      setShowLeaveModal(true);
+    };
+    document.addEventListener("click", handler, true);
+    return () => document.removeEventListener("click", handler, true);
+  }, [isDirty]);
 
 
 
@@ -588,21 +598,21 @@ export default function CreateDocument() {
                 setShowLeaveModal(false);
                 setIsDirty(false);
                 await handleSave("draft");
-                if (blocker.state === "blocked") blocker.proceed();
+                if (pendingNav) navigate(pendingNav);
               }}>
                 Save as Draft &amp; Leave
               </Button>
               <Button variant="outline" className="w-full" onClick={() => {
                 setShowLeaveModal(false);
                 setIsDirty(false);
-                if (blocker.state === "blocked") blocker.proceed();
+                if (pendingNav) navigate(pendingNav);
                 else navigate(-1);
               }}>
                 Discard &amp; Leave
               </Button>
               <Button variant="ghost" className="w-full" onClick={() => {
                 setShowLeaveModal(false);
-                if (blocker.state === "blocked") blocker.reset();
+                setPendingNav(null);
               }}>
                 Keep Editing
               </Button>
