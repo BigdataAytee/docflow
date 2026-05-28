@@ -30,7 +30,8 @@ const STATUS_CONFIG = {
   cancelled: { label: "Cancelled", bg: "bg-slate-100 text-slate-500",     dot: "bg-slate-400",     icon: X },
   accepted:  { label: "Accepted",  bg: "bg-emerald-50 text-emerald-700",  dot: "bg-emerald-500",   icon: CheckCircle2 },
   rejected:    { label: "Rejected",    bg: "bg-red-50 text-red-700",     dot: "bg-red-500",     icon: X },
-  to_be_signed: { label: "To Be Signed", bg: "bg-amber-50 text-amber-700", dot: "bg-amber-500",   icon: PenLine },
+  to_be_signed:    { label: "To Be Signed",    bg: "bg-amber-50 text-amber-700",   dot: "bg-amber-500",  icon: PenLine },
+  to_be_delivered: { label: "To Be Delivered", bg: "bg-orange-50 text-orange-700", dot: "bg-orange-500", icon: PenLine },
   pending:      { label: "Pending",      bg: "bg-slate-100 text-slate-600", dot: "bg-slate-400",  icon: Clock },
   packed:       { label: "Packed",       bg: "bg-blue-50 text-blue-700",   dot: "bg-blue-500",   icon: CheckCircle2 },
   dispatched:   { label: "Dispatched",   bg: "bg-indigo-50 text-indigo-700", dot: "bg-indigo-500", icon: Send },
@@ -393,7 +394,7 @@ export default function Documents() {
                       <td className="px-5 py-4">
                         <div className="flex flex-col gap-1.5">
                           <StatusBadge status={doc.status} />
-                          {doc.type === "waybill" && doc.status === "to_be_signed" && (
+                          {doc.type === "waybill" && (doc.status === "to_be_signed" || doc.status === "to_be_delivered") && (
                             <a
                               href={`/waybill-sign?id=${doc.id}`}
                               target="_blank"
@@ -440,7 +441,7 @@ export default function Documents() {
                     <div className="flex flex-wrap items-center gap-2 mb-1">
                       <span className="text-sm font-bold text-foreground">{doc.number}</span>
                       <StatusBadge status={doc.status} />
-                      {doc.type === "waybill" && doc.status === "to_be_signed" && (
+                      {doc.type === "waybill" && (doc.status === "to_be_signed" || doc.status === "to_be_delivered") && (
                         <a
                           href={`/waybill-sign?id=${doc.id}`}
                           target="_blank"

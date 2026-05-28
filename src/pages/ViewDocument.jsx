@@ -35,13 +35,14 @@ const STATUS_COLORS = {
   delivered: "bg-emerald-50 text-emerald-600",
   returned: "bg-red-50 text-red-600",
   to_be_signed: "bg-amber-50 text-amber-700",
+  to_be_delivered: "bg-orange-50 text-orange-700",
 };
 
 const STATUS_BY_TYPE = {
   invoice: ["draft","sent","viewed","partially_paid","paid","overdue","cancelled"],
   quotation: ["draft","sent","viewed","accepted","rejected","cancelled"],
   receipt: ["draft","sent","paid"],
-  waybill: ["pending","packed","dispatched","in_transit","delivered","returned","to_be_signed"],
+  waybill: ["pending","packed","dispatched","in_transit","delivered","returned","to_be_signed","to_be_delivered"],
 };
 
 const AMOUNT_LABEL = {
@@ -248,25 +249,9 @@ export default function ViewDocument() {
   };
 
   const downloadSoftSignage = async () => {
-    if (doc.customer_signature) {
-      if (!pdfSoftRef.current) return;
-      setGeneratingPdf(true);
-      const blob = await generatePdfBlob(pdfSoftRef);
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = `${doc.number}-signed.pdf`;
-      a.click();
-      URL.revokeObjectURL(url);
-      setGeneratingPdf(false);
-      toast.success("Signed PDF downloaded — digital signature locked into document.");
-    } else {
-      setShowPdfPreview(false);
-      setSoftAutoDownload(true);
-      await base44.entities.Document.update(docId, { status: "to_be_signed" });
-      setDoc(prev => ({ ...prev, status: "to_be_signed" }));
-      setShowSignModal(true);
-    }
+    await base44.entities.Document.update(docId, { status: "to_be_delivered" });
+    toast.success("Waybill marked as 'To Be Delivered' and saved.");
+    navigate("/documents?type=waybill");
   };
 
   const handleDelete = async () => {
