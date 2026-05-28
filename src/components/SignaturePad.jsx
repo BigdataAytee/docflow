@@ -4,7 +4,7 @@ import { Trash2 } from "lucide-react";
 
 export default function SignaturePad({ label = "Signature", onSave }) {
   const canvasRef = useRef(null);
-  const [drawing, setDrawing] = useState(false);
+  const drawing = useRef(false);
   const [hasSignature, setHasSignature] = useState(false);
   const [savedSig, setSavedSig] = useState(null);
   const lastPos = useRef(null);
@@ -31,12 +31,12 @@ export default function SignaturePad({ label = "Signature", onSave }) {
     ctx.arc(pos.x, pos.y, 3.5, 0, Math.PI * 2);
     ctx.fill();
     lastPos.current = pos;
-    setDrawing(true);
+    drawing.current = true;
     setHasSignature(true);
   };
 
   const draw = (e) => {
-    if (!drawing) return;
+    if (!drawing.current) return;
     e.preventDefault();
     const canvas = canvasRef.current;
     const ctx = canvas.getContext("2d");
@@ -59,7 +59,7 @@ export default function SignaturePad({ label = "Signature", onSave }) {
   };
 
   const stopDraw = () => {
-    setDrawing(false);
+    drawing.current = false;
     lastPos.current = null;
   };
 
