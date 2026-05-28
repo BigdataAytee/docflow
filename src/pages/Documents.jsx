@@ -394,7 +394,7 @@ export default function Documents() {
                       <td className="px-5 py-4">
                         <div className="flex flex-col gap-1.5">
                           <StatusBadge status={doc.status} />
-                          {doc.type === "waybill" && (doc.status === "to_be_signed" || doc.status === "to_be_delivered") && (
+                          {doc.type === "waybill" && doc.status === "to_be_signed" && (
                             <a
                               href={`/waybill-sign?id=${doc.id}`}
                               target="_blank"
@@ -441,7 +441,7 @@ export default function Documents() {
                     <div className="flex flex-wrap items-center gap-2 mb-1">
                       <span className="text-sm font-bold text-foreground">{doc.number}</span>
                       <StatusBadge status={doc.status} />
-                      {doc.type === "waybill" && (doc.status === "to_be_signed" || doc.status === "to_be_delivered") && (
+                      {doc.type === "waybill" && doc.status === "to_be_signed" && (
                         <a
                           href={`/waybill-sign?id=${doc.id}`}
                           target="_blank"
