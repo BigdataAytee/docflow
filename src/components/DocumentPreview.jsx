@@ -53,7 +53,12 @@ function ItemsTable({ items, docType, T }) {
       <tbody>
         {items.length > 0 ? items.map((item, i) => (
           <tr key={i} style={{ borderBottom: "1px solid #e2e8f0", background: i % 2 === 0 ? "transparent" : "#f8fafc" }}>
-            <td style={{ padding: "14px 48px", color: "#1e293b", fontWeight: 500, fontSize: 14 }}>{item.description || <span style={{ color: "#cbd5e1" }}>Item description</span>}</td>
+            <td style={{ padding: "14px 48px", color: "#1e293b", fontWeight: 500, fontSize: 14 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                {item.image_url && <img src={item.image_url} alt="" style={{ width: 48, height: 48, objectFit: "cover", borderRadius: 4, border: "1px solid #e2e8f0", flexShrink: 0 }} />}
+                <span>{item.description || <span style={{ color: "#cbd5e1" }}>Item description</span>}</span>
+              </div>
+            </td>
             <td style={{ padding: "13px 12px", textAlign: "right", color: "#334155", fontWeight: 600, fontSize: 14 }}>{(parseFloat(item.quantity) || 0).toFixed(2)}</td>
             {showPrice && <td style={{ padding: "13px 12px", textAlign: "right", color: "#334155", fontWeight: 500, fontSize: 14 }}>{fmt(item.unit_price)}</td>}
             {showPrice && <td style={{ padding: "14px 48px 14px 12px", textAlign: "right", fontWeight: 700, color: "#0f172a", fontSize: 15 }}>{fmt(item.amount)}</td>}

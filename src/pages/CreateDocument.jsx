@@ -3,7 +3,7 @@ import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
 import { base44 } from "@/api/base44Client";
 import { useNavigate, Link } from "react-router-dom";
-import { Plus, Trash2, ArrowLeft, Settings2, FileDown, Upload, GripVertical, PenLine, Printer, CheckCircle2 } from "lucide-react";
+import { Plus, Trash2, ArrowLeft, Settings2, FileDown, Upload, GripVertical, PenLine, Printer, CheckCircle2, ImagePlus, X } from "lucide-react";
 import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
@@ -58,6 +58,7 @@ export default function CreateDocument() {
   const autoSaveTimerRef = useRef(null);
   const [isDirty, setIsDirty] = useState(false);
   const [showLeaveModal, setShowLeaveModal] = useState(false);
+  const [uploadingItemImg, setUploadingItemImg] = useState({});
 
   // Warn on browser refresh / tab close
   useEffect(() => {
@@ -181,6 +182,13 @@ export default function CreateDocument() {
   };
 
   const updateItem = (i, key, val) => setItems(prev => prev.map((item, idx) => idx === i ? { ...item, [key]: val } : item));
+
+  const handleItemImageUpload = async (i, file) => {
+    setUploadingItemImg(prev => ({ ...prev, [i]: true }));
+    const { file_url } = await base44.integrations.Core.UploadFile({ file });
+    updateItem(i, "image_url", file_url);
+    setUploadingItemImg(prev => ({ ...prev, [i]: false }));
+  };
 
   const calcs = useMemo(() => {
     const lineItems = items.map(it => {
@@ -578,7 +586,26 @@ export default function CreateDocument() {
                             {/* Desktop row layout */}
                             <div className="hidden sm:grid grid-cols-12 gap-2 items-center">
                               <div className="col-span-1 flex items-center"><span {...drag.dragHandleProps} className="cursor-grab active:cursor-grabbing p-1 text-muted-foreground"><GripVertical className="h-4 w-4" /></span></div>
-                              <div className="col-span-4"><Input value={item.description} onChange={e => updateItem(i, "description", e.target.value)} placeholder={L.itemDesc} /></div>
+                              <div className="col-span-4">
+                                <Input value={item.description} onChange={e => updateItem(i, "description", e.target.value)} placeholder={L.itemDesc} />
+                                {docType === "quotation" && (
+                                  <div className="mt-1">
+                                    {item.image_url ? (
+                                      <div className="relative inline-block">
+                                        <img src={item.image_url} alt="item" className="h-12 w-12 object-cover rounded border border-border" />
+                                        <button type="button" onClick={() => updateItem(i, "image_url", "")} className="absolute -top-1 -right-1 bg-destructive text-white rounded-full w-4 h-4 flex items-center justify-center">
+                                          <X className="h-2.5 w-2.5" />
+                                        </button>
+                                      </div>
+                                    ) : (
+                                      <label className="cursor-pointer flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors">
+                                        {uploadingItemImg[i] ? <span className="text-xs animate-pulse">Uploading…</span> : <><ImagePlus className="h-3.5 w-3.5" /> Add image</>}
+                                        <input type="file" accept="image/*" className="hidden" onChange={e => e.target.files[0] && handleItemImageUpload(i, e.target.files[0])} />
+                                      </label>
+                                    )}
+                                  </div>
+                                )}
+                              </div>
                               <div className="col-span-2"><Input value={item.quantity} onChange={e => updateItem(i, "quantity", e.target.value)} onFocus={e => e.target.select()} placeholder="0" /></div>
                               {L.showPrices && <div className="col-span-2"><Input value={item.unit_price} onChange={e => updateItem(i, "unit_price", e.target.value)} onFocus={e => e.target.select()} placeholder="0" /></div>}
                               {L.showDisc && <div className="col-span-2"><Input value={item.discount} onChange={e => updateItem(i, "discount", e.target.value)} onFocus={e => e.target.select()} placeholder="0" /></div>}
