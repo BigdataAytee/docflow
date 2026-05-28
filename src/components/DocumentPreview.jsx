@@ -240,7 +240,7 @@ function ClassicDoc({ form, items, calcs, sym, docType, managerSig, customerSig,
   const isColoredHeader = T.headerBg !== "#ffffff" && T.headerBg !== "#fffbeb";
 
   return (
-    <div style={{ background: "#fff", minHeight: 1123 }}>
+    <div style={{ background: "#fff", minHeight: 1123, display: "flex", flexDirection: "column" }}>
       <div style={{ background: T.headerBg, borderBottom: `2px solid ${T.accentColor}`, padding: "36px 48px", display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
         <div>
           {form.logo_url ? <img src={form.logo_url} alt="logo" style={{ height: 110, maxWidth: 200, objectFit: "contain", display: "block", marginBottom: 8 }} /> : <div style={{ height: 8 }} />}
@@ -280,7 +280,7 @@ function ClassicDoc({ form, items, calcs, sym, docType, managerSig, customerSig,
       <ExtraFields form={form} docType={docType} T={T} />
       {docType !== "waybill" && <TotalsBlock calcs={calcs} form={form} sym={sym} T={T} amountLabel={amountLabel} />}
       <SigsAndPayment managerSig={managerSig} customerSig={customerSig} form={form} T={T} docType={docType} sym={sym} />
-      <div style={{ padding: "14px 48px", background: T.stripBg, borderTop: `1px solid ${T.stripBorder}`, textAlign: "center", fontSize: 9, color: T.tableHeaderColor }}>
+      <div style={{ padding: "14px 48px", background: T.stripBg, borderTop: `1px solid ${T.stripBorder}`, textAlign: "center", fontSize: 9, color: T.tableHeaderColor, marginTop: "auto" }}>
         {[form.company_phone && `☎ ${form.company_phone}`, form.company_email && `✉ ${form.company_email}`, form.company_website && `🌐 ${form.company_website}`].filter(Boolean).join("  ·  ")}
       </div>
     </div>
@@ -293,7 +293,7 @@ function ModernDoc({ form, items, calcs, sym, docType, managerSig, customerSig, 
   const billToLabel = BILL_TO_LABEL[docType] || "BILL TO";
   const amountLabel = AMOUNT_LABEL[docType] || "BALANCE DUE";
   return (
-    <div style={{ background: "#fff", minHeight: 1123 }}>
+    <div style={{ background: "#fff", minHeight: 1123, display: "flex", flexDirection: "column" }}>
       <div style={{ background: T.headerBg, padding: "0" }}>
         <div style={{ padding: "28px 36px 0", display: "flex", alignItems: "flex-end", justifyContent: "space-between" }}>
           <div style={{ flex: 1 }}>
@@ -335,7 +335,7 @@ function ModernDoc({ form, items, calcs, sym, docType, managerSig, customerSig, 
       <ExtraFields form={form} docType={docType} T={T} />
       {docType !== "waybill" && <TotalsBlock calcs={calcs} form={form} sym={sym} T={T} amountLabel={amountLabel} />}
       <SigsAndPayment managerSig={managerSig} customerSig={customerSig} form={form} T={T} docType={docType} sym={sym} />
-      <div style={{ height: 6, background: T.accentColor }} />
+      <div style={{ height: 6, background: T.accentColor, marginTop: "auto" }} />
       <div style={{ padding: "8px 36px", background: T.stripBg, textAlign: "center", fontSize: 9, color: T.tableHeaderColor }}>
         {[form.company_phone && `☎ ${form.company_phone}`, form.company_email && `✉ ${form.company_email}`, form.company_website && `🌐 ${form.company_website}`].filter(Boolean).join("  ·  ")}
       </div>
@@ -349,7 +349,7 @@ function MinimalDoc({ form, items, calcs, sym, docType, managerSig, customerSig,
   const billToLabel = BILL_TO_LABEL[docType] || "BILL TO";
   const amountLabel = AMOUNT_LABEL[docType] || "BALANCE DUE";
   return (
-    <div style={{ background: "#fff", minHeight: 1123 }}>
+    <div style={{ background: "#fff", minHeight: 1123, display: "flex", flexDirection: "column" }}>
       <div style={{ height: 4, background: T.accentColor }} />
       <div style={{ padding: "28px 40px 18px", display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
         <div>
@@ -386,7 +386,7 @@ function MinimalDoc({ form, items, calcs, sym, docType, managerSig, customerSig,
       <ExtraFields form={form} docType={docType} T={T} />
       {docType !== "waybill" && <TotalsBlock calcs={calcs} form={form} sym={sym} T={T} amountLabel={amountLabel} />}
       <SigsAndPayment managerSig={managerSig} customerSig={customerSig} form={form} T={T} docType={docType} sym={sym} />
-      <div style={{ padding: "10px 40px", borderTop: "1px solid #f3f4f6", textAlign: "center", fontSize: 9, color: "#d1d5db", letterSpacing: 1 }}>
+      <div style={{ padding: "10px 40px", borderTop: "1px solid #f3f4f6", textAlign: "center", fontSize: 9, color: "#d1d5db", letterSpacing: 1, marginTop: "auto" }}>
         {[form.company_phone && `☎ ${form.company_phone}`, form.company_email && `✉ ${form.company_email}`, form.company_website && `🌐 ${form.company_website}`].filter(Boolean).join("  ·  ")}
       </div>
     </div>
@@ -403,7 +403,7 @@ function BoldDoc({ form, items, calcs, sym, docType, managerSig, customerSig, T 
   const rightBorder = isColoredHeader ? T.accentColor : T.stripBorder;
 
   return (
-    <div style={{ background: "#fff", minHeight: 1123 }}>
+    <div style={{ background: "#fff", minHeight: 1123, display: "flex", flexDirection: "column" }}>
       <div style={{ display: "grid", gridTemplateColumns: "55% 45%" }}>
         <div style={{ background: T.headerBg, padding: "32px 32px", minHeight: 200, display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
           <div>
@@ -439,7 +439,7 @@ function BoldDoc({ form, items, calcs, sym, docType, managerSig, customerSig, T 
       <ExtraFields form={form} docType={docType} T={T} />
       {docType !== "waybill" && <TotalsBlock calcs={calcs} form={form} sym={sym} T={T} amountLabel={amountLabel} />}
       <SigsAndPayment managerSig={managerSig} customerSig={customerSig} form={form} T={T} docType={docType} sym={sym} />
-      <div style={{ height: 4, background: T.accentColor }} />
+      <div style={{ height: 4, background: T.accentColor, marginTop: "auto" }} />
       <div style={{ padding: "8px 32px", background: T.stripBg, textAlign: "center", fontSize: 9, color: T.tableHeaderColor }}>
         {[form.company_phone && `☎ ${form.company_phone}`, form.company_email && `✉ ${form.company_email}`, form.company_website && `🌐 ${form.company_website}`].filter(Boolean).join("  ·  ")}
       </div>
@@ -453,7 +453,7 @@ function ElegantDoc({ form, items, calcs, sym, docType, managerSig, customerSig,
   const billToLabel = BILL_TO_LABEL[docType] || "BILL TO";
   const amountLabel = AMOUNT_LABEL[docType] || "BALANCE DUE";
   return (
-    <div style={{ background: "#fff", minHeight: 1123 }}>
+    <div style={{ background: "#fff", minHeight: 1123, display: "flex", flexDirection: "column" }}>
       <div style={{ height: 2, background: T.accentColor }} />
       <div style={{ height: 2, background: T.accentColor, margin: "3px 0 0", opacity: 0.3 }} />
       <div style={{ padding: "28px 40px 20px", textAlign: "center", borderBottom: `1px solid ${T.stripBorder}` }}>
@@ -496,7 +496,7 @@ function ElegantDoc({ form, items, calcs, sym, docType, managerSig, customerSig,
       <ExtraFields form={form} docType={docType} T={T} />
       {docType !== "waybill" && <TotalsBlock calcs={calcs} form={form} sym={sym} T={T} amountLabel={amountLabel} />}
       <SigsAndPayment managerSig={managerSig} customerSig={customerSig} form={form} T={T} docType={docType} sym={sym} />
-      <div style={{ padding: "12px 40px", textAlign: "center", borderTop: `1px solid ${T.stripBorder}` }}>
+      <div style={{ padding: "12px 40px", textAlign: "center", borderTop: `1px solid ${T.stripBorder}`, marginTop: "auto" }}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 10, marginBottom: 6 }}>
           <div style={{ flex: 1, height: 1, background: T.accentColor, opacity: 0.3 }} />
           <div style={{ width: 4, height: 4, background: T.accentColor, transform: "rotate(45deg)", opacity: 0.5 }} />
