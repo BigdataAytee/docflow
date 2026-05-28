@@ -249,6 +249,7 @@ export default function ViewDocument() {
   };
 
   const downloadSoftSignage = async () => {
+    setShowPdfPreview(false);
     await base44.entities.Document.update(docId, { status: "draft" });
     toast.success("Waybill saved as draft.");
     navigate("/documents?type=waybill");
