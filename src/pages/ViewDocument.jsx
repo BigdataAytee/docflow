@@ -655,7 +655,7 @@ export default function ViewDocument() {
                 {doc.type === "waybill" && pdfMode === "soft" && !doc.customer_signature && (
                   <button
                     onClick={() => setShowInlineSigPad(true)}
-                    className="mt-4 w-full border-2 border-dashed border-emerald-400 rounded-2xl p-8 flex flex-col items-center gap-3 text-emerald-600 hover:bg-emerald-50 hover:border-emerald-500 transition-all group"
+                    className="mt-4 w-full border-2 border-emerald-400 rounded-2xl p-8 flex flex-col items-center gap-3 text-emerald-600 hover:bg-emerald-50 hover:border-emerald-500 transition-all group"
                   >
                     <div className="w-14 h-14 rounded-full bg-emerald-100 group-hover:bg-emerald-200 flex items-center justify-center transition-colors">
                       <PenLine className="h-7 w-7" />
