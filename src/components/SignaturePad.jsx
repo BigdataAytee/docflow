@@ -83,10 +83,10 @@ export default function SignaturePad({ label = "Signature", onSave }) {
         <div className="space-y-2">
           <canvas
             ref={canvasRef}
-            width={600}
-            height={180}
+            width={400}
+            height={560}
             className="border border-border rounded-lg bg-gray-50 touch-none cursor-crosshair w-full"
-            style={{ height: 140 }}
+            style={{ height: 320 }}
             onMouseDown={startDraw}
             onMouseMove={draw}
             onMouseUp={stopDraw}
