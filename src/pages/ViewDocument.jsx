@@ -397,11 +397,13 @@ export default function ViewDocument() {
               </Button>
             </>
           )}
-          <Button size="sm" onClick={() => setShowSignModal(true)} className="gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white border-0">
-            <PenLine className="h-3.5 w-3.5" />
-            <span className="hidden sm:inline">Receiver Sign</span>
-            <span className="sm:hidden">Sign</span>
-          </Button>
+          {doc.status !== "to_be_delivered" && (
+            <Button size="sm" onClick={() => setShowSignModal(true)} className="gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white border-0">
+              <PenLine className="h-3.5 w-3.5" />
+              <span className="hidden sm:inline">Receiver Sign</span>
+              <span className="sm:hidden">Sign</span>
+            </Button>
+          )}
           {doc.status !== "to_be_delivered" && (
             <Button size="sm" variant="outline" onClick={() => { navigator.clipboard.writeText(`${window.location.origin}/waybill-sign?id=${docId}`); toast.success("Signature link copied! Share with the receiver."); }} className="gap-1.5">
               <Share2 className="h-3.5 w-3.5" />
