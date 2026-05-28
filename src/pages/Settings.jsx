@@ -26,6 +26,11 @@ export default function Settings() {
     default_payment_instructions: "",
     document_tagline: "",
     footer_contact_line: "",
+    company_abbreviation: "",
+    prefix_invoice: "INV",
+    prefix_quotation: "QUO",
+    prefix_receipt: "REC",
+    prefix_waybill: "WB",
   });
 
   useEffect(() => {
@@ -45,6 +50,11 @@ export default function Settings() {
           default_payment_instructions: user.default_payment_instructions || "",
           document_tagline: user.document_tagline || "",
           footer_contact_line: user.footer_contact_line || "",
+          company_abbreviation: user.company_abbreviation || "",
+          prefix_invoice: user.prefix_invoice || "INV",
+          prefix_quotation: user.prefix_quotation || "QUO",
+          prefix_receipt: user.prefix_receipt || "REC",
+          prefix_waybill: user.prefix_waybill || "WB",
         }));
         if (user.logo_url) setLogoPreview(user.logo_url);
       }
@@ -153,6 +163,44 @@ export default function Settings() {
           <div className="mt-4"><Label>Document Tagline</Label><p className="text-xs text-muted-foreground mb-1.5">A short sentence displayed at the bottom of every document.</p><Input value={form.document_tagline} onChange={e => update("document_tagline", e.target.value)} placeholder="e.g. Thank you for your business — we look forward to serving you again." /></div>
         </div>
 
+
+        <div className="border-t border-border pt-6">
+          <h2 className="font-semibold mb-1">Document Number Prefixes</h2>
+          <p className="text-xs text-muted-foreground mb-4">
+            Document numbers follow the format: <span className="font-mono font-semibold">[Company Abbr]-[Type Prefix]-[Sequence]</span>, e.g. <span className="font-mono">DR-INV-0001</span>.
+            Type prefixes must be unique across document types.
+          </p>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <Label>Company Abbreviation</Label>
+              <p className="text-xs text-muted-foreground mb-1">Short code for your company. Shown at the start of every document number.</p>
+              <Input value={form.company_abbreviation} onChange={e => update("company_abbreviation", e.target.value.toUpperCase())} placeholder="e.g. DR" style={{ textTransform: "uppercase" }} />
+            </div>
+            <div />
+            <div>
+              <Label>Invoice Prefix</Label>
+              <Input value={form.prefix_invoice} onChange={e => update("prefix_invoice", e.target.value.toUpperCase())} placeholder="INV" style={{ textTransform: "uppercase" }} />
+            </div>
+            <div>
+              <Label>Quotation Prefix</Label>
+              <Input value={form.prefix_quotation} onChange={e => update("prefix_quotation", e.target.value.toUpperCase())} placeholder="QUO" style={{ textTransform: "uppercase" }} />
+            </div>
+            <div>
+              <Label>Receipt Prefix</Label>
+              <Input value={form.prefix_receipt} onChange={e => update("prefix_receipt", e.target.value.toUpperCase())} placeholder="REC" style={{ textTransform: "uppercase" }} />
+            </div>
+            <div>
+              <Label>Waybill Prefix</Label>
+              <Input value={form.prefix_waybill} onChange={e => update("prefix_waybill", e.target.value.toUpperCase())} placeholder="WB" style={{ textTransform: "uppercase" }} />
+            </div>
+          </div>
+          {(() => {
+            const prefixes = [form.prefix_invoice, form.prefix_quotation, form.prefix_receipt, form.prefix_waybill].filter(Boolean);
+            return prefixes.length !== new Set(prefixes).size ? (
+              <p className="text-xs text-red-500 mt-2">⚠ Each document type prefix must be unique across all document types.</p>
+            ) : null;
+          })()}
+        </div>
 
         <Button onClick={save} disabled={saving}>{saving ? "Saving..." : "Save Settings"}</Button>
       </div>

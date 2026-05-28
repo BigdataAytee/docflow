@@ -47,22 +47,11 @@ export default function CreateDocument() {
   const [customerSig, setCustomerSig] = useState(null);
   const [showAddCustomer, setShowAddCustomer] = useState(false);
   const [savingCustomer, setSavingCustomer] = useState(false);
-  const defaultPrefix = DEFAULT_PREFIXES[docType] || "DOC";
-  const [numPrefix, setNumPrefix] = useState(() => localStorage.getItem(`docPrefix_${docType}`) || defaultPrefix);
+  const [typePrefix, setTypePrefix] = useState(DEFAULT_PREFIXES[docType] || "DOC");
+  const [companyAbbr, setCompanyAbbr] = useState("");
   const [numSeq, setNumSeq] = useState("");
   const [numOpen, setNumOpen] = useState(false);
-  const [prefixError, setPrefixError] = useState("");
   const [autoSaveStatus, setAutoSaveStatus] = useState("");
-
-  const getOtherPrefixes = () =>
-    Object.keys(DEFAULT_PREFIXES)
-      .filter(t => t !== docType)
-      .map(t => (localStorage.getItem(`docPrefix_${t}`) || DEFAULT_PREFIXES[t]).toUpperCase());
-
-  // Always persist prefix changes to localStorage
-  useEffect(() => {
-    if (numPrefix) localStorage.setItem(`docPrefix_${docType}`, numPrefix);
-  }, [numPrefix, docType]);
 
   const draftIdRef = useRef(editId || null);
   const autoSaveTimerRef = useRef(null);
@@ -131,20 +120,27 @@ export default function CreateDocument() {
   useEffect(() => { setIsDirty(true); }, [form, items]);
 
   useEffect(() => {
-    base44.auth.me().then(user => {
-      if (user) base44.entities.Customer.filter({ created_by: user.email }, "-created_date", 100).then(setCustomers);
-    });
-    if (editId) {
-      base44.entities.Document.get(editId).then(doc => {
+    (async () => {
+      const user = await base44.auth.me();
+      if (!user) return;
+
+      base44.entities.Customer.filter({ created_by: user.email }, "-created_date", 100).then(setCustomers);
+
+      const tPrefix = (user[`prefix_${docType}`] || DEFAULT_PREFIXES[docType] || "DOC").toUpperCase();
+      const cAbbr = (user.company_abbreviation || "").toUpperCase();
+      setTypePrefix(tPrefix);
+      setCompanyAbbr(cAbbr);
+
+      if (editId) {
+        const doc = await base44.entities.Document.get(editId);
         const { items: docItems, ...rest } = doc;
         setForm(f => ({ ...f, ...rest, issue_date: rest.issue_date ? rest.issue_date.split("T")[0] : f.issue_date, due_date: rest.due_date ? rest.due_date.split("T")[0] : "" }));
         if (docItems && docItems.length > 0) setItems(docItems);
+        // Parse seq from end of number (last segment after final dash)
         const parts = (rest.number || "").split("-");
-        if (parts.length >= 2) { setNumPrefix(parts[0]); setNumSeq(parts.slice(1).join("-")); }
-      });
-    } else {
-      base44.auth.me().then(user => {
-        if (user) setForm(f => ({
+        if (parts.length >= 2) setNumSeq(parts[parts.length - 1]);
+      } else {
+        setForm(f => ({
           ...f,
           company_name: user.company_name || user.full_name || "",
           company_email: user.company_email || user.email || "",
@@ -157,17 +153,15 @@ export default function CreateDocument() {
           terms: user.default_terms || "",
           payment_instructions: user.default_payment_instructions || "",
         }));
-      });
-      base44.entities.Document.filter({ type: docType }, "-created_date", 1).then(docs => {
-        const savedPrefix = localStorage.getItem(`docPrefix_${docType}`);
-        const prefix = savedPrefix || DEFAULT_PREFIXES[docType] || "DOC";
+
+        const docs = await base44.entities.Document.filter({ type: docType }, "-created_date", 1);
         const num = docs.length > 0 ? parseInt((docs[0].number || "0").replace(/\D/g, "") || "0") + 1 : 1;
         const seq = String(num).padStart(4, "0");
-        setNumPrefix(prefix);
         setNumSeq(seq);
-        setForm(f => ({ ...f, number: `${prefix}-${seq}` }));
-      });
-    }
+        const fullNumber = cAbbr ? `${cAbbr}-${tPrefix}-${seq}` : `${tPrefix}-${seq}`;
+        setForm(f => ({ ...f, number: fullNumber }));
+      }
+    })();
   }, [docType, editId]);
 
   const selectCustomer = (id) => {
@@ -249,7 +243,7 @@ export default function CreateDocument() {
 
   const buildDocPayload = (status) => ({
     ...form,
-    number: numPrefix && numSeq ? `${numPrefix}-${numSeq}` : form.number,
+    number: numSeq ? (companyAbbr ? `${companyAbbr}-${typePrefix}-${numSeq}` : `${typePrefix}-${numSeq}`) : form.number,
     template: "classic",
     template_color: "slate",
     status,
@@ -371,35 +365,33 @@ export default function CreateDocument() {
                       <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">Customize Document Number</p>
                       <div className="space-y-3">
                         <div>
-                          <Label className="text-xs">Prefix</Label>
+                          <Label className="text-xs">Company Abbreviation</Label>
+                          <p className="text-xs text-muted-foreground mb-1">Your company's short code (e.g. DR)</p>
                           <Input
-                            value={numPrefix}
+                            value={companyAbbr}
                             onChange={e => {
                               const val = e.target.value.toUpperCase();
-                              const others = getOtherPrefixes();
-                              setPrefixError(val && others.includes(val) ? `"${val}" is already used by another document type.` : "");
-                              setNumPrefix(val);
-                              setForm(f => ({ ...f, number: `${val}-${numSeq}` }));
+                              setCompanyAbbr(val);
+                              setForm(f => ({ ...f, number: val ? `${val}-${typePrefix}-${numSeq}` : `${typePrefix}-${numSeq}` }));
                             }}
-                            placeholder={`e.g. ${DEFAULT_PREFIXES[docType]}`}
+                            placeholder="e.g. DR"
                             className="h-8 text-sm mt-1"
                             style={{ textTransform: "uppercase" }}
                           />
-                          {prefixError && <p className="text-xs text-red-500 mt-1">{prefixError}</p>}
                         </div>
                         <div>
-                          <Label className="text-xs">Number</Label>
-                          <Input value={numSeq} onChange={e => { setNumSeq(e.target.value); setForm(f => ({ ...f, number: `${numPrefix}-${e.target.value}` })); }} placeholder="e.g. 0001" className="h-8 text-sm mt-1" />
+                          <Label className="text-xs">Document Type Prefix</Label>
+                          <div className="flex items-center gap-2 mt-1">
+                            <Input value={typePrefix} readOnly className="h-8 text-sm bg-muted/50 cursor-default flex-1" />
+                            <span className="text-xs text-muted-foreground whitespace-nowrap">Set in Settings</span>
+                          </div>
                         </div>
-                        <p className="text-xs text-muted-foreground">Preview: <span className="font-mono font-semibold text-foreground">{numPrefix}-{numSeq}</span></p>
-                        <button
-                          type="button"
-                          disabled={!!prefixError}
-                          className="w-full mt-1 bg-primary text-primary-foreground text-xs font-semibold py-1.5 rounded-md hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                          onClick={() => { if (!prefixError) setNumOpen(false); }}
-                        >
-                          Save
-                        </button>
+                        <div>
+                          <Label className="text-xs">Sequence Number</Label>
+                          <Input value={numSeq} onChange={e => { setNumSeq(e.target.value); setForm(f => ({ ...f, number: companyAbbr ? `${companyAbbr}-${typePrefix}-${e.target.value}` : `${typePrefix}-${e.target.value}` })); }} placeholder="e.g. 0001" className="h-8 text-sm mt-1" />
+                        </div>
+                        <p className="text-xs text-muted-foreground">Preview: <span className="font-mono font-semibold text-foreground">{companyAbbr ? `${companyAbbr}-${typePrefix}-${numSeq}` : `${typePrefix}-${numSeq}`}</span></p>
+                        <button type="button" className="w-full mt-1 bg-primary text-primary-foreground text-xs font-semibold py-1.5 rounded-md hover:bg-primary/90 transition-colors" onClick={() => setNumOpen(false)}>Save</button>
                       </div>
                     </PopoverContent>
                   </Popover>
