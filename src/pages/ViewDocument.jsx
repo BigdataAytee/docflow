@@ -115,8 +115,16 @@ export default function ViewDocument() {
 
   const saveCustomerSig = async (sig) => {
     const sigUrl = await uploadSig(sig);
-    await base44.entities.Document.update(docId, { customer_signature: sigUrl });
-    setDoc(prev => ({ ...prev, customer_signature: sigUrl }));
+    const now = new Date();
+    const updates = {
+      customer_signature: sigUrl,
+      status: "delivered",
+      receiver_date: now.toISOString().split("T")[0],
+      receiver_time: now.toTimeString().slice(0, 5),
+      delivery_signed_at: now.toISOString(),
+    };
+    await base44.entities.Document.update(docId, updates);
+    setDoc(prev => ({ ...prev, ...updates }));
   };
 
   const handleSoftSigSave = async (sig) => {
@@ -403,7 +411,7 @@ export default function ViewDocument() {
               <span>Sign Delivery</span>
             </Button>
           )}
-          {doc.status !== "to_be_delivered" && (
+          {doc.status !== "to_be_delivered" && doc.status !== "delivered" && (
             <Button size="sm" onClick={() => setShowSignModal(true)} className="gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white border-0">
               <PenLine className="h-3.5 w-3.5" />
               <span className="hidden sm:inline">Receiver Sign</span>
