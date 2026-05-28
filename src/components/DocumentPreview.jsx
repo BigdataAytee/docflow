@@ -179,6 +179,59 @@ function Sigs({ managerSig, customerSig, form, T, docType }) {
   );
 }
 
+function SigsAndPayment({ managerSig, customerSig, form, T, docType, sym }) {
+  return (
+    <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", padding: "20px 48px", borderTop: "1px solid #e2e8f0", gap: 24 }}>
+      <div style={{ flex: 1 }}>
+        <Sigs managerSig={managerSig} customerSig={customerSig} form={form} T={T} docType={docType} wrapperStyle={{ padding: 0, border: "none" }} />
+      </div>
+      {form?.payment_method && (
+        <div style={{ flexShrink: 0, width: 220, border: `1px solid ${T.stripBorder}`, borderRadius: 8, overflow: "hidden", background: T.stripBg, alignSelf: "flex-end" }}>
+          <div style={{ padding: "7px 12px", background: T.tableHeaderBg, borderBottom: `1px solid ${T.stripBorder}` }}>
+            <span style={{ fontSize: 9, fontWeight: 700, color: T.tableHeaderColor, textTransform: "uppercase", letterSpacing: 1 }}>Payment Details</span>
+          </div>
+          <div style={{ padding: "8px 12px", display: "flex", flexDirection: "column", gap: 5 }}>
+            <div style={{ display: "flex", justifyContent: "space-between", fontSize: 10 }}>
+              <span style={{ color: "#94a3b8" }}>Method</span>
+              <span style={{ fontWeight: 700, color: "#1e293b" }}>{form.payment_method}</span>
+            </div>
+            {form.payment_method === "Bank Transfer" && form.bank_name && (
+              <div style={{ display: "flex", justifyContent: "space-between", fontSize: 10 }}>
+                <span style={{ color: "#94a3b8" }}>Bank</span>
+                <span style={{ fontWeight: 600, color: "#1e293b" }}>{form.bank_name}</span>
+              </div>
+            )}
+            {form.payment_method === "Bank Transfer" && form.account_number && (
+              <div style={{ display: "flex", justifyContent: "space-between", fontSize: 10 }}>
+                <span style={{ color: "#94a3b8" }}>Account No.</span>
+                <span style={{ fontWeight: 600, color: "#1e293b", fontFamily: "monospace" }}>{form.account_number}</span>
+              </div>
+            )}
+            {form.payment_method === "Bank Transfer" && form.account_holder_name && (
+              <div style={{ display: "flex", justifyContent: "space-between", fontSize: 10 }}>
+                <span style={{ color: "#94a3b8" }}>Acct. Name</span>
+                <span style={{ fontWeight: 600, color: "#1e293b" }}>{form.account_holder_name}</span>
+              </div>
+            )}
+            {form.transaction_id && (
+              <div style={{ display: "flex", justifyContent: "space-between", fontSize: 10 }}>
+                <span style={{ color: "#94a3b8" }}>Txn ID</span>
+                <span style={{ fontWeight: 600, color: "#1e293b", fontFamily: "monospace" }}>{form.transaction_id}</span>
+              </div>
+            )}
+            {form.reference_number && (
+              <div style={{ display: "flex", justifyContent: "space-between", fontSize: 10 }}>
+                <span style={{ color: "#94a3b8" }}>Ref No.</span>
+                <span style={{ fontWeight: 600, color: "#1e293b" }}>{form.reference_number}</span>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ─── Layout 1: Classic ───────────────────────────────────────────────────────
 function ClassicDoc({ form, items, calcs, sym, docType, managerSig, customerSig, T }) {
   const label = TYPE_LABELS[docType] || "INVOICE";
@@ -226,8 +279,7 @@ function ClassicDoc({ form, items, calcs, sym, docType, managerSig, customerSig,
       <ItemsTable items={items} docType={docType} T={T} />
       <ExtraFields form={form} docType={docType} T={T} />
       {docType !== "waybill" && <TotalsBlock calcs={calcs} form={form} sym={sym} T={T} amountLabel={amountLabel} />}
-      <PaymentDetailsBlock form={form} sym={sym} T={T} />
-      <Sigs managerSig={managerSig} customerSig={customerSig} form={form} T={T} docType={docType} />
+      <SigsAndPayment managerSig={managerSig} customerSig={customerSig} form={form} T={T} docType={docType} sym={sym} />
       <div style={{ padding: "14px 48px", background: T.stripBg, borderTop: `1px solid ${T.stripBorder}`, textAlign: "center", fontSize: 9, color: T.tableHeaderColor }}>
         {[form.company_phone && `☎ ${form.company_phone}`, form.company_email && `✉ ${form.company_email}`, form.company_website && `🌐 ${form.company_website}`].filter(Boolean).join("  ·  ")}
       </div>
@@ -282,8 +334,7 @@ function ModernDoc({ form, items, calcs, sym, docType, managerSig, customerSig, 
       <ItemsTable items={items} docType={docType} T={T} />
       <ExtraFields form={form} docType={docType} T={T} />
       {docType !== "waybill" && <TotalsBlock calcs={calcs} form={form} sym={sym} T={T} amountLabel={amountLabel} />}
-      <PaymentDetailsBlock form={form} sym={sym} T={T} />
-      <Sigs managerSig={managerSig} customerSig={customerSig} form={form} T={T} docType={docType} />
+      <SigsAndPayment managerSig={managerSig} customerSig={customerSig} form={form} T={T} docType={docType} sym={sym} />
       <div style={{ height: 6, background: T.accentColor }} />
       <div style={{ padding: "8px 36px", background: T.stripBg, textAlign: "center", fontSize: 9, color: T.tableHeaderColor }}>
         {[form.company_phone && `☎ ${form.company_phone}`, form.company_email && `✉ ${form.company_email}`, form.company_website && `🌐 ${form.company_website}`].filter(Boolean).join("  ·  ")}
@@ -334,8 +385,7 @@ function MinimalDoc({ form, items, calcs, sym, docType, managerSig, customerSig,
       <ItemsTable items={items} docType={docType} T={T} />
       <ExtraFields form={form} docType={docType} T={T} />
       {docType !== "waybill" && <TotalsBlock calcs={calcs} form={form} sym={sym} T={T} amountLabel={amountLabel} />}
-      <PaymentDetailsBlock form={form} sym={sym} T={T} />
-      <Sigs managerSig={managerSig} customerSig={customerSig} form={form} T={T} docType={docType} />
+      <SigsAndPayment managerSig={managerSig} customerSig={customerSig} form={form} T={T} docType={docType} sym={sym} />
       <div style={{ padding: "10px 40px", borderTop: "1px solid #f3f4f6", textAlign: "center", fontSize: 9, color: "#d1d5db", letterSpacing: 1 }}>
         {[form.company_phone && `☎ ${form.company_phone}`, form.company_email && `✉ ${form.company_email}`, form.company_website && `🌐 ${form.company_website}`].filter(Boolean).join("  ·  ")}
       </div>
@@ -388,8 +438,7 @@ function BoldDoc({ form, items, calcs, sym, docType, managerSig, customerSig, T 
       <ItemsTable items={items} docType={docType} T={T} />
       <ExtraFields form={form} docType={docType} T={T} />
       {docType !== "waybill" && <TotalsBlock calcs={calcs} form={form} sym={sym} T={T} amountLabel={amountLabel} />}
-      <PaymentDetailsBlock form={form} sym={sym} T={T} />
-      <Sigs managerSig={managerSig} customerSig={customerSig} form={form} T={T} docType={docType} />
+      <SigsAndPayment managerSig={managerSig} customerSig={customerSig} form={form} T={T} docType={docType} sym={sym} />
       <div style={{ height: 4, background: T.accentColor }} />
       <div style={{ padding: "8px 32px", background: T.stripBg, textAlign: "center", fontSize: 9, color: T.tableHeaderColor }}>
         {[form.company_phone && `☎ ${form.company_phone}`, form.company_email && `✉ ${form.company_email}`, form.company_website && `🌐 ${form.company_website}`].filter(Boolean).join("  ·  ")}
@@ -446,8 +495,7 @@ function ElegantDoc({ form, items, calcs, sym, docType, managerSig, customerSig,
       <ItemsTable items={items} docType={docType} T={T} />
       <ExtraFields form={form} docType={docType} T={T} />
       {docType !== "waybill" && <TotalsBlock calcs={calcs} form={form} sym={sym} T={T} amountLabel={amountLabel} />}
-      <PaymentDetailsBlock form={form} sym={sym} T={T} />
-      <Sigs managerSig={managerSig} customerSig={customerSig} form={form} T={T} docType={docType} />
+      <SigsAndPayment managerSig={managerSig} customerSig={customerSig} form={form} T={T} docType={docType} sym={sym} />
       <div style={{ padding: "12px 40px", textAlign: "center", borderTop: `1px solid ${T.stripBorder}` }}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 10, marginBottom: 6 }}>
           <div style={{ flex: 1, height: 1, background: T.accentColor, opacity: 0.3 }} />
