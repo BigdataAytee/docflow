@@ -28,7 +28,7 @@ export default function SignaturePad({ label = "Signature", onSave }) {
     // Draw a dot so single taps are visible
     ctx.fillStyle = "#1d4ed8";
     ctx.beginPath();
-    ctx.arc(pos.x, pos.y, 1.2, 0, Math.PI * 2);
+    ctx.arc(pos.x, pos.y, 2, 0, Math.PI * 2);
     ctx.fill();
     lastPos.current = pos;
     setDrawing(true);
@@ -47,7 +47,7 @@ export default function SignaturePad({ label = "Signature", onSave }) {
     const mx = (prev.x + pos.x) / 2;
     const my = (prev.y + pos.y) / 2;
     ctx.strokeStyle = "#1d4ed8";
-    ctx.lineWidth = 1.6;
+    ctx.lineWidth = 3;
     ctx.lineCap = "round";
     ctx.lineJoin = "round";
     ctx.beginPath();
