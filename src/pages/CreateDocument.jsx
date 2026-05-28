@@ -20,13 +20,14 @@ const typeLabels = {
   invoice: "Invoice", quotation: "Quotation", receipt: "Receipt", waybill: "Waybill",
 };
 
-// Per-type terminology config
 const DOC_LABELS = {
-  invoice:   { number: "Invoice Number",   issueDate: "Invoice Date",  dueDate: "Due Date",      customer: "Bill To",       customerAddr: "Billing Address",  items: "Line Items",               itemDesc: "Item Description",   itemQty: "Quantity",    notes: "Notes to Customer",    showTax: true,  showDisc: true,  showDue: true,  showPrices: true  },
-  quotation: { number: "Quotation Number", issueDate: "Issue Date",    dueDate: "Expiry Date",   customer: "Prepared For",  customerAddr: "Client Address",   items: "Proposed Items / Services", itemDesc: "Item / Service",     itemQty: "Est. Qty",    notes: "Notes",                showTax: true,  showDisc: true,  showDue: true,  showPrices: true  },
-  receipt:   { number: "Receipt Number",   issueDate: "Payment Date",  dueDate: null,            customer: "Received From", customerAddr: "Client Address",   items: "Payment For",               itemDesc: "Description of Payment",itemQty: "Quantity",    notes: "Notes",                showTax: false, showDisc: false, showDue: false, showPrices: true  },
-  waybill:   { number: "Waybill Number",   issueDate: "Dispatch Date", dueDate: "Delivery Date", customer: "Receiver",      customerAddr: "Delivery Address", items: "Goods Description",         itemDesc: "Goods / Items",      itemQty: "Qty Shipped", notes: "Delivery Instructions", showTax: false, showDisc: false, showDue: true,  showPrices: false },
+  invoice:   { number: "Invoice Number",   issueDate: "Invoice Date",  dueDate: "Due Date",      customer: "Bill To",       items: "Line Items",                itemDesc: "Item Description",      itemQty: "Quantity",    notes: "Notes to Customer",     sig: "Authorized Signature",            showTax: true,  showDisc: true,  showDue: true,  showPrices: true  },
+  quotation: { number: "Quotation Number", issueDate: "Issue Date",    dueDate: "Expiry Date",   customer: "Prepared For",  items: "Proposed Items / Services", itemDesc: "Item / Service",         itemQty: "Est. Qty",    notes: "Notes",                 sig: "Prepared By (Signature)",         showTax: true,  showDisc: true,  showDue: true,  showPrices: true  },
+  receipt:   { number: "Receipt Number",   issueDate: "Payment Date",  dueDate: null,            customer: "Received From", items: "Payment For",               itemDesc: "Description of Payment", itemQty: "Quantity",    notes: "Notes",                 sig: "Received By (Signature)",         showTax: false, showDisc: false, showDue: false, showPrices: true  },
+  waybill:   { number: "Waybill Number",   issueDate: "Dispatch Date", dueDate: "Delivery Date", customer: "Receiver",      items: "Goods Description",         itemDesc: "Goods / Items",          itemQty: "Qty Shipped", notes: "Delivery Instructions", sig: "Dispatcher Signature",            showTax: false, showDisc: false, showDue: true,  showPrices: false },
 };
+
+const DEFAULT_PREFIXES = { invoice: "INV", quotation: "QUO", receipt: "REC", waybill: "WB" };
 
 const CURRENCIES = [
   { value: "NGN", label: "₦ NGN — Nigerian Naira" },
@@ -46,16 +47,23 @@ export default function CreateDocument() {
   const [customerSig, setCustomerSig] = useState(null);
   const [showAddCustomer, setShowAddCustomer] = useState(false);
   const [savingCustomer, setSavingCustomer] = useState(false);
-  const defaultPrefix = docType === "invoice" ? "INV" : docType === "quotation" ? "QUO" : docType === "receipt" ? "REC" : docType === "waybill" ? "WB" : "DOC";
+  const defaultPrefix = DEFAULT_PREFIXES[docType] || "DOC";
   const [numPrefix, setNumPrefix] = useState(() => localStorage.getItem(`docPrefix_${docType}`) || defaultPrefix);
   const [numSeq, setNumSeq] = useState("");
   const [numOpen, setNumOpen] = useState(false);
+  const [prefixError, setPrefixError] = useState("");
   const [autoSaveStatus, setAutoSaveStatus] = useState("");
+
+  const getOtherPrefixes = () =>
+    Object.keys(DEFAULT_PREFIXES)
+      .filter(t => t !== docType)
+      .map(t => (localStorage.getItem(`docPrefix_${t}`) || DEFAULT_PREFIXES[t]).toUpperCase());
 
   // Always persist prefix changes to localStorage
   useEffect(() => {
     if (numPrefix) localStorage.setItem(`docPrefix_${docType}`, numPrefix);
-  }, [numPrefix, docType]); // "", "saving", "saved"
+  }, [numPrefix, docType]);
+
   const draftIdRef = useRef(editId || null);
   const autoSaveTimerRef = useRef(null);
   const [isDirty, setIsDirty] = useState(false);
@@ -86,8 +94,6 @@ export default function CreateDocument() {
     document.addEventListener("click", handler, true);
     return () => document.removeEventListener("click", handler, true);
   }, [isDirty]);
-
-
 
   const [form, setForm] = useState({
     type: docType,
@@ -121,7 +127,7 @@ export default function CreateDocument() {
   });
   const [items, setItems] = useState([{ description: "", quantity: "", unit_price: "", discount: "" }]);
 
-  // Mark dirty on any user change (must be after form/items are declared)
+  // Mark dirty on any user change
   useEffect(() => { setIsDirty(true); }, [form, items]);
 
   useEffect(() => {
@@ -154,7 +160,7 @@ export default function CreateDocument() {
       });
       base44.entities.Document.filter({ type: docType }, "-created_date", 1).then(docs => {
         const savedPrefix = localStorage.getItem(`docPrefix_${docType}`);
-        const prefix = savedPrefix || (docType === "invoice" ? "INV" : docType === "quotation" ? "QUO" : docType === "receipt" ? "REC" : docType === "waybill" ? "WB" : "DOC");
+        const prefix = savedPrefix || DEFAULT_PREFIXES[docType] || "DOC";
         const num = docs.length > 0 ? parseInt((docs[0].number || "0").replace(/\D/g, "") || "0") + 1 : 1;
         const seq = String(num).padStart(4, "0");
         setNumPrefix(prefix);
@@ -217,7 +223,6 @@ export default function CreateDocument() {
     }
   };
 
-  // Auto-save logic — only if there is meaningful data
   const hasMeaningfulData = form.customer_name || items.some(it => it.description);
   useEffect(() => {
     if (!hasMeaningfulData) return;
@@ -316,7 +321,7 @@ export default function CreateDocument() {
       const a = document.createElement("a");
       a.href = url; a.download = `${form.number || "document"}.pdf`;
       a.click(); URL.revokeObjectURL(url);
-      alert("Direct sharing is only available on mobile browsers. The PDF has been downloaded instead — you can manually share it from your files.");
+      alert("Direct sharing is only available on mobile browsers. The PDF has been downloaded instead.");
     }
     setGeneratingPdf(false);
   };
@@ -367,14 +372,34 @@ export default function CreateDocument() {
                       <div className="space-y-3">
                         <div>
                           <Label className="text-xs">Prefix</Label>
-                          <Input value={numPrefix} onChange={e => { setNumPrefix(e.target.value); setForm(f => ({ ...f, number: `${e.target.value}-${numSeq}` })); }} placeholder="e.g. INV" className="h-8 text-sm mt-1" />
+                          <Input
+                            value={numPrefix}
+                            onChange={e => {
+                              const val = e.target.value.toUpperCase();
+                              const others = getOtherPrefixes();
+                              setPrefixError(val && others.includes(val) ? `"${val}" is already used by another document type.` : "");
+                              setNumPrefix(val);
+                              setForm(f => ({ ...f, number: `${val}-${numSeq}` }));
+                            }}
+                            placeholder={`e.g. ${DEFAULT_PREFIXES[docType]}`}
+                            className="h-8 text-sm mt-1"
+                            style={{ textTransform: "uppercase" }}
+                          />
+                          {prefixError && <p className="text-xs text-red-500 mt-1">{prefixError}</p>}
                         </div>
                         <div>
                           <Label className="text-xs">Number</Label>
                           <Input value={numSeq} onChange={e => { setNumSeq(e.target.value); setForm(f => ({ ...f, number: `${numPrefix}-${e.target.value}` })); }} placeholder="e.g. 0001" className="h-8 text-sm mt-1" />
                         </div>
                         <p className="text-xs text-muted-foreground">Preview: <span className="font-mono font-semibold text-foreground">{numPrefix}-{numSeq}</span></p>
-                        <button type="button" className="w-full mt-1 bg-primary text-primary-foreground text-xs font-semibold py-1.5 rounded-md hover:bg-primary/90 transition-colors" onClick={() => setNumOpen(false)}>Save</button>
+                        <button
+                          type="button"
+                          disabled={!!prefixError}
+                          className="w-full mt-1 bg-primary text-primary-foreground text-xs font-semibold py-1.5 rounded-md hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                          onClick={() => { if (!prefixError) setNumOpen(false); }}
+                        >
+                          Save
+                        </button>
                       </div>
                     </PopoverContent>
                   </Popover>
@@ -457,8 +482,8 @@ export default function CreateDocument() {
               <div className="col-span-1" />
               <div className="col-span-4 text-xs font-medium text-muted-foreground">{L.itemDesc}</div>
               <div className="col-span-2 text-xs font-medium text-muted-foreground">{L.itemQty}</div>
-              {docType !== 'waybill' && <div className="col-span-2 text-xs font-medium text-muted-foreground">Unit Price</div>}
-              {docType !== 'waybill' && <div className="col-span-2 text-xs font-medium text-muted-foreground">Disc %</div>}
+              {L.showPrices && <div className="col-span-2 text-xs font-medium text-muted-foreground">Unit Price</div>}
+              {L.showDisc && <div className="col-span-2 text-xs font-medium text-muted-foreground">Disc %</div>}
             </div>
             <DragDropContext onDragEnd={({ source, destination }) => {
               if (!destination) return;
@@ -478,31 +503,31 @@ export default function CreateDocument() {
                             <div className="sm:hidden bg-muted/30 rounded-lg p-3 space-y-2">
                               <div className="flex items-center gap-2">
                                 <span {...drag.dragHandleProps} className="cursor-grab active:cursor-grabbing p-1 text-muted-foreground shrink-0"><GripVertical className="h-4 w-4" /></span>
-                                <Input value={item.description} onChange={e => updateItem(i, "description", e.target.value)} placeholder="Item description" className="flex-1" />
+                                <Input value={item.description} onChange={e => updateItem(i, "description", e.target.value)} placeholder={L.itemDesc} className="flex-1" />
                                 <Button variant="ghost" size="icon" className="shrink-0" onClick={() => setItems(prev => prev.filter((_, idx) => idx !== i))} disabled={items.length === 1}>
                                   <Trash2 className="h-4 w-4 text-muted-foreground" />
                                 </Button>
                               </div>
-                              {docType !== 'waybill' ? (
+                              {L.showPrices ? (
                                 <div className="grid grid-cols-3 gap-2">
-                                  <div><Label className="text-xs text-muted-foreground">Qty</Label><Input value={item.quantity} onChange={e => updateItem(i, "quantity", e.target.value)} onFocus={e => e.target.select()} placeholder="0" className="mt-1" /></div>
+                                  <div><Label className="text-xs text-muted-foreground">{L.itemQty}</Label><Input value={item.quantity} onChange={e => updateItem(i, "quantity", e.target.value)} onFocus={e => e.target.select()} placeholder="0" className="mt-1" /></div>
                                   <div><Label className="text-xs text-muted-foreground">Unit Price</Label><Input value={item.unit_price} onChange={e => updateItem(i, "unit_price", e.target.value)} onFocus={e => e.target.select()} placeholder="0" className="mt-1" /></div>
                                   <div><Label className="text-xs text-muted-foreground">Disc %</Label><Input value={item.discount} onChange={e => updateItem(i, "discount", e.target.value)} onFocus={e => e.target.select()} placeholder="0" className="mt-1" /></div>
                                 </div>
                               ) : (
-                                <div><Label className="text-xs text-muted-foreground">Qty</Label><Input value={item.quantity} onChange={e => updateItem(i, "quantity", e.target.value)} onFocus={e => e.target.select()} placeholder="0" className="mt-1 w-28" /></div>
+                                <div><Label className="text-xs text-muted-foreground">{L.itemQty}</Label><Input value={item.quantity} onChange={e => updateItem(i, "quantity", e.target.value)} onFocus={e => e.target.select()} placeholder="0" className="mt-1 w-28" /></div>
                               )}
-                              {docType !== 'waybill' && (
+                              {L.showPrices && (
                                 <div className="text-right text-xs font-semibold text-foreground">{sym}{((parseFloat(item.quantity) || 0) * (parseFloat(item.unit_price) || 0) * (1 - (parseFloat(item.discount) || 0) / 100)).toLocaleString("en", { minimumFractionDigits: 2 })}</div>
                               )}
                             </div>
                             {/* Desktop row layout */}
                             <div className="hidden sm:grid grid-cols-12 gap-2 items-center">
                               <div className="col-span-1 flex items-center"><span {...drag.dragHandleProps} className="cursor-grab active:cursor-grabbing p-1 text-muted-foreground"><GripVertical className="h-4 w-4" /></span></div>
-                              <div className="col-span-4"><Input value={item.description} onChange={e => updateItem(i, "description", e.target.value)} placeholder="Item description" /></div>
+                              <div className="col-span-4"><Input value={item.description} onChange={e => updateItem(i, "description", e.target.value)} placeholder={L.itemDesc} /></div>
                               <div className="col-span-2"><Input value={item.quantity} onChange={e => updateItem(i, "quantity", e.target.value)} onFocus={e => e.target.select()} placeholder="0" /></div>
-                              {docType !== 'waybill' && <div className="col-span-2"><Input value={item.unit_price} onChange={e => updateItem(i, "unit_price", e.target.value)} onFocus={e => e.target.select()} placeholder="0" /></div>}
-                              {docType !== 'waybill' && <div className="col-span-2"><Input value={item.discount} onChange={e => updateItem(i, "discount", e.target.value)} onFocus={e => e.target.select()} placeholder="0" /></div>}
+                              {L.showPrices && <div className="col-span-2"><Input value={item.unit_price} onChange={e => updateItem(i, "unit_price", e.target.value)} onFocus={e => e.target.select()} placeholder="0" /></div>}
+                              {L.showDisc && <div className="col-span-2"><Input value={item.discount} onChange={e => updateItem(i, "discount", e.target.value)} onFocus={e => e.target.select()} placeholder="0" /></div>}
                               <div className="col-span-1">
                                 <Button variant="ghost" size="icon" onClick={() => setItems(prev => prev.filter((_, idx) => idx !== i))} disabled={items.length === 1}>
                                   <Trash2 className="h-4 w-4 text-muted-foreground" />
@@ -525,43 +550,43 @@ export default function CreateDocument() {
 
           {/* Totals */}
           {docType !== "waybill" && (
-          <div className="bg-card rounded-xl border border-border p-6">
-            <h3 className="font-semibold mb-4">{docType === "receipt" ? "Payment Summary" : "Totals"}</h3>
-            <div className="space-y-3 text-sm">
-              <div className="flex items-center justify-between gap-2">
-                <span className="text-muted-foreground">Subtotal</span>
-                <span className="font-medium">{sym}{calcs.subtotal.toLocaleString("en", { minimumFractionDigits: 2 })}</span>
-              </div>
-              {L.showDisc && (
+            <div className="bg-card rounded-xl border border-border p-6">
+              <h3 className="font-semibold mb-4">{docType === "receipt" ? "Payment Summary" : "Totals"}</h3>
+              <div className="space-y-3 text-sm">
                 <div className="flex items-center justify-between gap-2">
-                  <Label className="text-muted-foreground font-normal">Global Discount %</Label>
-                  <div className="flex items-center gap-2">
-                    <Input className="w-20 h-8 text-xs" value={form.global_discount_rate} onChange={e => setForm(f => ({ ...f, global_discount_rate: e.target.value }))} onFocus={e => e.target.select()} placeholder="0" />
-                    <span className="text-orange-600 text-xs w-24 text-right">-{sym}{calcs.globalDiscAmt.toLocaleString("en", { minimumFractionDigits: 2 })}</span>
+                  <span className="text-muted-foreground">Subtotal</span>
+                  <span className="font-medium">{sym}{calcs.subtotal.toLocaleString("en", { minimumFractionDigits: 2 })}</span>
+                </div>
+                {L.showDisc && (
+                  <div className="flex items-center justify-between gap-2">
+                    <Label className="text-muted-foreground font-normal">Global Discount %</Label>
+                    <div className="flex items-center gap-2">
+                      <Input className="w-20 h-8 text-xs" value={form.global_discount_rate} onChange={e => setForm(f => ({ ...f, global_discount_rate: e.target.value }))} onFocus={e => e.target.select()} placeholder="0" />
+                      <span className="text-orange-600 text-xs w-24 text-right">-{sym}{calcs.globalDiscAmt.toLocaleString("en", { minimumFractionDigits: 2 })}</span>
+                    </div>
                   </div>
-                </div>
-              )}
-              {L.showTax && (
-                <div className="flex items-center justify-between gap-2">
-                  <Label className="text-muted-foreground font-normal">VAT %</Label>
-                  <div className="flex items-center gap-2">
-                    <Input className="w-20 h-8 text-xs" value={form.tax_rate} onChange={e => setForm(f => ({ ...f, tax_rate: e.target.value }))} onFocus={e => e.target.select()} placeholder="0" />
-                    <span className="text-muted-foreground text-xs w-24 text-right">{sym}{calcs.taxAmt.toLocaleString("en", { minimumFractionDigits: 2 })}</span>
+                )}
+                {L.showTax && (
+                  <div className="flex items-center justify-between gap-2">
+                    <Label className="text-muted-foreground font-normal">VAT %</Label>
+                    <div className="flex items-center gap-2">
+                      <Input className="w-20 h-8 text-xs" value={form.tax_rate} onChange={e => setForm(f => ({ ...f, tax_rate: e.target.value }))} onFocus={e => e.target.select()} placeholder="0" />
+                      <span className="text-muted-foreground text-xs w-24 text-right">{sym}{calcs.taxAmt.toLocaleString("en", { minimumFractionDigits: 2 })}</span>
+                    </div>
                   </div>
+                )}
+                {L.showTax && (
+                  <div className="flex items-center justify-between gap-2">
+                    <Label className="text-muted-foreground font-normal">Shipping</Label>
+                    <Input className="w-32 h-8 text-xs text-right" value={form.shipping} onChange={e => setForm(f => ({ ...f, shipping: e.target.value }))} onFocus={e => e.target.select()} placeholder="0" />
+                  </div>
+                )}
+                <div className="border-t border-border pt-3 flex justify-between">
+                  <span className="font-bold">{docType === "receipt" ? "Amount Received" : "Total"}</span>
+                  <span className="text-xl font-black text-primary">{sym}{calcs.total.toLocaleString("en", { minimumFractionDigits: 2 })}</span>
                 </div>
-              )}
-              {L.showTax && (
-                <div className="flex items-center justify-between gap-2">
-                  <Label className="text-muted-foreground font-normal">Shipping</Label>
-                  <Input className="w-32 h-8 text-xs text-right" value={form.shipping} onChange={e => setForm(f => ({ ...f, shipping: e.target.value }))} onFocus={e => e.target.select()} placeholder="0" />
-                </div>
-              )}
-              <div className="border-t border-border pt-3 flex justify-between">
-                <span className="font-bold">{docType === "receipt" ? "Amount Received" : "Total"}</span>
-                <span className="text-xl font-black text-primary">{sym}{calcs.total.toLocaleString("en", { minimumFractionDigits: 2 })}</span>
               </div>
             </div>
-          </div>
           )}
 
           {/* Notes */}
