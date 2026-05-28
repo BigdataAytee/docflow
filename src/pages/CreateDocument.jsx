@@ -22,10 +22,10 @@ const typeLabels = {
 };
 
 const DOC_LABELS = {
-  invoice:   { number: "Invoice Number",   issueDate: "Invoice Date",  dueDate: "Due Date",      customer: "Bill To",       items: "Line Items",                itemDesc: "Item Description",      itemQty: "Quantity",    notes: "Notes to Customer",     sig: "Authorized Signature",            showTax: true,  showDisc: true,  showDue: true,  showPrices: true  },
-  quotation: { number: "Quotation Number", issueDate: "Issue Date",    dueDate: "Expiry Date",   customer: "Prepared For",  items: "Proposed Items / Services", itemDesc: "Item / Service",         itemQty: "Est. Qty",    notes: "Notes",                 sig: "Prepared By (Signature)",         showTax: true,  showDisc: true,  showDue: true,  showPrices: true  },
-  receipt:   { number: "Receipt Number",   issueDate: "Payment Date",  dueDate: null,            customer: "Received From", items: "Payment For",               itemDesc: "Description of Payment", itemQty: "Quantity",    notes: "Notes",                 sig: "Manager's Signature",             showTax: false, showDisc: false, showDue: false, showPrices: true  },
-  waybill:   { number: "Waybill Number",   issueDate: "Dispatch Date", dueDate: "Delivery Date", customer: "Receiver",      items: "Goods Description",         itemDesc: "Goods / Items",          itemQty: "Qty Shipped", notes: "Delivery Instructions", sig: "Dispatcher Signature",            showTax: false, showDisc: false, showDue: true,  showPrices: false },
+  invoice:   { number: "Invoice Number",   issueDate: "Invoice Date",  dueDate: "Due Date",      customer: "Bill To",       items: "Line Items",                itemDesc: "Item Description",      itemQty: "Quantity",    notes: "Notes to Customer",     sig: "Authorized Signature",     sigDesc: "Sign to authorize this invoice.",                                     showTax: true,  showDisc: true,  showDue: true,  showPrices: true  },
+  quotation: { number: "Quotation Number", issueDate: "Issue Date",    dueDate: "Expiry Date",   customer: "Prepared For",  items: "Proposed Items / Services", itemDesc: "Item / Service",         itemQty: "Est. Qty",    notes: "Notes",                 sig: "Prepared By (Signature)",  sigDesc: "Sign to authorize this quotation.",                                  showTax: true,  showDisc: true,  showDue: true,  showPrices: true  },
+  receipt:   { number: "Receipt Number",   issueDate: "Payment Date",  dueDate: null,            customer: "Received From", items: "Payment For",               itemDesc: "Description of Payment", itemQty: "Quantity",    notes: "Notes",                 sig: "Manager's Signature",     sigDesc: "Sign to confirm this receipt.",                                      showTax: false, showDisc: false, showDue: false, showPrices: true  },
+  waybill:   { number: "Waybill Number",   issueDate: "Dispatch Date", dueDate: "Delivery Date", customer: "Receiver",      items: "Goods Description",         itemDesc: "Goods / Items",          itemQty: "Qty Shipped", notes: "Delivery Instructions", sig: "Manager's Signature",     sigDesc: "Sign as the dispatcher/manager authorizing this waybill.",           showTax: false, showDisc: false, showDue: true,  showPrices: false },
 };
 
 const DEFAULT_PREFIXES = { invoice: "INV", quotation: "QUO", receipt: "REC", waybill: "WB" };
@@ -723,12 +723,65 @@ export default function CreateDocument() {
 
           {/* Primary Signature */}
           <div className="bg-card rounded-xl border border-border p-6">
-            <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center justify-between mb-1">
               <h3 className="font-semibold">{L.sig}</h3>
               {savedManagerSig && managerSig === savedManagerSig && (
                 <span className="text-xs text-emerald-600 font-medium bg-emerald-50 px-2 py-0.5 rounded-full">✓ Using saved signature</span>
               )}
             </div>
+            <p className="text-xs text-muted-foreground mb-4">{L.sigDesc}</p>
+            {managerSig ? (
+              <div className="space-y-3">
+                <div className="border border-border rounded-xl p-4 bg-gray-50">
+                  <img src={managerSig} alt={L.sig} className="h-20 object-contain" />
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  <button onClick={() => setManagerSig(null)} className="text-xs text-primary hover:underline">Re-sign</button>
+                  {savedManagerSig !== managerSig && (
+                    <button
+                      disabled={savingDefaultSig}
+                      onClick={async () => {
+                        setSavingDefaultSig(true);
+                        await base44.auth.updateMe({ manager_signature: managerSig });
+                        setSavedManagerSig(managerSig);
+                        setSavingDefaultSig(false);
+                        toast.success("Signature saved as your default — it will appear on all new documents.");
+                      }}
+                      className="text-xs text-slate-600 hover:text-slate-900 border border-slate-300 rounded-full px-3 py-0.5 hover:bg-slate-50 transition-colors"
+                    >
+                      {savingDefaultSig ? "Saving…" : "💾 Save as default"}
+                    </button>
+                  )}
+                  {savedManagerSig && managerSig === savedManagerSig && (
+                    <button
+                      onClick={async () => {
+                        await base44.auth.updateMe({ manager_signature: "" });
+                        setSavedManagerSig(null);
+                        toast.success("Default signature removed.");
+                      }}
+                      className="text-xs text-red-400 hover:text-red-600 hover:underline"
+                    >
+                      Remove default
+                    </button>
+                  )}
+                </div>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                <p className="text-xs text-muted-foreground">Sign using your mouse, finger, or stylus. This will appear on the final document.</p>
+                {savedManagerSig && (
+                  <button
+                    onClick={() => setManagerSig(savedManagerSig)}
+                    className="flex items-center gap-2 text-xs text-primary border border-primary/30 rounded-lg px-3 py-2 hover:bg-primary/5 transition-colors"
+                  >
+                    <span>↩ Use my saved signature</span>
+                    <img src={savedManagerSig} alt="Saved sig" className="h-6 object-contain opacity-70" />
+                  </button>
+                )}
+                <SignaturePad label={L.sig} onSave={handleManagerSigSave} />
+              </div>
+            )}
+          </div>
             {managerSig ? (
               <div className="space-y-3">
                 <div className="border border-border rounded-xl p-4 bg-gray-50">
@@ -843,7 +896,6 @@ export default function CreateDocument() {
             Save &amp; Send
           </Button>
         </div>
-      </div>
 
       {/* Leave confirmation modal */}
       {showLeaveModal && (
