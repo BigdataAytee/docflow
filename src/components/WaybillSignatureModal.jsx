@@ -32,7 +32,7 @@ function SignatureCanvas({ onApply }) {
     const ctx = canvas.getContext("2d");
     ctx.beginPath();
     ctx.arc(pt.x, pt.y, 2, 0, Math.PI * 2);
-    ctx.fillStyle = "#0f172a";
+    ctx.fillStyle = "#1d4ed8";
     ctx.fill();
     setHasSig(true);
   }, []);
@@ -50,8 +50,8 @@ function SignatureCanvas({ onApply }) {
       (pt.x + lastPoint.current.x) / 2,
       (pt.y + lastPoint.current.y) / 2
     );
-    ctx.strokeStyle = "#0f172a";
-    ctx.lineWidth = 3;
+    ctx.strokeStyle = "#1d4ed8";
+    ctx.lineWidth = 2;
     ctx.lineCap = "round";
     ctx.lineJoin = "round";
     ctx.stroke();

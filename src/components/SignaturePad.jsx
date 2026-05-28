@@ -26,7 +26,7 @@ export default function SignaturePad({ label = "Signature", onSave }) {
     const pos = getPos(e, canvas);
     const ctx = canvas.getContext("2d");
     // Draw a dot so single taps are visible
-    ctx.fillStyle = "#1e293b";
+    ctx.fillStyle = "#1d4ed8";
     ctx.beginPath();
     ctx.arc(pos.x, pos.y, 1.2, 0, Math.PI * 2);
     ctx.fill();
@@ -46,8 +46,8 @@ export default function SignaturePad({ label = "Signature", onSave }) {
     // Smooth curve using quadratic bezier midpoint
     const mx = (prev.x + pos.x) / 2;
     const my = (prev.y + pos.y) / 2;
-    ctx.strokeStyle = "#1e293b";
-    ctx.lineWidth = 1.8;
+    ctx.strokeStyle = "#1d4ed8";
+    ctx.lineWidth = 1.6;
     ctx.lineCap = "round";
     ctx.lineJoin = "round";
     ctx.beginPath();
