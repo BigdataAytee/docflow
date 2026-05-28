@@ -61,6 +61,9 @@ export default function ViewDocument() {
   const [generatingPdf, setGeneratingPdf] = useState(false);
   const [pdfMode, setPdfMode] = useState("soft"); // "soft" | "paper"
   const pdfRef = useRef(null);
+  const pdfPaperRef = useRef(null);
+  const pdfSoftRef = useRef(null);
+  const [softAutoDownload, setSoftAutoDownload] = useState(false);
 
   useEffect(() => {
     Promise.all([
@@ -102,12 +105,28 @@ export default function ViewDocument() {
 
   const handleDeliveryConfirmed = (updatedDoc) => {
     setDoc(prev => ({ ...prev, ...updatedDoc }));
+    if (softAutoDownload) {
+      setSoftAutoDownload(false);
+      setTimeout(async () => {
+        if (!pdfSoftRef.current) return;
+        setGeneratingPdf(true);
+        const blob = await generatePdfBlob(pdfSoftRef);
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `${updatedDoc.number || "waybill"}-signed.pdf`;
+        a.click();
+        URL.revokeObjectURL(url);
+        setGeneratingPdf(false);
+        toast.success("Signed PDF downloaded — signature locked into document.");
+      }, 600);
+    }
   };
 
-  const generatePdfBlob = async () => {
+  const generatePdfBlob = async (targetRef) => {
     const html2canvas = (await import("html2canvas")).default;
     const { jsPDF } = await import("jspdf");
-    const element = pdfRef.current;
+    const element = (targetRef || pdfRef).current;
     const canvas = await html2canvas(element, { scale: 1.5, useCORS: true, backgroundColor: "#ffffff", width: 794, windowWidth: 794 });
     const imgData = canvas.toDataURL("image/jpeg", 0.88);
     const pdf = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
@@ -167,6 +186,40 @@ export default function ViewDocument() {
     a.click();
     URL.revokeObjectURL(url);
     setGeneratingPdf(false);
+  };
+
+  const downloadPaperSignage = async () => {
+    if (!pdfPaperRef.current) return;
+    setGeneratingPdf(true);
+    const blob = await generatePdfBlob(pdfPaperRef);
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `${doc.number}-paper-signage.pdf`;
+    a.click();
+    URL.revokeObjectURL(url);
+    setGeneratingPdf(false);
+    toast.success("Paper Signage PDF downloaded — print and have the receiver sign physically.");
+  };
+
+  const downloadSoftSignage = async () => {
+    if (doc.customer_signature) {
+      if (!pdfSoftRef.current) return;
+      setGeneratingPdf(true);
+      const blob = await generatePdfBlob(pdfSoftRef);
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `${doc.number}-signed.pdf`;
+      a.click();
+      URL.revokeObjectURL(url);
+      setGeneratingPdf(false);
+      toast.success("Signed PDF downloaded — digital signature locked into document.");
+    } else {
+      setShowPdfPreview(false);
+      setSoftAutoDownload(true);
+      setShowSignModal(true);
+    }
   };
 
   const handleDelete = async () => {
@@ -235,11 +288,11 @@ export default function ViewDocument() {
           </Button>
           {doc.type === "waybill" && (
             <>
-              <Button variant="outline" size="sm" className="hidden md:flex h-9 gap-1.5" onClick={() => { setPdfMode("paper"); setShowPdfPreview(true); }}>
-                <Printer className="h-4 w-4" /><span>Paper Signage</span>
+              <Button variant="outline" size="sm" className="hidden md:flex h-9 gap-1.5" onClick={downloadPaperSignage} disabled={generatingPdf}>
+                <Printer className="h-4 w-4" /><span>{generatingPdf ? "..." : "Paper Signage"}</span>
               </Button>
-              <Button variant="outline" size="sm" className="hidden md:flex h-9 gap-1.5 border-slate-700 text-slate-800 hover:bg-slate-900 hover:text-white" onClick={() => { setPdfMode("soft"); setShowPdfPreview(true); }}>
-                <PenLine className="h-4 w-4" /><span>Soft Signage</span>
+              <Button variant="outline" size="sm" className="hidden md:flex h-9 gap-1.5 border-slate-700 text-slate-800 hover:bg-slate-900 hover:text-white" onClick={downloadSoftSignage} disabled={generatingPdf}>
+                <PenLine className="h-4 w-4" /><span>{generatingPdf ? "..." : "Soft Signage"}</span>
               </Button>
             </>
           )}
@@ -264,10 +317,10 @@ export default function ViewDocument() {
               </DropdownMenuItem>
               {doc.type === "waybill" && (
                 <>
-                  <DropdownMenuItem onClick={() => { setPdfMode("paper"); setShowPdfPreview(true); }}>
+                  <DropdownMenuItem onClick={downloadPaperSignage} disabled={generatingPdf}>
                     <Printer className="h-4 w-4 mr-2" /> Save for Paper Signage
                   </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => { setPdfMode("soft"); setShowPdfPreview(true); }}>
+                  <DropdownMenuItem onClick={downloadSoftSignage} disabled={generatingPdf}>
                     <PenLine className="h-4 w-4 mr-2" /> Save for Soft Signage
                   </DropdownMenuItem>
                 </>
@@ -305,14 +358,14 @@ export default function ViewDocument() {
       {doc.type === "waybill" && (
         <div className="print:hidden mb-4 bg-white border border-border rounded-xl p-3 flex flex-wrap gap-2 items-center">
           <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mr-1 hidden sm:inline">Waybill Actions</span>
-          <Button size="sm" variant="outline" onClick={() => { setPdfMode("paper"); setShowPdfPreview(true); }} className="gap-1.5">
+          <Button size="sm" variant="outline" onClick={downloadPaperSignage} disabled={generatingPdf} className="gap-1.5">
             <Printer className="h-3.5 w-3.5" />
-            <span className="hidden sm:inline">Paper Signage</span>
+            <span className="hidden sm:inline">{generatingPdf ? "Generating..." : "Paper Signage"}</span>
             <span className="sm:hidden">Paper</span>
           </Button>
-          <Button size="sm" variant="outline" onClick={() => { setPdfMode("soft"); setShowPdfPreview(true); }} className="gap-1.5 border-slate-700 text-slate-800 hover:bg-slate-900 hover:text-white">
+          <Button size="sm" variant="outline" onClick={downloadSoftSignage} disabled={generatingPdf} className="gap-1.5 border-slate-700 text-slate-800 hover:bg-slate-900 hover:text-white">
             <PenLine className="h-3.5 w-3.5" />
-            <span className="hidden sm:inline">Soft Signage PDF</span>
+            <span className="hidden sm:inline">{generatingPdf ? "Generating..." : "Soft Signage"}</span>
             <span className="sm:hidden">Soft</span>
           </Button>
           <Button size="sm" onClick={() => setShowSignModal(true)} className="gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white border-0">
@@ -375,6 +428,40 @@ export default function ViewDocument() {
         <UnifiedTemplate doc={doc} onSaveManagerSig={saveManagerSig} onSaveCustomerSig={saveCustomerSig} onOpenSignModal={() => setShowSignModal(true)} />
       </div>
 
+      {/* Hidden off-screen render containers for direct PDF generation */}
+      <div style={{ position: "fixed", left: -9999, top: -9999, width: 794, zIndex: -1, pointerEvents: "none" }}>
+        <div ref={pdfPaperRef} style={{ width: 794 }}>
+          {doc && (
+            <DocumentPreview
+              form={doc} items={doc.items || []}
+              calcs={{ subtotal: doc.subtotal, taxAmt: doc.tax_amount, total: doc.total }}
+              sym={CURRENCY_SYMBOLS[doc.currency] || doc.currency || "₦"}
+              docType={doc.type}
+              managerSig={doc.manager_signature}
+              customerSig=""
+              template={doc.template || "classic"}
+              templateColor={doc.template_color || "slate"}
+            />
+          )}
+        </div>
+      </div>
+      <div style={{ position: "fixed", left: -9999, top: -9999, width: 794, zIndex: -1, pointerEvents: "none" }}>
+        <div ref={pdfSoftRef} style={{ width: 794 }}>
+          {doc && (
+            <DocumentPreview
+              form={doc} items={doc.items || []}
+              calcs={{ subtotal: doc.subtotal, taxAmt: doc.tax_amount, total: doc.total }}
+              sym={CURRENCY_SYMBOLS[doc.currency] || doc.currency || "₦"}
+              docType={doc.type}
+              managerSig={doc.manager_signature}
+              customerSig={doc.customer_signature}
+              template={doc.template || "classic"}
+              templateColor={doc.template_color || "slate"}
+            />
+          )}
+        </div>
+      </div>
+
       {showSignModal && doc.type === "waybill" && (
         <WaybillSignatureModal
           doc={doc}
@@ -406,7 +493,7 @@ export default function ViewDocument() {
                     <span className="hidden sm:inline">{generatingPdf ? "..." : "Paper Signage"}</span>
                     <span className="sm:hidden">Paper</span>
                   </Button>
-                  <Button size="sm" onClick={() => downloadInMode("soft")} disabled={generatingPdf} className="gap-1.5 bg-slate-900 hover:bg-slate-800 text-white shrink-0">
+                  <Button size="sm" onClick={downloadSoftSignage} disabled={generatingPdf} className="gap-1.5 bg-slate-900 hover:bg-slate-800 text-white shrink-0">
                     <PenLine className="h-4 w-4" />
                     <span className="hidden sm:inline">{generatingPdf ? "..." : "Soft Signage"}</span>
                     <span className="sm:hidden">Soft</span>
