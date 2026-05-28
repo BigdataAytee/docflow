@@ -33,7 +33,8 @@
         "dispatched",
         "in_transit",
         "delivered",
-        "returned"
+        "returned",
+        "to_be_signed"
       ],
       "title": "Status",
       "default": "draft"
@@ -149,6 +150,9 @@
           },
           "amount": {
             "type": "number"
+          },
+          "image_url": {
+            "type": "string"
           }
         }
       }

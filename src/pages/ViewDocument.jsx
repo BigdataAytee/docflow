@@ -34,13 +34,14 @@ const STATUS_COLORS = {
   in_transit: "bg-purple-50 text-purple-600",
   delivered: "bg-emerald-50 text-emerald-600",
   returned: "bg-red-50 text-red-600",
+  to_be_signed: "bg-amber-50 text-amber-700",
 };
 
 const STATUS_BY_TYPE = {
   invoice: ["draft","sent","viewed","partially_paid","paid","overdue","cancelled"],
   quotation: ["draft","sent","viewed","accepted","rejected","cancelled"],
   receipt: ["draft","sent","paid"],
-  waybill: ["pending","packed","dispatched","in_transit","delivered","returned"],
+  waybill: ["pending","packed","dispatched","in_transit","delivered","returned","to_be_signed"],
 };
 
 const AMOUNT_LABEL = {
@@ -262,6 +263,8 @@ export default function ViewDocument() {
     } else {
       setShowPdfPreview(false);
       setSoftAutoDownload(true);
+      await base44.entities.Document.update(docId, { status: "to_be_signed" });
+      setDoc(prev => ({ ...prev, status: "to_be_signed" }));
       setShowSignModal(true);
     }
   };

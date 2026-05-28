@@ -5,7 +5,7 @@ import { format } from "date-fns";
 import {
   Search, FileText, Plus, Eye, Pencil, Copy, Trash2,
   TrendingUp, TrendingDown, DollarSign, Clock, AlertCircle, CheckCircle2,
-  Send, MoreHorizontal, X, Filter
+  Send, MoreHorizontal, X, Filter, PenLine
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -29,7 +29,16 @@ const STATUS_CONFIG = {
   overdue:   { label: "Overdue",   bg: "bg-red-50 text-red-700",          dot: "bg-red-500",       icon: AlertCircle },
   cancelled: { label: "Cancelled", bg: "bg-slate-100 text-slate-500",     dot: "bg-slate-400",     icon: X },
   accepted:  { label: "Accepted",  bg: "bg-emerald-50 text-emerald-700",  dot: "bg-emerald-500",   icon: CheckCircle2 },
-  rejected:  { label: "Rejected",  bg: "bg-red-50 text-red-700",          dot: "bg-red-500",       icon: X },
+  rejected:    { label: "Rejected",    bg: "bg-red-50 text-red-700",     dot: "bg-red-500",     icon: X },
+  to_be_signed: { label: "To Be Signed", bg: "bg-amber-50 text-amber-700", dot: "bg-amber-500",   icon: PenLine },
+  pending:      { label: "Pending",      bg: "bg-slate-100 text-slate-600", dot: "bg-slate-400",  icon: Clock },
+  packed:       { label: "Packed",       bg: "bg-blue-50 text-blue-700",   dot: "bg-blue-500",   icon: CheckCircle2 },
+  dispatched:   { label: "Dispatched",   bg: "bg-indigo-50 text-indigo-700", dot: "bg-indigo-500", icon: Send },
+  in_transit:   { label: "In Transit",   bg: "bg-purple-50 text-purple-700", dot: "bg-purple-500", icon: Send },
+  delivered:    { label: "Delivered",    bg: "bg-emerald-50 text-emerald-700", dot: "bg-emerald-500", icon: CheckCircle2 },
+  returned:     { label: "Returned",     bg: "bg-red-50 text-red-700",     dot: "bg-red-500",     icon: X },
+  partially_paid: { label: "Partial",    bg: "bg-teal-50 text-teal-700",   dot: "bg-teal-500",   icon: CheckCircle2 },
+  viewed:       { label: "Viewed",       bg: "bg-indigo-50 text-indigo-700", dot: "bg-indigo-500", icon: Eye },
 };
 
 function StatusBadge({ status }) {
@@ -382,7 +391,20 @@ export default function Documents() {
                         <div className="text-sm font-bold text-foreground">{sym(doc.currency)}{(doc.total || 0).toLocaleString("en", { minimumFractionDigits: 2 })}</div>
                       </td>
                       <td className="px-5 py-4">
-                        <StatusBadge status={doc.status} />
+                        <div className="flex flex-col gap-1.5">
+                          <StatusBadge status={doc.status} />
+                          {doc.type === "waybill" && doc.status === "to_be_signed" && (
+                            <a
+                              href={`/waybill-sign?id=${doc.id}`}
+                              target="_blank"
+                              rel="noreferrer"
+                              onClick={e => e.stopPropagation()}
+                              className="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-amber-500 text-white text-xs font-semibold hover:bg-amber-600 transition-colors w-fit"
+                            >
+                              <PenLine className="h-3 w-3" /> Sign Now
+                            </a>
+                          )}
+                        </div>
                       </td>
                       <td className="px-5 py-4 text-sm text-muted-foreground">
                         {doc.created_date ? format(new Date(doc.created_date), "MMM d, yyyy") : "—"}
@@ -418,6 +440,17 @@ export default function Documents() {
                     <div className="flex flex-wrap items-center gap-2 mb-1">
                       <span className="text-sm font-bold text-foreground">{doc.number}</span>
                       <StatusBadge status={doc.status} />
+                      {doc.type === "waybill" && doc.status === "to_be_signed" && (
+                        <a
+                          href={`/waybill-sign?id=${doc.id}`}
+                          target="_blank"
+                          rel="noreferrer"
+                          onClick={e => e.stopPropagation()}
+                          className="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-amber-500 text-white text-xs font-semibold hover:bg-amber-600 transition-colors"
+                        >
+                          <PenLine className="h-3 w-3" /> Sign Now
+                        </a>
+                      )}
                     </div>
                     <p className="text-sm text-foreground font-medium truncate">{doc.customer_name || "—"}</p>
                     <p className="text-xs text-muted-foreground mt-0.5">
