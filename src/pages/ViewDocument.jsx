@@ -304,16 +304,7 @@ export default function ViewDocument() {
               </SelectContent>
             </Select>
           </div>
-          {doc.type === "waybill" && doc.status !== "to_be_delivered" && (
-            <Button
-              size="sm"
-              className={`h-9 px-3 gap-1.5 ${doc.status === "delivered" ? "bg-emerald-600 hover:bg-emerald-700" : "bg-slate-800 hover:bg-slate-900"} text-white border-0`}
-              onClick={() => setShowSignModal(true)}
-            >
-              <span className="text-base leading-none">{doc.status === "delivered" ? "✓" : "✍"}</span>
-              <span className="hidden sm:inline">{doc.status === "delivered" ? "Delivery Confirmed" : "Sign Delivery"}</span>
-            </Button>
-          )}
+
           <Button variant="outline" size="sm" className="h-9 px-3" onClick={() => navigate(`/documents/new?edit=${docId}`)}>
             <Pencil className="h-4 w-4" /><span className="hidden sm:inline ml-1.5">Edit</span>
           </Button>
