@@ -167,7 +167,7 @@ export default function CreateDocument() {
   const selectCustomer = (id) => {
     if (id === "__add_new__") { setShowAddCustomer(true); return; }
     const c = customers.find(x => x.id === id);
-    if (c) setForm(f => ({ ...f, customer_id: id, customer_name: c.full_name, customer_email: c.email || "", customer_address: c.billing_address || "", currency: c.currency || "NGN" }));
+    if (c) setForm(f => ({ ...f, customer_id: id, customer_name: c.full_name, customer_email: c.email || "", customer_address: c.billing_address || "", currency: c.currency || f.currency }));
   };
 
   const handleAddCustomer = async (data) => {
