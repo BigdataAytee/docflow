@@ -252,6 +252,16 @@ export default function ViewDocument() {
               <DropdownMenuItem onClick={handleSharePdf} disabled={generatingPdf}>
                 <Upload className="h-4 w-4 mr-2" /> Share PDF
               </DropdownMenuItem>
+              {doc.type === "waybill" && (
+                <>
+                  <DropdownMenuItem onClick={() => { setPdfMode("paper"); setShowPdfPreview(true); }}>
+                    <Printer className="h-4 w-4 mr-2" /> Save for Paper Signage
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => { setPdfMode("soft"); setShowPdfPreview(true); }}>
+                    <PenLine className="h-4 w-4 mr-2" /> Save for Soft Signage
+                  </DropdownMenuItem>
+                </>
+              )}
               <DropdownMenuItem onClick={() => window.print()}>
                 <Printer className="h-4 w-4 mr-2" /> Print
               </DropdownMenuItem>
