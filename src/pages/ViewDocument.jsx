@@ -852,9 +852,9 @@ function UnifiedTemplate({ doc, onSaveManagerSig, onSaveCustomerSig, onOpenSignM
                   <div style={{ height: 64, borderBottom: "1px solid #9ca3af", marginBottom: 4 }} />
                   <p className="text-xs text-gray-500 mt-1">{doc.customer_name}</p>
                   <div className="mt-3 grid grid-cols-2 gap-2 text-xs text-gray-400">
-                    <div>Name: _______________</div>
-                    <div>Date: _______________</div>
-                    <div>Time: _______________</div>
+                    <div className="flex flex-col gap-1"><span>Name</span><div style={{ borderBottom: "1px solid #d1d5db", height: 16 }} /></div>
+                    <div className="flex flex-col gap-1"><span>Date</span><div style={{ borderBottom: "1px solid #d1d5db", height: 16 }} /></div>
+                    <div className="flex flex-col gap-1"><span>Time</span><div style={{ borderBottom: "1px solid #d1d5db", height: 16 }} /></div>
                   </div>
                 </div>
               ) : (
@@ -864,9 +864,9 @@ function UnifiedTemplate({ doc, onSaveManagerSig, onSaveCustomerSig, onOpenSignM
                   </div>
                   <div className="hidden print:block h-16 border-b border-gray-400 mb-1" />
                   <div className="mt-3 grid grid-cols-2 gap-2 text-xs text-gray-400">
-                    <div>Name: _______________</div>
-                    <div>Date: _______________</div>
-                    <div>Time: _______________</div>
+                    <div className="flex flex-col gap-1"><span>Name</span><div className="border-b border-gray-300 h-4" /></div>
+                    <div className="flex flex-col gap-1"><span>Date</span><div className="border-b border-gray-300 h-4" /></div>
+                    <div className="flex flex-col gap-1"><span>Time</span><div className="border-b border-gray-300 h-4" /></div>
                   </div>
                 </div>
               )}
