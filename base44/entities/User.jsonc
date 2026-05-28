@@ -1,0 +1,86 @@
+{
+  "name": "User",
+  "type": "object",
+  "properties": {
+    "role": {
+      "type": "string",
+      "enum": [
+        "admin",
+        "user"
+      ],
+      "title": "Role"
+    },
+    "company_name": {
+      "type": "string",
+      "title": "Company Name"
+    },
+    "company_email": {
+      "type": "string",
+      "title": "Company Email"
+    },
+    "company_phone": {
+      "type": "string",
+      "title": "Company Phone"
+    },
+    "company_address": {
+      "type": "string",
+      "title": "Company Address"
+    },
+    "company_website": {
+      "type": "string",
+      "title": "Company Website"
+    },
+    "company_abbreviation": {
+      "type": "string",
+      "title": "Company Abbreviation"
+    },
+    "logo_url": {
+      "type": "string",
+      "title": "Logo URL"
+    },
+    "default_currency": {
+      "type": "string",
+      "title": "Default Currency"
+    },
+    "default_tax_rate": {
+      "type": "number",
+      "title": "Default Tax Rate"
+    },
+    "default_terms": {
+      "type": "string",
+      "title": "Default Terms"
+    },
+    "default_payment_instructions": {
+      "type": "string",
+      "title": "Default Payment Instructions"
+    },
+    "document_tagline": {
+      "type": "string",
+      "title": "Document Tagline"
+    },
+    "footer_contact_line": {
+      "type": "string",
+      "title": "Footer Contact Line"
+    },
+    "prefix_invoice": {
+      "type": "string",
+      "title": "Invoice Prefix"
+    },
+    "prefix_quotation": {
+      "type": "string",
+      "title": "Quotation Prefix"
+    },
+    "prefix_receipt": {
+      "type": "string",
+      "title": "Receipt Prefix"
+    },
+    "prefix_waybill": {
+      "type": "string",
+      "title": "Waybill Prefix"
+    },
+    "manager_signature": {
+      "type": "string",
+      "title": "Manager Signature URL"
+    }
+  }
+}
