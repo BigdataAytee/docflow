@@ -339,6 +339,11 @@ export default function CreateDocument() {
     return file_url;
   };
 
+  const handleManagerSigSave = async (dataUrl) => {
+    const url = await uploadSig(dataUrl);
+    setManagerSig(url);
+  };
+
   const handleSoftSigSave = async (sig) => {
     const now = new Date();
     const receiverDate = now.toISOString().split("T")[0];
@@ -702,13 +707,8 @@ export default function CreateDocument() {
                       disabled={savingDefaultSig}
                       onClick={async () => {
                         setSavingDefaultSig(true);
-                        let sigUrl = managerSig;
-                        if (managerSig.startsWith("data:")) {
-                          sigUrl = await uploadSig(managerSig);
-                          setManagerSig(sigUrl);
-                        }
-                        await base44.auth.updateMe({ manager_signature: sigUrl });
-                        setSavedManagerSig(sigUrl);
+                        await base44.auth.updateMe({ manager_signature: managerSig });
+                        setSavedManagerSig(managerSig);
                         setSavingDefaultSig(false);
                         toast.success("Signature saved as your default — it will appear on all new documents.");
                       }}
@@ -743,7 +743,7 @@ export default function CreateDocument() {
                     <img src={savedManagerSig} alt="Saved sig" className="h-6 object-contain opacity-70" />
                   </button>
                 )}
-                <SignaturePad label={L.sig} onSave={setManagerSig} />
+                <SignaturePad label={L.sig} onSave={handleManagerSigSave} />
               </div>
             )}
           </div>
