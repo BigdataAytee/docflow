@@ -820,19 +820,16 @@ function UnifiedTemplate({ doc, onSaveManagerSig, onSaveCustomerSig, onOpenSignM
               </div>
             ) : doc.manager_signature ? (
               <div>
-                <img src={doc.manager_signature} alt="Manager Signature" className="h-16 object-contain mb-2" />
+                <img src={doc.manager_signature} alt="Manager Signature" className="h-24 object-contain mb-2" />
                 <div className="border-t border-gray-400 pt-1.5">
                   <p className="text-xs text-gray-500">{doc.company_name || "Company"}</p>
                 </div>
-                <button className="text-xs text-primary mt-1.5 hover:underline print:hidden" onClick={() => onSaveManagerSig("")}>Re-sign</button>
               </div>
             ) : (
               <div>
-                <div className="print:hidden">
-                  <SignaturePad label="" onSave={onSaveManagerSig} />
-                </div>
-                <div className="hidden print:block h-16 border-b border-gray-400 mb-1" />
+                <div className="h-16 border-b border-gray-300 mb-2" />
                 <p className="text-xs text-gray-500 mt-1">{doc.company_name || "Company"}</p>
+                <p className="text-xs text-muted-foreground mt-1 print:hidden">Sign in the document editor to add your signature.</p>
               </div>
             )}
           </div>
