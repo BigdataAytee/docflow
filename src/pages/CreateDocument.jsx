@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo, useRef } from "react";
 import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
 import { base44 } from "@/api/base44Client";
-import { useNavigate, Link } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { Plus, Trash2, ArrowLeft, Settings2, FileDown, Upload, GripVertical, PenLine, Printer, CheckCircle2, ImagePlus, X } from "lucide-react";
 import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -22,8 +22,8 @@ const typeLabels = {
 };
 
 const DOC_LABELS = {
-  invoice:   { number: "Invoice Number",   issueDate: "Invoice Date",  dueDate: "Due Date",      customer: "Bill To",       items: "Line Items",                itemDesc: "Item Description",      itemQty: "Quantity",    notes: "Notes to Customer",     sig: "Authorized Signature",     sigDesc: "Sign to authorize this invoice.",                                     showTax: true,  showDisc: true,  showDue: true,  showPrices: true  },
-  quotation: { number: "Quotation Number", issueDate: "Issue Date",    dueDate: "Expiry Date",   customer: "Prepared For",  items: "Proposed Items / Services", itemDesc: "Item / Service",         itemQty: "Est. Qty",    notes: "Notes",                 sig: "Prepared By (Signature)",  sigDesc: "Sign to authorize this quotation.",                                  showTax: true,  showDisc: true,  showDue: true,  showPrices: true  },
+  invoice:   { number: "Invoice Number",   issueDate: "Invoice Date",  dueDate: "Due Date",      customer: "Bill To",       items: "Line Items",                itemDesc: "Item Description",      itemQty: "Quantity",    notes: "Notes to Customer",     sig: "Authorized Signature",    sigDesc: "Sign to authorize this invoice.",                                    showTax: true,  showDisc: true,  showDue: true,  showPrices: true  },
+  quotation: { number: "Quotation Number", issueDate: "Issue Date",    dueDate: "Expiry Date",   customer: "Prepared For",  items: "Proposed Items / Services", itemDesc: "Item / Service",         itemQty: "Est. Qty",    notes: "Notes",                 sig: "Prepared By (Signature)", sigDesc: "Sign to authorize this quotation.",                                  showTax: true,  showDisc: true,  showDue: true,  showPrices: true  },
   receipt:   { number: "Receipt Number",   issueDate: "Payment Date",  dueDate: null,            customer: "Received From", items: "Payment For",               itemDesc: "Description of Payment", itemQty: "Quantity",    notes: "Notes",                 sig: "Manager's Signature",     sigDesc: "Sign to confirm this receipt.",                                      showTax: false, showDisc: false, showDue: false, showPrices: true  },
   waybill:   { number: "Waybill Number",   issueDate: "Dispatch Date", dueDate: "Delivery Date", customer: "Receiver",      items: "Goods Description",         itemDesc: "Goods / Items",          itemQty: "Qty Shipped", notes: "Delivery Instructions", sig: "Manager's Signature",     sigDesc: "Sign as the dispatcher/manager authorizing this waybill.",           showTax: false, showDisc: false, showDue: true,  showPrices: false },
 };
@@ -62,7 +62,6 @@ export default function CreateDocument() {
   const [showLeaveModal, setShowLeaveModal] = useState(false);
   const [uploadingItemImg, setUploadingItemImg] = useState({});
 
-  // Warn on browser refresh / tab close
   useEffect(() => {
     const handler = (e) => { if (isDirty) { e.preventDefault(); e.returnValue = ""; } };
     window.addEventListener("beforeunload", handler);
@@ -71,7 +70,6 @@ export default function CreateDocument() {
 
   const [pendingNav, setPendingNav] = useState(null);
 
-  // Intercept all anchor clicks when dirty
   useEffect(() => {
     if (!isDirty) return;
     const handler = (e) => {
@@ -102,6 +100,8 @@ export default function CreateDocument() {
     terms: "",
     terms_label: "Due on Receipt",
     global_discount_rate: "",
+    manager_name: "",
+    manager_title: "",
     payment_instructions: "",
     payment_method: "",
     transaction_id: "",
@@ -120,7 +120,6 @@ export default function CreateDocument() {
   });
   const [items, setItems] = useState([{ description: "", quantity: "", unit_price: "", discount: "" }]);
 
-  // Mark dirty on any user change
   useEffect(() => { setIsDirty(true); }, [form, items]);
 
   useEffect(() => {
@@ -140,28 +139,37 @@ export default function CreateDocument() {
         setManagerSig(user.manager_signature);
       }
 
-      if (editId) {
-        const doc = await base44.entities.Document.get(editId);
-        setForm(f => ({
-          ...f,
-          company_name: user.company_name || user.full_name || "",
-          company_email: user.company_email || user.email || "",
-          company_phone: user.company_phone || "",
-          company_address: user.company_address || "",
-          company_website: user.company_website || "",
-          logo_url: user.logo_url || "",
-          currency: user.default_currency || "NGN",
-          tax_rate: user.default_tax_rate ?? "",
-          terms: user.default_terms || "",
-          payment_instructions: user.default_payment_instructions || "",
-        }));
+      setForm(f => ({
+        ...f,
+        company_name: user.company_name || user.full_name || "",
+        company_email: user.company_email || user.email || "",
+        company_phone: user.company_phone || "",
+        company_address: user.company_address || "",
+        company_website: user.company_website || "",
+        logo_url: user.logo_url || "",
+        currency: user.default_currency || "NGN",
+        tax_rate: user.default_tax_rate ?? "",
+        terms: user.default_terms || "",
+        payment_instructions: user.default_payment_instructions || "",
+        manager_name: user.full_name || "",
+        manager_title: user.manager_title || "",
+      }));
 
+      if (!editId) {
         const docs = await base44.entities.Document.filter({ type: docType }, "-created_date", 1);
         const num = docs.length > 0 ? parseInt((docs[0].number || "0").replace(/\D/g, "") || "0") + 1 : 1;
         const seq = String(num).padStart(4, "0");
         setNumSeq(seq);
         const fullNumber = cAbbr ? `${cAbbr}-${tPrefix}-${seq}` : `${tPrefix}-${seq}`;
         setForm(f => ({ ...f, number: fullNumber }));
+      } else {
+        const doc = await base44.entities.Document.get(editId);
+        if (doc) {
+          setForm(f => ({ ...f, ...doc, issue_date: doc.issue_date ? doc.issue_date.split("T")[0] : f.issue_date, due_date: doc.due_date ? doc.due_date.split("T")[0] : "" }));
+          if (doc.items) setItems(doc.items);
+          if (doc.manager_signature) setManagerSig(doc.manager_signature);
+          if (doc.customer_signature) setCustomerSig(doc.customer_signature);
+        }
       }
     })();
   }, [docType, editId]);
@@ -192,14 +200,14 @@ export default function CreateDocument() {
 
   const calcs = useMemo(() => {
     const lineItems = items.map(it => {
-      const amt = (it.quantity || 0) * (it.unit_price || 0);
-      const disc = amt * ((it.discount || 0) / 100);
+      const amt = (parseFloat(it.quantity) || 0) * (parseFloat(it.unit_price) || 0);
+      const disc = amt * ((parseFloat(it.discount) || 0) / 100);
       return { ...it, amount: amt - disc };
     });
     const subtotal = lineItems.reduce((s, i) => s + i.amount, 0);
     const globalDiscAmt = subtotal * ((parseFloat(form.global_discount_rate) || 0) / 100);
     const discountedSubtotal = subtotal - globalDiscAmt;
-    const taxAmt = discountedSubtotal * ((form.tax_rate || 0) / 100);
+    const taxAmt = discountedSubtotal * ((parseFloat(form.tax_rate) || 0) / 100);
     const total = discountedSubtotal + taxAmt + (parseFloat(form.shipping) || 0);
     return { lineItems, subtotal, globalDiscAmt, taxAmt, total };
   }, [items, form.tax_rate, form.shipping, form.global_discount_rate]);
@@ -208,6 +216,48 @@ export default function CreateDocument() {
     if (isDirty) { e.preventDefault(); setShowLeaveModal(true); }
     else navigate(-1);
   };
+
+  const buildDocPayload = (status) => ({
+    type: form.type || docType,
+    number: form.number,
+    status,
+    customer_id: form.customer_id || "",
+    customer_name: form.customer_name || "",
+    customer_email: form.customer_email || "",
+    customer_address: form.customer_address || "",
+    currency: form.currency || "NGN",
+    tax_rate: parseFloat(form.tax_rate) || 0,
+    tax_amount: calcs.taxAmt,
+    subtotal: calcs.subtotal,
+    global_discount_rate: parseFloat(form.global_discount_rate) || 0,
+    global_discount_amount: calcs.globalDiscAmt,
+    discount_total: calcs.globalDiscAmt,
+    shipping: parseFloat(form.shipping) || 0,
+    total: calcs.total,
+    balance_due: calcs.total,
+    notes: form.notes || "",
+    terms: form.terms || "",
+    terms_label: form.terms_label || "Due on Receipt",
+    payment_instructions: form.payment_instructions || "",
+    payment_method: form.payment_method || "",
+    transaction_id: form.transaction_id || "",
+    reference_number: form.reference_number || "",
+    driver_name: form.driver_name || "",
+    vehicle_number: form.vehicle_number || "",
+    tracking_number: form.tracking_number || "",
+    issue_date: form.issue_date ? new Date(form.issue_date).toISOString() : new Date().toISOString(),
+    due_date: form.due_date ? new Date(form.due_date).toISOString() : undefined,
+    logo_url: form.logo_url || "",
+    company_name: form.company_name || "",
+    company_email: form.company_email || "",
+    company_phone: form.company_phone || "",
+    company_address: form.company_address || "",
+    company_website: form.company_website || "",
+    manager_name: form.manager_name || "",
+    manager_title: form.manager_title || "",
+    manager_signature: managerSig || "",
+    items: calcs.lineItems,
+  });
 
   const handleSave = async (status = "draft") => {
     const resolvedStatus = (form.type || docType) === "waybill" && status === "draft" ? "pending" : status;
@@ -249,53 +299,13 @@ export default function CreateDocument() {
 
   const sym = CURRENCIES.find(c => c.value === form.currency)?.label.split(" ")[0] || "₦";
 
-  const buildDocPayload = (status) => ({
-    type: form.type || docType,
-    number: form.number,
-    status,
-    customer_id: form.customer_id || "",
-    customer_name: form.customer_name || "",
-    customer_email: form.customer_email || "",
-    customer_address: form.customer_address || "",
-    currency: form.currency || "NGN",
-    tax_rate: parseFloat(form.tax_rate) || 0,
-    tax_amount: calcs.taxAmt,
-    subtotal: calcs.subtotal,
-    global_discount_rate: parseFloat(form.global_discount_rate) || 0,
-    global_discount_amount: calcs.globalDiscAmt,
-    discount_total: calcs.globalDiscAmt,
-    shipping: parseFloat(form.shipping) || 0,
-    total: calcs.total,
-    balance_due: calcs.total,
-    notes: form.notes || "",
-    terms: form.terms || "",
-    terms_label: form.terms_label || "Due on Receipt",
-    payment_instructions: form.payment_instructions || "",
-    payment_method: form.payment_method || "",
-    transaction_id: form.transaction_id || "",
-    reference_number: form.reference_number || "",
-    driver_name: form.driver_name || "",
-    vehicle_number: form.vehicle_number || "",
-    tracking_number: form.tracking_number || "",
-    issue_date: form.issue_date ? new Date(form.issue_date).toISOString() : new Date().toISOString(),
-    due_date: form.due_date ? new Date(form.due_date).toISOString() : undefined,
-    logo_url: form.logo_url || "",
-    company_name: form.company_name || "",
-    company_email: form.company_email || "",
-    company_phone: form.company_phone || "",
-    company_address: form.company_address || "",
-    company_website: form.company_website || "",
-    manager_signature: managerSig || "",
-    items: calcs.lineItems,
-  });
-
   const pdfRef = useRef(null);
   const [generatingPdf, setGeneratingPdf] = useState(false);
   const [showPdfPreview, setShowPdfPreview] = useState(false);
   const [showInlineSigPad, setShowInlineSigPad] = useState(false);
-  const [sigStep, setSigStep] = useState("info"); // "info" | "sign"
+  const [sigStep, setSigStep] = useState("info");
   const [receiverName, setReceiverName] = useState("");
-  const [pdfMode, setPdfMode] = useState("soft"); // "soft" | "paper"
+  const [pdfMode, setPdfMode] = useState("soft");
   const template = "classic";
   const templateColor = "slate";
 
@@ -342,7 +352,6 @@ export default function CreateDocument() {
       const a = document.createElement("a");
       a.href = url; a.download = `${form.number || "document"}.pdf`;
       a.click(); URL.revokeObjectURL(url);
-      alert("Direct sharing is only available on mobile browsers. The PDF has been downloaded instead.");
     }
     setGeneratingPdf(false);
   };
@@ -385,7 +394,6 @@ export default function CreateDocument() {
     const sigUrl = await uploadSig(sig);
     setForm(f => ({ ...f, receiver_name: receiverName, receiver_date: receiverDate, receiver_time: receiverTime, delivery_signed_at: now.toISOString() }));
     setCustomerSig(sigUrl);
-    // Persist signed document to DB
     const signedPayload = { ...buildDocPayload("delivered"), receiver_date: receiverDate, receiver_time: receiverTime, delivery_signed_at: now.toISOString(), customer_signature: sigUrl, manager_signature: managerSig || "" };
     if (draftIdRef.current) {
       await base44.entities.Document.update(draftIdRef.current, signedPayload);
@@ -422,7 +430,7 @@ export default function CreateDocument() {
       doc.paid_amount = 0;
       await base44.entities.Document.create(doc);
     }
-    toast.success("Waybill saved as draft.");
+    toast.success("Waybill saved.");
     navigate("/documents?type=waybill");
   };
 
@@ -438,6 +446,7 @@ export default function CreateDocument() {
 
   return (
     <div className="max-w-5xl mx-auto pb-32 lg:pb-0">
+      {/* Header */}
       <div className="flex items-center gap-3 mb-6">
         <button onClick={handleBackClick} className="p-2 hover:bg-muted rounded-lg"><ArrowLeft className="h-4 w-4" /></button>
         <div>
@@ -450,7 +459,10 @@ export default function CreateDocument() {
         </div>
       </div>
 
+      {/* Main grid: form (2 cols) + sidebar (1 col) */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 lg:gap-6">
+
+        {/* ── Left column: form sections ── */}
         <div className="lg:col-span-2 space-y-6">
 
           {/* Document Info */}
@@ -729,7 +741,17 @@ export default function CreateDocument() {
                 <span className="text-xs text-emerald-600 font-medium bg-emerald-50 px-2 py-0.5 rounded-full">✓ Using saved signature</span>
               )}
             </div>
-            <p className="text-xs text-muted-foreground mb-4">{L.sigDesc}</p>
+            <p className="text-xs text-muted-foreground mb-3">{L.sigDesc}</p>
+            <div className="grid grid-cols-2 gap-3 mb-4 pb-4 border-b border-border">
+              <div>
+                <Label className="text-xs">Signatory Name</Label>
+                <Input value={form.manager_name} onChange={e => setForm(f => ({ ...f, manager_name: e.target.value }))} placeholder="e.g. John Doe" className="mt-1 h-9 text-sm" />
+              </div>
+              <div>
+                <Label className="text-xs">Title / Position</Label>
+                <Input value={form.manager_title} onChange={e => setForm(f => ({ ...f, manager_title: e.target.value }))} placeholder="e.g. Manager" className="mt-1 h-9 text-sm" />
+              </div>
+            </div>
             {managerSig ? (
               <div className="space-y-3">
                 <div className="border border-border rounded-xl p-4 bg-gray-50">
@@ -782,63 +804,10 @@ export default function CreateDocument() {
               </div>
             )}
           </div>
-            {managerSig ? (
-              <div className="space-y-3">
-                <div className="border border-border rounded-xl p-4 bg-gray-50">
-                  <img src={managerSig} alt="Manager Signature" className="h-20 object-contain" />
-                </div>
-                <div className="flex flex-wrap gap-2">
-                  <button onClick={() => setManagerSig(null)} className="text-xs text-primary hover:underline">Re-sign</button>
-                  {savedManagerSig !== managerSig && (
-                    <button
-                      disabled={savingDefaultSig}
-                      onClick={async () => {
-                        setSavingDefaultSig(true);
-                        await base44.auth.updateMe({ manager_signature: managerSig });
-                        setSavedManagerSig(managerSig);
-                        setSavingDefaultSig(false);
-                        toast.success("Signature saved as your default — it will appear on all new documents.");
-                      }}
-                      className="text-xs text-slate-600 hover:text-slate-900 border border-slate-300 rounded-full px-3 py-0.5 hover:bg-slate-50 transition-colors"
-                    >
-                      {savingDefaultSig ? "Saving…" : "💾 Save as default"}
-                    </button>
-                  )}
-                  {savedManagerSig && managerSig === savedManagerSig && (
-                    <button
-                      onClick={async () => {
-                        await base44.auth.updateMe({ manager_signature: "" });
-                        setSavedManagerSig(null);
-                        toast.success("Default signature removed.");
-                      }}
-                      className="text-xs text-red-400 hover:text-red-600 hover:underline"
-                    >
-                      Remove default
-                    </button>
-                  )}
-                </div>
-              </div>
-            ) : (
-              <div className="space-y-3">
-                <p className="text-xs text-muted-foreground">Sign here using mouse or stylus. This signature will appear on the final document.</p>
-                {savedManagerSig && (
-                  <button
-                    onClick={() => setManagerSig(savedManagerSig)}
-                    className="flex items-center gap-2 text-xs text-primary border border-primary/30 rounded-lg px-3 py-2 hover:bg-primary/5 transition-colors"
-                  >
-                    <span>↩ Use my saved signature</span>
-                    <img src={savedManagerSig} alt="Saved sig" className="h-6 object-contain opacity-70" />
-                  </button>
-                )}
-                <SignaturePad label={L.sig} onSave={handleManagerSigSave} />
-              </div>
-            )}
-          </div>
 
+        </div>{/* end left column */}
 
-        </div>
-
-        {/* Live Preview Sidebar — hidden on mobile */}
+        {/* ── Right sidebar: live preview + actions ── */}
         <div className="hidden lg:block space-y-4">
           <div className="bg-card rounded-xl border border-border overflow-hidden">
             <div className="px-4 py-3 border-b border-border">
@@ -882,20 +851,22 @@ export default function CreateDocument() {
               )}
             </div>
           </div>
-        </div>
+        </div>{/* end sidebar */}
 
-        {/* Mobile sticky bottom action bar */}
-        <div className="lg:hidden fixed bottom-14 left-0 right-0 z-30 bg-card border-t border-border px-4 py-3 flex gap-2 shadow-lg">
-          <Button variant="outline" size="sm" className="flex-1" onClick={() => setShowPdfPreview(true)} disabled={saving}>
-            <FileDown className="h-4 w-4 mr-1" /> Preview
-          </Button>
-          <Button variant="outline" size="sm" className="flex-1" onClick={() => handleSave("draft")} disabled={saving || !form.customer_name}>
-            {saving ? "Saving..." : (form.type || docType) === "waybill" ? "Pending" : "Draft"}
-          </Button>
-          <Button size="sm" className="flex-1" onClick={() => handleSave("sent")} disabled={saving || !form.customer_name}>
-            Save &amp; Send
-          </Button>
-        </div>
+      </div>{/* end grid */}
+
+      {/* Mobile sticky bottom action bar */}
+      <div className="lg:hidden fixed bottom-14 left-0 right-0 z-30 bg-card border-t border-border px-4 py-3 flex gap-2 shadow-lg">
+        <Button variant="outline" size="sm" className="flex-1" onClick={() => setShowPdfPreview(true)} disabled={saving}>
+          <FileDown className="h-4 w-4 mr-1" /> Preview
+        </Button>
+        <Button variant="outline" size="sm" className="flex-1" onClick={() => handleSave("draft")} disabled={saving || !form.customer_name}>
+          {saving ? "Saving..." : (form.type || docType) === "waybill" ? "Pending" : "Draft"}
+        </Button>
+        <Button size="sm" className="flex-1" onClick={() => handleSave("sent")} disabled={saving || !form.customer_name}>
+          Save &amp; Send
+        </Button>
+      </div>
 
       {/* Leave confirmation modal */}
       {showLeaveModal && (
@@ -907,12 +878,12 @@ export default function CreateDocument() {
             </div>
             <div className="flex flex-col gap-2">
               <Button className="w-full" onClick={async () => {
-              setShowLeaveModal(false);
-              setIsDirty(false);
-              await handleSave("draft");
-              if (pendingNav) navigate(pendingNav);
+                setShowLeaveModal(false);
+                setIsDirty(false);
+                await handleSave("draft");
+                if (pendingNav) navigate(pendingNav);
               }}>
-              {(form.type || docType) === "waybill" ? "Save as Pending & Leave" : "Save as Draft & Leave"}
+                {(form.type || docType) === "waybill" ? "Save as Pending & Leave" : "Save as Draft & Leave"}
               </Button>
               <Button variant="outline" className="w-full" onClick={() => {
                 setShowLeaveModal(false);
@@ -968,7 +939,6 @@ export default function CreateDocument() {
             </div>
           </div>
           <div className="flex-1 overflow-auto bg-gray-100" style={{ position: "relative" }} onClick={e => e.stopPropagation()}>
-            {/* Soft Signage: unsigned banner */}
             {(form.type || docType) === "waybill" && pdfMode === "soft" && !customerSig && (
               <div className="sticky top-0 z-10 bg-emerald-600 text-white px-5 py-3 flex items-center justify-between shadow-md">
                 <div className="flex items-center gap-3">
@@ -983,7 +953,6 @@ export default function CreateDocument() {
                 </button>
               </div>
             )}
-            {/* Soft Signage: signed banner */}
             {(form.type || docType) === "waybill" && pdfMode === "soft" && customerSig && (
               <div className="sticky top-0 z-10 bg-emerald-700 text-white px-5 py-3 flex items-center justify-between shadow-md">
                 <div className="flex items-center gap-3">
@@ -1014,7 +983,6 @@ export default function CreateDocument() {
                   </div>
                 </div>
               </div>
-              {/* Tap-to-sign area below preview */}
               {(form.type || docType) === "waybill" && pdfMode === "soft" && !customerSig && (
                 <button
                   onClick={() => setShowInlineSigPad(true)}
@@ -1031,11 +999,10 @@ export default function CreateDocument() {
               )}
             </div>
           </div>
-          {/* Inline Signature Capture Overlay */}
+          {/* Inline Receiver Signature Overlay (waybill soft signage) */}
           {showInlineSigPad && (
             <div className="fixed inset-0 z-[60] flex flex-col bg-black/80" onClick={() => { setShowInlineSigPad(false); setSigStep("info"); }}>
               <div className="mt-auto bg-white rounded-t-3xl shadow-2xl" style={{ maxHeight: "92dvh" }} onClick={e => e.stopPropagation()}>
-                {/* Header */}
                 <div className="bg-slate-900 text-white px-6 py-5 rounded-t-3xl">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
@@ -1052,7 +1019,6 @@ export default function CreateDocument() {
                     </button>
                   </div>
                 </div>
-                {/* Step: Info */}
                 {sigStep === "info" && (
                   <div className="p-5 space-y-4 overflow-y-auto">
                     <div>
@@ -1074,7 +1040,6 @@ export default function CreateDocument() {
                     </Button>
                   </div>
                 )}
-                {/* Step: Sign */}
                 {sigStep === "sign" && (
                   <div className="p-5 overflow-y-auto">
                     <div className="flex items-center justify-between bg-slate-50 rounded-xl px-4 py-3 border border-slate-200 mb-4">
@@ -1091,6 +1056,7 @@ export default function CreateDocument() {
           )}
         </div>
       )}
+
     </div>
   );
 }

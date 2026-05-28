@@ -97,6 +97,14 @@
       "type": "string",
       "title": "Company Website"
     },
+    "manager_name": {
+      "type": "string",
+      "title": "Manager / Signatory Name"
+    },
+    "manager_title": {
+      "type": "string",
+      "title": "Manager Title / Position"
+    },
     "manager_signature": {
       "type": "string",
       "title": "Manager Signature"

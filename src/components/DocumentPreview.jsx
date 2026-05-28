@@ -97,7 +97,9 @@ function Sigs({ managerSig, customerSig, form, T, docType }) {
         {(managerSig || form?.manager_signature) ? <img src={managerSig || form.manager_signature} alt="" style={{ height: 72, objectFit: "contain", display: "block", marginBottom: 4 }} /> : <div style={{ height: 72 }} />}
         <div style={{ borderTop: `1px solid ${T.accentColor}`, paddingTop: 3 }}>
           <div style={{ fontSize: 8, color: T.tableHeaderColor, textTransform: "uppercase", letterSpacing: 1 }}>{managerLabel}</div>
-          {form?.company_name && <div style={{ fontSize: 10, color: "#475569", marginTop: 1 }}>{form.company_name}</div>}
+          {form?.manager_name && <div style={{ fontSize: 11, color: "#1e293b", fontWeight: 700, marginTop: 2 }}>{form.manager_name}</div>}
+          {form?.manager_title && <div style={{ fontSize: 9, color: "#64748b", marginTop: 1 }}>{form.manager_title}</div>}
+          {!form?.manager_name && form?.company_name && <div style={{ fontSize: 10, color: "#475569", marginTop: 1 }}>{form.company_name}</div>}
         </div>
       </div>
       {showCustomer && (
