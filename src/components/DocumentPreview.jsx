@@ -89,7 +89,7 @@ function Sigs({ managerSig, customerSig, form, T, docType }) {
   return (
     <div style={{ display: "flex", gap: 40, padding: "20px 48px", borderTop: "1px solid #e2e8f0" }}>
       <div style={{ minWidth: 160 }}>
-        {(managerSig || form?.manager_signature) ? <img src={managerSig || form.manager_signature} alt="" style={{ height: 48, objectFit: "contain", display: "block", marginBottom: 4 }} /> : <div style={{ height: 48 }} />}
+        {(managerSig || form?.manager_signature) ? <img src={managerSig || form.manager_signature} alt="" style={{ height: 72, objectFit: "contain", display: "block", marginBottom: 4 }} /> : <div style={{ height: 72 }} />}
         <div style={{ borderTop: `1px solid ${T.accentColor}`, paddingTop: 3 }}>
           <div style={{ fontSize: 8, color: T.tableHeaderColor, textTransform: "uppercase", letterSpacing: 1 }}>{managerLabel}</div>
           {form?.company_name && <div style={{ fontSize: 10, color: "#475569", marginTop: 1 }}>{form.company_name}</div>}
@@ -98,8 +98,8 @@ function Sigs({ managerSig, customerSig, form, T, docType }) {
       {showCustomer && (
         <div style={{ minWidth: 180 }}>
           {(customerSig || form?.customer_signature)
-            ? <img src={customerSig || form.customer_signature} alt="" style={{ height: 48, objectFit: "contain", display: "block", marginBottom: 4 }} />
-            : <div style={{ height: 48, borderBottom: "1px solid #9ca3af", marginBottom: 4 }} />
+            ? <img src={customerSig || form.customer_signature} alt="" style={{ height: 72, objectFit: "contain", display: "block", marginBottom: 4 }} />
+            : <div style={{ height: 72, borderBottom: "1px solid #9ca3af", marginBottom: 4 }} />
           }
           <div style={{ borderTop: `1px solid ${T.accentColor}`, paddingTop: 3 }}>
             <div style={{ fontSize: 8, color: T.tableHeaderColor, textTransform: "uppercase", letterSpacing: 1 }}>{customerLabel}</div>
