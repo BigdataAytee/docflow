@@ -109,7 +109,6 @@ function Sigs({ managerSig, customerSig, form, T, docType }) {
             : <div style={{ height: 72, borderBottom: "1px solid #9ca3af", marginBottom: 4 }} />
           }
           <div style={{ borderTop: `1px solid ${T.accentColor}`, paddingTop: 3 }}>
-            <div style={{ fontSize: 8, color: T.tableHeaderColor, textTransform: "uppercase", letterSpacing: 1 }}>{customerLabel}</div>
             {docType === "waybill" && (
               <>
                 <div style={{ fontSize: 10, color: "#334155", fontWeight: 600, marginTop: 2 }}>{form?.receiver_name || form?.customer_name || ""}</div>
