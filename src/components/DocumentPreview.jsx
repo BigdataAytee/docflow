@@ -156,7 +156,7 @@ function ClassicDoc({ form, items, calcs, sym, docType, managerSig, customerSig,
       {docType !== "waybill" && <TotalsBlock calcs={calcs} form={form} sym={sym} T={T} amountLabel={amountLabel} />}
       <Sigs managerSig={managerSig} customerSig={customerSig} form={form} T={T} docType={docType} />
       <div style={{ padding: "14px 48px", background: T.stripBg, borderTop: `1px solid ${T.stripBorder}`, textAlign: "center", fontSize: 9, color: T.tableHeaderColor }}>
-        {[form.company_phone, form.company_email, form.company_website].filter(Boolean).join("  ·  ")}
+        {[form.company_phone && `☎ ${form.company_phone}`, form.company_email && `✉ ${form.company_email}`, form.company_website && `🌐 ${form.company_website}`].filter(Boolean).join("  ·  ")}
       </div>
     </div>
   );
@@ -212,7 +212,7 @@ function ModernDoc({ form, items, calcs, sym, docType, managerSig, customerSig, 
       <Sigs managerSig={managerSig} customerSig={customerSig} form={form} T={T} docType={docType} />
       <div style={{ height: 6, background: T.accentColor }} />
       <div style={{ padding: "8px 36px", background: T.stripBg, textAlign: "center", fontSize: 9, color: T.tableHeaderColor }}>
-        {[form.company_phone, form.company_email, form.company_website].filter(Boolean).join("  ·  ")}
+        {[form.company_phone && `☎ ${form.company_phone}`, form.company_email && `✉ ${form.company_email}`, form.company_website && `🌐 ${form.company_website}`].filter(Boolean).join("  ·  ")}
       </div>
     </div>
   );
@@ -262,7 +262,7 @@ function MinimalDoc({ form, items, calcs, sym, docType, managerSig, customerSig,
       {docType !== "waybill" && <TotalsBlock calcs={calcs} form={form} sym={sym} T={T} amountLabel={amountLabel} />}
       <Sigs managerSig={managerSig} customerSig={customerSig} form={form} T={T} docType={docType} />
       <div style={{ padding: "10px 40px", borderTop: "1px solid #f3f4f6", textAlign: "center", fontSize: 9, color: "#d1d5db", letterSpacing: 1 }}>
-        {[form.company_phone, form.company_email, form.company_website].filter(Boolean).join("  ·  ")}
+        {[form.company_phone && `☎ ${form.company_phone}`, form.company_email && `✉ ${form.company_email}`, form.company_website && `🌐 ${form.company_website}`].filter(Boolean).join("  ·  ")}
       </div>
     </div>
   );
@@ -316,7 +316,7 @@ function BoldDoc({ form, items, calcs, sym, docType, managerSig, customerSig, T 
       <Sigs managerSig={managerSig} customerSig={customerSig} form={form} T={T} docType={docType} />
       <div style={{ height: 4, background: T.accentColor }} />
       <div style={{ padding: "8px 32px", background: T.stripBg, textAlign: "center", fontSize: 9, color: T.tableHeaderColor }}>
-        {[form.company_phone, form.company_email, form.company_website].filter(Boolean).join("  ·  ")}
+        {[form.company_phone && `☎ ${form.company_phone}`, form.company_email && `✉ ${form.company_email}`, form.company_website && `🌐 ${form.company_website}`].filter(Boolean).join("  ·  ")}
       </div>
     </div>
   );
@@ -378,7 +378,7 @@ function ElegantDoc({ form, items, calcs, sym, docType, managerSig, customerSig,
           <div style={{ flex: 1, height: 1, background: T.accentColor, opacity: 0.3 }} />
         </div>
         <div style={{ fontSize: 9, color: "#d1d5db", letterSpacing: 1 }}>
-          {[form.company_phone, form.company_email, form.company_website].filter(Boolean).join("  ·  ")}
+          {[form.company_phone && `☎ ${form.company_phone}`, form.company_email && `✉ ${form.company_email}`, form.company_website && `🌐 ${form.company_website}`].filter(Boolean).join("  ·  ")}
         </div>
       </div>
       <div style={{ height: 2, background: T.accentColor, opacity: 0.3 }} />
