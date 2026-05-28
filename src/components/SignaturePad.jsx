@@ -30,6 +30,10 @@ export default function SignaturePad({ label = "Signature", onSave }) {
     ctx.lineCap = "round";
     ctx.lineJoin = "round";
     ctx.beginPath();
+    ctx.arc(pos.x, pos.y, 1.5, 0, Math.PI * 2);
+    ctx.fillStyle = "#1d4ed8";
+    ctx.fill();
+    ctx.beginPath();
     ctx.moveTo(pos.x, pos.y);
     lastPos.current = pos;
     drawing.current = true;
