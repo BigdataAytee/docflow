@@ -689,14 +689,7 @@ export default function CreateDocument() {
             <SignaturePad label={L.sig} onSave={setManagerSig} />
           </div>
 
-          {/* Secondary Signature — waybill receiver or quotation acceptance */}
-          {(docType === "waybill" || docType === "quotation") && (
-            <div className="bg-card rounded-xl border border-border p-6">
-              <h3 className="font-semibold mb-4">{docType === "waybill" ? "Receiver Signature" : "Customer Acceptance Signature"}</h3>
-              <p className="text-xs text-muted-foreground mb-3">{docType === "waybill" ? "Receiver signs here to confirm goods received in good condition." : "Customer signs here to accept this quotation."}</p>
-              <SignaturePad label={docType === "waybill" ? "Receiver Signature" : "Acceptance Signature"} onSave={setCustomerSig} />
-            </div>
-          )}
+
         </div>
 
         {/* Live Preview Sidebar — hidden on mobile */}
