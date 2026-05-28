@@ -3,7 +3,7 @@ import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
 import { base44 } from "@/api/base44Client";
 import { useNavigate, Link } from "react-router-dom";
-import { Plus, Trash2, ArrowLeft, Settings2, FileDown, Upload, GripVertical, PenLine, Printer } from "lucide-react";
+import { Plus, Trash2, ArrowLeft, Settings2, FileDown, Upload, GripVertical, PenLine, Printer, CheckCircle2 } from "lucide-react";
 import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
@@ -15,6 +15,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import CustomerForm from "../components/CustomerForm";
 import SignaturePad from "../components/SignaturePad";
 import DocumentPreview from "../components/DocumentPreview";
+import { toast } from "sonner";
 
 const typeLabels = {
   invoice: "Invoice", quotation: "Quotation", receipt: "Receipt", waybill: "Waybill",
@@ -269,6 +270,7 @@ export default function CreateDocument() {
   const pdfRef = useRef(null);
   const [generatingPdf, setGeneratingPdf] = useState(false);
   const [showPdfPreview, setShowPdfPreview] = useState(false);
+  const [showInlineSigPad, setShowInlineSigPad] = useState(false);
   const [pdfMode, setPdfMode] = useState("soft"); // "soft" | "paper"
   const template = "classic";
   const templateColor = "slate";
@@ -334,6 +336,24 @@ export default function CreateDocument() {
     a.click();
     URL.revokeObjectURL(url);
     setGeneratingPdf(false);
+  };
+
+  const handleSoftSigSave = async (sig) => {
+    setCustomerSig(sig);
+    setShowInlineSigPad(false);
+    setPdfMode("soft");
+    toast.success("Signature captured — preparing signed PDF…");
+    await new Promise(r => setTimeout(r, 400));
+    setGeneratingPdf(true);
+    const blob = await generatePdfBlob();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `${form.number || "waybill"}-signed.pdf`;
+    a.click();
+    URL.revokeObjectURL(url);
+    setGeneratingPdf(false);
+    toast.success("Signed PDF downloaded — signature locked into document.");
   };
 
   const [viewportWidth, setViewportWidth] = useState(window.innerWidth);
@@ -759,8 +779,36 @@ export default function CreateDocument() {
               <button className="p-2 hover:bg-muted rounded-lg text-muted-foreground shrink-0" onClick={() => setShowPdfPreview(false)}>✕</button>
             </div>
           </div>
-          <div className="flex-1 overflow-auto bg-gray-100" onClick={e => e.stopPropagation()}>
-            <div className="flex justify-center p-4">
+          <div className="flex-1 overflow-auto bg-gray-100" style={{ position: "relative" }} onClick={e => e.stopPropagation()}>
+            {/* Soft Signage: unsigned banner */}
+            {(form.type || docType) === "waybill" && pdfMode === "soft" && !customerSig && (
+              <div className="sticky top-0 z-10 bg-emerald-600 text-white px-5 py-3 flex items-center justify-between shadow-md">
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center shrink-0"><PenLine className="h-4 w-4" /></div>
+                  <div>
+                    <p className="font-bold text-sm leading-tight">Receiver Signature Required</p>
+                    <p className="text-xs text-emerald-100">Tap below or use the button to sign digitally</p>
+                  </div>
+                </div>
+                <button onClick={() => setShowInlineSigPad(true)} className="bg-white text-emerald-700 font-bold text-sm px-4 py-2 rounded-xl hover:bg-emerald-50 transition-colors flex items-center gap-2 shrink-0">
+                  <PenLine className="h-4 w-4" /> Sign Here
+                </button>
+              </div>
+            )}
+            {/* Soft Signage: signed banner */}
+            {(form.type || docType) === "waybill" && pdfMode === "soft" && customerSig && (
+              <div className="sticky top-0 z-10 bg-emerald-700 text-white px-5 py-3 flex items-center justify-between shadow-md">
+                <div className="flex items-center gap-3">
+                  <CheckCircle2 className="h-5 w-5 text-emerald-300 shrink-0" />
+                  <div>
+                    <p className="font-bold text-sm">Document Signed</p>
+                    <p className="text-xs text-emerald-200">Signature is locked into the PDF</p>
+                  </div>
+                </div>
+                <button onClick={() => setShowInlineSigPad(true)} className="text-xs text-emerald-200 hover:text-white underline">Re-sign</button>
+              </div>
+            )}
+            <div className="flex flex-col items-center p-4">
               <div style={{ width: 794 * previewScale, minHeight: 1123 * previewScale, overflow: "hidden" }}>
                 <div style={{ width: 794, transformOrigin: "top left", transform: `scale(${previewScale})`, display: "block" }}>
                   <div ref={pdfRef} style={{ width: 794 }}>
@@ -778,8 +826,50 @@ export default function CreateDocument() {
                   </div>
                 </div>
               </div>
+              {/* Tap-to-sign area below preview */}
+              {(form.type || docType) === "waybill" && pdfMode === "soft" && !customerSig && (
+                <button
+                  onClick={() => setShowInlineSigPad(true)}
+                  className="mt-4 w-full max-w-3xl border-2 border-dashed border-emerald-400 rounded-2xl p-8 flex flex-col items-center gap-3 text-emerald-600 hover:bg-emerald-50 hover:border-emerald-500 transition-all group"
+                >
+                  <div className="w-14 h-14 rounded-full bg-emerald-100 group-hover:bg-emerald-200 flex items-center justify-center transition-colors">
+                    <PenLine className="h-7 w-7" />
+                  </div>
+                  <div className="text-center">
+                    <p className="font-bold text-lg">Tap to Sign Here</p>
+                    <p className="text-sm text-emerald-500 mt-1">Touch, mouse, or stylus — sign in the Receiver Signature field</p>
+                  </div>
+                </button>
+              )}
             </div>
           </div>
+          {/* Inline Signature Capture Overlay */}
+          {showInlineSigPad && (
+            <div className="fixed inset-0 z-[60] flex flex-col bg-black/80" onClick={() => setShowInlineSigPad(false)}>
+              <div className="mt-auto bg-white rounded-t-3xl shadow-2xl" style={{ maxHeight: "92dvh" }} onClick={e => e.stopPropagation()}>
+                <div className="bg-slate-900 text-white px-6 py-5 rounded-t-3xl">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-xl bg-emerald-500/20 flex items-center justify-center">
+                        <PenLine className="h-5 w-5 text-emerald-400" />
+                      </div>
+                      <div>
+                        <h2 className="font-bold text-base">Receiver Signature</h2>
+                        <p className="text-xs text-slate-400">{form.number || "Draft"} · {form.customer_name || "Receiver"}</p>
+                      </div>
+                    </div>
+                    <button onClick={() => setShowInlineSigPad(false)} className="p-2 hover:bg-slate-700 rounded-lg transition-colors">
+                      <span className="text-lg leading-none">✕</span>
+                    </button>
+                  </div>
+                </div>
+                <div className="p-5 overflow-y-auto">
+                  <p className="text-xs text-muted-foreground mb-4 text-center">Sign below using your finger, mouse, or stylus. This will be permanently embedded into the PDF.</p>
+                  <SignaturePad label="Receiver Signature" onSave={handleSoftSigSave} />
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       )}
     </div>
