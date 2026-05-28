@@ -787,9 +787,7 @@ export default function CreateDocument() {
               <Textarea value={form.notes} onChange={e => setForm(f => ({ ...f, notes: e.target.value }))} rows={2}
                 placeholder={docType === "waybill" ? "e.g. Handle with care. Deliver between 9am–5pm." : docType === "receipt" ? "e.g. Thank you for your payment." : "e.g. Thanks for your business."} />
             </div>
-            {docType === "invoice" && (
-              <div><Label>Payment Instructions</Label><Textarea value={form.payment_instructions} onChange={e => setForm(f => ({ ...f, payment_instructions: e.target.value }))} rows={2} placeholder="e.g. Bank transfer to Account No. 0123456789" /></div>
-            )}
+
             {docType === "quotation" && (
               <div><Label>Terms &amp; Conditions</Label><Textarea value={form.terms} onChange={e => setForm(f => ({ ...f, terms: e.target.value }))} rows={2} placeholder="e.g. This quotation is valid for 30 days. Prices subject to change." /></div>
             )}
