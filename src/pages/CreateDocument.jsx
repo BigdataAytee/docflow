@@ -202,9 +202,10 @@ export default function CreateDocument() {
   };
 
   const handleSave = async (status = "draft") => {
+    const resolvedStatus = (form.type || docType) === "waybill" && status === "draft" ? "pending" : status;
     if (autoSaveTimerRef.current) clearTimeout(autoSaveTimerRef.current);
     setSaving(true);
-    const doc = buildDocPayload(status);
+    const doc = buildDocPayload(resolvedStatus);
     const targetId = draftIdRef.current || editId;
     if (targetId) {
       await base44.entities.Document.update(targetId, doc);
@@ -224,7 +225,7 @@ export default function CreateDocument() {
     if (autoSaveTimerRef.current) clearTimeout(autoSaveTimerRef.current);
     autoSaveTimerRef.current = setTimeout(async () => {
       setAutoSaveStatus("saving");
-      const docData = buildDocPayload("draft");
+      const docData = buildDocPayload((form.type || docType) === "waybill" ? "pending" : "draft");
       if (draftIdRef.current) {
         await base44.entities.Document.update(draftIdRef.current, docData);
       } else {
@@ -344,6 +345,15 @@ export default function CreateDocument() {
     const receiverTime = now.toTimeString().slice(0, 5);
     setForm(f => ({ ...f, receiver_date: receiverDate, receiver_time: receiverTime, delivery_signed_at: now.toISOString() }));
     setCustomerSig(sig);
+    // Persist signed document to DB
+    const signedPayload = { ...buildDocPayload("delivered"), receiver_date: receiverDate, receiver_time: receiverTime, delivery_signed_at: now.toISOString(), customer_signature: sig, manager_signature: managerSig || "" };
+    if (draftIdRef.current) {
+      await base44.entities.Document.update(draftIdRef.current, signedPayload);
+    } else {
+      signedPayload.paid_amount = 0;
+      const created = await base44.entities.Document.create(signedPayload);
+      draftIdRef.current = created.id;
+    }
     setShowInlineSigPad(false);
     setPdfMode("soft");
     toast.success("Signature captured — preparing signed PDF…");
@@ -379,7 +389,7 @@ export default function CreateDocument() {
           <div className="flex items-center gap-2">
             <p className="text-sm text-muted-foreground">{editId ? "Update the document details below" : "Fill in the details below"}</p>
             {autoSaveStatus === "saving" && <span className="text-xs text-muted-foreground animate-pulse">Auto-saving…</span>}
-            {autoSaveStatus === "saved" && <span className="text-xs text-green-600 font-medium">✓ Draft saved</span>}
+            {autoSaveStatus === "saved" && <span className="text-xs text-green-600 font-medium">{(form.type || docType) === "waybill" ? "✓ Pending saved" : "✓ Draft saved"}</span>}
           </div>
         </div>
       </div>
@@ -672,7 +682,7 @@ export default function CreateDocument() {
           <div className="bg-card rounded-xl border border-border p-5 sticky top-8">
             <div className="space-y-2">
               <Button className="w-full" onClick={() => handleSave("draft")} disabled={saving || !form.customer_name}>
-                {saving ? "Saving..." : "Save as Draft"}
+                {saving ? "Saving..." : (form.type || docType) === "waybill" ? "Save — To Be Delivered" : "Save as Draft"}
               </Button>
               <Button variant="outline" className="w-full" onClick={() => handleSave("sent")} disabled={saving || !form.customer_name}>
                 Save &amp; Send
@@ -705,7 +715,7 @@ export default function CreateDocument() {
             <FileDown className="h-4 w-4 mr-1" /> Preview
           </Button>
           <Button variant="outline" size="sm" className="flex-1" onClick={() => handleSave("draft")} disabled={saving || !form.customer_name}>
-            {saving ? "Saving..." : "Draft"}
+            {saving ? "Saving..." : (form.type || docType) === "waybill" ? "Pending" : "Draft"}
           </Button>
           <Button size="sm" className="flex-1" onClick={() => handleSave("sent")} disabled={saving || !form.customer_name}>
             Save &amp; Send
@@ -723,12 +733,12 @@ export default function CreateDocument() {
             </div>
             <div className="flex flex-col gap-2">
               <Button className="w-full" onClick={async () => {
-                setShowLeaveModal(false);
-                setIsDirty(false);
-                await handleSave("draft");
-                if (pendingNav) navigate(pendingNav);
+              setShowLeaveModal(false);
+              setIsDirty(false);
+              await handleSave("draft");
+              if (pendingNav) navigate(pendingNav);
               }}>
-                Save as Draft &amp; Leave
+              {(form.type || docType) === "waybill" ? "Save as Pending & Leave" : "Save as Draft & Leave"}
               </Button>
               <Button variant="outline" className="w-full" onClick={() => {
                 setShowLeaveModal(false);
