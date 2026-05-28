@@ -3,8 +3,7 @@ import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
 import { base44 } from "@/api/base44Client";
 import { useNavigate, Link } from "react-router-dom";
-import { Plus, Trash2, ArrowLeft, Settings2, FileDown, Upload, GripVertical } from "lucide-react";
-import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
+import { Plus, Trash2, ArrowLeft, Settings2, FileDown, Upload } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -87,7 +86,6 @@ export default function CreateDocument() {
     notes: "",
     terms: "",
     terms_label: "Due on Receipt",
-    global_discount_rate: "",
     payment_instructions: "",
     due_date: "",
     issue_date: new Date().toISOString().split("T")[0],
@@ -167,12 +165,10 @@ export default function CreateDocument() {
       return { ...it, amount: amt - disc };
     });
     const subtotal = lineItems.reduce((s, i) => s + i.amount, 0);
-    const globalDiscAmt = subtotal * ((parseFloat(form.global_discount_rate) || 0) / 100);
-    const discountedSubtotal = subtotal - globalDiscAmt;
-    const taxAmt = discountedSubtotal * ((form.tax_rate || 0) / 100);
-    const total = discountedSubtotal + taxAmt + (parseFloat(form.shipping) || 0);
-    return { lineItems, subtotal, globalDiscAmt, taxAmt, total };
-  }, [items, form.tax_rate, form.shipping, form.global_discount_rate]);
+    const taxAmt = subtotal * ((form.tax_rate || 0) / 100);
+    const total = subtotal + taxAmt + (parseFloat(form.shipping) || 0);
+    return { lineItems, subtotal, taxAmt, total };
+  }, [items, form.tax_rate, form.shipping]);
 
   const handleBackClick = (e) => {
     if (isDirty) { e.preventDefault(); setShowLeaveModal(true); }
@@ -228,8 +224,6 @@ export default function CreateDocument() {
     template_color: "slate",
     status,
     tax_rate: parseFloat(form.tax_rate) || 0,
-    global_discount_rate: parseFloat(form.global_discount_rate) || 0,
-    global_discount_amount: calcs.globalDiscAmt,
     shipping: parseFloat(form.shipping) || 0,
     items: calcs.lineItems.map(it => ({
       ...it,
@@ -399,70 +393,50 @@ export default function CreateDocument() {
           <div className="bg-card rounded-xl border border-border p-6">
             <h3 className="font-semibold mb-4">Line Items</h3>
             <div className="hidden sm:grid grid-cols-12 gap-2 mb-1">
-              <div className="col-span-1" />
-              <div className="col-span-4 text-xs font-medium text-muted-foreground">Description</div>
+              <div className="col-span-5 text-xs font-medium text-muted-foreground">Description</div>
               <div className="col-span-2 text-xs font-medium text-muted-foreground">Qty</div>
               {docType !== 'waybill' && <div className="col-span-2 text-xs font-medium text-muted-foreground">Unit Price</div>}
               {docType !== 'waybill' && <div className="col-span-2 text-xs font-medium text-muted-foreground">Disc %</div>}
             </div>
-            <DragDropContext onDragEnd={({ source, destination }) => {
-              if (!destination) return;
-              const next = [...items];
-              const [moved] = next.splice(source.index, 1);
-              next.splice(destination.index, 0, moved);
-              setItems(next);
-            }}>
-              <Droppable droppableId="line-items">
-                {(provided) => (
-                  <div className="space-y-3" ref={provided.innerRef} {...provided.droppableProps}>
-                    {items.map((item, i) => (
-                      <Draggable key={i} draggableId={`item-${i}`} index={i}>
-                        {(drag) => (
-                          <div ref={drag.innerRef} {...drag.draggableProps} className="select-none">
-                            {/* Mobile card layout */}
-                            <div className="sm:hidden bg-muted/30 rounded-lg p-3 space-y-2">
-                              <div className="flex items-center gap-2">
-                                <span {...drag.dragHandleProps} className="cursor-grab active:cursor-grabbing p-1 text-muted-foreground shrink-0"><GripVertical className="h-4 w-4" /></span>
-                                <Input value={item.description} onChange={e => updateItem(i, "description", e.target.value)} placeholder="Item description" className="flex-1" />
-                                <Button variant="ghost" size="icon" className="shrink-0" onClick={() => setItems(prev => prev.filter((_, idx) => idx !== i))} disabled={items.length === 1}>
-                                  <Trash2 className="h-4 w-4 text-muted-foreground" />
-                                </Button>
-                              </div>
-                              {docType !== 'waybill' ? (
-                                <div className="grid grid-cols-3 gap-2">
-                                  <div><Label className="text-xs text-muted-foreground">Qty</Label><Input value={item.quantity} onChange={e => updateItem(i, "quantity", e.target.value)} onFocus={e => e.target.select()} placeholder="0" className="mt-1" /></div>
-                                  <div><Label className="text-xs text-muted-foreground">Unit Price</Label><Input value={item.unit_price} onChange={e => updateItem(i, "unit_price", e.target.value)} onFocus={e => e.target.select()} placeholder="0" className="mt-1" /></div>
-                                  <div><Label className="text-xs text-muted-foreground">Disc %</Label><Input value={item.discount} onChange={e => updateItem(i, "discount", e.target.value)} onFocus={e => e.target.select()} placeholder="0" className="mt-1" /></div>
-                                </div>
-                              ) : (
-                                <div><Label className="text-xs text-muted-foreground">Qty</Label><Input value={item.quantity} onChange={e => updateItem(i, "quantity", e.target.value)} onFocus={e => e.target.select()} placeholder="0" className="mt-1 w-28" /></div>
-                              )}
-                              {docType !== 'waybill' && (
-                                <div className="text-right text-xs font-semibold text-foreground">{sym}{((parseFloat(item.quantity) || 0) * (parseFloat(item.unit_price) || 0) * (1 - (parseFloat(item.discount) || 0) / 100)).toLocaleString("en", { minimumFractionDigits: 2 })}</div>
-                              )}
-                            </div>
-                            {/* Desktop row layout */}
-                            <div className="hidden sm:grid grid-cols-12 gap-2 items-center">
-                              <div className="col-span-1 flex items-center"><span {...drag.dragHandleProps} className="cursor-grab active:cursor-grabbing p-1 text-muted-foreground"><GripVertical className="h-4 w-4" /></span></div>
-                              <div className="col-span-4"><Input value={item.description} onChange={e => updateItem(i, "description", e.target.value)} placeholder="Item description" /></div>
-                              <div className="col-span-2"><Input value={item.quantity} onChange={e => updateItem(i, "quantity", e.target.value)} onFocus={e => e.target.select()} placeholder="0" /></div>
-                              {docType !== 'waybill' && <div className="col-span-2"><Input value={item.unit_price} onChange={e => updateItem(i, "unit_price", e.target.value)} onFocus={e => e.target.select()} placeholder="0" /></div>}
-                              {docType !== 'waybill' && <div className="col-span-2"><Input value={item.discount} onChange={e => updateItem(i, "discount", e.target.value)} onFocus={e => e.target.select()} placeholder="0" /></div>}
-                              <div className="col-span-1">
-                                <Button variant="ghost" size="icon" onClick={() => setItems(prev => prev.filter((_, idx) => idx !== i))} disabled={items.length === 1}>
-                                  <Trash2 className="h-4 w-4 text-muted-foreground" />
-                                </Button>
-                              </div>
-                            </div>
-                          </div>
-                        )}
-                      </Draggable>
-                    ))}
-                    {provided.placeholder}
+            <div className="space-y-3">
+              {items.map((item, i) => (
+                <div key={i}>
+                  {/* Mobile card layout */}
+                  <div className="sm:hidden bg-muted/30 rounded-lg p-3 space-y-2">
+                    <div className="flex items-center gap-2">
+                      <Input value={item.description} onChange={e => updateItem(i, "description", e.target.value)} placeholder="Item description" className="flex-1" />
+                      <Button variant="ghost" size="icon" className="shrink-0" onClick={() => setItems(prev => prev.filter((_, idx) => idx !== i))} disabled={items.length === 1}>
+                        <Trash2 className="h-4 w-4 text-muted-foreground" />
+                      </Button>
+                    </div>
+                    {docType !== 'waybill' ? (
+                      <div className="grid grid-cols-3 gap-2">
+                        <div><Label className="text-xs text-muted-foreground">Qty</Label><Input value={item.quantity} onChange={e => updateItem(i, "quantity", e.target.value)} onFocus={e => e.target.select()} placeholder="0" className="mt-1" /></div>
+                        <div><Label className="text-xs text-muted-foreground">Unit Price</Label><Input value={item.unit_price} onChange={e => updateItem(i, "unit_price", e.target.value)} onFocus={e => e.target.select()} placeholder="0" className="mt-1" /></div>
+                        <div><Label className="text-xs text-muted-foreground">Disc %</Label><Input value={item.discount} onChange={e => updateItem(i, "discount", e.target.value)} onFocus={e => e.target.select()} placeholder="0" className="mt-1" /></div>
+                      </div>
+                    ) : (
+                      <div><Label className="text-xs text-muted-foreground">Qty</Label><Input value={item.quantity} onChange={e => updateItem(i, "quantity", e.target.value)} onFocus={e => e.target.select()} placeholder="0" className="mt-1 w-28" /></div>
+                    )}
+                    {docType !== 'waybill' && (
+                      <div className="text-right text-xs font-semibold text-foreground">{sym}{((parseFloat(item.quantity) || 0) * (parseFloat(item.unit_price) || 0) * (1 - (parseFloat(item.discount) || 0) / 100)).toLocaleString("en", { minimumFractionDigits: 2 })}</div>
+                    )}
                   </div>
-                )}
-              </Droppable>
-            </DragDropContext>
+                  {/* Desktop row layout */}
+                  <div className="hidden sm:grid grid-cols-12 gap-2 items-center">
+                    <div className="col-span-5"><Input value={item.description} onChange={e => updateItem(i, "description", e.target.value)} placeholder="Item description" /></div>
+                    <div className="col-span-2"><Input value={item.quantity} onChange={e => updateItem(i, "quantity", e.target.value)} onFocus={e => e.target.select()} placeholder="0" /></div>
+                    {docType !== 'waybill' && <div className="col-span-2"><Input value={item.unit_price} onChange={e => updateItem(i, "unit_price", e.target.value)} onFocus={e => e.target.select()} placeholder="0" /></div>}
+                    {docType !== 'waybill' && <div className="col-span-2"><Input value={item.discount} onChange={e => updateItem(i, "discount", e.target.value)} onFocus={e => e.target.select()} placeholder="0" /></div>}
+                    <div className="col-span-1">
+                      <Button variant="ghost" size="icon" onClick={() => setItems(prev => prev.filter((_, idx) => idx !== i))} disabled={items.length === 1}>
+                        <Trash2 className="h-4 w-4 text-muted-foreground" />
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
             <Button variant="outline" size="sm" className="mt-4" onClick={() => setItems(p => [...p, { description: "", quantity: "", unit_price: "", discount: "" }])}>
               <Plus className="h-3 w-3 mr-1" /> Add Item
             </Button>
@@ -476,15 +450,6 @@ export default function CreateDocument() {
                 <span className="text-muted-foreground">Subtotal</span>
                 <span className="font-medium">{sym}{calcs.subtotal.toLocaleString("en", { minimumFractionDigits: 2 })}</span>
               </div>
-              {docType !== 'waybill' && (
-                <div className="flex items-center justify-between gap-2">
-                  <Label className="text-muted-foreground font-normal">Global Disc %</Label>
-                  <div className="flex items-center gap-2">
-                    <Input className="w-20 h-8 text-xs" value={form.global_discount_rate} onChange={e => setForm(f => ({ ...f, global_discount_rate: e.target.value }))} onFocus={e => e.target.select()} placeholder="0" />
-                    <span className="text-orange-600 text-xs w-24 text-right">-{sym}{calcs.globalDiscAmt.toLocaleString("en", { minimumFractionDigits: 2 })}</span>
-                  </div>
-                </div>
-              )}
               <div className="flex items-center justify-between gap-2">
                 <Label className="text-muted-foreground font-normal">VAT %</Label>
                 <div className="flex items-center gap-2">
