@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo, useRef } from "react";
 import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
 import { base44 } from "@/api/base44Client";
-import { useNavigate, Link } from "react-router-dom";
+import { useNavigate, Link, useBlocker } from "react-router-dom";
 import { Plus, Trash2, ArrowLeft, Settings2, FileDown, Upload, GripVertical } from "lucide-react";
 import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -60,17 +60,14 @@ export default function CreateDocument() {
     return () => window.removeEventListener("beforeunload", handler);
   }, [isDirty]);
 
-  // Intercept browser back button
+  // Block all in-app navigation when dirty
+  const blocker = useBlocker(({ currentLocation, nextLocation }) =>
+    isDirty && currentLocation.pathname !== nextLocation.pathname
+  );
+
   useEffect(() => {
-    if (!isDirty) return;
-    history.pushState(null, "", window.location.href);
-    const handler = () => {
-      history.pushState(null, "", window.location.href); // re-push so back stays blocked
-      setShowLeaveModal(true);
-    };
-    window.addEventListener("popstate", handler);
-    return () => window.removeEventListener("popstate", handler);
-  }, [isDirty]);
+    if (blocker.state === "blocked") setShowLeaveModal(true);
+  }, [blocker.state]);
 
 
 
@@ -176,7 +173,7 @@ export default function CreateDocument() {
 
   const handleBackClick = (e) => {
     if (isDirty) { e.preventDefault(); setShowLeaveModal(true); }
-    else navigate("/documents");
+    else navigate(-1);
   };
 
   const handleSave = async (status = "draft") => {
@@ -587,13 +584,26 @@ export default function CreateDocument() {
               <p className="text-sm text-muted-foreground mt-1">You have unsaved changes. What would you like to do?</p>
             </div>
             <div className="flex flex-col gap-2">
-              <Button className="w-full" onClick={async () => { setShowLeaveModal(false); setIsDirty(false); await handleSave("draft"); }}>
+              <Button className="w-full" onClick={async () => {
+                setShowLeaveModal(false);
+                setIsDirty(false);
+                await handleSave("draft");
+                if (blocker.state === "blocked") blocker.proceed();
+              }}>
                 Save as Draft &amp; Leave
               </Button>
-              <Button variant="outline" className="w-full" onClick={() => { setShowLeaveModal(false); setIsDirty(false); navigate("/documents"); }}>
+              <Button variant="outline" className="w-full" onClick={() => {
+                setShowLeaveModal(false);
+                setIsDirty(false);
+                if (blocker.state === "blocked") blocker.proceed();
+                else navigate(-1);
+              }}>
                 Discard &amp; Leave
               </Button>
-              <Button variant="ghost" className="w-full" onClick={() => setShowLeaveModal(false)}>
+              <Button variant="ghost" className="w-full" onClick={() => {
+                setShowLeaveModal(false);
+                if (blocker.state === "blocked") blocker.reset();
+              }}>
                 Keep Editing
               </Button>
             </div>
