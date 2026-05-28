@@ -1,27 +1,25 @@
 import { Link, useLocation } from "react-router-dom";
-import { Users, FileText, Settings, Plus, ChevronDown, LogOut, Mail, LayoutGrid, ShieldAlert } from "lucide-react";
+import { Users, FileText, Settings, Plus, LogOut, Mail, LayoutGrid, ShieldAlert, Receipt, FileSignature, ClipboardList, Truck } from "lucide-react";
 import { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 
 const navItems = [
   { label: "Documents", icon: FileText, path: "/documents" },
+  { label: "Invoice", icon: ClipboardList, path: "/documents/new?type=invoice", exact: true },
+  { label: "Quotation", icon: FileSignature, path: "/documents/new?type=quotation", exact: true },
+  { label: "Receipt", icon: Receipt, path: "/documents/new?type=receipt", exact: true },
+  { label: "Waybill", icon: Truck, path: "/documents/new?type=waybill", exact: true },
   { label: "Customers", icon: Users, path: "/customers" },
   { label: "Mail", icon: Mail, path: "/mail" },
   { label: "Apps & Tools", icon: LayoutGrid, path: "/apps" },
   { label: "Settings", icon: Settings, path: "/settings" },
 ];
 
-const docTypes = [
-  { label: "Invoice", value: "invoice" },
-  { label: "Quotation", value: "quotation" },
-  { label: "Receipt", value: "receipt" },
-  { label: "Waybill", value: "waybill" },
-];
+
 
 export default function Sidebar({ onClose }) {
   const location = useLocation();
-  const [showCreate, setShowCreate] = useState(false);
   const [companyName, setCompanyName] = useState("");
   const [companyEmail, setCompanyEmail] = useState("");
   const [isAdmin, setIsAdmin] = useState(false);
@@ -43,33 +41,9 @@ export default function Sidebar({ onClose }) {
         <p className="text-xs text-sidebar-foreground/50 mt-0.5">{companyEmail}</p>
       </div>
 
-      <div className="px-3 mb-4">
-        <div className="relative">
-          <Button
-            onClick={() => setShowCreate(!showCreate)}
-            className="w-full bg-sidebar-primary hover:bg-sidebar-primary/90 text-white justify-between"
-          >
-            <span className="flex items-center gap-2"><Plus className="h-4 w-4" /> New Document</span>
-            <ChevronDown className={`h-3 w-3 transition-transform ${showCreate ? "rotate-180" : ""}`} />
-          </Button>
-          {showCreate && (
-            <div className="absolute top-full left-0 right-0 mt-1 bg-sidebar-accent rounded-lg border border-sidebar-border overflow-hidden shadow-xl z-10">
-              {docTypes.map(dt => (
-                <Link
-                  key={dt.value}
-                  to={`/documents/new?type=${dt.value}`}
-                  onClick={() => { setShowCreate(false); onClose && onClose(); }}
-                  className="block px-4 py-2.5 text-sm hover:bg-sidebar-primary/20 text-sidebar-foreground transition-colors"
-                >
-                  {dt.label}
-                </Link>
-              ))}
-            </div>
-          )}
-        </div>
-      </div>
 
-      <nav className="flex-1 px-3 space-y-1">
+
+      <nav className="flex-1 px-3 space-y-1 overflow-y-auto">
         {isAdmin && (
           <Link
             to="/admin"
@@ -84,14 +58,19 @@ export default function Sidebar({ onClose }) {
             Admin Dashboard
           </Link>
         )}
-        {navItems.map(item => {
-          const active = location.pathname === item.path || (item.path !== "/" && location.pathname.startsWith(item.path));
+        {navItems.map((item, idx) => {
+          const isDocType = item.exact;
+          const active = isDocType
+            ? location.pathname + location.search === item.path
+            : location.pathname === item.path || (item.path !== "/" && location.pathname.startsWith(item.path.split("?")[0]) && !item.path.includes("?"));
           return (
             <Link
-              key={item.path}
+              key={item.path + idx}
               to={item.path}
               onClick={() => onClose && onClose()}
               className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all ${
+                isDocType ? "pl-7" : ""
+              } ${
                 active
                   ? "bg-sidebar-accent text-white"
                   : "text-sidebar-foreground/70 hover:text-white hover:bg-sidebar-accent/50"
