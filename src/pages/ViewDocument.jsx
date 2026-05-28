@@ -370,23 +370,36 @@ export default function ViewDocument() {
               <p className="font-semibold text-sm">Document Preview</p>
               <p className="text-xs text-muted-foreground">{doc.number}</p>
             </div>
-            <div className="flex items-center gap-2 flex-wrap justify-end">
+            <div className="flex items-center gap-2 overflow-x-auto flex-nowrap sm:flex-wrap justify-end">
               {doc.type === "waybill" ? (
                 <>
-                  <Button size="sm" variant="outline" onClick={() => downloadInMode("paper")} disabled={generatingPdf} className="gap-1.5">
+                  <Button size="sm" variant="ghost" onClick={() => window.print()} className="gap-1.5 shrink-0">
                     <Printer className="h-4 w-4" />
-                    <span className="hidden sm:inline">{generatingPdf ? "Generating..." : "Paper Signage"}</span>
+                    <span className="hidden md:inline">Print</span>
+                  </Button>
+                  <Button size="sm" variant="outline" onClick={() => downloadInMode("soft")} disabled={generatingPdf} className="gap-1.5 shrink-0">
+                    <FileDown className="h-4 w-4" />
+                    <span className="hidden md:inline">{generatingPdf ? "Generating..." : "Download PDF"}</span>
+                  </Button>
+                  <Button size="sm" variant="outline" onClick={() => downloadInMode("paper")} disabled={generatingPdf} className="gap-1.5 shrink-0">
+                    <Printer className="h-4 w-4" />
+                    <span className="hidden sm:inline">{generatingPdf ? "..." : "Paper Signage"}</span>
                     <span className="sm:hidden">Paper</span>
                   </Button>
-                  <Button size="sm" onClick={() => downloadInMode("soft")} disabled={generatingPdf} className="gap-1.5 bg-slate-900 hover:bg-slate-800 text-white">
+                  <Button size="sm" onClick={() => downloadInMode("soft")} disabled={generatingPdf} className="gap-1.5 bg-slate-900 hover:bg-slate-800 text-white shrink-0">
                     <PenLine className="h-4 w-4" />
-                    <span className="hidden sm:inline">{generatingPdf ? "Generating..." : "Soft Signage PDF"}</span>
+                    <span className="hidden sm:inline">{generatingPdf ? "..." : "Soft Signage"}</span>
                     <span className="sm:hidden">Soft</span>
                   </Button>
-                  <Button size="sm" variant="outline" onClick={() => { setShowPdfPreview(false); setShowSignModal(true); }} className="gap-1.5 border-emerald-300 text-emerald-700 hover:bg-emerald-50">
+                  <Button size="sm" variant="outline" onClick={() => { setShowPdfPreview(false); setShowSignModal(true); }} className="gap-1.5 border-emerald-300 text-emerald-700 hover:bg-emerald-50 shrink-0">
                     <PenLine className="h-4 w-4" />
                     <span className="hidden sm:inline">Receiver Sign</span>
                     <span className="sm:hidden">Sign</span>
+                  </Button>
+                  <Button size="sm" variant="outline" onClick={() => { navigator.clipboard.writeText(`${window.location.origin}/waybill-sign?id=${docId}`); toast.success("Signature link copied!"); }} className="gap-1.5 shrink-0">
+                    <Share2 className="h-4 w-4" />
+                    <span className="hidden sm:inline">Request Sig.</span>
+                    <span className="sm:hidden">Req.</span>
                   </Button>
                 </>
               ) : (
