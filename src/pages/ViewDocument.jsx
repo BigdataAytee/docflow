@@ -64,6 +64,7 @@ export default function ViewDocument() {
   const pdfPaperRef = useRef(null);
   const pdfSoftRef = useRef(null);
   const [softAutoDownload, setSoftAutoDownload] = useState(false);
+  const [showInlineSigPad, setShowInlineSigPad] = useState(false);
 
   useEffect(() => {
     Promise.all([
@@ -101,6 +102,26 @@ export default function ViewDocument() {
   const saveCustomerSig = async (sig) => {
     await base44.entities.Document.update(docId, { customer_signature: sig });
     setDoc(prev => ({ ...prev, customer_signature: sig }));
+  };
+
+  const handleSoftSigSave = async (sig) => {
+    await base44.entities.Document.update(docId, { customer_signature: sig });
+    setDoc(prev => ({ ...prev, customer_signature: sig }));
+    setShowInlineSigPad(false);
+    toast.success("Signature captured — preparing signed PDF…");
+    setTimeout(async () => {
+      if (!pdfSoftRef.current) return;
+      setGeneratingPdf(true);
+      const blob = await generatePdfBlob(pdfSoftRef);
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `${doc.number}-signed.pdf`;
+      a.click();
+      URL.revokeObjectURL(url);
+      setGeneratingPdf(false);
+      toast.success("Signed PDF downloaded — signature locked into document.");
+    }, 600);
   };
 
   const handleDeliveryConfirmed = (updatedDoc) => {
@@ -428,6 +449,40 @@ export default function ViewDocument() {
         <UnifiedTemplate doc={doc} onSaveManagerSig={saveManagerSig} onSaveCustomerSig={saveCustomerSig} onOpenSignModal={() => setShowSignModal(true)} />
       </div>
 
+      {/* Inline Signature Capture Overlay — Soft Signage */}
+      {showInlineSigPad && (
+        <div className="fixed inset-0 z-[60] flex flex-col bg-black/80" onClick={() => setShowInlineSigPad(false)}>
+          <div
+            className="mt-auto bg-white rounded-t-3xl shadow-2xl"
+            style={{ maxHeight: "92dvh" }}
+            onClick={e => e.stopPropagation()}
+          >
+            {/* Header */}
+            <div className="bg-slate-900 text-white px-6 py-5 rounded-t-3xl">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-emerald-500/20 flex items-center justify-center">
+                    <PenLine className="h-5 w-5 text-emerald-400" />
+                  </div>
+                  <div>
+                    <h2 className="font-bold text-base">Receiver Signature</h2>
+                    <p className="text-xs text-slate-400">{doc.number} · {doc.customer_name}</p>
+                  </div>
+                </div>
+                <button onClick={() => setShowInlineSigPad(false)} className="p-2 hover:bg-slate-700 rounded-lg transition-colors">
+                  <span className="text-lg leading-none">✕</span>
+                </button>
+              </div>
+            </div>
+            {/* Signature Pad */}
+            <div className="p-5 overflow-y-auto">
+              <p className="text-xs text-muted-foreground mb-4 text-center">Sign below using your finger, mouse, or stylus. This will be permanently embedded into the PDF.</p>
+              <SignaturePad label="Receiver Signature" onSave={handleSoftSigSave} />
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Hidden off-screen render containers for direct PDF generation */}
       <div style={{ position: "fixed", left: -9999, top: -9999, width: 794, zIndex: -1, pointerEvents: "none" }}>
         <div ref={pdfPaperRef} style={{ width: 794 }}>
@@ -524,20 +579,75 @@ export default function ViewDocument() {
               <button className="p-2 hover:bg-muted rounded-lg text-muted-foreground" onClick={() => setShowPdfPreview(false)}>✕</button>
             </div>
           </div>
-          <div className="flex-1 overflow-auto bg-gray-100 p-6" onClick={e => e.stopPropagation()}>
-            <div className="max-w-4xl mx-auto">
-              <div ref={pdfRef} style={{ width: 794 }}>
-                <DocumentPreview
-                  form={doc}
-                  items={doc.items || []}
-                  calcs={{ subtotal: doc.subtotal, taxAmt: doc.tax_amount, total: doc.total }}
-                  sym={CURRENCY_SYMBOLS[doc.currency] || doc.currency || "₦"}
-                  docType={doc.type}
-                  managerSig={doc.manager_signature}
-                  customerSig={doc.type === "waybill" && pdfMode === "paper" ? "" : doc.customer_signature}
-                  template={doc.template || "classic"}
-                  templateColor={doc.template_color || "slate"}
-                />
+          <div className="flex-1 overflow-auto bg-gray-100" onClick={e => e.stopPropagation()} style={{ position: "relative" }}>
+            {/* Soft Signage: Tap-to-Sign banner */}
+            {doc.type === "waybill" && pdfMode === "soft" && !doc.customer_signature && (
+              <div className="sticky top-0 z-10 bg-emerald-600 text-white px-5 py-3 flex items-center justify-between shadow-md">
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center shrink-0">
+                    <PenLine className="h-4 w-4" />
+                  </div>
+                  <div>
+                    <p className="font-bold text-sm leading-tight">Receiver Signature Required</p>
+                    <p className="text-xs text-emerald-100">Tap below or use the button to sign digitally</p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setShowInlineSigPad(true)}
+                  className="bg-white text-emerald-700 font-bold text-sm px-4 py-2 rounded-xl hover:bg-emerald-50 transition-colors flex items-center gap-2 shrink-0"
+                >
+                  <PenLine className="h-4 w-4" /> Sign Here
+                </button>
+              </div>
+            )}
+            {/* Soft Signage: Signed confirmation banner */}
+            {doc.type === "waybill" && pdfMode === "soft" && doc.customer_signature && (
+              <div className="sticky top-0 z-10 bg-emerald-700 text-white px-5 py-3 flex items-center justify-between shadow-md">
+                <div className="flex items-center gap-3">
+                  <CheckCircle2 className="h-5 w-5 text-emerald-300 shrink-0" />
+                  <div>
+                    <p className="font-bold text-sm">Document Signed</p>
+                    <p className="text-xs text-emerald-200">Signature is locked into the PDF</p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setShowInlineSigPad(true)}
+                  className="text-xs text-emerald-200 hover:text-white underline"
+                >
+                  Re-sign
+                </button>
+              </div>
+            )}
+            <div className="p-6">
+              <div className="max-w-4xl mx-auto">
+                <div ref={pdfRef} style={{ width: 794 }}>
+                  <DocumentPreview
+                    form={doc}
+                    items={doc.items || []}
+                    calcs={{ subtotal: doc.subtotal, taxAmt: doc.tax_amount, total: doc.total }}
+                    sym={CURRENCY_SYMBOLS[doc.currency] || doc.currency || "₦"}
+                    docType={doc.type}
+                    managerSig={doc.manager_signature}
+                    customerSig={doc.type === "waybill" && pdfMode === "paper" ? "" : doc.customer_signature}
+                    template={doc.template || "classic"}
+                    templateColor={doc.template_color || "slate"}
+                  />
+                </div>
+                {/* Soft Signage: Tap-to-Sign area at the bottom of the preview */}
+                {doc.type === "waybill" && pdfMode === "soft" && !doc.customer_signature && (
+                  <button
+                    onClick={() => setShowInlineSigPad(true)}
+                    className="mt-4 w-full border-2 border-dashed border-emerald-400 rounded-2xl p-8 flex flex-col items-center gap-3 text-emerald-600 hover:bg-emerald-50 hover:border-emerald-500 transition-all group"
+                  >
+                    <div className="w-14 h-14 rounded-full bg-emerald-100 group-hover:bg-emerald-200 flex items-center justify-center transition-colors">
+                      <PenLine className="h-7 w-7" />
+                    </div>
+                    <div className="text-center">
+                      <p className="font-bold text-lg">Tap to Sign Here</p>
+                      <p className="text-sm text-emerald-500 mt-1">Touch, mouse, or stylus — sign in the Receiver Signature field</p>
+                    </div>
+                  </button>
+                )}
               </div>
             </div>
           </div>
