@@ -241,6 +241,18 @@
       ],
       "title": "Payment Method"
     },
+    "bank_name": {
+      "type": "string",
+      "title": "Bank Name"
+    },
+    "account_number": {
+      "type": "string",
+      "title": "Account Number"
+    },
+    "account_holder_name": {
+      "type": "string",
+      "title": "Account Holder Name"
+    },
     "transaction_id": {
       "type": "string",
       "title": "Transaction ID"

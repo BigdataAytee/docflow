@@ -104,6 +104,9 @@ export default function CreateDocument() {
     manager_title: "",
     payment_instructions: "",
     payment_method: "",
+    bank_name: "",
+    account_number: "",
+    account_holder_name: "",
     transaction_id: "",
     reference_number: "",
     driver_name: "",
@@ -240,6 +243,9 @@ export default function CreateDocument() {
     terms_label: form.terms_label || "Due on Receipt",
     payment_instructions: form.payment_instructions || "",
     payment_method: form.payment_method || "",
+    bank_name: form.bank_name || "",
+    account_number: form.account_number || "",
+    account_holder_name: form.account_holder_name || "",
     transaction_id: form.transaction_id || "",
     reference_number: form.reference_number || "",
     driver_name: form.driver_name || "",
@@ -568,6 +574,18 @@ export default function CreateDocument() {
                   </Select>
                 </div>
                 <div><Label>Transaction ID</Label><Input value={form.transaction_id} onChange={e => setForm(f => ({ ...f, transaction_id: e.target.value }))} placeholder="e.g. TXN-0012345" /></div>
+              </div>
+              {form.payment_method === "Bank Transfer" && (
+                <div className="border border-border rounded-xl p-4 bg-muted/30 space-y-3">
+                  <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Bank Details</p>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div><Label>Bank Name</Label><Input value={form.bank_name} onChange={e => setForm(f => ({ ...f, bank_name: e.target.value }))} placeholder="e.g. First Bank" /></div>
+                    <div><Label>Account Number</Label><Input value={form.account_number} onChange={e => setForm(f => ({ ...f, account_number: e.target.value }))} placeholder="e.g. 0123456789" /></div>
+                    <div className="col-span-2"><Label>Account Holder Name</Label><Input value={form.account_holder_name} onChange={e => setForm(f => ({ ...f, account_holder_name: e.target.value }))} placeholder="e.g. John Doe" /></div>
+                  </div>
+                </div>
+              )}
+              <div className="grid grid-cols-2 gap-4">
                 <div className="col-span-2"><Label>Reference Number</Label><Input value={form.reference_number} onChange={e => setForm(f => ({ ...f, reference_number: e.target.value }))} placeholder="e.g. REF-2024-001" /></div>
               </div>
             </div>
