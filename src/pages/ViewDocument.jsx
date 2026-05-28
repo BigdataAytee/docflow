@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { base44 } from "@/api/base44Client";
 import { useParams, Link, useNavigate } from "react-router-dom";
-import { ArrowLeft, Trash2, Printer, Send, Pencil, Share2, FileDown, MoreVertical, Upload } from "lucide-react";
+import { ArrowLeft, Trash2, Printer, Send, Pencil, Share2, FileDown, MoreVertical, Upload, Copy, GitMerge } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -18,10 +18,28 @@ const TYPE_LABELS = {
 };
 
 const STATUS_COLORS = {
-  draft: "bg-gray-100 text-gray-500", sent: "bg-blue-50 text-blue-600",
-  paid: "bg-emerald-50 text-emerald-600", overdue: "bg-red-50 text-red-600",
-  cancelled: "bg-gray-100 text-gray-500", accepted: "bg-emerald-50 text-emerald-600",
+  draft: "bg-gray-100 text-gray-500",
+  sent: "bg-blue-50 text-blue-600",
+  viewed: "bg-indigo-50 text-indigo-600",
+  paid: "bg-emerald-50 text-emerald-600",
+  partially_paid: "bg-teal-50 text-teal-600",
+  overdue: "bg-red-50 text-red-600",
+  cancelled: "bg-gray-100 text-gray-500",
+  accepted: "bg-emerald-50 text-emerald-600",
   rejected: "bg-red-50 text-red-600",
+  pending: "bg-amber-50 text-amber-600",
+  packed: "bg-blue-50 text-blue-600",
+  dispatched: "bg-indigo-50 text-indigo-600",
+  in_transit: "bg-purple-50 text-purple-600",
+  delivered: "bg-emerald-50 text-emerald-600",
+  returned: "bg-red-50 text-red-600",
+};
+
+const STATUS_BY_TYPE = {
+  invoice: ["draft","sent","viewed","partially_paid","paid","overdue","cancelled"],
+  quotation: ["draft","sent","viewed","accepted","rejected","cancelled"],
+  receipt: ["draft","sent","paid"],
+  waybill: ["pending","packed","dispatched","in_transit","delivered","returned"],
 };
 
 const AMOUNT_LABEL = {
@@ -134,6 +152,22 @@ export default function ViewDocument() {
     navigate("/documents");
   };
 
+  const handleDuplicate = async () => {
+    const { id, created_date, updated_date, created_by, ...rest } = doc;
+    const nextNum = `${rest.number}-copy`;
+    const created = await base44.entities.Document.create({ ...rest, number: nextNum, status: "draft", manager_signature: "", customer_signature: "", paid_amount: 0 });
+    toast.success("Document duplicated!");
+    navigate(`/documents/${created.id}`);
+  };
+
+  const handleConvertToInvoice = async () => {
+    const { id, created_date, updated_date, created_by, ...rest } = doc;
+    const newNum = rest.number.replace(/^QUO/i, "INV");
+    const created = await base44.entities.Document.create({ ...rest, type: "invoice", number: newNum, status: "draft", manager_signature: "", customer_signature: "", paid_amount: 0 });
+    toast.success("Converted to invoice!");
+    navigate(`/documents/${created.id}`);
+  };
+
   if (loading) return <div className="flex items-center justify-center h-64"><div className="w-8 h-8 border-4 border-primary/20 border-t-primary rounded-full animate-spin" /></div>;
   if (!doc) return <div className="text-center py-12 text-muted-foreground">Document not found</div>;
 
@@ -153,10 +187,10 @@ export default function ViewDocument() {
         <div className="flex items-center gap-1.5 shrink-0">
           <div className="hidden md:block">
             <Select value={doc.status} onValueChange={updateStatus}>
-              <SelectTrigger className="w-[120px] h-8 text-xs"><SelectValue /></SelectTrigger>
+              <SelectTrigger className="w-[140px] h-8 text-xs"><SelectValue /></SelectTrigger>
               <SelectContent>
-                {["draft","sent","paid","overdue","cancelled","accepted","rejected"].map(s => (
-                  <SelectItem key={s} value={s} className="capitalize text-xs">{s}</SelectItem>
+                {(STATUS_BY_TYPE[doc.type] || STATUS_BY_TYPE.invoice).map(s => (
+                  <SelectItem key={s} value={s} className="capitalize text-xs">{s.replace(/_/g, " ")}</SelectItem>
                 ))}
               </SelectContent>
             </Select>
@@ -174,9 +208,9 @@ export default function ViewDocument() {
             <DropdownMenuContent align="end" className="w-52">
               <div className="md:hidden px-2 py-1.5">
                 <p className="text-xs text-muted-foreground mb-1.5">Change Status</p>
-                {["draft","sent","paid","overdue","cancelled","accepted","rejected"].map(s => (
+                {(STATUS_BY_TYPE[doc.type] || STATUS_BY_TYPE.invoice).map(s => (
                   <button key={s} onClick={() => updateStatus(s)}
-                    className={`block w-full text-left px-2 py-1 rounded text-xs capitalize hover:bg-muted ${doc.status === s ? "font-bold text-primary" : ""}`}>{s}</button>
+                    className={`block w-full text-left px-2 py-1 rounded text-xs capitalize hover:bg-muted ${doc.status === s ? "font-bold text-primary" : ""}`}>{s.replace(/_/g, " ")}</button>
                 ))}
               </div>
               <DropdownMenuSeparator className="md:hidden" />
@@ -197,6 +231,14 @@ export default function ViewDocument() {
               {doc.status === "draft" && (
                 <DropdownMenuItem onClick={() => updateStatus("sent")}>
                   <Send className="h-4 w-4 mr-2" /> Mark as Sent
+                </DropdownMenuItem>
+              )}
+              <DropdownMenuItem onClick={handleDuplicate}>
+                <Copy className="h-4 w-4 mr-2" /> Duplicate
+              </DropdownMenuItem>
+              {doc.type === "quotation" && (
+                <DropdownMenuItem onClick={handleConvertToInvoice}>
+                  <GitMerge className="h-4 w-4 mr-2" /> Convert to Invoice
                 </DropdownMenuItem>
               )}
               <DropdownMenuSeparator />
@@ -267,7 +309,7 @@ export default function ViewDocument() {
 function UnifiedTemplate({ doc, onSaveManagerSig, onSaveCustomerSig, isPdf = false }) {
   const items = doc.items || [];
   const curr = doc.currency || "NGN";
-  const fmtAmt = (n) => `${(n || 0).toLocaleString("en", { minimumFractionDigits: 2 })}`;
+  const fmtAmt = (n) => `${(n || 0).toLocaleString("en", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
   const fmtCurr = (n) => `${curr} ${fmtAmt(n)}`;
   const customerLabel = CUSTOMER_LABEL[doc.type] || "Sold To";
   const amountLabel = AMOUNT_LABEL[doc.type] || "Balance Due";
@@ -364,6 +406,9 @@ function UnifiedTemplate({ doc, onSaveManagerSig, onSaveCustomerSig, isPdf = fal
           <div className="flex justify-end mt-6 mb-8">
             <div className="w-72 text-sm space-y-1.5">
               <div className="flex justify-between py-1"><span className="text-gray-400">Subtotal</span><span className="text-gray-700">{fmtAmt(doc.subtotal)}</span></div>
+              {doc.global_discount_amount > 0 && (
+                <div className="flex justify-between py-1 text-orange-600"><span>Discount ({doc.global_discount_rate}%)</span><span>(-) {fmtAmt(doc.global_discount_amount)}</span></div>
+              )}
               {doc.tax_amount > 0 && (
                 <div className="flex justify-between py-1"><span className="text-gray-400">VAT ({doc.tax_rate}%)</span><span className="text-gray-700">{fmtAmt(doc.tax_amount)}</span></div>
               )}
