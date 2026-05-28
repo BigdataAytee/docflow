@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useMemo } from "react";
 import { base44 } from "@/api/base44Client";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import { format } from "date-fns";
 import {
   Search, FileText, Plus, ChevronDown, Eye, Pencil, Copy, Trash2,
@@ -123,16 +123,24 @@ export default function Documents() {
   const [documents, setDocuments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
-  const [typeFilter, setTypeFilter] = useState("all");
+  const urlTypeInit = new URLSearchParams(window.location.search).get("type") || "all";
+  const [typeFilter, setTypeFilter] = useState(urlTypeInit);
   const [statusFilter, setStatusFilter] = useState("all");
-  const [showDropdown, setShowDropdown] = useState(false);
-  const [hoveredRow, setHoveredRow] = useState(null);
   const [sortCol, setSortCol] = useState("created_date");
   const [sortDir, setSortDir] = useState("desc");
-  const [pendingDeletes, setPendingDeletes] = useState([]); // { doc, timeoutId, startedAt }
+  const [pendingDeletes, setPendingDeletes] = useState([]);
   const [confirmDeleteDoc, setConfirmDeleteDoc] = useState(null);
+  const [showDropdown, setShowDropdown] = useState(false);
+  const [hoveredRow, setHoveredRow] = useState(null);
   const dropdownRef = useRef(null);
   const navigate = useNavigate();
+  const location = useLocation();
+
+  // Sync typeFilter with URL param
+  useEffect(() => {
+    const urlType = new URLSearchParams(location.search).get("type");
+    setTypeFilter(urlType || "all");
+  }, [location.search]);
 
   useEffect(() => {
     const handleClick = (e) => { if (dropdownRef.current && !dropdownRef.current.contains(e.target)) setShowDropdown(false); };
@@ -230,7 +238,9 @@ export default function Documents() {
       {/* Header */}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">Documents</h1>
+          <h1 className="text-2xl font-bold tracking-tight">
+            {typeFilter !== "all" ? typeLabels[typeFilter] + "s" : "Documents"}
+          </h1>
           <p className="text-sm text-muted-foreground mt-0.5">
             {loading ? "Loading…" : `${documents.length} total · ${stats.paidCount} paid`}
           </p>

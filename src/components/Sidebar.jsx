@@ -5,15 +5,14 @@ import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 
 const navItems = [
-  { label: "Documents", icon: FileText, path: "/documents" },
-  { label: "Invoice", icon: ClipboardList, path: "/documents/new?type=invoice", exact: true },
-  { label: "Quotation", icon: FileSignature, path: "/documents/new?type=quotation", exact: true },
-  { label: "Receipt", icon: Receipt, path: "/documents/new?type=receipt", exact: true },
-  { label: "Waybill", icon: Truck, path: "/documents/new?type=waybill", exact: true },
-  { label: "Customers", icon: Users, path: "/customers" },
-  { label: "Mail", icon: Mail, path: "/mail" },
-  { label: "Apps & Tools", icon: LayoutGrid, path: "/apps" },
-  { label: "Settings", icon: Settings, path: "/settings" },
+  { label: "Invoices",    icon: ClipboardList,  path: "/documents?type=invoice" },
+  { label: "Quotations",  icon: FileSignature,  path: "/documents?type=quotation" },
+  { label: "Receipts",    icon: Receipt,        path: "/documents?type=receipt" },
+  { label: "Waybills",    icon: Truck,          path: "/documents?type=waybill" },
+  { label: "Customers",   icon: Users,          path: "/customers" },
+  { label: "Mail",        icon: Mail,           path: "/mail" },
+  { label: "Apps & Tools",icon: LayoutGrid,     path: "/apps" },
+  { label: "Settings",    icon: Settings,       path: "/settings" },
 ];
 
 
@@ -59,18 +58,13 @@ export default function Sidebar({ onClose }) {
           </Link>
         )}
         {navItems.map((item, idx) => {
-          const isDocType = item.exact;
-          const active = isDocType
-            ? location.pathname + location.search === item.path
-            : location.pathname === item.path || (item.path !== "/" && location.pathname.startsWith(item.path.split("?")[0]) && !item.path.includes("?"));
+          const active = location.pathname + location.search === item.path;
           return (
             <Link
               key={item.path + idx}
               to={item.path}
               onClick={() => onClose && onClose()}
               className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all ${
-                isDocType ? "pl-7" : ""
-              } ${
                 active
                   ? "bg-sidebar-accent text-white"
                   : "text-sidebar-foreground/70 hover:text-white hover:bg-sidebar-accent/50"
