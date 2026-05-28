@@ -809,7 +809,7 @@ function UnifiedTemplate({ doc, onSaveManagerSig, onSaveCustomerSig, onOpenSignM
               <div>
                 {doc.manager_signature
                   ? <img src={doc.manager_signature} alt="Manager Signature" className="h-16 object-contain mb-2" />
-                  : <div style={{ height: 64, borderBottom: "1px solid #9ca3af", marginBottom: 4 }} />
+                  : <div style={{ height: 64, borderBottom: "2px solid #374151", marginBottom: 4 }} />
                 }
                 <p className="text-xs text-gray-500 mt-1">{doc.company_name || "Company"}</p>
               </div>
@@ -822,7 +822,7 @@ function UnifiedTemplate({ doc, onSaveManagerSig, onSaveCustomerSig, onOpenSignM
               </div>
             ) : (
               <div>
-                <div className="h-16 border-b border-gray-300 mb-2" />
+                <div style={{ height: 64, borderBottom: "2px solid #374151", marginBottom: 8 }} />
                 <p className="text-xs text-gray-500 mt-1">{doc.company_name || "Company"}</p>
                 <p className="text-xs text-muted-foreground mt-1 print:hidden">Sign in the document editor to add your signature.</p>
               </div>
@@ -849,12 +849,12 @@ function UnifiedTemplate({ doc, onSaveManagerSig, onSaveCustomerSig, onOpenSignM
                 </div>
               ) : isPdf ? (
                 <div>
-                  <div style={{ height: 64, borderBottom: "1px solid #9ca3af", marginBottom: 4 }} />
+                  <div style={{ height: 64, borderBottom: "2px solid #374151", marginBottom: 4 }} />
                   <p className="text-xs text-gray-500 mt-1">{doc.customer_name}</p>
                   <div className="mt-3 grid grid-cols-2 gap-2 text-xs text-gray-400">
-                    <div className="flex flex-col gap-1"><span>Name</span><div style={{ borderBottom: "1px solid #d1d5db", height: 16 }} /></div>
-                    <div className="flex flex-col gap-1"><span>Date</span><div style={{ borderBottom: "1px solid #d1d5db", height: 16 }} /></div>
-                    <div className="flex flex-col gap-1"><span>Time</span><div style={{ borderBottom: "1px solid #d1d5db", height: 16 }} /></div>
+                    <div className="flex flex-col gap-1"><span>Name</span><div style={{ borderBottom: "2px solid #374151", height: 16 }} /></div>
+                    <div className="flex flex-col gap-1"><span>Date</span><div style={{ borderBottom: "2px solid #374151", height: 16 }} /></div>
+                    <div className="flex flex-col gap-1"><span>Time</span><div style={{ borderBottom: "2px solid #374151", height: 16 }} /></div>
                   </div>
                 </div>
               ) : (
@@ -862,11 +862,11 @@ function UnifiedTemplate({ doc, onSaveManagerSig, onSaveCustomerSig, onOpenSignM
                   <div className="print:hidden">
                     <SignaturePad label="" onSave={onSaveCustomerSig} />
                   </div>
-                  <div className="hidden print:block h-16 border-b border-gray-400 mb-1" />
+                  <div className="hidden print:block" style={{ height: 64, borderBottom: "2px solid #374151", marginBottom: 4 }} />
                   <div className="mt-3 grid grid-cols-2 gap-2 text-xs text-gray-400">
-                    <div className="flex flex-col gap-1"><span>Name</span><div className="border-b border-gray-300 h-4" /></div>
-                    <div className="flex flex-col gap-1"><span>Date</span><div className="border-b border-gray-300 h-4" /></div>
-                    <div className="flex flex-col gap-1"><span>Time</span><div className="border-b border-gray-300 h-4" /></div>
+                    <div className="flex flex-col gap-1"><span>Name</span><div style={{ borderBottom: "2px solid #374151", height: 16 }} /></div>
+                    <div className="flex flex-col gap-1"><span>Date</span><div style={{ borderBottom: "2px solid #374151", height: 16 }} /></div>
+                    <div className="flex flex-col gap-1"><span>Time</span><div style={{ borderBottom: "2px solid #374151", height: 16 }} /></div>
                   </div>
                 </div>
               )}
