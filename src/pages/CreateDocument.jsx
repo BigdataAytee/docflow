@@ -47,6 +47,8 @@ export default function CreateDocument() {
   const [managerSig, setManagerSig] = useState(null);
   const [savedManagerSig, setSavedManagerSig] = useState(null);
   const [savingDefaultSig, setSavingDefaultSig] = useState(false);
+  const [savedBankDetails, setSavedBankDetails] = useState(null);
+  const [savingBankDetails, setSavingBankDetails] = useState(false);
   const [customerSig, setCustomerSig] = useState(null);
   const [showAddCustomer, setShowAddCustomer] = useState(false);
   const [savingCustomer, setSavingCustomer] = useState(false);
@@ -140,6 +142,12 @@ export default function CreateDocument() {
       if (user.manager_signature) {
         setSavedManagerSig(user.manager_signature);
         setManagerSig(user.manager_signature);
+      }
+
+      if (user.default_bank_name || user.default_account_number) {
+        const saved = { bank_name: user.default_bank_name || "", account_number: user.default_account_number || "", account_holder_name: user.default_account_holder_name || "" };
+        setSavedBankDetails(saved);
+        setForm(f => ({ ...f, bank_name: saved.bank_name, account_number: saved.account_number, account_holder_name: saved.account_holder_name }));
       }
 
       setForm(f => ({
@@ -582,6 +590,39 @@ export default function CreateDocument() {
                     <div><Label>Bank Name</Label><Input value={form.bank_name} onChange={e => setForm(f => ({ ...f, bank_name: e.target.value }))} placeholder="e.g. First Bank" /></div>
                     <div><Label>Account Number</Label><Input value={form.account_number} onChange={e => setForm(f => ({ ...f, account_number: e.target.value }))} placeholder="e.g. 0123456789" /></div>
                     <div className="col-span-2"><Label>Account Holder Name</Label><Input value={form.account_holder_name} onChange={e => setForm(f => ({ ...f, account_holder_name: e.target.value }))} placeholder="e.g. John Doe" /></div>
+                  </div>
+                  <div className="flex items-center gap-3 pt-1">
+                    {savedBankDetails && form.bank_name === savedBankDetails.bank_name && form.account_number === savedBankDetails.account_number ? (
+                      <span className="text-xs text-emerald-600 font-medium">✓ Using saved bank details</span>
+                    ) : (
+                      <button
+                        type="button"
+                        disabled={savingBankDetails || !form.bank_name || !form.account_number}
+                        onClick={async () => {
+                          setSavingBankDetails(true);
+                          await base44.auth.updateMe({ default_bank_name: form.bank_name, default_account_number: form.account_number, default_account_holder_name: form.account_holder_name });
+                          setSavedBankDetails({ bank_name: form.bank_name, account_number: form.account_number, account_holder_name: form.account_holder_name });
+                          setSavingBankDetails(false);
+                          toast.success("Bank details saved — they'll auto-fill on new documents.");
+                        }}
+                        className="text-xs text-slate-600 hover:text-slate-900 border border-slate-300 rounded-full px-3 py-0.5 hover:bg-slate-50 transition-colors disabled:opacity-40"
+                      >
+                        {savingBankDetails ? "Saving…" : "💾 Save as default"}
+                      </button>
+                    )}
+                    {savedBankDetails && (
+                      <button
+                        type="button"
+                        onClick={async () => {
+                          await base44.auth.updateMe({ default_bank_name: "", default_account_number: "", default_account_holder_name: "" });
+                          setSavedBankDetails(null);
+                          toast.success("Default bank details removed.");
+                        }}
+                        className="text-xs text-red-400 hover:text-red-600 hover:underline"
+                      >
+                        Remove default
+                      </button>
+                    )}
                   </div>
                 </div>
               )}

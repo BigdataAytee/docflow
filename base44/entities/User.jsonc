@@ -54,13 +54,13 @@
       "type": "string",
       "title": "Default Payment Instructions"
     },
-    "document_tagline": {
+    "manager_title": {
       "type": "string",
-      "title": "Document Tagline"
+      "title": "Manager Title"
     },
-    "footer_contact_line": {
+    "manager_signature": {
       "type": "string",
-      "title": "Footer Contact Line"
+      "title": "Manager Signature"
     },
     "prefix_invoice": {
       "type": "string",
@@ -78,9 +78,17 @@
       "type": "string",
       "title": "Waybill Prefix"
     },
-    "manager_signature": {
+    "default_bank_name": {
       "type": "string",
-      "title": "Manager Signature URL"
+      "title": "Default Bank Name"
+    },
+    "default_account_number": {
+      "type": "string",
+      "title": "Default Account Number"
+    },
+    "default_account_holder_name": {
+      "type": "string",
+      "title": "Default Account Holder Name"
     }
   }
 }
