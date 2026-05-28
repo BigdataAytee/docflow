@@ -103,6 +103,26 @@
       "type": "string",
       "title": "Customer Signature"
     },
+    "receiver_name": {
+      "type": "string",
+      "title": "Receiver Full Name"
+    },
+    "receiver_date": {
+      "type": "string",
+      "title": "Date Received"
+    },
+    "receiver_time": {
+      "type": "string",
+      "title": "Time Received"
+    },
+    "delivery_signed_at": {
+      "type": "string",
+      "title": "Delivery Signed At"
+    },
+    "delivery_proof_url": {
+      "type": "string",
+      "title": "Delivery Proof Image URL"
+    },
     "terms_label": {
       "type": "string",
       "title": "Terms Label",

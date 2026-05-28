@@ -96,10 +96,26 @@ function Sigs({ managerSig, customerSig, form, T, docType }) {
         </div>
       </div>
       {showCustomer && (
-        <div style={{ minWidth: 160 }}>
-          {(customerSig || form?.customer_signature) ? <img src={customerSig || form.customer_signature} alt="" style={{ height: 48, objectFit: "contain", display: "block", marginBottom: 4 }} /> : <div style={{ height: 48 }} />}
+        <div style={{ minWidth: 180 }}>
+          {(customerSig || form?.customer_signature)
+            ? <img src={customerSig || form.customer_signature} alt="" style={{ height: 48, objectFit: "contain", display: "block", marginBottom: 4 }} />
+            : <div style={{ height: 48, borderBottom: "1px solid #9ca3af", marginBottom: 4 }} />
+          }
           <div style={{ borderTop: `1px solid ${T.accentColor}`, paddingTop: 3 }}>
             <div style={{ fontSize: 8, color: T.tableHeaderColor, textTransform: "uppercase", letterSpacing: 1 }}>{customerLabel}</div>
+            {docType === "waybill" && (
+              <>
+                <div style={{ fontSize: 10, color: "#334155", fontWeight: 600, marginTop: 2 }}>{form?.receiver_name || form?.customer_name || ""}</div>
+                <div style={{ fontSize: 9, color: "#94a3b8", marginTop: 1 }}>
+                  {form?.receiver_date && `Date: ${form.receiver_date}`}
+                  {form?.receiver_date && form?.receiver_time && "  ·  "}
+                  {form?.receiver_time && `Time: ${form.receiver_time}`}
+                </div>
+                {!(form?.receiver_date) && (
+                  <div style={{ fontSize: 9, color: "#cbd5e1", marginTop: 2 }}>Name: ____________  Date: ____________  Time: ____________</div>
+                )}
+              </>
+            )}
           </div>
         </div>
       )}

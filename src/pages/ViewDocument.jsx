@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { format } from "date-fns";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import SignaturePad from "../components/SignaturePad";
+import WaybillSignatureModal from "../components/WaybillSignatureModal";
 import { buildTheme } from "../components/TemplateSelector";
 import DocumentPreview from "../components/DocumentPreview";
 
@@ -56,6 +57,7 @@ export default function ViewDocument() {
   const [doc, setDoc] = useState(null);
   const [loading, setLoading] = useState(true);
   const [showPdfPreview, setShowPdfPreview] = useState(false);
+  const [showSignModal, setShowSignModal] = useState(false);
   const [generatingPdf, setGeneratingPdf] = useState(false);
   const pdfRef = useRef(null);
 
@@ -95,6 +97,10 @@ export default function ViewDocument() {
   const saveCustomerSig = async (sig) => {
     await base44.entities.Document.update(docId, { customer_signature: sig });
     setDoc(prev => ({ ...prev, customer_signature: sig }));
+  };
+
+  const handleDeliveryConfirmed = (updatedDoc) => {
+    setDoc(prev => ({ ...prev, ...updatedDoc }));
   };
 
   const generatePdfBlob = async () => {
@@ -195,6 +201,16 @@ export default function ViewDocument() {
               </SelectContent>
             </Select>
           </div>
+          {doc.type === "waybill" && (
+            <Button
+              size="sm"
+              className={`h-9 px-3 gap-1.5 ${doc.status === "delivered" ? "bg-emerald-600 hover:bg-emerald-700" : "bg-slate-800 hover:bg-slate-900"} text-white border-0`}
+              onClick={() => setShowSignModal(true)}
+            >
+              <span className="text-base leading-none">{doc.status === "delivered" ? "✓" : "✍"}</span>
+              <span className="hidden sm:inline">{doc.status === "delivered" ? "Delivery Confirmed" : "Sign Delivery"}</span>
+            </Button>
+          )}
           <Button variant="outline" size="sm" className="h-9 px-3" onClick={() => navigate(`/documents/new?edit=${docId}`)}>
             <Pencil className="h-4 w-4" /><span className="hidden sm:inline ml-1.5">Edit</span>
           </Button>
@@ -263,6 +279,14 @@ export default function ViewDocument() {
       <div className="overflow-x-auto -mx-4 md:mx-0 px-4 md:px-0">
         <UnifiedTemplate doc={doc} onSaveManagerSig={saveManagerSig} onSaveCustomerSig={saveCustomerSig} />
       </div>
+
+      {showSignModal && doc.type === "waybill" && (
+        <WaybillSignatureModal
+          doc={doc}
+          onClose={() => setShowSignModal(false)}
+          onSaved={handleDeliveryConfirmed}
+        />
+      )}
 
       {showPdfPreview && (
         <div className="fixed inset-0 z-50 bg-black/60 flex flex-col" onClick={() => setShowPdfPreview(false)}>
@@ -466,21 +490,30 @@ function UnifiedTemplate({ doc, onSaveManagerSig, onSaveCustomerSig, isPdf = fal
           {doc.type === 'waybill' && (
             <div>
               <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-3">Receiver Signature</p>
-              {isPdf ? (
+              {doc.customer_signature ? (
                 <div>
-                  {doc.customer_signature
-                    ? <img src={doc.customer_signature} alt="Customer Signature" className="h-16 object-contain mb-2" />
-                    : <div style={{ height: 64, borderBottom: "1px solid #9ca3af", marginBottom: 4 }} />
-                  }
-                  <p className="text-xs text-gray-500 mt-1">{doc.customer_name}</p>
-                </div>
-              ) : doc.customer_signature ? (
-                <div>
-                  <img src={doc.customer_signature} alt="Customer Signature" className="h-16 object-contain mb-2" />
+                  <img src={doc.customer_signature} alt="Receiver Signature" className="h-16 object-contain mb-2" />
                   <div className="border-t border-gray-400 pt-1.5">
-                    <p className="text-xs text-gray-500">{doc.customer_name}</p>
+                    <p className="text-xs font-semibold text-gray-700">{doc.receiver_name || doc.customer_name}</p>
+                    {doc.receiver_date && <p className="text-xs text-gray-400 mt-0.5">Date: {doc.receiver_date} {doc.receiver_time && `· ${doc.receiver_time}`}</p>}
                   </div>
-                  <button className="text-xs text-primary mt-1.5 hover:underline print:hidden" onClick={() => onSaveCustomerSig("")}>Re-sign</button>
+                  <div className="flex items-center gap-2 mt-2 print:hidden">
+                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 text-xs font-semibold">✓ Delivered</span>
+                    <button className="text-xs text-primary hover:underline" onClick={() => setShowSignModal(true)}>Re-sign</button>
+                  </div>
+                  <div className="hidden print:block mt-1">
+                    <span className="text-xs text-emerald-600 font-semibold">✓ Delivery Confirmed</span>
+                  </div>
+                </div>
+              ) : isPdf ? (
+                <div>
+                  <div style={{ height: 64, borderBottom: "1px solid #9ca3af", marginBottom: 4 }} />
+                  <p className="text-xs text-gray-500 mt-1">{doc.customer_name}</p>
+                  <div className="mt-3 grid grid-cols-2 gap-2 text-xs text-gray-400">
+                    <div>Name: _______________</div>
+                    <div>Date: _______________</div>
+                    <div>Time: _______________</div>
+                  </div>
                 </div>
               ) : (
                 <div>
@@ -488,9 +521,15 @@ function UnifiedTemplate({ doc, onSaveManagerSig, onSaveCustomerSig, isPdf = fal
                     <SignaturePad label="" onSave={onSaveCustomerSig} />
                   </div>
                   <div className="hidden print:block h-16 border-b border-gray-400 mb-1" />
-                  <p className="text-xs text-gray-500 mt-1">{doc.customer_name}</p>
+                  <div className="mt-3 grid grid-cols-2 gap-2 text-xs text-gray-400">
+                    <div>Name: _______________</div>
+                    <div>Date: _______________</div>
+                    <div>Time: _______________</div>
+                  </div>
                 </div>
               )}
+            </div>
+          )}
             </div>
           )}
         </div>
