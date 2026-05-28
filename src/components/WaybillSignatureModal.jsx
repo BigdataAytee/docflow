@@ -140,10 +140,22 @@ export default function WaybillSignatureModal({ doc, onClose, onSaved }) {
   const timeStr = now.toTimeString().slice(0, 5);
   const displayDate = now.toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" });
 
+  const uploadSig = async (dataUrl) => {
+    const [header, data] = dataUrl.split(',');
+    const mime = header.match(/:(.*?);/)[1];
+    const bytes = atob(data);
+    const arr = new Uint8Array(bytes.length);
+    for (let i = 0; i < bytes.length; i++) arr[i] = bytes.charCodeAt(i);
+    const file = new File([arr], 'signature.png', { type: mime });
+    const { file_url } = await base44.integrations.Core.UploadFile({ file });
+    return file_url;
+  };
+
   const handleDigitalSign = async (sigDataUrl) => {
     setSaving(true);
+    const sigUrl = await uploadSig(sigDataUrl);
     const updates = {
-      customer_signature: sigDataUrl,
+      customer_signature: sigUrl,
       receiver_name: receiverName,
       receiver_date: todayStr,
       receiver_time: timeStr,

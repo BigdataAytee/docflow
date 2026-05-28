@@ -94,28 +94,42 @@ export default function ViewDocument() {
     setDoc(prev => ({ ...prev, status }));
   };
 
+  const uploadSig = async (dataUrl) => {
+    const [header, data] = dataUrl.split(',');
+    const mime = header.match(/:(.*?);/)[1];
+    const bytes = atob(data);
+    const arr = new Uint8Array(bytes.length);
+    for (let i = 0; i < bytes.length; i++) arr[i] = bytes.charCodeAt(i);
+    const file = new File([arr], 'signature.png', { type: mime });
+    const { file_url } = await base44.integrations.Core.UploadFile({ file });
+    return file_url;
+  };
+
   const saveManagerSig = async (sig) => {
-    await base44.entities.Document.update(docId, { manager_signature: sig });
-    setDoc(prev => ({ ...prev, manager_signature: sig }));
+    const sigUrl = await uploadSig(sig);
+    await base44.entities.Document.update(docId, { manager_signature: sigUrl });
+    setDoc(prev => ({ ...prev, manager_signature: sigUrl }));
   };
 
   const saveCustomerSig = async (sig) => {
-    await base44.entities.Document.update(docId, { customer_signature: sig });
-    setDoc(prev => ({ ...prev, customer_signature: sig }));
+    const sigUrl = await uploadSig(sig);
+    await base44.entities.Document.update(docId, { customer_signature: sigUrl });
+    setDoc(prev => ({ ...prev, customer_signature: sigUrl }));
   };
 
   const handleSoftSigSave = async (sig) => {
     const now = new Date();
     const receiverDate = now.toISOString().split("T")[0];
     const receiverTime = now.toTimeString().slice(0, 5);
+    const sigUrl = await uploadSig(sig);
     await base44.entities.Document.update(docId, {
-      customer_signature: sig,
+      customer_signature: sigUrl,
       receiver_date: receiverDate,
       receiver_time: receiverTime,
       delivery_signed_at: now.toISOString(),
       status: "delivered",
     });
-    setDoc(prev => ({ ...prev, customer_signature: sig, receiver_date: receiverDate, receiver_time: receiverTime, delivery_signed_at: now.toISOString(), status: "delivered" }));
+    setDoc(prev => ({ ...prev, customer_signature: sigUrl, receiver_date: receiverDate, receiver_time: receiverTime, delivery_signed_at: now.toISOString(), status: "delivered" }));
     setShowInlineSigPad(false);
     toast.success("Signature captured — preparing signed PDF…");
     setTimeout(async () => {

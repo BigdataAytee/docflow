@@ -339,14 +339,26 @@ export default function CreateDocument() {
     setGeneratingPdf(false);
   };
 
+  const uploadSig = async (dataUrl) => {
+    const [header, data] = dataUrl.split(',');
+    const mime = header.match(/:(.*?);/)[1];
+    const bytes = atob(data);
+    const arr = new Uint8Array(bytes.length);
+    for (let i = 0; i < bytes.length; i++) arr[i] = bytes.charCodeAt(i);
+    const file = new File([arr], 'signature.png', { type: mime });
+    const { file_url } = await base44.integrations.Core.UploadFile({ file });
+    return file_url;
+  };
+
   const handleSoftSigSave = async (sig) => {
     const now = new Date();
     const receiverDate = now.toISOString().split("T")[0];
     const receiverTime = now.toTimeString().slice(0, 5);
+    const sigUrl = await uploadSig(sig);
     setForm(f => ({ ...f, receiver_date: receiverDate, receiver_time: receiverTime, delivery_signed_at: now.toISOString() }));
-    setCustomerSig(sig);
+    setCustomerSig(sigUrl);
     // Persist signed document to DB
-    const signedPayload = { ...buildDocPayload("delivered"), receiver_date: receiverDate, receiver_time: receiverTime, delivery_signed_at: now.toISOString(), customer_signature: sig, manager_signature: managerSig || "" };
+    const signedPayload = { ...buildDocPayload("delivered"), receiver_date: receiverDate, receiver_time: receiverTime, delivery_signed_at: now.toISOString(), customer_signature: sigUrl, manager_signature: managerSig || "" };
     if (draftIdRef.current) {
       await base44.entities.Document.update(draftIdRef.current, signedPayload);
     } else {
