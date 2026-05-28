@@ -702,8 +702,13 @@ export default function CreateDocument() {
                       disabled={savingDefaultSig}
                       onClick={async () => {
                         setSavingDefaultSig(true);
-                        await base44.auth.updateMe({ manager_signature: managerSig });
-                        setSavedManagerSig(managerSig);
+                        let sigUrl = managerSig;
+                        if (managerSig.startsWith("data:")) {
+                          sigUrl = await uploadSig(managerSig);
+                          setManagerSig(sigUrl);
+                        }
+                        await base44.auth.updateMe({ manager_signature: sigUrl });
+                        setSavedManagerSig(sigUrl);
                         setSavingDefaultSig(false);
                         toast.success("Signature saved as your default — it will appear on all new documents.");
                       }}
