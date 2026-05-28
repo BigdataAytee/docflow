@@ -219,7 +219,6 @@ export default function CreateDocument() {
       await base44.entities.Document.update(targetId, doc);
       navigate(`/documents/${targetId}`);
     } else {
-      doc.manager_signature = managerSig || "";
       doc.customer_signature = customerSig || "";
       doc.paid_amount = 0;
       const created = await base44.entities.Document.create(doc);
@@ -237,7 +236,6 @@ export default function CreateDocument() {
       if (draftIdRef.current) {
         await base44.entities.Document.update(draftIdRef.current, docData);
       } else {
-        docData.manager_signature = managerSig || "";
         docData.customer_signature = customerSig || "";
         docData.paid_amount = 0;
         const created = await base44.entities.Document.create(docData);
@@ -252,28 +250,9 @@ export default function CreateDocument() {
   const sym = CURRENCIES.find(c => c.value === form.currency)?.label.split(" ")[0] || "₦";
 
   const buildDocPayload = (status) => ({
-    ...form,
-    number: numSeq ? (companyAbbr ? `${companyAbbr}-${typePrefix}-${numSeq}` : `${typePrefix}-${numSeq}`) : form.number,
-    template: "classic",
-    template_color: "slate",
-    status,
-    tax_rate: parseFloat(form.tax_rate) || 0,
-    global_discount_rate: parseFloat(form.global_discount_rate) || 0,
-    global_discount_amount: calcs.globalDiscAmt,
-    shipping: parseFloat(form.shipping) || 0,
-    items: calcs.lineItems.map(it => ({
-      ...it,
-      quantity: parseFloat(it.quantity) || 0,
-      unit_price: parseFloat(it.unit_price) || 0,
-      discount: parseFloat(it.discount) || 0,
-      amount: parseFloat(it.amount) || 0,
-    })),
-    subtotal: calcs.subtotal,
-    tax_amount: calcs.taxAmt,
-    total: calcs.total,
-    balance_due: calcs.total,
     issue_date: form.issue_date ? new Date(form.issue_date).toISOString() : new Date().toISOString(),
     due_date: form.due_date ? new Date(form.due_date).toISOString() : undefined,
+    manager_signature: managerSig || form.manager_signature || "",
   });
 
   const pdfRef = useRef(null);
