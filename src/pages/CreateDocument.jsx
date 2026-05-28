@@ -435,8 +435,8 @@ export default function CreateDocument() {
             </div>
           </div>
 
-          {/* Receipt — Payment Details */}
-          {docType === "receipt" && (
+          {/* Payment Details — Invoice & Quotation */}
+          {(docType === "invoice" || docType === "quotation") && (
             <div className="bg-card rounded-xl border border-border p-6 space-y-4">
               <h3 className="font-semibold text-sm text-muted-foreground uppercase tracking-wider">Payment Details</h3>
               <div className="grid grid-cols-2 gap-4">
