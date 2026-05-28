@@ -154,9 +154,8 @@ function Sigs({ managerSig, customerSig, form, T, docType }) {
       </div>
       {showCustomer && (
         <div style={{ minWidth: 180 }}>
-          {(customerSig || form?.customer_signature)
-            ? <img src={customerSig || form.customer_signature} alt="" style={{ height: 72, objectFit: "contain", display: "block", marginBottom: 4 }} />
-            : <div style={{ height: 72, borderBottom: "1px solid #9ca3af", marginBottom: 4 }} />
+          {(customerSig || form?.customer_signature) &&
+            <img src={customerSig || form.customer_signature} alt="" style={{ height: 72, objectFit: "contain", display: "block", marginBottom: 4 }} />
           }
           <div style={{ borderTop: `1px solid ${T.accentColor}`, paddingTop: 3 }}>
             {docType === "waybill" && (
