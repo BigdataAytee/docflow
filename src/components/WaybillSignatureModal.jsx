@@ -91,10 +91,10 @@ function SignatureCanvas({ onApply }) {
       >
         <canvas
           ref={canvasRef}
-          width={1200}
-          height={500}
+          width={1000}
+          height={1000}
           className="w-full"
-          style={{ display: "block", cursor: "crosshair", minHeight: 200 }}
+          style={{ display: "block", cursor: "crosshair", height: 360 }}
           onMouseDown={startDraw}
           onMouseMove={draw}
           onMouseUp={stopDraw}
@@ -106,7 +106,6 @@ function SignatureCanvas({ onApply }) {
             <p className="text-slate-300 text-sm select-none font-medium">Sign here using finger, mouse or stylus</p>
           </div>
         )}
-        {/* Signature line */}
         <div className="absolute bottom-12 left-10 right-10 flex items-end gap-3">
           <div className="flex-1 border-b-2 border-slate-300" />
           <span className="text-xs text-slate-300 pb-0.5 shrink-0">Receiver Signature</span>
@@ -128,7 +127,7 @@ function SignatureCanvas({ onApply }) {
 // ─── Main Modal ───────────────────────────────────────────────────────────────
 export default function WaybillSignatureModal({ doc, onClose, onSaved }) {
   const [mode, setMode] = useState("digital");
-  const [step, setStep] = useState("info"); // "info" | "sign"
+  const [step, setStep] = useState("info");
   const [receiverName, setReceiverName] = useState(doc.receiver_name || doc.customer_name || "");
   const [saving, setSaving] = useState(false);
   const [uploadingProof, setUploadingProof] = useState(false);
@@ -241,8 +240,6 @@ export default function WaybillSignatureModal({ doc, onClose, onSaved }) {
           {/* STEP: Info */}
           {step === "info" && (
             <div className="p-5 space-y-5">
-
-              {/* Delivery summary card */}
               <div className="rounded-xl bg-slate-50 border border-slate-200 p-4 space-y-3">
                 <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Delivery Details</p>
                 <div className="grid grid-cols-2 gap-3 text-sm">
@@ -267,7 +264,6 @@ export default function WaybillSignatureModal({ doc, onClose, onSaved }) {
                 </div>
               </div>
 
-              {/* Receiver info form */}
               <div className="space-y-4">
                 <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Receiver Information</p>
                 <div>
@@ -303,7 +299,6 @@ export default function WaybillSignatureModal({ doc, onClose, onSaved }) {
                 </Button>
               ) : (
                 <div className="space-y-4">
-                  {/* Paper mode actions */}
                   <div className="rounded-xl border-2 border-dashed border-slate-200 p-6 text-center bg-slate-50 space-y-3">
                     <Printer className="h-10 w-10 text-slate-300 mx-auto" />
                     <div>
@@ -349,8 +344,7 @@ export default function WaybillSignatureModal({ doc, onClose, onSaved }) {
 
           {/* STEP: Sign (Digital only) */}
           {step === "sign" && mode === "digital" && (
-            <div className="p-5 space-y-4">
-              {/* Receiver recap */}
+            <div className="p-4 flex flex-col gap-3">
               <div className="flex items-center justify-between bg-slate-50 rounded-xl px-4 py-3 border border-slate-200">
                 <div className="flex items-center gap-3">
                   <User className="h-4 w-4 text-slate-400" />
@@ -365,10 +359,7 @@ export default function WaybillSignatureModal({ doc, onClose, onSaved }) {
                 </div>
               </div>
 
-              <div>
-                <p className="text-xs font-bold uppercase tracking-widest text-slate-400 mb-3">Receiver Signature</p>
-                <SignatureCanvas onApply={handleDigitalSign} />
-              </div>
+              <SignatureCanvas onApply={handleDigitalSign} />
 
               {saving && (
                 <div className="text-center py-2">
