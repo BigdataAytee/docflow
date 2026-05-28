@@ -72,21 +72,21 @@ export default function SignaturePad({ label = "Signature", onSave }) {
   };
 
   return (
-    <div className="space-y-2">
-      <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">{label}</p>
+    <div className="flex flex-col items-center space-y-3">
+      {label && <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider self-start">{label}</p>}
       {savedSig ? (
-        <div className="border border-border rounded-lg p-3 bg-white">
-          <img src={savedSig} alt="Signature" className="h-16 object-contain" />
-          <button onClick={() => setSavedSig(null)} className="text-xs text-primary mt-1 hover:underline">Re-sign</button>
+        <div className="border border-border rounded-xl p-4 bg-white w-48">
+          <img src={savedSig} alt="Signature" className="w-full object-contain" />
+          <button onClick={() => setSavedSig(null)} className="text-xs text-primary mt-2 hover:underline block text-center w-full">Re-sign</button>
         </div>
       ) : (
-        <div className="space-y-2">
+        <div className="flex flex-col items-center gap-3">
           <canvas
             ref={canvasRef}
-            width={400}
-            height={560}
-            className="border border-border rounded-lg bg-gray-50 touch-none cursor-crosshair w-full"
-            style={{ height: 220 }}
+            width={320}
+            height={480}
+            className="border-2 border-border rounded-xl bg-gray-50 touch-none cursor-crosshair"
+            style={{ width: 200, height: 300 }}
             onMouseDown={startDraw}
             onMouseMove={draw}
             onMouseUp={stopDraw}
@@ -95,7 +95,7 @@ export default function SignaturePad({ label = "Signature", onSave }) {
             onTouchMove={draw}
             onTouchEnd={stopDraw}
           />
-          <p className="text-xs text-muted-foreground">Sign above using mouse or stylus</p>
+          <p className="text-xs text-muted-foreground">Sign inside the box</p>
           <div className="flex gap-2">
             <Button size="sm" variant="outline" onClick={clear} disabled={!hasSignature}><Trash2 className="h-3 w-3 mr-1" />Clear</Button>
             <Button size="sm" onClick={save} disabled={!hasSignature}>Save Signature</Button>
