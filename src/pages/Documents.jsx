@@ -3,7 +3,7 @@ import { base44 } from "@/api/base44Client";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { format } from "date-fns";
 import {
-  Search, FileText, Plus, ChevronDown, Eye, Pencil, Copy, Trash2,
+  Search, FileText, Plus, Eye, Pencil, Copy, Trash2,
   TrendingUp, TrendingDown, DollarSign, Clock, AlertCircle, CheckCircle2,
   Send, MoreHorizontal, X, Filter
 } from "lucide-react";
@@ -130,9 +130,7 @@ export default function Documents() {
   const [sortDir, setSortDir] = useState("desc");
   const [pendingDeletes, setPendingDeletes] = useState([]);
   const [confirmDeleteDoc, setConfirmDeleteDoc] = useState(null);
-  const [showDropdown, setShowDropdown] = useState(false);
   const [hoveredRow, setHoveredRow] = useState(null);
-  const dropdownRef = useRef(null);
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -142,11 +140,7 @@ export default function Documents() {
     setTypeFilter(urlType || "all");
   }, [location.search]);
 
-  useEffect(() => {
-    const handleClick = (e) => { if (dropdownRef.current && !dropdownRef.current.contains(e.target)) setShowDropdown(false); };
-    document.addEventListener("mousedown", handleClick);
-    return () => document.removeEventListener("mousedown", handleClick);
-  }, []);
+
 
   useEffect(() => {
     base44.auth.me().then(user => {
@@ -246,30 +240,13 @@ export default function Documents() {
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <div className="relative" ref={dropdownRef}>
-            <button
-              onClick={() => setShowDropdown(!showDropdown)}
-              className="inline-flex items-center gap-2 bg-primary text-primary-foreground px-4 py-2.5 rounded-xl text-sm font-semibold hover:bg-primary/90 transition-all shadow-sm shadow-primary/20 active:scale-95"
-            >
-              <Plus className="h-4 w-4" /> New Document <ChevronDown className={`h-3.5 w-3.5 transition-transform ${showDropdown ? "rotate-180" : ""}`} />
-            </button>
-            {showDropdown && (
-              <div className="absolute right-0 mt-1.5 w-48 bg-card border border-border rounded-xl shadow-xl overflow-hidden z-20">
-                <div className="p-1">
-                  {docTypes.map(dt => (
-                    <button
-                      key={dt.value}
-                      onClick={() => { navigate(`/documents/new?type=${dt.value}`); setShowDropdown(false); }}
-                      className="flex items-center gap-2.5 w-full text-left px-3 py-2.5 text-sm font-medium rounded-lg hover:bg-accent transition-colors"
-                    >
-                      <FileText className="h-4 w-4 text-muted-foreground" />
-                      {dt.label}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
-          </div>
+          <button
+            onClick={() => navigate(`/documents/new?type=${typeFilter !== "all" ? typeFilter : "invoice"}`)}
+            className="inline-flex items-center gap-2 bg-primary text-primary-foreground px-4 py-2.5 rounded-xl text-sm font-semibold hover:bg-primary/90 transition-all shadow-sm shadow-primary/20 active:scale-95"
+          >
+            <Plus className="h-4 w-4" />
+            New {typeFilter !== "all" ? typeLabels[typeFilter] : "Invoice"}
+          </button>
         </div>
       </div>
 
