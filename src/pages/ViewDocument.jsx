@@ -105,8 +105,17 @@ export default function ViewDocument() {
   };
 
   const handleSoftSigSave = async (sig) => {
-    await base44.entities.Document.update(docId, { customer_signature: sig });
-    setDoc(prev => ({ ...prev, customer_signature: sig }));
+    const now = new Date();
+    const receiverDate = now.toISOString().split("T")[0];
+    const receiverTime = now.toTimeString().slice(0, 5);
+    await base44.entities.Document.update(docId, {
+      customer_signature: sig,
+      receiver_date: receiverDate,
+      receiver_time: receiverTime,
+      delivery_signed_at: now.toISOString(),
+      status: "delivered",
+    });
+    setDoc(prev => ({ ...prev, customer_signature: sig, receiver_date: receiverDate, receiver_time: receiverTime, delivery_signed_at: now.toISOString(), status: "delivered" }));
     setShowInlineSigPad(false);
     toast.success("Signature captured — preparing signed PDF…");
     setTimeout(async () => {

@@ -339,6 +339,10 @@ export default function CreateDocument() {
   };
 
   const handleSoftSigSave = async (sig) => {
+    const now = new Date();
+    const receiverDate = now.toISOString().split("T")[0];
+    const receiverTime = now.toTimeString().slice(0, 5);
+    setForm(f => ({ ...f, receiver_date: receiverDate, receiver_time: receiverTime, delivery_signed_at: now.toISOString() }));
     setCustomerSig(sig);
     setShowInlineSigPad(false);
     setPdfMode("soft");
