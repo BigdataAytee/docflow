@@ -83,10 +83,10 @@ export default function SignaturePad({ label = "Signature", onSave }) {
         <div className="flex flex-col items-center gap-3">
           <canvas
             ref={canvasRef}
-            width={320}
-            height={480}
+            width={500}
+            height={500}
             className="border-2 border-border rounded-xl bg-gray-50 touch-none cursor-crosshair"
-            style={{ width: 200, height: 300 }}
+            style={{ width: 260, height: 260 }}
             onMouseDown={startDraw}
             onMouseMove={draw}
             onMouseUp={stopDraw}
