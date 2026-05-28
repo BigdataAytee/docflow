@@ -397,6 +397,12 @@ export default function ViewDocument() {
               </Button>
             </>
           )}
+          {doc.status === "to_be_delivered" && (
+            <Button size="sm" onClick={() => setShowSignModal(true)} className="gap-1.5 bg-orange-500 hover:bg-orange-600 text-white border-0 animate-pulse">
+              <PenLine className="h-3.5 w-3.5" />
+              <span>Sign Delivery</span>
+            </Button>
+          )}
           {doc.status !== "to_be_delivered" && (
             <Button size="sm" onClick={() => setShowSignModal(true)} className="gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white border-0">
               <PenLine className="h-3.5 w-3.5" />
