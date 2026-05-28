@@ -55,7 +55,7 @@ function ItemsTable({ items, docType, T }) {
           <tr key={i} style={{ borderBottom: "1px solid #e2e8f0", background: i % 2 === 0 ? "transparent" : "#f8fafc" }}>
             <td style={{ padding: "14px 48px", color: "#1e293b", fontWeight: 500, fontSize: 14 }}>
               <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                {item.image_url && <img src={item.image_url} alt="" style={{ width: 48, height: 48, objectFit: "cover", borderRadius: 4, border: "1px solid #e2e8f0", flexShrink: 0 }} />}
+                {item.image_url && <img src={item.image_url} alt="" style={{ width: 90, height: 90, objectFit: "cover", borderRadius: 6, border: "1px solid #e2e8f0", flexShrink: 0, boxShadow: "0 1px 4px rgba(0,0,0,0.10)" }} />}
                 <span>{item.description || <span style={{ color: "#cbd5e1" }}>Item description</span>}</span>
               </div>
             </td>

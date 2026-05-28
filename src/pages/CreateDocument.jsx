@@ -592,7 +592,7 @@ export default function CreateDocument() {
                                   <div className="mt-1">
                                     {item.image_url ? (
                                       <div className="relative inline-block">
-                                        <img src={item.image_url} alt="item" className="h-12 w-12 object-cover rounded border border-border" />
+                                        <img src={item.image_url} alt="item" className="h-20 w-20 object-cover rounded-lg border border-border shadow-sm" />
                                         <button type="button" onClick={() => updateItem(i, "image_url", "")} className="absolute -top-1 -right-1 bg-destructive text-white rounded-full w-4 h-4 flex items-center justify-center">
                                           <X className="h-2.5 w-2.5" />
                                         </button>
