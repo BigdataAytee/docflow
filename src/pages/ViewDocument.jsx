@@ -233,6 +233,16 @@ export default function ViewDocument() {
           <Button variant="outline" size="sm" className="hidden md:flex h-9" onClick={() => setShowPdfPreview(true)}>
             <FileDown className="h-4 w-4" /><span className="ml-1.5">PDF</span>
           </Button>
+          {doc.type === "waybill" && (
+            <>
+              <Button variant="outline" size="sm" className="hidden md:flex h-9 gap-1.5" onClick={() => { setPdfMode("paper"); setShowPdfPreview(true); }}>
+                <Printer className="h-4 w-4" /><span>Paper Signage</span>
+              </Button>
+              <Button variant="outline" size="sm" className="hidden md:flex h-9 gap-1.5 border-slate-700 text-slate-800 hover:bg-slate-900 hover:text-white" onClick={() => { setPdfMode("soft"); setShowPdfPreview(true); }}>
+                <PenLine className="h-4 w-4" /><span>Soft Signage</span>
+              </Button>
+            </>
+          )}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="outline" size="icon" className="h-9 w-9"><MoreVertical className="h-4 w-4" /></Button>
