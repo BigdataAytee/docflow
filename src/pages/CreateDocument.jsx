@@ -3,7 +3,7 @@ import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
 import { base44 } from "@/api/base44Client";
 import { useNavigate, Link } from "react-router-dom";
-import { Plus, Trash2, ArrowLeft, Settings2, FileDown, Upload, GripVertical } from "lucide-react";
+import { Plus, Trash2, ArrowLeft, Settings2, FileDown, Upload, GripVertical, PenLine, Printer } from "lucide-react";
 import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
@@ -269,6 +269,7 @@ export default function CreateDocument() {
   const pdfRef = useRef(null);
   const [generatingPdf, setGeneratingPdf] = useState(false);
   const [showPdfPreview, setShowPdfPreview] = useState(false);
+  const [pdfMode, setPdfMode] = useState("soft"); // "soft" | "paper"
   const template = "classic";
   const templateColor = "slate";
 
@@ -317,6 +318,21 @@ export default function CreateDocument() {
       a.click(); URL.revokeObjectURL(url);
       alert("Direct sharing is only available on mobile browsers. The PDF has been downloaded instead.");
     }
+    setGeneratingPdf(false);
+  };
+
+  const downloadInMode = async (mode) => {
+    if (!pdfRef.current) return;
+    setPdfMode(mode);
+    setGeneratingPdf(true);
+    await new Promise(r => setTimeout(r, 150));
+    const blob = await generatePdfBlob();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `${form.number || "waybill"}-${mode === "paper" ? "paper" : "signed"}.pdf`;
+    a.click();
+    URL.revokeObjectURL(url);
     setGeneratingPdf(false);
   };
 
@@ -645,6 +661,16 @@ export default function CreateDocument() {
                 <Upload className="h-4 w-4 mr-1" />
                 Share PDF
               </Button>
+              {(form.type || docType) === "waybill" && (
+                <>
+                  <Button variant="outline" className="w-full gap-2" onClick={() => { setPdfMode("paper"); setShowPdfPreview(true); }}>
+                    <Printer className="h-4 w-4" /> Save for Paper Signage
+                  </Button>
+                  <Button variant="outline" className="w-full gap-2 border-slate-700 text-slate-800 hover:bg-slate-900 hover:text-white" onClick={() => { setPdfMode("soft"); setShowPdfPreview(true); }}>
+                    <PenLine className="h-4 w-4" /> Save for Soft Signage
+                  </Button>
+                </>
+              )}
             </div>
           </div>
         </div>
@@ -707,16 +733,30 @@ export default function CreateDocument() {
               <p className="font-semibold text-sm">Document Preview</p>
               <p className="text-xs text-muted-foreground">{form.number || "Draft"}</p>
             </div>
-            <div className="flex items-center gap-2">
-              <Button size="sm" onClick={handleDownloadPdf} disabled={generatingPdf}>
+            <div className="flex items-center gap-2 overflow-x-auto flex-nowrap sm:flex-wrap justify-end">
+              <Button size="sm" variant="outline" onClick={handleDownloadPdf} disabled={generatingPdf} className="shrink-0">
                 <FileDown className="h-4 w-4 mr-1" />
                 {generatingPdf ? "Generating..." : "Download PDF"}
               </Button>
-              <Button size="sm" variant="outline" onClick={handleSharePdf} disabled={generatingPdf}>
+              <Button size="sm" variant="outline" onClick={handleSharePdf} disabled={generatingPdf} className="shrink-0">
                 <Upload className="h-4 w-4 mr-1" />
                 {generatingPdf ? "Generating..." : "Share PDF"}
               </Button>
-              <button className="p-2 hover:bg-muted rounded-lg text-muted-foreground" onClick={() => setShowPdfPreview(false)}>✕</button>
+              {(form.type || docType) === "waybill" && (
+                <>
+                  <Button size="sm" variant="outline" onClick={() => downloadInMode("paper")} disabled={generatingPdf} className="gap-1.5 shrink-0">
+                    <Printer className="h-4 w-4" />
+                    <span className="hidden sm:inline">{generatingPdf ? "..." : "Paper Signage"}</span>
+                    <span className="sm:hidden">Paper</span>
+                  </Button>
+                  <Button size="sm" onClick={() => downloadInMode("soft")} disabled={generatingPdf} className="gap-1.5 bg-slate-900 hover:bg-slate-800 text-white shrink-0">
+                    <PenLine className="h-4 w-4" />
+                    <span className="hidden sm:inline">{generatingPdf ? "..." : "Soft Signage"}</span>
+                    <span className="sm:hidden">Soft</span>
+                  </Button>
+                </>
+              )}
+              <button className="p-2 hover:bg-muted rounded-lg text-muted-foreground shrink-0" onClick={() => setShowPdfPreview(false)}>✕</button>
             </div>
           </div>
           <div className="flex-1 overflow-auto bg-gray-100" onClick={e => e.stopPropagation()}>
@@ -731,7 +771,7 @@ export default function CreateDocument() {
                       sym={sym}
                       docType={form.type || docType}
                       managerSig={managerSig}
-                      customerSig={customerSig}
+                      customerSig={(form.type || docType) === "waybill" && pdfMode === "paper" ? "" : customerSig}
                       template={template}
                       templateColor={templateColor}
                     />
