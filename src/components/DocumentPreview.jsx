@@ -152,26 +152,24 @@ function Sigs({ managerSig, customerSig, form, T, docType }) {
           {!form?.manager_name && form?.company_name && <div style={{ fontSize: 10, color: "#475569", marginTop: 1 }}>{form.company_name}</div>}
         </div>
       </div>
-      {showCustomer && (
+      {showCustomer && (docType === "waybill" || (customerSig || form?.customer_signature)) && (
         <div style={{ minWidth: 180 }}>
           {(customerSig || form?.customer_signature) &&
             <img src={customerSig || form.customer_signature} alt="" style={{ height: 72, objectFit: "contain", display: "block", marginBottom: 4 }} />
           }
-          <div style={{ borderTop: `1px solid ${T.accentColor}`, paddingTop: 3 }}>
-            {docType === "waybill" && (
-              <>
-                <div style={{ fontSize: 10, color: "#334155", fontWeight: 600, marginTop: 2 }}>{form?.receiver_name || form?.customer_name || ""}</div>
-                <div style={{ fontSize: 9, color: "#94a3b8", marginTop: 1 }}>
-                  {form?.receiver_date && `Date: ${form.receiver_date}`}
-                  {form?.receiver_date && form?.receiver_time && "  ·  "}
-                  {form?.receiver_time && `Time: ${form.receiver_time}`}
-                </div>
-                {!(form?.receiver_date) && (
-                  <div style={{ fontSize: 9, color: "#cbd5e1", marginTop: 2 }}>Name: ____________  Date: ____________  Time: ____________</div>
-                )}
-              </>
-            )}
-          </div>
+          {docType === "waybill" && (
+            <div style={{ borderTop: `1px solid ${T.accentColor}`, paddingTop: 3 }}>
+              <div style={{ fontSize: 10, color: "#334155", fontWeight: 600, marginTop: 2 }}>{form?.receiver_name || form?.customer_name || ""}</div>
+              <div style={{ fontSize: 9, color: "#94a3b8", marginTop: 1 }}>
+                {form?.receiver_date && `Date: ${form.receiver_date}`}
+                {form?.receiver_date && form?.receiver_time && "  ·  "}
+                {form?.receiver_time && `Time: ${form.receiver_time}`}
+              </div>
+              {!(form?.receiver_date) && (
+                <div style={{ fontSize: 9, color: "#cbd5e1", marginTop: 2 }}>Name: ____________  Date: ____________  Time: ____________</div>
+              )}
+            </div>
+          )}
         </div>
       )}
     </div>
