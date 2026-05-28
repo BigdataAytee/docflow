@@ -754,7 +754,7 @@ export default function CreateDocument() {
                   <Button variant="outline" className="w-full gap-2" onClick={() => { setPdfMode("paper"); setShowPdfPreview(true); }}>
                     <Printer className="h-4 w-4" /> Save for Paper Signage
                   </Button>
-                  <Button variant="outline" className="w-full gap-2 border-slate-700 text-slate-800 hover:bg-slate-900 hover:text-white" onClick={handleSoftSignage}>
+                  <Button variant="outline" className="w-full gap-2 border-slate-700 text-slate-800 hover:bg-slate-900 hover:text-white" onClick={() => { setPdfMode("soft"); setShowPdfPreview(true); }}>
                     <PenLine className="h-4 w-4" /> Save for Soft Signage
                   </Button>
                 </>
