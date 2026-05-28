@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { base44 } from "@/api/base44Client";
 import { useParams, Link, useNavigate } from "react-router-dom";
-import { ArrowLeft, Trash2, Printer, Send, Pencil, Share2, FileDown, MoreVertical, Upload, Copy, GitMerge } from "lucide-react";
+import { ArrowLeft, Trash2, Printer, Send, Pencil, Share2, FileDown, MoreVertical, Upload, Copy, GitMerge, PenLine, CheckCircle2 } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -59,6 +59,7 @@ export default function ViewDocument() {
   const [showPdfPreview, setShowPdfPreview] = useState(false);
   const [showSignModal, setShowSignModal] = useState(false);
   const [generatingPdf, setGeneratingPdf] = useState(false);
+  const [pdfMode, setPdfMode] = useState("soft"); // "soft" | "paper"
   const pdfRef = useRef(null);
 
   useEffect(() => {
@@ -150,6 +151,21 @@ export default function ViewDocument() {
       a.click(); URL.revokeObjectURL(url);
       toast.info("Direct sharing is only available on mobile browsers. The PDF has been downloaded instead — you can manually share it from your files.");
     }
+    setGeneratingPdf(false);
+  };
+
+  const downloadInMode = async (mode) => {
+    if (!pdfRef.current) return;
+    setPdfMode(mode);
+    setGeneratingPdf(true);
+    await new Promise(r => setTimeout(r, 150));
+    const blob = await generatePdfBlob();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `${doc.number || "waybill"}-${mode === "paper" ? "paper" : "signed"}.pdf`;
+    a.click();
+    URL.revokeObjectURL(url);
     setGeneratingPdf(false);
   };
 
@@ -276,6 +292,39 @@ export default function ViewDocument() {
         </div>
       )}
 
+      {doc.type === "waybill" && doc.status === "delivered" && doc.delivery_signed_at && (
+        <div className="print:hidden mb-4 bg-emerald-50 border border-emerald-200 rounded-xl px-5 py-4">
+          <div className="flex items-start justify-between gap-3">
+            <div className="flex items-center gap-3">
+              <div className="w-9 h-9 rounded-full bg-emerald-100 flex items-center justify-center shrink-0">
+                <CheckCircle2 className="h-5 w-5 text-emerald-600" />
+              </div>
+              <div>
+                <p className="text-sm font-bold text-emerald-800">Delivery Confirmed ✓</p>
+                <p className="text-xs text-emerald-700 mt-0.5">
+                  Signed by <strong>{doc.receiver_name || doc.customer_name}</strong>
+                  {doc.receiver_date && <> · {doc.receiver_date}</>}
+                  {doc.receiver_time && <> at {doc.receiver_time}</>}
+                </p>
+              </div>
+            </div>
+            {doc.delivery_proof_url && (
+              <a href={doc.delivery_proof_url} target="_blank" rel="noreferrer"
+                className="text-xs text-emerald-700 underline shrink-0">View proof</a>
+            )}
+          </div>
+        </div>
+      )}
+
+      {doc.type === "waybill" && !(["delivered"].includes(doc.status)) && (
+        <div className="print:hidden mb-4 bg-blue-50 border border-blue-200 rounded-xl px-5 py-3 flex items-center justify-between">
+          <div>
+            <p className="text-sm font-semibold text-blue-800">Awaiting Delivery Confirmation</p>
+            <p className="text-xs text-blue-700">Click "Sign Delivery" to capture receiver signature and confirm delivery.</p>
+          </div>
+        </div>
+      )}
+
       <div className="overflow-x-auto -mx-4 md:mx-0 px-4 md:px-0">
         <UnifiedTemplate doc={doc} onSaveManagerSig={saveManagerSig} onSaveCustomerSig={saveCustomerSig} onOpenSignModal={() => setShowSignModal(true)} />
       </div>
@@ -295,15 +344,37 @@ export default function ViewDocument() {
               <p className="font-semibold text-sm">Document Preview</p>
               <p className="text-xs text-muted-foreground">{doc.number}</p>
             </div>
-            <div className="flex items-center gap-2">
-              <Button size="sm" onClick={handleDownloadPdf} disabled={generatingPdf}>
-                <FileDown className="h-4 w-4 mr-1" />
-                {generatingPdf ? "Generating..." : "Download PDF"}
-              </Button>
-              <Button size="sm" variant="outline" onClick={handleSharePdf} disabled={generatingPdf}>
-                <Upload className="h-4 w-4 mr-1" />
-                Share
-              </Button>
+            <div className="flex items-center gap-2 flex-wrap justify-end">
+              {doc.type === "waybill" ? (
+                <>
+                  <Button size="sm" variant="outline" onClick={() => downloadInMode("paper")} disabled={generatingPdf} className="gap-1.5">
+                    <Printer className="h-4 w-4" />
+                    <span className="hidden sm:inline">{generatingPdf ? "Generating..." : "Paper Signage"}</span>
+                    <span className="sm:hidden">Paper</span>
+                  </Button>
+                  <Button size="sm" onClick={() => downloadInMode("soft")} disabled={generatingPdf} className="gap-1.5 bg-slate-900 hover:bg-slate-800 text-white">
+                    <PenLine className="h-4 w-4" />
+                    <span className="hidden sm:inline">{generatingPdf ? "Generating..." : "Soft Signage PDF"}</span>
+                    <span className="sm:hidden">Soft</span>
+                  </Button>
+                  <Button size="sm" variant="outline" onClick={() => { setShowPdfPreview(false); setShowSignModal(true); }} className="gap-1.5 border-emerald-300 text-emerald-700 hover:bg-emerald-50">
+                    <PenLine className="h-4 w-4" />
+                    <span className="hidden sm:inline">Receiver Sign</span>
+                    <span className="sm:hidden">Sign</span>
+                  </Button>
+                </>
+              ) : (
+                <>
+                  <Button size="sm" onClick={handleDownloadPdf} disabled={generatingPdf}>
+                    <FileDown className="h-4 w-4 mr-1" />
+                    {generatingPdf ? "Generating..." : "Download PDF"}
+                  </Button>
+                  <Button size="sm" variant="outline" onClick={handleSharePdf} disabled={generatingPdf}>
+                    <Upload className="h-4 w-4 mr-1" />
+                    Share
+                  </Button>
+                </>
+              )}
               <button className="p-2 hover:bg-muted rounded-lg text-muted-foreground" onClick={() => setShowPdfPreview(false)}>✕</button>
             </div>
           </div>
@@ -317,7 +388,7 @@ export default function ViewDocument() {
                   sym={CURRENCY_SYMBOLS[doc.currency] || doc.currency || "₦"}
                   docType={doc.type}
                   managerSig={doc.manager_signature}
-                  customerSig={doc.customer_signature}
+                  customerSig={doc.type === "waybill" && pdfMode === "paper" ? "" : doc.customer_signature}
                   template={doc.template || "classic"}
                   templateColor={doc.template_color || "slate"}
                 />
