@@ -45,6 +45,8 @@ export default function CreateDocument() {
   const [customers, setCustomers] = useState([]);
   const [saving, setSaving] = useState(false);
   const [managerSig, setManagerSig] = useState(null);
+  const [savedManagerSig, setSavedManagerSig] = useState(null);
+  const [savingDefaultSig, setSavingDefaultSig] = useState(false);
   const [customerSig, setCustomerSig] = useState(null);
   const [showAddCustomer, setShowAddCustomer] = useState(false);
   const [savingCustomer, setSavingCustomer] = useState(false);
@@ -133,15 +135,13 @@ export default function CreateDocument() {
       setTypePrefix(tPrefix);
       setCompanyAbbr(cAbbr);
 
+      if (user.manager_signature) {
+        setSavedManagerSig(user.manager_signature);
+        setManagerSig(user.manager_signature);
+      }
+
       if (editId) {
         const doc = await base44.entities.Document.get(editId);
-        const { items: docItems, ...rest } = doc;
-        setForm(f => ({ ...f, ...rest, issue_date: rest.issue_date ? rest.issue_date.split("T")[0] : f.issue_date, due_date: rest.due_date ? rest.due_date.split("T")[0] : "" }));
-        if (docItems && docItems.length > 0) setItems(docItems);
-        // Parse seq from end of number (last segment after final dash)
-        const parts = (rest.number || "").split("-");
-        if (parts.length >= 2) setNumSeq(parts[parts.length - 1]);
-      } else {
         setForm(f => ({
           ...f,
           company_name: user.company_name || user.full_name || "",
@@ -684,9 +684,63 @@ export default function CreateDocument() {
 
           {/* Primary Signature */}
           <div className="bg-card rounded-xl border border-border p-6">
-            <h3 className="font-semibold mb-4">{L.sig}</h3>
-            <p className="text-xs text-muted-foreground mb-3">Sign here using mouse or stylus. This signature will appear on the final document.</p>
-            <SignaturePad label={L.sig} onSave={setManagerSig} />
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="font-semibold">{L.sig}</h3>
+              {savedManagerSig && managerSig === savedManagerSig && (
+                <span className="text-xs text-emerald-600 font-medium bg-emerald-50 px-2 py-0.5 rounded-full">✓ Using saved signature</span>
+              )}
+            </div>
+            {managerSig ? (
+              <div className="space-y-3">
+                <div className="border border-border rounded-xl p-4 bg-gray-50">
+                  <img src={managerSig} alt="Manager Signature" className="h-20 object-contain" />
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  <button onClick={() => setManagerSig(null)} className="text-xs text-primary hover:underline">Re-sign</button>
+                  {savedManagerSig !== managerSig && (
+                    <button
+                      disabled={savingDefaultSig}
+                      onClick={async () => {
+                        setSavingDefaultSig(true);
+                        await base44.auth.updateMe({ manager_signature: managerSig });
+                        setSavedManagerSig(managerSig);
+                        setSavingDefaultSig(false);
+                        toast.success("Signature saved as your default — it will appear on all new documents.");
+                      }}
+                      className="text-xs text-slate-600 hover:text-slate-900 border border-slate-300 rounded-full px-3 py-0.5 hover:bg-slate-50 transition-colors"
+                    >
+                      {savingDefaultSig ? "Saving…" : "💾 Save as default"}
+                    </button>
+                  )}
+                  {savedManagerSig && managerSig === savedManagerSig && (
+                    <button
+                      onClick={async () => {
+                        await base44.auth.updateMe({ manager_signature: "" });
+                        setSavedManagerSig(null);
+                        toast.success("Default signature removed.");
+                      }}
+                      className="text-xs text-red-400 hover:text-red-600 hover:underline"
+                    >
+                      Remove default
+                    </button>
+                  )}
+                </div>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                <p className="text-xs text-muted-foreground">Sign here using mouse or stylus. This signature will appear on the final document.</p>
+                {savedManagerSig && (
+                  <button
+                    onClick={() => setManagerSig(savedManagerSig)}
+                    className="flex items-center gap-2 text-xs text-primary border border-primary/30 rounded-lg px-3 py-2 hover:bg-primary/5 transition-colors"
+                  >
+                    <span>↩ Use my saved signature</span>
+                    <img src={savedManagerSig} alt="Saved sig" className="h-6 object-contain opacity-70" />
+                  </button>
+                )}
+                <SignaturePad label={L.sig} onSave={setManagerSig} />
+              </div>
+            )}
           </div>
 
 
