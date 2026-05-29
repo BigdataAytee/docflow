@@ -14,13 +14,13 @@ const fmt = (n) => (n || 0).toLocaleString("en", { minimumFractionDigits: 2 });
 
 function ExtraFields({ form, docType, T }) {
   if (docType === "receipt") {
-    const hasExtra = form.payment_method || form.transaction_id;
+    const hasExtra = form.payment_method || form.transaction_id || form.reference_number;
     if (!hasExtra) return null;
     return (
       <div style={{ padding: "12px 48px", borderBottom: `1px solid ${T.stripBorder}`, background: T.stripBg, display: "flex", gap: 32, flexWrap: "wrap" }}>
         {form.payment_method && <div><span style={{ color: "#94a3b8", fontSize: 9, textTransform: "uppercase", letterSpacing: 1, display: "block", marginBottom: 2 }}>Payment Method</span><span style={{ fontWeight: 700, color: "#1e293b", fontSize: 12 }}>{form.payment_method}</span></div>}
         {form.transaction_id && <div><span style={{ color: "#94a3b8", fontSize: 9, textTransform: "uppercase", letterSpacing: 1, display: "block", marginBottom: 2 }}>Transaction ID</span><span style={{ fontWeight: 700, color: "#1e293b", fontSize: 12 }}>{form.transaction_id}</span></div>}
-
+        {form.reference_number && <div><span style={{ color: "#94a3b8", fontSize: 9, textTransform: "uppercase", letterSpacing: 1, display: "block", marginBottom: 2 }}>Reference No.</span><span style={{ fontWeight: 700, color: "#1e293b", fontSize: 12 }}>{form.reference_number}</span></div>}
       </div>
     );
   }
