@@ -584,7 +584,7 @@ export default function CreateDocument() {
                     </SelectContent>
                   </Select>
                 </div>
-                <div><Label>Transaction ID</Label><Input value={form.transaction_id} onChange={e => setForm(f => ({ ...f, transaction_id: e.target.value }))} placeholder="e.g. TXN-0012345" /></div>
+  
               </div>
               {form.payment_method === "Bank Transfer" && (
                 <div className="border border-border rounded-xl p-4 bg-muted/30 space-y-3">
@@ -629,9 +629,7 @@ export default function CreateDocument() {
                   </div>
                 </div>
               )}
-              <div className="grid grid-cols-2 gap-4">
-                <div className="col-span-2"><Label>Reference Number</Label><Input value={form.reference_number} onChange={e => setForm(f => ({ ...f, reference_number: e.target.value }))} placeholder="e.g. REF-2024-001" /></div>
-              </div>
+
             </div>
           )}
 
