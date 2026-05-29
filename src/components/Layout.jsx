@@ -71,7 +71,7 @@ export default function Layout() {
         </div>
 
         {/* Page content — bottom padding for mobile nav bar */}
-        <div className="flex-1 p-4 md:p-6 lg:p-8 pb-36 lg:pb-8">
+        <div className="flex-1 p-4 md:p-6 lg:p-8 pb-52 md:pb-52 lg:pb-8">
           <Outlet />
         </div>
       </main>
