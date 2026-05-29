@@ -187,25 +187,24 @@ function SigsAndPayment({ managerSig, customerSig, form, T, docType, sym }) {
               <span style={{ color: "#94a3b8" }}>Method</span>
               <span style={{ fontWeight: 700, color: "#1e293b" }}>{form.payment_method}</span>
             </div>
-            {form.payment_method === "Bank Transfer" && form.bank_name && (
-              <div style={{ display: "flex", justifyContent: "space-between", fontSize: 10 }}>
-                <span style={{ color: "#94a3b8" }}>Bank</span>
-                <span style={{ fontWeight: 600, color: "#1e293b" }}>{form.bank_name}</span>
-              </div>
-            )}
-            {form.payment_method === "Bank Transfer" && form.account_number && (
-              <div style={{ display: "flex", justifyContent: "space-between", fontSize: 10 }}>
-                <span style={{ color: "#94a3b8" }}>Account No.</span>
-                <span style={{ fontWeight: 600, color: "#1e293b", fontFamily: "monospace" }}>{form.account_number}</span>
-              </div>
-            )}
-            {form.payment_method === "Bank Transfer" && form.account_holder_name && (
-              <div style={{ display: "flex", justifyContent: "space-between", fontSize: 10 }}>
-                <span style={{ color: "#94a3b8" }}>Acct. Name</span>
-                <span style={{ fontWeight: 600, color: "#1e293b" }}>{form.account_holder_name}</span>
-              </div>
-            )}
-
+            {/* Bank Transfer */}
+            {form.payment_method === "Bank Transfer" && form.bank_name && <div style={{ display: "flex", justifyContent: "space-between", fontSize: 10 }}><span style={{ color: "#94a3b8" }}>Bank</span><span style={{ fontWeight: 600, color: "#1e293b" }}>{form.bank_name}</span></div>}
+            {form.payment_method === "Bank Transfer" && form.account_number && <div style={{ display: "flex", justifyContent: "space-between", fontSize: 10 }}><span style={{ color: "#94a3b8" }}>Account No.</span><span style={{ fontWeight: 600, color: "#1e293b", fontFamily: "monospace" }}>{form.account_number}</span></div>}
+            {form.payment_method === "Bank Transfer" && form.account_holder_name && <div style={{ display: "flex", justifyContent: "space-between", fontSize: 10 }}><span style={{ color: "#94a3b8" }}>Acct. Name</span><span style={{ fontWeight: 600, color: "#1e293b" }}>{form.account_holder_name}</span></div>}
+            {/* POS */}
+            {form.payment_method === "POS" && form.transaction_id && <div style={{ display: "flex", justifyContent: "space-between", fontSize: 10 }}><span style={{ color: "#94a3b8" }}>Transaction ID</span><span style={{ fontWeight: 600, color: "#1e293b", fontFamily: "monospace" }}>{form.transaction_id}</span></div>}
+            {form.payment_method === "POS" && form.reference_number && <div style={{ display: "flex", justifyContent: "space-between", fontSize: 10 }}><span style={{ color: "#94a3b8" }}>Terminal ID</span><span style={{ fontWeight: 600, color: "#1e293b" }}>{form.reference_number}</span></div>}
+            {/* Credit Card */}
+            {form.payment_method === "Credit Card" && form.transaction_id && <div style={{ display: "flex", justifyContent: "space-between", fontSize: 10 }}><span style={{ color: "#94a3b8" }}>Transaction ID</span><span style={{ fontWeight: 600, color: "#1e293b", fontFamily: "monospace" }}>{form.transaction_id}</span></div>}
+            {form.payment_method === "Credit Card" && form.reference_number && <div style={{ display: "flex", justifyContent: "space-between", fontSize: 10 }}><span style={{ color: "#94a3b8" }}>Card (last 4)</span><span style={{ fontWeight: 600, color: "#1e293b", fontFamily: "monospace" }}>•••• {form.reference_number}</span></div>}
+            {/* Mobile Money */}
+            {form.payment_method === "Mobile Money" && form.account_number && <div style={{ display: "flex", justifyContent: "space-between", fontSize: 10 }}><span style={{ color: "#94a3b8" }}>Phone</span><span style={{ fontWeight: 600, color: "#1e293b" }}>{form.account_number}</span></div>}
+            {form.payment_method === "Mobile Money" && form.transaction_id && <div style={{ display: "flex", justifyContent: "space-between", fontSize: 10 }}><span style={{ color: "#94a3b8" }}>Transaction ID</span><span style={{ fontWeight: 600, color: "#1e293b", fontFamily: "monospace" }}>{form.transaction_id}</span></div>}
+            {form.payment_method === "Mobile Money" && form.account_holder_name && <div style={{ display: "flex", justifyContent: "space-between", fontSize: 10 }}><span style={{ color: "#94a3b8" }}>Acct. Name</span><span style={{ fontWeight: 600, color: "#1e293b" }}>{form.account_holder_name}</span></div>}
+            {/* Cheque */}
+            {form.payment_method === "Cheque" && form.reference_number && <div style={{ display: "flex", justifyContent: "space-between", fontSize: 10 }}><span style={{ color: "#94a3b8" }}>Cheque No.</span><span style={{ fontWeight: 600, color: "#1e293b", fontFamily: "monospace" }}>{form.reference_number}</span></div>}
+            {form.payment_method === "Cheque" && form.bank_name && <div style={{ display: "flex", justifyContent: "space-between", fontSize: 10 }}><span style={{ color: "#94a3b8" }}>Bank</span><span style={{ fontWeight: 600, color: "#1e293b" }}>{form.bank_name}</span></div>}
+            {form.payment_method === "Cheque" && form.account_holder_name && <div style={{ display: "flex", justifyContent: "space-between", fontSize: 10 }}><span style={{ color: "#94a3b8" }}>Drawer</span><span style={{ fontWeight: 600, color: "#1e293b" }}>{form.account_holder_name}</span></div>}
           </div>
         </div>
       )}

@@ -629,6 +629,44 @@ export default function CreateDocument() {
                   </div>
                 </div>
               )}
+              {form.payment_method === "POS" && (
+                <div className="border border-border rounded-xl p-4 bg-muted/30 space-y-3">
+                  <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">POS Details</p>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div><Label>Transaction ID</Label><Input value={form.transaction_id} onChange={e => setForm(f => ({ ...f, transaction_id: e.target.value }))} placeholder="e.g. TXN-0012345" /></div>
+                    <div><Label>Terminal ID</Label><Input value={form.reference_number} onChange={e => setForm(f => ({ ...f, reference_number: e.target.value }))} placeholder="e.g. TID-001" /></div>
+                  </div>
+                </div>
+              )}
+              {form.payment_method === "Credit Card" && (
+                <div className="border border-border rounded-xl p-4 bg-muted/30 space-y-3">
+                  <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Card Details</p>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div><Label>Transaction ID</Label><Input value={form.transaction_id} onChange={e => setForm(f => ({ ...f, transaction_id: e.target.value }))} placeholder="e.g. TXN-0012345" /></div>
+                    <div><Label>Last 4 Digits</Label><Input value={form.reference_number} onChange={e => setForm(f => ({ ...f, reference_number: e.target.value }))} placeholder="e.g. 4242" maxLength={4} /></div>
+                  </div>
+                </div>
+              )}
+              {form.payment_method === "Mobile Money" && (
+                <div className="border border-border rounded-xl p-4 bg-muted/30 space-y-3">
+                  <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Mobile Money Details</p>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div><Label>Phone Number</Label><Input value={form.account_number} onChange={e => setForm(f => ({ ...f, account_number: e.target.value }))} placeholder="e.g. 0812345678" /></div>
+                    <div><Label>Transaction ID</Label><Input value={form.transaction_id} onChange={e => setForm(f => ({ ...f, transaction_id: e.target.value }))} placeholder="e.g. TXN-0012345" /></div>
+                    <div className="col-span-2"><Label>Account Name</Label><Input value={form.account_holder_name} onChange={e => setForm(f => ({ ...f, account_holder_name: e.target.value }))} placeholder="e.g. John Doe" /></div>
+                  </div>
+                </div>
+              )}
+              {form.payment_method === "Cheque" && (
+                <div className="border border-border rounded-xl p-4 bg-muted/30 space-y-3">
+                  <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Cheque Details</p>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div><Label>Cheque Number</Label><Input value={form.reference_number} onChange={e => setForm(f => ({ ...f, reference_number: e.target.value }))} placeholder="e.g. 000123" /></div>
+                    <div><Label>Bank Name</Label><Input value={form.bank_name} onChange={e => setForm(f => ({ ...f, bank_name: e.target.value }))} placeholder="e.g. First Bank" /></div>
+                    <div className="col-span-2"><Label>Account Holder Name</Label><Input value={form.account_holder_name} onChange={e => setForm(f => ({ ...f, account_holder_name: e.target.value }))} placeholder="e.g. John Doe" /></div>
+                  </div>
+                </div>
+              )}
 
             </div>
           )}
