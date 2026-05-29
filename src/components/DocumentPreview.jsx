@@ -210,18 +210,7 @@ function SigsAndPayment({ managerSig, customerSig, form, T, docType, sym }) {
                 <span style={{ fontWeight: 600, color: "#1e293b" }}>{form.account_holder_name}</span>
               </div>
             )}
-            {form.transaction_id && (
-              <div style={{ display: "flex", justifyContent: "space-between", fontSize: 10 }}>
-                <span style={{ color: "#94a3b8" }}>Txn ID</span>
-                <span style={{ fontWeight: 600, color: "#1e293b", fontFamily: "monospace" }}>{form.transaction_id}</span>
-              </div>
-            )}
-            {form.reference_number && (
-              <div style={{ display: "flex", justifyContent: "space-between", fontSize: 10 }}>
-                <span style={{ color: "#94a3b8" }}>Ref No.</span>
-                <span style={{ fontWeight: 600, color: "#1e293b" }}>{form.reference_number}</span>
-              </div>
-            )}
+
           </div>
         </div>
       )}
