@@ -125,12 +125,7 @@ function PaymentDetailsBlock({ form, sym, T }) {
               <span style={{ fontWeight: 600, color: "#1e293b", fontFamily: "monospace" }}>{form.transaction_id}</span>
             </div>
           )}
-          {form.reference_number && (
-            <div style={{ display: "flex", justifyContent: "space-between", fontSize: 11 }}>
-              <span style={{ color: "#94a3b8" }}>Reference No.</span>
-              <span style={{ fontWeight: 600, color: "#1e293b" }}>{form.reference_number}</span>
-            </div>
-          )}
+
         </div>
       </div>
     </div>
