@@ -137,7 +137,7 @@ function Sigs({ managerSig, customerSig, form, T, docType }) {
   const managerLabel = SIG_LABEL[docType] || "Authorized Signatory";
   const customerLabel = SIG2_LABEL[docType] || "Customer Signature";
   return (
-    <div style={{ display: "flex", gap: 40, padding: "20px 48px", borderTop: "1px solid #e2e8f0" }}>
+    <div style={{ display: "flex", gap: 40, padding: "20px 48px", borderTop: "1px solid #e2e8f0", alignItems: "flex-start" }}>
       <div style={{ minWidth: 160 }}>
         {(managerSig || form?.manager_signature) ? <img src={managerSig || form.manager_signature} alt="" style={{ height: 72, objectFit: "contain", display: "block", marginBottom: 4 }} /> : <div style={{ height: 72 }} />}
         <div style={{ borderTop: `1px solid ${T.accentColor}`, paddingTop: 3 }}>
@@ -149,8 +149,9 @@ function Sigs({ managerSig, customerSig, form, T, docType }) {
       </div>
       {showCustomer && (docType === "waybill" || (customerSig || form?.customer_signature)) && (
         <div style={{ minWidth: 180 }}>
-          {(customerSig || form?.customer_signature) &&
-            <img src={customerSig || form.customer_signature} alt="" style={{ height: 72, objectFit: "contain", display: "block", marginBottom: 4 }} />
+          {(customerSig || form?.customer_signature)
+            ? <img src={customerSig || form.customer_signature} alt="" style={{ height: 72, objectFit: "contain", display: "block", marginBottom: 4 }} />
+            : <div style={{ height: 72 }} />
           }
           {docType === "waybill" && (
             <div style={{ borderTop: `1px solid ${T.accentColor}`, paddingTop: 3 }}>
