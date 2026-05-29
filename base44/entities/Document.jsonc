@@ -35,10 +35,7 @@
         "delivered",
         "returned",
         "to_be_signed",
-        "to_be_delivered",
-        "pending_signature",
-        "signed",
-        "archived"
+        "to_be_delivered"
       ],
       "title": "Status",
       "default": "draft"
@@ -71,10 +68,6 @@
     "customer_email": {
       "type": "string",
       "title": "Customer Email"
-    },
-    "customer_phone": {
-      "type": "string",
-      "title": "Customer Phone"
     },
     "customer_address": {
       "type": "string",
@@ -279,31 +272,6 @@
     "tracking_number": {
       "type": "string",
       "title": "Tracking Number"
-    },
-    "signing_token": {
-      "type": "string",
-      "title": "Signing Token"
-    },
-    "signed_at": {
-      "type": "string",
-      "title": "Signed At"
-    },
-    "signed_by": {
-      "type": "string",
-      "title": "Signed By"
-    },
-    "locked": {
-      "type": "boolean",
-      "title": "Locked",
-      "default": false
-    },
-    "pdf_url": {
-      "type": "string",
-      "title": "Generated PDF URL"
-    },
-    "signed_pdf_url": {
-      "type": "string",
-      "title": "Signed PDF URL"
     }
   },
   "required": [

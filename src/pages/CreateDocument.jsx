@@ -3,7 +3,7 @@ import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
 import { base44 } from "@/api/base44Client";
 import { useNavigate } from "react-router-dom";
-import { Plus, Trash2, ArrowLeft, Settings2, FileDown, Upload, GripVertical, PenLine, Printer, CheckCircle2, ImagePlus, X, Lock, Send, Link2 } from "lucide-react";
+import { Plus, Trash2, ArrowLeft, Settings2, FileDown, Upload, GripVertical, PenLine, Printer, CheckCircle2, ImagePlus, X } from "lucide-react";
 import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
@@ -63,9 +63,6 @@ export default function CreateDocument() {
   const [isDirty, setIsDirty] = useState(false);
   const [showLeaveModal, setShowLeaveModal] = useState(false);
   const [uploadingItemImg, setUploadingItemImg] = useState({});
-  const [isLocked, setIsLocked] = useState(false);
-  const [generatingAndSending, setGeneratingAndSending] = useState(false);
-  const hiddenPdfRef = useRef(null);
 
   useEffect(() => {
     const handler = (e) => { if (isDirty) { e.preventDefault(); e.returnValue = ""; } };
@@ -183,7 +180,6 @@ export default function CreateDocument() {
           if (doc.items) setItems(doc.items);
           if (doc.manager_signature) setManagerSig(doc.manager_signature);
           if (doc.customer_signature) setCustomerSig(doc.customer_signature);
-          if (doc.locked) setIsLocked(true);
         }
       }
     })();
@@ -455,48 +451,6 @@ export default function CreateDocument() {
     navigate("/documents?type=waybill");
   };
 
-  const handleGenerateAndSend = async () => {
-    if (!form.customer_name) return;
-    if (!form.customer_email) { toast.error("Customer email is required to send for signature."); return; }
-    setGeneratingAndSending(true);
-    // Save the doc first
-    const docPayload = buildDocPayload("pending_signature");
-    docPayload.locked = true;
-    docPayload.customer_signature = "";
-    docPayload.paid_amount = 0;
-    let savedId = draftIdRef.current || editId;
-    if (savedId) {
-      await base44.entities.Document.update(savedId, docPayload);
-    } else {
-      const created = await base44.entities.Document.create(docPayload);
-      savedId = created.id;
-      draftIdRef.current = savedId;
-    }
-    // Generate PDF from hidden preview
-    let pdfUrl = "";
-    if (hiddenPdfRef.current) {
-      const { default: html2canvas } = await import("html2canvas");
-      const { default: jsPDF } = await import("jspdf");
-      const canvas = await html2canvas(hiddenPdfRef.current, { scale: 2, useCORS: true, logging: false, backgroundColor: "#ffffff", width: 794, windowWidth: 794 });
-      const imgData = canvas.toDataURL("image/jpeg", 0.88);
-      const pdf = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
-      const pw = pdf.internal.pageSize.getWidth();
-      const ph = pdf.internal.pageSize.getHeight();
-      const imgH = (canvas.height / canvas.width) * pw;
-      pdf.addImage(imgData, "JPEG", 0, 0, pw, imgH);
-      const blob = pdf.output("blob");
-      const file = new File([blob], `${form.number || "waybill"}.pdf`, { type: "application/pdf" });
-      const result = await base44.integrations.Core.UploadFile({ file });
-      pdfUrl = result.file_url || "";
-    }
-    // Call backend to create token and send email
-    await base44.functions.invoke("waybillSigning", { action: "generateToken", docId: savedId, pdfUrl });
-    setIsLocked(true);
-    setGeneratingAndSending(false);
-    toast.success(`Waybill sent to ${form.customer_email} for signature.`);
-    navigate("/documents?type=waybill");
-  };
-
   const [viewportWidth, setViewportWidth] = useState(window.innerWidth);
   useEffect(() => {
     const onResize = () => setViewportWidth(window.innerWidth);
@@ -509,20 +463,6 @@ export default function CreateDocument() {
 
   return (
     <div className="max-w-5xl mx-auto pb-32 md:pb-0">
-      {/* Lock banner for locked waybills */}
-      {isLocked && (docType === "waybill" || form.type === "waybill") && (
-        <div className="mb-4 flex items-center gap-3 bg-orange-50 border border-orange-200 rounded-xl p-4">
-          <Lock className="h-5 w-5 text-orange-500 shrink-0" />
-          <div className="flex-1 min-w-0">
-            <p className="font-semibold text-orange-800 text-sm">Document Locked — Awaiting Signature</p>
-            <p className="text-xs text-orange-600 mt-0.5">This waybill has been sent for signature and can no longer be edited.</p>
-          </div>
-          <button onClick={() => navigate("/documents?type=waybill")} className="text-xs font-semibold text-orange-700 border border-orange-300 rounded-lg px-3 py-1.5 hover:bg-orange-100 transition-colors shrink-0">
-            Back to List
-          </button>
-        </div>
-      )}
-
       {/* Header */}
       <div className="flex items-center gap-3 mb-6">
         <button onClick={handleBackClick} className="p-2 hover:bg-muted rounded-lg"><ArrowLeft className="h-4 w-4" /></button>
@@ -540,7 +480,7 @@ export default function CreateDocument() {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
 
         {/* ── Left column: form sections ── */}
-        <div className="md:col-span-2 space-y-6" style={{ pointerEvents: isLocked ? "none" : undefined, opacity: isLocked ? 0.65 : 1 }}>
+        <div className="lg:col-span-2 space-y-6">
 
           {/* Document Info */}
           <div className="bg-card rounded-xl border border-border p-6 space-y-4">
@@ -997,21 +937,15 @@ export default function CreateDocument() {
                 <Upload className="h-4 w-4 mr-1" />
                 Share PDF
               </Button>
-              {(form.type || docType) === "waybill" && !isLocked && (
-                <Button
-                  className="w-full gap-2 bg-emerald-600 hover:bg-emerald-700 text-white"
-                  onClick={handleGenerateAndSend}
-                  disabled={generatingAndSending || !form.customer_name || !form.customer_email}
-                >
-                  <Send className="h-4 w-4" />
-                  {generatingAndSending ? "Generating…" : "Generate PDF & Send for Signature"}
-                </Button>
-              )}
-              {(form.type || docType) === "waybill" && isLocked && (
-                <div className="flex items-center gap-2 justify-center py-2 text-orange-600">
-                  <Lock className="h-4 w-4" />
-                  <span className="text-sm font-medium">Awaiting customer signature</span>
-                </div>
+              {(form.type || docType) === "waybill" && (
+                <>
+                  <Button variant="outline" className="w-full gap-2" onClick={() => { setPdfMode("paper"); setShowPdfPreview(true); }}>
+                    <Printer className="h-4 w-4" /> Save for Paper Signage
+                  </Button>
+                  <Button variant="outline" className="w-full gap-2 border-slate-700 text-slate-800 hover:bg-slate-900 hover:text-white" onClick={() => { setPdfMode("soft"); setShowPdfPreview(true); }}>
+                    <PenLine className="h-4 w-4" /> Save for Soft Signage
+                  </Button>
+                </>
               )}
             </div>
           </div>
@@ -1026,42 +960,35 @@ export default function CreateDocument() {
       >
         <div className="bg-white/95 backdrop-blur-md border-t border-border shadow-[0_-4px_24px_rgba(0,0,0,0.10)] px-4 pt-3 pb-2">
           {/* Secondary actions row */}
-          {(form.type || docType) !== "waybill" && (
-            <div className="flex items-center gap-2 mb-2.5">
-              <Button variant="outline" size="sm" className="flex-1 gap-1.5 h-9 text-sm font-medium" onClick={() => setShowPdfPreview(true)} disabled={saving}>
-                <FileDown className="h-4 w-4" /> Preview PDF
-              </Button>
-              <Button variant="outline" size="sm" className="flex-1 gap-1.5 h-9 text-sm font-medium" onClick={() => handleSave("draft")} disabled={saving || !form.customer_name}>
-                {saving ? "Saving…" : "Save Draft"}
-              </Button>
-            </div>
-          )}
-          {(form.type || docType) === "waybill" && !isLocked && (
-            <div className="space-y-2">
-              <Button variant="outline" size="sm" className="w-full gap-1.5 h-9 text-sm font-medium" onClick={() => handleSave("draft")} disabled={saving || !form.customer_name}>
-                {saving ? "Saving…" : "Save Draft"}
-              </Button>
-              <Button
-                className="w-full h-11 text-[14px] font-bold rounded-xl shadow-sm gap-2 bg-emerald-600 hover:bg-emerald-700"
-                onClick={handleGenerateAndSend}
-                disabled={generatingAndSending || !form.customer_name || !form.customer_email}
-              >
-                <Send className="h-4 w-4" />
-                {generatingAndSending ? "Generating…" : "Generate PDF & Send"}
-              </Button>
-            </div>
-          )}
-          {(form.type || docType) === "waybill" && isLocked && (
-            <div className="flex items-center gap-2 justify-center py-3 text-orange-600 bg-orange-50 rounded-xl border border-orange-200">
-              <Lock className="h-4 w-4" />
-              <span className="text-sm font-semibold">Awaiting Signature</span>
-            </div>
-          )}
-          {(form.type || docType) !== "waybill" && (
-            <Button className="w-full h-11 text-[15px] font-semibold rounded-xl shadow-sm" onClick={() => handleSave("sent")} disabled={saving || !form.customer_name}>
-              {saving ? "Saving…" : "Save Document"}
+          <div className="flex items-center gap-2 mb-2.5">
+            <Button
+              variant="outline"
+              size="sm"
+              className="flex-1 gap-1.5 h-9 text-sm font-medium"
+              onClick={() => setShowPdfPreview(true)}
+              disabled={saving}
+            >
+              <FileDown className="h-4 w-4" />
+              Preview PDF
             </Button>
-          )}
+            <Button
+              variant="outline"
+              size="sm"
+              className="flex-1 gap-1.5 h-9 text-sm font-medium"
+              onClick={() => handleSave("draft")}
+              disabled={saving || !form.customer_name}
+            >
+              {saving ? "Saving…" : (form.type || docType) === "waybill" ? "Save Pending" : "Save Draft"}
+            </Button>
+          </div>
+          {/* Primary full-width button */}
+          <Button
+            className="w-full h-11 text-[15px] font-semibold rounded-xl shadow-sm"
+            onClick={() => handleSave("sent")}
+            disabled={saving || !form.customer_name}
+          >
+            {saving ? "Saving…" : "Save Document"}
+          </Button>
         </div>
       </div>
 
@@ -1251,25 +1178,6 @@ export default function CreateDocument() {
               </div>
             </div>
           )}
-        </div>
-      )}
-
-      {/* Hidden PDF render target for waybill signature flow */}
-      {(docType === "waybill" || form.type === "waybill") && (
-        <div style={{ position: "fixed", top: 0, left: "-800px", width: 794, zIndex: -1, pointerEvents: "none" }}>
-          <div ref={hiddenPdfRef} style={{ width: 794, background: "#fff" }}>
-            <DocumentPreview
-              form={form}
-              items={calcs.lineItems}
-              calcs={calcs}
-              sym={sym}
-              docType={docType}
-              managerSig={managerSig}
-              customerSig={null}
-              template="classic"
-              templateColor="slate"
-            />
-          </div>
         </div>
       )}
 
