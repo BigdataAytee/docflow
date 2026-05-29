@@ -83,10 +83,10 @@ export default function Layout() {
         {/* Page content */}
         <div className="flex-1 min-w-0 p-4 md:p-6 lg:p-8 lg:pb-8">
           <Outlet />
-          {/* Bottom spacer — clears fixed nav + action bars on mobile/tablet */}
+          {/* Bottom spacer — clears fixed nav (56px) + action bar (~110px) + buffer */}
           <div
             className="lg:hidden"
-            style={{ height: "calc(56px + env(safe-area-inset-bottom, 0px) + 100px)" }}
+            style={{ height: "calc(56px + env(safe-area-inset-bottom, 0px) + 140px)" }}
           />
         </div>
       </main>
