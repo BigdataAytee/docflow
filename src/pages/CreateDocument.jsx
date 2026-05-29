@@ -824,9 +824,7 @@ export default function CreateDocument() {
                 placeholder={docType === "waybill" ? "e.g. Handle with care. Deliver between 9am–5pm." : docType === "receipt" ? "e.g. Thank you for your payment." : "e.g. Thanks for your business."} />
             </div>
 
-            {docType === "quotation" && (
-              <div><Label>Terms &amp; Conditions</Label><Textarea value={form.terms} onChange={e => setForm(f => ({ ...f, terms: e.target.value }))} rows={2} placeholder="e.g. This quotation is valid for 30 days. Prices subject to change." /></div>
-            )}
+
           </div>
 
           {/* Primary Signature */}
