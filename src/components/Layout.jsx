@@ -71,8 +71,10 @@ export default function Layout() {
         </div>
 
         {/* Page content — bottom padding for mobile nav bar */}
-        <div className="flex-1 p-4 md:p-6 lg:p-8 pb-52 md:pb-52 lg:pb-8">
+        <div className="flex-1 p-4 md:p-6 lg:p-8 lg:pb-8">
           <Outlet />
+          {/* Guaranteed bottom spacer for mobile/tablet — clears nav + action bars */}
+          <div className="lg:hidden" style={{ height: "calc(64px + env(safe-area-inset-bottom, 0px) + 80px)" }} />
         </div>
       </main>
 
