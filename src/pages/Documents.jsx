@@ -3,9 +3,9 @@ import { base44 } from "@/api/base44Client";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { format } from "date-fns";
 import {
-  Search, FileText, Plus, Eye, Pencil, Copy, Trash2,
-  TrendingUp, TrendingDown, DollarSign, Clock, AlertCircle, CheckCircle2,
-  Send, MoreHorizontal, X, Filter, PenLine
+  Search, FileText, Plus, Eye, Pencil, Trash2,
+  Clock, AlertCircle, CheckCircle2,
+  Send, X, PenLine, Link2, Truck, Archive
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -23,23 +23,27 @@ const docTypes = [
 ];
 
 const STATUS_CONFIG = {
-  draft:     { label: "Draft",     bg: "bg-slate-100 text-slate-600",     dot: "bg-slate-400",     icon: Clock },
-  sent:      { label: "Sent",      bg: "bg-blue-50 text-blue-700",        dot: "bg-blue-500",      icon: Send },
-  paid:      { label: "Paid",      bg: "bg-emerald-50 text-emerald-700",  dot: "bg-emerald-500",   icon: CheckCircle2 },
-  overdue:   { label: "Overdue",   bg: "bg-red-50 text-red-700",          dot: "bg-red-500",       icon: AlertCircle },
-  cancelled: { label: "Cancelled", bg: "bg-slate-100 text-slate-500",     dot: "bg-slate-400",     icon: X },
-  accepted:  { label: "Accepted",  bg: "bg-emerald-50 text-emerald-700",  dot: "bg-emerald-500",   icon: CheckCircle2 },
-  rejected:    { label: "Rejected",    bg: "bg-red-50 text-red-700",     dot: "bg-red-500",     icon: X },
-  to_be_signed:    { label: "To Be Signed",    bg: "bg-amber-50 text-amber-700",   dot: "bg-amber-500",  icon: PenLine },
-  to_be_delivered: { label: "To Be Delivered", bg: "bg-orange-50 text-orange-700", dot: "bg-orange-500", icon: PenLine },
-  pending:      { label: "Pending",      bg: "bg-slate-100 text-slate-600", dot: "bg-slate-400",  icon: Clock },
-  packed:       { label: "Packed",       bg: "bg-blue-50 text-blue-700",   dot: "bg-blue-500",   icon: CheckCircle2 },
-  dispatched:   { label: "Dispatched",   bg: "bg-indigo-50 text-indigo-700", dot: "bg-indigo-500", icon: Send },
-  in_transit:   { label: "In Transit",   bg: "bg-purple-50 text-purple-700", dot: "bg-purple-500", icon: Send },
-  delivered:    { label: "Delivered",    bg: "bg-emerald-50 text-emerald-700", dot: "bg-emerald-500", icon: CheckCircle2 },
-  returned:     { label: "Returned",     bg: "bg-red-50 text-red-700",     dot: "bg-red-500",     icon: X },
-  partially_paid: { label: "Partial",    bg: "bg-teal-50 text-teal-700",   dot: "bg-teal-500",   icon: CheckCircle2 },
-  viewed:       { label: "Viewed",       bg: "bg-indigo-50 text-indigo-700", dot: "bg-indigo-500", icon: Eye },
+  draft:     { label: "Draft",              bg: "bg-slate-100 text-slate-600",      dot: "bg-slate-400",    icon: Clock },
+  sent:      { label: "Sent",               bg: "bg-blue-50 text-blue-700",         dot: "bg-blue-500",    icon: Send },
+  paid:      { label: "Paid",               bg: "bg-emerald-50 text-emerald-700",   dot: "bg-emerald-500", icon: CheckCircle2 },
+  overdue:   { label: "Overdue",            bg: "bg-red-50 text-red-700",           dot: "bg-red-500",     icon: AlertCircle },
+  cancelled: { label: "Cancelled",          bg: "bg-slate-100 text-slate-500",      dot: "bg-slate-400",   icon: X },
+  accepted:  { label: "Accepted",           bg: "bg-emerald-50 text-emerald-700",   dot: "bg-emerald-500", icon: CheckCircle2 },
+  rejected:  { label: "Rejected",           bg: "bg-red-50 text-red-700",           dot: "bg-red-500",     icon: X },
+  to_be_signed:    { label: "To Be Signed",    bg: "bg-amber-50 text-amber-700",   dot: "bg-amber-500",   icon: PenLine },
+  to_be_delivered: { label: "To Be Delivered", bg: "bg-orange-50 text-orange-700", dot: "bg-orange-500",  icon: PenLine },
+  pending:      { label: "Pending",        bg: "bg-slate-100 text-slate-600",    dot: "bg-slate-400",   icon: Clock },
+  packed:       { label: "Packed",         bg: "bg-blue-50 text-blue-700",       dot: "bg-blue-500",    icon: CheckCircle2 },
+  dispatched:   { label: "Dispatched",     bg: "bg-indigo-50 text-indigo-700",   dot: "bg-indigo-500",  icon: Send },
+  in_transit:   { label: "In Transit",     bg: "bg-purple-50 text-purple-700",   dot: "bg-purple-500",  icon: Send },
+  delivered:    { label: "Delivered",      bg: "bg-emerald-50 text-emerald-700", dot: "bg-emerald-500", icon: CheckCircle2 },
+  returned:     { label: "Returned",       bg: "bg-red-50 text-red-700",         dot: "bg-red-500",     icon: X },
+  partially_paid: { label: "Partial",      bg: "bg-teal-50 text-teal-700",       dot: "bg-teal-500",    icon: CheckCircle2 },
+  viewed:       { label: "Viewed",         bg: "bg-indigo-50 text-indigo-700",   dot: "bg-indigo-500",  icon: Eye },
+  // Waybill workflow statuses
+  pending_signature: { label: "Pending Signature", bg: "bg-orange-50 text-orange-700", dot: "bg-orange-400", icon: PenLine },
+  signed:    { label: "Signed",    bg: "bg-emerald-50 text-emerald-700", dot: "bg-emerald-500", icon: CheckCircle2 },
+  archived:  { label: "Archived",  bg: "bg-slate-100 text-slate-500",   dot: "bg-slate-400",   icon: Archive },
 };
 
 function StatusBadge({ status }) {
@@ -230,6 +234,16 @@ export default function Documents() {
     setPendingDeletes(prev => prev.filter(p => p.doc.id !== docId));
   };
 
+  const updateDocStatus = async (docId, status) => {
+    await base44.entities.Document.update(docId, { status });
+    setDocuments(prev => prev.map(d => d.id === docId ? { ...d, status } : d));
+  };
+
+  const copySigningLink = (tok) => {
+    const url = `${window.location.origin}/waybill-sign?token=${tok}`;
+    navigator.clipboard.writeText(url);
+  };
+
   const SortIcon = ({ col }) => {
     if (sortCol !== col) return <span className="ml-1 opacity-30">↕</span>;
     return <span className="ml-1 text-primary">{sortDir === "asc" ? "↑" : "↓"}</span>;
@@ -394,7 +408,18 @@ export default function Documents() {
                       <td className="px-5 py-4">
                         <div className="flex flex-col gap-1.5">
                           <StatusBadge status={doc.status} />
-                          {doc.type === "waybill" && doc.status === "to_be_signed" && (
+                          {doc.type === "waybill" && doc.status === "pending_signature" && doc.signing_token && (
+                            <a
+                              href={`/waybill-sign?token=${doc.signing_token}`}
+                              target="_blank"
+                              rel="noreferrer"
+                              onClick={e => e.stopPropagation()}
+                              className="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-orange-500 text-white text-xs font-semibold hover:bg-orange-600 transition-colors w-fit"
+                            >
+                              <PenLine className="h-3 w-3" /> Sign Now
+                            </a>
+                          )}
+                          {doc.type === "waybill" && (doc.status === "to_be_signed" || (doc.status === "pending" && !doc.signing_token)) && (
                             <a
                               href={`/waybill-sign?id=${doc.id}`}
                               target="_blank"
@@ -412,18 +437,34 @@ export default function Documents() {
                       </td>
                       <td className="px-5 py-4" onClick={e => e.stopPropagation()}>
                         <div className={`flex items-center gap-1 transition-opacity ${hoveredRow === doc.id ? "opacity-100" : "opacity-0"}`}>
-                          <Link to={`/documents/${doc.id}`}
-                            className="h-7 w-7 flex items-center justify-center rounded-lg hover:bg-muted text-muted-foreground hover:text-foreground transition-colors" title="View">
-                            <Eye className="h-3.5 w-3.5" />
-                          </Link>
-                          <Link to={`/documents/new?edit=${doc.id}`}
-                            className="h-7 w-7 flex items-center justify-center rounded-lg hover:bg-muted text-muted-foreground hover:text-foreground transition-colors" title="Edit">
-                            <Pencil className="h-3.5 w-3.5" />
-                          </Link>
-                          <button onClick={(e) => handleDelete(doc, e)}
-                            className="h-7 w-7 flex items-center justify-center rounded-lg hover:bg-red-50 text-muted-foreground hover:text-red-600 transition-colors" title="Delete">
-                            <Trash2 className="h-3.5 w-3.5" />
-                          </button>
+                          {doc.type === "waybill" && ["pending_signature", "signed", "delivered", "archived"].includes(doc.status) ? (
+                            <>
+                              <Link to={`/documents/${doc.id}`} className="h-7 w-7 flex items-center justify-center rounded-lg hover:bg-muted text-muted-foreground hover:text-foreground transition-colors" title="View"><Eye className="h-3.5 w-3.5" /></Link>
+                              {doc.status === "pending_signature" && doc.signing_token && (
+                                <button onClick={() => copySigningLink(doc.signing_token)} className="h-7 w-7 flex items-center justify-center rounded-lg hover:bg-blue-50 text-muted-foreground hover:text-blue-600 transition-colors" title="Copy signing link">
+                                  <Link2 className="h-3.5 w-3.5" />
+                                </button>
+                              )}
+                              {doc.status === "signed" && (
+                                <button onClick={() => updateDocStatus(doc.id, "delivered")} className="h-7 w-7 flex items-center justify-center rounded-lg hover:bg-emerald-50 text-muted-foreground hover:text-emerald-600 transition-colors" title="Mark Delivered">
+                                  <Truck className="h-3.5 w-3.5" />
+                                </button>
+                              )}
+                              {doc.status === "delivered" && (
+                                <button onClick={() => updateDocStatus(doc.id, "archived")} className="h-7 w-7 flex items-center justify-center rounded-lg hover:bg-slate-100 text-muted-foreground hover:text-slate-600 transition-colors" title="Archive">
+                                  <Archive className="h-3.5 w-3.5" />
+                                </button>
+                              )}
+                            </>
+                          ) : (
+                            <>
+                              <Link to={`/documents/${doc.id}`} className="h-7 w-7 flex items-center justify-center rounded-lg hover:bg-muted text-muted-foreground hover:text-foreground transition-colors" title="View"><Eye className="h-3.5 w-3.5" /></Link>
+                              {!(doc.type === "waybill" && doc.locked) && (
+                                <Link to={`/documents/new?edit=${doc.id}`} className="h-7 w-7 flex items-center justify-center rounded-lg hover:bg-muted text-muted-foreground hover:text-foreground transition-colors" title="Edit"><Pencil className="h-3.5 w-3.5" /></Link>
+                              )}
+                              <button onClick={(e) => handleDelete(doc, e)} className="h-7 w-7 flex items-center justify-center rounded-lg hover:bg-red-50 text-muted-foreground hover:text-red-600 transition-colors" title="Delete"><Trash2 className="h-3.5 w-3.5" /></button>
+                            </>
+                          )}
                         </div>
                       </td>
                     </tr>
@@ -441,6 +482,17 @@ export default function Documents() {
                     <div className="flex flex-wrap items-center gap-2 mb-1">
                       <span className="text-sm font-bold text-foreground">{doc.number}</span>
                       <StatusBadge status={doc.status} />
+                      {doc.type === "waybill" && doc.status === "pending_signature" && doc.signing_token && (
+                        <a
+                          href={`/waybill-sign?token=${doc.signing_token}`}
+                          target="_blank"
+                          rel="noreferrer"
+                          onClick={e => e.stopPropagation()}
+                          className="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-orange-500 text-white text-xs font-semibold hover:bg-orange-600 transition-colors"
+                        >
+                          <PenLine className="h-3 w-3" /> Sign Now
+                        </a>
+                      )}
                       {doc.type === "waybill" && doc.status === "to_be_signed" && (
                         <a
                           href={`/waybill-sign?id=${doc.id}`}
