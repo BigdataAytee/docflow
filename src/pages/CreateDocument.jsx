@@ -462,7 +462,7 @@ export default function CreateDocument() {
   const L = DOC_LABELS[docType] || DOC_LABELS.invoice;
 
   return (
-    <div className="max-w-5xl mx-auto pb-32 lg:pb-0">
+    <div className="max-w-5xl mx-auto pb-32 md:pb-0">
       {/* Header */}
       <div className="flex items-center gap-3 mb-6">
         <button onClick={handleBackClick} className="p-2 hover:bg-muted rounded-lg"><ArrowLeft className="h-4 w-4" /></button>
@@ -477,7 +477,7 @@ export default function CreateDocument() {
       </div>
 
       {/* Main grid: form (2 cols) + sidebar (1 col) */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 lg:gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
 
         {/* ── Left column: form sections ── */}
         <div className="lg:col-span-2 space-y-6">
@@ -906,7 +906,7 @@ export default function CreateDocument() {
         </div>{/* end left column */}
 
         {/* ── Right sidebar: live preview + actions ── */}
-        <div className="hidden lg:block space-y-4">
+        <div className="hidden md:block space-y-4">
           <div className="bg-card rounded-xl border border-border overflow-hidden">
             <div className="px-4 py-3 border-b border-border">
               <div className="flex items-center justify-between">
@@ -955,7 +955,7 @@ export default function CreateDocument() {
 
       {/* Mobile sticky bottom action bar */}
       <div
-        className="lg:hidden fixed left-0 right-0 z-50"
+        className="md:hidden fixed left-0 right-0 z-50"
         style={{ bottom: "calc(56px + env(safe-area-inset-bottom, 0px))" }}
       >
         <div className="bg-white/95 backdrop-blur-md border-t border-border shadow-[0_-4px_24px_rgba(0,0,0,0.10)] px-4 pt-3 pb-2">
