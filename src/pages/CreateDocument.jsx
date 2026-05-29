@@ -954,7 +954,7 @@ export default function CreateDocument() {
       </div>{/* end grid */}
 
       {/* Mobile sticky bottom action bar */}
-      <div className="lg:hidden fixed bottom-16 left-0 right-0 z-50 bg-card border-t border-border px-4 py-3 flex gap-2 shadow-lg">
+      <div className="lg:hidden fixed left-0 right-0 z-50 bg-card border-t border-border px-4 py-3 flex gap-2 shadow-lg" style={{ bottom: "calc(56px + env(safe-area-inset-bottom, 0px))" }}>
         <Button variant="outline" size="sm" className="flex-1" onClick={() => setShowPdfPreview(true)} disabled={saving}>
           <FileDown className="h-4 w-4 mr-1" /> Preview
         </Button>
