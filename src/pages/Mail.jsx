@@ -160,10 +160,7 @@ export default function Mail() {
     : FOLDER_LABELS[folder] || folder;
 
   return (
-    <div
-      className="flex overflow-hidden rounded-2xl border border-[#e0e0e0] bg-white"
-      style={{ height: "calc(100vh - 5rem)" }}
-    >
+    <div className="flex overflow-hidden rounded-2xl border border-[#e0e0e0] bg-white h-[calc(100dvh-11rem)] md:h-[calc(100dvh-8rem)] lg:h-[calc(100dvh-5rem)]">
       {/* ── Desktop Sidebar ── */}
       <div className="hidden md:flex flex-col w-56 xl:w-64 shrink-0 overflow-y-auto bg-[#f6f8fc]" style={{ borderRight: "1px solid #e0e0e0" }}>
         <MailSidebar

@@ -485,7 +485,7 @@ export default function CreateDocument() {
           {/* Document Info */}
           <div className="bg-card rounded-xl border border-border p-6 space-y-4">
             <h3 className="font-semibold text-sm text-muted-foreground uppercase tracking-wider">{typeLabels[docType]} Details</h3>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <Label>{L.number}</Label>
                 <div className="relative">
@@ -565,7 +565,7 @@ export default function CreateDocument() {
                 </DialogContent>
               </Dialog>
 
-              <div><Label>{L.issueDate}</Label><Input type="date" value={form.issue_date} onChange={e => setForm(f => ({ ...f, issue_date: e.target.value }))} /></div>
+              <div className="sm:col-span-1"><Label>{L.issueDate}</Label><Input type="date" value={form.issue_date} onChange={e => setForm(f => ({ ...f, issue_date: e.target.value }))} /></div>
               {L.showDue && <div><Label>{L.dueDate}</Label><Input type="date" value={form.due_date} onChange={e => setForm(f => ({ ...f, due_date: e.target.value }))} /></div>}
             </div>
           </div>
@@ -581,15 +581,19 @@ export default function CreateDocument() {
                     <SelectTrigger><SelectValue placeholder="Select method" /></SelectTrigger>
                     <SelectContent>
                       <SelectItem value="Bank Transfer">Bank Transfer</SelectItem>
+                      <SelectItem value="Cash">Cash</SelectItem>
+                      <SelectItem value="POS">POS</SelectItem>
+                      <SelectItem value="Credit Card">Credit Card</SelectItem>
+                      <SelectItem value="Mobile Money">Mobile Money</SelectItem>
+                      <SelectItem value="Cheque">Cheque</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
-  
               </div>
               {form.payment_method === "Bank Transfer" && (
                 <div className="border border-border rounded-xl p-4 bg-muted/30 space-y-3">
                   <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Bank Details</p>
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div><Label>Bank Name</Label><Input value={form.bank_name} onChange={e => setForm(f => ({ ...f, bank_name: e.target.value }))} placeholder="e.g. First Bank" /></div>
                     <div><Label>Account Number</Label><Input value={form.account_number} onChange={e => setForm(f => ({ ...f, account_number: e.target.value }))} placeholder="e.g. 0123456789" /></div>
                     <div className="col-span-2"><Label>Account Holder Name</Label><Input value={form.account_holder_name} onChange={e => setForm(f => ({ ...f, account_holder_name: e.target.value }))} placeholder="e.g. John Doe" /></div>
@@ -675,7 +679,7 @@ export default function CreateDocument() {
           {docType === "waybill" && (
             <div className="bg-card rounded-xl border border-border p-6 space-y-4">
               <h3 className="font-semibold text-sm text-muted-foreground uppercase tracking-wider">Logistics Details</h3>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div><Label>Driver Name</Label><Input value={form.driver_name} onChange={e => setForm(f => ({ ...f, driver_name: e.target.value }))} placeholder="e.g. John Doe" /></div>
                 <div><Label>Vehicle Number</Label><Input value={form.vehicle_number} onChange={e => setForm(f => ({ ...f, vehicle_number: e.target.value }))} placeholder="e.g. LND-123-AB" /></div>
                 <div className="col-span-2"><Label>Tracking Number</Label><Input value={form.tracking_number} onChange={e => setForm(f => ({ ...f, tracking_number: e.target.value }))} placeholder="e.g. TRK-20240001" /></div>
@@ -836,7 +840,7 @@ export default function CreateDocument() {
               )}
             </div>
             <p className="text-xs text-muted-foreground mb-3">{L.sigDesc}</p>
-            <div className="grid grid-cols-2 gap-3 mb-4 pb-4 border-b border-border">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4 pb-4 border-b border-border">
               <div>
                 <Label className="text-xs">Signatory Name</Label>
                 <Input value={form.manager_name} onChange={e => setForm(f => ({ ...f, manager_name: e.target.value }))} placeholder="e.g. John Doe" className="mt-1 h-9 text-sm" />

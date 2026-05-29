@@ -71,7 +71,7 @@ export default function Layout() {
         </div>
 
         {/* Page content — bottom padding for mobile nav bar */}
-        <div className="flex-1 p-4 md:p-6 lg:p-8 pb-24 lg:pb-8">
+        <div className="flex-1 p-4 md:p-6 lg:p-8 pb-28 lg:pb-8">
           <Outlet />
         </div>
       </main>
@@ -79,7 +79,7 @@ export default function Layout() {
       <CommandPalette open={cmdOpen} onClose={() => setCmdOpen(false)} />
 
       {/* Mobile Bottom Navigation */}
-      <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-sidebar border-t border-sidebar-border flex safe-area-inset-bottom">
+      <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-sidebar border-t border-sidebar-border flex" style={{ paddingBottom: "env(safe-area-inset-bottom, 0px)" }}>
         {bottomNavItems.map(item => {
           const active = location.pathname === item.path || (item.path !== "/" && location.pathname.startsWith(item.path));
           return (

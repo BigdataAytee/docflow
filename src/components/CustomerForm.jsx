@@ -27,7 +27,7 @@ export default function CustomerForm({ initial, onSave, onCancel }) {
   return (
     <div className="flex flex-col gap-4">
       <div className="space-y-4 overflow-y-auto max-h-[60vh] pr-1">
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div><Label>Full Name *</Label><Input value={form.full_name} onChange={e => update("full_name", e.target.value)} /></div>
         <div><Label>Company</Label><Input value={form.company_name} onChange={e => update("company_name", e.target.value)} /></div>
         <div><Label>Email</Label><Input type="email" value={form.email} onChange={e => update("email", e.target.value)} /></div>
