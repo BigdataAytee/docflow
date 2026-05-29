@@ -580,7 +580,7 @@ export default function CreateDocument() {
                   <Select value={form.payment_method} onValueChange={v => setForm(f => ({ ...f, payment_method: v }))}>
                     <SelectTrigger><SelectValue placeholder="Select method" /></SelectTrigger>
                     <SelectContent>
-                      {["Cash","Bank Transfer","POS","Credit Card","Mobile Money","Cheque"].map(m => <SelectItem key={m} value={m}>{m}</SelectItem>)}
+                      <SelectItem value="Bank Transfer">Bank Transfer</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
