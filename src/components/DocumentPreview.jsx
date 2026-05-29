@@ -171,6 +171,16 @@ function Sigs({ managerSig, customerSig, form, T, docType }) {
   );
 }
 
+function NotesBlock({ form, T }) {
+  if (!form?.notes) return null;
+  return (
+    <div style={{ padding: "12px 48px 16px", borderTop: `1px solid ${T.stripBorder}` }}>
+      <div style={{ fontSize: 9, fontWeight: 700, color: T.tableHeaderColor, textTransform: "uppercase", letterSpacing: 1, marginBottom: 5 }}>Note to Customer</div>
+      <div style={{ fontSize: 11, color: "#475569", whiteSpace: "pre-line", lineHeight: 1.6 }}>{form.notes}</div>
+    </div>
+  );
+}
+
 function SigsAndPayment({ managerSig, customerSig, form, T, docType, sym }) {
   return (
     <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", padding: "20px 48px", borderTop: "1px solid #e2e8f0", gap: 24 }}>
@@ -259,6 +269,7 @@ function ClassicDoc({ form, items, calcs, sym, docType, managerSig, customerSig,
       <ItemsTable items={items} docType={docType} T={T} />
       <ExtraFields form={form} docType={docType} T={T} />
       {docType !== "waybill" && <TotalsBlock calcs={calcs} form={form} sym={sym} T={T} amountLabel={amountLabel} />}
+      <NotesBlock form={form} T={T} />
       <SigsAndPayment managerSig={managerSig} customerSig={customerSig} form={form} T={T} docType={docType} sym={sym} />
       <div style={{ padding: "14px 48px", background: T.stripBg, borderTop: `1px solid ${T.stripBorder}`, textAlign: "center", fontSize: 9, color: T.tableHeaderColor, marginTop: "auto" }}>
         {[form.company_phone && `☎ ${form.company_phone}`, form.company_email && `✉ ${form.company_email}`, form.company_website && `🌐 ${form.company_website}`].filter(Boolean).join("  ·  ")}
@@ -314,6 +325,7 @@ function ModernDoc({ form, items, calcs, sym, docType, managerSig, customerSig, 
       <ItemsTable items={items} docType={docType} T={T} />
       <ExtraFields form={form} docType={docType} T={T} />
       {docType !== "waybill" && <TotalsBlock calcs={calcs} form={form} sym={sym} T={T} amountLabel={amountLabel} />}
+      <NotesBlock form={form} T={T} />
       <SigsAndPayment managerSig={managerSig} customerSig={customerSig} form={form} T={T} docType={docType} sym={sym} />
       <div style={{ height: 6, background: T.accentColor, marginTop: "auto" }} />
       <div style={{ padding: "8px 36px", background: T.stripBg, textAlign: "center", fontSize: 9, color: T.tableHeaderColor }}>
@@ -365,6 +377,7 @@ function MinimalDoc({ form, items, calcs, sym, docType, managerSig, customerSig,
       <ItemsTable items={items} docType={docType} T={T} />
       <ExtraFields form={form} docType={docType} T={T} />
       {docType !== "waybill" && <TotalsBlock calcs={calcs} form={form} sym={sym} T={T} amountLabel={amountLabel} />}
+      <NotesBlock form={form} T={T} />
       <SigsAndPayment managerSig={managerSig} customerSig={customerSig} form={form} T={T} docType={docType} sym={sym} />
       <div style={{ padding: "10px 40px", borderTop: "1px solid #f3f4f6", textAlign: "center", fontSize: 9, color: "#d1d5db", letterSpacing: 1, marginTop: "auto" }}>
         {[form.company_phone && `☎ ${form.company_phone}`, form.company_email && `✉ ${form.company_email}`, form.company_website && `🌐 ${form.company_website}`].filter(Boolean).join("  ·  ")}
@@ -418,6 +431,7 @@ function BoldDoc({ form, items, calcs, sym, docType, managerSig, customerSig, T 
       <ItemsTable items={items} docType={docType} T={T} />
       <ExtraFields form={form} docType={docType} T={T} />
       {docType !== "waybill" && <TotalsBlock calcs={calcs} form={form} sym={sym} T={T} amountLabel={amountLabel} />}
+      <NotesBlock form={form} T={T} />
       <SigsAndPayment managerSig={managerSig} customerSig={customerSig} form={form} T={T} docType={docType} sym={sym} />
       <div style={{ height: 4, background: T.accentColor, marginTop: "auto" }} />
       <div style={{ padding: "8px 32px", background: T.stripBg, textAlign: "center", fontSize: 9, color: T.tableHeaderColor }}>
@@ -475,6 +489,7 @@ function ElegantDoc({ form, items, calcs, sym, docType, managerSig, customerSig,
       <ItemsTable items={items} docType={docType} T={T} />
       <ExtraFields form={form} docType={docType} T={T} />
       {docType !== "waybill" && <TotalsBlock calcs={calcs} form={form} sym={sym} T={T} amountLabel={amountLabel} />}
+      <NotesBlock form={form} T={T} />
       <SigsAndPayment managerSig={managerSig} customerSig={customerSig} form={form} T={T} docType={docType} sym={sym} />
       <div style={{ padding: "12px 40px", textAlign: "center", borderTop: `1px solid ${T.stripBorder}`, marginTop: "auto" }}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 10, marginBottom: 6 }}>
