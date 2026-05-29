@@ -89,6 +89,8 @@
   html {
     scroll-behavior: smooth;
     -webkit-text-size-adjust: 100%;
+    overflow-x: hidden;
+    max-width: 100vw;
   }
 
   body {
@@ -96,18 +98,37 @@
     font-size: clamp(14px, 1.5vw, 16px);
     line-height: 1.6;
     overflow-x: hidden;
+    max-width: 100vw;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
   }
 
+  /* Improve tap targets */
   button, a, [role="button"] {
     touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
   }
 
+  /* Prevent iOS auto-zoom on input focus */
   input, textarea, select {
-    font-size: 16px; /* prevents iOS auto-zoom */
+    font-size: 16px;
+    max-width: 100%;
+  }
+
+  /* Ensure images never break layout */
+  img {
+    max-width: 100%;
+    height: auto;
   }
 
   /* Smooth momentum scrolling on iOS */
-  .overflow-y-auto, .overflow-auto {
+  .overflow-y-auto, .overflow-auto, .overflow-y-scroll {
     -webkit-overflow-scrolling: touch;
+    overscroll-behavior-y: contain;
+  }
+
+  /* Responsive containers never overflow */
+  * {
+    min-width: 0;
   }
 }
