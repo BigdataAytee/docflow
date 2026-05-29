@@ -954,16 +954,42 @@ export default function CreateDocument() {
       </div>{/* end grid */}
 
       {/* Mobile sticky bottom action bar */}
-      <div className="lg:hidden fixed left-0 right-0 z-50 bg-card border-t border-border px-4 py-3 flex gap-2 shadow-lg" style={{ bottom: "calc(56px + env(safe-area-inset-bottom, 0px))" }}>
-        <Button variant="outline" size="sm" className="flex-1" onClick={() => setShowPdfPreview(true)} disabled={saving}>
-          <FileDown className="h-4 w-4 mr-1" /> Preview
-        </Button>
-        <Button variant="outline" size="sm" className="flex-1" onClick={() => handleSave("draft")} disabled={saving || !form.customer_name}>
-          {saving ? "Saving..." : (form.type || docType) === "waybill" ? "Pending" : "Draft"}
-        </Button>
-        <Button size="sm" className="flex-1" onClick={() => handleSave("sent")} disabled={saving || !form.customer_name}>
-          Save &amp; Send
-        </Button>
+      <div
+        className="lg:hidden fixed left-0 right-0 z-50"
+        style={{ bottom: "calc(56px + env(safe-area-inset-bottom, 0px))" }}
+      >
+        <div className="bg-white/95 backdrop-blur-md border-t border-border shadow-[0_-4px_24px_rgba(0,0,0,0.10)] px-4 pt-3 pb-2">
+          {/* Secondary actions row */}
+          <div className="flex items-center gap-2 mb-2.5">
+            <Button
+              variant="outline"
+              size="sm"
+              className="flex-1 gap-1.5 h-9 text-sm font-medium"
+              onClick={() => setShowPdfPreview(true)}
+              disabled={saving}
+            >
+              <FileDown className="h-4 w-4" />
+              Preview PDF
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              className="flex-1 gap-1.5 h-9 text-sm font-medium"
+              onClick={() => handleSave("draft")}
+              disabled={saving || !form.customer_name}
+            >
+              {saving ? "Saving…" : (form.type || docType) === "waybill" ? "Save Pending" : "Save Draft"}
+            </Button>
+          </div>
+          {/* Primary full-width button */}
+          <Button
+            className="w-full h-11 text-[15px] font-semibold rounded-xl shadow-sm"
+            onClick={() => handleSave("sent")}
+            disabled={saving || !form.customer_name}
+          >
+            {saving ? "Saving…" : "Save Document"}
+          </Button>
+        </div>
       </div>
 
       {/* Leave confirmation modal */}
