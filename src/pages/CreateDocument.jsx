@@ -914,8 +914,8 @@ export default function CreateDocument() {
                 <span className="text-xs text-muted-foreground capitalize">{typeLabels[docType]}</span>
               </div>
             </div>
-            <div className="overflow-hidden" style={{ height: 460, width: "100%" }}>
-              <div style={{ transform: "scale(0.40)", transformOrigin: "top left", width: 794, pointerEvents: "none", position: "absolute" }}>
+            <div className="overflow-hidden" style={{ height: 460, width: "100%", position: "relative" }}>
+              <div style={{ transform: "scale(0.40)", transformOrigin: "top left", width: 794, pointerEvents: "none", position: "absolute", top: 0, left: 0 }}>
                 <DocumentPreview form={form} items={calcs.lineItems} calcs={calcs} sym={sym} docType={docType} template={template} templateColor={templateColor} />
               </div>
             </div>

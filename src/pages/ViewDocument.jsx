@@ -479,8 +479,10 @@ export default function ViewDocument() {
       )}
 
       {/* Document view — scrollable on mobile */}
-      <div className="w-full overflow-x-auto -mx-4 md:mx-0">
-        <UnifiedTemplate doc={doc} onSaveManagerSig={saveManagerSig} onSaveCustomerSig={saveCustomerSig} onOpenSignModal={() => setShowSignModal(true)} />
+      <div className="w-full overflow-x-auto -mx-4 md:mx-0" style={{ WebkitOverflowScrolling: "touch" }}>
+        <div className="min-w-[520px] md:min-w-0">
+          <UnifiedTemplate doc={doc} onSaveManagerSig={saveManagerSig} onSaveCustomerSig={saveCustomerSig} onOpenSignModal={() => setShowSignModal(true)} />
+        </div>
       </div>
 
       {/* Inline Signature Capture Overlay */}
