@@ -6,7 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
-import { ImageIcon, CheckCircle2 } from "lucide-react";
+import { ImageIcon } from "lucide-react";
 
 export default function Settings() {
   const logoInputRef = useRef(null);
@@ -76,8 +76,6 @@ export default function Settings() {
   const save = async () => {
     setSaving(true);
     await base44.auth.updateMe(form);
-
-    // Sync company info + logo to ALL existing documents
     const docs = await base44.entities.Document.list("-created_date", 500);
     await Promise.all(docs.map(doc =>
       base44.entities.Document.update(doc.id, {
@@ -89,7 +87,6 @@ export default function Settings() {
         company_website: form.company_website,
       })
     ));
-
     setSaving(false);
     toast.success("Settings saved and applied to all documents");
   };
@@ -97,23 +94,23 @@ export default function Settings() {
   const update = (k, v) => setForm(p => ({ ...p, [k]: v }));
 
   return (
-    <div className="max-w-2xl">
+    <div className="max-w-2xl w-full">
       <h1 className="text-2xl font-bold mb-1">Settings</h1>
       <p className="text-sm text-muted-foreground mb-8">Configure your company details and document defaults</p>
 
-      <div className="bg-card rounded-xl border border-border p-6 space-y-6">
+      <div className="bg-card rounded-xl border border-border p-4 sm:p-6 space-y-6">
         <h2 className="font-semibold">Company Logo</h2>
         <div className="flex items-start gap-5">
           <div
             onClick={() => logoInputRef.current?.click()}
-            className="w-28 h-28 rounded-xl border-2 border-dashed border-border flex items-center justify-center cursor-pointer hover:border-primary hover:bg-primary/5 transition-all overflow-hidden bg-gray-50 flex-shrink-0"
+            className="w-24 h-24 sm:w-28 sm:h-28 rounded-xl border-2 border-dashed border-border flex items-center justify-center cursor-pointer hover:border-primary hover:bg-primary/5 transition-all overflow-hidden bg-gray-50 flex-shrink-0"
           >
             {logoPreview ? (
               <img src={logoPreview} alt="Logo" className="w-full h-full object-contain" />
             ) : (
               <div className="text-center text-muted-foreground p-2">
                 <ImageIcon className="h-7 w-7 mx-auto mb-1" />
-                <p className="text-xs">Click to upload</p>
+                <p className="text-xs">Upload</p>
               </div>
             )}
           </div>
@@ -132,7 +129,7 @@ export default function Settings() {
 
         <div className="border-t border-border pt-6">
           <h2 className="font-semibold mb-4">Company Information</h2>
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div><Label>Company Name</Label><Input value={form.company_name} onChange={e => update("company_name", e.target.value)} /></div>
             <div><Label>Email</Label><Input value={form.company_email} onChange={e => update("company_email", e.target.value)} /></div>
             <div><Label>Phone</Label><Input value={form.company_phone} onChange={e => update("company_phone", e.target.value)} /></div>
@@ -143,7 +140,7 @@ export default function Settings() {
 
         <div className="border-t border-border pt-6">
           <h2 className="font-semibold mb-4">Document Defaults</h2>
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <Label>Default Currency</Label>
               <Select value={form.default_currency} onValueChange={v => update("default_currency", v)}>
@@ -159,10 +156,9 @@ export default function Settings() {
             <div><Label>Default VAT Rate (%)</Label><Input type="number" value={form.default_tax_rate} onChange={e => update("default_tax_rate", +e.target.value)} className="mt-1" /></div>
           </div>
           <div className="mt-4"><Label>Default Payment Instructions</Label><p className="text-xs text-muted-foreground mb-1.5">Bank details, account number, etc. Shown on invoices and quotations.</p><Textarea value={form.default_payment_instructions} onChange={e => update("default_payment_instructions", e.target.value)} rows={3} /></div>
-          <div className="mt-4"><Label>Footer Contact Line</Label><p className="text-xs text-muted-foreground mb-1.5">Displayed at the bottom of every document (e.g. phone · email · website).</p><Input value={form.footer_contact_line} onChange={e => update("footer_contact_line", e.target.value)} placeholder="e.g. 07423182811  ·  admin@dynamicrenaissance.org  ·  www.dynamicrenaissance.org" /></div>
-          <div className="mt-4"><Label>Document Tagline</Label><p className="text-xs text-muted-foreground mb-1.5">A short sentence displayed at the bottom of every document.</p><Input value={form.document_tagline} onChange={e => update("document_tagline", e.target.value)} placeholder="e.g. Thank you for your business — we look forward to serving you again." /></div>
+          <div className="mt-4"><Label>Footer Contact Line</Label><p className="text-xs text-muted-foreground mb-1.5">Displayed at the bottom of every document (e.g. phone · email · website).</p><Input value={form.footer_contact_line} onChange={e => update("footer_contact_line", e.target.value)} placeholder="e.g. 07423182811  ·  admin@example.org" /></div>
+          <div className="mt-4"><Label>Document Tagline</Label><p className="text-xs text-muted-foreground mb-1.5">A short sentence displayed at the bottom of every document.</p><Input value={form.document_tagline} onChange={e => update("document_tagline", e.target.value)} placeholder="e.g. Thank you for your business." /></div>
         </div>
-
 
         <div className="border-t border-border pt-6">
           <h2 className="font-semibold mb-1">Document Number Prefixes</h2>
@@ -170,10 +166,10 @@ export default function Settings() {
             Document numbers follow the format: <span className="font-mono font-semibold">[Company Abbr]-[Type Prefix]-[Sequence]</span>, e.g. <span className="font-mono">DR-INV-0001</span>.
             Type prefixes must be unique across document types.
           </p>
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <Label>Company Abbreviation</Label>
-              <p className="text-xs text-muted-foreground mb-1">Short code for your company. Shown at the start of every document number.</p>
+              <p className="text-xs text-muted-foreground mb-1">Short code for your company.</p>
               <Input value={form.company_abbreviation} onChange={e => update("company_abbreviation", e.target.value.toUpperCase())} placeholder="e.g. DR" style={{ textTransform: "uppercase" }} />
             </div>
             <div />
@@ -202,7 +198,7 @@ export default function Settings() {
           })()}
         </div>
 
-        <Button onClick={save} disabled={saving}>{saving ? "Saving..." : "Save Settings"}</Button>
+        <Button onClick={save} disabled={saving} className="w-full sm:w-auto">{saving ? "Saving..." : "Save Settings"}</Button>
       </div>
     </div>
   );

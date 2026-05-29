@@ -61,12 +61,20 @@ export default function ViewDocument() {
   const [showPdfPreview, setShowPdfPreview] = useState(false);
   const [showSignModal, setShowSignModal] = useState(false);
   const [generatingPdf, setGeneratingPdf] = useState(false);
-  const [pdfMode, setPdfMode] = useState("soft"); // "soft" | "paper"
+  const [pdfMode, setPdfMode] = useState("soft");
   const pdfRef = useRef(null);
   const pdfPaperRef = useRef(null);
   const pdfSoftRef = useRef(null);
   const [softAutoDownload, setSoftAutoDownload] = useState(false);
   const [showInlineSigPad, setShowInlineSigPad] = useState(false);
+  const [previewScale, setPreviewScale] = useState(1);
+
+  useEffect(() => {
+    const calcScale = () => setPreviewScale(Math.min(1, (window.innerWidth - 32) / 794));
+    calcScale();
+    window.addEventListener("resize", calcScale);
+    return () => window.removeEventListener("resize", calcScale);
+  }, []);
 
   useEffect(() => {
     Promise.all([
@@ -217,12 +225,11 @@ export default function ViewDocument() {
     if (navigator.canShare && navigator.canShare({ files: [file] })) {
       await navigator.share({ files: [file], title: doc.number, text: `${doc.number} — ${doc.customer_name}` });
     } else {
-      // Fallback: download the PDF instead
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url; a.download = `${doc.number || "document"}.pdf`;
       a.click(); URL.revokeObjectURL(url);
-      toast.info("Direct sharing is only available on mobile browsers. The PDF has been downloaded instead — you can manually share it from your files.");
+      toast.info("Direct sharing is only available on mobile browsers. The PDF has been downloaded instead.");
     }
     setGeneratingPdf(false);
   };
@@ -291,7 +298,7 @@ export default function ViewDocument() {
   return (
     <div className="max-w-4xl mx-auto">
       {/* Toolbar */}
-      <div className="flex items-center justify-between gap-2 mb-5 print:hidden">
+      <div className="flex items-center justify-between gap-2 mb-5 print:hidden flex-wrap">
         <div className="flex items-center gap-2 min-w-0">
           <Link to="/documents" className="p-2 hover:bg-muted rounded-lg shrink-0"><ArrowLeft className="h-4 w-4" /></Link>
           <div className="min-w-0">
@@ -429,7 +436,7 @@ export default function ViewDocument() {
       )}
 
       {doc.status === "draft" && (
-        <div className="print:hidden mb-4 bg-amber-50 border border-amber-200 rounded-xl px-5 py-3 flex items-center justify-between">
+        <div className="print:hidden mb-4 bg-amber-50 border border-amber-200 rounded-xl px-5 py-3 flex items-center justify-between gap-3">
           <div>
             <p className="text-sm font-semibold text-amber-800">What's next?</p>
             <p className="text-xs text-amber-700">Send this document to your customer or mark it as Sent.</p>
@@ -471,19 +478,15 @@ export default function ViewDocument() {
         </div>
       )}
 
-      <div className="overflow-x-auto -mx-4 md:mx-0 px-4 md:px-0">
+      {/* Document view — scrollable on mobile */}
+      <div className="w-full overflow-x-auto -mx-4 md:mx-0">
         <UnifiedTemplate doc={doc} onSaveManagerSig={saveManagerSig} onSaveCustomerSig={saveCustomerSig} onOpenSignModal={() => setShowSignModal(true)} />
       </div>
 
-      {/* Inline Signature Capture Overlay — Soft Signage */}
+      {/* Inline Signature Capture Overlay */}
       {showInlineSigPad && (
         <div className="fixed inset-0 z-[60] flex flex-col bg-black/80" onClick={() => setShowInlineSigPad(false)}>
-          <div
-            className="mt-auto bg-white rounded-t-3xl shadow-2xl"
-            style={{ maxHeight: "92dvh" }}
-            onClick={e => e.stopPropagation()}
-          >
-            {/* Header */}
+          <div className="mt-auto bg-white rounded-t-3xl shadow-2xl" style={{ maxHeight: "92dvh" }} onClick={e => e.stopPropagation()}>
             <div className="bg-slate-900 text-white px-6 py-5 rounded-t-3xl">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
@@ -500,16 +503,15 @@ export default function ViewDocument() {
                 </button>
               </div>
             </div>
-            {/* Signature Pad */}
             <div className="p-5 overflow-y-auto">
-              <p className="text-xs text-muted-foreground mb-4 text-center">Sign below using your finger, mouse, or stylus. This will be permanently embedded into the PDF.</p>
+              <p className="text-xs text-muted-foreground mb-4 text-center">Sign below using your finger, mouse, or stylus.</p>
               <SignaturePad label="Receiver Signature" onSave={handleSoftSigSave} />
             </div>
           </div>
         </div>
       )}
 
-      {/* Hidden off-screen render containers for direct PDF generation */}
+      {/* Hidden off-screen render containers for PDF generation */}
       <div style={{ position: "fixed", left: -9999, top: -9999, width: 794, zIndex: -1, pointerEvents: "none" }}>
         <div ref={pdfPaperRef} style={{ width: 794 }}>
           {doc && (
@@ -553,113 +555,107 @@ export default function ViewDocument() {
 
       {showPdfPreview && (
         <div className="fixed inset-0 z-50 bg-black/60 flex flex-col" onClick={() => setShowPdfPreview(false)}>
-          <div className="flex items-center justify-between px-6 py-3 bg-white border-b shrink-0" onClick={e => e.stopPropagation()}>
-            <div>
-              <p className="font-semibold text-sm">Document Preview</p>
-              <p className="text-xs text-muted-foreground">{doc.number}</p>
+          <div className="flex items-center justify-between px-4 py-3 bg-white border-b shrink-0" onClick={e => e.stopPropagation()}>
+            <div className="min-w-0 mr-2">
+              <p className="font-semibold text-sm truncate">Document Preview</p>
+              <p className="text-xs text-muted-foreground truncate">{doc.number}</p>
             </div>
-            <div className="flex items-center gap-2 overflow-x-auto flex-nowrap sm:flex-wrap justify-end">
+            <div className="flex items-center gap-1.5 overflow-x-auto flex-nowrap justify-end shrink-0 max-w-[65vw] sm:max-w-none">
               {doc.type === "waybill" ? (
                 <>
                   <Button size="sm" variant="ghost" onClick={() => window.print()} className="gap-1.5 shrink-0">
                     <Printer className="h-4 w-4" />
-                    <span className="hidden md:inline">Print</span>
                   </Button>
                   <Button size="sm" variant="outline" onClick={() => downloadInMode("soft")} disabled={generatingPdf} className="gap-1.5 shrink-0">
                     <FileDown className="h-4 w-4" />
-                    <span className="hidden md:inline">{generatingPdf ? "Generating..." : "Download PDF"}</span>
+                    <span className="hidden sm:inline">{generatingPdf ? "..." : "PDF"}</span>
                   </Button>
                   <Button size="sm" variant="outline" onClick={() => downloadInMode("paper")} disabled={generatingPdf} className="gap-1.5 shrink-0">
                     <Printer className="h-4 w-4" />
-                    <span className="hidden sm:inline">{generatingPdf ? "..." : "Paper Signage"}</span>
-                    <span className="sm:hidden">Paper</span>
+                    <span className="hidden sm:inline">{generatingPdf ? "..." : "Paper"}</span>
                   </Button>
                   <Button size="sm" onClick={downloadSoftSignage} disabled={generatingPdf} className="gap-1.5 bg-slate-900 hover:bg-slate-800 text-white shrink-0">
                     <PenLine className="h-4 w-4" />
-                    <span className="hidden sm:inline">{generatingPdf ? "..." : "Soft Signage"}</span>
-                    <span className="sm:hidden">Soft</span>
+                    <span className="hidden sm:inline">Soft</span>
                   </Button>
                   <Button size="sm" variant="outline" onClick={() => { setShowPdfPreview(false); setShowSignModal(true); }} className="gap-1.5 border-emerald-300 text-emerald-700 hover:bg-emerald-50 shrink-0">
                     <PenLine className="h-4 w-4" />
-                    <span className="hidden sm:inline">Receiver Sign</span>
-                    <span className="sm:hidden">Sign</span>
+                    <span className="hidden sm:inline">Sign</span>
                   </Button>
                   <Button size="sm" variant="outline" onClick={() => { navigator.clipboard.writeText(`${window.location.origin}/waybill-sign?id=${docId}`); toast.success("Signature link copied!"); }} className="gap-1.5 shrink-0">
                     <Share2 className="h-4 w-4" />
-                    <span className="hidden sm:inline">Request Sig.</span>
-                    <span className="sm:hidden">Req.</span>
                   </Button>
                 </>
               ) : (
                 <>
-                  <Button size="sm" onClick={handleDownloadPdf} disabled={generatingPdf}>
+                  <Button size="sm" onClick={handleDownloadPdf} disabled={generatingPdf} className="shrink-0">
                     <FileDown className="h-4 w-4 mr-1" />
-                    {generatingPdf ? "Generating..." : "Download PDF"}
+                    {generatingPdf ? "..." : "Download"}
                   </Button>
-                  <Button size="sm" variant="outline" onClick={handleSharePdf} disabled={generatingPdf}>
+                  <Button size="sm" variant="outline" onClick={handleSharePdf} disabled={generatingPdf} className="shrink-0">
                     <Upload className="h-4 w-4 mr-1" />
                     Share
                   </Button>
                 </>
               )}
-              <button className="p-2 hover:bg-muted rounded-lg text-muted-foreground" onClick={() => setShowPdfPreview(false)}>✕</button>
+              <button className="p-2 hover:bg-muted rounded-lg text-muted-foreground shrink-0" onClick={() => setShowPdfPreview(false)}>✕</button>
             </div>
           </div>
-          <div className="flex-1 overflow-auto bg-gray-100" onClick={e => e.stopPropagation()} style={{ position: "relative" }}>
-            {/* Soft Signage: Tap-to-Sign banner */}
+          <div className="flex-1 overflow-auto bg-gray-100" onClick={e => e.stopPropagation()}>
             {doc.type === "waybill" && pdfMode === "soft" && !doc.customer_signature && (
-              <div className="sticky top-0 z-10 bg-emerald-600 text-white px-5 py-3 flex items-center justify-between shadow-md">
+              <div className="sticky top-0 z-10 bg-emerald-600 text-white px-4 py-3 flex items-center justify-between shadow-md">
                 <div className="flex items-center gap-3">
                   <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center shrink-0">
                     <PenLine className="h-4 w-4" />
                   </div>
                   <div>
                     <p className="font-bold text-sm leading-tight">Receiver Signature Required</p>
-                    <p className="text-xs text-emerald-100">Tap below or use the button to sign digitally</p>
+                    <p className="text-xs text-emerald-100 hidden sm:block">Tap below to sign digitally</p>
                   </div>
                 </div>
-                <button
-                  onClick={() => setShowInlineSigPad(true)}
-                  className="bg-white text-emerald-700 font-bold text-sm px-4 py-2 rounded-xl hover:bg-emerald-50 transition-colors flex items-center gap-2 shrink-0"
-                >
-                  <PenLine className="h-4 w-4" /> Sign Here
+                <button onClick={() => setShowInlineSigPad(true)} className="bg-white text-emerald-700 font-bold text-sm px-3 py-2 rounded-xl hover:bg-emerald-50 transition-colors flex items-center gap-2 shrink-0">
+                  <PenLine className="h-4 w-4" /> Sign
                 </button>
               </div>
             )}
-            {/* Soft Signage: Signed confirmation banner */}
             {doc.type === "waybill" && pdfMode === "soft" && doc.customer_signature && (
-              <div className="sticky top-0 z-10 bg-emerald-700 text-white px-5 py-3 flex items-center justify-between shadow-md">
+              <div className="sticky top-0 z-10 bg-emerald-700 text-white px-4 py-3 flex items-center justify-between shadow-md">
                 <div className="flex items-center gap-3">
                   <CheckCircle2 className="h-5 w-5 text-emerald-300 shrink-0" />
                   <div>
                     <p className="font-bold text-sm">Document Signed</p>
-                    <p className="text-xs text-emerald-200">Signature is locked into the PDF</p>
+                    <p className="text-xs text-emerald-200">Signature locked into PDF</p>
                   </div>
                 </div>
-                <button
-                  onClick={() => setShowInlineSigPad(true)}
-                  className="text-xs text-emerald-200 hover:text-white underline"
-                >
-                  Re-sign
-                </button>
+                <button onClick={() => setShowInlineSigPad(true)} className="text-xs text-emerald-200 hover:text-white underline">Re-sign</button>
               </div>
             )}
-            <div className="p-6">
+            <div className="p-2 sm:p-6">
               <div className="max-w-4xl mx-auto">
-                <div ref={pdfRef} style={{ width: 794 }}>
-                  <DocumentPreview
-                    form={doc}
-                    items={doc.items || []}
-                    calcs={{ subtotal: doc.subtotal, taxAmt: doc.tax_amount, total: doc.total }}
-                    sym={CURRENCY_SYMBOLS[doc.currency] || doc.currency || "₦"}
-                    docType={doc.type}
-                    managerSig={doc.manager_signature}
-                    customerSig={doc.type === "waybill" && pdfMode === "paper" ? "" : doc.customer_signature}
-                    template={doc.template || "classic"}
-                    templateColor={doc.template_color || "slate"}
-                  />
+                {/* Scale to fit mobile viewport */}
+                <div style={{ width: 794 * previewScale, overflow: "hidden" }}>
+                  <div
+                    ref={pdfRef}
+                    style={{
+                      width: 794,
+                      transformOrigin: "top left",
+                      transform: `scale(${previewScale})`,
+                      marginBottom: previewScale < 1 ? `${(previewScale - 1) * 1123}px` : undefined,
+                    }}
+                  >
+                    <DocumentPreview
+                      form={doc}
+                      items={doc.items || []}
+                      calcs={{ subtotal: doc.subtotal, taxAmt: doc.tax_amount, total: doc.total }}
+                      sym={CURRENCY_SYMBOLS[doc.currency] || doc.currency || "₦"}
+                      docType={doc.type}
+                      managerSig={doc.manager_signature}
+                      customerSig={doc.type === "waybill" && pdfMode === "paper" ? "" : doc.customer_signature}
+                      template={doc.template || "classic"}
+                      templateColor={doc.template_color || "slate"}
+                    />
+                  </div>
                 </div>
-                {/* Soft Signage: Tap-to-Sign area at the bottom of the preview */}
                 {doc.type === "waybill" && pdfMode === "soft" && !doc.customer_signature && (
                   <button
                     onClick={() => setShowInlineSigPad(true)}
@@ -670,7 +666,7 @@ export default function ViewDocument() {
                     </div>
                     <div className="text-center">
                       <p className="font-bold text-lg">Tap to Sign Here</p>
-                      <p className="text-sm text-emerald-500 mt-1">Touch, mouse, or stylus — sign in the Receiver Signature field</p>
+                      <p className="text-sm text-emerald-500 mt-1">Touch, mouse, or stylus</p>
                     </div>
                   </button>
                 )}
@@ -746,7 +742,6 @@ function UnifiedTemplate({ doc, onSaveManagerSig, onSaveCustomerSig, onOpenSignM
               <p className="font-semibold text-gray-700 text-sm">{format(new Date(doc.due_date), "dd MMM yyyy")}</p>
             </div>
           )}
-
         </div>
       </div>
 
