@@ -11,7 +11,7 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Email not connected.' }, { status: 400 });
     }
 
-    const { folder = 'INBOX', limit = 50 } = await req.json().catch(() => ({}));
+    const { folder = 'INBOX', limit = 100 } = await req.json().catch(() => ({}));
 
     const client = new ImapFlow({
       host: user.mail_imap_host,
@@ -35,23 +35,12 @@ Deno.serve(async (req) => {
       const fetchLimit = Math.min(limit, totalMessages);
       const from = Math.max(1, totalMessages - fetchLimit + 1);
 
+      // Only fetch envelope + flags — no body download to avoid stream issues
       for await (const msg of client.fetch(`${from}:${totalMessages}`, {
         uid: true,
         flags: true,
         envelope: true,
-        bodyStructure: true,
-        source: false,
       })) {
-        let body = '';
-        try {
-          const bodyPart = await client.download(msg.seq, '1', { uid: false });
-          if (bodyPart) {
-            const chunks = [];
-            for await (const chunk of bodyPart.content) chunks.push(chunk);
-            body = new TextDecoder().decode(Buffer.concat(chunks));
-          }
-        } catch { /* skip body on error */ }
-
         const env = msg.envelope || {};
         const from_addr = env.from?.[0] || {};
         const to_addr = env.to?.[0] || {};
@@ -67,7 +56,7 @@ Deno.serve(async (req) => {
           date: env.date ? new Date(env.date).toISOString() : new Date().toISOString(),
           is_read: msg.flags?.has('\\Seen') ?? false,
           is_starred: msg.flags?.has('\\Flagged') ?? false,
-          body,
+          body: '',
           folder: folder === 'INBOX' ? 'inbox' : folder.toLowerCase(),
         });
       }

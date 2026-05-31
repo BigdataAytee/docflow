@@ -91,9 +91,13 @@ export default function Mail() {
         const res = await base44.functions.invoke("mailSend", form);
         if (res.data?.error) throw new Error(res.data.error);
       } catch (err) {
-        // If SMTP fails, fall back to platform email
-        await base44.integrations.Core.SendEmail({ to: form.to_email, subject: form.subject, body: form.body });
-        await base44.entities.Mail.create({ ...form, status: "failed", folder: "sent", is_read: true });
+        // SMTP failed — fall back to platform email
+        try {
+          await base44.integrations.Core.SendEmail({ to: form.to_email, subject: form.subject, body: form.body });
+          await base44.entities.Mail.create({ ...form, status: "sent", folder: "sent", is_read: true });
+        } catch {
+          await base44.entities.Mail.create({ ...form, status: "failed", folder: "sent", is_read: true });
+        }
       }
     } else {
       try {

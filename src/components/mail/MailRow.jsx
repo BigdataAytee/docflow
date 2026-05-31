@@ -33,7 +33,10 @@ export default function MailRow({ mail, selected, checked, onCheck, onClick, onS
   const [hovered, setHovered] = useState(false);
   const isRead = mail.is_read !== false;
   const isStarred = mail.is_starred;
-  const displayName = mail.to_name || mail.to_email || "Unknown";
+  const isInbox = mail.folder === "inbox";
+  const displayName = isInbox
+    ? (mail.from_name || mail.from_email || "Unknown")
+    : (mail.to_name || mail.to_email || "Unknown");
 
   return (
     <div
@@ -67,7 +70,7 @@ export default function MailRow({ mail, selected, checked, onCheck, onClick, onS
 
       {/* Avatar */}
       <div className="w-8 flex items-center justify-center shrink-0 mr-1">
-        <Avatar name={displayName} email={mail.to_email} size={28} />
+        <Avatar name={displayName} email={isInbox ? mail.from_email : mail.to_email} size={28} />
       </div>
 
       {/* Sender */}
@@ -100,7 +103,7 @@ export default function MailRow({ mail, selected, checked, onCheck, onClick, onS
         </div>
       ) : (
         <div className="shrink-0 ml-2 text-xs text-slate-400 whitespace-nowrap w-[50px] text-right">
-          {formatTime(mail.created_date)}
+          {formatTime(mail.date || mail.created_date)}
         </div>
       )}
 
