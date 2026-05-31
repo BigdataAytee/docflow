@@ -166,7 +166,7 @@ export default function Home() {
           type="text"
           value={searchQuery}
           onChange={e => setSearchQuery(e.target.value)}
-          placeholder="Search by invoice number, customer, status, tracking number…"
+          placeholder="Search by document reference number, customer name, status, tracking number…"
           className="w-full h-12 pl-11 pr-11 rounded-2xl border border-border bg-card text-sm focus:outline-none focus:ring-2 focus:ring-ring shadow-sm placeholder:text-muted-foreground transition-shadow focus:shadow-md"
         />
         {searchQuery && (
