@@ -160,9 +160,9 @@ export default function Mail() {
     : FOLDER_LABELS[folder] || folder;
 
   return (
-    <div className="flex overflow-hidden rounded-2xl border border-[#e0e0e0] bg-white h-[calc(100dvh-11rem)] md:h-[calc(100dvh-8rem)] lg:h-[calc(100dvh-5rem)]">
+    <div className="flex overflow-hidden rounded-2xl border border-border shadow-lg bg-white h-[calc(100dvh-11rem)] md:h-[calc(100dvh-8rem)] lg:h-[calc(100dvh-5rem)]">
       {/* ── Desktop Sidebar ── */}
-      <div className="hidden md:flex flex-col w-56 xl:w-64 shrink-0 overflow-y-auto bg-[#f6f8fc]" style={{ borderRight: "1px solid #e0e0e0" }}>
+      <div className="hidden md:flex flex-col w-56 xl:w-64 shrink-0 overflow-y-auto" style={{ background: "hsl(224 30% 12%)", borderRight: "1px solid hsl(224 20% 20%)" }}>
         <MailSidebar
           folder={folder}
           setFolder={(f) => { setFolder(f); setSelected(null); setCheckedIds(new Set()); }}
@@ -175,12 +175,12 @@ export default function Mail() {
       {sidebarOpen && (
         <div className="fixed inset-0 z-50 flex md:hidden">
           <div className="absolute inset-0 bg-black/30" onClick={() => setSidebarOpen(false)} />
-          <div className="relative w-72 bg-[#f6f8fc] h-full shadow-2xl flex flex-col overflow-y-auto">
-            <div className="flex items-center gap-3 px-4 py-3 border-b border-[#e0e0e0]">
-              <button onClick={() => setSidebarOpen(false)} className="p-1 hover:bg-[#e8eaed] rounded-full">
-                <X className="h-5 w-5 text-[#444746]" />
+          <div className="relative w-72 h-full shadow-2xl flex flex-col overflow-y-auto" style={{ background: "hsl(224 30% 12%)" }}>
+            <div className="flex items-center gap-3 px-4 py-3" style={{ borderBottom: "1px solid hsl(224 20% 20%)" }}>
+              <button onClick={() => setSidebarOpen(false)} className="p-1 hover:bg-white/10 rounded-full">
+                <X className="h-5 w-5 text-white/70" />
               </button>
-              <span className="font-medium text-[#202124]">Mail</span>
+              <span className="font-semibold text-white">✉️ Mail</span>
             </div>
             <MailSidebar
               folder={folder}
@@ -197,12 +197,12 @@ export default function Mail() {
       <div className="flex flex-col flex-1 min-w-0">
 
         {/* Top search bar */}
-        <div className="flex items-center gap-2 px-3 py-2 shrink-0 bg-[#f6f8fc]" style={{ borderBottom: "1px solid #e0e0e0" }}>
-          <button onClick={() => setSidebarOpen(true)} className="md:hidden p-2 hover:bg-[#e8eaed] rounded-full text-[#5f6368]">
+        <div className="flex items-center gap-2 px-3 py-2 shrink-0 bg-slate-50" style={{ borderBottom: "1px solid hsl(220 13% 91%)" }}>
+          <button onClick={() => setSidebarOpen(true)} className="md:hidden p-2 hover:bg-slate-200 rounded-full text-slate-500">
             <Menu className="h-5 w-5" />
           </button>
-          <div className={`flex-1 max-w-2xl flex items-center gap-2 px-4 py-2 rounded-2xl transition-all ${searchFocused ? "bg-white shadow-md border border-[#dadce0]" : "bg-[#eaf1fb] hover:bg-[#e4ecf9]"}`}>
-            <Search className="h-4 w-4 text-[#5f6368] shrink-0" />
+          <div className={`flex-1 max-w-2xl flex items-center gap-2 px-4 py-2 rounded-2xl transition-all ${searchFocused ? "bg-white shadow-md border border-indigo-200" : "bg-indigo-50 hover:bg-indigo-100/80"}`}>
+            <Search className="h-4 w-4 text-indigo-400 shrink-0" />
             <input
               id="mail-search"
               value={search}
@@ -210,21 +210,21 @@ export default function Mail() {
               onFocus={() => setSearchFocused(true)}
               onBlur={() => setSearchFocused(false)}
               placeholder="Search mail"
-              className="flex-1 text-sm bg-transparent outline-none text-[#202124] placeholder:text-[#5f6368]"
+              className="flex-1 text-sm bg-transparent outline-none text-slate-700 placeholder:text-slate-400"
             />
             {search && (
-              <button onClick={() => setSearch("")} className="text-[#5f6368] hover:text-[#202124]">
+              <button onClick={() => setSearch("")} className="text-slate-400 hover:text-slate-600">
                 <X className="h-3.5 w-3.5" />
               </button>
             )}
           </div>
-          <button onClick={handleRefresh} className="p-2 hover:bg-[#e8eaed] rounded-full text-[#5f6368]">
+          <button onClick={handleRefresh} className="p-2 hover:bg-slate-200 rounded-full text-slate-500">
             <RefreshCw className={`h-4 w-4 ${refreshing ? "animate-spin" : ""}`} />
           </button>
-          <button className="p-2 hover:bg-[#e8eaed] rounded-full text-[#5f6368] hidden sm:block">
+          <button className="p-2 hover:bg-slate-200 rounded-full text-slate-500 hidden sm:block">
             <Settings className="h-4 w-4" />
           </button>
-          <button className="md:hidden p-2 bg-[#1a73e8] hover:bg-[#1557b0] text-white rounded-2xl text-xs font-medium px-3"
+          <button className="md:hidden px-4 py-2 text-white rounded-2xl text-xs font-bold transition-all" style={{ background: "linear-gradient(135deg,#6366f1,#4f46e5)" }}
             onClick={() => { setComposing(true); setReplyTo(null); }}>
             + Compose
           </button>
@@ -244,8 +244,8 @@ export default function Mail() {
         ) : (
           <div className="flex flex-col flex-1 min-h-0">
             {/* List toolbar */}
-            <div className="flex items-center gap-1 px-4 py-1 border-b border-[#e0e0e0] shrink-0 bg-white">
-              <button onClick={toggleSelectAll} className="p-2 hover:bg-[#e8eaed] rounded-full text-[#5f6368]">
+            <div className="flex items-center gap-1 px-4 py-1 border-b border-border shrink-0 bg-white">
+              <button onClick={toggleSelectAll} className="p-2 hover:bg-slate-100 rounded-full text-slate-500">
                 {selectAll ? <CheckSquare className="h-4 w-4 text-[#1a73e8]" /> : <Square className="h-4 w-4" />}
               </button>
               {hasChecked && (
@@ -259,7 +259,7 @@ export default function Mail() {
                       setCheckedIds(new Set());
                       setSelectAll(false);
                     }}
-                    className="flex items-center gap-1.5 px-3 py-1.5 text-xs text-[#5f6368] hover:bg-[#e8eaed] rounded-full transition-colors"
+                    className="flex items-center gap-1.5 px-3 py-1.5 text-xs text-slate-500 hover:bg-red-50 hover:text-red-600 rounded-full transition-colors"
                   >
                     Delete selected ({checkedIds.size})
                   </button>
@@ -267,14 +267,14 @@ export default function Mail() {
               )}
               {!hasChecked && (
                 <>
-                  <button onClick={handleRefresh} className="p-2 hover:bg-[#e8eaed] rounded-full text-[#5f6368]">
+                  <button onClick={handleRefresh} className="p-2 hover:bg-slate-100 rounded-full text-slate-500">
                     <RefreshCw className={`h-4 w-4 ${refreshing ? "animate-spin" : ""}`} />
                   </button>
-                  <button className="p-2 hover:bg-[#e8eaed] rounded-full text-[#5f6368]">
+                  <button className="p-2 hover:bg-slate-100 rounded-full text-slate-500">
                     <MoreVertical className="h-4 w-4" />
                   </button>
                   <div className="flex-1" />
-                  <div className="flex items-center gap-1 text-xs text-[#5f6368]">
+                  <div className="flex items-center gap-1 text-xs text-slate-400">
                     <span>{filteredMails.length > 0 ? `1–${filteredMails.length} of ${filteredMails.length}` : "0"}</span>
                     <button className="p-1.5 hover:bg-[#e8eaed] rounded-full"><ChevronLeft className="h-3.5 w-3.5" /></button>
                     <button className="p-1.5 hover:bg-[#e8eaed] rounded-full"><ChevronRight className="h-3.5 w-3.5" /></button>

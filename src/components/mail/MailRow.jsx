@@ -40,10 +40,10 @@ export default function MailRow({ mail, selected, checked, onCheck, onClick, onS
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
       onClick={onClick}
-      className={`flex items-center gap-1 px-4 py-0.5 cursor-pointer group border-b border-transparent transition-colors ${
-        selected ? "bg-[#c2e7ff]/60 border-b-[#c2e7ff]" :
-        hovered ? "bg-[#f6f8fc] shadow-sm" :
-        isRead ? "bg-white" : "bg-white font-semibold"
+      className={`flex items-center gap-1 px-4 py-0.5 cursor-pointer group border-b border-transparent transition-all ${
+        selected ? "bg-indigo-50 border-b-indigo-100" :
+        hovered ? "bg-slate-50 shadow-sm" :
+        isRead ? "bg-white" : "bg-white"
       }`}
       style={{ minHeight: 48 }}
     >
@@ -53,7 +53,7 @@ export default function MailRow({ mail, selected, checked, onCheck, onClick, onS
           type="checkbox"
           checked={!!checked}
           onChange={() => {}}
-          className="w-4 h-4 rounded accent-[#1a73e8] cursor-pointer"
+          className="w-4 h-4 rounded accent-indigo-600 cursor-pointer"
           onClick={e => e.stopPropagation()}
         />
       </div>
@@ -61,7 +61,7 @@ export default function MailRow({ mail, selected, checked, onCheck, onClick, onS
       {/* Star */}
       <div className="w-7 flex items-center justify-center shrink-0" onClick={e => { e.stopPropagation(); onStar?.(mail); }}>
         <Star
-          className={`h-4 w-4 transition-colors ${isStarred ? "fill-[#f4b400] text-[#f4b400]" : "text-gray-300 hover:text-gray-500"}`}
+          className={`h-4 w-4 transition-colors ${isStarred ? "fill-amber-400 text-amber-400" : "text-gray-200 hover:text-amber-300"}`}
         />
       </div>
 
@@ -71,16 +71,16 @@ export default function MailRow({ mail, selected, checked, onCheck, onClick, onS
       </div>
 
       {/* Sender */}
-      <div className={`w-36 lg:w-44 shrink-0 text-sm truncate ${!isRead ? "font-bold text-[#202124]" : "text-[#202124]"}`}>
+      <div className={`w-36 lg:w-44 shrink-0 text-sm truncate ${!isRead ? "font-bold text-slate-900" : "text-slate-700"}`}>
         {displayName}
       </div>
 
       {/* Subject + snippet */}
       <div className="flex-1 min-w-0 flex items-center gap-2 text-sm truncate">
-        <span className={`shrink-0 truncate max-w-[300px] ${!isRead ? "font-bold text-[#202124]" : "text-[#202124]"}`}>
+        <span className={`shrink-0 truncate max-w-[300px] ${!isRead ? "font-bold text-slate-900" : "text-slate-700"}`}>
           {mail.subject || "(no subject)"}
         </span>
-        <span className="text-[#5f6368] font-normal truncate hidden sm:inline">
+        <span className="text-slate-400 font-normal truncate hidden sm:inline">
           — {(mail.body || "").replace(/<[^>]*>/g, "").slice(0, 80)}
         </span>
       </div>
@@ -88,18 +88,18 @@ export default function MailRow({ mail, selected, checked, onCheck, onClick, onS
       {/* Hover actions */}
       {hovered ? (
         <div className="flex items-center gap-1 shrink-0 ml-2" onClick={e => e.stopPropagation()}>
-          <button onClick={() => onDelete?.(mail)} className="p-1.5 rounded-full hover:bg-[#e8eaed] text-[#5f6368]" title="Delete">
+          <button onClick={() => onDelete?.(mail)} className="p-1.5 rounded-full hover:bg-red-50 hover:text-red-500 text-slate-400 transition-colors" title="Delete">
             <Trash2 className="h-4 w-4" />
           </button>
-          <button className="p-1.5 rounded-full hover:bg-[#e8eaed] text-[#5f6368]" title="Snooze">
+          <button className="p-1.5 rounded-full hover:bg-slate-100 text-slate-400 transition-colors" title="Snooze">
             <Clock className="h-4 w-4" />
           </button>
-          <button className="p-1.5 rounded-full hover:bg-[#e8eaed] text-[#5f6368]" title="Archive">
+          <button className="p-1.5 rounded-full hover:bg-slate-100 text-slate-400 transition-colors" title="Archive">
             <Archive className="h-4 w-4" />
           </button>
         </div>
       ) : (
-        <div className="shrink-0 ml-2 text-xs text-[#5f6368] whitespace-nowrap w-[50px] text-right">
+        <div className="shrink-0 ml-2 text-xs text-slate-400 whitespace-nowrap w-[50px] text-right">
           {formatTime(mail.created_date)}
         </div>
       )}
