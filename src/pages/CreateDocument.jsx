@@ -21,6 +21,13 @@ const typeLabels = {
   invoice: "Invoice", quotation: "Quotation", receipt: "Receipt", waybill: "Waybill",
 };
 
+const TYPE_THEMES = {
+  invoice:   { gradient: "linear-gradient(135deg,#3b82f6 0%,#1d4ed8 100%)", glow: "rgba(59,130,246,0.25)",  accent: "#3b82f6",  light: "#eff6ff",  border: "#bfdbfe", badge: "bg-blue-100 text-blue-700",   icon: "📄", emoji: "💼" },
+  quotation: { gradient: "linear-gradient(135deg,#8b5cf6 0%,#6d28d9 100%)", glow: "rgba(139,92,246,0.25)", accent: "#8b5cf6",  light: "#f5f3ff",  border: "#ddd6fe", badge: "bg-purple-100 text-purple-700", icon: "📋", emoji: "📋" },
+  receipt:   { gradient: "linear-gradient(135deg,#10b981 0%,#047857 100%)", glow: "rgba(16,185,129,0.25)",  accent: "#10b981",  light: "#ecfdf5",  border: "#a7f3d0", badge: "bg-emerald-100 text-emerald-700",icon: "🧾", emoji: "🧾" },
+  waybill:   { gradient: "linear-gradient(135deg,#f59e0b 0%,#b45309 100%)", glow: "rgba(245,158,11,0.25)",  accent: "#f59e0b",  light: "#fffbeb",  border: "#fde68a", badge: "bg-amber-100 text-amber-700",   icon: "🚚", emoji: "🚚" },
+};
+
 const DOC_LABELS = {
   invoice:   { number: "Invoice Number",   issueDate: "Invoice Date",  dueDate: "Due Date",      customer: "Bill To",       items: "Line Items",                itemDesc: "Item Description",      itemQty: "Quantity",    notes: "Notes to Customer",     sig: "Authorized Signature",    sigDesc: "Sign to authorize this invoice.",                                    showTax: true,  showDisc: true,  showDue: true,  showPrices: true  },
   quotation: { number: "Quotation Number", issueDate: "Issue Date",    dueDate: "Expiry Date",   customer: "Prepared For",  items: "Proposed Items / Services", itemDesc: "Item / Service",         itemQty: "Est. Qty",    notes: "Notes",                 sig: "Prepared By (Signature)", sigDesc: "Sign to authorize this quotation.",                                  showTax: true,  showDisc: true,  showDue: true,  showPrices: true  },
@@ -461,17 +468,46 @@ export default function CreateDocument() {
 
   const L = DOC_LABELS[docType] || DOC_LABELS.invoice;
 
+  const theme = TYPE_THEMES[docType] || TYPE_THEMES.invoice;
+
   return (
     <div className="max-w-5xl mx-auto pb-32 md:pb-0">
-      {/* Header */}
-      <div className="flex items-center gap-3 mb-6">
-        <button onClick={handleBackClick} className="p-2 hover:bg-muted rounded-lg"><ArrowLeft className="h-4 w-4" /></button>
-        <div>
-          <h1 className="text-2xl font-bold">{editId ? `Edit ${typeLabels[form.type || docType]}` : `New ${typeLabels[docType]}`}</h1>
-          <div className="flex items-center gap-2">
-            <p className="text-sm text-muted-foreground">{editId ? "Update the document details below" : "Fill in the details below"}</p>
-            {autoSaveStatus === "saving" && <span className="text-xs text-muted-foreground animate-pulse">Auto-saving…</span>}
-            {autoSaveStatus === "saved" && <span className="text-xs text-green-600 font-medium">{(form.type || docType) === "waybill" ? "✓ Pending saved" : "✓ Draft saved"}</span>}
+      {/* Themed header banner */}
+      <div
+        className="relative rounded-3xl overflow-hidden px-6 py-7 mb-7"
+        style={{ background: theme.gradient, boxShadow: `0 8px 40px ${theme.glow}` }}
+      >
+        <div className="absolute -top-8 -right-10 w-52 h-52 rounded-full bg-white/10 pointer-events-none" />
+        <div className="absolute -bottom-10 -left-6 w-36 h-36 rounded-full bg-black/10 pointer-events-none" />
+        <div className="relative z-10 flex items-start justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <button
+              onClick={handleBackClick}
+              className="w-9 h-9 rounded-xl bg-white/15 hover:bg-white/25 backdrop-blur-sm flex items-center justify-center text-white transition-all shrink-0"
+            >
+              <ArrowLeft className="h-4 w-4" />
+            </button>
+            <div>
+              <div className="flex items-center gap-2 mb-0.5">
+                <span className="text-white/60 text-xs font-semibold uppercase tracking-widest">Document Builder</span>
+              </div>
+              <h1 className="text-2xl font-bold text-white">
+                {theme.emoji} {editId ? `Edit ${typeLabels[form.type || docType]}` : `New ${typeLabels[docType]}`}
+              </h1>
+            </div>
+          </div>
+          <div className="flex flex-col items-end gap-1 shrink-0">
+            {autoSaveStatus === "saving" && (
+              <span className="text-xs text-white/60 animate-pulse bg-white/10 px-3 py-1 rounded-full">Auto-saving…</span>
+            )}
+            {autoSaveStatus === "saved" && (
+              <span className="text-xs text-white font-semibold bg-white/15 px-3 py-1 rounded-full">
+                ✓ {(form.type || docType) === "waybill" ? "Pending saved" : "Draft saved"}
+              </span>
+            )}
+            {form.number && (
+              <span className="text-white/50 text-xs font-mono mt-1">{form.number}</span>
+            )}
           </div>
         </div>
       </div>
@@ -480,11 +516,14 @@ export default function CreateDocument() {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
 
         {/* ── Left column: form sections ── */}
-        <div className="lg:col-span-2 space-y-6">
+        <div className="lg:col-span-2 space-y-5">
 
           {/* Document Info */}
-          <div className="bg-card rounded-xl border border-border p-6 space-y-4">
-            <h3 className="font-semibold text-sm text-muted-foreground uppercase tracking-wider">{typeLabels[docType]} Details</h3>
+          <div className="bg-card rounded-2xl border border-border p-6 space-y-4 shadow-sm" style={{ borderLeft: `3px solid ${theme.accent}` }}>
+            <div className="flex items-center gap-2">
+              <div className="w-6 h-6 rounded-lg flex items-center justify-center text-sm" style={{ background: theme.light, border: `1px solid ${theme.border}` }}>🗂️</div>
+              <h3 className="font-semibold text-sm uppercase tracking-wider" style={{ color: theme.accent }}>{typeLabels[docType]} Details</h3>
+            </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <Label>{L.number}</Label>
@@ -572,8 +611,11 @@ export default function CreateDocument() {
 
           {/* Payment Details — Invoice & Quotation */}
           {(docType === "invoice" || docType === "quotation") && (
-            <div className="bg-card rounded-xl border border-border p-6 space-y-4">
-              <h3 className="font-semibold text-sm text-muted-foreground uppercase tracking-wider">Payment Details</h3>
+            <div className="bg-card rounded-2xl border border-border p-6 space-y-4 shadow-sm" style={{ borderLeft: `3px solid ${theme.accent}` }}>
+              <div className="flex items-center gap-2">
+                <div className="w-6 h-6 rounded-lg flex items-center justify-center text-sm" style={{ background: theme.light, border: `1px solid ${theme.border}` }}>💳</div>
+                <h3 className="font-semibold text-sm uppercase tracking-wider" style={{ color: theme.accent }}>Payment Details</h3>
+              </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <Label>Payment Method</Label>
@@ -677,8 +719,11 @@ export default function CreateDocument() {
 
           {/* Waybill — Logistics Details */}
           {docType === "waybill" && (
-            <div className="bg-card rounded-xl border border-border p-6 space-y-4">
-              <h3 className="font-semibold text-sm text-muted-foreground uppercase tracking-wider">Logistics Details</h3>
+            <div className="bg-card rounded-2xl border border-border p-6 space-y-4 shadow-sm" style={{ borderLeft: `3px solid ${theme.accent}` }}>
+              <div className="flex items-center gap-2">
+                <div className="w-6 h-6 rounded-lg flex items-center justify-center text-sm" style={{ background: theme.light, border: `1px solid ${theme.border}` }}>🚚</div>
+                <h3 className="font-semibold text-sm uppercase tracking-wider" style={{ color: theme.accent }}>Logistics Details</h3>
+              </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div><Label>Driver Name</Label><Input value={form.driver_name} onChange={e => setForm(f => ({ ...f, driver_name: e.target.value }))} placeholder="e.g. John Doe" /></div>
                 <div><Label>Vehicle Number</Label><Input value={form.vehicle_number} onChange={e => setForm(f => ({ ...f, vehicle_number: e.target.value }))} placeholder="e.g. LND-123-AB" /></div>
@@ -688,8 +733,11 @@ export default function CreateDocument() {
           )}
 
           {/* Line Items */}
-          <div className="bg-card rounded-xl border border-border p-6">
-            <h3 className="font-semibold mb-4">{L.items}</h3>
+          <div className="bg-card rounded-2xl border border-border p-6 shadow-sm" style={{ borderLeft: `3px solid ${theme.accent}` }}>
+            <div className="flex items-center gap-2 mb-4">
+              <div className="w-6 h-6 rounded-lg flex items-center justify-center text-sm" style={{ background: theme.light, border: `1px solid ${theme.border}` }}>📦</div>
+              <h3 className="font-semibold text-sm uppercase tracking-wider" style={{ color: theme.accent }}>{L.items}</h3>
+            </div>
             <div className="hidden sm:grid grid-cols-12 gap-2 mb-1">
               <div className="col-span-1" />
               <div className="col-span-4 text-xs font-medium text-muted-foreground">{L.itemDesc}</div>
@@ -781,8 +829,11 @@ export default function CreateDocument() {
 
           {/* Totals */}
           {docType !== "waybill" && (
-            <div className="bg-card rounded-xl border border-border p-6">
-              <h3 className="font-semibold mb-4">{docType === "receipt" ? "Payment Summary" : "Totals"}</h3>
+            <div className="bg-card rounded-2xl border border-border p-6 shadow-sm" style={{ borderLeft: `3px solid ${theme.accent}` }}>
+              <div className="flex items-center gap-2 mb-4">
+                <div className="w-6 h-6 rounded-lg flex items-center justify-center text-sm" style={{ background: theme.light, border: `1px solid ${theme.border}` }}>💰</div>
+                <h3 className="font-semibold text-sm uppercase tracking-wider" style={{ color: theme.accent }}>{docType === "receipt" ? "Payment Summary" : "Totals"}</h3>
+              </div>
               <div className="space-y-3 text-sm">
                 <div className="flex items-center justify-between gap-2">
                   <span className="text-muted-foreground">Subtotal</span>
@@ -821,7 +872,7 @@ export default function CreateDocument() {
           )}
 
           {/* Notes */}
-          <div className="bg-card rounded-xl border border-border p-6 space-y-4">
+          <div className="bg-card rounded-2xl border border-border p-6 space-y-4 shadow-sm" style={{ borderLeft: `3px solid ${theme.accent}` }}>
             <div>
               <Label>{L.notes}</Label>
               <Textarea value={form.notes} onChange={e => setForm(f => ({ ...f, notes: e.target.value }))} rows={2}
@@ -832,7 +883,7 @@ export default function CreateDocument() {
           </div>
 
           {/* Primary Signature */}
-          <div className="bg-card rounded-xl border border-border p-6">
+          <div className="bg-card rounded-2xl border border-border p-6 shadow-sm" style={{ borderLeft: `3px solid ${theme.accent}` }}>
             <div className="flex items-center justify-between mb-1">
               <h3 className="font-semibold">{L.sig}</h3>
               {savedManagerSig && managerSig === savedManagerSig && (
@@ -907,11 +958,11 @@ export default function CreateDocument() {
 
         {/* ── Right sidebar: live preview + actions ── */}
         <div className="hidden md:block space-y-4">
-          <div className="bg-card rounded-xl border border-border overflow-hidden">
-            <div className="px-4 py-3 border-b border-border">
+          <div className="bg-card rounded-2xl border border-border overflow-hidden shadow-sm">
+            <div className="px-4 py-3 border-b border-border" style={{ background: theme.gradient }}>
               <div className="flex items-center justify-between">
-                <h3 className="font-semibold text-sm">Live Preview</h3>
-                <span className="text-xs text-muted-foreground capitalize">{typeLabels[docType]}</span>
+                <h3 className="font-semibold text-sm text-white">Live Preview</h3>
+                <span className="text-xs text-white/60 capitalize font-medium">{theme.emoji} {typeLabels[docType]}</span>
               </div>
             </div>
             <div className="overflow-hidden" style={{ height: 460, width: "100%", position: "relative" }}>
@@ -921,9 +972,12 @@ export default function CreateDocument() {
             </div>
           </div>
 
-          <div className="bg-card rounded-xl border border-border p-5 sticky top-8">
+          <div className="bg-card rounded-2xl border border-border p-5 sticky top-8 shadow-sm">
+            <div className="mb-3 pb-3 border-b border-border">
+              <p className="text-xs font-bold uppercase tracking-wider" style={{ color: theme.accent }}>Actions</p>
+            </div>
             <div className="space-y-2">
-              <Button className="w-full" onClick={() => handleSave("draft")} disabled={saving || !form.customer_name}>
+              <Button className="w-full text-white font-semibold" style={{ background: theme.gradient }} onClick={() => handleSave("draft")} disabled={saving || !form.customer_name}>
                 {saving ? "Saving..." : (form.type || docType) === "waybill" ? "Save — To Be Delivered" : "Save as Draft"}
               </Button>
               <Button variant="outline" className="w-full" onClick={() => handleSave("sent")} disabled={saving || !form.customer_name}>
