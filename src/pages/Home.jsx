@@ -76,6 +76,14 @@ const STATUS_COLORS = {
 export default function Home() {
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState("");
+  const [selectedType, setSelectedType] = useState(null);
+
+  const handleCardClick = (path, type) => {
+    setSelectedType(type);
+    setTimeout(() => navigate(path), 280);
+  };
+
+  const activeMeta = DOC_TYPES.find(d => d.type === selectedType);
 
   const { data: docs = [] } = useQuery({
     queryKey: ["home-docs"],
@@ -121,7 +129,7 @@ export default function Home() {
       {/* Hero greeting */}
       <div
         className="relative rounded-3xl overflow-hidden px-6 py-8 md:px-10 md:py-10"
-        style={{ background: "linear-gradient(135deg, hsl(230,65%,14%) 0%, hsl(230,60%,22%) 60%, hsl(260,50%,28%) 100%)" }}
+        style={{ background: selectedType && activeMeta ? activeMeta.gradient : "linear-gradient(135deg, hsl(230,65%,14%) 0%, hsl(230,60%,22%) 60%, hsl(260,50%,28%) 100%)", transition: "background 0.3s ease" }}
       >
         {/* Decorative blobs */}
         <div className="absolute -top-10 -right-10 w-56 h-56 rounded-full opacity-20" style={{ background: "radial-gradient(circle, #6366f1, transparent 70%)" }} />
@@ -222,11 +230,14 @@ export default function Home() {
                 return (
                   <div
                     key={type}
-                    onClick={() => navigate(path)}
+                    onClick={() => handleCardClick(path, type)}
                     className="group relative rounded-2xl md:rounded-3xl cursor-pointer overflow-hidden transition-all duration-300 hover:-translate-y-1"
                     style={{
                       background: gradient,
-                      boxShadow: `0 4px 24px ${glow}`,
+                      boxShadow: selectedType === type ? `0 0 0 3px white, 0 8px 32px ${glow}` : `0 4px 24px ${glow}`,
+                      transform: selectedType === type ? "scale(1.04)" : undefined,
+                      opacity: selectedType && selectedType !== type ? 0.55 : 1,
+                      transition: "all 0.25s ease",
                     }}
                   >
                     {/* Decorative circle */}
