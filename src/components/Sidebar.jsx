@@ -30,27 +30,51 @@ export default function Sidebar({ onClose }) {
     });
   }, []);
 
+  const initials = companyName
+    ? companyName.split(" ").map(w => w[0]).slice(0, 2).join("").toUpperCase()
+    : "MB";
+
   return (
-    <aside className="h-full w-64 bg-sidebar text-sidebar-foreground flex flex-col">
-      <div className="p-6 pb-4">
-        <h1 className="text-lg font-bold text-white tracking-tight">{companyName || "My Business"}</h1>
-        <p className="text-xs text-sidebar-foreground/50 mt-0.5">{companyEmail}</p>
+    <aside className="h-full w-64 flex flex-col" style={{ background: "linear-gradient(180deg, hsl(224,30%,10%) 0%, hsl(228,28%,13%) 100%)" }}>
+
+      {/* Brand header */}
+      <div className="px-5 pt-6 pb-5">
+        <div className="flex items-center gap-3">
+          <div
+            className="w-9 h-9 rounded-xl flex items-center justify-center text-white font-bold text-sm shrink-0"
+            style={{ background: "linear-gradient(135deg,#6366f1,#3b82f6)" }}
+          >
+            {initials}
+          </div>
+          <div className="min-w-0">
+            <p className="text-white font-semibold text-sm leading-tight truncate">{companyName || "My Business"}</p>
+            <p className="text-white/40 text-xs truncate mt-0.5">{companyEmail}</p>
+          </div>
+        </div>
       </div>
 
+      {/* Divider */}
+      <div className="mx-4 h-px bg-white/[0.07] mb-3" />
 
+      {/* Nav label */}
+      <p className="px-5 text-[10px] font-bold uppercase tracking-widest text-white/30 mb-2">Navigation</p>
 
-      <nav className="flex-1 px-3 space-y-1 overflow-y-auto">
+      <nav className="flex-1 px-3 space-y-0.5 overflow-y-auto">
         {isAdmin && (
           <Link
             to="/admin"
             onClick={() => onClose && onClose()}
-            className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all ${
+            className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all group ${
               location.pathname === "/admin"
-                ? "bg-sidebar-accent text-white"
-                : "text-sidebar-foreground/70 hover:text-white hover:bg-sidebar-accent/50"
+                ? "bg-white/10 text-white shadow-sm"
+                : "text-white/50 hover:text-white hover:bg-white/[0.06]"
             }`}
           >
-            <ShieldAlert className="h-4 w-4" />
+            <div className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 transition-all ${
+              location.pathname === "/admin" ? "bg-red-500/20" : "bg-white/5 group-hover:bg-white/10"
+            }`}>
+              <ShieldAlert className={`h-3.5 w-3.5 ${ location.pathname === "/admin" ? "text-red-400" : "text-white/50 group-hover:text-white/80" }`} />
+            </div>
             Admin Dashboard
           </Link>
         )}
@@ -63,25 +87,37 @@ export default function Sidebar({ onClose }) {
               key={item.path + idx}
               to={item.path}
               onClick={() => onClose && onClose()}
-              className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all ${
+              className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all group ${
                 active
-                  ? "bg-sidebar-accent text-white"
-                  : "text-sidebar-foreground/70 hover:text-white hover:bg-sidebar-accent/50"
+                  ? "bg-white/10 text-white shadow-sm"
+                  : "text-white/50 hover:text-white hover:bg-white/[0.06]"
               }`}
             >
-              <item.icon className="h-4 w-4" />
+              <div className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 transition-all ${
+                active
+                  ? "bg-white/15"
+                  : "bg-white/5 group-hover:bg-white/10"
+              }`}>
+                <item.icon className={`h-3.5 w-3.5 transition-colors ${ active ? "text-white" : "text-white/50 group-hover:text-white/80" }`} />
+              </div>
               {item.label}
+              {active && <div className="ml-auto w-1.5 h-1.5 rounded-full bg-indigo-400" />}
             </Link>
           );
         })}
       </nav>
 
-      <div className="p-3 border-t border-sidebar-border">
+      {/* Bottom sign out */}
+      <div className="mx-4 h-px bg-white/[0.07] mt-2" />
+      <div className="p-3">
         <button
           onClick={() => base44.auth.logout()}
-          className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-sidebar-foreground/50 hover:text-white hover:bg-sidebar-accent/50 transition-all w-full"
+          className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-white/40 hover:text-white hover:bg-white/[0.06] transition-all w-full group"
         >
-          <LogOut className="h-4 w-4" /> Sign Out
+          <div className="w-7 h-7 rounded-lg bg-white/5 group-hover:bg-white/10 flex items-center justify-center shrink-0 transition-all">
+            <LogOut className="h-3.5 w-3.5" />
+          </div>
+          Sign Out
         </button>
       </div>
     </aside>
