@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { base44 } from "@/api/base44Client";
+import MailConnectModal from "../components/mail/MailConnectModal";
 import {
   Search, RefreshCw, ChevronDown, MoreVertical, Menu, X,
   CheckSquare, Square, Inbox, Settings, HelpCircle, Grid3x3,
@@ -26,17 +27,53 @@ export default function Mail() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [checkedIds, setCheckedIds] = useState(new Set());
   const [selectAll, setSelectAll] = useState(false);
+  const [mailConnected, setMailConnected] = useState(false);
+  const [showConnectModal, setShowConnectModal] = useState(false);
+  const [connectedEmail, setConnectedEmail] = useState("");
 
   const load = useCallback(async () => {
     setLoading(true);
     const user = await base44.auth.me();
     if (!user) { setLoading(false); return; }
-    const [c, m] = await Promise.all([
-      base44.entities.Customer.filter({ created_by: user.email }, "-created_date", 200),
-      base44.entities.Mail.filter({ created_by: user.email }, "-created_date", 200),
-    ]);
-    setCustomers(c);
-    setMails(m);
+
+    const isConnected = !!(user.mail_smtp_host && user.mail_smtp_user);
+    setMailConnected(isConnected);
+    setConnectedEmail(user.mail_smtp_user || "");
+
+    const customerPromise = base44.entities.Customer.filter({ created_by: user.email }, "-created_date", 200);
+
+    if (isConnected) {
+      // Fetch real inbox from IMAP
+      try {
+        const [c, inboxRes] = await Promise.all([
+          customerPromise,
+          base44.functions.invoke("mailFetch", { folder: "INBOX", limit: 100 }),
+        ]);
+        setCustomers(c);
+        const realMails = (inboxRes.data?.messages || []).map((m, idx) => ({
+          id: `imap-${m.uid || idx}`,
+          ...m,
+          folder: "inbox",
+        }));
+        // Also load sent from entity store
+        const sentMails = await base44.entities.Mail.filter({ created_by: user.email }, "-created_date", 200);
+        setMails([...realMails, ...sentMails]);
+      } catch (err) {
+        console.error("IMAP fetch failed:", err);
+        // Fall back to entity mails
+        const [c, m] = await Promise.all([customerPromise, base44.entities.Mail.filter({ created_by: user.email }, "-created_date", 200)]);
+        setCustomers(c);
+        setMails(m);
+      }
+    } else {
+      const [c, m] = await Promise.all([
+        customerPromise,
+        base44.entities.Mail.filter({ created_by: user.email }, "-created_date", 200),
+      ]);
+      setCustomers(c);
+      setMails(m);
+    }
+
     setLoading(false);
   }, []);
 
@@ -49,17 +86,24 @@ export default function Mail() {
   };
 
   const handleSend = async (form) => {
-    try {
-      await base44.integrations.Core.SendEmail({ to: form.to_email, subject: form.subject, body: form.body });
-      await base44.entities.Mail.create({ ...form, status: "sent", folder: "sent", is_read: true });
-    } catch {
-      await base44.entities.Mail.create({ ...form, status: "failed", folder: "sent", is_read: true });
+    if (mailConnected) {
+      try {
+        const res = await base44.functions.invoke("mailSend", form);
+        if (res.data?.error) throw new Error(res.data.error);
+      } catch (err) {
+        // If SMTP fails, fall back to platform email
+        await base44.integrations.Core.SendEmail({ to: form.to_email, subject: form.subject, body: form.body });
+        await base44.entities.Mail.create({ ...form, status: "failed", folder: "sent", is_read: true });
+      }
+    } else {
+      try {
+        await base44.integrations.Core.SendEmail({ to: form.to_email, subject: form.subject, body: form.body });
+        await base44.entities.Mail.create({ ...form, status: "sent", folder: "sent", is_read: true });
+      } catch {
+        await base44.entities.Mail.create({ ...form, status: "failed", folder: "sent", is_read: true });
+      }
     }
-    const user = await base44.auth.me();
-    if (user) {
-      const updated = await base44.entities.Mail.filter({ created_by: user.email }, "-created_date", 200);
-      setMails(updated);
-    }
+    await load();
   };
 
   const handleStar = async (mail) => {
@@ -72,7 +116,21 @@ export default function Mail() {
   const handleDelete = async (mail) => {
     setMails(prev => prev.filter(m => m.id !== mail.id));
     if (selected?.id === mail.id) setSelected(null);
-    await base44.entities.Mail.delete(mail.id);
+    // Only delete from entity if it's an entity-backed mail
+    if (!mail.id?.startsWith("imap-")) {
+      await base44.entities.Mail.delete(mail.id);
+    }
+  };
+
+  const handleDisconnect = async () => {
+    await base44.auth.updateMe({
+      mail_smtp_host: "", mail_smtp_port: "",
+      mail_smtp_user: "", mail_smtp_pass: "",
+      mail_imap_host: "", mail_imap_port: "",
+    });
+    setMailConnected(false);
+    setConnectedEmail("");
+    await load();
   };
 
   const handleMarkRead = async (mail) => {
@@ -196,6 +254,31 @@ export default function Mail() {
       {/* ── Main Content ── */}
       <div className="flex flex-col flex-1 min-w-0">
 
+        {/* Connection banner */}
+        {!mailConnected && (
+          <div className="flex items-center justify-between gap-3 px-4 py-2.5 bg-indigo-50 border-b border-indigo-200 shrink-0">
+            <div className="flex items-center gap-2 text-xs text-indigo-800">
+              <span className="text-base">📭</span>
+              <span>Connect your Gmail or workmailtech to send and receive real emails.</span>
+            </div>
+            <button
+              onClick={() => setShowConnectModal(true)}
+              className="shrink-0 text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-700 px-3 py-1.5 rounded-full transition-colors"
+            >
+              Connect Email
+            </button>
+          </div>
+        )}
+        {mailConnected && (
+          <div className="flex items-center justify-between gap-3 px-4 py-1.5 bg-green-50 border-b border-green-200 shrink-0">
+            <div className="flex items-center gap-2 text-xs text-green-800">
+              <span className="text-green-500">●</span>
+              <span>Connected: <strong>{connectedEmail}</strong></span>
+            </div>
+            <button onClick={handleDisconnect} className="text-xs text-red-500 hover:underline shrink-0">Disconnect</button>
+          </div>
+        )}
+
         {/* Top search bar */}
         <div className="flex items-center gap-2 px-3 py-2 shrink-0 bg-slate-50" style={{ borderBottom: "1px solid hsl(220 13% 91%)" }}>
           <button onClick={() => setSidebarOpen(true)} className="md:hidden p-2 hover:bg-slate-200 rounded-full text-slate-500">
@@ -317,6 +400,13 @@ export default function Mail() {
           onSend={handleSend}
           onClose={() => { setComposing(false); setReplyTo(null); }}
           replyTo={replyTo}
+        />
+      )}
+
+      {showConnectModal && (
+        <MailConnectModal
+          onClose={() => setShowConnectModal(false)}
+          onConnected={() => { setShowConnectModal(false); load(); }}
         />
       )}
     </div>
