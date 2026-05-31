@@ -1,5 +1,6 @@
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { FileText, FileCheck, Receipt, Truck, Mail, Plus, TrendingUp, Clock } from "lucide-react";
+import { FileText, FileCheck, Receipt, Truck, Mail, Plus, Clock, Search, X } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 
@@ -63,6 +64,7 @@ const DOC_TYPES = [
 
 export default function Home() {
   const navigate = useNavigate();
+  const [searchQuery, setSearchQuery] = useState("");
 
   const { data: docs = [] } = useQuery({
     queryKey: ["home-docs"],
@@ -75,6 +77,21 @@ export default function Home() {
   });
 
   const countByType = (type) => docs.filter((d) => d.type === type).length;
+
+  const searchResults = searchQuery.trim().length > 1
+    ? docs.filter(doc => {
+        const q = searchQuery.toLowerCase();
+        return (
+          (doc.number || "").toLowerCase().includes(q) ||
+          (doc.customer_name || "").toLowerCase().includes(q) ||
+          (doc.customer_email || "").toLowerCase().includes(q) ||
+          (doc.type || "").toLowerCase().includes(q) ||
+          (doc.status || "").replace(/_/g, " ").toLowerCase().includes(q) ||
+          (doc.notes || "").toLowerCase().includes(q) ||
+          (doc.tracking_number || "").toLowerCase().includes(q)
+        );
+      })
+    : [];
 
   const recentDocs = docs.slice(0, 5);
 
@@ -94,6 +111,59 @@ export default function Home() {
         </h1>
         <p className="text-muted-foreground mt-1">What would you like to create today?</p>
       </div>
+
+      {/* Search */}
+      <div className="relative">
+        <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
+        <input
+          type="text"
+          value={searchQuery}
+          onChange={e => setSearchQuery(e.target.value)}
+          placeholder="Search by invoice number, customer name, status, tracking number…"
+          className="w-full h-11 pl-10 pr-10 rounded-xl border border-border bg-card text-sm focus:outline-none focus:ring-2 focus:ring-ring placeholder:text-muted-foreground"
+        />
+        {searchQuery && (
+          <button onClick={() => setSearchQuery("")} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
+            <X className="h-4 w-4" />
+          </button>
+        )}
+      </div>
+
+      {/* Search results */}
+      {searchQuery.trim().length > 1 && (
+        <div>
+          <p className="text-xs text-muted-foreground mb-2">{searchResults.length} result{searchResults.length !== 1 ? "s" : ""} for "{searchQuery}"</p>
+          {searchResults.length === 0 ? (
+            <div className="bg-card rounded-2xl border border-border px-5 py-8 text-center text-sm text-muted-foreground">No documents found</div>
+          ) : (
+            <div className="bg-card rounded-2xl border border-border divide-y divide-border overflow-hidden">
+              {searchResults.slice(0, 20).map(doc => {
+                const meta = DOC_TYPES.find(d => d.type === doc.type) || DOC_TYPES[0];
+                const Icon = meta.icon;
+                return (
+                  <div
+                    key={doc.id}
+                    onClick={() => navigate(`/documents/${doc.id}`)}
+                    className="flex items-center gap-3 px-5 py-3.5 cursor-pointer hover:bg-muted/40 transition-colors"
+                  >
+                    <div className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0" style={{ background: meta.bg }}>
+                      <Icon style={{ color: meta.color }} className="h-4 w-4" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-medium text-sm truncate">{doc.number || "—"}</p>
+                      <p className="text-xs text-muted-foreground truncate">{doc.customer_name || "No customer"}</p>
+                    </div>
+                    <div className="text-right shrink-0">
+                      <p className="text-xs font-semibold text-foreground capitalize">{doc.status?.replace(/_/g, " ")}</p>
+                      <p className="text-xs text-muted-foreground capitalize">{doc.type}</p>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Main document type grid */}
       <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
