@@ -1,18 +1,15 @@
 import { Link, useLocation } from "react-router-dom";
-import { Users, FileText, Settings, Plus, LogOut, Mail, LayoutGrid, ShieldAlert, Receipt, FileSignature, ClipboardList, Truck } from "lucide-react";
+import { Users, Settings, LogOut, Mail, LayoutGrid, ShieldAlert, Home } from "lucide-react";
 import { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 
 const navItems = [
-  { label: "Invoices",    icon: ClipboardList,  path: "/documents?type=invoice" },
-  { label: "Quotations",  icon: FileSignature,  path: "/documents?type=quotation" },
-  { label: "Receipts",    icon: Receipt,        path: "/documents?type=receipt" },
-  { label: "Waybills",    icon: Truck,          path: "/documents?type=waybill" },
-  { label: "Customers",   icon: Users,          path: "/customers" },
-  { label: "Mail",        icon: Mail,           path: "/mail" },
-  { label: "Apps & Tools",icon: LayoutGrid,     path: "/apps" },
-  { label: "Settings",    icon: Settings,       path: "/settings" },
+  { label: "Home",        icon: Home,       path: "/" },
+  { label: "Customers",   icon: Users,      path: "/customers" },
+  { label: "Mail",        icon: Mail,       path: "/mail" },
+  { label: "Apps & Tools",icon: LayoutGrid, path: "/apps" },
+  { label: "Settings",    icon: Settings,   path: "/settings" },
 ];
 
 
@@ -58,7 +55,9 @@ export default function Sidebar({ onClose }) {
           </Link>
         )}
         {navItems.map((item, idx) => {
-          const active = location.pathname + location.search === item.path;
+          const active = item.path === "/"
+            ? location.pathname === "/"
+            : location.pathname + location.search === item.path || (item.path !== "/" && location.pathname.startsWith(item.path.split("?")[0]) && item.path.split("?")[0] !== "/");
           return (
             <Link
               key={item.path + idx}

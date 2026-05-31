@@ -1,12 +1,12 @@
 import { useState, useEffect } from "react";
 import { Outlet, Link, useLocation } from "react-router-dom";
 import Sidebar from "./Sidebar";
-import { Menu, FileText, Users, Mail, Settings, Search, LayoutGrid } from "lucide-react";
+import { Menu, Home, Users, Mail, Settings, Search, LayoutGrid } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import CommandPalette from "./CommandPalette";
 
 const bottomNavItems = [
-  { label: "Docs",      icon: FileText,   path: "/documents" },
+  { label: "Home",      icon: Home,       path: "/" },
   { label: "Customers", icon: Users,      path: "/customers" },
   { label: "Mail",      icon: Mail,       path: "/mail" },
   { label: "Apps",      icon: LayoutGrid, path: "/apps" },
