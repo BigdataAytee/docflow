@@ -12,6 +12,13 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Button } from "@/components/ui/button";
 
 const currencySymbols = { NGN: "₦", USD: "$", EUR: "€", GBP: "£" };
+
+const TYPE_THEMES = {
+  invoice:   { gradient: "linear-gradient(135deg,#3b82f6 0%,#1d4ed8 100%)", glow: "rgba(59,130,246,0.18)",  accent: "#3b82f6",  accentBg: "rgba(59,130,246,0.08)",  icon: "💼", emoji: "📄" },
+  quotation: { gradient: "linear-gradient(135deg,#8b5cf6 0%,#6d28d9 100%)", glow: "rgba(139,92,246,0.18)", accent: "#8b5cf6",  accentBg: "rgba(139,92,246,0.08)", icon: "📋", emoji: "📋" },
+  receipt:   { gradient: "linear-gradient(135deg,#10b981 0%,#047857 100%)", glow: "rgba(16,185,129,0.18)",  accent: "#10b981",  accentBg: "rgba(16,185,129,0.08)",  icon: "🧾", emoji: "🧾" },
+  waybill:   { gradient: "linear-gradient(135deg,#f59e0b 0%,#d97706 100%)", glow: "rgba(245,158,11,0.18)",  accent: "#f59e0b",  accentBg: "rgba(245,158,11,0.08)",  icon: "🚚", emoji: "🚚" },
+};
 const sym = (currency) => currencySymbols[currency] || "₦";
 
 const typeLabels = { invoice: "Invoice", quotation: "Quotation", receipt: "Receipt", waybill: "Waybill" };
@@ -237,28 +244,54 @@ export default function Documents() {
 
   const hasFilters = search || typeFilter !== "all" || statusFilter !== "all";
 
+  const theme = typeFilter !== "all" ? TYPE_THEMES[typeFilter] : null;
+
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight">
-            {typeFilter !== "all" ? typeLabels[typeFilter] + "s" : "Documents"}
-          </h1>
-          <p className="text-sm text-muted-foreground mt-0.5">
-            {loading ? "Loading…" : `${documents.length} total · ${stats.paidCount} paid`}
-          </p>
+      {/* Themed header banner */}
+      {theme ? (
+        <div
+          className="relative rounded-3xl overflow-hidden px-6 py-7 md:px-10 md:py-9"
+          style={{ background: theme.gradient, boxShadow: `0 8px 40px ${theme.glow}` }}
+        >
+          {/* Decorative circles */}
+          <div className="absolute -top-8 -right-8 w-48 h-48 rounded-full bg-white/10" />
+          <div className="absolute -bottom-10 -left-6 w-36 h-36 rounded-full bg-black/10" />
+          <div className="relative z-10 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div>
+              <p className="text-white/60 text-xs font-semibold uppercase tracking-widest mb-1">Documents</p>
+              <h1 className="text-2xl md:text-3xl font-bold text-white leading-tight">
+                {theme.emoji} {typeLabels[typeFilter]}s
+              </h1>
+              <p className="text-white/60 text-sm mt-1.5">
+                {loading ? "Loading…" : `${filtered.length} document${filtered.length !== 1 ? "s" : ""} · ${stats.paidCount} paid`}
+              </p>
+            </div>
+            <button
+              onClick={() => navigate(`/documents/new?type=${typeFilter}`)}
+              className="inline-flex items-center gap-2 bg-white/20 hover:bg-white/30 backdrop-blur-sm text-white px-5 py-2.5 rounded-2xl text-sm font-bold transition-all active:scale-95 w-fit border border-white/20"
+            >
+              <Plus className="h-4 w-4" />
+              New {typeLabels[typeFilter]}
+            </button>
+          </div>
         </div>
-        <div className="flex items-center gap-2">
+      ) : (
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <h1 className="text-2xl font-bold tracking-tight">Documents</h1>
+            <p className="text-sm text-muted-foreground mt-0.5">
+              {loading ? "Loading…" : `${documents.length} total · ${stats.paidCount} paid`}
+            </p>
+          </div>
           <button
-            onClick={() => navigate(`/documents/new?type=${typeFilter !== "all" ? typeFilter : "invoice"}`)}
+            onClick={() => navigate("/documents/new?type=invoice")}
             className="inline-flex items-center gap-2 bg-primary text-primary-foreground px-4 py-2.5 rounded-xl text-sm font-semibold hover:bg-primary/90 transition-all shadow-sm shadow-primary/20 active:scale-95"
           >
-            <Plus className="h-4 w-4" />
-            New {typeFilter !== "all" ? typeLabels[typeFilter] : "Invoice"}
+            <Plus className="h-4 w-4" /> New Invoice
           </button>
         </div>
-      </div>
+      )}
 
       {/* Table Card */}
       <div className="bg-card rounded-2xl border border-border overflow-hidden">
