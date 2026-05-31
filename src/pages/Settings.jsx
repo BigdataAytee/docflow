@@ -6,7 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
-import { ImageIcon, Building2, FileText, Hash, User, Save, Upload, X, CheckCircle2 } from "lucide-react";
+import { ImageIcon, Building2, FileText, Hash, User, Save, Upload, X, CheckCircle2, AlertTriangle } from "lucide-react";
 import SignaturePad from "../components/SignaturePad";
 
 const TABS = [
@@ -38,6 +38,9 @@ export default function Settings() {
   const [activeTab, setActiveTab] = useState("company");
   const [managerSig, setManagerSig] = useState(null);
   const [savedManagerSig, setSavedManagerSig] = useState(null);
+  const [savedForm, setSavedForm] = useState(null);
+  const [showLeaveModal, setShowLeaveModal] = useState(false);
+  const [pendingNav, setPendingNav] = useState(null);
   const [form, setForm] = useState({
     company_name: "",
     company_email: "",
@@ -66,8 +69,7 @@ export default function Settings() {
   useEffect(() => {
     base44.auth.me().then(user => {
       if (user) {
-        setForm(f => ({
-          ...f,
+        const loaded = {
           company_name: user.company_name || "",
           company_email: user.company_email || user.email || "",
           company_phone: user.company_phone || "",
@@ -90,7 +92,9 @@ export default function Settings() {
           default_bank_name: user.default_bank_name || "",
           default_account_number: user.default_account_number || "",
           default_account_holder_name: user.default_account_holder_name || "",
-        }));
+        };
+        setForm(loaded);
+        setSavedForm(loaded);
         if (user.logo_url) setLogoPreview(user.logo_url);
         if (user.manager_signature) {
           setManagerSig(user.manager_signature);
@@ -99,6 +103,33 @@ export default function Settings() {
       }
     });
   }, []);
+
+  const isDirty = savedForm !== null && (
+    JSON.stringify(form) !== JSON.stringify(savedForm) ||
+    managerSig !== savedManagerSig
+  );
+
+  useEffect(() => {
+    const handler = (e) => { if (isDirty) { e.preventDefault(); e.returnValue = ""; } };
+    window.addEventListener("beforeunload", handler);
+    return () => window.removeEventListener("beforeunload", handler);
+  }, [isDirty]);
+
+  useEffect(() => {
+    if (!isDirty) return;
+    const handler = (e) => {
+      const anchor = e.target.closest("a[href]");
+      if (!anchor) return;
+      const href = anchor.getAttribute("href");
+      if (!href || href.startsWith("http") || href.startsWith("mailto")) return;
+      e.preventDefault();
+      e.stopPropagation();
+      setPendingNav(href);
+      setShowLeaveModal(true);
+    };
+    document.addEventListener("click", handler, true);
+    return () => document.removeEventListener("click", handler, true);
+  }, [isDirty]);
 
   const handleLogoChange = async (e) => {
     const file = e.target.files[0];
@@ -145,8 +176,15 @@ export default function Settings() {
       })
     ));
     setSavedManagerSig(managerSig);
+    setSavedForm({ ...form });
     setSaving(false);
     toast.success("Settings saved and applied to all documents");
+  };
+
+  const discard = () => {
+    if (savedForm) setForm({ ...savedForm });
+    setManagerSig(savedManagerSig);
+    toast("Changes discarded");
   };
 
   const update = (k, v) => setForm(p => ({ ...p, [k]: v }));
@@ -425,17 +463,74 @@ export default function Settings() {
 
       {/* Save button */}
       <div className="mt-6 flex items-center justify-between gap-4 bg-card rounded-2xl border border-border p-4 shadow-sm">
-        <p className="text-sm text-muted-foreground hidden sm:block">Changes apply to all existing documents.</p>
-        <Button
-          onClick={save}
-          disabled={saving || hasDuplicatePrefixes}
-          className="w-full sm:w-auto gap-2 font-bold px-8"
-          style={{ background: ACCENT.gradient }}
-        >
-          <Save className="h-4 w-4" />
-          {saving ? "Saving…" : "Save Settings"}
-        </Button>
+        <p className="text-sm text-muted-foreground hidden sm:block">
+          {isDirty ? <span className="text-amber-600 font-medium">⚠ You have unsaved changes</span> : "Changes apply to all existing documents."}
+        </p>
+        <div className="flex gap-2 w-full sm:w-auto">
+          {isDirty && (
+            <Button variant="outline" onClick={discard} className="flex-1 sm:flex-none">
+              Discard
+            </Button>
+          )}
+          <Button
+            onClick={save}
+            disabled={saving || hasDuplicatePrefixes}
+            className="flex-1 sm:flex-none gap-2 font-bold px-8"
+            style={{ background: isDirty ? "linear-gradient(135deg,#f59e0b,#d97706)" : ACCENT.gradient }}
+          >
+            <Save className="h-4 w-4" />
+            {saving ? "Saving…" : "Save Settings"}
+          </Button>
+        </div>
       </div>
+
+      {/* Leave confirmation modal */}
+      {showLeaveModal && (
+        <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4">
+          <div className="bg-card rounded-2xl border border-border p-6 max-w-sm w-full shadow-2xl space-y-4">
+            <div className="flex items-start gap-3">
+              <div className="w-10 h-10 rounded-xl bg-amber-100 flex items-center justify-center shrink-0">
+                <AlertTriangle className="h-5 w-5 text-amber-600" />
+              </div>
+              <div>
+                <h3 className="font-bold text-base">Unsaved Changes</h3>
+                <p className="text-sm text-muted-foreground mt-0.5">You have changes that haven't been saved yet. What would you like to do?</p>
+              </div>
+            </div>
+            <div className="flex flex-col gap-2">
+              <Button
+                className="w-full gap-2 font-bold"
+                style={{ background: ACCENT.gradient }}
+                onClick={async () => {
+                  setShowLeaveModal(false);
+                  await save();
+                  if (pendingNav) window.location.href = pendingNav;
+                }}
+              >
+                <Save className="h-4 w-4" /> Save then Leave
+              </Button>
+              <Button
+                variant="outline"
+                className="w-full"
+                onClick={() => {
+                  setShowLeaveModal(false);
+                  discard();
+                  if (pendingNav) window.location.href = pendingNav;
+                }}
+              >
+                Discard then Leave
+              </Button>
+              <Button
+                variant="ghost"
+                className="w-full text-muted-foreground"
+                onClick={() => { setShowLeaveModal(false); setPendingNav(null); }}
+              >
+                Keep Editing
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
