@@ -189,9 +189,26 @@ export default function ViewDocument() {
   const generatePdfBlob = async (targetRef) => {
     const html2canvas = (await import("html2canvas")).default;
     const { jsPDF } = await import("jspdf");
-    const element = (targetRef || pdfRef).current;
-    const canvas = await html2canvas(element, { scale: 3, useCORS: true, backgroundColor: "#ffffff", width: 794, windowWidth: 794 });
-    const imgData = canvas.toDataURL("image/jpeg", 0.88);
+    const element = (targetRef || pdfDocRef).current;
+    const wrapper = element.parentElement;
+    const savedStyle = wrapper.getAttribute("style");
+    wrapper.setAttribute("style", "position:fixed;top:0;left:0;width:794px;z-index:-1;visibility:hidden;");
+    await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
+    const elHeight = element.scrollHeight || 1123;
+    const canvas = await html2canvas(element, {
+      scale: 2,
+      useCORS: true,
+      allowTaint: true,
+      backgroundColor: "#ffffff",
+      width: 794,
+      height: elHeight,
+      windowWidth: 794,
+      windowHeight: elHeight,
+      scrollX: 0,
+      scrollY: 0,
+    });
+    wrapper.setAttribute("style", savedStyle || "");
+    const imgData = canvas.toDataURL("image/jpeg", 0.92);
     const pdf = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
     const pageWidthMm = pdf.internal.pageSize.getWidth();
     const pageHeightMm = pdf.internal.pageSize.getHeight();
@@ -514,8 +531,8 @@ export default function ViewDocument() {
       )}
 
       {/* Hidden off-screen render container for PDF generation */}
-      <div style={{ position: "absolute", left: "-9999px", top: 0, width: "794px", minWidth: "794px", overflow: "visible", zIndex: -1, pointerEvents: "none" }}>
-        <div ref={pdfDocRef} style={{ width: 794, minWidth: 794 }}>
+      <div style={{ position: "fixed", top: 0, left: "-9999px", width: "794px", zIndex: -1, pointerEvents: "none", visibility: "hidden" }}>
+        <div ref={pdfDocRef} style={{ width: "794px" }}>
           {doc && (
             <UnifiedTemplate
               doc={doc}
