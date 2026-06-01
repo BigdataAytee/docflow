@@ -889,9 +889,7 @@ function UnifiedTemplate({ doc, onSaveManagerSig, onSaveCustomerSig, onOpenSignM
           <div className="border-t border-gray-200 pt-6 mt-6">
             <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-3">Bank / Payment Details</p>
             <div className="inline-flex flex-col gap-2 text-sm bg-gray-50 border border-gray-200 rounded-lg px-4 py-3 min-w-[220px]">
-              {doc.payment_method && (
-                <div className="flex items-center gap-3"><span className="text-[10px] text-gray-400 uppercase tracking-wider font-semibold w-28 shrink-0">Method</span><span className="text-gray-700 font-medium">{doc.payment_method}</span></div>
-              )}
+
               {doc.bank_name && (
                 <div className="flex items-center gap-3"><span className="text-[10px] text-gray-400 uppercase tracking-wider font-semibold w-28 shrink-0">Bank</span><span className="text-gray-700 font-medium">{doc.bank_name}</span></div>
               )}
