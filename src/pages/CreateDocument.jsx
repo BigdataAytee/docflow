@@ -571,7 +571,12 @@ export default function CreateDocument() {
                           <Input value={numSeq} onChange={e => { setNumSeq(e.target.value); setForm(f => ({ ...f, number: companyAbbr ? `${companyAbbr}-${typePrefix}-${e.target.value}` : `${typePrefix}-${e.target.value}` })); }} placeholder="e.g. 0001" className="h-8 text-sm mt-1" />
                         </div>
                         <p className="text-xs text-muted-foreground">Preview: <span className="font-mono font-semibold text-foreground">{companyAbbr ? `${companyAbbr}-${typePrefix}-${numSeq}` : `${typePrefix}-${numSeq}`}</span></p>
-                        <button type="button" className="w-full mt-1 bg-primary text-primary-foreground text-xs font-semibold py-1.5 rounded-md hover:bg-primary/90 transition-colors" onClick={() => setNumOpen(false)}>Save</button>
+                        <button type="button" className="w-full mt-1 bg-primary text-primary-foreground text-xs font-semibold py-1.5 rounded-md hover:bg-primary/90 transition-colors" onClick={async () => {
+                             // Persist abbreviation to user settings so it stays in sync
+                             await base44.auth.updateMe({ company_abbreviation: companyAbbr });
+                             setNumOpen(false);
+                             toast.success("Number format saved to settings.");
+                           }}>Save</button>
                       </div>
                     </PopoverContent>
                   </Popover>

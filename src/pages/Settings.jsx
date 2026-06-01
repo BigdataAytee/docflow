@@ -198,7 +198,7 @@ export default function Settings() {
     await base44.auth.updateMe(payload);
     // Filter by current user's email to only update OWN documents
     const me = await base44.auth.me();
-    const docs = await base44.entities.Document.filter({ created_by: me.email }, "-created_date", 500);
+    const docs = await base44.entities.Document.filter({ created_by_id: me.id }, "-created_date", 500);
     await Promise.all(docs.map(doc =>
       base44.entities.Document.update(doc.id, {
         logo_url: form.logo_url,
