@@ -12,6 +12,7 @@ const DOC_TYPES = [
     icon: FileText,
     gradient: "linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)",
     glow: "rgba(59,130,246,0.25)",
+    path: "/documents?type=invoice",
     newPath: "/documents/new?type=invoice",
   },
   {
@@ -21,6 +22,7 @@ const DOC_TYPES = [
     icon: FileCheck,
     gradient: "linear-gradient(135deg, #8b5cf6 0%, #6d28d9 100%)",
     glow: "rgba(139,92,246,0.25)",
+    path: "/documents?type=quotation",
     newPath: "/documents/new?type=quotation",
   },
   {
@@ -30,6 +32,7 @@ const DOC_TYPES = [
     icon: Receipt,
     gradient: "linear-gradient(135deg, #10b981 0%, #047857 100%)",
     glow: "rgba(16,185,129,0.25)",
+    path: "/documents?type=receipt",
     newPath: "/documents/new?type=receipt",
   },
   {
@@ -39,6 +42,7 @@ const DOC_TYPES = [
     icon: Truck,
     gradient: "linear-gradient(135deg, #f59e0b 0%, #d97706 100%)",
     glow: "rgba(245,158,11,0.25)",
+    path: "/documents?type=waybill",
     newPath: "/documents/new?type=waybill",
   },
   {
@@ -48,6 +52,7 @@ const DOC_TYPES = [
     icon: Mail,
     gradient: "linear-gradient(135deg, #ef4444 0%, #b91c1c 100%)",
     glow: "rgba(239,68,68,0.25)",
+    path: "/mail",
     newPath: null,
   },
 ];
@@ -66,7 +71,6 @@ const STATUS_COLORS = {
 export default function Home() {
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState("");
-  const [selectedType, setSelectedType] = useState(null);
 
   const { data: user } = useQuery({
     queryKey: ["me"],
@@ -84,7 +88,7 @@ export default function Home() {
 
   const countByType = (type) => docs.filter((d) => d.type === type).length;
 
-  const filteredDocs = selectedType ? docs.filter((d) => d.type === selectedType) : [];
+
 
   const searchResults =
     searchQuery.trim().length > 1
@@ -112,14 +116,8 @@ export default function Home() {
   };
 
   const firstName = user?.full_name?.split(" ")[0] || "";
-  const activeMeta = DOC_TYPES.find((d) => d.type === selectedType);
-
-  const handleCardClick = (type) => {
-    if (type === "mail") {
-      navigate("/mail");
-      return;
-    }
-    setSelectedType((prev) => (prev === type ? null : type));
+  const handleCardClick = (path) => {
+    navigate(path);
   };
 
   const handleNewClick = (e, newPath) => {
@@ -160,10 +158,7 @@ export default function Home() {
       <div
         className="relative rounded-3xl overflow-hidden px-6 py-8 md:px-10 md:py-10"
         style={{
-          background: activeMeta
-            ? activeMeta.gradient
-            : "linear-gradient(135deg, hsl(230,65%,14%) 0%, hsl(230,60%,22%) 60%, hsl(260,50%,28%) 100%)",
-          transition: "background 0.3s ease",
+          background: "linear-gradient(135deg, hsl(230,65%,14%) 0%, hsl(230,60%,22%) 60%, hsl(260,50%,28%) 100%)",
         }}
       >
         <div className="absolute -top-10 -right-10 w-56 h-56 rounded-full opacity-20" style={{ background: "radial-gradient(circle, #6366f1, transparent 70%)" }} />
@@ -233,19 +228,16 @@ export default function Home() {
           <div>
             <h2 className="font-bold text-base text-foreground mb-4">Quick Access</h2>
             <div className="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-4">
-              {DOC_TYPES.map(({ type, label, description, icon: Icon, gradient, glow, newPath }) => {
-                const isSelected = selectedType === type;
+              {DOC_TYPES.map(({ type, label, description, icon: Icon, gradient, glow, path, newPath }) => {
                 const count = type !== "mail" ? countByType(type) : null;
                 return (
                   <div
                     key={type}
-                    onClick={() => handleCardClick(type)}
-                    className="group relative rounded-2xl md:rounded-3xl cursor-pointer overflow-hidden"
+                    onClick={() => handleCardClick(path)}
+                    className="group relative rounded-2xl md:rounded-3xl cursor-pointer overflow-hidden hover:-translate-y-1"
                     style={{
                       background: gradient,
-                      boxShadow: isSelected ? `0 0 0 3px white, 0 8px 32px ${glow}` : `0 4px 24px ${glow}`,
-                      transform: isSelected ? "scale(1.04)" : "scale(1)",
-                      opacity: selectedType && !isSelected ? 0.55 : 1,
+                      boxShadow: `0 4px 24px ${glow}`,
                       transition: "all 0.25s ease",
                     }}
                   >
@@ -283,43 +275,8 @@ export default function Home() {
             </div>
           </div>
 
-          {/* Filtered docs list for selected type */}
-          {selectedType && selectedType !== "mail" && (
-            <div>
-              <div className="flex items-center justify-between mb-4">
-                <div className="flex items-center gap-2">
-                  <h2 className="font-bold text-base text-foreground">{activeMeta?.label}</h2>
-                  <span className="text-xs text-muted-foreground">({filteredDocs.length})</span>
-                </div>
-                <button
-                  onClick={() => setSelectedType(null)}
-                  className="text-xs text-muted-foreground hover:text-foreground flex items-center gap-1"
-                >
-                  <X className="h-3 w-3" /> Close
-                </button>
-              </div>
-              {filteredDocs.length === 0 ? (
-                <div className="bg-card rounded-2xl border border-border px-5 py-10 text-center text-sm text-muted-foreground">
-                  No {activeMeta?.label?.toLowerCase()} yet.{" "}
-                  <button
-                    onClick={() => navigate(activeMeta?.newPath)}
-                    className="text-primary underline ml-1"
-                  >
-                    Create one
-                  </button>
-                </div>
-              ) : (
-                <div className="bg-card rounded-2xl border border-border overflow-hidden shadow-sm">
-                  {filteredDocs.map((doc, idx) => (
-                    <DocRow key={doc.id} doc={doc} idx={idx} total={filteredDocs.length} />
-                  ))}
-                </div>
-              )}
-            </div>
-          )}
-
           {/* Recent documents */}
-          {!selectedType && recentDocs.length > 0 && (
+          {recentDocs.length > 0 && (
             <div>
               <div className="flex items-center gap-2 mb-4">
                 <Clock className="h-4 w-4 text-muted-foreground" />
