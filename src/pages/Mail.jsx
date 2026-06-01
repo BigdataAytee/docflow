@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { base44 } from "@/api/base44Client";
 import MailConnectModal from "../components/mail/MailConnectModal";
+import { toast } from "sonner";
 import {
   Search, RefreshCw, ChevronDown, MoreVertical, Menu, X,
   CheckSquare, Square, Inbox, Settings, HelpCircle, Grid3x3,
@@ -43,24 +44,26 @@ export default function Mail() {
     const customerPromise = base44.entities.Customer.filter({ created_by: user.email }, "-created_date", 200);
 
     if (isConnected) {
-      // Fetch real inbox from IMAP
       try {
-        const [c, inboxRes] = await Promise.all([
+        const [c, inboxRes, sentMails] = await Promise.all([
           customerPromise,
           base44.functions.invoke("mailFetch", { folder: "INBOX", limit: 100 }),
+          base44.entities.Mail.filter({ created_by: user.email }, "-created_date", 200),
         ]);
         setCustomers(c);
-        const realMails = (inboxRes.data?.messages || []).map((m, idx) => ({
-          id: `imap-${m.uid || idx}`,
-          ...m,
-          folder: "inbox",
-        }));
-        // Also load sent from entity store
-        const sentMails = await base44.entities.Mail.filter({ created_by: user.email }, "-created_date", 200);
-        setMails([...realMails, ...sentMails]);
+        if (inboxRes.data?.error) {
+          toast.error(`Inbox error: ${inboxRes.data.error}`);
+          setMails(sentMails);
+        } else {
+          const inboxMails = (inboxRes.data?.messages || []).map((m, idx) => ({
+            id: `imap-${m.uid || idx}`,
+            ...m,
+            folder: "inbox",
+          }));
+          setMails([...inboxMails, ...sentMails]);
+        }
       } catch (err) {
-        console.error("IMAP fetch failed:", err);
-        // Fall back to entity mails
+        toast.error(`Could not load inbox: ${err.message}`);
         const [c, m] = await Promise.all([customerPromise, base44.entities.Mail.filter({ created_by: user.email }, "-created_date", 200)]);
         setCustomers(c);
         setMails(m);
@@ -87,19 +90,15 @@ export default function Mail() {
 
   const handleSend = async (form) => {
     if (mailConnected) {
-      try {
-        const res = await base44.functions.invoke("mailSend", form);
-        if (res.data?.error) throw new Error(res.data.error);
-      } catch (err) {
-        // SMTP failed — fall back to platform email
-        try {
-          await base44.integrations.Core.SendEmail({ to: form.to_email, subject: form.subject, body: form.body });
-          await base44.entities.Mail.create({ ...form, status: "sent", folder: "sent", is_read: true });
-        } catch {
-          await base44.entities.Mail.create({ ...form, status: "failed", folder: "sent", is_read: true });
-        }
+      // Use the user's real SMTP — never fall back to platform email (which shows 'DocFlow')
+      const res = await base44.functions.invoke("mailSend", form);
+      if (res.data?.error) {
+        toast.error(`Send failed: ${res.data.error}`);
+        await base44.entities.Mail.create({ ...form, status: "failed", folder: "sent", is_read: true });
       }
+      // On success, mailSend backend already saves the entity record
     } else {
+      // Not connected — use platform email
       try {
         await base44.integrations.Core.SendEmail({ to: form.to_email, subject: form.subject, body: form.body });
         await base44.entities.Mail.create({ ...form, status: "sent", folder: "sent", is_read: true });
