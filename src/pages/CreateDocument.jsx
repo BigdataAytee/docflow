@@ -112,7 +112,7 @@ export default function CreateDocument() {
     manager_name: "",
     manager_title: "",
     payment_instructions: "",
-    payment_method: "Bank Transfer",
+    payment_method: "",
     bank_name: "",
     account_number: "",
     account_holder_name: "",
@@ -1083,23 +1083,6 @@ export default function CreateDocument() {
         </div>
       )}
 
-      {/* Hidden always-rendered PDF container for direct downloads */}
-      <div style={{ position: "fixed", top: 0, left: "-9999px", width: "794px", zIndex: -1, pointerEvents: "none", opacity: 0 }}>
-        <div ref={pdfRef} style={{ width: "794px" }}>
-          <DocumentPreview
-            form={form}
-            items={calcs.lineItems}
-            calcs={calcs}
-            sym={sym}
-            docType={form.type || docType}
-            managerSig={managerSig}
-            customerSig={customerSig}
-            template={template}
-            templateColor={templateColor}
-          />
-        </div>
-      </div>
-
       {/* PDF Preview Modal */}
       {showPdfPreview && (
         <div className="fixed inset-0 z-50 bg-black/60 flex flex-col" onClick={() => setShowPdfPreview(false)}>
@@ -1164,7 +1147,7 @@ export default function CreateDocument() {
             <div className="flex flex-col items-center p-4">
               <div style={{ width: 794 * previewScale, minHeight: 1123 * previewScale, overflow: "hidden" }}>
                 <div style={{ width: 794, transformOrigin: "top left", transform: `scale(${previewScale})`, display: "block" }}>
-                  <div style={{ width: 794 }}>
+                  <div ref={pdfRef} style={{ width: 794 }}>
                     <DocumentPreview
                       form={form}
                       items={calcs.lineItems}
