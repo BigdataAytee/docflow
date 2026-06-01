@@ -169,7 +169,7 @@ export default function CreateDocument() {
         tax_rate: user.default_tax_rate ?? "",
         terms: user.default_terms || "",
         payment_instructions: user.default_payment_instructions || "",
-        manager_name: user.full_name || "",
+        manager_name: user.manager_name || user.full_name || "",
         manager_title: user.manager_title || "",
       }));
 
