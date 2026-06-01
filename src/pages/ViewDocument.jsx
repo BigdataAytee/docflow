@@ -885,9 +885,28 @@ function UnifiedTemplate({ doc, onSaveManagerSig, onSaveCustomerSig, onOpenSignM
           )}
         </div>
 
-        {doc.payment_instructions && !['receipt', 'waybill'].includes(doc.type) && (
+        {(doc.bank_name || doc.account_number || doc.account_holder_name) && doc.type !== 'waybill' && (
           <div className="border-t border-gray-200 pt-6 mt-6">
-            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-2">Payment Detail</p>
+            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-3">Bank Details</p>
+            <div className="grid grid-cols-2 gap-3 text-sm">
+              {doc.bank_name && (
+                <div><p className="text-[10px] text-gray-400 uppercase tracking-wider font-semibold mb-0.5">Bank</p><p className="text-gray-700 font-medium">{doc.bank_name}</p></div>
+              )}
+              {doc.account_holder_name && (
+                <div><p className="text-[10px] text-gray-400 uppercase tracking-wider font-semibold mb-0.5">Account Name</p><p className="text-gray-700 font-medium">{doc.account_holder_name}</p></div>
+              )}
+              {doc.account_number && (
+                <div><p className="text-[10px] text-gray-400 uppercase tracking-wider font-semibold mb-0.5">Account Number</p><p className="text-gray-700 font-medium">{doc.account_number}</p></div>
+              )}
+              {doc.payment_method && (
+                <div><p className="text-[10px] text-gray-400 uppercase tracking-wider font-semibold mb-0.5">Payment Method</p><p className="text-gray-700 font-medium">{doc.payment_method}</p></div>
+              )}
+            </div>
+          </div>
+        )}
+        {doc.payment_instructions && doc.type !== 'waybill' && (
+          <div className="border-t border-gray-200 pt-6 mt-4">
+            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-2">Payment Instructions</p>
             <p className="text-sm text-gray-700 whitespace-pre-line">{doc.payment_instructions}</p>
           </div>
         )}
