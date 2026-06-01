@@ -153,13 +153,26 @@ export default function Settings() {
   const handleLogoChange = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
+    // Reset input so the same file can be re-selected after a failure
+    e.target.value = "";
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error("Logo file is too large. Please use an image under 5MB.");
+      return;
+    }
     setUploadingLogo(true);
     const reader = new FileReader();
     reader.onload = (ev) => setLogoPreview(ev.target.result);
     reader.readAsDataURL(file);
-    const { file_url } = await base44.integrations.Core.UploadFile({ file });
-    setForm(f => ({ ...f, logo_url: file_url }));
-    setUploadingLogo(false);
+    try {
+      const { file_url } = await base44.integrations.Core.UploadFile({ file });
+      setForm(f => ({ ...f, logo_url: file_url }));
+      toast.success("Logo uploaded successfully!");
+    } catch (err) {
+      setLogoPreview(null);
+      toast.error("Logo upload failed. Please try again.");
+    } finally {
+      setUploadingLogo(false);
+    }
   };
 
   const uploadSig = async (dataUrl) => {
