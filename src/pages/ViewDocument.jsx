@@ -189,7 +189,7 @@ export default function ViewDocument() {
     const html2canvas = (await import("html2canvas")).default;
     const { jsPDF } = await import("jspdf");
     const element = (targetRef || pdfRef).current;
-    const canvas = await html2canvas(element, { scale: 1.5, useCORS: true, backgroundColor: "#ffffff", width: 794, windowWidth: 794 });
+    const canvas = await html2canvas(element, { scale: 3, useCORS: true, backgroundColor: "#ffffff", width: 794, windowWidth: 794 });
     const imgData = canvas.toDataURL("image/jpeg", 0.88);
     const pdf = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
     const pageWidthMm = pdf.internal.pageSize.getWidth();

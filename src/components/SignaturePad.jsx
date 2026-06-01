@@ -26,11 +26,11 @@ export default function SignaturePad({ label = "Signature", onSave }) {
     const ctx = canvas.getContext("2d");
     const pos = getPos(e, canvas);
     ctx.strokeStyle = "#1d4ed8";
-    ctx.lineWidth = 3;
+    ctx.lineWidth = 6;
     ctx.lineCap = "round";
     ctx.lineJoin = "round";
     ctx.beginPath();
-    ctx.arc(pos.x, pos.y, 1.5, 0, Math.PI * 2);
+    ctx.arc(pos.x, pos.y, 3, 0, Math.PI * 2);
     ctx.fillStyle = "#1d4ed8";
     ctx.fill();
     ctx.beginPath();
