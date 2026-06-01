@@ -19,6 +19,7 @@ export default function Sidebar({ onClose }) {
   const [companyName, setCompanyName] = useState("");
   const [companyEmail, setCompanyEmail] = useState("");
   const [isAdmin, setIsAdmin] = useState(false);
+  const [logoUrl, setLogoUrl] = useState("");
 
   useEffect(() => {
     base44.auth.me().then(user => {
@@ -26,6 +27,7 @@ export default function Sidebar({ onClose }) {
         setCompanyName(user.company_name || user.full_name || "");
         setCompanyEmail(user.company_email || user.email || "");
         setIsAdmin(user.role === "admin");
+        setLogoUrl(user.logo_url || "");
       }
     });
   }, []);
@@ -40,12 +42,20 @@ export default function Sidebar({ onClose }) {
       {/* Brand header */}
       <div className="px-5 pt-6 pb-5">
         <div className="flex items-center gap-3">
-          <div
-            className="w-9 h-9 rounded-xl flex items-center justify-center text-white font-bold text-sm shrink-0"
-            style={{ background: "linear-gradient(135deg,#6366f1,#3b82f6)" }}
-          >
-            {initials}
-          </div>
+          {logoUrl ? (
+            <img
+              src={logoUrl}
+              alt="Logo"
+              className="w-9 h-9 rounded-xl object-contain shrink-0 bg-white"
+            />
+          ) : (
+            <div
+              className="w-9 h-9 rounded-xl flex items-center justify-center text-white font-bold text-sm shrink-0"
+              style={{ background: "linear-gradient(135deg,#6366f1,#3b82f6)" }}
+            >
+              {initials}
+            </div>
+          )}
           <div className="min-w-0">
             <p className="text-white font-semibold text-sm leading-tight truncate">{companyName || "My Business"}</p>
             <p className="text-white/40 text-xs truncate mt-0.5">{companyEmail}</p>
