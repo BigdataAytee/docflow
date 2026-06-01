@@ -23,6 +23,7 @@ import Mail from './pages/Mail';
 import Apps from './pages/Apps';
 import WaybillSign from './pages/WaybillSign';
 import AdminDashboard from './pages/AdminDashboard';
+import Help from './pages/Help';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -66,6 +67,7 @@ const AuthenticatedApp = () => {
           <Route path="/mail" element={<Mail />} />
           <Route path="/apps" element={<Apps />} />
           <Route path="/admin" element={<AdminDashboard />} />
+          <Route path="/help" element={<Help />} />
         </Route>
       </Route>
       <Route path="*" element={<PageNotFound />} />

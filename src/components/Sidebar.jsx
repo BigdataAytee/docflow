@@ -1,5 +1,5 @@
 import { Link, useLocation } from "react-router-dom";
-import { Users, Settings, LogOut, LayoutGrid, ShieldAlert, Home } from "lucide-react";
+import { Users, Settings, LogOut, LayoutGrid, ShieldAlert, Home, HelpCircle } from "lucide-react";
 import { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
@@ -9,6 +9,7 @@ const navItems = [
   { label: "Customers",   icon: Users,      path: "/customers" },
   { label: "Apps & Tools",icon: LayoutGrid, path: "/apps" },
   { label: "Settings",    icon: Settings,   path: "/settings" },
+  { label: "Help Center", icon: HelpCircle, path: "/help" },
 ];
 
 
