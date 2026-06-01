@@ -84,9 +84,6 @@ export default function Home() {
   };
 
   const activeMeta = DOC_TYPES.find(d => d.type === selectedType);
-  const filteredDocs = selectedType && selectedType !== "mail"
-    ? docs.filter(d => d.type === selectedType)
-    : [];
 
   const { data: user } = useQuery({
     queryKey: ["me"],
@@ -102,6 +99,10 @@ export default function Home() {
   });
 
   const countByType = (type) => docs.filter((d) => d.type === type).length;
+
+  const filteredDocs = selectedType && selectedType !== "mail"
+    ? docs.filter(d => d.type === selectedType)
+    : [];
 
   const searchResults = searchQuery.trim().length > 1
     ? docs.filter(doc => {
