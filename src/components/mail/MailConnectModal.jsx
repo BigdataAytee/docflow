@@ -12,10 +12,10 @@ const PRESETS = [
     label: "Gmail",
     icon: "🔴",
     smtp_host: "smtp.gmail.com",
-    smtp_port: "587",
+    smtp_port: "465",
     imap_host: "imap.gmail.com",
     imap_port: "993",
-    hint: "Gmail requires an App Password (not your regular password). Go to myaccount.google.com/apppasswords to generate one — you need 2-Step Verification enabled.",
+    hint: "⚠️ Gmail blocks SMTP connections from cloud servers. If sending fails, use workmailtech or Outlook instead. If you still want Gmail: enable 2-Step Verification, generate an App Password at myaccount.google.com/apppasswords, and use port 465.",
   },
   {
     id: "outlook",

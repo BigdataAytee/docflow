@@ -13,15 +13,20 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Email not connected. Please set up your email account first.' }, { status: 400 });
     }
 
+    const smtpPort = parseInt(user.mail_smtp_port) || 587;
     const transporter = nodemailer.createTransport({
       host: user.mail_smtp_host,
-      port: parseInt(user.mail_smtp_port) || 587,
-      secure: parseInt(user.mail_smtp_port) === 465,
+      port: smtpPort,
+      secure: smtpPort === 465,
+      requireTLS: smtpPort === 587,
       auth: {
         user: user.mail_smtp_user,
         pass: user.mail_smtp_pass,
       },
       tls: { rejectUnauthorized: false },
+      connectionTimeout: 15000,
+      greetingTimeout: 10000,
+      socketTimeout: 15000,
     });
 
     const mailOptions = {
