@@ -812,8 +812,8 @@ function UnifiedTemplate({ doc, onSaveManagerSig, onSaveCustomerSig, onOpenSignM
           </div>
         )}
 
-        {/* Signatures */}
-        <div className={`border-t border-gray-200 pt-8 mt-6 grid gap-12 ${doc.type === 'waybill' ? 'grid-cols-2' : 'grid-cols-1 max-w-xs'}`}>
+        {/* Signatures + Bank Details */}
+        <div className="border-t border-gray-200 pt-8 mt-6 flex items-start justify-between gap-8">
           <div>
             <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-3">Manager's Signature</p>
             {isPdf ? (
@@ -883,25 +883,24 @@ function UnifiedTemplate({ doc, onSaveManagerSig, onSaveCustomerSig, onOpenSignM
               )}
             </div>
           )}
-        </div>
 
-        {(doc.bank_name || doc.account_number || doc.account_holder_name || doc.payment_method) && doc.type !== 'waybill' && (
-          <div className="border-t border-gray-200 pt-6 mt-6">
-            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-3">Bank / Payment Details</p>
-            <div className="inline-flex flex-col gap-2 text-sm bg-gray-50 border border-gray-200 rounded-lg px-4 py-3 min-w-[220px]">
-
-              {doc.bank_name && (
-                <div className="flex items-center gap-3"><span className="text-[10px] text-gray-400 uppercase tracking-wider font-semibold w-28 shrink-0">Bank</span><span className="text-gray-700 font-medium">{doc.bank_name}</span></div>
-              )}
-              {doc.account_number && (
-                <div className="flex items-center gap-3"><span className="text-[10px] text-gray-400 uppercase tracking-wider font-semibold w-28 shrink-0">Account No.</span><span className="text-gray-700 font-medium font-mono">{doc.account_number}</span></div>
-              )}
-              {doc.account_holder_name && (
-                <div className="flex items-center gap-3"><span className="text-[10px] text-gray-400 uppercase tracking-wider font-semibold w-28 shrink-0">Account Name</span><span className="text-gray-700 font-medium">{doc.account_holder_name}</span></div>
-              )}
+          {doc.type !== 'waybill' && (doc.bank_name || doc.account_number || doc.account_holder_name) && (
+            <div>
+              <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-3">Bank Details</p>
+              <div className="flex flex-col gap-2 text-sm bg-gray-50 border border-gray-200 rounded-lg px-4 py-3 min-w-[220px]">
+                {doc.bank_name && (
+                  <div className="flex items-center gap-3"><span className="text-[10px] text-gray-400 uppercase tracking-wider font-semibold w-28 shrink-0">Bank</span><span className="text-gray-700 font-medium">{doc.bank_name}</span></div>
+                )}
+                {doc.account_number && (
+                  <div className="flex items-center gap-3"><span className="text-[10px] text-gray-400 uppercase tracking-wider font-semibold w-28 shrink-0">Account No.</span><span className="text-gray-700 font-medium font-mono">{doc.account_number}</span></div>
+                )}
+                {doc.account_holder_name && (
+                  <div className="flex items-center gap-3"><span className="text-[10px] text-gray-400 uppercase tracking-wider font-semibold w-28 shrink-0">Account Name</span><span className="text-gray-700 font-medium">{doc.account_holder_name}</span></div>
+                )}
+              </div>
             </div>
-          </div>
-        )}
+          )}
+        </div>
       </div>
 
       {/* Footer */}
