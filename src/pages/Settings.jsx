@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { useBlocker } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -40,7 +40,9 @@ export default function Settings() {
   const [managerSig, setManagerSig] = useState(null);
   const [savedManagerSig, setSavedManagerSig] = useState(null);
   const [savedForm, setSavedForm] = useState(null);
+  const navigate = useNavigate();
   const [showLeaveModal, setShowLeaveModal] = useState(false);
+  const [pendingNav, setPendingNav] = useState(null);
   const [form, setForm] = useState({
     company_name: "",
     company_email: "",
@@ -109,17 +111,41 @@ export default function Settings() {
     managerSig !== savedManagerSig
   );
 
-  // Block in-app navigation when there are unsaved changes
-  const blocker = useBlocker(isDirty);
-  useEffect(() => {
-    if (blocker.state === "blocked") setShowLeaveModal(true);
-  }, [blocker.state]);
-
-  // Block browser refresh / tab close when there are unsaved changes
+  // Block browser refresh / tab close
   useEffect(() => {
     const handler = (e) => { if (isDirty) { e.preventDefault(); e.returnValue = ""; } };
     window.addEventListener("beforeunload", handler);
     return () => window.removeEventListener("beforeunload", handler);
+  }, [isDirty]);
+
+  // Intercept in-app link clicks (sidebar, nav) when there are unsaved changes
+  useEffect(() => {
+    if (!isDirty) return;
+    const handleClick = (e) => {
+      const anchor = e.target.closest("a[href]");
+      if (!anchor) return;
+      const href = anchor.getAttribute("href");
+      if (!href || href.startsWith("http") || href.startsWith("mailto") || href.startsWith("#")) return;
+      e.preventDefault();
+      e.stopPropagation();
+      setPendingNav(href);
+      setShowLeaveModal(true);
+    };
+    // Intercept browser back/forward
+    const handlePop = (e) => {
+      if (isDirty) {
+        window.history.pushState(null, "", window.location.href);
+        setPendingNav(-1);
+        setShowLeaveModal(true);
+      }
+    };
+    window.history.pushState(null, "", window.location.href);
+    document.addEventListener("click", handleClick, true);
+    window.addEventListener("popstate", handlePop);
+    return () => {
+      document.removeEventListener("click", handleClick, true);
+      window.removeEventListener("popstate", handlePop);
+    };
   }, [isDirty]);
 
   const handleLogoChange = async (e) => {
@@ -497,7 +523,8 @@ export default function Settings() {
                 onClick={async () => {
                   setShowLeaveModal(false);
                   await save();
-                  blocker.proceed?.();
+                  if (pendingNav === -1) navigate(-1);
+                  else if (pendingNav) navigate(pendingNav);
                 }}
               >
                 <Save className="h-4 w-4" /> Save then Leave
@@ -508,7 +535,8 @@ export default function Settings() {
                 onClick={() => {
                   setShowLeaveModal(false);
                   discard();
-                  blocker.proceed?.();
+                  if (pendingNav === -1) navigate(-1);
+                  else if (pendingNav) navigate(pendingNav);
                 }}
               >
                 Discard then Leave
@@ -516,7 +544,7 @@ export default function Settings() {
               <Button
                 variant="ghost"
                 className="w-full text-muted-foreground"
-                onClick={() => { setShowLeaveModal(false); blocker.reset?.(); }}
+                onClick={() => { setShowLeaveModal(false); setPendingNav(null); }}
               >
                 Keep Editing
               </Button>
