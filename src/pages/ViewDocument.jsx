@@ -885,29 +885,23 @@ function UnifiedTemplate({ doc, onSaveManagerSig, onSaveCustomerSig, onOpenSignM
           )}
         </div>
 
-        {(doc.bank_name || doc.account_number || doc.account_holder_name) && doc.type !== 'waybill' && (
+        {(doc.bank_name || doc.account_number || doc.account_holder_name || doc.payment_method) && doc.type !== 'waybill' && (
           <div className="border-t border-gray-200 pt-6 mt-6">
-            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-3">Bank Details</p>
-            <div className="grid grid-cols-2 gap-3 text-sm">
-              {doc.bank_name && (
-                <div><p className="text-[10px] text-gray-400 uppercase tracking-wider font-semibold mb-0.5">Bank</p><p className="text-gray-700 font-medium">{doc.bank_name}</p></div>
+            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-3">Bank / Payment Details</p>
+            <div className="inline-flex flex-col gap-2 text-sm bg-gray-50 border border-gray-200 rounded-lg px-4 py-3 min-w-[220px]">
+              {doc.payment_method && (
+                <div className="flex items-center gap-3"><span className="text-[10px] text-gray-400 uppercase tracking-wider font-semibold w-28 shrink-0">Method</span><span className="text-gray-700 font-medium">{doc.payment_method}</span></div>
               )}
-              {doc.account_holder_name && (
-                <div><p className="text-[10px] text-gray-400 uppercase tracking-wider font-semibold mb-0.5">Account Name</p><p className="text-gray-700 font-medium">{doc.account_holder_name}</p></div>
+              {doc.bank_name && (
+                <div className="flex items-center gap-3"><span className="text-[10px] text-gray-400 uppercase tracking-wider font-semibold w-28 shrink-0">Bank</span><span className="text-gray-700 font-medium">{doc.bank_name}</span></div>
               )}
               {doc.account_number && (
-                <div><p className="text-[10px] text-gray-400 uppercase tracking-wider font-semibold mb-0.5">Account Number</p><p className="text-gray-700 font-medium">{doc.account_number}</p></div>
+                <div className="flex items-center gap-3"><span className="text-[10px] text-gray-400 uppercase tracking-wider font-semibold w-28 shrink-0">Account No.</span><span className="text-gray-700 font-medium font-mono">{doc.account_number}</span></div>
               )}
-              {doc.payment_method && (
-                <div><p className="text-[10px] text-gray-400 uppercase tracking-wider font-semibold mb-0.5">Payment Method</p><p className="text-gray-700 font-medium">{doc.payment_method}</p></div>
+              {doc.account_holder_name && (
+                <div className="flex items-center gap-3"><span className="text-[10px] text-gray-400 uppercase tracking-wider font-semibold w-28 shrink-0">Account Name</span><span className="text-gray-700 font-medium">{doc.account_holder_name}</span></div>
               )}
             </div>
-          </div>
-        )}
-        {doc.payment_instructions && doc.type !== 'waybill' && (
-          <div className="border-t border-gray-200 pt-6 mt-4">
-            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-2">Payment Instructions</p>
-            <p className="text-sm text-gray-700 whitespace-pre-line">{doc.payment_instructions}</p>
           </div>
         )}
       </div>

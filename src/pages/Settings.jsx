@@ -352,11 +352,7 @@ export default function Settings() {
 
           <Section title="Document Content Defaults" emoji="📝">
             <div className="space-y-4">
-              <div>
-                <Label>Default Payment Instructions</Label>
-                <p className="text-xs text-muted-foreground mb-1.5">Shown on invoices &amp; quotations. Add extra payment details here.</p>
-                <Textarea value={form.default_payment_instructions} onChange={e => update("default_payment_instructions", e.target.value)} rows={3} placeholder="e.g. Please include invoice number as reference" />
-              </div>
+
               <div>
                 <Label>Default Terms &amp; Conditions</Label>
                 <p className="text-xs text-muted-foreground mb-1.5">Pre-filled in the Terms field on every new document.</p>
