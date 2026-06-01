@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { FileText, Receipt, X, ArrowRight, CalendarDays } from "lucide-react";
+import { FileText, Receipt, X, ArrowRight, CalendarDays, Truck } from "lucide-react";
 import { format } from "date-fns";
 
 const today = () => new Date().toISOString().split("T")[0];
@@ -15,15 +15,18 @@ const addDays = (n) => {
 export default function ConvertDocumentModal({ doc, targetType, onConfirm, onClose }) {
   const isInvoice = targetType === "invoice";
   const isReceipt = targetType === "receipt";
+  const isWaybill = targetType === "waybill";
 
+  const prefix = isInvoice ? "INV" : isReceipt ? "REC" : "WB";
   const suggestedNumber = doc.number
-    .replace(/^QUO/i, isInvoice ? "INV" : "REC")
-    .replace(/^QU/i, isInvoice ? "INV" : "REC");
+    .replace(/^INV/i, prefix)
+    .replace(/^QUO/i, prefix)
+    .replace(/^QU/i, prefix);
 
   const [form, setForm] = useState({
     number: suggestedNumber,
     issue_date: today(),
-    due_date: isInvoice ? addDays(14) : today(),
+    due_date: isInvoice ? addDays(14) : isWaybill ? "" : today(),
     payment_method: doc.payment_method || "",
     notes: doc.notes || "",
   });
@@ -42,13 +45,13 @@ export default function ConvertDocumentModal({ doc, targetType, onConfirm, onClo
         onClick={e => e.stopPropagation()}
       >
         {/* Header */}
-        <div className={`px-6 py-5 flex items-center gap-3 ${isInvoice ? "bg-indigo-600" : "bg-emerald-600"}`}>
+        <div className={`px-6 py-5 flex items-center gap-3 ${isInvoice ? "bg-indigo-600" : isWaybill ? "bg-orange-600" : "bg-emerald-600"}`}>
           <div className="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center shrink-0">
-            {isInvoice ? <FileText className="h-5 w-5 text-white" /> : <Receipt className="h-5 w-5 text-white" />}
+            {isInvoice ? <FileText className="h-5 w-5 text-white" /> : isWaybill ? <Truck className="h-5 w-5 text-white" /> : <Receipt className="h-5 w-5 text-white" />}
           </div>
           <div className="flex-1 min-w-0">
             <h2 className="font-bold text-white text-base leading-tight">
-              Convert to {isInvoice ? "Invoice" : "Receipt"}
+              Convert to {isInvoice ? "Invoice" : isWaybill ? "Waybill" : "Receipt"}
             </h2>
             <p className="text-white/70 text-xs mt-0.5 truncate">
               From: {doc.number} · {doc.customer_name}
@@ -64,19 +67,19 @@ export default function ConvertDocumentModal({ doc, targetType, onConfirm, onClo
           <span className="text-amber-500 mt-0.5">ℹ️</span>
           <p className="text-xs text-amber-800">
             The original quotation <strong>{doc.number}</strong> will remain unchanged.
-            A new {isInvoice ? "invoice" : "receipt"} document will be created and opened.
+            A new {isInvoice ? "invoice" : isWaybill ? "waybill" : "receipt"} document will be created and opened.
           </p>
         </div>
 
         {/* Form */}
         <div className="px-6 py-5 space-y-4">
           <div>
-            <Label className="text-xs font-semibold">{isInvoice ? "Invoice" : "Receipt"} Number</Label>
+            <Label className="text-xs font-semibold">{isInvoice ? "Invoice" : isWaybill ? "Waybill" : "Receipt"} Number</Label>
             <Input
               className="mt-1 font-mono"
               value={form.number}
               onChange={e => update("number", e.target.value)}
-              placeholder={isInvoice ? "INV-0001" : "REC-0001"}
+              placeholder={isInvoice ? "INV-0001" : isWaybill ? "WB-0001" : "REC-0001"}
             />
           </div>
 
@@ -131,12 +134,12 @@ export default function ConvertDocumentModal({ doc, targetType, onConfirm, onClo
         <div className="px-6 pb-5 flex gap-3">
           <Button variant="outline" className="flex-1" onClick={onClose}>Cancel</Button>
           <Button
-            className={`flex-1 gap-2 font-bold ${isInvoice ? "bg-indigo-600 hover:bg-indigo-700" : "bg-emerald-600 hover:bg-emerald-700"} text-white`}
+            className={`flex-1 gap-2 font-bold ${isInvoice ? "bg-indigo-600 hover:bg-indigo-700" : isWaybill ? "bg-orange-600 hover:bg-orange-700" : "bg-emerald-600 hover:bg-emerald-700"} text-white`}
             onClick={handleConfirm}
             disabled={!form.number.trim()}
           >
             <ArrowRight className="h-4 w-4" />
-            Create {isInvoice ? "Invoice" : "Receipt"}
+            Create {isInvoice ? "Invoice" : isWaybill ? "Waybill" : "Receipt"}
           </Button>
         </div>
       </div>

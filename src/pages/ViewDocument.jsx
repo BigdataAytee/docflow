@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { base44 } from "@/api/base44Client";
 import { useParams, Link, useNavigate } from "react-router-dom";
-import { ArrowLeft, Trash2, Printer, Send, Pencil, Share2, FileDown, MoreVertical, Upload, Copy, GitMerge, PenLine, CheckCircle2, Receipt } from "lucide-react";
+import { ArrowLeft, Trash2, Printer, Send, Pencil, Share2, FileDown, MoreVertical, Upload, Copy, GitMerge, PenLine, CheckCircle2, Receipt, Truck } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -314,24 +314,24 @@ export default function ViewDocument() {
   const handleConvertConfirm = async (formData) => {
     const { id, created_date, updated_date, created_by, ...rest } = doc;
     const isReceipt = convertTarget === "receipt";
+    const isWaybill = convertTarget === "waybill";
     const newDoc = {
       ...rest,
       type: convertTarget,
       number: formData.number,
-      status: isReceipt ? "paid" : "draft",
+      status: isReceipt ? "paid" : isWaybill ? "pending" : "draft",
       issue_date: formData.issue_date ? new Date(formData.issue_date).toISOString() : new Date().toISOString(),
       due_date: formData.due_date ? new Date(formData.due_date).toISOString() : null,
       notes: formData.notes,
       manager_signature: "",
       customer_signature: "",
-      ...(isReceipt ? {
-        paid_amount: rest.total || 0,
-        balance_due: 0,
-      } : { paid_amount: 0 }),
+      payment_method: formData.payment_method || rest.payment_method || undefined,
+      ...(isReceipt ? { paid_amount: rest.total || 0, balance_due: 0 } : { paid_amount: 0 }),
     };
     const created = await base44.entities.Document.create(newDoc);
     setConvertTarget(null);
-    toast.success(`${convertTarget === "invoice" ? "Invoice" : "Receipt"} created successfully!`);
+    const label = convertTarget === "invoice" ? "Invoice" : convertTarget === "receipt" ? "Receipt" : "Waybill";
+    toast.success(`${label} created successfully!`);
     navigate(`/documents/${created.id}`);
   };
 
@@ -370,6 +370,16 @@ export default function ViewDocument() {
               </Button>
               <Button variant="outline" size="sm" className="h-9 px-3 hidden md:flex gap-1.5 border-emerald-300 text-emerald-700 hover:bg-emerald-50" onClick={() => setConvertTarget("receipt")}>
                 <Receipt className="h-4 w-4" /><span>→ Receipt</span>
+              </Button>
+            </>
+          )}
+          {doc.type === "invoice" && (
+            <>
+              <Button variant="outline" size="sm" className="h-9 px-3 hidden md:flex gap-1.5 border-emerald-300 text-emerald-700 hover:bg-emerald-50" onClick={() => setConvertTarget("receipt")}>
+                <Receipt className="h-4 w-4" /><span>→ Receipt</span>
+              </Button>
+              <Button variant="outline" size="sm" className="h-9 px-3 hidden md:flex gap-1.5 border-orange-300 text-orange-700 hover:bg-orange-50" onClick={() => setConvertTarget("waybill")}>
+                <Truck className="h-4 w-4" /><span>→ Waybill</span>
               </Button>
             </>
           )}
@@ -441,6 +451,16 @@ export default function ViewDocument() {
                   </DropdownMenuItem>
                   <DropdownMenuItem onClick={() => setConvertTarget("receipt")}>
                     <Receipt className="h-4 w-4 mr-2" /> Convert to Receipt
+                  </DropdownMenuItem>
+                </>
+              )}
+              {doc.type === "invoice" && (
+                <>
+                  <DropdownMenuItem onClick={() => setConvertTarget("receipt")}>
+                    <Receipt className="h-4 w-4 mr-2" /> Convert to Receipt
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setConvertTarget("waybill")}>
+                    <Truck className="h-4 w-4 mr-2" /> Convert to Waybill
                   </DropdownMenuItem>
                 </>
               )}
