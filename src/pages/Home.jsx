@@ -85,14 +85,17 @@ export default function Home() {
 
   const activeMeta = DOC_TYPES.find(d => d.type === selectedType);
 
-  const { data: docs = [] } = useQuery({
-    queryKey: ["home-docs"],
-    queryFn: () => base44.entities.Document.list("-created_date", 50),
-  });
-
   const { data: user } = useQuery({
     queryKey: ["me"],
     queryFn: () => base44.auth.me(),
+  });
+
+  const { data: docs = [] } = useQuery({
+    queryKey: ["home-docs", user?.email],
+    queryFn: () => user?.email
+      ? base44.entities.Document.filter({ created_by: user.email }, "-created_date", 50)
+      : [],
+    enabled: !!user?.email,
   });
 
   const countByType = (type) => docs.filter((d) => d.type === type).length;
