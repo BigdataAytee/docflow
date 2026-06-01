@@ -197,7 +197,7 @@ export default function ViewDocument() {
     const element = (targetRef || pdfDocRef).current;
     const wrapper = element.parentElement;
     const savedStyle = wrapper.getAttribute("style");
-    wrapper.setAttribute("style", "position:fixed;top:0;left:0;width:794px;z-index:-1;visibility:hidden;");
+    wrapper.setAttribute("style", "position:fixed;top:0;left:-9999px;width:794px;z-index:9999;");
     await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
     const elHeight = element.scrollHeight || 1123;
     const canvas = await html2canvas(element, {
