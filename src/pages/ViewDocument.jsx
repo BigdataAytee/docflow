@@ -210,7 +210,7 @@ export default function ViewDocument() {
 
   const handleDownloadPdf = async () => {
     setGeneratingPdf(true);
-    const blob = await generatePdfBlob();
+    const blob = await generatePdfBlob(pdfSoftRef);
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url; a.download = `${doc.number || "document"}.pdf`;
@@ -220,7 +220,7 @@ export default function ViewDocument() {
 
   const handleSharePdf = async () => {
     setGeneratingPdf(true);
-    const blob = await generatePdfBlob();
+    const blob = await generatePdfBlob(pdfSoftRef);
     const file = new File([blob], `${doc.number || "document"}.pdf`, { type: "application/pdf" });
     if (navigator.canShare && navigator.canShare({ files: [file] })) {
       await navigator.share({ files: [file], title: doc.number, text: `${doc.number} — ${doc.customer_name}` });
@@ -235,11 +235,10 @@ export default function ViewDocument() {
   };
 
   const downloadInMode = async (mode) => {
-    if (!pdfRef.current) return;
     setPdfMode(mode);
     setGeneratingPdf(true);
     await new Promise(r => setTimeout(r, 150));
-    const blob = await generatePdfBlob();
+    const blob = await generatePdfBlob(mode === "paper" ? pdfPaperRef : pdfSoftRef);
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
