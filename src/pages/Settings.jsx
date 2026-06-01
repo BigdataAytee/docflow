@@ -40,6 +40,7 @@ export default function Settings() {
   const [managerSig, setManagerSig] = useState(null);
   const [savedManagerSig, setSavedManagerSig] = useState(null);
   const [savedForm, setSavedForm] = useState(null);
+  const [userInfo, setUserInfo] = useState(null);
   const navigate = useNavigate();
   const [showLeaveModal, setShowLeaveModal] = useState(false);
   const [pendingNav, setPendingNav] = useState(null);
@@ -71,6 +72,7 @@ export default function Settings() {
   useEffect(() => {
     base44.auth.me().then(user => {
       if (user) {
+        setUserInfo(user);
         const loaded = {
           company_name: user.company_name || "",
           company_email: user.company_email || user.email || "",
@@ -464,8 +466,12 @@ export default function Settings() {
           <Section title="Account Info" emoji="🔑">
             <div className="space-y-3 text-sm">
               <div className="flex items-center justify-between py-2 border-b border-border">
-                <span className="text-muted-foreground">Email</span>
-                <span className="font-medium text-foreground">{form.company_email || "—"}</span>
+                <span className="text-muted-foreground">Full Name</span>
+                <span className="font-medium text-foreground">{userInfo?.full_name || "—"}</span>
+              </div>
+              <div className="flex items-center justify-between py-2 border-b border-border">
+                <span className="text-muted-foreground">Login Email</span>
+                <span className="font-medium text-foreground">{userInfo?.email || "—"}</span>
               </div>
               <div className="flex items-center justify-between py-2 border-b border-border">
                 <span className="text-muted-foreground">Company</span>
