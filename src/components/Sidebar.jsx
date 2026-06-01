@@ -71,8 +71,20 @@ export default function Sidebar({ onClose }) {
             </div>
 
             <div className="min-w-0 w-full">
-              <p className="text-white font-bold text-sm leading-tight truncate tracking-wide">{companyName || "My Business"}</p>
-              <p className="text-white/35 text-[10px] truncate mt-0.5 font-medium tracking-wider uppercase">{companyEmail}</p>
+              <p
+                className="font-black text-sm leading-tight truncate"
+                style={{
+                  background: "linear-gradient(90deg, #e0e7ff 0%, #a5b4fc 40%, #38bdf8 100%)",
+                  WebkitBackgroundClip: "text",
+                  WebkitTextFillColor: "transparent",
+                  backgroundClip: "text",
+                  letterSpacing: "0.04em",
+                  textShadow: "none",
+                }}
+              >
+                {companyName || "My Business"}
+              </p>
+              <p className="text-white/35 text-[10px] truncate mt-0.5 font-medium lowercase">{companyEmail}</p>
             </div>
 
             {/* Decorative accent line */}
