@@ -277,14 +277,16 @@ function DocPreviewPanel({ design, userInfo, useAutoFit, setUseAutoFit, manualZo
     if (!containerRef.current) return;
     const compute = (el) => {
       const { width, height } = el.getBoundingClientRect();
+      if (width < 10 || height < 10) return; // skip zero-size frames
       const sw = (width  - 32) / previewW;
       const sh = (height - 32) / DOC_H;
-      setFitScale(parseFloat(Math.min(sw, sh, 1).toFixed(4)));
+      setFitScale(parseFloat(Math.min(sw, sh, 0.99).toFixed(4)));
     };
-    compute(containerRef.current);
+    // defer first compute so layout has settled
+    const raf = requestAnimationFrame(() => compute(containerRef.current));
     const ro = new ResizeObserver(([e]) => compute(e.target));
     ro.observe(containerRef.current);
-    return () => ro.disconnect();
+    return () => { cancelAnimationFrame(raf); ro.disconnect(); };
   }, [devicePreview, previewW]);
 
   const previewDoc = {
@@ -303,7 +305,7 @@ function DocPreviewPanel({ design, userInfo, useAutoFit, setUseAutoFit, manualZo
   };
 
   return (
-    <div className="flex flex-col h-full min-h-0">
+    <div className="flex flex-col" style={{ flex: "1 1 0", minHeight: 0 }}>
       {/* Preview controls */}
       <div className="flex items-center justify-between gap-2 px-3 py-2 border-b border-border bg-white shrink-0 flex-wrap">
         {/* Device switcher */}
@@ -336,7 +338,8 @@ function DocPreviewPanel({ design, userInfo, useAutoFit, setUseAutoFit, manualZo
 
       {/* Preview canvas */}
       <div ref={containerRef}
-        className="flex-1 min-h-0 bg-gradient-to-br from-slate-100 to-slate-200 flex items-center justify-center overflow-hidden p-3">
+        style={{ flex: "1 1 0", minHeight: 0 }}
+        className="bg-gradient-to-br from-slate-100 to-slate-200 flex items-center justify-center overflow-hidden p-3">
         <div style={{
           width:  previewW * scale,
           height: DOC_H   * scale,
@@ -492,12 +495,12 @@ export default function DocumentDesign() {
       {/* ── TABLET (md–lg): 2-column, preview | controls stacked ── */}
       <div className="hidden md:flex lg:hidden flex-1 min-h-0 overflow-hidden">
         {/* Left: Preview (larger share) */}
-        <div className="flex-1 min-w-0 flex flex-col min-h-0 border-r border-border">
+        <div style={{ flex: "1 1 0", minWidth: 0, minHeight: 0, display: "flex", flexDirection: "column" }} className="border-r border-border">
           <DocPreviewPanel design={design} userInfo={userInfo} useAutoFit={useAutoFit}
             setUseAutoFit={setUseAutoFit} manualZoom={manualZoom} setManualZoom={setManualZoom} />
         </div>
         {/* Right: Controls + Presets in scrollable panel with tabs */}
-        <div className="w-72 shrink-0 bg-white flex flex-col min-h-0">
+        <div style={{ width: 272, flexShrink: 0, display: "flex", flexDirection: "column", minHeight: 0 }} className="bg-white">
           <TabletSidePanel design={design} update={update} presetsProps={presetsProps} />
         </div>
       </div>
@@ -505,14 +508,14 @@ export default function DocumentDesign() {
       {/* ── MOBILE (<md): Single panel with bottom tab bar ── */}
       <div className="flex md:hidden flex-1 min-h-0 flex-col overflow-hidden">
         {/* Active panel */}
-        <div className="flex-1 min-h-0 bg-white overflow-hidden flex flex-col">
+        <div style={{ flex: "1 1 0", minHeight: 0 }} className="bg-white overflow-hidden flex flex-col">
           {mobilePanel === "design" && (
             <div className="flex-1 min-h-0 overflow-y-auto">
               <DesignControls design={design} update={update} />
             </div>
           )}
           {mobilePanel === "preview" && (
-            <div className="flex-1 min-h-0 flex flex-col">
+            <div style={{ flex: "1 1 0", minHeight: 0, display: "flex", flexDirection: "column" }}>
               <DocPreviewPanel design={design} userInfo={userInfo} useAutoFit={useAutoFit}
                 setUseAutoFit={setUseAutoFit} manualZoom={manualZoom} setManualZoom={setManualZoom} />
             </div>
@@ -546,7 +549,7 @@ export default function DocumentDesign() {
 function TabletSidePanel({ design, update, presetsProps }) {
   const [tab, setTab] = useState("controls");
   return (
-    <div className="flex flex-col h-full min-h-0">
+    <div style={{ display: "flex", flexDirection: "column", flex: "1 1 0", minHeight: 0 }}>
       <div className="flex border-b border-border shrink-0">
         {[["controls","Controls"],["presets","Presets"]].map(([id, lbl]) => (
           <button key={id} onClick={() => setTab(id)}
@@ -555,7 +558,7 @@ function TabletSidePanel({ design, update, presetsProps }) {
           </button>
         ))}
       </div>
-      <div className="flex-1 min-h-0 overflow-y-auto">
+      <div style={{ flex: "1 1 0", minHeight: 0, overflowY: "auto" }}>
         {tab === "controls" ? (
           <DesignControls design={design} update={update} />
         ) : (
