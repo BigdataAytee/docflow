@@ -79,8 +79,8 @@ export default function Home() {
   const [selectedType, setSelectedType] = useState(null);
 
   const handleCardClick = (path, type) => {
-    if (type === "mail") { navigate("/mail"); return; }
-    setSelectedType(prev => prev === type ? null : type);
+    setSelectedType(type);
+    setTimeout(() => navigate(path), 280);
   };
 
   const activeMeta = DOC_TYPES.find(d => d.type === selectedType);
@@ -99,10 +99,6 @@ export default function Home() {
   });
 
   const countByType = (type) => docs.filter((d) => d.type === type).length;
-
-  const filteredDocs = selectedType && selectedType !== "mail"
-    ? docs.filter(d => d.type === selectedType)
-    : [];
 
   const searchResults = searchQuery.trim().length > 1
     ? docs.filter(doc => {
@@ -290,62 +286,20 @@ export default function Home() {
             </div>
           </div>
 
-          {/* Filtered docs for selected type */}
-          {selectedType && selectedType !== "mail" && (
-            <div>
-              <div className="flex items-center justify-between mb-4">
-                <div className="flex items-center gap-2">
-                  {activeMeta && <activeMeta.icon className="h-4 w-4 text-muted-foreground" />}
-                  <h2 className="font-bold text-base text-foreground">{activeMeta?.label}</h2>
-                  <span className="text-xs text-muted-foreground">({filteredDocs.length})</span>
-                </div>
-                <button onClick={() => setSelectedType(null)} className="text-xs text-muted-foreground hover:text-foreground flex items-center gap-1"><X className="h-3 w-3" /> Close</button>
-              </div>
-              {filteredDocs.length === 0 ? (
-                <div className="bg-card rounded-2xl border border-border px-5 py-10 text-center text-sm text-muted-foreground">
-                  No {activeMeta?.label?.toLowerCase()} yet.
-                </div>
-              ) : (
-                <div className="bg-card rounded-2xl border border-border overflow-hidden shadow-sm">
-                  {filteredDocs.map((doc, idx) => {
-                    const meta = DOC_TYPES.find((d) => d.type === doc.type) || DOC_TYPES[0];
-                    const Icon = meta.icon;
-                    const statusColor = STATUS_COLORS[doc.status] || "#94a3b8";
-                    return (
-                      <div
-                        key={doc.id}
-                        onClick={() => navigate(`/documents/${doc.id}`)}
-                        className={`flex items-center gap-4 px-5 py-3.5 cursor-pointer hover:bg-muted/40 transition-colors group ${idx < filteredDocs.length - 1 ? "border-b border-border" : ""}`}
-                      >
-                        <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 shadow-sm" style={{ background: meta.gradient }}>
-                          <Icon className="h-4 w-4 text-white" />
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <p className="font-semibold text-sm truncate">{doc.number || "—"}</p>
-                          <p className="text-xs text-muted-foreground truncate">{doc.customer_name || "No customer"}</p>
-                        </div>
-                        <div className="flex items-center gap-3 shrink-0">
-                          <span className="text-xs font-semibold px-2.5 py-1 rounded-full capitalize" style={{ background: statusColor + "1a", color: statusColor }}>
-                            {doc.status?.replace(/_/g, " ")}
-                          </span>
-                          <ArrowRight className="h-4 w-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
-            </div>
-          )}
-
           {/* Recent documents */}
-          {!selectedType && recentDocs.length > 0 && (
+          {recentDocs.length > 0 && (
             <div>
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-2">
                   <Clock className="h-4 w-4 text-muted-foreground" />
                   <h2 className="font-bold text-base text-foreground">Recent Documents</h2>
                 </div>
+                <button
+                  onClick={() => navigate("/documents")}
+                  className="text-xs text-primary font-semibold flex items-center gap-1 hover:underline"
+                >
+                  View all <ArrowRight className="h-3 w-3" />
+                </button>
               </div>
               <div className="bg-card rounded-2xl border border-border overflow-hidden shadow-sm">
                 {recentDocs.map((doc, idx) => {
