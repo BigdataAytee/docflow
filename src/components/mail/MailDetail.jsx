@@ -7,8 +7,12 @@ import { base44 } from "@/api/base44Client";
 export default function MailDetail({ mail, onClose, onStar, onDelete, onReply }) {
   const [showDetails, setShowDetails] = useState(false);
 
-  const displayName = mail.to_name || mail.to_email || "Unknown";
-  const date = mail.created_date ? format(new Date(mail.created_date), "EEE, MMM d, yyyy, h:mm a") : "";
+  const isInbox = mail.folder === "inbox";
+  const displayName = isInbox
+    ? (mail.from_name || mail.from_email || "Unknown")
+    : (mail.to_name || mail.to_email || "Unknown");
+  const dateStr = mail.date || mail.created_date;
+  const date = dateStr ? format(new Date(dateStr), "EEE, MMM d, yyyy, h:mm a") : "";
 
   const handleStar = (e) => {
     e.stopPropagation();
@@ -74,7 +78,7 @@ export default function MailDetail({ mail, onClose, onStar, onDelete, onReply })
               )}
             </div>
             <div className="flex items-center gap-1 shrink-0">
-              <button className="p-1.5 hover:bg-slate-100 rounded-full text-slate-400 transition-colors" title="Reply">
+              <button onClick={() => onReply?.(mail)} className="p-1.5 hover:bg-slate-100 rounded-full text-slate-400 transition-colors" title="Reply">
                 <Reply className="h-4 w-4" />
               </button>
               <button className="p-1.5 hover:bg-slate-100 rounded-full text-slate-400 transition-colors" title="More">

@@ -31,6 +31,7 @@ export default function Mail() {
   const [mailConnected, setMailConnected] = useState(false);
   const [showConnectModal, setShowConnectModal] = useState(false);
   const [connectedEmail, setConnectedEmail] = useState("");
+  const [showMailSettings, setShowMailSettings] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -307,9 +308,56 @@ export default function Mail() {
           <button onClick={handleRefresh} className="p-2 hover:bg-slate-200 rounded-full text-slate-500">
             <RefreshCw className={`h-4 w-4 ${refreshing ? "animate-spin" : ""}`} />
           </button>
-          <button className="p-2 hover:bg-slate-200 rounded-full text-slate-500 hidden sm:block">
-            <Settings className="h-4 w-4" />
-          </button>
+          <div className="relative hidden sm:block">
+            <button
+              onClick={() => setShowMailSettings(s => !s)}
+              className="p-2 hover:bg-slate-200 rounded-full text-slate-500"
+              title="Mail settings"
+            >
+              <Settings className="h-4 w-4" />
+            </button>
+            {showMailSettings && (
+              <div className="absolute right-0 top-10 z-50 bg-white border border-border rounded-xl shadow-xl w-72 p-4 space-y-3">
+                <p className="text-xs font-bold uppercase tracking-wider text-slate-400">Mail Settings</p>
+                {mailConnected ? (
+                  <>
+                    <div className="bg-green-50 border border-green-200 rounded-lg px-3 py-2">
+                      <p className="text-xs text-green-700 font-medium">Connected account</p>
+                      <p className="text-sm font-semibold text-green-900 truncate">{connectedEmail}</p>
+                    </div>
+                    <button
+                      onClick={() => { setShowMailSettings(false); setShowConnectModal(true); }}
+                      className="w-full text-sm text-left px-3 py-2 hover:bg-slate-50 rounded-lg text-slate-700 transition-colors"
+                    >
+                      🔄 Switch / Reconnect account
+                    </button>
+                    <button
+                      onClick={() => { setShowMailSettings(false); handleDisconnect(); }}
+                      className="w-full text-sm text-left px-3 py-2 hover:bg-red-50 rounded-lg text-red-500 transition-colors"
+                    >
+                      🔌 Disconnect email
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <p className="text-sm text-slate-500">No email account connected yet.</p>
+                    <button
+                      onClick={() => { setShowMailSettings(false); setShowConnectModal(true); }}
+                      className="w-full text-sm font-bold px-3 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg transition-colors"
+                    >
+                      Connect Email Account
+                    </button>
+                  </>
+                )}
+                <button
+                  onClick={() => setShowMailSettings(false)}
+                  className="w-full text-xs text-slate-400 hover:text-slate-600 pt-1"
+                >
+                  Close
+                </button>
+              </div>
+            )}
+          </div>
           <button className="md:hidden px-4 py-2 text-white rounded-2xl text-xs font-bold transition-all" style={{ background: "linear-gradient(135deg,#6366f1,#4f46e5)" }}
             onClick={() => { setComposing(true); setReplyTo(null); }}>
             + Compose
