@@ -76,14 +76,12 @@ const STATUS_COLORS = {
 export default function Home() {
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState("");
-  const [selectedType, setSelectedType] = useState(null);
-
-  const handleCardClick = (path, type) => {
+  const handleCardClick = (newPath, type) => {
     if (type === "mail") { navigate("/mail"); return; }
-    setSelectedType(prev => prev === type ? null : type);
+    if (newPath) navigate(newPath);
   };
 
-  const activeMeta = DOC_TYPES.find(d => d.type === selectedType);
+
 
   const { data: user } = useQuery({
     queryKey: ["me"],
@@ -100,9 +98,7 @@ export default function Home() {
 
   const countByType = (type) => docs.filter((d) => d.type === type).length;
 
-  const filteredDocs = selectedType && selectedType !== "mail"
-    ? docs.filter(d => d.type === selectedType)
-    : [];
+
 
   const searchResults = searchQuery.trim().length > 1
     ? docs.filter(doc => {
@@ -136,7 +132,7 @@ export default function Home() {
       {/* Hero greeting */}
       <div
         className="relative rounded-3xl overflow-hidden px-6 py-8 md:px-10 md:py-10"
-        style={{ background: selectedType && activeMeta ? activeMeta.gradient : "linear-gradient(135deg, hsl(230,65%,14%) 0%, hsl(230,60%,22%) 60%, hsl(260,50%,28%) 100%)", transition: "background 0.3s ease" }}
+        style={{ background: "linear-gradient(135deg, hsl(230,65%,14%) 0%, hsl(230,60%,22%) 60%, hsl(260,50%,28%) 100%)" }}
       >
         {/* Decorative blobs */}
         <div className="absolute -top-10 -right-10 w-56 h-56 rounded-full opacity-20" style={{ background: "radial-gradient(circle, #6366f1, transparent 70%)" }} />
@@ -232,18 +228,16 @@ export default function Home() {
           <div>
             <h2 className="font-bold text-base text-foreground mb-4">Quick Access</h2>
             <div className="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-4">
-              {DOC_TYPES.map(({ type, label, description, icon: Icon, gradient, glow, path, newPath }) => {
+              {DOC_TYPES.map(({ type, label, description, icon: Icon, gradient, glow, newPath }) => {
                 const count = type !== "mail" ? countByType(type) : null;
                 return (
                   <div
                     key={type}
-                    onClick={() => handleCardClick(path, type)}
+                    onClick={() => handleCardClick(newPath, type)}
                     className="group relative rounded-2xl md:rounded-3xl cursor-pointer overflow-hidden transition-all duration-300 hover:-translate-y-1"
                     style={{
                       background: gradient,
-                      boxShadow: selectedType === type ? `0 0 0 3px white, 0 8px 32px ${glow}` : `0 4px 24px ${glow}`,
-                      transform: selectedType === type ? "scale(1.04)" : undefined,
-                      opacity: selectedType && selectedType !== type ? 0.55 : 1,
+                      boxShadow: `0 4px 24px ${glow}`,
                       transition: "all 0.25s ease",
                     }}
                   >
@@ -290,56 +284,8 @@ export default function Home() {
             </div>
           </div>
 
-          {/* Filtered docs for selected type */}
-          {selectedType && selectedType !== "mail" && (
-            <div>
-              <div className="flex items-center justify-between mb-4">
-                <div className="flex items-center gap-2">
-                  {activeMeta && <activeMeta.icon className="h-4 w-4 text-muted-foreground" />}
-                  <h2 className="font-bold text-base text-foreground">{activeMeta?.label}</h2>
-                  <span className="text-xs text-muted-foreground">({filteredDocs.length})</span>
-                </div>
-                <button onClick={() => setSelectedType(null)} className="text-xs text-muted-foreground hover:text-foreground flex items-center gap-1"><X className="h-3 w-3" /> Close</button>
-              </div>
-              {filteredDocs.length === 0 ? (
-                <div className="bg-card rounded-2xl border border-border px-5 py-10 text-center text-sm text-muted-foreground">
-                  No {activeMeta?.label?.toLowerCase()} yet.
-                </div>
-              ) : (
-                <div className="bg-card rounded-2xl border border-border overflow-hidden shadow-sm">
-                  {filteredDocs.map((doc, idx) => {
-                    const meta = DOC_TYPES.find((d) => d.type === doc.type) || DOC_TYPES[0];
-                    const Icon = meta.icon;
-                    const statusColor = STATUS_COLORS[doc.status] || "#94a3b8";
-                    return (
-                      <div
-                        key={doc.id}
-                        onClick={() => navigate(`/documents/${doc.id}`)}
-                        className={`flex items-center gap-4 px-5 py-3.5 cursor-pointer hover:bg-muted/40 transition-colors group ${idx < filteredDocs.length - 1 ? "border-b border-border" : ""}`}
-                      >
-                        <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 shadow-sm" style={{ background: meta.gradient }}>
-                          <Icon className="h-4 w-4 text-white" />
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <p className="font-semibold text-sm truncate">{doc.number || "—"}</p>
-                          <p className="text-xs text-muted-foreground truncate">{doc.customer_name || "No customer"}</p>
-                        </div>
-                        <div className="flex items-center gap-3 shrink-0">
-                          <span className="text-xs font-semibold px-2.5 py-1 rounded-full capitalize" style={{ background: statusColor + "1a", color: statusColor }}>
-                            {doc.status?.replace(/_/g, " ")}
-                          </span>
-                          <ArrowRight className="h-4 w-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
-            </div>
-          )}
-
           {/* Recent documents */}
-          {!selectedType && recentDocs.length > 0 && (
+          {recentDocs.length > 0 && (
             <div>
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-2">
