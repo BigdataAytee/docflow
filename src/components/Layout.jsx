@@ -4,6 +4,7 @@ import Sidebar from "./Sidebar";
 import { Menu, Home, Users, Mail, Settings, Search, LayoutGrid } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import CommandPalette from "./CommandPalette";
+import OnboardingGuide from "./OnboardingGuide";
 
 const bottomNavItems = [
   { label: "Home",      icon: Home,       path: "/" },
@@ -92,6 +93,7 @@ export default function Layout() {
       </main>
 
       <CommandPalette open={cmdOpen} onClose={() => setCmdOpen(false)} />
+      <OnboardingGuide />
 
       {/* Mobile/Tablet Bottom Navigation */}
       <nav

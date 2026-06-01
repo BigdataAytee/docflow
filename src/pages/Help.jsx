@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { ChevronDown, ChevronUp, Mail, BookOpen, MessageCircle, FileText, Users, Settings } from "lucide-react";
+import { ChevronDown, ChevronUp, Mail, BookOpen, MessageCircle, FileText, Users, Settings, PlayCircle } from "lucide-react";
+import OnboardingGuide from "../components/OnboardingGuide";
 
 const FAQS = [
   {
@@ -87,12 +88,20 @@ function FAQItem({ q, a }) {
 }
 
 export default function Help() {
+  const [showOnboarding, setShowOnboarding] = useState(false);
+
   return (
     <div className="max-w-3xl mx-auto pb-16">
       {/* Header */}
       <div className="mb-8">
         <h1 className="text-2xl font-black">Help Center</h1>
         <p className="text-muted-foreground text-sm mt-1">Find answers to common questions and learn how to get the most from the app.</p>
+        <button
+          onClick={() => setShowOnboarding(true)}
+          className="mt-3 inline-flex items-center gap-2 text-sm font-semibold text-indigo-600 border border-indigo-200 bg-indigo-50 rounded-xl px-4 py-2 hover:bg-indigo-100 transition-colors"
+        >
+          <PlayCircle className="h-4 w-4" /> Reopen Getting Started Guide
+        </button>
       </div>
 
       {/* FAQ sections */}
@@ -111,6 +120,8 @@ export default function Help() {
           </div>
         ))}
       </div>
+
+      {showOnboarding && <OnboardingGuide forceOpen onClose={() => setShowOnboarding(false)} />}
 
       {/* Contact card */}
       <div className="mt-8 rounded-2xl border border-indigo-200 bg-indigo-50 px-6 py-6 flex flex-col sm:flex-row items-start sm:items-center gap-4">
