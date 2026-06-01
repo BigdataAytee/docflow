@@ -92,12 +92,18 @@ export default function Mail() {
   const handleSend = async (form) => {
     if (mailConnected) {
       // Use the user's real SMTP — never fall back to platform email (which shows 'DocFlow')
-      const res = await base44.functions.invoke("mailSend", form);
-      if (res.data?.error) {
-        toast.error(`Send failed: ${res.data.error}`);
+      try {
+        const res = await base44.functions.invoke("mailSend", form);
+        if (res.data?.error) {
+          toast.error(`Send failed: ${res.data.error}`);
+          await base44.entities.Mail.create({ ...form, status: "failed", folder: "sent", is_read: true });
+        }
+        // On success, mailSend backend already saves the entity record
+      } catch (err) {
+        const msg = err?.response?.data?.error || err.message || "Unknown error";
+        toast.error(`Send failed: ${msg}`);
         await base44.entities.Mail.create({ ...form, status: "failed", folder: "sent", is_read: true });
       }
-      // On success, mailSend backend already saves the entity record
     } else {
       // Not connected — use platform email
       try {
