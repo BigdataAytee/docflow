@@ -65,6 +65,7 @@ export default function ViewDocument() {
   const pdfRef = useRef(null);
   const pdfPaperRef = useRef(null);
   const pdfSoftRef = useRef(null);
+  const pdfDocRef = useRef(null);
   const [softAutoDownload, setSoftAutoDownload] = useState(false);
   const [showInlineSigPad, setShowInlineSigPad] = useState(false);
   const [previewScale, setPreviewScale] = useState(1);
@@ -153,7 +154,7 @@ export default function ViewDocument() {
     setTimeout(async () => {
       if (!pdfSoftRef.current) return;
       setGeneratingPdf(true);
-      const blob = await generatePdfBlob(pdfSoftRef);
+      const blob = await generatePdfBlob(pdfDocRef);
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
@@ -172,7 +173,7 @@ export default function ViewDocument() {
       setTimeout(async () => {
         if (!pdfSoftRef.current) return;
         setGeneratingPdf(true);
-        const blob = await generatePdfBlob(pdfSoftRef);
+        const blob = await generatePdfBlob(pdfDocRef);
         const url = URL.createObjectURL(blob);
         const a = document.createElement("a");
         a.href = url;
@@ -210,7 +211,7 @@ export default function ViewDocument() {
 
   const handleDownloadPdf = async () => {
     setGeneratingPdf(true);
-    const blob = await generatePdfBlob(pdfSoftRef);
+    const blob = await generatePdfBlob(pdfDocRef);
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url; a.download = `${doc.number || "document"}.pdf`;
@@ -220,7 +221,7 @@ export default function ViewDocument() {
 
   const handleSharePdf = async () => {
     setGeneratingPdf(true);
-    const blob = await generatePdfBlob(pdfSoftRef);
+    const blob = await generatePdfBlob(pdfDocRef);
     const file = new File([blob], `${doc.number || "document"}.pdf`, { type: "application/pdf" });
     if (navigator.canShare && navigator.canShare({ files: [file] })) {
       await navigator.share({ files: [file], title: doc.number, text: `${doc.number} — ${doc.customer_name}` });
@@ -238,7 +239,7 @@ export default function ViewDocument() {
     setPdfMode(mode);
     setGeneratingPdf(true);
     await new Promise(r => setTimeout(r, 150));
-    const blob = await generatePdfBlob(mode === "paper" ? pdfPaperRef : pdfSoftRef);
+    const blob = await generatePdfBlob(pdfDocRef);
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
@@ -249,9 +250,9 @@ export default function ViewDocument() {
   };
 
   const downloadPaperSignage = async () => {
-    if (!pdfPaperRef.current) return;
+    if (!pdfDocRef.current) return;
     setGeneratingPdf(true);
-    const blob = await generatePdfBlob(pdfPaperRef);
+    const blob = await generatePdfBlob(pdfDocRef);
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
@@ -512,35 +513,16 @@ export default function ViewDocument() {
         </div>
       )}
 
-      {/* Hidden off-screen render containers for PDF generation */}
-      <div style={{ position: "fixed", left: -9999, top: -9999, width: 794, zIndex: -1, pointerEvents: "none" }}>
-        <div ref={pdfPaperRef} style={{ width: 794 }}>
+      {/* Hidden off-screen render container for PDF generation */}
+      <div style={{ position: "absolute", left: "-9999px", top: 0, width: "794px", minWidth: "794px", overflow: "visible", zIndex: -1, pointerEvents: "none" }}>
+        <div ref={pdfDocRef} style={{ width: 794, minWidth: 794 }}>
           {doc && (
-            <DocumentPreview
-              form={doc} items={doc.items || []}
-              calcs={{ subtotal: doc.subtotal, taxAmt: doc.tax_amount, total: doc.total }}
-              sym={CURRENCY_SYMBOLS[doc.currency] || doc.currency || "₦"}
-              docType={doc.type}
-              managerSig={doc.manager_signature}
-              customerSig=""
-              template={doc.template || "classic"}
-              templateColor={doc.template_color || "slate"}
-            />
-          )}
-        </div>
-      </div>
-      <div style={{ position: "fixed", left: -9999, top: -9999, width: 794, zIndex: -1, pointerEvents: "none" }}>
-        <div ref={pdfSoftRef} style={{ width: 794 }}>
-          {doc && (
-            <DocumentPreview
-              form={doc} items={doc.items || []}
-              calcs={{ subtotal: doc.subtotal, taxAmt: doc.tax_amount, total: doc.total }}
-              sym={CURRENCY_SYMBOLS[doc.currency] || doc.currency || "₦"}
-              docType={doc.type}
-              managerSig={doc.manager_signature}
-              customerSig={doc.customer_signature}
-              template={doc.template || "classic"}
-              templateColor={doc.template_color || "slate"}
+            <UnifiedTemplate
+              doc={doc}
+              isPdf={true}
+              onSaveManagerSig={() => {}}
+              onSaveCustomerSig={() => {}}
+              onOpenSignModal={() => {}}
             />
           )}
         </div>
