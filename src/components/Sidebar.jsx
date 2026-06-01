@@ -40,25 +40,49 @@ export default function Sidebar({ onClose }) {
     <aside className="h-full w-64 flex flex-col" style={{ background: "linear-gradient(180deg, hsl(224,30%,10%) 0%, hsl(228,28%,13%) 100%)" }}>
 
       {/* Brand header */}
-      <div className="px-5 pt-6 pb-5">
-        <div className="flex items-center gap-3">
-          {logoUrl ? (
-            <img
-              src={logoUrl}
-              alt="Logo"
-              className="w-9 h-9 rounded-xl object-contain shrink-0 bg-white"
-            />
-          ) : (
-            <div
-              className="w-9 h-9 rounded-xl flex items-center justify-center text-white font-bold text-sm shrink-0"
-              style={{ background: "linear-gradient(135deg,#6366f1,#3b82f6)" }}
-            >
-              {initials}
+      <div className="relative overflow-hidden">
+        {/* Decorative blobs */}
+        <div className="absolute -top-6 -right-6 w-28 h-28 rounded-full opacity-20" style={{ background: "radial-gradient(circle, #818cf8, transparent 70%)" }} />
+        <div className="absolute -bottom-4 -left-4 w-20 h-20 rounded-full opacity-15" style={{ background: "radial-gradient(circle, #38bdf8, transparent 70%)" }} />
+
+        <div className="relative px-4 pt-5 pb-4">
+          {/* Logo / Avatar */}
+          <div className="flex flex-col items-center text-center gap-2">
+            <div className="relative">
+              {/* Glow ring */}
+              <div className="absolute inset-0 rounded-2xl blur-md opacity-60" style={{ background: "linear-gradient(135deg,#6366f1,#06b6d4)" }} />
+              {logoUrl ? (
+                <img
+                  src={logoUrl}
+                  alt="Logo"
+                  className="relative w-14 h-14 rounded-2xl object-contain bg-white/95 shadow-xl"
+                  style={{ padding: 3 }}
+                />
+              ) : (
+                <div
+                  className="relative w-14 h-14 rounded-2xl flex items-center justify-center text-white font-black text-lg shadow-xl"
+                  style={{ background: "linear-gradient(135deg,#6366f1 0%,#3b82f6 50%,#06b6d4 100%)" }}
+                >
+                  {initials}
+                </div>
+              )}
+              {/* Active dot */}
+              <span className="absolute -bottom-1 -right-1 w-3.5 h-3.5 bg-emerald-400 border-2 rounded-full" style={{ borderColor: "hsl(226,30%,11%)" }} />
             </div>
-          )}
-          <div className="min-w-0">
-            <p className="text-white font-semibold text-sm leading-tight truncate">{companyName || "My Business"}</p>
-            <p className="text-white/40 text-xs truncate mt-0.5">{companyEmail}</p>
+
+            <div className="min-w-0 w-full">
+              <p className="text-white font-bold text-sm leading-tight truncate tracking-wide">{companyName || "My Business"}</p>
+              <p className="text-white/35 text-[10px] truncate mt-0.5 font-medium tracking-wider uppercase">{companyEmail}</p>
+            </div>
+
+            {/* Decorative accent line */}
+            <div className="flex items-center gap-1.5 w-full mt-0.5">
+              <div className="flex-1 h-px" style={{ background: "linear-gradient(to right, transparent, rgba(99,102,241,0.6))" }} />
+              <div className="w-1 h-1 rounded-full bg-indigo-400/70" />
+              <div className="w-1.5 h-1.5 rounded-full bg-sky-400/80" />
+              <div className="w-1 h-1 rounded-full bg-indigo-400/70" />
+              <div className="flex-1 h-px" style={{ background: "linear-gradient(to left, transparent, rgba(99,102,241,0.6))" }} />
+            </div>
           </div>
         </div>
       </div>
