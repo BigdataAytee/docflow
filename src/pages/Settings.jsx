@@ -7,7 +7,8 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
-import { ImageIcon, Building2, FileText, Hash, User, Save, Upload, X, CheckCircle2, AlertTriangle } from "lucide-react";
+import { ImageIcon, Building2, FileText, Hash, User, Save, Upload, X, CheckCircle2, AlertTriangle, Paintbrush } from "lucide-react";
+import DocumentDesign from "./settings/DocumentDesign";
 import SignaturePad from "../components/SignaturePad";
 
 const TABS = [
@@ -15,6 +16,7 @@ const TABS = [
   { id: "documents", label: "Documents", icon: FileText,   emoji: "📄" },
   { id: "numbering", label: "Numbering", icon: Hash,       emoji: "#️⃣" },
   { id: "account",   label: "Account",   icon: User,       emoji: "👤" },
+  { id: "design",    label: "Design",    icon: Paintbrush, emoji: "🎨" },
 ];
 
 const ACCENT = { gradient: "linear-gradient(135deg,#6366f1 0%,#4f46e5 60%,#3730a3 100%)", glow: "rgba(99,102,241,0.25)", accent: "#6366f1", light: "#eef2ff", border: "#c7d2fe" };
@@ -225,6 +227,36 @@ export default function Settings() {
 
   const prefixes = [form.prefix_invoice, form.prefix_quotation, form.prefix_receipt, form.prefix_waybill].filter(Boolean);
   const hasDuplicatePrefixes = prefixes.length !== new Set(prefixes).size;
+
+  if (activeTab === "design") {
+    return (
+      <div className="w-full -mx-4 md:-mx-6 lg:-mx-8 -my-4 md:-my-6 lg:-my-8" style={{ height: "calc(100vh - 64px)", display: "flex", flexDirection: "column" }}>
+        {/* Mini banner for design tab */}
+        <div className="px-6 py-4 flex items-center gap-3 border-b border-border bg-white shrink-0">
+          <div className="flex gap-1 bg-muted/60 p-1 rounded-xl overflow-x-auto">
+            {TABS.map(tab => {
+              const Icon = tab.icon;
+              const active = activeTab === tab.id;
+              return (
+                <button key={tab.id} onClick={() => setActiveTab(tab.id)}
+                  className={`flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-semibold transition-all whitespace-nowrap ${
+                    active ? "bg-white text-indigo-700 shadow-sm" : "text-muted-foreground hover:text-foreground hover:bg-white/50"
+                  }`}>
+                  <Icon className="h-3.5 w-3.5 shrink-0" />
+                  <span className="hidden sm:inline">{tab.label}</span>
+                  <span className="sm:hidden">{tab.emoji}</span>
+                </button>
+              );
+            })}
+          </div>
+          <span className="text-xs text-muted-foreground hidden md:block">Customise how your documents look</span>
+        </div>
+        <div className="flex-1 min-h-0 overflow-hidden">
+          <DocumentDesign />
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-3xl w-full pb-20 md:pb-0">
