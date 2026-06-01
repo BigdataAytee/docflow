@@ -629,11 +629,6 @@ export default function CreateDocument() {
                     <SelectTrigger><SelectValue placeholder="Select method" /></SelectTrigger>
                     <SelectContent>
                       <SelectItem value="Bank Transfer">Bank Transfer</SelectItem>
-                      <SelectItem value="Cash">Cash</SelectItem>
-                      <SelectItem value="POS">POS</SelectItem>
-                      <SelectItem value="Credit Card">Credit Card</SelectItem>
-                      <SelectItem value="Mobile Money">Mobile Money</SelectItem>
-                      <SelectItem value="Cheque">Cheque</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
