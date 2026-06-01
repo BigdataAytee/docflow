@@ -174,7 +174,8 @@ export default function CreateDocument() {
       }));
 
       if (!editId) {
-        const docs = await base44.entities.Document.filter({ type: docType }, "-created_date", 1);
+        // Filter by user to get accurate next sequence number
+        const docs = await base44.entities.Document.filter({ type: docType, created_by: user.email }, "-created_date", 1);
         const num = docs.length > 0 ? parseInt((docs[0].number || "0").replace(/\D/g, "") || "0") + 1 : 1;
         const seq = String(num).padStart(4, "0");
         setNumSeq(seq);
@@ -182,6 +183,11 @@ export default function CreateDocument() {
         setForm(f => ({ ...f, number: fullNumber }));
       } else {
         const doc = await base44.entities.Document.get(editId);
+        // Ownership check — only the creator (or admin) may edit this document
+        if (doc && doc.created_by !== user.email && user.role !== "admin") {
+          navigate("/documents");
+          return;
+        }
         if (doc) {
           setForm(f => ({ ...f, ...doc, issue_date: doc.issue_date ? doc.issue_date.split("T")[0] : f.issue_date, due_date: doc.due_date ? doc.due_date.split("T")[0] : "" }));
           if (doc.items) setItems(doc.items);

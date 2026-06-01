@@ -164,7 +164,9 @@ export default function Settings() {
     const payload = { ...form };
     if (managerSig) payload.manager_signature = managerSig;
     await base44.auth.updateMe(payload);
-    const docs = await base44.entities.Document.list("-created_date", 500);
+    // Filter by current user's email to only update OWN documents
+    const me = await base44.auth.me();
+    const docs = await base44.entities.Document.filter({ created_by: me.email }, "-created_date", 500);
     await Promise.all(docs.map(doc =>
       base44.entities.Document.update(doc.id, {
         logo_url: form.logo_url,

@@ -82,6 +82,11 @@ export default function ViewDocument() {
       base44.entities.Document.get(docId),
       base44.auth.me(),
     ]).then(([d, user]) => {
+      // Ownership check — only the creator (or admin) may view this document
+      if (d && user && d.created_by !== user.email && user.role !== "admin") {
+        navigate("/documents");
+        return;
+      }
       if (user) {
         d = {
           ...d,
