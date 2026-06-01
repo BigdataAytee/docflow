@@ -620,8 +620,8 @@ export default function CreateDocument() {
             </div>
           </div>
 
-          {/* Payment Details — Invoice & Quotation */}
-          {(docType === "invoice" || docType === "quotation") && (
+          {/* Payment Details — Invoice & Quotation only */}
+          {((form.type || docType) === "invoice" || (form.type || docType) === "quotation") && (
             <div className="bg-card rounded-2xl border border-border p-6 space-y-4 shadow-sm" style={{ borderLeft: `3px solid ${theme.accent}` }}>
               <div className="flex items-center gap-2">
                 <div className="w-6 h-6 rounded-lg flex items-center justify-center text-sm" style={{ background: theme.light, border: `1px solid ${theme.border}` }}>💳</div>

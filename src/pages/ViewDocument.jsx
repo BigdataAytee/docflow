@@ -325,9 +325,8 @@ export default function ViewDocument() {
       manager_signature: "",
       customer_signature: "",
       ...(isReceipt ? {
-        payment_method: formData.payment_method,
-        paid_amount: formData.paid_amount,
-        balance_due: Math.max(0, (rest.total || 0) - formData.paid_amount),
+        paid_amount: rest.total || 0,
+        balance_due: 0,
       } : { paid_amount: 0 }),
     };
     const created = await base44.entities.Document.create(newDoc);

@@ -24,8 +24,6 @@ export default function ConvertDocumentModal({ doc, targetType, onConfirm, onClo
     number: suggestedNumber,
     issue_date: today(),
     due_date: isInvoice ? addDays(14) : today(),
-    payment_method: isReceipt ? "Bank Transfer" : "",
-    paid_amount: isReceipt ? (doc.total || 0) : 0,
     notes: doc.notes || "",
   });
 
@@ -100,32 +98,7 @@ export default function ConvertDocumentModal({ doc, targetType, onConfirm, onClo
             )}
           </div>
 
-          {isReceipt && (
-            <>
-              <div>
-                <Label className="text-xs font-semibold">Payment Method</Label>
-                <Select value={form.payment_method} onValueChange={v => update("payment_method", v)}>
-                  <SelectTrigger className="mt-1"><SelectValue placeholder="Select method" /></SelectTrigger>
-                  <SelectContent>
-                    {["Cash", "Bank Transfer", "POS", "Credit Card", "Mobile Money", "Cheque"].map(m => (
-                      <SelectItem key={m} value={m}>{m}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div>
-                <Label className="text-xs font-semibold">Amount Paid ({doc.currency || "NGN"})</Label>
-                <Input
-                  className="mt-1"
-                  type="number"
-                  min="0"
-                  value={form.paid_amount}
-                  onChange={e => update("paid_amount", +e.target.value)}
-                />
-                <p className="text-xs text-muted-foreground mt-1">Total on quotation: {doc.currency} {(doc.total || 0).toLocaleString()}</p>
-              </div>
-            </>
-          )}
+
 
           <div>
             <Label className="text-xs font-semibold">Additional Notes <span className="font-normal text-muted-foreground">(optional)</span></Label>
