@@ -816,17 +816,9 @@ function UnifiedTemplate({ doc, onSaveManagerSig, onSaveCustomerSig, onOpenSignM
         <div className="border-t border-gray-200 pt-8 mt-6 flex items-start justify-between gap-8">
           <div>
             <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-3">Manager's Signature</p>
-            {isPdf ? (
+            {doc.manager_signature ? (
               <div>
-                {doc.manager_signature
-                  ? <img src={doc.manager_signature} alt="Manager Signature" className="h-16 object-contain mb-2" />
-                  : <div style={{ height: 64, borderBottom: "2px solid #374151", marginBottom: 4 }} />
-                }
-                <p className="text-xs text-gray-500 mt-1">{doc.company_name || "Company"}</p>
-              </div>
-            ) : doc.manager_signature ? (
-              <div>
-                <img src={doc.manager_signature} alt="Manager Signature" className="h-24 object-contain mb-2" />
+                <img src={doc.manager_signature} alt="Manager Signature" className="h-20 object-contain mb-2" />
                 <div className="border-t border-gray-400 pt-1.5">
                   <p className="text-xs text-gray-500">{doc.company_name || "Company"}</p>
                 </div>
@@ -835,7 +827,7 @@ function UnifiedTemplate({ doc, onSaveManagerSig, onSaveCustomerSig, onOpenSignM
               <div>
                 <div style={{ height: 64, borderBottom: "2px solid #374151", marginBottom: 8 }} />
                 <p className="text-xs text-gray-500 mt-1">{doc.company_name || "Company"}</p>
-                <p className="text-xs text-muted-foreground mt-1 print:hidden">Sign in the document editor to add your signature.</p>
+                {!isPdf && <p className="text-xs text-muted-foreground mt-1">Sign in the document editor to add your signature.</p>}
               </div>
             )}
           </div>
