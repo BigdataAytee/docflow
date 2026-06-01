@@ -24,6 +24,7 @@ export default function ConvertDocumentModal({ doc, targetType, onConfirm, onClo
     number: suggestedNumber,
     issue_date: today(),
     due_date: isInvoice ? addDays(14) : today(),
+    payment_method: doc.payment_method || "",
     notes: doc.notes || "",
   });
 
@@ -99,6 +100,20 @@ export default function ConvertDocumentModal({ doc, targetType, onConfirm, onClo
           </div>
 
 
+
+          {isInvoice && (
+            <div>
+              <Label className="text-xs font-semibold">Payment Method <span className="font-normal text-muted-foreground">(optional)</span></Label>
+              <Select value={form.payment_method} onValueChange={v => update("payment_method", v)}>
+                <SelectTrigger className="mt-1"><SelectValue placeholder="Select payment method" /></SelectTrigger>
+                <SelectContent>
+                  {["Cash","Bank Transfer","POS","Credit Card","Mobile Money","Cheque"].map(m => (
+                    <SelectItem key={m} value={m}>{m}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
 
           <div>
             <Label className="text-xs font-semibold">Additional Notes <span className="font-normal text-muted-foreground">(optional)</span></Label>
