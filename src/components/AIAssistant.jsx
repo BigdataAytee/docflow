@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
-import { Sparkles, X, ArrowRight, Check, ChevronLeft, FileText, FileCheck, Receipt, Truck, Loader2, Wand2, MessageSquare } from "lucide-react";
+import { Sparkles, X, ArrowRight, Check, ChevronLeft, FileText, FileCheck, Receipt, Truck, Loader2, Wand2, MessageSquare, ImagePlus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 const DOC_TYPES = [
@@ -20,7 +20,18 @@ export default function AIAssistant() {
   const [extractedNotes, setExtractedNotes] = useState("");
   const textareaRef = useRef(null);
 
-  const reset = () => { setStage("idle"); setInputText(""); setExtractedItems([]); setExtractedNotes(""); };
+  const [attachedImage, setAttachedImage] = useState(null); // { url, name }
+  const [uploadingImage, setUploadingImage] = useState(false);
+  const imageInputRef = useRef(null);
+
+  const handleImageUpload = async (file) => {
+    setUploadingImage(true);
+    const { file_url } = await base44.integrations.Core.UploadFile({ file });
+    setAttachedImage({ url: file_url, name: file.name });
+    setUploadingImage(false);
+  };
+
+  const reset = () => { setStage("idle"); setInputText(""); setExtractedItems([]); setExtractedNotes(""); setAttachedImage(null); };
   const close = () => { setOpen(false); setTimeout(reset, 400); };
 
   useEffect(() => {
@@ -30,15 +41,21 @@ export default function AIAssistant() {
   const handleExtract = async () => {
     if (!inputText.trim()) return;
     setStage("extracting");
-    const result = await base44.integrations.Core.InvokeLLM({
-      prompt: `You are a document data extractor for a business invoicing app.
-Extract product/service line items from the following text. Each item should have a description, quantity (default 1 if not mentioned), and unit_price (0 if not mentioned).
+    const hasImage = !!attachedImage;
+    const promptText = hasImage && !inputText.trim()
+      ? "Extract product/service line items from this image. If it is a photo of a list, receipt, invoice, handwritten note or any business document, extract all items with their descriptions, quantities, and prices."
+      : `You are a document data extractor for a business invoicing app.
+Extract product/service line items from the following text${hasImage ? " and the attached image" : ""}. Each item should have a description, quantity (default 1 if not mentioned), and unit_price (0 if not mentioned).
 Also extract any general notes that are not a specific line item.
 
 Text:
 """
-${inputText}
-"""`,
+${inputText || "(see attached image)"}
+"""`;
+    const result = await base44.integrations.Core.InvokeLLM({
+      prompt: promptText,
+      ...(hasImage ? { file_urls: [attachedImage.url] } : {}),
+      model: hasImage ? "gemini_3_flash" : undefined,
       response_json_schema: {
         type: "object",
         properties: {
@@ -156,12 +173,32 @@ ${inputText}
                     ref={textareaRef}
                     value={inputText}
                     onChange={e => setInputText(e.target.value)}
-                    rows={7}
+                    rows={attachedImage ? 3 : 7}
                     disabled={stage === "extracting"}
-                    placeholder={"Examples:\n• 5 bags of cement @ ₦5,000 each\n• 2 hours plumbing service — bathroom\n• Delivery of 200 blocks to Ikeja\n\nOr paste any text — the AI will extract what matters!"}
+                    placeholder={"Examples:\n• 5 bags of cement @ ₦5,000 each\n• 2 hours plumbing service — bathroom\n\nOr paste any text — the AI will extract what matters!"}
                     className="w-full border border-border rounded-2xl px-4 py-3 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-indigo-400 bg-muted/20 placeholder:text-muted-foreground/50 disabled:opacity-60 leading-relaxed"
                   />
-                  <p className="text-xs text-muted-foreground">The AI will extract item descriptions, quantities, and prices — even from messy text.</p>
+
+                  {/* Image attachment */}
+                  {attachedImage ? (
+                    <div className="flex items-center gap-3 bg-indigo-50 border border-indigo-200 rounded-2xl px-4 py-3">
+                      <div className="w-12 h-12 rounded-xl overflow-hidden border border-indigo-200 shrink-0">
+                        <img src={attachedImage.url} alt="attached" className="w-full h-full object-cover" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-xs font-semibold text-indigo-700 truncate">{attachedImage.name}</p>
+                        <p className="text-xs text-indigo-500 mt-0.5">AI will read text from this image</p>
+                      </div>
+                      <button onClick={() => setAttachedImage(null)} className="text-indigo-300 hover:text-red-400 transition-colors shrink-0"><X className="h-4 w-4" /></button>
+                    </div>
+                  ) : (
+                    <label className={`flex items-center justify-center gap-2 border-2 border-dashed border-indigo-200 rounded-2xl py-3 text-indigo-500 hover:bg-indigo-50 transition-colors cursor-pointer text-xs font-medium ${uploadingImage ? "opacity-60 pointer-events-none" : ""}`}>
+                      {uploadingImage ? <><Loader2 className="h-4 w-4 animate-spin" /> Uploading image…</> : <><ImagePlus className="h-4 w-4" /> Attach a photo or image (receipt, list, handwriting…)</>}
+                      <input ref={imageInputRef} type="file" accept="image/*" className="hidden" onChange={e => e.target.files[0] && handleImageUpload(e.target.files[0])} />
+                    </label>
+                  )}
+
+                  <p className="text-xs text-muted-foreground">Type text, paste a list, or attach a photo — the AI will extract what matters.</p>
                   <Button
                     className="w-full h-12 font-bold gap-2 rounded-xl text-white"
                     style={{ background: "linear-gradient(135deg, #6366f1, #8b5cf6)" }}
