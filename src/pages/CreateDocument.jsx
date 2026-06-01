@@ -112,7 +112,7 @@ export default function CreateDocument() {
     manager_name: "",
     manager_title: "",
     payment_instructions: "",
-    payment_method: "",
+    payment_method: "Bank Transfer",
     bank_name: "",
     account_number: "",
     account_holder_name: "",
