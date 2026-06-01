@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { base44 } from "@/api/base44Client";
 import { useParams, Link, useNavigate } from "react-router-dom";
-import { ArrowLeft, Trash2, Printer, Send, Pencil, Share2, FileDown, MoreVertical, Upload, Copy, GitMerge, PenLine, CheckCircle2 } from "lucide-react";
+import { ArrowLeft, Trash2, Printer, Send, Pencil, Share2, FileDown, MoreVertical, Upload, Copy, GitMerge, PenLine, CheckCircle2, Receipt } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -9,6 +9,7 @@ import { format } from "date-fns";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import SignaturePad from "../components/SignaturePad";
 import WaybillSignatureModal from "../components/WaybillSignatureModal";
+import ConvertDocumentModal from "../components/ConvertDocumentModal";
 import { buildTheme } from "../components/TemplateSelector";
 import DocumentPreview from "../components/DocumentPreview";
 
@@ -68,6 +69,7 @@ export default function ViewDocument() {
   const pdfDocRef = useRef(null);
   const [softAutoDownload, setSoftAutoDownload] = useState(false);
   const [showInlineSigPad, setShowInlineSigPad] = useState(false);
+  const [convertTarget, setConvertTarget] = useState(null); // 'invoice' | 'receipt'
   const [previewScale, setPreviewScale] = useState(1);
 
   useEffect(() => {
@@ -309,11 +311,28 @@ export default function ViewDocument() {
     navigate(`/documents/${created.id}`);
   };
 
-  const handleConvertToInvoice = async () => {
+  const handleConvertConfirm = async (formData) => {
     const { id, created_date, updated_date, created_by, ...rest } = doc;
-    const newNum = rest.number.replace(/^QUO/i, "INV");
-    const created = await base44.entities.Document.create({ ...rest, type: "invoice", number: newNum, status: "draft", manager_signature: "", customer_signature: "", paid_amount: 0 });
-    toast.success("Converted to invoice!");
+    const isReceipt = convertTarget === "receipt";
+    const newDoc = {
+      ...rest,
+      type: convertTarget,
+      number: formData.number,
+      status: isReceipt ? "paid" : "draft",
+      issue_date: formData.issue_date ? new Date(formData.issue_date).toISOString() : new Date().toISOString(),
+      due_date: formData.due_date ? new Date(formData.due_date).toISOString() : null,
+      notes: formData.notes,
+      manager_signature: "",
+      customer_signature: "",
+      ...(isReceipt ? {
+        payment_method: formData.payment_method,
+        paid_amount: formData.paid_amount,
+        balance_due: Math.max(0, (rest.total || 0) - formData.paid_amount),
+      } : { paid_amount: 0 }),
+    };
+    const created = await base44.entities.Document.create(newDoc);
+    setConvertTarget(null);
+    toast.success(`${convertTarget === "invoice" ? "Invoice" : "Receipt"} created successfully!`);
     navigate(`/documents/${created.id}`);
   };
 
@@ -345,6 +364,16 @@ export default function ViewDocument() {
             </Select>
           </div>
 
+          {doc.type === "quotation" && (
+            <>
+              <Button variant="outline" size="sm" className="h-9 px-3 hidden md:flex gap-1.5 border-indigo-300 text-indigo-700 hover:bg-indigo-50" onClick={() => setConvertTarget("invoice")}>
+                <GitMerge className="h-4 w-4" /><span>→ Invoice</span>
+              </Button>
+              <Button variant="outline" size="sm" className="h-9 px-3 hidden md:flex gap-1.5 border-emerald-300 text-emerald-700 hover:bg-emerald-50" onClick={() => setConvertTarget("receipt")}>
+                <Receipt className="h-4 w-4" /><span>→ Receipt</span>
+              </Button>
+            </>
+          )}
           <Button variant="outline" size="sm" className="h-9 px-3" onClick={() => navigate(`/documents/new?edit=${docId}`)}>
             <Pencil className="h-4 w-4" /><span className="hidden sm:inline ml-1.5">Edit</span>
           </Button>
@@ -407,9 +436,14 @@ export default function ViewDocument() {
                 <Copy className="h-4 w-4 mr-2" /> Duplicate
               </DropdownMenuItem>
               {doc.type === "quotation" && (
-                <DropdownMenuItem onClick={handleConvertToInvoice}>
-                  <GitMerge className="h-4 w-4 mr-2" /> Convert to Invoice
-                </DropdownMenuItem>
+                <>
+                  <DropdownMenuItem onClick={() => setConvertTarget("invoice")}>
+                    <GitMerge className="h-4 w-4 mr-2" /> Convert to Invoice
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setConvertTarget("receipt")}>
+                    <Receipt className="h-4 w-4 mr-2" /> Convert to Receipt
+                  </DropdownMenuItem>
+                </>
               )}
               <DropdownMenuSeparator />
               <DropdownMenuItem className="text-destructive" onClick={handleDelete}>
@@ -558,6 +592,15 @@ export default function ViewDocument() {
           doc={doc}
           onClose={() => setShowSignModal(false)}
           onSaved={handleDeliveryConfirmed}
+        />
+      )}
+
+      {convertTarget && (
+        <ConvertDocumentModal
+          doc={doc}
+          targetType={convertTarget}
+          onConfirm={handleConvertConfirm}
+          onClose={() => setConvertTarget(null)}
         />
       )}
 
