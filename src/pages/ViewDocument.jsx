@@ -197,26 +197,29 @@ export default function ViewDocument() {
     const element = (targetRef || pdfDocRef).current;
     const wrapper = element.parentElement;
     const savedStyle = wrapper.getAttribute("style");
-    wrapper.setAttribute("style", "position:fixed;top:0;left:-9999px;width:794px;z-index:9999;");
-    await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
-    const elHeight = element.scrollHeight || 1123;
+    // Make visible off-screen at exact A4 pixel width so layout fully renders
+    wrapper.setAttribute("style", "position:fixed;top:0;left:-9999px;width:794px;z-index:9999;opacity:0;pointer-events:none;");
+    element.style.width = "794px";
+    // Wait for layout to settle
+    await new Promise(r => setTimeout(r, 300));
     const canvas = await html2canvas(element, {
       scale: 2,
       useCORS: true,
       allowTaint: true,
       backgroundColor: "#ffffff",
       width: 794,
-      height: elHeight,
       windowWidth: 794,
-      windowHeight: elHeight,
       scrollX: 0,
       scrollY: 0,
+      logging: false,
     });
     wrapper.setAttribute("style", savedStyle || "");
-    const imgData = canvas.toDataURL("image/jpeg", 0.92);
+    element.style.width = "";
+    const imgData = canvas.toDataURL("image/jpeg", 0.95);
     const pdf = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
     const pageWidthMm = pdf.internal.pageSize.getWidth();
     const pageHeightMm = pdf.internal.pageSize.getHeight();
+    // canvas.width is 794*2=1588 (scale:2), canvas.height is auto-detected full height
     const imgHeightMm = (canvas.height / canvas.width) * pageWidthMm;
     let remaining = imgHeightMm;
     let yPos = 0;
