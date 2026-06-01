@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { FileText, FileCheck, Receipt, Truck, Mail, Plus, Clock, Search, X, ArrowRight, Sparkles } from "lucide-react";
+import AIAssistant from "../components/AIAssistant";
 import { useQuery } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 
@@ -338,6 +339,7 @@ export default function Home() {
           )}
         </>
       )}
+    <AIAssistant />
     </div>
   );
 }
