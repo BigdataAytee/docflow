@@ -12,8 +12,6 @@ const DOC_TYPES = [
     icon: FileText,
     gradient: "linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)",
     glow: "rgba(59,130,246,0.25)",
-    badgeBg: "rgba(255,255,255,0.2)",
-    path: "/documents?type=invoice",
     newPath: "/documents/new?type=invoice",
   },
   {
@@ -23,8 +21,6 @@ const DOC_TYPES = [
     icon: FileCheck,
     gradient: "linear-gradient(135deg, #8b5cf6 0%, #6d28d9 100%)",
     glow: "rgba(139,92,246,0.25)",
-    badgeBg: "rgba(255,255,255,0.2)",
-    path: "/documents?type=quotation",
     newPath: "/documents/new?type=quotation",
   },
   {
@@ -34,8 +30,6 @@ const DOC_TYPES = [
     icon: Receipt,
     gradient: "linear-gradient(135deg, #10b981 0%, #047857 100%)",
     glow: "rgba(16,185,129,0.25)",
-    badgeBg: "rgba(255,255,255,0.2)",
-    path: "/documents?type=receipt",
     newPath: "/documents/new?type=receipt",
   },
   {
@@ -45,8 +39,6 @@ const DOC_TYPES = [
     icon: Truck,
     gradient: "linear-gradient(135deg, #f59e0b 0%, #d97706 100%)",
     glow: "rgba(245,158,11,0.25)",
-    badgeBg: "rgba(255,255,255,0.2)",
-    path: "/documents?type=waybill",
     newPath: "/documents/new?type=waybill",
   },
   {
@@ -56,8 +48,6 @@ const DOC_TYPES = [
     icon: Mail,
     gradient: "linear-gradient(135deg, #ef4444 0%, #b91c1c 100%)",
     glow: "rgba(239,68,68,0.25)",
-    badgeBg: "rgba(255,255,255,0.2)",
-    path: "/mail",
     newPath: null,
   },
 ];
@@ -77,14 +67,6 @@ export default function Home() {
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedType, setSelectedType] = useState(null);
-  const handleCardClick = (type) => {
-    if (type === "mail") { navigate("/mail"); return; }
-    setSelectedType(prev => prev === type ? null : type);
-  };
-
-  const activeMeta = DOC_TYPES.find(d => d.type === selectedType);
-
-
 
   const { data: user } = useQuery({
     queryKey: ["me"],
@@ -93,30 +75,32 @@ export default function Home() {
 
   const { data: docs = [] } = useQuery({
     queryKey: ["home-docs", user?.email],
-    queryFn: () => user?.email
-      ? base44.entities.Document.filter({ created_by: user.email }, "-created_date", 50)
-      : [],
+    queryFn: () =>
+      user?.email
+        ? base44.entities.Document.filter({ created_by: user.email }, "-created_date", 50)
+        : [],
     enabled: !!user?.email,
   });
 
   const countByType = (type) => docs.filter((d) => d.type === type).length;
 
+  const filteredDocs = selectedType ? docs.filter((d) => d.type === selectedType) : [];
 
-
-  const searchResults = searchQuery.trim().length > 1
-    ? docs.filter(doc => {
-        const q = searchQuery.toLowerCase();
-        return (
-          (doc.number || "").toLowerCase().includes(q) ||
-          (doc.customer_name || "").toLowerCase().includes(q) ||
-          (doc.customer_email || "").toLowerCase().includes(q) ||
-          (doc.type || "").toLowerCase().includes(q) ||
-          (doc.status || "").replace(/_/g, " ").toLowerCase().includes(q) ||
-          (doc.notes || "").toLowerCase().includes(q) ||
-          (doc.tracking_number || "").toLowerCase().includes(q)
-        );
-      })
-    : [];
+  const searchResults =
+    searchQuery.trim().length > 1
+      ? docs.filter((doc) => {
+          const q = searchQuery.toLowerCase();
+          return (
+            (doc.number || "").toLowerCase().includes(q) ||
+            (doc.customer_name || "").toLowerCase().includes(q) ||
+            (doc.customer_email || "").toLowerCase().includes(q) ||
+            (doc.type || "").toLowerCase().includes(q) ||
+            (doc.status || "").replace(/_/g, " ").toLowerCase().includes(q) ||
+            (doc.notes || "").toLowerCase().includes(q) ||
+            (doc.tracking_number || "").toLowerCase().includes(q)
+          );
+        })
+      : [];
 
   const recentDocs = docs.slice(0, 6);
 
@@ -128,6 +112,46 @@ export default function Home() {
   };
 
   const firstName = user?.full_name?.split(" ")[0] || "";
+  const activeMeta = DOC_TYPES.find((d) => d.type === selectedType);
+
+  const handleCardClick = (type) => {
+    if (type === "mail") {
+      navigate("/mail");
+      return;
+    }
+    setSelectedType((prev) => (prev === type ? null : type));
+  };
+
+  const handleNewClick = (e, newPath) => {
+    e.stopPropagation();
+    navigate(newPath);
+  };
+
+  const DocRow = ({ doc, idx, total }) => {
+    const meta = DOC_TYPES.find((d) => d.type === doc.type) || DOC_TYPES[0];
+    const Icon = meta.icon;
+    const statusColor = STATUS_COLORS[doc.status] || "#94a3b8";
+    return (
+      <div
+        onClick={() => navigate(`/documents/${doc.id}`)}
+        className={`flex items-center gap-4 px-5 py-3.5 cursor-pointer hover:bg-muted/40 transition-colors group ${idx < total - 1 ? "border-b border-border" : ""}`}
+      >
+        <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 shadow-sm" style={{ background: meta.gradient }}>
+          <Icon className="h-4 w-4 text-white" />
+        </div>
+        <div className="flex-1 min-w-0">
+          <p className="font-semibold text-sm truncate">{doc.number || "—"}</p>
+          <p className="text-xs text-muted-foreground truncate">{doc.customer_name || "No customer"}</p>
+        </div>
+        <div className="flex items-center gap-3 shrink-0">
+          <span className="text-xs font-semibold px-2.5 py-1 rounded-full capitalize" style={{ background: statusColor + "1a", color: statusColor }}>
+            {doc.status?.replace(/_/g, " ")}
+          </span>
+          <ArrowRight className="h-4 w-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
+        </div>
+      </div>
+    );
+  };
 
   return (
     <div className="max-w-4xl mx-auto space-y-8">
@@ -135,12 +159,15 @@ export default function Home() {
       {/* Hero greeting */}
       <div
         className="relative rounded-3xl overflow-hidden px-6 py-8 md:px-10 md:py-10"
-        style={{ background: selectedType && activeMeta ? activeMeta.gradient : "linear-gradient(135deg, hsl(230,65%,14%) 0%, hsl(230,60%,22%) 60%, hsl(260,50%,28%) 100%)", transition: "background 0.3s ease" }}
+        style={{
+          background: activeMeta
+            ? activeMeta.gradient
+            : "linear-gradient(135deg, hsl(230,65%,14%) 0%, hsl(230,60%,22%) 60%, hsl(260,50%,28%) 100%)",
+          transition: "background 0.3s ease",
+        }}
       >
-        {/* Decorative blobs */}
         <div className="absolute -top-10 -right-10 w-56 h-56 rounded-full opacity-20" style={{ background: "radial-gradient(circle, #6366f1, transparent 70%)" }} />
         <div className="absolute -bottom-8 -left-8 w-44 h-44 rounded-full opacity-15" style={{ background: "radial-gradient(circle, #3b82f6, transparent 70%)" }} />
-
         <div className="relative z-10 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
             <div className="flex items-center gap-2 mb-2">
@@ -158,7 +185,7 @@ export default function Home() {
               <p className="text-white/50 text-xs mt-0.5">Total Docs</p>
             </div>
             <div className="bg-white/10 backdrop-blur-sm border border-white/10 rounded-2xl px-4 py-3 text-center min-w-[72px]">
-              <p className="text-2xl font-bold text-emerald-300">{docs.filter(d => d.status === "paid" || d.status === "delivered").length}</p>
+              <p className="text-2xl font-bold text-emerald-300">{docs.filter((d) => d.status === "paid" || d.status === "delivered").length}</p>
               <p className="text-white/50 text-xs mt-0.5">Completed</p>
             </div>
           </div>
@@ -171,8 +198,8 @@ export default function Home() {
         <input
           type="text"
           value={searchQuery}
-          onChange={e => setSearchQuery(e.target.value)}
-          placeholder="Search by document reference number, customer name, status, tracking number…"
+          onChange={(e) => setSearchQuery(e.target.value)}
+          placeholder="Search by document number, customer name, status, tracking number…"
           className="w-full h-12 pl-11 pr-11 rounded-2xl border border-border bg-card text-sm focus:outline-none focus:ring-2 focus:ring-ring shadow-sm placeholder:text-muted-foreground transition-shadow focus:shadow-md"
         />
         {searchQuery && (
@@ -189,43 +216,18 @@ export default function Home() {
             <span className="font-semibold text-foreground">{searchResults.length}</span> result{searchResults.length !== 1 ? "s" : ""} for &ldquo;{searchQuery}&rdquo;
           </p>
           {searchResults.length === 0 ? (
-            <div className="bg-card rounded-2xl border border-border px-5 py-10 text-center text-sm text-muted-foreground">
-              No documents found
-            </div>
+            <div className="bg-card rounded-2xl border border-border px-5 py-10 text-center text-sm text-muted-foreground">No documents found</div>
           ) : (
             <div className="bg-card rounded-2xl border border-border divide-y divide-border overflow-hidden shadow-sm">
-              {searchResults.slice(0, 20).map(doc => {
-                const meta = DOC_TYPES.find(d => d.type === doc.type) || DOC_TYPES[0];
-                const Icon = meta.icon;
-                const statusColor = STATUS_COLORS[doc.status] || "#94a3b8";
-                return (
-                  <div
-                    key={doc.id}
-                    onClick={() => navigate(`/documents/${doc.id}`)}
-                    className="flex items-center gap-4 px-5 py-3.5 cursor-pointer hover:bg-muted/40 transition-colors group"
-                  >
-                    <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 shadow-sm" style={{ background: meta.gradient }}>
-                      <Icon className="h-4 w-4 text-white" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="font-semibold text-sm truncate">{doc.number || "—"}</p>
-                      <p className="text-xs text-muted-foreground truncate">{doc.customer_name || "No customer"}</p>
-                    </div>
-                    <div className="flex items-center gap-3 shrink-0">
-                      <span className="text-xs font-semibold px-2.5 py-1 rounded-full capitalize" style={{ background: statusColor + "1a", color: statusColor }}>
-                        {doc.status?.replace(/_/g, " ")}
-                      </span>
-                      <ArrowRight className="h-4 w-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
-                    </div>
-                  </div>
-                );
-              })}
+              {searchResults.slice(0, 20).map((doc, idx) => (
+                <DocRow key={doc.id} doc={doc} idx={idx} total={Math.min(searchResults.length, 20)} />
+              ))}
             </div>
           )}
         </div>
       )}
 
-      {/* Document type cards */}
+      {/* Document type cards + lists */}
       {!searchQuery && (
         <>
           <div>
@@ -238,42 +240,33 @@ export default function Home() {
                   <div
                     key={type}
                     onClick={() => handleCardClick(type)}
-                    className="group relative rounded-2xl md:rounded-3xl cursor-pointer overflow-hidden transition-all duration-300 hover:-translate-y-1"
+                    className="group relative rounded-2xl md:rounded-3xl cursor-pointer overflow-hidden"
                     style={{
                       background: gradient,
                       boxShadow: isSelected ? `0 0 0 3px white, 0 8px 32px ${glow}` : `0 4px 24px ${glow}`,
-                      transform: isSelected ? "scale(1.04)" : undefined,
+                      transform: isSelected ? "scale(1.04)" : "scale(1)",
                       opacity: selectedType && !isSelected ? 0.55 : 1,
                       transition: "all 0.25s ease",
                     }}
                   >
-                    {/* Decorative circle */}
                     <div className="absolute -top-6 -right-6 w-28 h-28 rounded-full bg-white/10" />
                     <div className="absolute -bottom-8 -left-4 w-20 h-20 rounded-full bg-black/10" />
-
                     <div className="relative z-10 p-4 md:p-5 flex flex-col gap-3 min-h-[148px] md:min-h-[160px]">
-                      {/* Top row: icon + count */}
                       <div className="flex items-start justify-between">
                         <div className="w-10 h-10 md:w-12 md:h-12 rounded-xl md:rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center shadow-inner">
                           <Icon className="h-5 w-5 md:h-6 md:w-6 text-white" />
                         </div>
                         {count !== null && count > 0 && (
-                          <span className="text-xs font-bold px-2 py-1 rounded-full bg-white/25 text-white backdrop-blur-sm">
-                            {count}
-                          </span>
+                          <span className="text-xs font-bold px-2 py-1 rounded-full bg-white/25 text-white backdrop-blur-sm">{count}</span>
                         )}
                       </div>
-
-                      {/* Label + description */}
                       <div className="flex-1">
                         <h3 className="font-bold text-white text-base md:text-lg leading-tight">{label}</h3>
                         <p className="text-white/70 text-xs mt-0.5 leading-relaxed hidden sm:block">{description}</p>
                       </div>
-
-                      {/* CTA */}
                       {newPath ? (
                         <button
-                          onClick={(e) => { e.stopPropagation(); navigate(newPath); }}
+                          onClick={(e) => handleNewClick(e, newPath)}
                           className="flex items-center gap-1.5 text-xs font-bold text-white bg-white/20 hover:bg-white/30 backdrop-blur-sm rounded-xl px-3 py-1.5 w-fit transition-colors"
                         >
                           <Plus className="h-3 w-3" /> New
@@ -290,49 +283,36 @@ export default function Home() {
             </div>
           </div>
 
-          {/* Filtered docs for selected type */}
+          {/* Filtered docs list for selected type */}
           {selectedType && selectedType !== "mail" && (
             <div>
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-2">
-                  {activeMeta && <activeMeta.icon className="h-4 w-4 text-muted-foreground" />}
                   <h2 className="font-bold text-base text-foreground">{activeMeta?.label}</h2>
-                  <span className="text-xs text-muted-foreground">({docs.filter(d => d.type === selectedType).length})</span>
+                  <span className="text-xs text-muted-foreground">({filteredDocs.length})</span>
                 </div>
-                <button onClick={() => setSelectedType(null)} className="text-xs text-muted-foreground hover:text-foreground flex items-center gap-1"><X className="h-3 w-3" /> Close</button>
+                <button
+                  onClick={() => setSelectedType(null)}
+                  className="text-xs text-muted-foreground hover:text-foreground flex items-center gap-1"
+                >
+                  <X className="h-3 w-3" /> Close
+                </button>
               </div>
-              {docs.filter(d => d.type === selectedType).length === 0 ? (
+              {filteredDocs.length === 0 ? (
                 <div className="bg-card rounded-2xl border border-border px-5 py-10 text-center text-sm text-muted-foreground">
-                  No {activeMeta?.label?.toLowerCase()} yet.
+                  No {activeMeta?.label?.toLowerCase()} yet.{" "}
+                  <button
+                    onClick={() => navigate(activeMeta?.newPath)}
+                    className="text-primary underline ml-1"
+                  >
+                    Create one
+                  </button>
                 </div>
               ) : (
                 <div className="bg-card rounded-2xl border border-border overflow-hidden shadow-sm">
-                  {docs.filter(d => d.type === selectedType).map((doc, idx, arr) => {
-                    const meta = DOC_TYPES.find((d) => d.type === doc.type) || DOC_TYPES[0];
-                    const Icon = meta.icon;
-                    const statusColor = STATUS_COLORS[doc.status] || "#94a3b8";
-                    return (
-                      <div
-                        key={doc.id}
-                        onClick={() => navigate(`/documents/${doc.id}`)}
-                        className={`flex items-center gap-4 px-5 py-3.5 cursor-pointer hover:bg-muted/40 transition-colors group ${idx < arr.length - 1 ? "border-b border-border" : ""}`}
-                      >
-                        <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 shadow-sm" style={{ background: meta.gradient }}>
-                          <Icon className="h-4 w-4 text-white" />
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <p className="font-semibold text-sm truncate">{doc.number || "—"}</p>
-                          <p className="text-xs text-muted-foreground truncate">{doc.customer_name || "No customer"}</p>
-                        </div>
-                        <div className="flex items-center gap-3 shrink-0">
-                          <span className="text-xs font-semibold px-2.5 py-1 rounded-full capitalize" style={{ background: statusColor + "1a", color: statusColor }}>
-                            {doc.status?.replace(/_/g, " ")}
-                          </span>
-                          <ArrowRight className="h-4 w-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
-                        </div>
-                      </div>
-                    );
-                  })}
+                  {filteredDocs.map((doc, idx) => (
+                    <DocRow key={doc.id} doc={doc} idx={idx} total={filteredDocs.length} />
+                  ))}
                 </div>
               )}
             </div>
@@ -341,44 +321,14 @@ export default function Home() {
           {/* Recent documents */}
           {!selectedType && recentDocs.length > 0 && (
             <div>
-              <div className="flex items-center justify-between mb-4">
-                <div className="flex items-center gap-2">
-                  <Clock className="h-4 w-4 text-muted-foreground" />
-                  <h2 className="font-bold text-base text-foreground">Recent Documents</h2>
-                </div>
+              <div className="flex items-center gap-2 mb-4">
+                <Clock className="h-4 w-4 text-muted-foreground" />
+                <h2 className="font-bold text-base text-foreground">Recent Documents</h2>
               </div>
               <div className="bg-card rounded-2xl border border-border overflow-hidden shadow-sm">
-                {recentDocs.map((doc, idx) => {
-                  const meta = DOC_TYPES.find((d) => d.type === doc.type) || DOC_TYPES[0];
-                  const Icon = meta.icon;
-                  const statusColor = STATUS_COLORS[doc.status] || "#94a3b8";
-                  return (
-                    <div
-                      key={doc.id}
-                      onClick={() => navigate(`/documents/${doc.id}`)}
-                      className={`flex items-center gap-4 px-5 py-3.5 cursor-pointer hover:bg-muted/40 transition-colors group ${idx < recentDocs.length - 1 ? "border-b border-border" : ""}`}
-                    >
-                      <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 shadow-sm" style={{ background: meta.gradient }}>
-                        <Icon className="h-4 w-4 text-white" />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="font-semibold text-sm truncate">{doc.number || "—"}</p>
-                        <p className="text-xs text-muted-foreground truncate">{doc.customer_name || "No customer"}</p>
-                      </div>
-                      <div className="flex items-center gap-3 shrink-0">
-                        <div className="text-right hidden sm:block">
-                          <span className="text-xs font-semibold px-2.5 py-1 rounded-full capitalize block" style={{ background: statusColor + "1a", color: statusColor }}>
-                            {doc.status?.replace(/_/g, " ")}
-                          </span>
-                          <p className="text-xs text-muted-foreground mt-1">
-                            {doc.issue_date ? new Date(doc.issue_date).toLocaleDateString("en-GB", { day: "2-digit", month: "short" }) : ""}
-                          </p>
-                        </div>
-                        <ArrowRight className="h-4 w-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
-                      </div>
-                    </div>
-                  );
-                })}
+                {recentDocs.map((doc, idx) => (
+                  <DocRow key={doc.id} doc={doc} idx={idx} total={recentDocs.length} />
+                ))}
               </div>
             </div>
           )}
