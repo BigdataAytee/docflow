@@ -1019,16 +1019,7 @@ export default function CreateDocument() {
                 <Upload className="h-4 w-4 mr-1" />
                 Share PDF
               </Button>
-              {(form.type || docType) === "waybill" && (
-                <>
-                  <Button variant="outline" className="w-full gap-2" onClick={() => { setPdfMode("paper"); setShowPdfPreview(true); }}>
-                    <Printer className="h-4 w-4" /> Save for Paper Signage
-                  </Button>
-                  <Button variant="outline" className="w-full gap-2 border-slate-700 text-slate-800 hover:bg-slate-900 hover:text-white" onClick={() => { setPdfMode("soft"); setShowPdfPreview(true); }}>
-                    <PenLine className="h-4 w-4" /> Save for Soft Signage
-                  </Button>
-                </>
-              )}
+
             </div>
           </div>
         </div>{/* end sidebar */}
@@ -1127,20 +1118,7 @@ export default function CreateDocument() {
                 <Upload className="h-4 w-4 mr-1" />
                 {generatingPdf ? "Generating..." : "Share PDF"}
               </Button>
-              {(form.type || docType) === "waybill" && (
-                <>
-                  <Button size="sm" variant="outline" onClick={() => downloadInMode("paper")} disabled={generatingPdf} className="gap-1.5 shrink-0">
-                    <Printer className="h-4 w-4" />
-                    <span className="hidden sm:inline">{generatingPdf ? "..." : "Paper Signage"}</span>
-                    <span className="sm:hidden">Paper</span>
-                  </Button>
-                  <Button size="sm" onClick={handleSoftSignage} disabled={saving} className="gap-1.5 bg-slate-900 hover:bg-slate-800 text-white shrink-0">
-                    <PenLine className="h-4 w-4" />
-                    <span className="hidden sm:inline">Soft Signage</span>
-                    <span className="sm:hidden">Soft</span>
-                  </Button>
-                </>
-              )}
+
               <button className="p-2 hover:bg-muted rounded-lg text-muted-foreground shrink-0" onClick={() => setShowPdfPreview(false)}>✕</button>
             </div>
           </div>
