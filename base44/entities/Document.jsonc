@@ -57,6 +57,11 @@
       "title": "Color Scheme",
       "default": "slate"
     },
+    "template_font": {
+      "type": "string",
+      "title": "Typography Font",
+      "default": ""
+    },
     "customer_id": {
       "type": "string",
       "title": "Customer ID"

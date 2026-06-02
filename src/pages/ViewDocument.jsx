@@ -721,6 +721,7 @@ export default function ViewDocument() {
                       customerSig={doc.type === "waybill" && pdfMode === "paper" ? "" : doc.customer_signature}
                       template={doc.template || "classic"}
                       templateColor={doc.template_color || "slate"}
+                      templateFont={doc.template_font}
                     />
                   </div>
                 </ScaledDocument>
@@ -778,7 +779,7 @@ function UnifiedTemplate({ doc, onSaveManagerSig, onSaveCustomerSig, onOpenSignM
   const fmtCurr = (n) => `${curr} ${fmtAmt(n)}`;
   const customerLabel = CUSTOMER_LABEL[doc.type] || "Sold To";
   const amountLabel = AMOUNT_LABEL[doc.type] || "Balance Due";
-  const T = buildTheme(doc.template || "classic", doc.template_color || "slate");
+  const T = buildTheme(doc.template || "classic", doc.template_color || "slate", doc.template_font);
   const isColoredHeader = T.headerBg !== "#ffffff" && T.headerBg !== "#fffbeb";
 
   return (

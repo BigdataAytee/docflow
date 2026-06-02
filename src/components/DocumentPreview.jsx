@@ -509,8 +509,8 @@ function ElegantDoc({ form, items, calcs, sym, docType, managerSig, customerSig,
 }
 
 // ─── Main export ─────────────────────────────────────────────────────────────
-export default function DocumentPreview({ form, items, calcs, sym, docType, managerSig, customerSig, template, templateColor }) {
-  const T = buildTheme(template || form?.template || "classic", templateColor || form?.template_color || "slate");
+export default function DocumentPreview({ form, items, calcs, sym, docType, managerSig, customerSig, template, templateColor, templateFont }) {
+  const T = buildTheme(template || form?.template || "classic", templateColor || form?.template_color || "slate", templateFont || form?.template_font);
   const lineItems = items || [];
   const shared = { form, items: lineItems, calcs, sym, docType, managerSig, customerSig, T };
   const layout = template || form?.template || "classic";

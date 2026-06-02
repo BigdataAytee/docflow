@@ -21,16 +21,25 @@ const FONTS = [
 ];
 
 const COLOR_PALETTES = [
-  { id: "slate",    label: "Slate",    swatch: "#334155" },
-  { id: "indigo",   label: "Indigo",   swatch: "#4f46e5" },
-  { id: "blue",     label: "Ocean",    swatch: "#2563eb" },
-  { id: "emerald",  label: "Emerald",  swatch: "#059669" },
-  { id: "rose",     label: "Rose",     swatch: "#e11d48" },
-  { id: "amber",    label: "Amber",    swatch: "#d97706" },
-  { id: "purple",   label: "Plum",     swatch: "#7c3aed" },
-  { id: "teal",     label: "Teal",     swatch: "#0d9488" },
-  { id: "gold",     label: "Gold",     swatch: "#b45309" },
-  { id: "charcoal", label: "Charcoal", swatch: "#111827" },
+  { id: "slate",    label: "Slate",        swatch: "#334155" },
+  { id: "charcoal", label: "Charcoal",     swatch: "#111827" },
+  { id: "midnight", label: "Midnight",     swatch: "#1e1b4b" },
+  { id: "navy",     label: "Navy",         swatch: "#0f172a" },
+  { id: "indigo",   label: "Indigo",       swatch: "#4f46e5" },
+  { id: "blue",     label: "Ocean Blue",   swatch: "#2563eb" },
+  { id: "sky",      label: "Sky",          swatch: "#0284c7" },
+  { id: "teal",     label: "Teal",         swatch: "#0d9488" },
+  { id: "emerald",  label: "Emerald",      swatch: "#059669" },
+  { id: "forest",   label: "Forest",       swatch: "#14532d" },
+  { id: "purple",   label: "Plum Purple",  swatch: "#7c3aed" },
+  { id: "pink",     label: "Pink",         swatch: "#be185d" },
+  { id: "rose",     label: "Rose Red",     swatch: "#e11d48" },
+  { id: "crimson",  label: "Crimson",      swatch: "#7f1d1d" },
+  { id: "coral",    label: "Coral",        swatch: "#e7553a" },
+  { id: "amber",    label: "Amber",        swatch: "#d97706" },
+  { id: "copper",   label: "Copper",       swatch: "#92400e" },
+  { id: "gold",     label: "Gold",         swatch: "#b45309" },
+  { id: "gray",     label: "Gray",         swatch: "#9ca3af" },
 ];
 
 const LAYOUT_TEMPLATES = [

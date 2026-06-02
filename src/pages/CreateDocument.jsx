@@ -173,6 +173,11 @@ export default function CreateDocument() {
         manager_title: user.manager_title || "",
       }));
 
+      // Apply saved document design settings
+      if (user.doc_design_template) setTemplate(user.doc_design_template);
+      if (user.doc_design_color) setTemplateColor(user.doc_design_color);
+      if (user.doc_design_font) setTemplateFont(user.doc_design_font);
+
       if (!editId) {
         // Check for AI prefill
         const aiPrefillRaw = sessionStorage.getItem("ai_prefill");
@@ -256,6 +261,9 @@ export default function CreateDocument() {
     type: form.type || docType,
     number: form.number,
     status,
+    template: template,
+    template_color: templateColor,
+    template_font: templateFont,
     customer_id: form.customer_id || "",
     customer_name: form.customer_name || "",
     customer_email: form.customer_email || "",
@@ -344,8 +352,9 @@ export default function CreateDocument() {
   const [sigStep, setSigStep] = useState("info");
   const [receiverName, setReceiverName] = useState("");
   const [pdfMode, setPdfMode] = useState("soft");
-  const template = "classic";
-  const templateColor = "slate";
+  const [template, setTemplate] = useState("classic");
+  const [templateColor, setTemplateColor] = useState("slate");
+  const [templateFont, setTemplateFont] = useState("");
 
   const generatePdfBlob = async () => {
     const canvas = await html2canvas(pdfRef.current, { scale: 2, useCORS: true, logging: false, backgroundColor: "#ffffff", width: 794, windowWidth: 794 });
@@ -986,7 +995,7 @@ export default function CreateDocument() {
             </div>
             <div className="overflow-hidden" style={{ height: 460, width: "100%", position: "relative" }}>
               <div style={{ transform: "scale(0.40)", transformOrigin: "top left", width: 794, pointerEvents: "none", position: "absolute", top: 0, left: 0 }}>
-                <DocumentPreview form={form} items={calcs.lineItems} calcs={calcs} sym={sym} docType={docType} template={template} templateColor={templateColor} />
+                <DocumentPreview form={form} items={calcs.lineItems} calcs={calcs} sym={sym} docType={docType} template={template} templateColor={templateColor} templateFont={templateFont} />
               </div>
             </div>
           </div>
@@ -1176,6 +1185,7 @@ export default function CreateDocument() {
                       customerSig={(form.type || docType) === "waybill" && pdfMode === "paper" ? "" : customerSig}
                       template={template}
                       templateColor={templateColor}
+                      templateFont={templateFont}
                     />
                   </div>
                 </div>
