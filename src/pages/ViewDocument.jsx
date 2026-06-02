@@ -74,12 +74,13 @@ export default function ViewDocument() {
 
   useEffect(() => {
     const calcScale = () => {
-      const availableWidth = document.documentElement.clientWidth - 32;
-      setPreviewScale(Math.min(1, availableWidth / 794));
+      // Always use portrait width — cap at screen's shorter dimension on landscape
+      const portraitWidth = Math.min(window.innerWidth, window.innerHeight > window.innerWidth ? window.innerWidth : window.screen.width);
+      setPreviewScale(Math.min(1, (portraitWidth - 32) / 794));
     };
     calcScale();
     window.addEventListener("resize", calcScale);
-    window.addEventListener("orientationchange", () => setTimeout(calcScale, 100));
+    window.addEventListener("orientationchange", calcScale);
     return () => {
       window.removeEventListener("resize", calcScale);
       window.removeEventListener("orientationchange", calcScale);
@@ -749,25 +750,22 @@ export default function ViewDocument() {
 
 function ScaledDocument({ scale, children }) {
   const innerRef = useRef(null);
-  const [innerHeight, setInnerHeight] = useState(0);
+  const [scaledHeight, setScaledHeight] = useState(null);
 
   useEffect(() => {
     if (!innerRef.current) return;
-    const update = () => setInnerHeight(innerRef.current.offsetHeight);
-    update();
-    const observer = new ResizeObserver(update);
+    const observer = new ResizeObserver(() => {
+      if (innerRef.current) {
+        setScaledHeight(innerRef.current.offsetHeight * scale);
+      }
+    });
     observer.observe(innerRef.current);
     return () => observer.disconnect();
   }, [scale]);
 
-  const scaledHeight = innerHeight > 0 ? innerHeight * scale : "auto";
-
   return (
-    <div style={{ width: "100%", overflow: "hidden", height: scaledHeight }}>
-      <div
-        ref={innerRef}
-        style={{ width: 794, transformOrigin: "top left", transform: `scale(${scale})` }}
-      >
+    <div style={{ width: "100%", overflow: "hidden", height: scaledHeight ?? "auto" }}>
+      <div ref={innerRef} style={{ width: 794, transformOrigin: "top left", transform: `scale(${scale})` }}>
         {children}
       </div>
     </div>
