@@ -173,10 +173,12 @@ export default function CreateDocument() {
         manager_title: user.manager_title || "",
       }));
 
-      // Apply saved document design settings
-      if (user.doc_design_template) setTemplate(user.doc_design_template);
-      if (user.doc_design_color) setTemplateColor(user.doc_design_color);
-      if (user.doc_design_font) setTemplateFont(user.doc_design_font);
+      // Apply saved document design settings (only for new documents)
+      if (!editId) {
+        if (user.doc_design_template) setTemplate(user.doc_design_template);
+        if (user.doc_design_color) setTemplateColor(user.doc_design_color);
+        if (user.doc_design_font) setTemplateFont(user.doc_design_font);
+      }
 
       if (!editId) {
         // Check for AI prefill
@@ -206,6 +208,9 @@ export default function CreateDocument() {
           if (doc.items) setItems(doc.items);
           if (doc.manager_signature) setManagerSig(doc.manager_signature);
           if (doc.customer_signature) setCustomerSig(doc.customer_signature);
+          if (doc.template) setTemplate(doc.template);
+          if (doc.template_color) setTemplateColor(doc.template_color);
+          if (doc.template_font) setTemplateFont(doc.template_font);
         }
       }
     })();
