@@ -556,10 +556,12 @@ export default function ViewDocument() {
         </div>
       )}
 
-      {/* Document view — scrollable on mobile */}
-      <div className="w-full overflow-x-auto -mx-4 md:mx-0" style={{ WebkitOverflowScrolling: "touch" }}>
-        <div className="min-w-[520px] md:min-w-0">
-          <UnifiedTemplate doc={doc} onSaveManagerSig={saveManagerSig} onSaveCustomerSig={saveCustomerSig} onOpenSignModal={() => setShowSignModal(true)} />
+      {/* Document view — scaled to fit on mobile */}
+      <div style={{ width: "100%", overflow: "hidden" }}>
+        <div style={{ width: 794 * previewScale, transformOrigin: "top left" }}>
+          <div style={{ width: 794, transformOrigin: "top left", transform: `scale(${previewScale})`, marginBottom: previewScale < 1 ? `${(previewScale - 1) * 1123}px` : undefined }}>
+            <UnifiedTemplate doc={doc} onSaveManagerSig={saveManagerSig} onSaveCustomerSig={saveCustomerSig} onOpenSignModal={() => setShowSignModal(true)} />
+          </div>
         </div>
       </div>
 
