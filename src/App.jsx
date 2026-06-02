@@ -16,6 +16,7 @@ import ResetPassword from './pages/ResetPassword';
 import Home from './pages/Home';
 import Customers from './pages/Customers';
 import CreateDocument from './pages/CreateDocument';
+import DocumentList from './pages/DocumentList';
 import ViewDocument from './pages/ViewDocument';
 import Settings from './pages/Settings';
 import Mail from './pages/Mail';
@@ -59,6 +60,7 @@ const AuthenticatedApp = () => {
         <Route element={<Layout />}>
           <Route path="/" element={<Home />} />
           <Route path="/customers" element={<Customers />} />
+          <Route path="/documents" element={<DocumentList />} />
           <Route path="/documents/new" element={<CreateDocument />} />
           <Route path="/documents/:docId" element={<ViewDocument />} />
           <Route path="/settings" element={<Settings />} />

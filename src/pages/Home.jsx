@@ -296,7 +296,7 @@ export default function Home() {
                   <h2 className="font-bold text-base text-foreground">Recent Documents</h2>
                 </div>
                 <button
-                  onClick={() => navigate("/documents")}
+                  onClick={() => navigate("/documents?type=invoice")}
                   className="text-xs text-primary font-semibold flex items-center gap-1 hover:underline"
                 >
                   View all <ArrowRight className="h-3 w-3" />
