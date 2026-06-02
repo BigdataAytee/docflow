@@ -73,10 +73,18 @@ export default function ViewDocument() {
   const [previewScale, setPreviewScale] = useState(1);
 
   useEffect(() => {
-    const calcScale = () => setPreviewScale(Math.min(1, (window.innerWidth - 32) / 794));
+    const calcScale = () => {
+      // Always use portrait width — cap at screen's shorter dimension on landscape
+      const portraitWidth = Math.min(window.innerWidth, window.innerHeight > window.innerWidth ? window.innerWidth : window.screen.width);
+      setPreviewScale(Math.min(1, (portraitWidth - 32) / 794));
+    };
     calcScale();
     window.addEventListener("resize", calcScale);
-    return () => window.removeEventListener("resize", calcScale);
+    window.addEventListener("orientationchange", calcScale);
+    return () => {
+      window.removeEventListener("resize", calcScale);
+      window.removeEventListener("orientationchange", calcScale);
+    };
   }, []);
 
   useEffect(() => {

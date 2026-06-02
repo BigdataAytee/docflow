@@ -80,6 +80,12 @@
 
 
 
+@media print {
+  @page {
+    size: A4 portrait;
+  }
+}
+
 @layer base {
   * {
     @apply border-border outline-ring/50;
