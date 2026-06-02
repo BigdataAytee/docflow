@@ -160,7 +160,7 @@ function MiniPreview({ design, userInfo, fixedHeight }) {
             calcs={{ subtotal: previewDoc.subtotal, taxAmt: previewDoc.tax_amount, total: previewDoc.total }}
             sym="₦" docType="invoice"
             managerSig={previewDoc.manager_signature} customerSig=""
-            template={design.template} templateColor={design.color}
+            template={design.template} templateColor={design.color} templateFont={design.font}
           />
         </div>
       </div>
@@ -257,7 +257,7 @@ function DesktopPreview({ design, userInfo }) {
               calcs={{ subtotal: previewDoc.subtotal, taxAmt: previewDoc.tax_amount, total: previewDoc.total }}
               sym="₦" docType="invoice"
               managerSig={previewDoc.manager_signature} customerSig=""
-              template={design.template} templateColor={design.color}
+              template={design.template} templateColor={design.color} templateFont={design.font}
             />
           </div>
         </div>
