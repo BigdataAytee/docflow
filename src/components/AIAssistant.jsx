@@ -92,23 +92,40 @@ ${inputText || "(see attached image)"}
   return (
     <>
       {/* Floating launcher */}
-      <button
-        onClick={() => { setOpen(true); if (stage === "idle") setStage("input"); }}
-        className="fixed z-40 flex items-center gap-2.5 px-4 py-3 rounded-2xl shadow-2xl transition-all duration-300 hover:scale-105 active:scale-95"
-        style={{
-          bottom: "calc(72px + env(safe-area-inset-bottom, 0px))",
-          right: 16,
-          background: "linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #a855f7 100%)",
-          boxShadow: "0 8px 32px rgba(99,102,241,0.45), 0 2px 8px rgba(0,0,0,0.2)",
-        }}
+      <div
+        className="fixed z-40 group"
+        style={{ bottom: "calc(72px + env(safe-area-inset-bottom, 0px))", right: 16 }}
       >
-        <div className="relative">
-          <Sparkles className="h-5 w-5 text-white" />
-          <span className="absolute -top-1 -right-1 w-2 h-2 bg-yellow-300 rounded-full animate-ping" />
-          <span className="absolute -top-1 -right-1 w-2 h-2 bg-yellow-300 rounded-full" />
+        {/* Desktop tooltip */}
+        <div className="hidden lg:block absolute bottom-full right-0 mb-3 w-56 pointer-events-none">
+          <div className="bg-gray-900 text-white text-xs rounded-xl px-3 py-2.5 shadow-xl opacity-0 group-hover:opacity-100 transition-opacity duration-200 leading-relaxed">
+            <p className="font-bold mb-1">✨ AI Document Assistant</p>
+            <p className="text-white/75">Type or paste a list of items — the AI extracts them and pre-fills your document instantly.</p>
+            <div className="absolute bottom-0 right-5 translate-y-full w-0 h-0 border-l-4 border-r-4 border-t-4 border-l-transparent border-r-transparent border-t-gray-900" />
+          </div>
         </div>
-        <span className="text-white font-bold text-sm hidden sm:block">AI Assistant</span>
-      </button>
+
+        <button
+          onClick={() => { setOpen(true); if (stage === "idle") setStage("input"); }}
+          className="flex items-center gap-2.5 px-4 py-3 rounded-2xl shadow-2xl transition-all duration-300 hover:scale-105 active:scale-95"
+          style={{
+            background: "linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #a855f7 100%)",
+            boxShadow: "0 8px 32px rgba(99,102,241,0.45), 0 2px 8px rgba(0,0,0,0.2)",
+          }}
+        >
+          <div className="relative">
+            <Sparkles className="h-5 w-5 text-white" />
+            <span className="absolute -top-1 -right-1 w-2 h-2 bg-yellow-300 rounded-full animate-ping" />
+            <span className="absolute -top-1 -right-1 w-2 h-2 bg-yellow-300 rounded-full" />
+          </div>
+          <span className="text-white font-bold text-sm hidden sm:block">AI Assistant</span>
+        </button>
+
+        {/* Tablet / mobile helper text */}
+        <p className="lg:hidden text-center text-[10px] text-indigo-400 font-medium mt-1 whitespace-nowrap">
+          Tap to create docs with AI
+        </p>
+      </div>
 
       {/* Panel */}
       {open && (
