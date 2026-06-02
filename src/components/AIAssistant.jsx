@@ -240,18 +240,24 @@ ${inputText || "(see attached image)"}
                               <label className="flex items-center gap-1.5 text-xs text-indigo-600">
                                 <span className="font-medium">Qty</span>
                                 <input
-                                  type="number"
+                                  type="text"
+                                  inputMode="decimal"
                                   value={item.quantity}
-                                  onChange={e => setExtractedItems(prev => prev.map((it, idx) => idx === i ? { ...it, quantity: parseFloat(e.target.value) || 0 } : it))}
+                                  onFocus={e => e.target.select()}
+                                  onChange={e => setExtractedItems(prev => prev.map((it, idx) => idx === i ? { ...it, quantity: e.target.value } : it))}
+                                  onBlur={e => setExtractedItems(prev => prev.map((it, idx) => idx === i ? { ...it, quantity: parseFloat(e.target.value) || 0 } : it))}
                                   className="w-16 bg-white border border-indigo-200 rounded-lg px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-indigo-400"
                                 />
                               </label>
                               <label className="flex items-center gap-1.5 text-xs text-indigo-600">
                                 <span className="font-medium">Price</span>
                                 <input
-                                  type="number"
+                                  type="text"
+                                  inputMode="decimal"
                                   value={item.unit_price}
-                                  onChange={e => setExtractedItems(prev => prev.map((it, idx) => idx === i ? { ...it, unit_price: parseFloat(e.target.value) || 0 } : it))}
+                                  onFocus={e => e.target.select()}
+                                  onChange={e => setExtractedItems(prev => prev.map((it, idx) => idx === i ? { ...it, unit_price: e.target.value } : it))}
+                                  onBlur={e => setExtractedItems(prev => prev.map((it, idx) => idx === i ? { ...it, unit_price: parseFloat(e.target.value) || 0 } : it))}
                                   className="w-24 bg-white border border-indigo-200 rounded-lg px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-indigo-400"
                                 />
                               </label>
