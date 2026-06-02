@@ -188,7 +188,7 @@ function SigsAndPayment({ managerSig, customerSig, form, T, docType, sym }) {
       <div style={{ flex: 1 }}>
         <Sigs managerSig={managerSig} customerSig={customerSig} form={form} T={T} docType={docType} wrapperStyle={{ padding: 0, border: "none" }} />
       </div>
-      {form?.payment_method && (
+      {form?.payment_method && (docType === "invoice" || docType === "quotation") && (
         <div style={{ flexShrink: 0, width: 220, border: `1px solid ${T.stripBorder}`, borderRadius: 8, overflow: "hidden", background: T.stripBg, alignSelf: "flex-end" }}>
           <div style={{ padding: "7px 12px", background: T.tableHeaderBg, borderBottom: `1px solid ${T.stripBorder}` }}>
             <span style={{ fontSize: 9, fontWeight: 700, color: T.tableHeaderColor, textTransform: "uppercase", letterSpacing: 1 }}>Payment Details</span>
