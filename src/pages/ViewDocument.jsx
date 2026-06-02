@@ -947,7 +947,7 @@ function UnifiedTemplate({ doc, onSaveManagerSig, onSaveCustomerSig, onOpenSignM
             </div>
           )}
 
-          {doc.type !== 'waybill' && (doc.bank_name || doc.account_number || doc.account_holder_name) && (
+          {(doc.type === 'invoice' || doc.type === 'quotation') && (doc.bank_name || doc.account_number || doc.account_holder_name) && (
             <div>
               <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-3">Bank Details</p>
               <div className="flex flex-col gap-2 text-sm bg-gray-50 border border-gray-200 rounded-lg px-4 py-3 min-w-[220px]">
