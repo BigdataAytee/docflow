@@ -498,6 +498,7 @@ export default function DocumentDesign() {
   };
   const save = async () => {
     setSaving(true);
+    const me = await base44.auth.me();
     await base44.auth.updateMe({
       doc_design_template: design.template, doc_design_color: design.color,
       doc_design_font: design.font, doc_design_fontSize: design.fontSize,
@@ -505,8 +506,17 @@ export default function DocumentDesign() {
       doc_design_showSignature: design.showSignature, doc_design_cornerRadius: design.cornerRadius,
       doc_design_shadowEffect: design.shadowEffect, doc_design_pageSize: design.pageSize,
     });
+    // Apply design changes to all existing documents owned by this user
+    const docs = await base44.entities.Document.filter({ created_by_id: me.id }, "-created_date", 500);
+    await Promise.all(docs.map(doc =>
+      base44.entities.Document.update(doc.id, {
+        template: design.template,
+        template_color: design.color,
+        template_font: design.font,
+      })
+    ));
     setSavedDesign({ ...design }); setSaving(false);
-    toast.success("Document design saved!");
+    toast.success(`Document design saved and applied to all ${docs.length} document${docs.length !== 1 ? "s" : ""}!`);
   };
 
   const presetsProps = {
