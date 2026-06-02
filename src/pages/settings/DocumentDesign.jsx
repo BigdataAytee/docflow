@@ -508,32 +508,34 @@ export default function DocumentDesign() {
         </div>
       </div>
 
-      {/* ── TABLET & PHONE (<lg): Single scrollable column ── */}
-      <div className="flex lg:hidden flex-1 overflow-y-auto flex-col bg-white">
+      {/* ── TABLET & PHONE (<lg): Preview fixed top + side-by-side settings below ── */}
+      <div className="flex lg:hidden flex-1 flex-col overflow-hidden bg-slate-50">
 
-        {/* 1. Document Preview (mini thumbnail, always visible) */}
-        <div className="border-b border-border shrink-0">
-          <div className="px-4 py-2.5 flex items-center gap-2">
-            <Eye className="h-3.5 w-3.5 text-indigo-500" />
-            <p className="text-xs font-bold uppercase tracking-widest">Live Preview</p>
+        {/* Sticky preview at top */}
+        <div className="shrink-0 border-b border-border bg-white">
+          <MiniPreview design={design} userInfo={userInfo} fixedHeight={220} />
+        </div>
+
+        {/* Controls + Presets side by side, scrollable */}
+        <div className="flex flex-1 overflow-y-auto min-h-0">
+
+          {/* Left: Design Controls */}
+          <div className="flex-1 min-w-0 border-r border-border bg-white overflow-y-auto">
+            <div className="px-3 py-2 border-b border-border bg-indigo-50">
+              <p className="text-[10px] font-bold uppercase tracking-widest text-indigo-600">Design Controls</p>
+            </div>
+            <DesignControls design={design} update={update} />
           </div>
-          <MiniPreview design={design} userInfo={userInfo} fixedHeight={260} />
-        </div>
 
-        {/* 2. Controls */}
-        <div className="border-b border-border">
-          <DesignControls design={design} update={update} />
-        </div>
-
-        {/* 3. Style Presets */}
-        <div>
-          <div className="px-4 py-2.5 border-b border-border flex items-center gap-2">
-            <Star className="h-3.5 w-3.5 text-amber-500" />
-            <p className="text-xs font-bold uppercase tracking-widest">Style Presets</p>
+          {/* Right: Style Presets */}
+          <div className="flex-1 min-w-0 bg-white overflow-y-auto">
+            <div className="px-3 py-2 border-b border-border bg-amber-50">
+              <p className="text-[10px] font-bold uppercase tracking-widest text-amber-600">Style Presets</p>
+            </div>
+            <StylePresets {...presetsProps} />
           </div>
-          <StylePresets {...presetsProps} />
-        </div>
 
+        </div>
       </div>
     </div>
   );
