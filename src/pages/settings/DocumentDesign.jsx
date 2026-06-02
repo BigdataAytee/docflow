@@ -513,7 +513,7 @@ export default function DocumentDesign() {
 
         {/* Sticky preview at top */}
         <div className="shrink-0 border-b border-border bg-white">
-          <MiniPreview design={design} userInfo={userInfo} fixedHeight={220} />
+          <MiniPreview design={design} userInfo={userInfo} fixedHeight={380} />
         </div>
 
         {/* Controls + Presets side by side, scrollable */}
