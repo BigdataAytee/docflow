@@ -70,11 +70,11 @@ const SAMPLE = {
   currency: "NGN", shipping: 0, global_discount_amount: 0,
 };
 
-// Device specs: [docWidth, frameW, frameH, label]
+// Device specs: frameW/H = visible screen area inside frame chrome (px)
 const DEVICE_SPECS = {
-  desktop: { portrait: { docW: 794, frameW: 1440, frameH: 900,  label: "1440 × 900"   }, landscape: null },
-  tablet:  { portrait: { docW: 600, frameW: 768,  frameH: 1024, label: "768 × 1024"   }, landscape: { docW: 794, frameW: 1024, frameH: 768, label: "1024 × 768" } },
-  phone:   { portrait: { docW: 375, frameW: 390,  frameH: 844,  label: "390 × 844"    }, landscape: { docW: 600, frameW: 844,  frameH: 390, label: "844 × 390"  } },
+  desktop: { portrait: { screenW: 1200, screenH: 800,  docW: 794, label: "1440 × 900"  }, landscape: null },
+  tablet:  { portrait: { screenW: 768,  screenH: 1024, docW: 768, label: "768 × 1024"  }, landscape: { screenW: 1024, screenH: 768, docW: 1024, label: "1024 × 768" } },
+  phone:   { portrait: { screenW: 390,  screenH: 844,  docW: 390, label: "390 × 844"   }, landscape: { screenW: 844,  screenH: 390, docW: 844,  label: "844 × 390"  } },
 };
 
 const DOC_H = 1123;
@@ -268,60 +268,92 @@ function PresetsPanel({ activePresetId, applyPreset, savedThemes, applySavedThem
   );
 }
 
+// Chrome padding (px) added around the screen by the device frame chrome
+const FRAME_CHROME = {
+  desktop: { top: 32, bottom: 32, left: 0, right: 0 },
+  tablet:  { top: 20, bottom: 24, left: 16, right: 16 },
+  phone:   { top: 28, bottom: 20, left: 12, right: 12 },
+};
+
 // ─── DeviceFrame ───────────────────────────────────────────────────────────────
-function DeviceFrame({ device, landscape, children }) {
+// frameScale: how much the whole frame is scaled to fit the canvas
+// screenW/H: the screen area in un-scaled pixels
+function DeviceFrame({ device, landscape, frameScale, screenW, screenH, children }) {
+  const chrome = FRAME_CHROME[device];
+  const totalW = (screenW + chrome.left + chrome.right)  * frameScale;
+  const totalH = (screenH + chrome.top  + chrome.bottom) * frameScale;
+  const screenPxW = screenW * frameScale;
+  const screenPxH = screenH * frameScale;
+  const pad = (v) => v * frameScale;
+
   if (device === "desktop") {
     return (
-      <div className="flex flex-col items-center gap-2">
-        <div className="bg-gray-800 rounded-t-xl px-4 pt-2 pb-0 flex items-center gap-1.5 w-full">
-          {["#ff5f57","#ffbd2e","#28c840"].map(c => (
-            <span key={c} className="w-2.5 h-2.5 rounded-full" style={{ background: c }} />
-          ))}
-        </div>
-        <div className="w-full border-2 border-gray-800 rounded-b-xl overflow-hidden bg-white" style={{ borderTop: "none" }}>
-          {children}
-        </div>
-        <div className="flex flex-col items-center gap-0.5">
-          <div className="w-16 h-2 bg-gray-600 rounded" />
-          <div className="w-24 h-1.5 bg-gray-400 rounded-full" />
-        </div>
-      </div>
-    );
-  }
-  if (device === "tablet") {
-    const w = landscape ? "100%" : undefined;
-    return (
-      <div className={`bg-gray-800 rounded-[20px] p-2.5 shadow-2xl ${landscape ? "flex flex-row gap-2 items-center" : "flex flex-col gap-1.5 items-center"}`}
-        style={landscape ? { width: w } : {}}>
-        {!landscape && <div className="w-16 h-1.5 bg-gray-600 rounded-full" />}
-        {landscape && <div className="w-1.5 h-8 bg-gray-600 rounded-full" />}
-        <div className="rounded-[10px] overflow-hidden bg-white flex-1 w-full">
-          {children}
-        </div>
-        {!landscape && <div className="w-10 h-10 rounded-full border-2 border-gray-600 flex items-center justify-center"><div className="w-5 h-5 rounded border border-gray-500" /></div>}
-        {landscape && <div className="w-8 h-8 rounded-full border-2 border-gray-600 flex items-center justify-center shrink-0"><div className="w-4 h-4 rounded border border-gray-500" /></div>}
-      </div>
-    );
-  }
-  // phone
-  return (
-    <div className={`bg-gray-900 rounded-[32px] shadow-2xl ${landscape ? "flex flex-row items-center px-6 py-3" : "flex flex-col items-center px-3 py-4"}`}>
-      {!landscape && (
-        <div className="flex items-center justify-center mb-2 w-full">
-          <div className="w-24 h-5 bg-gray-800 rounded-full flex items-center justify-center gap-2">
-            <div className="w-2 h-2 rounded-full bg-gray-700" />
-            <div className="w-1.5 h-1.5 rounded-full bg-gray-600" />
+      <div style={{ width: totalW, display: "flex", flexDirection: "column", filter: "drop-shadow(0 8px 32px rgba(0,0,0,0.28))" }}>
+        {/* Menu bar */}
+        <div style={{ height: pad(28), background: "#1e293b", borderRadius: `${pad(10)}px ${pad(10)}px 0 0`, display: "flex", alignItems: "center", paddingLeft: pad(10), gap: pad(5), flexShrink: 0 }}>
+          {["#ff5f57","#ffbd2e","#28c840"].map(c => <span key={c} style={{ width: pad(9), height: pad(9), borderRadius: "50%", background: c, display: "inline-block" }} />)}
+          <div style={{ flex: 1, display: "flex", justifyContent: "center", paddingRight: pad(24) }}>
+            <div style={{ height: pad(14), width: pad(180), background: "#334155", borderRadius: pad(7) }} />
           </div>
         </div>
+        {/* Screen */}
+        <div style={{ width: screenPxW, height: screenPxH, overflow: "hidden", background: "#fff", border: `${pad(2)}px solid #1e293b`, borderTop: "none", borderRadius: `0 0 ${pad(8)}px ${pad(8)}px` }}>
+          {children}
+        </div>
+        {/* Stand */}
+        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: pad(3), marginTop: pad(4) }}>
+          <div style={{ width: pad(60), height: pad(8), background: "#475569", borderRadius: pad(4) }} />
+          <div style={{ width: pad(100), height: pad(5), background: "#334155", borderRadius: pad(3) }} />
+        </div>
+      </div>
+    );
+  }
+
+  if (device === "tablet") {
+    const frameStyle = {
+      width: totalW, height: totalH, background: "#1e293b",
+      borderRadius: pad(24), display: "flex", flexDirection: landscape ? "row" : "column",
+      alignItems: "center", justifyContent: "center",
+      padding: `${pad(chrome.top)}px ${pad(chrome.right)}px ${pad(chrome.bottom)}px ${pad(chrome.left)}px`,
+      boxSizing: "border-box", gap: pad(8), flexShrink: 0,
+      filter: "drop-shadow(0 8px 32px rgba(0,0,0,0.32))",
+    };
+    return (
+      <div style={frameStyle}>
+        {!landscape && <div style={{ width: pad(40), height: pad(4), background: "#475569", borderRadius: pad(2) }} />}
+        {landscape && <div style={{ width: pad(4), height: pad(30), background: "#475569", borderRadius: pad(2) }} />}
+        <div style={{ width: screenPxW, height: screenPxH, overflow: "hidden", background: "#fff", borderRadius: pad(8), flexShrink: 0 }}>
+          {children}
+        </div>
+        {!landscape && <div style={{ width: pad(36), height: pad(36), borderRadius: "50%", border: `${pad(2)}px solid #475569`, display: "flex", alignItems: "center", justifyContent: "center" }}><div style={{ width: pad(18), height: pad(18), border: `${pad(1.5)}px solid #475569`, borderRadius: pad(3) }} /></div>}
+        {landscape && <div style={{ width: pad(30), height: pad(30), borderRadius: "50%", border: `${pad(2)}px solid #475569`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}><div style={{ width: pad(14), height: pad(14), border: `${pad(1.5)}px solid #475569`, borderRadius: pad(3) }} /></div>}
+      </div>
+    );
+  }
+
+  // Phone
+  const frameStyle = {
+    width: totalW, height: totalH, background: "#0f172a",
+    borderRadius: pad(36), display: "flex", flexDirection: landscape ? "row" : "column",
+    alignItems: "center", justifyContent: "center",
+    padding: `${pad(chrome.top)}px ${pad(chrome.right)}px ${pad(chrome.bottom)}px ${pad(chrome.left)}px`,
+    boxSizing: "border-box", gap: pad(6), flexShrink: 0,
+    filter: "drop-shadow(0 8px 40px rgba(0,0,0,0.4))",
+  };
+  return (
+    <div style={frameStyle}>
+      {!landscape && (
+        <div style={{ width: pad(90), height: pad(20), background: "#1e293b", borderRadius: pad(10), display: "flex", alignItems: "center", justifyContent: "center", gap: pad(5) }}>
+          <div style={{ width: pad(6), height: pad(6), borderRadius: "50%", background: "#334155" }} />
+          <div style={{ width: pad(50), height: pad(5), borderRadius: pad(3), background: "#334155" }} />
+        </div>
       )}
-      {landscape && <div className="w-5 h-24 bg-gray-800 rounded-full flex flex-col items-center justify-center gap-2 mr-2">
-        <div className="w-2 h-2 rounded-full bg-gray-700" />
-      </div>}
-      <div className="rounded-[20px] overflow-hidden bg-white flex-1" style={{ minWidth: 0 }}>
+      {landscape && <div style={{ width: pad(16), height: pad(50), background: "#1e293b", borderRadius: pad(8), flexShrink: 0 }} />}
+      <div style={{ width: screenPxW, height: screenPxH, overflow: "hidden", background: "#fff", borderRadius: pad(12), flexShrink: 0 }}>
         {children}
       </div>
-      {!landscape && <div className="mt-2 w-28 h-1 bg-gray-700 rounded-full" />}
-      {landscape && <div className="ml-2 h-28 w-1 bg-gray-700 rounded-full" />}
+      {!landscape && <div style={{ width: pad(100), height: pad(4), background: "#1e293b", borderRadius: pad(2) }} />}
+      {landscape && <div style={{ width: pad(4), height: pad(80), background: "#1e293b", borderRadius: pad(2), flexShrink: 0 }} />}
     </div>
   );
 }
@@ -338,28 +370,32 @@ function DocPreviewPanel({ design, userInfo, fullscreen = false, onEnterFullscre
   // Pinch-to-zoom state
   const pinchRef      = useRef({ active: false, startDist: 0, startZoom: 2 });
 
-  const spec = DEVICE_SPECS[device][landscape && device !== "desktop" ? "landscape" : "portrait"];
-  const docW = spec.docW;
+  const orientKey = (landscape && device !== "desktop") ? "landscape" : "portrait";
+  const spec = DEVICE_SPECS[device][orientKey];
+  const { screenW, screenH, docW } = spec;
   const scale = useAutoFit ? fitScale : ZOOM_LEVELS[manualZoom];
 
-  // Compute auto-fit scale
+  // Compute frameScale: scale the entire device frame to fit the canvas
+  const chrome = FRAME_CHROME[device];
+  const totalFrameW = screenW + chrome.left + chrome.right;
+  const totalFrameH = screenH + chrome.top  + chrome.bottom;
+
   useEffect(() => {
     if (!containerRef.current) return;
     const compute = (el) => {
       const { width, height } = el.getBoundingClientRect();
       if (width < 20 || height < 20) return;
-      // account for device frame padding (~24px each side)
-      const availW = width  - 48;
-      const availH = height - 64;
-      const sw = availW / docW;
-      const sh = availH / DOC_H;
-      setFitScale(parseFloat(Math.min(sw, sh, 0.98).toFixed(4)));
+      const availW = width  - 32;
+      const availH = height - 32;
+      const sw = availW / totalFrameW;
+      const sh = availH / totalFrameH;
+      setFitScale(parseFloat(Math.min(sw, sh, 1).toFixed(4)));
     };
     const raf = requestAnimationFrame(() => containerRef.current && compute(containerRef.current));
     const ro = new ResizeObserver(([e]) => compute(e.target));
     ro.observe(containerRef.current);
     return () => { cancelAnimationFrame(raf); ro.disconnect(); };
-  }, [device, landscape, fullscreen, docW]);
+  }, [device, landscape, fullscreen, totalFrameW, totalFrameH]);
 
   // Pinch-to-zoom handlers
   const onTouchStart = useCallback((e) => {
@@ -475,32 +511,26 @@ function DocPreviewPanel({ design, userInfo, fullscreen = false, onEnterFullscre
         className={`flex items-center justify-center overflow-auto ${fullscreen ? "bg-gray-900" : "bg-gradient-to-br from-slate-100 to-slate-200"}`}
         style={{ flex: "1 1 0", minHeight: 0, padding: 16, touchAction: "pan-y" }}
       >
-        <DeviceFrame device={device} landscape={landscape}>
-          {/* Scaled document inside device frame */}
-          <div style={{
-            width: docW * scale,
-            height: DOC_H * scale,
-            overflow: "hidden",
-            flexShrink: 0,
-          }}>
-            <div style={{
-              width: docW,
-              height: DOC_H,
-              transformOrigin: "top left",
-              transform: `scale(${scale})`,
-              fontFamily: fontCss,
-              transition: "transform 0.2s ease",
-              pointerEvents: "none",
-            }}>
-              <DocumentPreview
-                form={previewDoc} items={previewDoc.items}
-                calcs={{ subtotal: previewDoc.subtotal, taxAmt: previewDoc.tax_amount, total: previewDoc.total }}
-                sym="₦" docType="invoice"
-                managerSig={previewDoc.manager_signature} customerSig=""
-                template={design.template} templateColor={design.color}
-              />
-            </div>
-          </div>
+        <DeviceFrame device={device} landscape={landscape} frameScale={scale} screenW={screenW} screenH={screenH}>
+          {/* Document scaled to fill screen width, scrollable vertically */}
+          {(() => {
+            const docScale = (screenW * scale) / docW; // fit doc width into screen width
+            return (
+              <div style={{ width: screenW * scale, height: screenH * scale, overflowY: "auto", overflowX: "hidden", WebkitOverflowScrolling: "touch" }}>
+                <div style={{ width: docW * docScale, height: DOC_H * docScale, flexShrink: 0 }}>
+                  <div style={{ width: docW, height: DOC_H, transformOrigin: "top left", transform: `scale(${docScale})`, fontFamily: fontCss, pointerEvents: "none" }}>
+                    <DocumentPreview
+                      form={previewDoc} items={previewDoc.items}
+                      calcs={{ subtotal: previewDoc.subtotal, taxAmt: previewDoc.tax_amount, total: previewDoc.total }}
+                      sym="₦" docType="invoice"
+                      managerSig={previewDoc.manager_signature} customerSig=""
+                      template={design.template} templateColor={design.color}
+                    />
+                  </div>
+                </div>
+              </div>
+            );
+          })()}
         </DeviceFrame>
       </div>
     </div>
