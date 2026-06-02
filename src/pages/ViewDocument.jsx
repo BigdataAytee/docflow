@@ -917,7 +917,6 @@ function UnifiedTemplate({ doc, onSaveManagerSig, onSaveCustomerSig, onOpenSignM
                   <div style={{ height: 64, borderBottom: "2px solid #374151", marginBottom: 4 }} />
                   <p className="text-xs text-gray-500 mt-1">{doc.customer_name}</p>
                   <div className="mt-3 flex gap-4 text-xs text-gray-400">
-                    <div className="flex flex-col gap-1 flex-1"><span>Name</span><div style={{ borderBottom: "2px solid #374151", height: 16 }} /></div>
                     <div className="flex flex-col gap-1 flex-1"><span>Date</span><div style={{ borderBottom: "2px solid #374151", height: 16 }} /></div>
                     <div className="flex flex-col gap-1 flex-1"><span>Time</span><div style={{ borderBottom: "2px solid #374151", height: 16 }} /></div>
                   </div>
