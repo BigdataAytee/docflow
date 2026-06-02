@@ -508,15 +508,25 @@ function ElegantDoc({ form, items, calcs, sym, docType, managerSig, customerSig,
   );
 }
 
+const CORNER_RADIUS_MAP = { none: 0, sm: 4, lg: 8, full: 16 };
+const SHADOW_MAP = {
+  none: "none",
+  sm:   "0 1px 4px rgba(0,0,0,0.08)",
+  md:   "0 4px 16px rgba(0,0,0,0.14)",
+  lg:   "0 8px 32px rgba(0,0,0,0.22)",
+};
+
 // ─── Main export ─────────────────────────────────────────────────────────────
-export default function DocumentPreview({ form, items, calcs, sym, docType, managerSig, customerSig, template, templateColor, templateFont }) {
+export default function DocumentPreview({ form, items, calcs, sym, docType, managerSig, customerSig, template, templateColor, templateFont, cornerRadius, shadowEffect }) {
   const T = buildTheme(template || form?.template || "classic", templateColor || form?.template_color || "slate", templateFont || form?.template_font);
   const lineItems = items || [];
   const shared = { form, items: lineItems, calcs, sym, docType, managerSig, customerSig, T };
   const layout = template || form?.template || "classic";
+  const radius = CORNER_RADIUS_MAP[cornerRadius] ?? 8;
+  const shadow = SHADOW_MAP[shadowEffect] ?? SHADOW_MAP.sm;
 
   return (
-    <div style={{ width: 794, border: "1px solid #e2e8f0", borderRadius: 8, overflow: "hidden", fontFamily: T.font }}>
+    <div style={{ width: 794, border: "1px solid #e2e8f0", borderRadius: radius, overflow: "hidden", fontFamily: T.font, boxShadow: shadow }}>
       {layout === "modern"  && <ModernDoc  {...shared} />}
       {layout === "minimal" && <MinimalDoc {...shared} />}
       {layout === "bold"    && <BoldDoc    {...shared} />}

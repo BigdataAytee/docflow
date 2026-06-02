@@ -161,6 +161,7 @@ function MiniPreview({ design, userInfo, fixedHeight }) {
             sym="₦" docType="invoice"
             managerSig={previewDoc.manager_signature} customerSig=""
             template={design.template} templateColor={design.color} templateFont={design.font}
+            cornerRadius={design.cornerRadius} shadowEffect={design.shadowEffect}
           />
         </div>
       </div>
@@ -258,6 +259,7 @@ function DesktopPreview({ design, userInfo }) {
               sym="₦" docType="invoice"
               managerSig={previewDoc.manager_signature} customerSig=""
               template={design.template} templateColor={design.color} templateFont={design.font}
+              cornerRadius={design.cornerRadius} shadowEffect={design.shadowEffect}
             />
           </div>
         </div>
