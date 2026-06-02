@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { base44 } from "@/api/base44Client";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -6,19 +6,19 @@ import DocumentPreview from "../../components/DocumentPreview";
 import {
   Save, ZoomIn, ZoomOut, Monitor, Tablet, Smartphone, ChevronDown, ChevronUp,
   Palette, Type, Layout, Sparkles, CheckCircle2, Trash2, Star, RotateCcw, Eye,
-  Settings2, Image, X
+  Settings2, Image, RotateCw, Maximize2, Minimize2, X
 } from "lucide-react";
 
 // ─── DATA ─────────────────────────────────────────────────────────────────────
 const FONTS = [
-  { id: "inter",        label: "Inter",        css: "'Inter', sans-serif",          pair: "Clean & modern"           },
-  { id: "poppins",      label: "Poppins",       css: "'Poppins', sans-serif",         pair: "Rounded & friendly"       },
-  { id: "playfair",     label: "Playfair",      css: "'Playfair Display', serif",     pair: "Editorial & elegant"      },
-  { id: "roboto",       label: "Roboto",        css: "'Roboto', sans-serif",          pair: "Neutral & versatile"      },
-  { id: "merriweather", label: "Merriweather",  css: "'Merriweather', serif",         pair: "Traditional & trustworthy"},
-  { id: "montserrat",   label: "Montserrat",    css: "'Montserrat', sans-serif",      pair: "Bold & corporate"         },
-  { id: "lato",         label: "Lato",          css: "'Lato', sans-serif",            pair: "Humanist & readable"      },
-  { id: "georgia",      label: "Georgia",       css: "Georgia, serif",                pair: "Classic & prestigious"    },
+  { id: "inter",        label: "Inter",        css: "'Inter', sans-serif",          pair: "Clean & modern"            },
+  { id: "poppins",      label: "Poppins",       css: "'Poppins', sans-serif",         pair: "Rounded & friendly"        },
+  { id: "playfair",     label: "Playfair",      css: "'Playfair Display', serif",     pair: "Editorial & elegant"       },
+  { id: "roboto",       label: "Roboto",        css: "'Roboto', sans-serif",          pair: "Neutral & versatile"       },
+  { id: "merriweather", label: "Merriweather",  css: "'Merriweather', serif",         pair: "Traditional & trustworthy" },
+  { id: "montserrat",   label: "Montserrat",    css: "'Montserrat', sans-serif",      pair: "Bold & corporate"          },
+  { id: "lato",         label: "Lato",          css: "'Lato', sans-serif",            pair: "Humanist & readable"       },
+  { id: "georgia",      label: "Georgia",       css: "Georgia, serif",                pair: "Classic & prestigious"     },
 ];
 
 const COLOR_PALETTES = [
@@ -35,11 +35,11 @@ const COLOR_PALETTES = [
 ];
 
 const LAYOUT_TEMPLATES = [
-  { id: "classic", label: "Classic"  },
-  { id: "modern",  label: "Modern"   },
-  { id: "minimal", label: "Minimal"  },
-  { id: "bold",    label: "Bold"     },
-  { id: "elegant", label: "Elegant"  },
+  { id: "classic", label: "Classic" },
+  { id: "modern",  label: "Modern"  },
+  { id: "minimal", label: "Minimal" },
+  { id: "bold",    label: "Bold"    },
+  { id: "elegant", label: "Elegant" },
 ];
 
 const PRESETS = [
@@ -70,10 +70,16 @@ const SAMPLE = {
   currency: "NGN", shipping: 0, global_discount_amount: 0,
 };
 
-const ZOOM_LEVELS = [0.4, 0.5, 0.65, 0.75, 1];
-const ZOOM_LABELS = ["40%", "50%", "65%", "75%", "100%"];
-const DOC_W = 794;
+// Device specs: [docWidth, frameW, frameH, label]
+const DEVICE_SPECS = {
+  desktop: { portrait: { docW: 794, frameW: 1440, frameH: 900,  label: "1440 × 900"   }, landscape: null },
+  tablet:  { portrait: { docW: 600, frameW: 768,  frameH: 1024, label: "768 × 1024"   }, landscape: { docW: 794, frameW: 1024, frameH: 768, label: "1024 × 768" } },
+  phone:   { portrait: { docW: 375, frameW: 390,  frameH: 844,  label: "390 × 844"    }, landscape: { docW: 600, frameW: 844,  frameH: 390, label: "844 × 390"  } },
+};
+
 const DOC_H = 1123;
+const ZOOM_LEVELS = [0.35, 0.5, 0.65, 0.75, 1];
+const ZOOM_LABELS = ["35%", "50%", "65%", "75%", "100%"];
 
 // ─── AccordionSection ─────────────────────────────────────────────────────────
 function AccordionSection({ title, IconComp, children, defaultOpen = false }) {
@@ -93,10 +99,10 @@ function AccordionSection({ title, IconComp, children, defaultOpen = false }) {
   );
 }
 
-// ─── DesignControls (shared between sidebar and mobile panel) ─────────────────
+// ─── DesignControls ────────────────────────────────────────────────────────────
 function DesignControls({ design, update }) {
   return (
-    <div className="overflow-y-auto flex-1">
+    <div className="overflow-y-auto" style={{ flex: "1 1 0", minHeight: 0 }}>
       <AccordionSection title="Templates" IconComp={Layout} defaultOpen>
         <div className="space-y-1">
           {LAYOUT_TEMPLATES.map(t => (
@@ -183,7 +189,7 @@ function DesignControls({ design, update }) {
 // ─── PresetsPanel ──────────────────────────────────────────────────────────────
 function PresetsPanel({ activePresetId, applyPreset, savedThemes, applySavedTheme, deleteTheme, showSaveInput, setShowSaveInput, savingThemeName, setSavingThemeName, saveTheme }) {
   return (
-    <div className="overflow-y-auto flex-1 flex flex-col">
+    <div className="overflow-y-auto" style={{ flex: "1 1 0", minHeight: 0 }}>
       <div className="px-4 pt-4 pb-3 border-b border-border">
         <div className="flex items-center gap-2 mb-2">
           <Star className="h-3.5 w-3.5 text-amber-500" />
@@ -204,7 +210,7 @@ function PresetsPanel({ activePresetId, applyPreset, savedThemes, applySavedThem
         </div>
       </div>
 
-      <div className="px-4 pt-3 pb-4 flex-1">
+      <div className="px-4 pt-3 pb-4">
         <div className="flex items-center justify-between mb-2">
           <p className="text-xs font-bold uppercase tracking-widest">My Themes</p>
           <button onClick={() => setShowSaveInput(s => !s)} className="text-xs text-indigo-600 font-semibold hover:text-indigo-800 transition-colors">+ Save</button>
@@ -215,7 +221,7 @@ function PresetsPanel({ activePresetId, applyPreset, savedThemes, applySavedThem
               onKeyDown={e => e.key === "Enter" && saveTheme()}
               placeholder="Theme name…" autoFocus
               className="flex-1 border border-border rounded-lg px-2 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-indigo-400" />
-            <button onClick={saveTheme} className="px-2 bg-indigo-600 text-white rounded-lg text-xs font-bold hover:bg-indigo-700 transition-colors">OK</button>
+            <button onClick={saveTheme} className="px-2 bg-indigo-600 text-white rounded-lg text-xs font-bold hover:bg-indigo-700">OK</button>
           </div>
         )}
         {savedThemes.length === 0 ? (
@@ -224,7 +230,7 @@ function PresetsPanel({ activePresetId, applyPreset, savedThemes, applySavedThem
             <p className="text-xs text-muted-foreground">No saved themes yet.</p>
           </div>
         ) : (
-          <div className="space-y-1">
+          <div className="space-y-1 mb-4">
             {savedThemes.map(t => (
               <div key={t.name} onClick={() => applySavedTheme(t)}
                 className={`flex items-center gap-2 px-3 py-2 rounded-xl border cursor-pointer group transition-all ${activePresetId === "custom_" + t.name ? "border-indigo-300 bg-indigo-50" : "border-transparent hover:border-border hover:bg-muted/40"}`}>
@@ -242,12 +248,11 @@ function PresetsPanel({ activePresetId, applyPreset, savedThemes, applySavedThem
           </div>
         )}
 
-        <div className="mt-4 bg-gradient-to-br from-indigo-50 to-purple-50 border border-indigo-100 rounded-2xl p-3">
+        <div className="mt-2 bg-gradient-to-br from-indigo-50 to-purple-50 border border-indigo-100 rounded-2xl p-3">
           <div className="flex items-center gap-1.5 mb-2">
             <Sparkles className="h-3.5 w-3.5 text-indigo-500" />
             <p className="text-xs font-bold text-indigo-700">AI Suggestions</p>
           </div>
-          <p className="text-[10px] text-indigo-600 leading-relaxed mb-2">Best styles for invoices:</p>
           <div className="space-y-1">
             {[PRESETS[0], PRESETS[1], PRESETS[4]].map(p => (
               <button key={p.id} onClick={() => applyPreset(p)}
@@ -263,31 +268,125 @@ function PresetsPanel({ activePresetId, applyPreset, savedThemes, applySavedThem
   );
 }
 
+// ─── DeviceFrame ───────────────────────────────────────────────────────────────
+function DeviceFrame({ device, landscape, children }) {
+  if (device === "desktop") {
+    return (
+      <div className="flex flex-col items-center gap-2">
+        <div className="bg-gray-800 rounded-t-xl px-4 pt-2 pb-0 flex items-center gap-1.5 w-full">
+          {["#ff5f57","#ffbd2e","#28c840"].map(c => (
+            <span key={c} className="w-2.5 h-2.5 rounded-full" style={{ background: c }} />
+          ))}
+        </div>
+        <div className="w-full border-2 border-gray-800 rounded-b-xl overflow-hidden bg-white" style={{ borderTop: "none" }}>
+          {children}
+        </div>
+        <div className="flex flex-col items-center gap-0.5">
+          <div className="w-16 h-2 bg-gray-600 rounded" />
+          <div className="w-24 h-1.5 bg-gray-400 rounded-full" />
+        </div>
+      </div>
+    );
+  }
+  if (device === "tablet") {
+    const w = landscape ? "100%" : undefined;
+    return (
+      <div className={`bg-gray-800 rounded-[20px] p-2.5 shadow-2xl ${landscape ? "flex flex-row gap-2 items-center" : "flex flex-col gap-1.5 items-center"}`}
+        style={landscape ? { width: w } : {}}>
+        {!landscape && <div className="w-16 h-1.5 bg-gray-600 rounded-full" />}
+        {landscape && <div className="w-1.5 h-8 bg-gray-600 rounded-full" />}
+        <div className="rounded-[10px] overflow-hidden bg-white flex-1 w-full">
+          {children}
+        </div>
+        {!landscape && <div className="w-10 h-10 rounded-full border-2 border-gray-600 flex items-center justify-center"><div className="w-5 h-5 rounded border border-gray-500" /></div>}
+        {landscape && <div className="w-8 h-8 rounded-full border-2 border-gray-600 flex items-center justify-center shrink-0"><div className="w-4 h-4 rounded border border-gray-500" /></div>}
+      </div>
+    );
+  }
+  // phone
+  return (
+    <div className={`bg-gray-900 rounded-[32px] shadow-2xl ${landscape ? "flex flex-row items-center px-6 py-3" : "flex flex-col items-center px-3 py-4"}`}>
+      {!landscape && (
+        <div className="flex items-center justify-center mb-2 w-full">
+          <div className="w-24 h-5 bg-gray-800 rounded-full flex items-center justify-center gap-2">
+            <div className="w-2 h-2 rounded-full bg-gray-700" />
+            <div className="w-1.5 h-1.5 rounded-full bg-gray-600" />
+          </div>
+        </div>
+      )}
+      {landscape && <div className="w-5 h-24 bg-gray-800 rounded-full flex flex-col items-center justify-center gap-2 mr-2">
+        <div className="w-2 h-2 rounded-full bg-gray-700" />
+      </div>}
+      <div className="rounded-[20px] overflow-hidden bg-white flex-1" style={{ minWidth: 0 }}>
+        {children}
+      </div>
+      {!landscape && <div className="mt-2 w-28 h-1 bg-gray-700 rounded-full" />}
+      {landscape && <div className="ml-2 h-28 w-1 bg-gray-700 rounded-full" />}
+    </div>
+  );
+}
+
 // ─── DocPreviewPanel ───────────────────────────────────────────────────────────
-function DocPreviewPanel({ design, userInfo, useAutoFit, setUseAutoFit, manualZoom, setManualZoom }) {
-  const containerRef = useRef(null);
-  const [fitScale, setFitScale] = useState(0.5);
-  const [devicePreview, setDevicePreview] = useState("desktop");
+function DocPreviewPanel({ design, userInfo, fullscreen = false, onEnterFullscreen, onExitFullscreen }) {
+  const containerRef   = useRef(null);
+  const [device, setDevice]       = useState("desktop");
+  const [landscape, setLandscape] = useState(false);
+  const [useAutoFit, setUseAutoFit] = useState(true);
+  const [manualZoom, setManualZoom] = useState(2);
+  const [fitScale, setFitScale]   = useState(0.5);
 
-  const previewW = devicePreview === "desktop" ? DOC_W : devicePreview === "tablet" ? 600 : 375;
-  const fontCss  = FONTS.find(f => f.id === design.font)?.css || FONTS[0].css;
-  const scale    = useAutoFit ? fitScale : ZOOM_LEVELS[manualZoom];
+  // Pinch-to-zoom state
+  const pinchRef      = useRef({ active: false, startDist: 0, startZoom: 2 });
 
+  const spec = DEVICE_SPECS[device][landscape && device !== "desktop" ? "landscape" : "portrait"];
+  const docW = spec.docW;
+  const scale = useAutoFit ? fitScale : ZOOM_LEVELS[manualZoom];
+
+  // Compute auto-fit scale
   useEffect(() => {
     if (!containerRef.current) return;
     const compute = (el) => {
       const { width, height } = el.getBoundingClientRect();
-      if (width < 10 || height < 10) return; // skip zero-size frames
-      const sw = (width  - 32) / previewW;
-      const sh = (height - 32) / DOC_H;
-      setFitScale(parseFloat(Math.min(sw, sh, 0.99).toFixed(4)));
+      if (width < 20 || height < 20) return;
+      // account for device frame padding (~24px each side)
+      const availW = width  - 48;
+      const availH = height - 64;
+      const sw = availW / docW;
+      const sh = availH / DOC_H;
+      setFitScale(parseFloat(Math.min(sw, sh, 0.98).toFixed(4)));
     };
-    // defer first compute so layout has settled
-    const raf = requestAnimationFrame(() => compute(containerRef.current));
+    const raf = requestAnimationFrame(() => containerRef.current && compute(containerRef.current));
     const ro = new ResizeObserver(([e]) => compute(e.target));
     ro.observe(containerRef.current);
     return () => { cancelAnimationFrame(raf); ro.disconnect(); };
-  }, [devicePreview, previewW]);
+  }, [device, landscape, fullscreen, docW]);
+
+  // Pinch-to-zoom handlers
+  const onTouchStart = useCallback((e) => {
+    if (e.touches.length === 2) {
+      const dx = e.touches[0].clientX - e.touches[1].clientX;
+      const dy = e.touches[0].clientY - e.touches[1].clientY;
+      pinchRef.current = { active: true, startDist: Math.hypot(dx, dy), startZoom: manualZoom };
+    }
+  }, [manualZoom]);
+
+  const onTouchMove = useCallback((e) => {
+    if (!pinchRef.current.active || e.touches.length !== 2) return;
+    const dx = e.touches[0].clientX - e.touches[1].clientX;
+    const dy = e.touches[0].clientY - e.touches[1].clientY;
+    const dist = Math.hypot(dx, dy);
+    const ratio = dist / pinchRef.current.startDist;
+    // map ratio to zoom index
+    const baseZoom = pinchRef.current.startZoom;
+    let newZoom = baseZoom;
+    if (ratio > 1.3) newZoom = Math.min(ZOOM_LEVELS.length - 1, baseZoom + 1);
+    if (ratio < 0.7) newZoom = Math.max(0, baseZoom - 1);
+    if (newZoom !== manualZoom) { setUseAutoFit(false); setManualZoom(newZoom); }
+  }, [manualZoom]);
+
+  const onTouchEnd = useCallback(() => { pinchRef.current.active = false; }, []);
+
+  const fontCss = FONTS.find(f => f.id === design.font)?.css || FONTS[0].css;
 
   const previewDoc = {
     ...SAMPLE,
@@ -305,247 +404,110 @@ function DocPreviewPanel({ design, userInfo, useAutoFit, setUseAutoFit, manualZo
   };
 
   return (
-    <div className="flex flex-col" style={{ flex: "1 1 0", minHeight: 0 }}>
-      {/* Preview controls */}
-      <div className="flex items-center justify-between gap-2 px-3 py-2 border-b border-border bg-white shrink-0 flex-wrap">
+    <div className="flex flex-col" style={{ flex: "1 1 0", minHeight: 0, background: fullscreen ? "#0f172a" : undefined }}>
+
+      {/* Toolbar */}
+      <div className={`flex items-center gap-2 px-3 py-2 border-b border-border shrink-0 flex-wrap gap-y-2 ${fullscreen ? "bg-gray-900 border-gray-700" : "bg-white"}`}>
+
         {/* Device switcher */}
-        <div className="flex items-center gap-0.5 bg-muted rounded-lg p-0.5">
-          {[["desktop", Monitor], ["tablet", Tablet], ["phone", Smartphone]].map(([id, Ic]) => (
-            <button key={id} onClick={() => setDevicePreview(id)}
-              className={`p-1.5 rounded-md transition-colors ${devicePreview === id ? "bg-white shadow text-indigo-600" : "text-muted-foreground hover:text-foreground"}`}>
+        <div className={`flex items-center gap-0.5 rounded-lg p-0.5 ${fullscreen ? "bg-gray-800" : "bg-muted"}`}>
+          {[["desktop", Monitor, "Desktop"], ["tablet", Tablet, "Tablet"], ["phone", Smartphone, "Phone"]].map(([id, Ic, lbl]) => (
+            <button key={id} onClick={() => { setDevice(id); setLandscape(false); setUseAutoFit(true); }}
+              title={lbl}
+              className={`p-1.5 rounded-md transition-colors ${device === id ? (fullscreen ? "bg-gray-700 text-indigo-400" : "bg-white shadow text-indigo-600") : (fullscreen ? "text-gray-400 hover:text-white" : "text-muted-foreground hover:text-foreground")}`}>
               <Ic className="h-3.5 w-3.5" />
             </button>
           ))}
         </div>
-        {/* Zoom */}
-        <div className="flex items-center gap-0.5 bg-muted rounded-lg p-0.5">
+
+        {/* Orientation toggle (phone/tablet only) */}
+        {device !== "desktop" && (
+          <button onClick={() => { setLandscape(l => !l); setUseAutoFit(true); }}
+            title="Rotate device"
+            className={`p-1.5 rounded-lg border transition-colors ${landscape ? (fullscreen ? "bg-indigo-900 border-indigo-600 text-indigo-400" : "bg-indigo-50 border-indigo-300 text-indigo-600") : (fullscreen ? "border-gray-700 text-gray-400" : "border-border text-muted-foreground hover:text-foreground")}`}>
+            <RotateCw className="h-3.5 w-3.5" />
+          </button>
+        )}
+
+        {/* Dimensions badge */}
+        <span className={`text-[10px] font-mono px-2 py-1 rounded-md ${fullscreen ? "bg-gray-800 text-gray-400" : "bg-muted text-muted-foreground"}`}>
+          {spec.label}
+        </span>
+
+        <div className="flex-1" />
+
+        {/* Zoom controls */}
+        <div className={`flex items-center gap-0.5 rounded-lg p-0.5 ${fullscreen ? "bg-gray-800" : "bg-muted"}`}>
           <button onClick={() => { setUseAutoFit(false); setManualZoom(z => Math.max(0, z - 1)); }}
             disabled={!useAutoFit && manualZoom === 0}
-            className="p-1.5 rounded-md hover:bg-white transition-colors text-muted-foreground disabled:opacity-30">
+            className={`p-1.5 rounded-md transition-colors disabled:opacity-30 ${fullscreen ? "text-gray-400 hover:text-white hover:bg-gray-700" : "text-muted-foreground hover:bg-white"}`}>
             <ZoomOut className="h-3.5 w-3.5" />
           </button>
           <button onClick={() => setUseAutoFit(a => !a)}
-            className={`text-xs font-mono font-bold px-2 py-1 rounded-md min-w-[44px] text-center transition-colors ${useAutoFit ? "bg-indigo-100 text-indigo-700" : "bg-white text-foreground shadow"}`}>
+            className={`text-xs font-mono font-bold px-2 py-1 rounded-md min-w-[44px] text-center transition-colors ${
+              useAutoFit
+                ? (fullscreen ? "bg-indigo-900 text-indigo-400" : "bg-indigo-100 text-indigo-700")
+                : (fullscreen ? "bg-gray-700 text-white" : "bg-white text-foreground shadow")
+            }`}>
             {useAutoFit ? "Fit" : ZOOM_LABELS[manualZoom]}
           </button>
           <button onClick={() => { setUseAutoFit(false); setManualZoom(z => Math.min(ZOOM_LEVELS.length - 1, z + 1)); }}
             disabled={!useAutoFit && manualZoom === ZOOM_LEVELS.length - 1}
-            className="p-1.5 rounded-md hover:bg-white transition-colors text-muted-foreground disabled:opacity-30">
+            className={`p-1.5 rounded-md transition-colors disabled:opacity-30 ${fullscreen ? "text-gray-400 hover:text-white hover:bg-gray-700" : "text-muted-foreground hover:bg-white"}`}>
             <ZoomIn className="h-3.5 w-3.5" />
           </button>
         </div>
+
+        {/* Fullscreen toggle */}
+        <button onClick={fullscreen ? onExitFullscreen : onEnterFullscreen}
+          title={fullscreen ? "Exit fullscreen" : "Fullscreen"}
+          className={`p-1.5 rounded-lg border transition-colors ${fullscreen ? "border-gray-700 text-gray-400 hover:text-white hover:border-gray-500" : "border-border text-muted-foreground hover:text-foreground"}`}>
+          {fullscreen ? <Minimize2 className="h-3.5 w-3.5" /> : <Maximize2 className="h-3.5 w-3.5" />}
+        </button>
       </div>
 
-      {/* Preview canvas */}
-      <div ref={containerRef}
-        style={{ flex: "1 1 0", minHeight: 0 }}
-        className="bg-gradient-to-br from-slate-100 to-slate-200 flex items-center justify-center overflow-hidden p-3">
-        <div style={{
-          width:  previewW * scale,
-          height: DOC_H   * scale,
-          flexShrink: 0,
-          position: "relative",
-          boxShadow: "0 6px 32px rgba(0,0,0,0.18)",
-          borderRadius: 6,
-          overflow: "hidden",
-        }}>
+      {/* Canvas */}
+      <div
+        ref={containerRef}
+        onTouchStart={onTouchStart}
+        onTouchMove={onTouchMove}
+        onTouchEnd={onTouchEnd}
+        className={`flex items-center justify-center overflow-auto ${fullscreen ? "bg-gray-900" : "bg-gradient-to-br from-slate-100 to-slate-200"}`}
+        style={{ flex: "1 1 0", minHeight: 0, padding: 16, touchAction: "pan-y" }}
+      >
+        <DeviceFrame device={device} landscape={landscape}>
+          {/* Scaled document inside device frame */}
           <div style={{
-            width: previewW,
-            height: DOC_H,
-            transformOrigin: "top left",
-            transform: `scale(${scale})`,
-            fontFamily: fontCss,
-            transition: "transform 0.25s ease",
-            pointerEvents: "none",
+            width: docW * scale,
+            height: DOC_H * scale,
+            overflow: "hidden",
+            flexShrink: 0,
           }}>
-            <DocumentPreview
-              form={previewDoc} items={previewDoc.items}
-              calcs={{ subtotal: previewDoc.subtotal, taxAmt: previewDoc.tax_amount, total: previewDoc.total }}
-              sym="₦" docType="invoice"
-              managerSig={previewDoc.manager_signature} customerSig=""
-              template={design.template} templateColor={design.color}
-            />
+            <div style={{
+              width: docW,
+              height: DOC_H,
+              transformOrigin: "top left",
+              transform: `scale(${scale})`,
+              fontFamily: fontCss,
+              transition: "transform 0.2s ease",
+              pointerEvents: "none",
+            }}>
+              <DocumentPreview
+                form={previewDoc} items={previewDoc.items}
+                calcs={{ subtotal: previewDoc.subtotal, taxAmt: previewDoc.tax_amount, total: previewDoc.total }}
+                sym="₦" docType="invoice"
+                managerSig={previewDoc.manager_signature} customerSig=""
+                template={design.template} templateColor={design.color}
+              />
+            </div>
           </div>
-        </div>
+        </DeviceFrame>
       </div>
     </div>
   );
 }
 
-// ─── Main Component ───────────────────────────────────────────────────────────
-export default function DocumentDesign() {
-  const [design, setDesign] = useState({
-    template: "classic", color: "slate", font: "inter", fontSize: "base",
-    showNotes: true, showBankDetails: true, showSignature: true,
-    cornerRadius: "lg", shadowEffect: "sm", pageSize: "a4",
-  });
-  const [savedDesign, setSavedDesign]     = useState(null);
-  const [userInfo, setUserInfo]           = useState(null);
-  const [saving, setSaving]               = useState(false);
-  const [useAutoFit, setUseAutoFit]       = useState(true);
-  const [manualZoom, setManualZoom]       = useState(2);
-  const [activePresetId, setActivePresetId] = useState(null);
-  const [savedThemes, setSavedThemes]     = useState([]);
-  const [savingThemeName, setSavingThemeName] = useState("");
-  const [showSaveInput, setShowSaveInput] = useState(false);
-  // Mobile/tablet panel switcher: "design" | "preview" | "themes"
-  const [mobilePanel, setMobilePanel]     = useState("design");
-
-  useEffect(() => {
-    base44.auth.me().then(user => {
-      if (!user) return;
-      setUserInfo(user);
-      const saved = {
-        template:        user.doc_design_template        || "classic",
-        color:           user.doc_design_color           || "slate",
-        font:            user.doc_design_font            || "inter",
-        fontSize:        user.doc_design_fontSize        || "base",
-        showNotes:       user.doc_design_showNotes       !== false,
-        showBankDetails: user.doc_design_showBankDetails !== false,
-        showSignature:   user.doc_design_showSignature   !== false,
-        cornerRadius:    user.doc_design_cornerRadius    || "lg",
-        shadowEffect:    user.doc_design_shadowEffect    || "sm",
-        pageSize:        user.doc_design_pageSize        || "a4",
-      };
-      setDesign(saved); setSavedDesign(saved);
-      try { setSavedThemes(JSON.parse(user.doc_design_saved_themes || "[]")); } catch { /**/ }
-    });
-  }, []);
-
-  const isDirty  = savedDesign && JSON.stringify(design) !== JSON.stringify(savedDesign);
-  const update   = (k, v) => { setDesign(d => ({ ...d, [k]: v })); setActivePresetId(null); };
-  const applyPreset = (p) => { setDesign(d => ({ ...d, template: p.template, color: p.color, font: p.font })); setActivePresetId(p.id); };
-  const applySavedTheme = (t) => { setDesign({ ...t.design }); setActivePresetId("custom_" + t.name); };
-  const deleteTheme = (name) => {
-    const upd = savedThemes.filter(t => t.name !== name);
-    setSavedThemes(upd);
-    base44.auth.updateMe({ doc_design_saved_themes: JSON.stringify(upd) });
-    toast("Theme deleted");
-  };
-  const saveTheme = () => {
-    if (!savingThemeName.trim()) return;
-    const upd = [...savedThemes.filter(t => t.name !== savingThemeName), { name: savingThemeName.trim(), design: { ...design } }];
-    setSavedThemes(upd);
-    base44.auth.updateMe({ doc_design_saved_themes: JSON.stringify(upd) });
-    setSavingThemeName(""); setShowSaveInput(false);
-    toast.success(`Theme "${savingThemeName}" saved!`);
-  };
-  const save = async () => {
-    setSaving(true);
-    await base44.auth.updateMe({
-      doc_design_template: design.template, doc_design_color: design.color,
-      doc_design_font: design.font, doc_design_fontSize: design.fontSize,
-      doc_design_showNotes: design.showNotes, doc_design_showBankDetails: design.showBankDetails,
-      doc_design_showSignature: design.showSignature, doc_design_cornerRadius: design.cornerRadius,
-      doc_design_shadowEffect: design.shadowEffect, doc_design_pageSize: design.pageSize,
-    });
-    setSavedDesign({ ...design }); setSaving(false);
-    toast.success("Document design saved!");
-  };
-
-  const presetsProps = {
-    activePresetId, applyPreset, savedThemes, applySavedTheme, deleteTheme,
-    showSaveInput, setShowSaveInput, savingThemeName, setSavingThemeName, saveTheme,
-  };
-
-  return (
-    <div className="flex flex-col h-full">
-
-      {/* ── Top action bar ── */}
-      <div className="flex items-center justify-between gap-2 px-3 md:px-4 py-2 bg-white border-b border-border shrink-0">
-        <div className="flex items-center gap-1.5 min-w-0">
-          {/* Mobile panel switcher (shown only on small screens, replaced by panel tabs below) */}
-          <span className="text-xs text-muted-foreground hidden sm:block">
-            {isDirty ? <span className="text-amber-600 font-semibold">⚠ Unsaved changes</span> : "Design your documents"}
-          </span>
-        </div>
-        <div className="flex items-center gap-2 shrink-0">
-          {isDirty && (
-            <button onClick={() => { setDesign({ ...savedDesign }); setActivePresetId(null); }}
-              className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground border border-border rounded-lg px-2.5 py-1.5 transition-colors">
-              <RotateCcw className="h-3 w-3" />
-              <span className="hidden sm:inline">Reset</span>
-            </button>
-          )}
-          <Button onClick={save} disabled={saving} size="sm" className="gap-1.5 font-bold text-xs"
-            style={{ background: isDirty ? "linear-gradient(135deg,#f59e0b,#d97706)" : "linear-gradient(135deg,#6366f1,#4f46e5)" }}>
-            <Save className="h-3.5 w-3.5" />
-            {saving ? "Saving…" : isDirty ? "Save" : "Saved"}
-          </Button>
-        </div>
-      </div>
-
-      {/* ── DESKTOP (lg+): 3-column layout ── */}
-      <div className="hidden lg:flex flex-1 min-h-0 overflow-hidden">
-        {/* Left: Controls */}
-        <div className="w-64 shrink-0 bg-white border-r border-border flex flex-col">
-          <DesignControls design={design} update={update} />
-        </div>
-        {/* Center: Preview */}
-        <div className="flex-1 min-w-0 flex flex-col min-h-0">
-          <DocPreviewPanel design={design} userInfo={userInfo} useAutoFit={useAutoFit}
-            setUseAutoFit={setUseAutoFit} manualZoom={manualZoom} setManualZoom={setManualZoom} />
-        </div>
-        {/* Right: Presets */}
-        <div className="w-60 shrink-0 bg-white border-l border-border flex flex-col">
-          <PresetsPanel {...presetsProps} />
-        </div>
-      </div>
-
-      {/* ── TABLET (md–lg): 2-column, preview | controls stacked ── */}
-      <div className="hidden md:flex lg:hidden flex-1 min-h-0 overflow-hidden">
-        {/* Left: Preview (larger share) */}
-        <div style={{ flex: "1 1 0", minWidth: 0, minHeight: 0, display: "flex", flexDirection: "column" }} className="border-r border-border">
-          <DocPreviewPanel design={design} userInfo={userInfo} useAutoFit={useAutoFit}
-            setUseAutoFit={setUseAutoFit} manualZoom={manualZoom} setManualZoom={setManualZoom} />
-        </div>
-        {/* Right: Controls + Presets in scrollable panel with tabs */}
-        <div style={{ width: 272, flexShrink: 0, display: "flex", flexDirection: "column", minHeight: 0 }} className="bg-white">
-          <TabletSidePanel design={design} update={update} presetsProps={presetsProps} />
-        </div>
-      </div>
-
-      {/* ── MOBILE (<md): Single panel with bottom tab bar ── */}
-      <div className="flex md:hidden flex-1 min-h-0 flex-col overflow-hidden">
-        {/* Active panel */}
-        <div style={{ flex: "1 1 0", minHeight: 0 }} className="bg-white overflow-hidden flex flex-col">
-          {mobilePanel === "design" && (
-            <div className="flex-1 min-h-0 overflow-y-auto">
-              <DesignControls design={design} update={update} />
-            </div>
-          )}
-          {mobilePanel === "preview" && (
-            <div style={{ flex: "1 1 0", minHeight: 0, display: "flex", flexDirection: "column" }}>
-              <DocPreviewPanel design={design} userInfo={userInfo} useAutoFit={useAutoFit}
-                setUseAutoFit={setUseAutoFit} manualZoom={manualZoom} setManualZoom={setManualZoom} />
-            </div>
-          )}
-          {mobilePanel === "themes" && (
-            <div className="flex-1 min-h-0 overflow-y-auto">
-              <PresetsPanel {...presetsProps} />
-            </div>
-          )}
-        </div>
-        {/* Bottom tab bar */}
-        <div className="flex border-t border-border bg-white shrink-0" style={{ paddingBottom: "env(safe-area-inset-bottom, 0px)" }}>
-          {[
-            ["design",  Settings2, "Controls"],
-            ["preview", Image,     "Preview" ],
-            ["themes",  Star,      "Themes"  ],
-          ].map(([id, Ic, lbl]) => (
-            <button key={id} onClick={() => setMobilePanel(id)}
-              className={`flex-1 flex flex-col items-center justify-center py-2.5 gap-0.5 transition-colors ${mobilePanel === id ? "text-indigo-600" : "text-muted-foreground"}`}>
-              <Ic className={`h-5 w-5 ${mobilePanel === id ? "text-indigo-600" : ""}`} />
-              <span className="text-[10px] font-semibold">{lbl}</span>
-            </button>
-          ))}
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// ─── TabletSidePanel (tabs between Controls & Presets on tablet) ───────────────
+// ─── TabletSidePanel ───────────────────────────────────────────────────────────
 function TabletSidePanel({ design, update, presetsProps }) {
   const [tab, setTab] = useState("controls");
   return (
@@ -558,12 +520,163 @@ function TabletSidePanel({ design, update, presetsProps }) {
           </button>
         ))}
       </div>
-      <div style={{ flex: "1 1 0", minHeight: 0, overflowY: "auto" }}>
+      <div style={{ flex: "1 1 0", minHeight: 0, display: "flex", flexDirection: "column" }}>
         {tab === "controls" ? (
           <DesignControls design={design} update={update} />
         ) : (
           <PresetsPanel {...presetsProps} />
         )}
+      </div>
+    </div>
+  );
+}
+
+// ─── Main Component ───────────────────────────────────────────────────────────
+export default function DocumentDesign() {
+  const [design, setDesign]           = useState({ template: "classic", color: "slate", font: "inter", fontSize: "base", showNotes: true, showBankDetails: true, showSignature: true, cornerRadius: "lg", shadowEffect: "sm", pageSize: "a4" });
+  const [savedDesign, setSavedDesign] = useState(null);
+  const [userInfo, setUserInfo]       = useState(null);
+  const [saving, setSaving]           = useState(false);
+  const [activePresetId, setActivePresetId] = useState(null);
+  const [savedThemes, setSavedThemes] = useState([]);
+  const [savingThemeName, setSavingThemeName] = useState("");
+  const [showSaveInput, setShowSaveInput]   = useState(false);
+  const [mobilePanel, setMobilePanel] = useState("design"); // design | preview | themes
+  const [fullscreen, setFullscreen]   = useState(false);
+
+  useEffect(() => {
+    base44.auth.me().then(user => {
+      if (!user) return;
+      setUserInfo(user);
+      const saved = {
+        template: user.doc_design_template || "classic", color: user.doc_design_color || "slate",
+        font: user.doc_design_font || "inter", fontSize: user.doc_design_fontSize || "base",
+        showNotes: user.doc_design_showNotes !== false, showBankDetails: user.doc_design_showBankDetails !== false,
+        showSignature: user.doc_design_showSignature !== false, cornerRadius: user.doc_design_cornerRadius || "lg",
+        shadowEffect: user.doc_design_shadowEffect || "sm", pageSize: user.doc_design_pageSize || "a4",
+      };
+      setDesign(saved); setSavedDesign(saved);
+      try { setSavedThemes(JSON.parse(user.doc_design_saved_themes || "[]")); } catch { /**/ }
+    });
+  }, []);
+
+  // Escape key exits fullscreen
+  useEffect(() => {
+    const handler = (e) => { if (e.key === "Escape") setFullscreen(false); };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, []);
+
+  const isDirty     = savedDesign && JSON.stringify(design) !== JSON.stringify(savedDesign);
+  const update      = (k, v) => { setDesign(d => ({ ...d, [k]: v })); setActivePresetId(null); };
+  const applyPreset = (p) => { setDesign(d => ({ ...d, template: p.template, color: p.color, font: p.font })); setActivePresetId(p.id); };
+  const applySavedTheme = (t) => { setDesign({ ...t.design }); setActivePresetId("custom_" + t.name); };
+  const deleteTheme = (name) => {
+    const upd = savedThemes.filter(t => t.name !== name);
+    setSavedThemes(upd); base44.auth.updateMe({ doc_design_saved_themes: JSON.stringify(upd) }); toast("Theme deleted");
+  };
+  const saveTheme = () => {
+    if (!savingThemeName.trim()) return;
+    const upd = [...savedThemes.filter(t => t.name !== savingThemeName), { name: savingThemeName.trim(), design: { ...design } }];
+    setSavedThemes(upd); base44.auth.updateMe({ doc_design_saved_themes: JSON.stringify(upd) });
+    setSavingThemeName(""); setShowSaveInput(false); toast.success(`Theme "${savingThemeName}" saved!`);
+  };
+  const save = async () => {
+    setSaving(true);
+    await base44.auth.updateMe({
+      doc_design_template: design.template, doc_design_color: design.color, doc_design_font: design.font,
+      doc_design_fontSize: design.fontSize, doc_design_showNotes: design.showNotes,
+      doc_design_showBankDetails: design.showBankDetails, doc_design_showSignature: design.showSignature,
+      doc_design_cornerRadius: design.cornerRadius, doc_design_shadowEffect: design.shadowEffect,
+      doc_design_pageSize: design.pageSize,
+    });
+    setSavedDesign({ ...design }); setSaving(false);
+    toast.success("Document design saved!");
+  };
+
+  const presetsProps = { activePresetId, applyPreset, savedThemes, applySavedTheme, deleteTheme, showSaveInput, setShowSaveInput, savingThemeName, setSavingThemeName, saveTheme };
+
+  return (
+    <div className="flex flex-col h-full">
+
+      {/* ── Fullscreen overlay ── */}
+      {fullscreen && (
+        <div className="fixed inset-0 z-50 flex flex-col bg-gray-900">
+          <div className="flex items-center justify-between px-4 py-2 bg-gray-800 border-b border-gray-700 shrink-0">
+            <span className="text-sm font-semibold text-white">Document Preview</span>
+            <button onClick={() => setFullscreen(false)}
+              className="p-1.5 rounded-lg bg-gray-700 hover:bg-gray-600 text-gray-300 hover:text-white transition-colors">
+              <X className="h-4 w-4" />
+            </button>
+          </div>
+          <div style={{ flex: "1 1 0", minHeight: 0 }}>
+            <DocPreviewPanel design={design} userInfo={userInfo} fullscreen onEnterFullscreen={() => {}} onExitFullscreen={() => setFullscreen(false)} />
+          </div>
+        </div>
+      )}
+
+      {/* ── Top action bar ── */}
+      <div className="flex items-center justify-between gap-2 px-3 md:px-4 py-2 bg-white border-b border-border shrink-0">
+        <span className="text-xs text-muted-foreground hidden sm:block">
+          {isDirty ? <span className="text-amber-600 font-semibold">⚠ Unsaved changes</span> : "Design your documents"}
+        </span>
+        <div className="flex items-center gap-2 ml-auto shrink-0">
+          {isDirty && (
+            <button onClick={() => { setDesign({ ...savedDesign }); setActivePresetId(null); }}
+              className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground border border-border rounded-lg px-2.5 py-1.5 transition-colors">
+              <RotateCcw className="h-3 w-3" /><span className="hidden sm:inline">Reset</span>
+            </button>
+          )}
+          <Button onClick={save} disabled={saving} size="sm" className="gap-1.5 font-bold text-xs"
+            style={{ background: isDirty ? "linear-gradient(135deg,#f59e0b,#d97706)" : "linear-gradient(135deg,#6366f1,#4f46e5)" }}>
+            <Save className="h-3.5 w-3.5" />
+            {saving ? "Saving…" : isDirty ? "Save" : "Saved"}
+          </Button>
+        </div>
+      </div>
+
+      {/* ── DESKTOP (lg+): 3-column ── */}
+      <div className="hidden lg:flex" style={{ flex: "1 1 0", minHeight: 0, overflow: "hidden" }}>
+        <div className="w-64 shrink-0 bg-white border-r border-border flex flex-col">
+          <DesignControls design={design} update={update} />
+        </div>
+        <div style={{ flex: "1 1 0", minWidth: 0, display: "flex", flexDirection: "column" }}>
+          <DocPreviewPanel design={design} userInfo={userInfo} onEnterFullscreen={() => setFullscreen(true)} onExitFullscreen={() => setFullscreen(false)} />
+        </div>
+        <div className="w-60 shrink-0 bg-white border-l border-border flex flex-col">
+          <PresetsPanel {...presetsProps} />
+        </div>
+      </div>
+
+      {/* ── TABLET (md–lg): Preview + side panel ── */}
+      <div className="hidden md:flex lg:hidden" style={{ flex: "1 1 0", minHeight: 0, overflow: "hidden" }}>
+        <div style={{ flex: "1 1 0", minWidth: 0, minHeight: 0, display: "flex", flexDirection: "column" }} className="border-r border-border">
+          <DocPreviewPanel design={design} userInfo={userInfo} onEnterFullscreen={() => setFullscreen(true)} onExitFullscreen={() => setFullscreen(false)} />
+        </div>
+        <div style={{ width: 272, flexShrink: 0, display: "flex", flexDirection: "column", minHeight: 0 }} className="bg-white">
+          <TabletSidePanel design={design} update={update} presetsProps={presetsProps} />
+        </div>
+      </div>
+
+      {/* ── MOBILE (<md): tabbed panels ── */}
+      <div className="flex md:hidden flex-col" style={{ flex: "1 1 0", minHeight: 0, overflow: "hidden" }}>
+        <div style={{ flex: "1 1 0", minHeight: 0, overflow: "hidden", display: "flex", flexDirection: "column" }} className="bg-white">
+          {mobilePanel === "design" && <DesignControls design={design} update={update} />}
+          {mobilePanel === "preview" && (
+            <DocPreviewPanel design={design} userInfo={userInfo} onEnterFullscreen={() => setFullscreen(true)} onExitFullscreen={() => setFullscreen(false)} />
+          )}
+          {mobilePanel === "themes" && <PresetsPanel {...presetsProps} />}
+        </div>
+        {/* Bottom tab bar */}
+        <div className="flex border-t border-border bg-white shrink-0" style={{ paddingBottom: "env(safe-area-inset-bottom, 0px)" }}>
+          {[["design", Settings2, "Controls"], ["preview", Image, "Preview"], ["themes", Star, "Themes"]].map(([id, Ic, lbl]) => (
+            <button key={id} onClick={() => setMobilePanel(id)}
+              className={`flex-1 flex flex-col items-center justify-center py-2.5 gap-0.5 transition-colors ${mobilePanel === id ? "text-indigo-600" : "text-muted-foreground"}`}>
+              <Ic className="h-5 w-5" />
+              <span className="text-[10px] font-semibold">{lbl}</span>
+            </button>
+          ))}
+        </div>
       </div>
     </div>
   );
