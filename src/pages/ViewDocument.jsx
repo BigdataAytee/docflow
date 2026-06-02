@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { base44 } from "@/api/base44Client";
-import { useParams, Link, useNavigate } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import { ArrowLeft, Trash2, Printer, Send, Pencil, Share2, FileDown, MoreVertical, Upload, Copy, GitMerge, PenLine, CheckCircle2, Receipt, Truck } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { toast } from "sonner";
@@ -351,7 +351,7 @@ export default function ViewDocument() {
       {/* Toolbar */}
       <div className="flex items-center justify-between gap-2 mb-5 print:hidden flex-wrap">
         <div className="flex items-center gap-2 min-w-0">
-          <Link to="/documents" className="p-2 hover:bg-muted rounded-lg shrink-0"><ArrowLeft className="h-4 w-4" /></Link>
+          <button onClick={() => navigate(`/documents?type=${doc.type}`)} className="p-2 hover:bg-muted rounded-lg shrink-0"><ArrowLeft className="h-4 w-4" /></button>
           <div className="min-w-0">
             <h1 className="text-base md:text-xl font-bold truncate">{doc.number}</h1>
             <p className="text-xs text-muted-foreground hidden sm:block">{TYPE_LABELS[doc.type]}</p>
