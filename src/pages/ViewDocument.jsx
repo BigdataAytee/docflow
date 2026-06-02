@@ -397,16 +397,7 @@ export default function ViewDocument() {
           <Button variant="outline" size="sm" className="hidden md:flex h-9" onClick={() => setShowPdfPreview(true)}>
             <FileDown className="h-4 w-4" /><span className="ml-1.5">PDF</span>
           </Button>
-          {doc.type === "waybill" && (
-            <>
-              <Button variant="outline" size="sm" className="hidden md:flex h-9 gap-1.5" onClick={downloadPaperSignage} disabled={generatingPdf}>
-                <Printer className="h-4 w-4" /><span>{generatingPdf ? "..." : "Paper Signage"}</span>
-              </Button>
-              <Button variant="outline" size="sm" className="hidden md:flex h-9 gap-1.5 border-slate-700 text-slate-800 hover:bg-slate-900 hover:text-white" onClick={downloadSoftSignage} disabled={generatingPdf}>
-                <PenLine className="h-4 w-4" /><span>{generatingPdf ? "..." : "Soft Signage"}</span>
-              </Button>
-            </>
-          )}
+
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="outline" size="icon" className="h-9 w-9"><MoreVertical className="h-4 w-4" /></Button>
@@ -426,24 +417,11 @@ export default function ViewDocument() {
               <DropdownMenuItem onClick={handleSharePdf} disabled={generatingPdf}>
                 <Upload className="h-4 w-4 mr-2" /> Share PDF
               </DropdownMenuItem>
-              {doc.type === "waybill" && (
-                <>
-                  <DropdownMenuItem onClick={downloadPaperSignage} disabled={generatingPdf}>
-                    <Printer className="h-4 w-4 mr-2" /> Save for Paper Signage
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={downloadSoftSignage} disabled={generatingPdf}>
-                    <PenLine className="h-4 w-4 mr-2" /> Save for Soft Signage
-                  </DropdownMenuItem>
-                </>
-              )}
+
               <DropdownMenuItem onClick={() => window.print()}>
                 <Printer className="h-4 w-4 mr-2" /> Print
               </DropdownMenuItem>
-              {doc.type === "waybill" && (
-                <DropdownMenuItem onClick={() => { navigator.clipboard.writeText(`${window.location.origin}/waybill-sign?id=${docId}`); toast.success("Link copied!"); }}>
-                  <Share2 className="h-4 w-4 mr-2" /> Copy Signature Link
-                </DropdownMenuItem>
-              )}
+
               {doc.status === "draft" && (
                 <DropdownMenuItem onClick={() => updateStatus("sent")}>
                   <Send className="h-4 w-4 mr-2" /> Mark as Sent
@@ -484,20 +462,6 @@ export default function ViewDocument() {
       {doc.type === "waybill" && (
         <div className="print:hidden mb-4 bg-white border border-border rounded-xl p-3 flex flex-wrap gap-2 items-center">
           <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mr-1 hidden sm:inline">Waybill Actions</span>
-          {doc.status !== "to_be_delivered" && (
-            <>
-              <Button size="sm" variant="outline" onClick={downloadPaperSignage} disabled={generatingPdf} className="gap-1.5">
-                <Printer className="h-3.5 w-3.5" />
-                <span className="hidden sm:inline">{generatingPdf ? "Generating..." : "Paper Signage"}</span>
-                <span className="sm:hidden">Paper</span>
-              </Button>
-              <Button size="sm" variant="outline" onClick={downloadSoftSignage} disabled={generatingPdf} className="gap-1.5 border-slate-700 text-slate-800 hover:bg-slate-900 hover:text-white">
-                <PenLine className="h-3.5 w-3.5" />
-                <span className="hidden sm:inline">{generatingPdf ? "Generating..." : "Soft Signage"}</span>
-                <span className="sm:hidden">Soft</span>
-              </Button>
-            </>
-          )}
           {doc.status === "to_be_delivered" && (
             <Button size="sm" onClick={() => setShowSignModal(true)} className="gap-1.5 bg-orange-500 hover:bg-orange-600 text-white border-0 animate-pulse">
               <PenLine className="h-3.5 w-3.5" />
@@ -509,13 +473,6 @@ export default function ViewDocument() {
               <PenLine className="h-3.5 w-3.5" />
               <span className="hidden sm:inline">Receiver Sign</span>
               <span className="sm:hidden">Sign</span>
-            </Button>
-          )}
-          {doc.status !== "to_be_delivered" && (
-            <Button size="sm" variant="outline" onClick={() => { navigator.clipboard.writeText(`${window.location.origin}/waybill-sign?id=${docId}`); toast.success("Signature link copied! Share with the receiver."); }} className="gap-1.5">
-              <Share2 className="h-3.5 w-3.5" />
-              <span className="hidden sm:inline">Request Signature</span>
-              <span className="sm:hidden">Request</span>
             </Button>
           )}
         </div>
@@ -637,33 +594,7 @@ export default function ViewDocument() {
               <p className="text-xs text-muted-foreground truncate">{doc.number}</p>
             </div>
             <div className="flex items-center gap-1.5 overflow-x-auto flex-nowrap justify-end shrink-0 max-w-[65vw] sm:max-w-none">
-              {doc.type === "waybill" ? (
-                <>
-                  <Button size="sm" variant="ghost" onClick={() => window.print()} className="gap-1.5 shrink-0">
-                    <Printer className="h-4 w-4" />
-                  </Button>
-                  <Button size="sm" variant="outline" onClick={() => downloadInMode("soft")} disabled={generatingPdf} className="gap-1.5 shrink-0">
-                    <FileDown className="h-4 w-4" />
-                    <span className="hidden sm:inline">{generatingPdf ? "..." : "PDF"}</span>
-                  </Button>
-                  <Button size="sm" variant="outline" onClick={() => downloadInMode("paper")} disabled={generatingPdf} className="gap-1.5 shrink-0">
-                    <Printer className="h-4 w-4" />
-                    <span className="hidden sm:inline">{generatingPdf ? "..." : "Paper"}</span>
-                  </Button>
-                  <Button size="sm" onClick={downloadSoftSignage} disabled={generatingPdf} className="gap-1.5 bg-slate-900 hover:bg-slate-800 text-white shrink-0">
-                    <PenLine className="h-4 w-4" />
-                    <span className="hidden sm:inline">Soft</span>
-                  </Button>
-                  <Button size="sm" variant="outline" onClick={() => { setShowPdfPreview(false); setShowSignModal(true); }} className="gap-1.5 border-emerald-300 text-emerald-700 hover:bg-emerald-50 shrink-0">
-                    <PenLine className="h-4 w-4" />
-                    <span className="hidden sm:inline">Sign</span>
-                  </Button>
-                  <Button size="sm" variant="outline" onClick={() => { navigator.clipboard.writeText(`${window.location.origin}/waybill-sign?id=${docId}`); toast.success("Signature link copied!"); }} className="gap-1.5 shrink-0">
-                    <Share2 className="h-4 w-4" />
-                  </Button>
-                </>
-              ) : (
-                <>
+              <>
                   <Button size="sm" onClick={handleDownloadPdf} disabled={generatingPdf} className="shrink-0">
                     <FileDown className="h-4 w-4 mr-1" />
                     {generatingPdf ? "..." : "Download"}
@@ -673,7 +604,6 @@ export default function ViewDocument() {
                     Share
                   </Button>
                 </>
-              )}
               <button className="p-2 hover:bg-muted rounded-lg text-muted-foreground shrink-0" onClick={() => setShowPdfPreview(false)}>✕</button>
             </div>
           </div>
