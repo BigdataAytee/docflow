@@ -912,22 +912,10 @@ function UnifiedTemplate({ doc, onSaveManagerSig, onSaveCustomerSig, onOpenSignM
                     <span className="text-xs text-emerald-600 font-semibold">✓ Delivery Confirmed</span>
                   </div>
                 </div>
-              ) : isPdf ? (
+              ) : (
                 <div>
                   <div style={{ height: 64, borderBottom: "2px solid #374151", marginBottom: 4 }} />
                   <p className="text-xs text-gray-500 mt-1">{doc.customer_name}</p>
-                  <div className="mt-3 grid grid-cols-2 gap-2 text-xs text-gray-400">
-                    <div className="flex flex-col gap-1"><span>Name</span><div style={{ borderBottom: "2px solid #374151", height: 16 }} /></div>
-                    <div className="flex flex-col gap-1"><span>Date</span><div style={{ borderBottom: "2px solid #374151", height: 16 }} /></div>
-                    <div className="flex flex-col gap-1"><span>Time</span><div style={{ borderBottom: "2px solid #374151", height: 16 }} /></div>
-                  </div>
-                </div>
-              ) : (
-                <div>
-                  <div className="print:hidden">
-                    <SignaturePad label="" onSave={onSaveCustomerSig} />
-                  </div>
-                  <div className="hidden print:block" style={{ height: 64, borderBottom: "2px solid #374151", marginBottom: 4 }} />
                   <div className="mt-3 grid grid-cols-2 gap-2 text-xs text-gray-400">
                     <div className="flex flex-col gap-1"><span>Name</span><div style={{ borderBottom: "2px solid #374151", height: 16 }} /></div>
                     <div className="flex flex-col gap-1"><span>Date</span><div style={{ borderBottom: "2px solid #374151", height: 16 }} /></div>
