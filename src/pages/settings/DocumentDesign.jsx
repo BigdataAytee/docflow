@@ -475,8 +475,11 @@ export default function DocumentDesign() {
     });
   }, []);
 
+  const DEFAULT_DESIGN = { template: "classic", color: "slate", font: "inter", fontSize: "base", showNotes: true, showBankDetails: true, showSignature: true, cornerRadius: "lg", shadowEffect: "sm", pageSize: "a4" };
+
   const isDirty = savedDesign && JSON.stringify(design) !== JSON.stringify(savedDesign);
   const update  = (k, v) => { setDesign(d => ({ ...d, [k]: v })); setActivePresetId(null); };
+  const resetToDefault = () => { setDesign({ ...DEFAULT_DESIGN }); setActivePresetId(null); toast("Design reset to default"); };
   const applyPreset = (p) => { setDesign(d => ({ ...d, template: p.template, color: p.color, font: p.font })); setActivePresetId(p.id); };
   const applySavedTheme = (t) => { setDesign({ ...t.design }); setActivePresetId("custom_" + t.name); };
   const deleteTheme = (name) => {
@@ -520,11 +523,16 @@ export default function DocumentDesign() {
           {isDirty ? <span className="text-amber-600 font-semibold">⚠ Unsaved changes</span> : "Customise how your documents look"}
         </span>
         <div className="flex items-center gap-2">
+          <button onClick={resetToDefault}
+            className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground border border-border rounded-lg px-2.5 py-1.5 transition-colors">
+            <RotateCcw className="h-3 w-3" />
+            <span className="hidden sm:inline">Reset to Default</span>
+          </button>
           {isDirty && (
             <button onClick={() => { setDesign({ ...savedDesign }); setActivePresetId(null); }}
               className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground border border-border rounded-lg px-2.5 py-1.5 transition-colors">
               <RotateCcw className="h-3 w-3" />
-              <span className="hidden sm:inline">Reset</span>
+              <span className="hidden sm:inline">Undo Changes</span>
             </button>
           )}
           <Button onClick={save} disabled={saving} size="sm" className="gap-1.5 font-bold text-xs"
