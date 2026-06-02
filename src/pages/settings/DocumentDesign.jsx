@@ -42,16 +42,40 @@ const LAYOUT_TEMPLATES = [
 ];
 
 const PRESETS = [
-  { id: "modern_pro",  label: "Modern Professional", template: "modern",  color: "slate",    font: "inter",        emoji: "💼" },
-  { id: "executive",   label: "Executive Report",    template: "classic", color: "charcoal", font: "merriweather", emoji: "🏛️" },
-  { id: "creative",    label: "Creative Portfolio",  template: "modern",  color: "indigo",   font: "poppins",      emoji: "🎨" },
-  { id: "corporate",   label: "Corporate Premium",   template: "bold",    color: "slate",    font: "montserrat",   emoji: "🏢" },
-  { id: "minimalist",  label: "Minimalist",          template: "minimal", color: "slate",    font: "lato",         emoji: "⬜" },
-  { id: "elegant_biz", label: "Elegant Business",    template: "elegant", color: "gold",     font: "playfair",     emoji: "✨" },
-  { id: "startup",     label: "Startup Pitch",       template: "modern",  color: "purple",   font: "poppins",      emoji: "🚀" },
-  { id: "magazine",    label: "Modern Magazine",     template: "bold",    color: "rose",     font: "montserrat",   emoji: "📰" },
-  { id: "clean_tech",  label: "Clean Technical",     template: "minimal", color: "blue",     font: "roboto",       emoji: "🔧" },
-  { id: "eco",         label: "Natural & Fresh",     template: "modern",  color: "emerald",  font: "lato",         emoji: "🌿" },
+  // ── Professional & Corporate ──────────────────────────────
+  { id: "modern_pro",     label: "Modern Professional",  template: "modern",  color: "slate",    font: "inter",        emoji: "💼", group: "Professional" },
+  { id: "executive",      label: "Executive Report",     template: "classic", color: "charcoal", font: "merriweather", emoji: "🏛️", group: "Professional" },
+  { id: "corporate",      label: "Corporate Premium",    template: "bold",    color: "slate",    font: "montserrat",   emoji: "🏢", group: "Professional" },
+  { id: "boardroom",      label: "Boardroom Black",      template: "bold",    color: "charcoal", font: "montserrat",   emoji: "🖤", group: "Professional" },
+  { id: "navy_exec",      label: "Navy Executive",       template: "classic", color: "indigo",   font: "merriweather", emoji: "🔷", group: "Professional" },
+  { id: "clean_tech",     label: "Clean Technical",      template: "minimal", color: "blue",     font: "roboto",       emoji: "🔧", group: "Professional" },
+  // ── Elegant & Luxury ─────────────────────────────────────
+  { id: "elegant_biz",    label: "Elegant Business",     template: "elegant", color: "gold",     font: "playfair",     emoji: "✨", group: "Elegant" },
+  { id: "royal_gold",     label: "Royal Gold",           template: "bold",    color: "gold",     font: "playfair",     emoji: "👑", group: "Elegant" },
+  { id: "black_tie",      label: "Black Tie",            template: "elegant", color: "charcoal", font: "playfair",     emoji: "🎩", group: "Elegant" },
+  { id: "ivory_classic",  label: "Ivory Classic",        template: "classic", color: "gold",     font: "georgia",      emoji: "🤍", group: "Elegant" },
+  { id: "deep_plum",      label: "Deep Plum",            template: "elegant", color: "purple",   font: "playfair",     emoji: "🍇", group: "Elegant" },
+  { id: "rose_luxury",    label: "Rose Luxe",            template: "elegant", color: "rose",     font: "georgia",      emoji: "🌹", group: "Elegant" },
+  // ── Creative & Bold ──────────────────────────────────────
+  { id: "creative",       label: "Creative Portfolio",   template: "modern",  color: "indigo",   font: "poppins",      emoji: "🎨", group: "Creative" },
+  { id: "startup",        label: "Startup Pitch",        template: "modern",  color: "purple",   font: "poppins",      emoji: "🚀", group: "Creative" },
+  { id: "magazine",       label: "Modern Magazine",      template: "bold",    color: "rose",     font: "montserrat",   emoji: "📰", group: "Creative" },
+  { id: "neon_agency",    label: "Neon Agency",          template: "bold",    color: "indigo",   font: "poppins",      emoji: "⚡", group: "Creative" },
+  { id: "fire_brand",     label: "Fire Brand",           template: "bold",    color: "rose",     font: "poppins",      emoji: "🔥", group: "Creative" },
+  { id: "bold_amber",     label: "Bold Amber",           template: "bold",    color: "amber",    font: "montserrat",   emoji: "🟠", group: "Creative" },
+  { id: "electric_blue",  label: "Electric Blue",        template: "modern",  color: "blue",     font: "montserrat",   emoji: "💙", group: "Creative" },
+  // ── Minimal & Clean ──────────────────────────────────────
+  { id: "minimalist",     label: "Minimalist",           template: "minimal", color: "slate",    font: "lato",         emoji: "⬜", group: "Minimal" },
+  { id: "pure_white",     label: "Pure White",           template: "minimal", color: "charcoal", font: "inter",        emoji: "🗒️", group: "Minimal" },
+  { id: "zen_minimal",    label: "Zen Minimal",          template: "minimal", color: "teal",     font: "lato",         emoji: "🪷", group: "Minimal" },
+  { id: "soft_gray",      label: "Soft Gray",            template: "classic", color: "slate",    font: "roboto",       emoji: "🩶", group: "Minimal" },
+  { id: "type_forward",   label: "Type Forward",         template: "minimal", color: "indigo",   font: "montserrat",   emoji: "📝", group: "Minimal" },
+  // ── Nature & Fresh ───────────────────────────────────────
+  { id: "eco",            label: "Natural & Fresh",      template: "modern",  color: "emerald",  font: "lato",         emoji: "🌿", group: "Nature" },
+  { id: "forest_deep",    label: "Forest Deep",          template: "bold",    color: "emerald",  font: "merriweather", emoji: "🌲", group: "Nature" },
+  { id: "ocean_breeze",   label: "Ocean Breeze",         template: "elegant", color: "teal",     font: "lato",         emoji: "🌊", group: "Nature" },
+  { id: "sunset_warm",    label: "Sunset Warm",          template: "modern",  color: "amber",    font: "poppins",      emoji: "🌅", group: "Nature" },
+  { id: "coral_fresh",    label: "Coral Fresh",          template: "classic", color: "rose",     font: "poppins",      emoji: "🪸", group: "Nature" },
 ];
 
 const SAMPLE = {
@@ -345,19 +369,24 @@ function StylePresets({ activePresetId, applyPreset, savedThemes, applySavedThem
           <Star className="h-3.5 w-3.5 text-amber-500" />
           <p className="text-xs font-bold uppercase tracking-widest">Style Presets</p>
         </div>
-        <div className="space-y-1">
-          {PRESETS.map(p => (
-            <button key={p.id} onClick={() => applyPreset(p)}
-              className={`w-full flex items-center gap-2 px-3 py-2 rounded-xl text-left transition-all border ${activePresetId === p.id ? "border-indigo-300 bg-indigo-50" : "border-transparent hover:border-border hover:bg-muted/40"}`}>
-              <span className="text-base">{p.emoji}</span>
-              <div className="min-w-0">
-                <p className="text-xs font-semibold truncate">{p.label}</p>
-                <p className="text-[10px] text-muted-foreground capitalize">{p.template} · {p.color}</p>
-              </div>
-              {activePresetId === p.id && <CheckCircle2 className="h-3.5 w-3.5 text-indigo-500 shrink-0 ml-auto" />}
-            </button>
-          ))}
-        </div>
+        {["Professional", "Elegant", "Creative", "Minimal", "Nature"].map(group => (
+          <div key={group} className="mb-3">
+            <p className="text-[9px] font-black uppercase tracking-widest text-muted-foreground/60 px-1 mb-1">{group}</p>
+            <div className="space-y-0.5">
+              {PRESETS.filter(p => p.group === group).map(p => (
+                <button key={p.id} onClick={() => applyPreset(p)}
+                  className={`w-full flex items-center gap-2 px-3 py-2 rounded-xl text-left transition-all border ${activePresetId === p.id ? "border-indigo-300 bg-indigo-50" : "border-transparent hover:border-border hover:bg-muted/40"}`}>
+                  <span className="text-sm">{p.emoji}</span>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-xs font-semibold truncate">{p.label}</p>
+                    <p className="text-[9px] text-muted-foreground capitalize">{p.template} · {p.color}</p>
+                  </div>
+                  {activePresetId === p.id && <CheckCircle2 className="h-3.5 w-3.5 text-indigo-500 shrink-0" />}
+                </button>
+              ))}
+            </div>
+          </div>
+        ))}
       </div>
 
       <div className="px-4 pt-3 pb-4">
