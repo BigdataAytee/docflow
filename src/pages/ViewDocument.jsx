@@ -565,13 +565,9 @@ export default function ViewDocument() {
       )}
 
       {/* Document view — scaled to fit on mobile */}
-      <div style={{ width: "100%", overflow: "hidden" }}>
-        <div style={{ width: 794 * previewScale, transformOrigin: "top left" }}>
-          <div style={{ width: 794, transformOrigin: "top left", transform: `scale(${previewScale})`, marginBottom: previewScale < 1 ? `${(previewScale - 1) * 1123}px` : undefined }}>
-            <UnifiedTemplate doc={doc} onSaveManagerSig={saveManagerSig} onSaveCustomerSig={saveCustomerSig} onOpenSignModal={() => setShowSignModal(true)} />
-          </div>
-        </div>
-      </div>
+      <ScaledDocument scale={previewScale}>
+        <UnifiedTemplate doc={doc} onSaveManagerSig={saveManagerSig} onSaveCustomerSig={saveCustomerSig} onOpenSignModal={() => setShowSignModal(true)} />
+      </ScaledDocument>
 
       {/* Inline Signature Capture Overlay */}
       {showInlineSigPad && (
@@ -713,16 +709,8 @@ export default function ViewDocument() {
             <div className="p-2 sm:p-6">
               <div className="max-w-4xl mx-auto">
                 {/* Scale to fit mobile viewport */}
-                <div style={{ width: 794 * previewScale, overflow: "hidden" }}>
-                  <div
-                    ref={pdfRef}
-                    style={{
-                      width: 794,
-                      transformOrigin: "top left",
-                      transform: `scale(${previewScale})`,
-                      marginBottom: previewScale < 1 ? `${(previewScale - 1) * 1123}px` : undefined,
-                    }}
-                  >
+                <ScaledDocument scale={previewScale}>
+                  <div ref={pdfRef}>
                     <DocumentPreview
                       form={doc}
                       items={doc.items || []}
@@ -735,7 +723,7 @@ export default function ViewDocument() {
                       templateColor={doc.template_color || "slate"}
                     />
                   </div>
-                </div>
+                </ScaledDocument>
                 {doc.type === "waybill" && pdfMode === "soft" && !doc.customer_signature && (
                   <button
                     onClick={() => setShowInlineSigPad(true)}
@@ -755,6 +743,30 @@ export default function ViewDocument() {
           </div>
         </div>
       )}
+    </div>
+  );
+}
+
+function ScaledDocument({ scale, children }) {
+  const innerRef = useRef(null);
+  const [scaledHeight, setScaledHeight] = useState(null);
+
+  useEffect(() => {
+    if (!innerRef.current) return;
+    const observer = new ResizeObserver(() => {
+      if (innerRef.current) {
+        setScaledHeight(innerRef.current.offsetHeight * scale);
+      }
+    });
+    observer.observe(innerRef.current);
+    return () => observer.disconnect();
+  }, [scale]);
+
+  return (
+    <div style={{ width: "100%", overflow: "hidden", height: scaledHeight ?? "auto" }}>
+      <div ref={innerRef} style={{ width: 794, transformOrigin: "top left", transform: `scale(${scale})` }}>
+        {children}
+      </div>
     </div>
   );
 }
