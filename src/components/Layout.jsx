@@ -7,12 +7,12 @@ import CommandPalette from "./CommandPalette";
 import OnboardingGuide from "./OnboardingGuide";
 
 const bottomNavItems = [
-  { label: "Home",      icon: Home,       path: "/" },
-  { label: "Customers", icon: Users,      path: "/customers" },
-  { label: "Mail",      icon: Mail,       path: "/mail" },
-  { label: "Apps",      icon: LayoutGrid, path: "/apps" },
-  { label: "Settings",  icon: Settings,   path: "/settings" },
-];
+{ label: "Home", icon: Home, path: "/" },
+{ label: "Customers", icon: Users, path: "/customers" },
+{ label: "Mail", icon: Mail, path: "/mail" },
+{ label: "Apps", icon: LayoutGrid, path: "/apps" },
+{ label: "Settings", icon: Settings, path: "/settings" }];
+
 
 export default function Layout() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -23,7 +23,7 @@ export default function Layout() {
     const handler = (e) => {
       if ((e.ctrlKey || e.metaKey) && e.key === "k") {
         e.preventDefault();
-        setCmdOpen(o => !o);
+        setCmdOpen((o) => !o);
       }
     };
     window.addEventListener("keydown", handler);
@@ -31,7 +31,7 @@ export default function Layout() {
   }, []);
 
   useEffect(() => {
-    base44.auth.me().then(user => {
+    base44.auth.me().then((user) => {
       if (user) setCompanyName(user.company_name || user.full_name || "");
     });
   }, []);
@@ -46,17 +46,17 @@ export default function Layout() {
       </div>
 
       {/* Mobile/Tablet sidebar drawer overlay */}
-      {sidebarOpen && (
-        <div className="fixed inset-0 z-50 lg:hidden">
+      {sidebarOpen &&
+      <div className="fixed inset-0 z-50 lg:hidden">
           <div
-            className="absolute inset-0 bg-black/50 backdrop-blur-sm"
-            onClick={() => setSidebarOpen(false)}
-          />
+          className="absolute inset-0 bg-black/50 backdrop-blur-sm"
+          onClick={() => setSidebarOpen(false)} />
+        
           <div className="absolute left-0 top-0 bottom-0 w-72 z-10 shadow-2xl">
             <Sidebar onClose={() => setSidebarOpen(false)} />
           </div>
         </div>
-      )}
+      }
 
       {/* Main content */}
       <main className="flex-1 min-w-0 min-h-screen flex flex-col lg:ml-64 overflow-x-hidden">
@@ -65,8 +65,8 @@ export default function Layout() {
           <button
             onClick={() => setSidebarOpen(true)}
             className="text-white p-2 rounded-lg hover:bg-white/10 active:bg-white/20 min-w-[44px] min-h-[44px] flex items-center justify-center"
-            aria-label="Open menu"
-          >
+            aria-label="Open menu">
+            
             <Menu className="h-5 w-5" />
           </button>
           <span className="text-white font-bold text-base tracking-tight flex-1 truncate">
@@ -74,9 +74,9 @@ export default function Layout() {
           </span>
           <button
             onClick={() => setCmdOpen(true)}
-            className="text-white/60 hover:text-white p-2 rounded-lg hover:bg-white/10 transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center"
-            aria-label="Search"
-          >
+            className="text-white/60 hover:text-white p-2 rounded-lg hover:bg-white/10 transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center hidden"
+            aria-label="Search">
+            
             <Search className="h-4 w-4" />
           </button>
         </div>
@@ -87,8 +87,8 @@ export default function Layout() {
           {/* Bottom spacer — clears fixed nav (56px) + action bar (~110px) + buffer */}
           <div
             className="lg:hidden"
-            style={{ height: "calc(56px + env(safe-area-inset-bottom, 0px) + 140px)" }}
-          />
+            style={{ height: "calc(56px + env(safe-area-inset-bottom, 0px) + 140px)" }} />
+          
         </div>
       </main>
 
@@ -98,30 +98,30 @@ export default function Layout() {
       {/* Mobile/Tablet Bottom Navigation */}
       <nav
         className="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-sidebar border-t border-sidebar-border flex"
-        style={{ paddingBottom: "env(safe-area-inset-bottom, 0px)" }}
-      >
-        {bottomNavItems.map(item => {
+        style={{ paddingBottom: "env(safe-area-inset-bottom, 0px)" }}>
+        
+        {bottomNavItems.map((item) => {
           const active =
-            location.pathname === item.path ||
-            (item.path !== "/" && location.pathname.startsWith(item.path));
+          location.pathname === item.path ||
+          item.path !== "/" && location.pathname.startsWith(item.path);
           return (
             <Link
               key={item.path}
               to={item.path}
               className={`flex-1 flex flex-col items-center justify-center py-2 gap-0.5 min-h-[56px] transition-colors touch-manipulation ${
-                active ? "text-white" : "text-sidebar-foreground/50 hover:text-sidebar-foreground/80"
-              }`}
-            >
+              active ? "text-white" : "text-sidebar-foreground/50 hover:text-sidebar-foreground/80"}`
+              }>
+              
               <item.icon
                 className={`h-5 w-5 transition-colors ${
-                  active ? "text-sidebar-primary" : ""
-                }`}
-              />
+                active ? "text-sidebar-primary" : ""}`
+                } />
+              
               <span className="text-[10px] font-medium tracking-wide">{item.label}</span>
-            </Link>
-          );
+            </Link>);
+
         })}
       </nav>
-    </div>
-  );
+    </div>);
+
 }
