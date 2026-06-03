@@ -188,6 +188,15 @@ export default function CreateDocument() {
           const prefill = JSON.parse(aiPrefillRaw);
           if (prefill.items?.length > 0) setItems(prefill.items.map(it => ({ description: it.description || "", quantity: String(it.quantity ?? 1), unit_price: String(it.unit_price ?? 0), discount: "" })));
           if (prefill.notes) setForm(f => ({ ...f, notes: prefill.notes }));
+          if (prefill.customer_id || prefill.customer_name) {
+            setForm(f => ({
+              ...f,
+              customer_id: prefill.customer_id || "",
+              customer_name: prefill.customer_name || "",
+              customer_email: prefill.customer_email || "",
+              customer_address: prefill.customer_address || "",
+            }));
+          }
         }
         // Filter by user to get accurate next sequence number
         const docs = await base44.entities.Document.filter({ type: docType, created_by: user.email }, "-created_date", 1);

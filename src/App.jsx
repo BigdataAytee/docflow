@@ -14,7 +14,7 @@ import ForgotPassword from './pages/ForgotPassword';
 import ResetPassword from './pages/ResetPassword';
 
 import Home from './pages/Home';
-import Customers from './pages/Customers';
+import Customers from './pages/Customers.jsx';
 import CreateDocument from './pages/CreateDocument';
 import DocumentList from './pages/DocumentList';
 import ViewDocument from './pages/ViewDocument';
