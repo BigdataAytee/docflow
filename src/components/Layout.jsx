@@ -72,13 +72,13 @@ export default function Layout() {
           <span className="text-white font-bold text-base tracking-tight flex-1 truncate">
             {companyName || "My Business"}
           </span>
-          
-
-
-
-
-
-          
+          <button
+            onClick={() => setCmdOpen(true)}
+            className="text-white/60 hover:text-white p-2 rounded-lg hover:bg-white/10 transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center hidden"
+            aria-label="Search">
+            
+            <Search className="h-4 w-4" />
+          </button>
         </div>
 
         {/* Page content */}
