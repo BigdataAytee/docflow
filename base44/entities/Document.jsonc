@@ -70,6 +70,10 @@
       "type": "string",
       "title": "Customer Name"
     },
+    "customer_company": {
+      "type": "string",
+      "title": "Customer Company Name"
+    },
     "customer_email": {
       "type": "string",
       "title": "Customer Email"

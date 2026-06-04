@@ -253,6 +253,7 @@ function ClassicDoc({ form, items, calcs, sym, docType, managerSig, customerSig,
         <div>
           <div style={{ fontSize: 8, color: T.tableHeaderColor, textTransform: "uppercase", letterSpacing: 1.5, fontWeight: 700, marginBottom: 6 }}>{billToLabel}</div>
           <div style={{ fontSize: 12, fontWeight: 700, color: "#1e293b" }}>{form.customer_name || "—"}</div>
+          {form.customer_company && <div style={{ fontSize: 10, color: "#334155", fontWeight: 600, marginTop: 2 }}>{form.customer_company}</div>}
           {form.customer_address && <div style={{ fontSize: 10, color: "#64748b", marginTop: 3, whiteSpace: "pre-line" }}>{form.customer_address}</div>}
           {form.customer_email && <div style={{ fontSize: 10, color: "#94a3b8", marginTop: 2 }}>{form.customer_email}</div>}
         </div>
@@ -300,6 +301,7 @@ function ModernDoc({ form, items, calcs, sym, docType, managerSig, customerSig, 
         <div>
           <div style={{ fontSize: 8, fontWeight: 700, color: T.tableHeaderColor, textTransform: "uppercase", letterSpacing: 1.5, marginBottom: 5 }}>{billToLabel}</div>
           <div style={{ fontSize: 12, fontWeight: 700, color: "#1e293b" }}>{form.customer_name || "—"}</div>
+          {form.customer_company && <div style={{ fontSize: 10, color: "#334155", fontWeight: 600, marginTop: 2 }}>{form.customer_company}</div>}
           {form.customer_address && <div style={{ fontSize: 10, color: "#64748b", marginTop: 2, whiteSpace: "pre-line" }}>{form.customer_address}</div>}
         </div>
         <div style={{ textAlign: "right" }}>
@@ -355,6 +357,7 @@ function MinimalDoc({ form, items, calcs, sym, docType, managerSig, customerSig,
         <div>
           <div style={{ fontSize: 8, fontWeight: 700, letterSpacing: 2, color: T.accentColor, textTransform: "uppercase", marginBottom: 5 }}>{billToLabel}</div>
           <div style={{ fontSize: 13, fontWeight: 700, color: "#111827" }}>{form.customer_name || "—"}</div>
+          {form.customer_company && <div style={{ fontSize: 10, color: "#374151", fontWeight: 600, marginTop: 2 }}>{form.customer_company}</div>}
           {form.customer_address && <div style={{ fontSize: 10, color: "#6b7280", whiteSpace: "pre-line", marginTop: 2 }}>{form.customer_address}</div>}
           {form.customer_email && <div style={{ fontSize: 10, color: "#9ca3af", marginTop: 2 }}>{form.customer_email}</div>}
         </div>
@@ -407,6 +410,7 @@ function BoldDoc({ form, items, calcs, sym, docType, managerSig, customerSig, T 
             <div>
               <div style={{ fontSize: 8, fontWeight: 700, color: T.headerColor, opacity: 0.5, textTransform: "uppercase", letterSpacing: 1.5, marginBottom: 4 }}>{billToLabel}</div>
               <div style={{ fontSize: 13, fontWeight: 700, color: T.headerColor }}>{form.customer_name || "—"}</div>
+              {form.customer_company && <div style={{ fontSize: 10, color: T.headerColor, fontWeight: 600, opacity: 0.85, marginTop: 2 }}>{form.customer_company}</div>}
               {form.customer_address && <div style={{ fontSize: 10, color: T.headerColor, opacity: 0.65, whiteSpace: "pre-line", marginTop: 2 }}>{form.customer_address}</div>}
             </div>
             <div style={{ textAlign: "right" }}>
@@ -470,6 +474,7 @@ function ElegantDoc({ form, items, calcs, sym, docType, managerSig, customerSig,
         <div style={{ textAlign: "center" }}>
           <div style={{ fontSize: 8, fontWeight: 700, letterSpacing: 2, color: T.tableHeaderColor, textTransform: "uppercase", marginBottom: 6 }}>{billToLabel}</div>
           <div style={{ fontSize: 12, fontWeight: 700, color: "#1e293b" }}>{form.customer_name || "—"}</div>
+          {form.customer_company && <div style={{ fontSize: 10, color: "#334155", fontWeight: 600, marginTop: 2 }}>{form.customer_company}</div>}
           {form.customer_address && <div style={{ fontSize: 10, color: "#6b7280", marginTop: 3, whiteSpace: "pre-line" }}>{form.customer_address}</div>}
         </div>
         <div style={{ textAlign: "right" }}>

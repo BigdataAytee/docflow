@@ -102,6 +102,7 @@ export default function CreateDocument() {
     number: "",
     customer_id: "",
     customer_name: "",
+    customer_company: "",
     customer_email: "",
     customer_address: "",
     tax_number: "",
@@ -202,6 +203,7 @@ export default function CreateDocument() {
               ...f,
               customer_id: prefill.customer_id || "",
               customer_name: prefill.customer_name || "",
+              customer_company: prefill.customer_company || "",
               customer_email: prefill.customer_email || "",
               customer_address: prefill.customer_address || "",
             }));
@@ -237,7 +239,7 @@ export default function CreateDocument() {
   const selectCustomer = (id) => {
     if (id === "__add_new__") { setShowAddCustomer(true); return; }
     const c = customers.find(x => x.id === id);
-    if (c) setForm(f => ({ ...f, customer_id: id, customer_name: c.full_name, customer_email: c.email || "", customer_address: c.billing_address || "", currency: c.currency || f.currency }));
+    if (c) setForm(f => ({ ...f, customer_id: id, customer_name: c.full_name, customer_company: c.company_name || "", customer_email: c.email || "", customer_address: c.billing_address || "", currency: c.currency || f.currency }));
   };
 
   const handleAddCustomer = async (data) => {
@@ -289,6 +291,7 @@ export default function CreateDocument() {
     template_font: templateFont,
     customer_id: form.customer_id || "",
     customer_name: form.customer_name || "",
+    customer_company: form.customer_company || "",
     customer_email: form.customer_email || "",
     customer_address: form.customer_address || "",
     tax_number: form.tax_number || "",

@@ -53,6 +53,7 @@ export default function CustomerDrawer({ customer, onClose, onEdit, onDelete, on
     sessionStorage.setItem("ai_prefill", JSON.stringify({
       customer_id: customer.id,
       customer_name: customer.full_name,
+      customer_company: customer.company_name || "",
       customer_email: customer.email || "",
       customer_address: customer.billing_address || customer.shipping_address || "",
     }));
