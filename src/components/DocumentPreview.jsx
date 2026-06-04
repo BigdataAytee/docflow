@@ -249,12 +249,14 @@ function ClassicDoc({ form, items, calcs, sym, docType, managerSig, customerSig,
           )}
         </div>
       </div>
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", background: T.stripBg, borderBottom: `1px solid ${T.stripBorder}` }}>
-        <div style={{ padding: "18px 48px", borderRight: `1px solid ${T.stripBorder}` }}>
-          <div style={{ fontSize: 8, color: T.tableHeaderColor, textTransform: "uppercase", letterSpacing: 1.5, fontWeight: 700, marginBottom: 6 }}>From</div>
-          <div style={{ fontSize: 12, fontWeight: 700, color: "#1e293b" }}>{form.company_name || "—"}</div>
-          {form.company_email && <div style={{ fontSize: 10, color: "#64748b", marginTop: 3 }}>{form.company_email}</div>}
-        </div>
+      <div style={{ display: "grid", gridTemplateColumns: (docType === "invoice" || docType === "quotation") ? "1fr 1fr" : "1fr", background: T.stripBg, borderBottom: `1px solid ${T.stripBorder}` }}>
+        {(docType === "invoice" || docType === "quotation") && (
+          <div style={{ padding: "18px 48px", borderRight: `1px solid ${T.stripBorder}` }}>
+            <div style={{ fontSize: 8, color: T.tableHeaderColor, textTransform: "uppercase", letterSpacing: 1.5, fontWeight: 700, marginBottom: 6 }}>From</div>
+            <div style={{ fontSize: 12, fontWeight: 700, color: "#1e293b" }}>{form.company_name || "—"}</div>
+            {form.company_email && <div style={{ fontSize: 10, color: "#64748b", marginTop: 3 }}>{form.company_email}</div>}
+          </div>
+        )}
         <div style={{ padding: "18px 48px" }}>
           <div style={{ fontSize: 8, color: T.tableHeaderColor, textTransform: "uppercase", letterSpacing: 1.5, fontWeight: 700, marginBottom: 6 }}>{billToLabel}</div>
           <div style={{ fontSize: 12, fontWeight: 700, color: "#1e293b" }}>{form.customer_name || "—"}</div>
@@ -300,12 +302,14 @@ function ModernDoc({ form, items, calcs, sym, docType, managerSig, customerSig, 
         </div>
         <div style={{ height: 6, background: T.accentColor, marginTop: 20 }} />
       </div>
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", borderBottom: `1px solid ${T.stripBorder}`, background: T.stripBg }}>
-        <div style={{ padding: "14px 20px", borderRight: `1px solid ${T.stripBorder}` }}>
-          <div style={{ fontSize: 8, fontWeight: 700, color: T.tableHeaderColor, textTransform: "uppercase", letterSpacing: 1.5, marginBottom: 5 }}>From</div>
-          <div style={{ fontSize: 12, fontWeight: 700, color: "#1e293b" }}>{form.company_name || "—"}</div>
-          {form.company_email && <div style={{ fontSize: 10, color: "#64748b", marginTop: 2 }}>{form.company_email}</div>}
-        </div>
+      <div style={{ display: "grid", gridTemplateColumns: (docType === "invoice" || docType === "quotation") ? "1fr 1fr 1fr" : "1fr 1fr", borderBottom: `1px solid ${T.stripBorder}`, background: T.stripBg }}>
+        {(docType === "invoice" || docType === "quotation") && (
+          <div style={{ padding: "14px 20px", borderRight: `1px solid ${T.stripBorder}` }}>
+            <div style={{ fontSize: 8, fontWeight: 700, color: T.tableHeaderColor, textTransform: "uppercase", letterSpacing: 1.5, marginBottom: 5 }}>From</div>
+            <div style={{ fontSize: 12, fontWeight: 700, color: "#1e293b" }}>{form.company_name || "—"}</div>
+            {form.company_email && <div style={{ fontSize: 10, color: "#64748b", marginTop: 2 }}>{form.company_email}</div>}
+          </div>
+        )}
         <div style={{ padding: "14px 20px", borderRight: `1px solid ${T.stripBorder}` }}>
           <div style={{ fontSize: 8, fontWeight: 700, color: T.tableHeaderColor, textTransform: "uppercase", letterSpacing: 1.5, marginBottom: 5 }}>{billToLabel}</div>
           <div style={{ fontSize: 12, fontWeight: 700, color: "#1e293b" }}>{form.customer_name || "—"}</div>
@@ -463,12 +467,14 @@ function ElegantDoc({ form, items, calcs, sym, docType, managerSig, customerSig,
         <div style={{ fontSize: 14, fontWeight: 700, letterSpacing: 6, color: T.docTitleColor, textTransform: "uppercase" }}>{label}</div>
         <div style={{ fontSize: 11, color: "#9ca3af", fontFamily: "monospace", marginTop: 4 }}>{form.number || "—"}</div>
       </div>
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", background: T.stripBg, borderBottom: `1px solid ${T.stripBorder}` }}>
-        <div style={{ padding: "14px 24px", borderRight: `1px solid ${T.stripBorder}`, textAlign: "center" }}>
-          <div style={{ fontSize: 8, fontWeight: 700, letterSpacing: 2, color: T.tableHeaderColor, textTransform: "uppercase", marginBottom: 6 }}>From</div>
-          <div style={{ fontSize: 12, fontWeight: 700, color: "#1e293b" }}>{form.company_name || "—"}</div>
-          {form.company_email && <div style={{ fontSize: 10, color: "#6b7280", marginTop: 3 }}>{form.company_email}</div>}
-        </div>
+      <div style={{ display: "grid", gridTemplateColumns: (docType === "invoice" || docType === "quotation") ? "1fr 1fr 1fr" : "1fr 1fr", background: T.stripBg, borderBottom: `1px solid ${T.stripBorder}` }}>
+        {(docType === "invoice" || docType === "quotation") && (
+          <div style={{ padding: "14px 24px", borderRight: `1px solid ${T.stripBorder}`, textAlign: "center" }}>
+            <div style={{ fontSize: 8, fontWeight: 700, letterSpacing: 2, color: T.tableHeaderColor, textTransform: "uppercase", marginBottom: 6 }}>From</div>
+            <div style={{ fontSize: 12, fontWeight: 700, color: "#1e293b" }}>{form.company_name || "—"}</div>
+            {form.company_email && <div style={{ fontSize: 10, color: "#6b7280", marginTop: 3 }}>{form.company_email}</div>}
+          </div>
+        )}
         <div style={{ padding: "14px 24px", borderRight: `1px solid ${T.stripBorder}`, textAlign: "center" }}>
           <div style={{ fontSize: 8, fontWeight: 700, letterSpacing: 2, color: T.tableHeaderColor, textTransform: "uppercase", marginBottom: 6 }}>{billToLabel}</div>
           <div style={{ fontSize: 12, fontWeight: 700, color: "#1e293b" }}>{form.customer_name || "—"}</div>
