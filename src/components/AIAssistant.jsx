@@ -39,7 +39,7 @@ export default function AIAssistant() {
   }, [stage]);
 
   const handleExtract = async () => {
-    if (!inputText.trim()) return;
+    if (!inputText.trim() && !attachedImage) return;
     setStage("extracting");
     const hasImage = !!attachedImage;
     const promptText = hasImage && !inputText.trim()
@@ -220,7 +220,7 @@ ${inputText || "(see attached image)"}
                     className="w-full h-12 font-bold gap-2 rounded-xl text-white"
                     style={{ background: "linear-gradient(135deg, #6366f1, #8b5cf6)" }}
                     onClick={handleExtract}
-                    disabled={!inputText.trim() || stage === "extracting"}
+                    disabled={(!inputText.trim() && !attachedImage) || stage === "extracting"}
                   >
                     {stage === "extracting"
                       ? <><Loader2 className="h-4 w-4 animate-spin" /> Extracting items…</>
