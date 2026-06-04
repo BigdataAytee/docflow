@@ -747,6 +747,7 @@ function UnifiedTemplate({ doc, onSaveManagerSig, onSaveCustomerSig, onOpenSignM
         <div>
           <p className="text-[10px] font-bold uppercase tracking-widest mb-2" style={{ color: T.tableHeaderColor }}>{customerLabel}</p>
           <p className="font-semibold text-gray-800 text-sm">{doc.customer_name || "—"}</p>
+          {doc.customer_company && <p className="text-gray-600 text-xs font-semibold mt-0.5">{doc.customer_company}</p>}
           {doc.customer_address && <p className="text-gray-500 text-xs whitespace-pre-line mt-0.5">{doc.customer_address}</p>}
           {doc.customer_email && <p className="text-gray-500 text-xs mt-0.5">{doc.customer_email}</p>}
         </div>
