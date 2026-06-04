@@ -259,6 +259,7 @@ function ClassicDoc({ form, items, calcs, sym, docType, managerSig, customerSig,
         <div style={{ textAlign: "right", fontSize: 11 }}>
           {form.issue_date && <div><span style={{ color: "#94a3b8" }}>{ISSUE_LABEL[docType] || "Date"}: </span><span style={{ fontWeight: 600, color: "#334155" }}>{form.issue_date}</span></div>}
           {form.due_date && DUE_LABEL[docType] && <div style={{ marginTop: 3 }}><span style={{ color: "#94a3b8" }}>{DUE_LABEL[docType]}: </span><span style={{ fontWeight: 600, color: "#334155" }}>{form.due_date}</span></div>}
+          {form.tax_number && <div style={{ marginTop: 3 }}><span style={{ color: "#94a3b8" }}>TIN: </span><span style={{ fontWeight: 600, color: "#334155" }}>{form.tax_number}</span></div>}
         </div>
       </div>
       <ItemsTable items={items} docType={docType} T={T} />
@@ -303,6 +304,7 @@ function ModernDoc({ form, items, calcs, sym, docType, managerSig, customerSig, 
         <div style={{ textAlign: "right" }}>
           {form.issue_date && <div style={{ fontSize: 10, color: "#64748b" }}><span style={{ color: "#94a3b8" }}>{ISSUE_LABEL[docType] || "Date"}: </span>{form.issue_date}</div>}
           {form.due_date && DUE_LABEL[docType] && <div style={{ fontSize: 10, color: "#64748b", marginTop: 2 }}><span style={{ color: "#94a3b8" }}>{DUE_LABEL[docType]}: </span>{form.due_date}</div>}
+          {form.tax_number && <div style={{ fontSize: 10, color: "#64748b", marginTop: 2 }}><span style={{ color: "#94a3b8" }}>TIN: </span>{form.tax_number}</div>}
           {docType !== "waybill" && (
             <div style={{ marginTop: 8, borderTop: `1px solid ${T.stripBorder}`, paddingTop: 6 }}>
               <div style={{ fontSize: 8, color: T.tableHeaderColor, textTransform: "uppercase" }}>{amountLabel}</div>
@@ -357,6 +359,7 @@ function MinimalDoc({ form, items, calcs, sym, docType, managerSig, customerSig,
         <div style={{ textAlign: "right" }}>
           {form.issue_date && <div style={{ fontSize: 10, color: "#9ca3af" }}>{ISSUE_LABEL[docType] || "Date"}: <span style={{ fontWeight: 600, color: "#374151" }}>{form.issue_date}</span></div>}
           {form.due_date && DUE_LABEL[docType] && <div style={{ fontSize: 10, color: "#9ca3af", marginTop: 2 }}>{DUE_LABEL[docType]}: <span style={{ fontWeight: 600, color: "#374151" }}>{form.due_date}</span></div>}
+          {form.tax_number && <div style={{ fontSize: 10, color: "#9ca3af", marginTop: 2 }}>TIN: <span style={{ fontWeight: 600, color: "#374151" }}>{form.tax_number}</span></div>}
           {docType !== "waybill" && (
             <div style={{ marginTop: 8 }}>
               <div style={{ fontSize: 8, fontWeight: 700, letterSpacing: 2, color: T.accentColor, textTransform: "uppercase", marginBottom: 3 }}>{amountLabel}</div>
@@ -406,6 +409,7 @@ function BoldDoc({ form, items, calcs, sym, docType, managerSig, customerSig, T 
             <div style={{ textAlign: "right" }}>
               {form.issue_date && <div style={{ fontSize: 10, color: T.headerColor, opacity: 0.65 }}>{ISSUE_LABEL[docType] || "Date"}: <span style={{ fontWeight: 600 }}>{form.issue_date}</span></div>}
               {form.due_date && DUE_LABEL[docType] && <div style={{ fontSize: 10, color: T.headerColor, opacity: 0.65, marginTop: 2 }}>{DUE_LABEL[docType]}: <span style={{ fontWeight: 600 }}>{form.due_date}</span></div>}
+              {form.tax_number && <div style={{ fontSize: 10, color: T.headerColor, opacity: 0.65, marginTop: 2 }}>TIN: <span style={{ fontWeight: 600 }}>{form.tax_number}</span></div>}
             </div>
           </div>
         </div>
@@ -467,6 +471,7 @@ function ElegantDoc({ form, items, calcs, sym, docType, managerSig, customerSig,
         <div style={{ textAlign: "right" }}>
           {form.issue_date && <div style={{ fontSize: 10, color: "#6b7280" }}>{ISSUE_LABEL[docType] || "Date"}: <span style={{ fontWeight: 600 }}>{form.issue_date}</span></div>}
           {form.due_date && DUE_LABEL[docType] && <div style={{ fontSize: 10, color: "#6b7280", marginTop: 2 }}>{DUE_LABEL[docType]}: <span style={{ fontWeight: 600 }}>{form.due_date}</span></div>}
+          {form.tax_number && <div style={{ fontSize: 10, color: "#6b7280", marginTop: 2 }}>TIN: <span style={{ fontWeight: 600 }}>{form.tax_number}</span></div>}
           {docType !== "waybill" && (
             <div style={{ marginTop: 8 }}>
               <div style={{ fontSize: 8, color: T.tableHeaderColor, textTransform: "uppercase", letterSpacing: 1 }}>{amountLabel}</div>

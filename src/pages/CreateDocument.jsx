@@ -102,6 +102,7 @@ export default function CreateDocument() {
     customer_name: "",
     customer_email: "",
     customer_address: "",
+    tax_number: "",
     currency: "NGN",
     tax_rate: "",
     shipping: "",
@@ -282,6 +283,7 @@ export default function CreateDocument() {
     customer_name: form.customer_name || "",
     customer_email: form.customer_email || "",
     customer_address: form.customer_address || "",
+    tax_number: form.tax_number || "",
     currency: form.currency || "NGN",
     tax_rate: parseFloat(form.tax_rate) || 0,
     tax_amount: calcs.taxAmt,
@@ -648,6 +650,10 @@ export default function CreateDocument() {
 
               <div className="sm:col-span-1"><Label>{L.issueDate}</Label><Input type="date" value={form.issue_date} onChange={e => setForm(f => ({ ...f, issue_date: e.target.value }))} /></div>
               {L.showDue && <div><Label>{L.dueDate}</Label><Input type="date" value={form.due_date} onChange={e => setForm(f => ({ ...f, due_date: e.target.value }))} /></div>}
+              <div className="sm:col-span-2">
+                <Label>Tax Identification Number (TIN)</Label>
+                <Input value={form.tax_number} onChange={e => setForm(f => ({ ...f, tax_number: e.target.value }))} placeholder="e.g. 1234567-0001" />
+              </div>
             </div>
           </div>
 

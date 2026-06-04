@@ -78,6 +78,10 @@
       "type": "string",
       "title": "Customer Address"
     },
+    "tax_number": {
+      "type": "string",
+      "title": "Tax Identification Number (TIN)"
+    },
     "logo_url": {
       "type": "string",
       "title": "Company Logo URL"
