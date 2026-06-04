@@ -257,6 +257,7 @@ function ClassicDoc({ form, items, calcs, sym, docType, managerSig, customerSig,
           {form.customer_email && <div style={{ fontSize: 10, color: "#94a3b8", marginTop: 2 }}>{form.customer_email}</div>}
         </div>
         <div style={{ textAlign: "right", fontSize: 11 }}>
+          {form.lpo_number && <div style={{ marginBottom: 3 }}><span style={{ color: "#94a3b8" }}>LPO: </span><span style={{ fontWeight: 600, color: "#334155" }}>{form.lpo_number}</span></div>}
           {form.issue_date && <div><span style={{ color: "#94a3b8" }}>{ISSUE_LABEL[docType] || "Date"}: </span><span style={{ fontWeight: 600, color: "#334155" }}>{form.issue_date}</span></div>}
           {form.due_date && DUE_LABEL[docType] && <div style={{ marginTop: 3 }}><span style={{ color: "#94a3b8" }}>{DUE_LABEL[docType]}: </span><span style={{ fontWeight: 600, color: "#334155" }}>{form.due_date}</span></div>}
           {form.tax_number && <div style={{ marginTop: 3 }}><span style={{ color: "#94a3b8" }}>TIN: </span><span style={{ fontWeight: 600, color: "#334155" }}>{form.tax_number}</span></div>}
@@ -302,6 +303,7 @@ function ModernDoc({ form, items, calcs, sym, docType, managerSig, customerSig, 
           {form.customer_address && <div style={{ fontSize: 10, color: "#64748b", marginTop: 2, whiteSpace: "pre-line" }}>{form.customer_address}</div>}
         </div>
         <div style={{ textAlign: "right" }}>
+          {form.lpo_number && <div style={{ fontSize: 10, color: "#64748b", marginBottom: 2 }}><span style={{ color: "#94a3b8" }}>LPO: </span>{form.lpo_number}</div>}
           {form.issue_date && <div style={{ fontSize: 10, color: "#64748b" }}><span style={{ color: "#94a3b8" }}>{ISSUE_LABEL[docType] || "Date"}: </span>{form.issue_date}</div>}
           {form.due_date && DUE_LABEL[docType] && <div style={{ fontSize: 10, color: "#64748b", marginTop: 2 }}><span style={{ color: "#94a3b8" }}>{DUE_LABEL[docType]}: </span>{form.due_date}</div>}
           {form.tax_number && <div style={{ fontSize: 10, color: "#64748b", marginTop: 2 }}><span style={{ color: "#94a3b8" }}>TIN: </span>{form.tax_number}</div>}
@@ -357,6 +359,7 @@ function MinimalDoc({ form, items, calcs, sym, docType, managerSig, customerSig,
           {form.customer_email && <div style={{ fontSize: 10, color: "#9ca3af", marginTop: 2 }}>{form.customer_email}</div>}
         </div>
         <div style={{ textAlign: "right" }}>
+          {form.lpo_number && <div style={{ fontSize: 10, color: "#9ca3af", marginBottom: 2 }}>LPO: <span style={{ fontWeight: 600, color: "#374151" }}>{form.lpo_number}</span></div>}
           {form.issue_date && <div style={{ fontSize: 10, color: "#9ca3af" }}>{ISSUE_LABEL[docType] || "Date"}: <span style={{ fontWeight: 600, color: "#374151" }}>{form.issue_date}</span></div>}
           {form.due_date && DUE_LABEL[docType] && <div style={{ fontSize: 10, color: "#9ca3af", marginTop: 2 }}>{DUE_LABEL[docType]}: <span style={{ fontWeight: 600, color: "#374151" }}>{form.due_date}</span></div>}
           {form.tax_number && <div style={{ fontSize: 10, color: "#9ca3af", marginTop: 2 }}>TIN: <span style={{ fontWeight: 600, color: "#374151" }}>{form.tax_number}</span></div>}
@@ -407,6 +410,7 @@ function BoldDoc({ form, items, calcs, sym, docType, managerSig, customerSig, T 
               {form.customer_address && <div style={{ fontSize: 10, color: T.headerColor, opacity: 0.65, whiteSpace: "pre-line", marginTop: 2 }}>{form.customer_address}</div>}
             </div>
             <div style={{ textAlign: "right" }}>
+              {form.lpo_number && <div style={{ fontSize: 10, color: T.headerColor, opacity: 0.65, marginBottom: 2 }}>LPO: <span style={{ fontWeight: 600 }}>{form.lpo_number}</span></div>}
               {form.issue_date && <div style={{ fontSize: 10, color: T.headerColor, opacity: 0.65 }}>{ISSUE_LABEL[docType] || "Date"}: <span style={{ fontWeight: 600 }}>{form.issue_date}</span></div>}
               {form.due_date && DUE_LABEL[docType] && <div style={{ fontSize: 10, color: T.headerColor, opacity: 0.65, marginTop: 2 }}>{DUE_LABEL[docType]}: <span style={{ fontWeight: 600 }}>{form.due_date}</span></div>}
               {form.tax_number && <div style={{ fontSize: 10, color: T.headerColor, opacity: 0.65, marginTop: 2 }}>TIN: <span style={{ fontWeight: 600 }}>{form.tax_number}</span></div>}
@@ -469,6 +473,7 @@ function ElegantDoc({ form, items, calcs, sym, docType, managerSig, customerSig,
           {form.customer_address && <div style={{ fontSize: 10, color: "#6b7280", marginTop: 3, whiteSpace: "pre-line" }}>{form.customer_address}</div>}
         </div>
         <div style={{ textAlign: "right" }}>
+          {form.lpo_number && <div style={{ fontSize: 10, color: "#6b7280", marginBottom: 2 }}>LPO: <span style={{ fontWeight: 600 }}>{form.lpo_number}</span></div>}
           {form.issue_date && <div style={{ fontSize: 10, color: "#6b7280" }}>{ISSUE_LABEL[docType] || "Date"}: <span style={{ fontWeight: 600 }}>{form.issue_date}</span></div>}
           {form.due_date && DUE_LABEL[docType] && <div style={{ fontSize: 10, color: "#6b7280", marginTop: 2 }}>{DUE_LABEL[docType]}: <span style={{ fontWeight: 600 }}>{form.due_date}</span></div>}
           {form.tax_number && <div style={{ fontSize: 10, color: "#6b7280", marginTop: 2 }}>TIN: <span style={{ fontWeight: 600 }}>{form.tax_number}</span></div>}

@@ -105,6 +105,7 @@ export default function CreateDocument() {
     customer_email: "",
     customer_address: "",
     tax_number: "",
+    lpo_number: "",
     currency: "NGN",
     tax_rate: "",
     shipping: "",
@@ -291,6 +292,7 @@ export default function CreateDocument() {
     customer_email: form.customer_email || "",
     customer_address: form.customer_address || "",
     tax_number: form.tax_number || "",
+    lpo_number: form.lpo_number || "",
     currency: form.currency || "NGN",
     tax_rate: parseFloat(form.tax_rate) || 0,
     tax_amount: calcs.taxAmt,
@@ -655,6 +657,10 @@ export default function CreateDocument() {
                 </DialogContent>
               </Dialog>
 
+              <div className="sm:col-span-2">
+                <Label>Local Purchase Order (LPO)</Label>
+                <Input value={form.lpo_number} onChange={e => setForm(f => ({ ...f, lpo_number: e.target.value }))} placeholder="e.g. LPO-2024-001" />
+              </div>
               <div className="sm:col-span-1"><Label>{L.issueDate}</Label><Input type="date" value={form.issue_date} onChange={e => setForm(f => ({ ...f, issue_date: e.target.value }))} /></div>
               {L.showDue && <div><Label>{L.dueDate}</Label><Input type="date" value={form.due_date} onChange={e => setForm(f => ({ ...f, due_date: e.target.value }))} /></div>}
               <div className="sm:col-span-2">

@@ -82,6 +82,10 @@
       "type": "string",
       "title": "Tax Identification Number (TIN)"
     },
+    "lpo_number": {
+      "type": "string",
+      "title": "Local Purchase Order (LPO)"
+    },
     "logo_url": {
       "type": "string",
       "title": "Company Logo URL"
