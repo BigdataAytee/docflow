@@ -249,18 +249,17 @@ function ClassicDoc({ form, items, calcs, sym, docType, managerSig, customerSig,
           )}
         </div>
       </div>
-      <div style={{ background: T.stripBg, borderBottom: `1px solid ${T.stripBorder}` }}>
-        <div style={{ padding: "18px 48px" }}>
+      <div style={{ background: T.stripBg, borderBottom: `1px solid ${T.stripBorder}`, display: "flex", justifyContent: "space-between", alignItems: "flex-start", padding: "18px 48px" }}>
+        <div>
           <div style={{ fontSize: 8, color: T.tableHeaderColor, textTransform: "uppercase", letterSpacing: 1.5, fontWeight: 700, marginBottom: 6 }}>{billToLabel}</div>
           <div style={{ fontSize: 12, fontWeight: 700, color: "#1e293b" }}>{form.customer_name || "—"}</div>
           {form.customer_address && <div style={{ fontSize: 10, color: "#64748b", marginTop: 3, whiteSpace: "pre-line" }}>{form.customer_address}</div>}
           {form.customer_email && <div style={{ fontSize: 10, color: "#94a3b8", marginTop: 2 }}>{form.customer_email}</div>}
         </div>
-      </div>
-      <div style={{ display: "flex", gap: 28, padding: "12px 48px", borderBottom: `1px solid ${T.stripBorder}`, fontSize: 11, background: "#fff" }}>
-        {form.issue_date && <div><span style={{ color: "#94a3b8" }}>{ISSUE_LABEL[docType] || "Date"}: </span><span style={{ fontWeight: 600, color: "#334155" }}>{form.issue_date}</span></div>}
-        {form.due_date && DUE_LABEL[docType] && <div><span style={{ color: "#94a3b8" }}>{DUE_LABEL[docType]}: </span><span style={{ fontWeight: 600, color: "#334155" }}>{form.due_date}</span></div>}
-
+        <div style={{ textAlign: "right", fontSize: 11 }}>
+          {form.issue_date && <div><span style={{ color: "#94a3b8" }}>{ISSUE_LABEL[docType] || "Date"}: </span><span style={{ fontWeight: 600, color: "#334155" }}>{form.issue_date}</span></div>}
+          {form.due_date && DUE_LABEL[docType] && <div style={{ marginTop: 3 }}><span style={{ color: "#94a3b8" }}>{DUE_LABEL[docType]}: </span><span style={{ fontWeight: 600, color: "#334155" }}>{form.due_date}</span></div>}
+        </div>
       </div>
       <ItemsTable items={items} docType={docType} T={T} />
       <ExtraFields form={form} docType={docType} T={T} />
@@ -295,14 +294,13 @@ function ModernDoc({ form, items, calcs, sym, docType, managerSig, customerSig, 
         </div>
         <div style={{ height: 6, background: T.accentColor, marginTop: 20 }} />
       </div>
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", borderBottom: `1px solid ${T.stripBorder}`, background: T.stripBg }}>
-        <div style={{ padding: "14px 20px", borderRight: `1px solid ${T.stripBorder}` }}>
+      <div style={{ borderBottom: `1px solid ${T.stripBorder}`, background: T.stripBg, display: "flex", justifyContent: "space-between", alignItems: "flex-start", padding: "14px 20px" }}>
+        <div>
           <div style={{ fontSize: 8, fontWeight: 700, color: T.tableHeaderColor, textTransform: "uppercase", letterSpacing: 1.5, marginBottom: 5 }}>{billToLabel}</div>
           <div style={{ fontSize: 12, fontWeight: 700, color: "#1e293b" }}>{form.customer_name || "—"}</div>
           {form.customer_address && <div style={{ fontSize: 10, color: "#64748b", marginTop: 2, whiteSpace: "pre-line" }}>{form.customer_address}</div>}
         </div>
-        <div style={{ padding: "14px 20px" }}>
-          <div style={{ fontSize: 8, fontWeight: 700, color: T.tableHeaderColor, textTransform: "uppercase", letterSpacing: 1.5, marginBottom: 5 }}>Details</div>
+        <div style={{ textAlign: "right" }}>
           {form.issue_date && <div style={{ fontSize: 10, color: "#64748b" }}><span style={{ color: "#94a3b8" }}>{ISSUE_LABEL[docType] || "Date"}: </span>{form.issue_date}</div>}
           {form.due_date && DUE_LABEL[docType] && <div style={{ fontSize: 10, color: "#64748b", marginTop: 2 }}><span style={{ color: "#94a3b8" }}>{DUE_LABEL[docType]}: </span>{form.due_date}</div>}
           {docType !== "waybill" && (
@@ -349,20 +347,23 @@ function MinimalDoc({ form, items, calcs, sym, docType, managerSig, customerSig,
         </div>
       </div>
       <div style={{ borderTop: "1px solid #f3f4f6", margin: "0 40px" }} />
-      <div style={{ padding: "16px 40px", display: "flex", gap: 48 }}>
+      <div style={{ padding: "16px 40px", display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
         <div>
           <div style={{ fontSize: 8, fontWeight: 700, letterSpacing: 2, color: T.accentColor, textTransform: "uppercase", marginBottom: 5 }}>{billToLabel}</div>
           <div style={{ fontSize: 13, fontWeight: 700, color: "#111827" }}>{form.customer_name || "—"}</div>
           {form.customer_address && <div style={{ fontSize: 10, color: "#6b7280", whiteSpace: "pre-line", marginTop: 2 }}>{form.customer_address}</div>}
           {form.customer_email && <div style={{ fontSize: 10, color: "#9ca3af", marginTop: 2 }}>{form.customer_email}</div>}
         </div>
-        {docType !== "waybill" && (
-          <div style={{ marginLeft: "auto", textAlign: "right" }}>
-            <div style={{ fontSize: 8, fontWeight: 700, letterSpacing: 2, color: T.accentColor, textTransform: "uppercase", marginBottom: 5 }}>{amountLabel}</div>
-            <div style={{ fontSize: 28, fontWeight: 900, color: "#111827" }}>{sym}{fmt(calcs?.total || 0)}</div>
-
-          </div>
-        )}
+        <div style={{ textAlign: "right" }}>
+          {form.issue_date && <div style={{ fontSize: 10, color: "#9ca3af" }}>{ISSUE_LABEL[docType] || "Date"}: <span style={{ fontWeight: 600, color: "#374151" }}>{form.issue_date}</span></div>}
+          {form.due_date && DUE_LABEL[docType] && <div style={{ fontSize: 10, color: "#9ca3af", marginTop: 2 }}>{DUE_LABEL[docType]}: <span style={{ fontWeight: 600, color: "#374151" }}>{form.due_date}</span></div>}
+          {docType !== "waybill" && (
+            <div style={{ marginTop: 8 }}>
+              <div style={{ fontSize: 8, fontWeight: 700, letterSpacing: 2, color: T.accentColor, textTransform: "uppercase", marginBottom: 3 }}>{amountLabel}</div>
+              <div style={{ fontSize: 28, fontWeight: 900, color: "#111827" }}>{sym}{fmt(calcs?.total || 0)}</div>
+            </div>
+          )}
+        </div>
       </div>
       <div style={{ borderTop: "1px solid #f3f4f6", margin: "0 40px 0" }} />
       <ItemsTable items={items} docType={docType} T={T} />
@@ -396,10 +397,16 @@ function BoldDoc({ form, items, calcs, sym, docType, managerSig, customerSig, T 
             {form.company_address && <div style={{ fontSize: 10, color: T.headerColor, opacity: 0.6, marginTop: 4, whiteSpace: "pre-line" }}>{form.company_address}</div>}
             {form.company_email && <div style={{ fontSize: 10, color: T.headerColor, opacity: 0.5, marginTop: 2 }}>{form.company_email}</div>}
           </div>
-          <div style={{ marginTop: 20 }}>
-            <div style={{ fontSize: 8, fontWeight: 700, color: T.headerColor, opacity: 0.5, textTransform: "uppercase", letterSpacing: 1.5, marginBottom: 4 }}>{billToLabel}</div>
-            <div style={{ fontSize: 13, fontWeight: 700, color: T.headerColor }}>{form.customer_name || "—"}</div>
-            {form.customer_address && <div style={{ fontSize: 10, color: T.headerColor, opacity: 0.65, whiteSpace: "pre-line", marginTop: 2 }}>{form.customer_address}</div>}
+          <div style={{ marginTop: 20, display: "flex", justifyContent: "space-between", alignItems: "flex-end" }}>
+            <div>
+              <div style={{ fontSize: 8, fontWeight: 700, color: T.headerColor, opacity: 0.5, textTransform: "uppercase", letterSpacing: 1.5, marginBottom: 4 }}>{billToLabel}</div>
+              <div style={{ fontSize: 13, fontWeight: 700, color: T.headerColor }}>{form.customer_name || "—"}</div>
+              {form.customer_address && <div style={{ fontSize: 10, color: T.headerColor, opacity: 0.65, whiteSpace: "pre-line", marginTop: 2 }}>{form.customer_address}</div>}
+            </div>
+            <div style={{ textAlign: "right" }}>
+              {form.issue_date && <div style={{ fontSize: 10, color: T.headerColor, opacity: 0.65 }}>{ISSUE_LABEL[docType] || "Date"}: <span style={{ fontWeight: 600 }}>{form.issue_date}</span></div>}
+              {form.due_date && DUE_LABEL[docType] && <div style={{ fontSize: 10, color: T.headerColor, opacity: 0.65, marginTop: 2 }}>{DUE_LABEL[docType]}: <span style={{ fontWeight: 600 }}>{form.due_date}</span></div>}
+            </div>
           </div>
         </div>
         <div style={{ background: rightBg, borderLeft: `4px solid ${rightBorder}`, padding: "32px 28px", display: "flex", flexDirection: "column", justifyContent: "space-between", alignItems: "flex-end" }}>
@@ -408,8 +415,6 @@ function BoldDoc({ form, items, calcs, sym, docType, managerSig, customerSig, T 
             <div style={{ fontSize: 12, fontFamily: "monospace", color: "#94a3b8", marginTop: 6 }}>{form.number || "—"}</div>
           </div>
           <div style={{ textAlign: "right" }}>
-            {form.issue_date && <div style={{ fontSize: 10, color: "#94a3b8" }}>{ISSUE_LABEL[docType] || "Date"}: <span style={{ fontWeight: 600, color: "#374151" }}>{form.issue_date}</span></div>}
-            {form.due_date && DUE_LABEL[docType] && <div style={{ fontSize: 10, color: "#94a3b8", marginTop: 2 }}>{DUE_LABEL[docType]}: <span style={{ fontWeight: 600, color: "#374151" }}>{form.due_date}</span></div>}
             {docType !== "waybill" && (
               <div style={{ marginTop: 12, borderTop: "2px solid rgba(255,255,255,0.35)", paddingTop: 8, textAlign: "right" }}>
                 <div style={{ fontSize: 9, color: "rgba(255,255,255,0.75)", textTransform: "uppercase", letterSpacing: 1 }}>{amountLabel}</div>
@@ -453,17 +458,15 @@ function ElegantDoc({ form, items, calcs, sym, docType, managerSig, customerSig,
         <div style={{ fontSize: 14, fontWeight: 700, letterSpacing: 6, color: T.docTitleColor, textTransform: "uppercase" }}>{label}</div>
         <div style={{ fontSize: 11, color: "#9ca3af", fontFamily: "monospace", marginTop: 4 }}>{form.number || "—"}</div>
       </div>
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", background: T.stripBg, borderBottom: `1px solid ${T.stripBorder}` }}>
-        <div style={{ padding: "14px 24px", borderRight: `1px solid ${T.stripBorder}`, textAlign: "center" }}>
+      <div style={{ background: T.stripBg, borderBottom: `1px solid ${T.stripBorder}`, display: "flex", justifyContent: "space-between", alignItems: "flex-start", padding: "14px 24px" }}>
+        <div style={{ textAlign: "center" }}>
           <div style={{ fontSize: 8, fontWeight: 700, letterSpacing: 2, color: T.tableHeaderColor, textTransform: "uppercase", marginBottom: 6 }}>{billToLabel}</div>
           <div style={{ fontSize: 12, fontWeight: 700, color: "#1e293b" }}>{form.customer_name || "—"}</div>
           {form.customer_address && <div style={{ fontSize: 10, color: "#6b7280", marginTop: 3, whiteSpace: "pre-line" }}>{form.customer_address}</div>}
         </div>
-        <div style={{ padding: "14px 24px", textAlign: "center" }}>
-          <div style={{ fontSize: 8, fontWeight: 700, letterSpacing: 2, color: T.tableHeaderColor, textTransform: "uppercase", marginBottom: 6 }}>Details</div>
-          {form.issue_date && <div style={{ fontSize: 10, color: "#6b7280" }}>{ISSUE_LABEL[docType] || "Date"}: {form.issue_date}</div>}
-          {form.due_date && DUE_LABEL[docType] && <div style={{ fontSize: 10, color: "#6b7280", marginTop: 2 }}>{DUE_LABEL[docType]}: {form.due_date}</div>}
-
+        <div style={{ textAlign: "right" }}>
+          {form.issue_date && <div style={{ fontSize: 10, color: "#6b7280" }}>{ISSUE_LABEL[docType] || "Date"}: <span style={{ fontWeight: 600 }}>{form.issue_date}</span></div>}
+          {form.due_date && DUE_LABEL[docType] && <div style={{ fontSize: 10, color: "#6b7280", marginTop: 2 }}>{DUE_LABEL[docType]}: <span style={{ fontWeight: 600 }}>{form.due_date}</span></div>}
           {docType !== "waybill" && (
             <div style={{ marginTop: 8 }}>
               <div style={{ fontSize: 8, color: T.tableHeaderColor, textTransform: "uppercase", letterSpacing: 1 }}>{amountLabel}</div>
