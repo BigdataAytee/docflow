@@ -708,11 +708,6 @@ export default function CreateDocument() {
                     <SelectContent>
                       <SelectItem value="none">— None —</SelectItem>
                       <SelectItem value="Bank Transfer">Bank Transfer</SelectItem>
-                      <SelectItem value="POS">POS</SelectItem>
-                      <SelectItem value="Credit Card">Credit Card</SelectItem>
-                      <SelectItem value="Mobile Money">Mobile Money</SelectItem>
-                      <SelectItem value="Cheque">Cheque</SelectItem>
-                      <SelectItem value="Cash">Cash</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
