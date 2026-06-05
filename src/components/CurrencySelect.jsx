@@ -1,6 +1,9 @@
-import React, { useState, useRef, useEffect } from "react";
-import { Input } from "@/components/ui/input";
-import { ChevronDown } from "lucide-react";
+import { useState } from "react";
+import { Check, ChevronsUpDown } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { cn } from "@/lib/utils";
 
 export const CURRENCIES = [
   { value: "NGN", label: "₦ NGN — Nigerian Naira" },
@@ -69,7 +72,6 @@ export const CURRENCIES = [
   { value: "CZK", label: "Kč CZK — Czech Koruna" },
   { value: "RON", label: "lei RON — Romanian Leu" },
   { value: "BGN", label: "лв BGN — Bulgarian Lev" },
-  { value: "HRK", label: "kn HRK — Croatian Kuna" },
   { value: "RSD", label: "din RSD — Serbian Dinar" },
   { value: "TRY", label: "₺ TRY — Turkish Lira" },
   { value: "UAH", label: "₴ UAH — Ukrainian Hryvnia" },
@@ -99,71 +101,44 @@ export const CURRENCIES = [
 
 export default function CurrencySelect({ value, onValueChange, className }) {
   const [open, setOpen] = useState(false);
-  const [search, setSearch] = useState("");
-  const containerRef = useRef(null);
-  const inputRef = useRef(null);
-
   const selected = CURRENCIES.find(c => c.value === value);
-  const filtered = search
-    ? CURRENCIES.filter(c => c.label.toLowerCase().includes(search.toLowerCase()) || c.value.toLowerCase().includes(search.toLowerCase()))
-    : CURRENCIES;
-
-  useEffect(() => {
-    const handler = (e) => {
-      if (containerRef.current && !containerRef.current.contains(e.target)) {
-        setOpen(false);
-        setSearch("");
-      }
-    };
-    document.addEventListener("mousedown", handler);
-    return () => document.removeEventListener("mousedown", handler);
-  }, []);
-
-  const handleSelect = (currency) => {
-    onValueChange(currency.value);
-    setOpen(false);
-    setSearch("");
-  };
 
   return (
-    <div ref={containerRef} className={`relative ${className || ""}`}>
-      <button
-        type="button"
-        onClick={() => { setOpen(o => !o); setTimeout(() => inputRef.current?.focus(), 50); }}
-        className="flex h-9 w-full items-center justify-between rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-1 focus:ring-ring"
-      >
-        <span>{selected ? selected.label : "Select currency"}</span>
-        <ChevronDown className="h-4 w-4 opacity-50 shrink-0" />
-      </button>
-
-      {open && (
-        <div className="absolute z-50 mt-1 w-full rounded-md border bg-popover text-popover-foreground shadow-md">
-          <div className="p-2 border-b">
-            <Input
-              ref={inputRef}
-              value={search}
-              onChange={e => setSearch(e.target.value)}
-              placeholder="Search currency..."
-              className="h-8 text-sm"
-            />
-          </div>
-          <div className="max-h-60 overflow-y-auto p-1">
-            {filtered.length === 0 && (
-              <div className="py-6 text-center text-sm text-muted-foreground">No results</div>
-            )}
-            {filtered.map(c => (
-              <button
-                key={c.value}
-                type="button"
-                onClick={() => handleSelect(c)}
-                className={`relative flex w-full cursor-default select-none items-center rounded-sm py-1.5 px-2 text-sm outline-none hover:bg-accent hover:text-accent-foreground ${c.value === value ? "bg-accent text-accent-foreground font-medium" : ""}`}
-              >
-                {c.label}
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
-    </div>
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <Button
+          variant="outline"
+          role="combobox"
+          aria-expanded={open}
+          className={cn("w-full justify-between font-normal", className)}
+        >
+          <span className="truncate">{selected ? selected.label : "Select currency..."}</span>
+          <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0" align="start">
+        <Command>
+          <CommandInput placeholder="Search currency..." />
+          <CommandList>
+            <CommandEmpty>No currency found.</CommandEmpty>
+            <CommandGroup>
+              {CURRENCIES.map(c => (
+                <CommandItem
+                  key={c.value}
+                  value={c.label}
+                  onSelect={() => {
+                    onValueChange(c.value);
+                    setOpen(false);
+                  }}
+                >
+                  <Check className={cn("mr-2 h-4 w-4", value === c.value ? "opacity-100" : "opacity-0")} />
+                  {c.label}
+                </CommandItem>
+              ))}
+            </CommandGroup>
+          </CommandList>
+        </Command>
+      </PopoverContent>
+    </Popover>
   );
 }
