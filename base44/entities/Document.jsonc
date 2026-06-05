@@ -209,6 +209,16 @@
       "type": "number",
       "default": 0
     },
+    "withholding_vat_rate": {
+      "type": "number",
+      "default": 0,
+      "title": "Withholding VAT Rate %"
+    },
+    "withholding_vat_amount": {
+      "type": "number",
+      "default": 0,
+      "title": "Withholding VAT Amount"
+    },
     "shipping": {
       "type": "number",
       "default": 0

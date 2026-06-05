@@ -73,6 +73,8 @@ function ItemsTable({ items, docType, T }) {
 
 function TotalsBlock({ calcs, form, sym, T, amountLabel }) {
   if (!calcs) return null;
+  const withholdingVatAmt = calcs.withholdingVatAmt || 0;
+  const netPayable = calcs.netPayable ?? calcs.total;
   return (
     <div style={{ display: "flex", justifyContent: "flex-end", padding: "18px 48px 28px" }}>
       <div style={{ width: 300, fontSize: 14 }}>
@@ -82,6 +84,17 @@ function TotalsBlock({ calcs, form, sym, T, amountLabel }) {
         <div style={{ display: "flex", justifyContent: "space-between", padding: "14px 0 8px", borderTop: `2px solid ${T.totalBorder}`, marginTop: 10, fontWeight: 900, fontSize: 18, color: "#0f172a" }}>
           <span style={{ fontSize: 16 }}>{amountLabel}</span><span style={{ color: T.accentColor, fontSize: 20 }}>{sym}{fmt(calcs.total)}</span>
         </div>
+        {withholdingVatAmt > 0 && (
+          <>
+            <div style={{ display: "flex", justifyContent: "space-between", padding: "7px 0", color: "#dc2626", fontWeight: 500, fontSize: 13 }}>
+              <span>Withholding VAT ({form.withholding_vat_rate}%)</span>
+              <span style={{ fontWeight: 600 }}>-{sym}{fmt(withholdingVatAmt)}</span>
+            </div>
+            <div style={{ display: "flex", justifyContent: "space-between", padding: "12px 0 8px", borderTop: "2px dashed #16a34a", marginTop: 4, fontWeight: 900, fontSize: 16, color: "#15803d" }}>
+              <span>Net Payable</span><span style={{ fontSize: 20 }}>{sym}{fmt(netPayable)}</span>
+            </div>
+          </>
+        )}
       </div>
     </div>
   );

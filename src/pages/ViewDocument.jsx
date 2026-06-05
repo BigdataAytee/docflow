@@ -644,7 +644,7 @@ export default function ViewDocument() {
                     <DocumentPreview
                       form={doc}
                       items={doc.items || []}
-                      calcs={{ subtotal: doc.subtotal, taxAmt: doc.tax_amount, total: doc.total }}
+                      calcs={{ subtotal: doc.subtotal, taxAmt: doc.tax_amount, total: doc.total, withholdingVatAmt: doc.withholding_vat_amount || 0, netPayable: doc.balance_due || doc.total }}
                       sym={CURRENCY_SYMBOLS[doc.currency] || doc.currency || "₦"}
                       docType={doc.type}
                       managerSig={doc.manager_signature}
@@ -816,8 +816,20 @@ function UnifiedTemplate({ doc, onSaveManagerSig, onSaveCustomerSig, onOpenSignM
               )}
               <div className="flex justify-between py-3" style={{ borderTop: `2px solid ${T.totalBorder}` }}>
                 <span className="font-black text-gray-900 uppercase text-sm">{amountLabel}</span>
-                <span className="font-black text-gray-900 text-lg">{fmtCurr(doc.balance_due || doc.total)}</span>
+                <span className="font-black text-gray-900 text-lg">{fmtCurr(doc.total)}</span>
               </div>
+              {doc.withholding_vat_amount > 0 && (
+                <>
+                  <div className="flex justify-between py-1 text-red-600">
+                    <span>Withholding VAT ({doc.withholding_vat_rate}%)</span>
+                    <span>(-) {fmtAmt(doc.withholding_vat_amount)}</span>
+                  </div>
+                  <div className="flex justify-between py-3" style={{ borderTop: "2px dashed #16a34a" }}>
+                    <span className="font-black text-green-700 uppercase text-sm">Net Payable</span>
+                    <span className="font-black text-green-700 text-lg">{fmtCurr(doc.balance_due)}</span>
+                  </div>
+                </>
+              )}
             </div>
           </div>
         )}

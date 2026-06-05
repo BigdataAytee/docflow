@@ -114,6 +114,7 @@ export default function CreateDocument() {
     terms: "",
     terms_label: "Due on Receipt",
     global_discount_rate: "",
+    withholding_vat_rate: "",
     manager_name: "",
     manager_title: "",
     payment_instructions: "",
@@ -279,9 +280,11 @@ export default function CreateDocument() {
     const globalDiscAmt = subtotal * ((parseFloat(form.global_discount_rate) || 0) / 100);
     const discountedSubtotal = subtotal - globalDiscAmt;
     const taxAmt = discountedSubtotal * ((parseFloat(form.tax_rate) || 0) / 100);
+    const withholdingVatAmt = taxAmt * ((parseFloat(form.withholding_vat_rate) || 0) / 100);
     const total = discountedSubtotal + taxAmt + (parseFloat(form.shipping) || 0);
-    return { lineItems, subtotal, globalDiscAmt, taxAmt, total };
-  }, [items, form.tax_rate, form.shipping, form.global_discount_rate]);
+    const netPayable = total - withholdingVatAmt;
+    return { lineItems, subtotal, globalDiscAmt, taxAmt, withholdingVatAmt, netPayable, total };
+  }, [items, form.tax_rate, form.shipping, form.global_discount_rate, form.withholding_vat_rate]);
 
   const handleBackClick = (e) => {
     if (isDirty) { e.preventDefault(); setShowLeaveModal(true); }
@@ -310,8 +313,10 @@ export default function CreateDocument() {
     global_discount_amount: calcs.globalDiscAmt,
     discount_total: calcs.globalDiscAmt,
     shipping: parseFloat(form.shipping) || 0,
+    withholding_vat_rate: parseFloat(form.withholding_vat_rate) || 0,
+    withholding_vat_amount: calcs.withholdingVatAmt || 0,
     total: calcs.total,
-    balance_due: calcs.total,
+    balance_due: calcs.netPayable ?? calcs.total,
     notes: form.notes || "",
     terms: form.terms || "",
     terms_label: form.terms_label || "Due on Receipt",
@@ -949,10 +954,25 @@ export default function CreateDocument() {
                     <Input className="w-32 h-8 text-xs text-right" value={form.shipping} onChange={e => setForm(f => ({ ...f, shipping: e.target.value }))} onKeyDown={numericOnly} onFocus={e => e.target.select()} placeholder="0" />
                   </div>
                 )}
+                {L.showTax && (
+                  <div className="flex items-center justify-between gap-2">
+                    <Label className="text-muted-foreground font-normal">Withholding VAT %</Label>
+                    <div className="flex items-center gap-2">
+                      <Input className="w-20 h-8 text-xs" value={form.withholding_vat_rate} onChange={e => setForm(f => ({ ...f, withholding_vat_rate: e.target.value }))} onKeyDown={numericOnly} onFocus={e => e.target.select()} placeholder="0" />
+                      <span className="text-red-500 text-xs w-24 text-right">-{sym}{(calcs.withholdingVatAmt || 0).toLocaleString("en", { minimumFractionDigits: 2 })}</span>
+                    </div>
+                  </div>
+                )}
                 <div className="border-t border-border pt-3 flex justify-between">
                   <span className="font-bold">{docType === "receipt" ? "Amount Received" : "Total"}</span>
                   <span className="text-xl font-black text-primary">{sym}{calcs.total.toLocaleString("en", { minimumFractionDigits: 2 })}</span>
                 </div>
+                {L.showTax && (calcs.withholdingVatAmt || 0) > 0 && (
+                  <div className="border-t border-dashed border-border pt-3 flex justify-between items-center">
+                    <span className="font-bold text-emerald-700">Net Payable</span>
+                    <span className="text-xl font-black text-emerald-700">{sym}{(calcs.netPayable || 0).toLocaleString("en", { minimumFractionDigits: 2 })}</span>
+                  </div>
+                )}
               </div>
             </div>
           )}
