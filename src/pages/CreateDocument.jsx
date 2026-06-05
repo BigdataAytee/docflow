@@ -14,6 +14,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import CustomerForm from "../components/CustomerForm";
 import BankDetailsFields from "../components/BankDetailsFields";
+import CurrencySelect, { CURRENCIES } from "../components/CurrencySelect";
 import SignaturePad from "../components/SignaturePad";
 import DocumentPreview from "../components/DocumentPreview";
 import { toast } from "sonner";
@@ -38,9 +39,8 @@ const DOC_LABELS = {
 
 const DEFAULT_PREFIXES = { invoice: "INV", quotation: "QUO", receipt: "REC", waybill: "WB" };
 
-const CURRENCIES = [
-  { value: "NGN", label: "₦ NGN — Nigerian Naira" },
-  { value: "USD", label: "$ USD — US Dollar" },
+const _PLACEHOLDER_START = [
+  { value: "USD_PLACEHOLDER", label: "placeholder" },
   { value: "EUR", label: "€ EUR — Euro" },
   { value: "GBP", label: "£ GBP — British Pound" },
   { value: "GHS", label: "₵ GHS — Ghana Cedi" },
@@ -778,12 +778,7 @@ export default function CreateDocument() {
               </div>
               <div>
                 <Label>Currency</Label>
-                <Select value={form.currency} onValueChange={v => setForm(f => ({ ...f, currency: v }))}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    {CURRENCIES.map(c => <SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>)}
-                  </SelectContent>
-                </Select>
+                <CurrencySelect value={form.currency} onValueChange={v => setForm(f => ({ ...f, currency: v }))} />
               </div>
               <div>
                 <Label>{L.customer}</Label>
