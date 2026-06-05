@@ -18,10 +18,8 @@ export default function ConvertDocumentModal({ doc, targetType, onConfirm, onClo
   const isWaybill = targetType === "waybill";
 
   const prefix = isInvoice ? "INV" : isReceipt ? "REC" : "WB";
-  const suggestedNumber = doc.number
-    .replace(/^INV/i, prefix)
-    .replace(/^QUO/i, prefix)
-    .replace(/^QU/i, prefix);
+  // Replace the type segment (INV/QUO/QU/REC/WB) wherever it appears in the number
+  const suggestedNumber = doc.number.replace(/\b(INV|QUO|QU|REC|WB)\b/gi, prefix);
 
   const [form, setForm] = useState({
     number: suggestedNumber,
