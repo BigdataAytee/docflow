@@ -10,6 +10,7 @@ import { toast } from "sonner";
 import { ImageIcon, Building2, FileText, Hash, User, Save, Upload, X, CheckCircle2, AlertTriangle, Paintbrush } from "lucide-react";
 import DocumentDesign from "./settings/DocumentDesign";
 import SignaturePad from "../components/SignaturePad";
+import BankDetailsFields from "../components/BankDetailsFields";
 
 const TABS = [
   { id: "company",   label: "Company",   icon: Building2,  emoji: "🏢" },
@@ -69,6 +70,8 @@ export default function Settings() {
     default_bank_name: "",
     default_account_number: "",
     default_account_holder_name: "",
+    default_bank_reference: "",
+    default_bank_swift: "",
   });
 
   useEffect(() => {
@@ -98,6 +101,8 @@ export default function Settings() {
           default_bank_name: user.default_bank_name || "",
           default_account_number: user.default_account_number || "",
           default_account_holder_name: user.default_account_holder_name || "",
+          default_bank_reference: user.default_bank_reference || "",
+          default_bank_swift: user.default_bank_swift || "",
         };
         setForm(loaded);
         setSavedForm(loaded);
@@ -452,12 +457,34 @@ export default function Settings() {
           </Section>
 
           <Section title="Default Bank Account" emoji="🏦">
-            <p className="text-xs text-muted-foreground mb-4">Auto-fills on new invoices and quotations when Bank Transfer is selected.</p>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div><Label>Bank Name</Label><Input className="mt-1" value={form.default_bank_name} onChange={e => update("default_bank_name", e.target.value)} placeholder="e.g. First Bank" /></div>
-              <div><Label>Account Number</Label><Input className="mt-1" value={form.default_account_number} onChange={e => update("default_account_number", e.target.value)} placeholder="e.g. 0123456789" /></div>
-              <div className="sm:col-span-2"><Label>Account Holder Name</Label><Input className="mt-1" value={form.default_account_holder_name} onChange={e => update("default_account_holder_name", e.target.value)} placeholder="e.g. Acme Limited" /></div>
-            </div>
+            <p className="text-xs text-muted-foreground mb-4">Auto-fills on new invoices and quotations when Bank Transfer is selected. Fields shown depend on your default currency.</p>
+            <BankDetailsFields
+              currency={form.default_currency}
+              form={{
+                bank_name: form.default_bank_name,
+                account_number: form.default_account_number,
+                account_holder_name: form.default_account_holder_name,
+                reference_number: form.default_bank_reference,
+                transaction_id: form.default_bank_swift,
+              }}
+              setForm={patch => setForm(prev => {
+                const resolved = typeof patch === "function" ? patch({
+                  bank_name: prev.default_bank_name,
+                  account_number: prev.default_account_number,
+                  account_holder_name: prev.default_account_holder_name,
+                  reference_number: prev.default_bank_reference,
+                  transaction_id: prev.default_bank_swift,
+                }) : patch;
+                return {
+                  ...prev,
+                  ...(resolved.bank_name !== undefined && { default_bank_name: resolved.bank_name }),
+                  ...(resolved.account_number !== undefined && { default_account_number: resolved.account_number }),
+                  ...(resolved.account_holder_name !== undefined && { default_account_holder_name: resolved.account_holder_name }),
+                  ...(resolved.reference_number !== undefined && { default_bank_reference: resolved.reference_number }),
+                  ...(resolved.transaction_id !== undefined && { default_bank_swift: resolved.transaction_id }),
+                };
+              })}
+            />
           </Section>
 
           <Section title="Document Content Defaults" emoji="📝">
