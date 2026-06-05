@@ -1,8 +1,8 @@
-import { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { Input } from "@/components/ui/input";
 import { ChevronDown } from "lucide-react";
 
-const CURRENCIES = [
+export const CURRENCIES = [
   { value: "NGN", label: "₦ NGN — Nigerian Naira" },
   { value: "USD", label: "$ USD — US Dollar" },
   { value: "EUR", label: "€ EUR — Euro" },
@@ -49,7 +49,6 @@ const CURRENCIES = [
   { value: "AOA", label: "Kz AOA — Angolan Kwanza" },
   { value: "CDF", label: "Fr CDF — Congolese Franc" },
   { value: "SLL", label: "Le SLL — Sierra Leonean Leone" },
-  { value: "GNF", label: "Fr GNF — Guinean Franc" },
   { value: "LRD", label: "L$ LRD — Liberian Dollar" },
   { value: "SOS", label: "Sh SOS — Somali Shilling" },
   { value: "SDG", label: "SDG SDG — Sudanese Pound" },
@@ -76,80 +75,31 @@ const CURRENCIES = [
   { value: "UAH", label: "₴ UAH — Ukrainian Hryvnia" },
   { value: "RUB", label: "₽ RUB — Russian Ruble" },
   { value: "KZT", label: "₸ KZT — Kazakhstani Tenge" },
-  { value: "UZS", label: "soʻm UZS — Uzbekistani Som" },
   { value: "GEL", label: "₾ GEL — Georgian Lari" },
-  { value: "AMD", label: "֏ AMD — Armenian Dram" },
-  { value: "AZN", label: "₼ AZN — Azerbaijani Manat" },
   { value: "ILS", label: "₪ ILS — Israeli Shekel" },
   { value: "IRR", label: "﷼ IRR — Iranian Rial" },
   { value: "IQD", label: "ع.د IQD — Iraqi Dinar" },
-  { value: "LBP", label: "L£ LBP — Lebanese Pound" },
-  { value: "SYP", label: "£ SYP — Syrian Pound" },
-  { value: "YER", label: "﷼ YER — Yemeni Rial" },
-  { value: "AFN", label: "؋ AFN — Afghan Afghani" },
   { value: "CLP", label: "$ CLP — Chilean Peso" },
   { value: "COP", label: "$ COP — Colombian Peso" },
   { value: "PEN", label: "S/ PEN — Peruvian Sol" },
   { value: "ARS", label: "$ ARS — Argentine Peso" },
   { value: "BOB", label: "Bs BOB — Bolivian Boliviano" },
-  { value: "PYG", label: "₲ PYG — Paraguayan Guaraní" },
   { value: "UYU", label: "$ UYU — Uruguayan Peso" },
-  { value: "VES", label: "Bs.S VES — Venezuelan Bolívar" },
   { value: "GTQ", label: "Q GTQ — Guatemalan Quetzal" },
-  { value: "HNL", label: "L HNL — Honduran Lempira" },
-  { value: "NIO", label: "C$ NIO — Nicaraguan Córdoba" },
   { value: "CRC", label: "₡ CRC — Costa Rican Colón" },
-  { value: "PAB", label: "B/. PAB — Panamanian Balboa" },
   { value: "DOP", label: "RD$ DOP — Dominican Peso" },
-  { value: "HTG", label: "G HTG — Haitian Gourde" },
   { value: "JMD", label: "J$ JMD — Jamaican Dollar" },
   { value: "TTD", label: "TT$ TTD — Trinidad & Tobago Dollar" },
-  { value: "BBD", label: "Bds$ BBD — Barbadian Dollar" },
-  { value: "BSD", label: "B$ BSD — Bahamian Dollar" },
-  { value: "BZD", label: "BZ$ BZD — Belize Dollar" },
-  { value: "GYD", label: "G$ GYD — Guyanese Dollar" },
-  { value: "SRD", label: "Sr$ SRD — Surinamese Dollar" },
   { value: "FJD", label: "FJ$ FJD — Fijian Dollar" },
-  { value: "PGK", label: "K PGK — Papua New Guinean Kina" },
-  { value: "WST", label: "T WST — Samoan Tālā" },
-  { value: "TOP", label: "T$ TOP — Tongan Paʻanga" },
-  { value: "SBD", label: "SI$ SBD — Solomon Islands Dollar" },
-  { value: "VUV", label: "Vt VUV — Vanuatu Vatu" },
-  { value: "KYD", label: "CI$ KYD — Cayman Islands Dollar" },
-  { value: "BMD", label: "BD$ BMD — Bermudian Dollar" },
-  { value: "XCD", label: "EC$ XCD — East Caribbean Dollar" },
-  { value: "AWG", label: "Afl AWG — Aruban Florin" },
-  { value: "ANG", label: "ƒ ANG — Netherlands Antillean Guilder" },
   { value: "ISK", label: "kr ISK — Icelandic Króna" },
-  { value: "MKD", label: "ден MKD — Macedonian Denar" },
-  { value: "ALL", label: "L ALL — Albanian Lek" },
-  { value: "MDL", label: "L MDL — Moldovan Leu" },
-  { value: "BAM", label: "KM BAM — Bosnia & Herzegovina Mark" },
-  { value: "MNT", label: "₮ MNT — Mongolian Tögrög" },
-  { value: "KHR", label: "₭ KHR — Cambodian Riel" },
-  { value: "LAK", label: "₭ LAK — Lao Kip" },
-  { value: "MOP", label: "P MOP — Macanese Pataca" },
-  { value: "BTN", label: "Nu BTN — Bhutanese Ngultrum" },
-  { value: "MVR", label: "Rf MVR — Maldivian Rufiyaa" },
-  { value: "SCR", label: "₨ SCR — Seychellois Rupee" },
-  { value: "MUR", label: "₨ MUR — Mauritian Rupee" },
-  { value: "MGA", label: "Ar MGA — Malagasy Ariary" },
-  { value: "KMF", label: "Fr KMF — Comorian Franc" },
-  { value: "DJF", label: "Fr DJF — Djiboutian Franc" },
-  { value: "ERN", label: "Nfk ERN — Eritrean Nakfa" },
-  { value: "STN", label: "Db STN — São Tomé & Príncipe Dobra" },
-  { value: "CVE", label: "Esc CVE — Cape Verdean Escudo" },
-  { value: "GMD", label: "D GMD — Gambian Dalasi" },
+  { value: "ZWL", label: "Z$ ZWL — Zimbabwean Dollar" },
   { value: "SZL", label: "E SZL — Swazi Lilangeni" },
   { value: "LSL", label: "L LSL — Lesotho Loti" },
-  { value: "ZWL", label: "Z$ ZWL — Zimbabwean Dollar" },
 ];
 
-export { CURRENCIES };
-
-export default function CurrencySelect({ value, onValueChange, className = "" }) {
-  const [search, setSearch] = useState("");
+export default function CurrencySelect({ value, onValueChange, className }) {
   const [open, setOpen] = useState(false);
+  const [search, setSearch] = useState("");
   const containerRef = useRef(null);
   const inputRef = useRef(null);
 
@@ -159,14 +109,14 @@ export default function CurrencySelect({ value, onValueChange, className = "" })
     : CURRENCIES;
 
   useEffect(() => {
-    const handleClickOutside = (e) => {
+    const handler = (e) => {
       if (containerRef.current && !containerRef.current.contains(e.target)) {
         setOpen(false);
         setSearch("");
       }
     };
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
   }, []);
 
   const handleSelect = (currency) => {
@@ -176,47 +126,41 @@ export default function CurrencySelect({ value, onValueChange, className = "" })
   };
 
   return (
-    <div ref={containerRef} className={`relative ${className}`}>
-      <div
-        className="flex h-9 w-full items-center justify-between whitespace-nowrap rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm cursor-pointer hover:bg-accent/30 transition-colors"
-        onClick={() => {
-          setOpen(o => !o);
-          setTimeout(() => inputRef.current?.focus(), 50);
-        }}
+    <div ref={containerRef} className={`relative ${className || ""}`}>
+      <button
+        type="button"
+        onClick={() => { setOpen(o => !o); setTimeout(() => inputRef.current?.focus(), 50); }}
+        className="flex h-9 w-full items-center justify-between rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-1 focus:ring-ring"
       >
-        <span className={selected ? "text-foreground" : "text-muted-foreground"}>
-          {selected ? selected.label : "Select currency"}
-        </span>
+        <span>{selected ? selected.label : "Select currency"}</span>
         <ChevronDown className="h-4 w-4 opacity-50 shrink-0" />
-      </div>
+      </button>
 
       {open && (
-        <div className="absolute z-50 mt-1 w-full min-w-[220px] rounded-md border border-border bg-popover shadow-md overflow-hidden">
-          <div className="p-2 border-b border-border">
+        <div className="absolute z-50 mt-1 w-full rounded-md border bg-popover text-popover-foreground shadow-md">
+          <div className="p-2 border-b">
             <Input
               ref={inputRef}
               value={search}
               onChange={e => setSearch(e.target.value)}
-              placeholder="Search currency…"
+              placeholder="Search currency..."
               className="h-8 text-sm"
-              onClick={e => e.stopPropagation()}
             />
           </div>
-          <div className="max-h-60 overflow-y-auto">
-            {filtered.length === 0 ? (
-              <div className="px-3 py-4 text-sm text-muted-foreground text-center">No currencies found</div>
-            ) : (
-              filtered.map(c => (
-                <div
-                  key={c.value}
-                  className={`px-3 py-2 text-sm cursor-pointer hover:bg-accent hover:text-accent-foreground transition-colors flex items-center justify-between ${c.value === value ? "bg-accent/50 font-medium" : ""}`}
-                  onClick={() => handleSelect(c)}
-                >
-                  {c.label}
-                  {c.value === value && <span className="text-primary text-xs">✓</span>}
-                </div>
-              ))
+          <div className="max-h-60 overflow-y-auto p-1">
+            {filtered.length === 0 && (
+              <div className="py-6 text-center text-sm text-muted-foreground">No results</div>
             )}
+            {filtered.map(c => (
+              <button
+                key={c.value}
+                type="button"
+                onClick={() => handleSelect(c)}
+                className={`relative flex w-full cursor-default select-none items-center rounded-sm py-1.5 px-2 text-sm outline-none hover:bg-accent hover:text-accent-foreground ${c.value === value ? "bg-accent text-accent-foreground font-medium" : ""}`}
+              >
+                {c.label}
+              </button>
+            ))}
           </div>
         </div>
       )}
