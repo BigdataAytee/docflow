@@ -42,6 +42,11 @@ const CURRENCIES = [
   { value: "USD", label: "$ USD — US Dollar" },
   { value: "EUR", label: "€ EUR — Euro" },
   { value: "GBP", label: "£ GBP — British Pound" },
+  { value: "GHS", label: "₵ GHS — Ghana Cedi" },
+  { value: "KES", label: "KSh KES — Kenyan Shilling" },
+  { value: "ZAR", label: "R ZAR — South African Rand" },
+  { value: "CAD", label: "C$ CAD — Canadian Dollar" },
+  { value: "AUD", label: "A$ AUD — Australian Dollar" },
 ];
 
 export default function CreateDocument() {
@@ -382,7 +387,8 @@ export default function CreateDocument() {
     return () => clearTimeout(autoSaveTimerRef.current);
   }, [form, items, managerSig, customerSig]);
 
-  const sym = CURRENCIES.find(c => c.value === form.currency)?.label.split(" ")[0] || "₦";
+  const CURRENCY_SYMBOLS = { NGN: "₦", USD: "$", EUR: "€", GBP: "£", GHS: "₵", KES: "KSh", ZAR: "R", CAD: "C$", AUD: "A$" };
+  const sym = CURRENCY_SYMBOLS[form.currency] || CURRENCIES.find(c => c.value === form.currency)?.label.split(" ")[0] || "₦";
 
   const pdfRef = useRef(null);
   const [generatingPdf, setGeneratingPdf] = useState(false);
