@@ -10,7 +10,6 @@ import { toast } from "sonner";
 import { ImageIcon, Building2, FileText, Hash, User, Save, Upload, X, CheckCircle2, AlertTriangle, Paintbrush } from "lucide-react";
 import DocumentDesign from "./settings/DocumentDesign";
 import SignaturePad from "../components/SignaturePad";
-import CurrencySelector from "../components/CurrencySelector";
 
 const TABS = [
   { id: "company",   label: "Company",   icon: Building2,  emoji: "🏢" },
@@ -365,7 +364,85 @@ export default function Settings() {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <Label>Default Currency</Label>
-                <CurrencySelector value={form.default_currency} onValueChange={v => update("default_currency", v)} className="mt-1" />
+                <Select value={form.default_currency} onValueChange={v => update("default_currency", v)}>
+                  <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
+                  <SelectContent className="max-h-72">
+                    <SelectItem value="NGN">₦ NGN — Nigerian Naira</SelectItem>
+                    <SelectItem value="USD">$ USD — US Dollar</SelectItem>
+                    <SelectItem value="EUR">€ EUR — Euro</SelectItem>
+                    <SelectItem value="GBP">£ GBP — British Pound</SelectItem>
+                    <SelectItem value="GHS">₵ GHS — Ghana Cedi</SelectItem>
+                    <SelectItem value="KES">KSh KES — Kenyan Shilling</SelectItem>
+                    <SelectItem value="ZAR">R ZAR — South African Rand</SelectItem>
+                    <SelectItem value="CAD">C$ CAD — Canadian Dollar</SelectItem>
+                    <SelectItem value="AUD">A$ AUD — Australian Dollar</SelectItem>
+                    <SelectItem value="JPY">¥ JPY — Japanese Yen</SelectItem>
+                    <SelectItem value="CNY">¥ CNY — Chinese Yuan</SelectItem>
+                    <SelectItem value="INR">₹ INR — Indian Rupee</SelectItem>
+                    <SelectItem value="BRL">R$ BRL — Brazilian Real</SelectItem>
+                    <SelectItem value="MXN">$ MXN — Mexican Peso</SelectItem>
+                    <SelectItem value="CHF">Fr CHF — Swiss Franc</SelectItem>
+                    <SelectItem value="SGD">S$ SGD — Singapore Dollar</SelectItem>
+                    <SelectItem value="HKD">HK$ HKD — Hong Kong Dollar</SelectItem>
+                    <SelectItem value="SEK">kr SEK — Swedish Krona</SelectItem>
+                    <SelectItem value="NOK">kr NOK — Norwegian Krone</SelectItem>
+                    <SelectItem value="DKK">kr DKK — Danish Krone</SelectItem>
+                    <SelectItem value="NZD">NZ$ NZD — New Zealand Dollar</SelectItem>
+                    <SelectItem value="AED">د.إ AED — UAE Dirham</SelectItem>
+                    <SelectItem value="SAR">﷼ SAR — Saudi Riyal</SelectItem>
+                    <SelectItem value="QAR">﷼ QAR — Qatari Riyal</SelectItem>
+                    <SelectItem value="KWD">د.ك KWD — Kuwaiti Dinar</SelectItem>
+                    <SelectItem value="BHD">BD BHD — Bahraini Dinar</SelectItem>
+                    <SelectItem value="OMR">﷼ OMR — Omani Rial</SelectItem>
+                    <SelectItem value="JOD">JD JOD — Jordanian Dinar</SelectItem>
+                    <SelectItem value="EGP">£ EGP — Egyptian Pound</SelectItem>
+                    <SelectItem value="MAD">MAD MAD — Moroccan Dirham</SelectItem>
+                    <SelectItem value="TND">DT TND — Tunisian Dinar</SelectItem>
+                    <SelectItem value="DZD">DA DZD — Algerian Dinar</SelectItem>
+                    <SelectItem value="ETB">Br ETB — Ethiopian Birr</SelectItem>
+                    <SelectItem value="TZS">TSh TZS — Tanzanian Shilling</SelectItem>
+                    <SelectItem value="UGX">USh UGX — Ugandan Shilling</SelectItem>
+                    <SelectItem value="RWF">Fr RWF — Rwandan Franc</SelectItem>
+                    <SelectItem value="XOF">Fr XOF — West African CFA Franc</SelectItem>
+                    <SelectItem value="XAF">Fr XAF — Central African CFA Franc</SelectItem>
+                    <SelectItem value="ZMW">ZK ZMW — Zambian Kwacha</SelectItem>
+                    <SelectItem value="MWK">MK MWK — Malawian Kwacha</SelectItem>
+                    <SelectItem value="BWP">P BWP — Botswana Pula</SelectItem>
+                    <SelectItem value="NAD">N$ NAD — Namibian Dollar</SelectItem>
+                    <SelectItem value="MZN">MT MZN — Mozambican Metical</SelectItem>
+                    <SelectItem value="AOA">Kz AOA — Angolan Kwanza</SelectItem>
+                    <SelectItem value="PKR">₨ PKR — Pakistani Rupee</SelectItem>
+                    <SelectItem value="BDT">৳ BDT — Bangladeshi Taka</SelectItem>
+                    <SelectItem value="LKR">₨ LKR — Sri Lankan Rupee</SelectItem>
+                    <SelectItem value="NPR">₨ NPR — Nepalese Rupee</SelectItem>
+                    <SelectItem value="THB">฿ THB — Thai Baht</SelectItem>
+                    <SelectItem value="VND">₫ VND — Vietnamese Dong</SelectItem>
+                    <SelectItem value="IDR">Rp IDR — Indonesian Rupiah</SelectItem>
+                    <SelectItem value="MYR">RM MYR — Malaysian Ringgit</SelectItem>
+                    <SelectItem value="PHP">₱ PHP — Philippine Peso</SelectItem>
+                    <SelectItem value="KRW">₩ KRW — South Korean Won</SelectItem>
+                    <SelectItem value="TWD">NT$ TWD — Taiwan Dollar</SelectItem>
+                    <SelectItem value="HUF">Ft HUF — Hungarian Forint</SelectItem>
+                    <SelectItem value="PLN">zł PLN — Polish Zloty</SelectItem>
+                    <SelectItem value="CZK">Kč CZK — Czech Koruna</SelectItem>
+                    <SelectItem value="RON">lei RON — Romanian Leu</SelectItem>
+                    <SelectItem value="TRY">₺ TRY — Turkish Lira</SelectItem>
+                    <SelectItem value="UAH">₴ UAH — Ukrainian Hryvnia</SelectItem>
+                    <SelectItem value="RUB">₽ RUB — Russian Ruble</SelectItem>
+                    <SelectItem value="ILS">₪ ILS — Israeli Shekel</SelectItem>
+                    <SelectItem value="ARS">$ ARS — Argentine Peso</SelectItem>
+                    <SelectItem value="BRL">R$ BRL — Brazilian Real</SelectItem>
+                    <SelectItem value="CLP">$ CLP — Chilean Peso</SelectItem>
+                    <SelectItem value="COP">$ COP — Colombian Peso</SelectItem>
+                    <SelectItem value="PEN">S/ PEN — Peruvian Sol</SelectItem>
+                    <SelectItem value="CRC">₡ CRC — Costa Rican Colón</SelectItem>
+                    <SelectItem value="DOP">RD$ DOP — Dominican Peso</SelectItem>
+                    <SelectItem value="JMD">J$ JMD — Jamaican Dollar</SelectItem>
+                    <SelectItem value="TTD">TT$ TTD — Trinidad & Tobago Dollar</SelectItem>
+                    <SelectItem value="FJD">FJ$ FJD — Fijian Dollar</SelectItem>
+                    <SelectItem value="ISK">kr ISK — Icelandic Króna</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
               <div>
                 <Label>Default VAT / Tax Rate (%)</Label>
