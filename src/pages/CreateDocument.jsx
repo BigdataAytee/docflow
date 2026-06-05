@@ -13,6 +13,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import CustomerForm from "../components/CustomerForm";
+import BankDetailsFields from "../components/BankDetailsFields";
 import SignaturePad from "../components/SignaturePad";
 import DocumentPreview from "../components/DocumentPreview";
 import { toast } from "sonner";
@@ -297,7 +298,7 @@ export default function CreateDocument() {
       if (user.default_bank_name || user.default_account_number) {
         const saved = { bank_name: user.default_bank_name || "", account_number: user.default_account_number || "", account_holder_name: user.default_account_holder_name || "" };
         setSavedBankDetails(saved);
-        setForm(f => ({ ...f, bank_name: saved.bank_name, account_number: saved.account_number, account_holder_name: saved.account_holder_name }));
+        setForm(f => ({ ...f, bank_name: saved.bank_name, account_number: saved.account_number, account_holder_name: saved.account_holder_name, reference_number: user.default_bank_reference || f.reference_number, transaction_id: user.default_bank_swift || f.transaction_id }));
       }
 
       setForm(f => ({
@@ -863,11 +864,7 @@ export default function CreateDocument() {
               {form.payment_method === "Bank Transfer" && (
                 <div className="border border-border rounded-xl p-4 bg-muted/30 space-y-3">
                   <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Bank Details</p>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div><Label>Bank Name</Label><Input value={form.bank_name} onChange={e => setForm(f => ({ ...f, bank_name: e.target.value }))} placeholder="e.g. First Bank" /></div>
-                    <div><Label>Account Number</Label><Input value={form.account_number} onChange={e => setForm(f => ({ ...f, account_number: e.target.value }))} placeholder="e.g. 0123456789" /></div>
-                    <div className="col-span-2"><Label>Account Holder Name</Label><Input value={form.account_holder_name} onChange={e => setForm(f => ({ ...f, account_holder_name: e.target.value }))} placeholder="e.g. John Doe" /></div>
-                  </div>
+                  <BankDetailsFields currency={form.currency} form={form} setForm={setForm} />
                   <div className="flex items-center gap-3 pt-1">
                     {savedBankDetails && form.bank_name === savedBankDetails.bank_name && form.account_number === savedBankDetails.account_number ? (
                       <span className="text-xs text-emerald-600 font-medium">✓ Using saved bank details</span>
@@ -877,7 +874,7 @@ export default function CreateDocument() {
                         disabled={savingBankDetails || !form.bank_name || !form.account_number}
                         onClick={async () => {
                           setSavingBankDetails(true);
-                          await base44.auth.updateMe({ default_bank_name: form.bank_name, default_account_number: form.account_number, default_account_holder_name: form.account_holder_name });
+                          await base44.auth.updateMe({ default_bank_name: form.bank_name, default_account_number: form.account_number, default_account_holder_name: form.account_holder_name, default_bank_reference: form.reference_number, default_bank_swift: form.transaction_id });
                           setSavedBankDetails({ bank_name: form.bank_name, account_number: form.account_number, account_holder_name: form.account_holder_name });
                           setSavingBankDetails(false);
                           toast.success("Bank details saved — they'll auto-fill on new documents.");
