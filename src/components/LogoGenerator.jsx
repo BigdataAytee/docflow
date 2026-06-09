@@ -96,7 +96,7 @@ export default function LogoGenerator({ open, onClose, onApply }) {
       // Auto-generate enhanced preview immediately
       setGenerating(true);
       const basePrompt = buildPrompt({ companyName, industry, style, logoType, color, extraDetails });
-      const prompt = `${basePrompt}\nUse the provided reference image as inspiration — enhance, modernise, and reimagine it while keeping recognisable brand elements.`;
+      const prompt = `Enhance and professionally polish this exact logo. Keep the same icon, shapes, layout, and overall composition completely intact. Only improve: sharpness, colour vibrancy, contrast, line quality, and professional finish. Apply a ${STYLES.find(s=>s.id===style)?.label || style} visual style and use ${COLORS.find(c=>c.id===color)?.hex || color} as the primary colour accent where appropriate. Pure white background, crisp edges, print-ready quality. Do NOT redesign or replace any element.`;
       const result = await base44.integrations.Core.GenerateImage({ prompt, existing_image_urls: [file_url] });
       setPreviewUrl(result.url);
     } catch {
@@ -113,7 +113,7 @@ export default function LogoGenerator({ open, onClose, onApply }) {
     try {
       const basePrompt = buildPrompt({ companyName, industry, style, logoType, color, extraDetails });
       const prompt = referenceUrl
-        ? `${basePrompt}\nUse the provided reference image as inspiration — enhance, modernise, and reimagine it while keeping recognisable brand elements.`
+        ? `Enhance and professionally polish this exact logo. Keep the same icon, shapes, layout, and overall composition completely intact. Only improve: sharpness, colour vibrancy, contrast, line quality, and professional finish. Apply a ${STYLES.find(s=>s.id===style)?.label || style} visual style and use ${COLORS.find(c=>c.id===color)?.hex || color} as the primary colour accent where appropriate. Pure white background, crisp edges, print-ready quality. Do NOT redesign or replace any element.`
         : basePrompt;
       const result = await base44.integrations.Core.GenerateImage({
         prompt,
