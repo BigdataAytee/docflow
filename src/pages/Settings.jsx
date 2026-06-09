@@ -7,11 +7,12 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
-import { ImageIcon, Building2, FileText, Hash, User, Save, Upload, X, CheckCircle2, AlertTriangle, Paintbrush } from "lucide-react";
+import { ImageIcon, Building2, FileText, Hash, User, Save, Upload, X, CheckCircle2, AlertTriangle, Paintbrush, Sparkles } from "lucide-react";
 import DocumentDesign from "./settings/DocumentDesign";
 import SignaturePad from "../components/SignaturePad";
 import BankDetailsFields from "../components/BankDetailsFields";
 import CurrencySelect from "@/components/CurrencySelect";
+import LogoGenerator from "@/components/LogoGenerator";
 
 const TABS = [
   { id: "company",   label: "Company",   icon: Building2,  emoji: "🏢" },
@@ -39,6 +40,7 @@ export default function Settings() {
   const logoInputRef = useRef(null);
   const [logoPreview, setLogoPreview] = useState(null);
   const [uploadingLogo, setUploadingLogo] = useState(false);
+  const [showLogoStudio, setShowLogoStudio] = useState(false);
   const [saving, setSaving] = useState(false);
   const [activeTab, setActiveTab] = useState("company");
   const [managerSig, setManagerSig] = useState(null);
@@ -327,12 +329,18 @@ export default function Settings() {
                 <p className="text-xs">Appears on all invoices, quotations, receipts and waybills.</p>
                 <p className="text-xs text-muted-foreground">PNG with transparent background, min 200×200px recommended.</p>
                 {uploadingLogo && <p className="text-indigo-600 text-xs animate-pulse">⏳ Uploading…</p>}
-                <div className="flex gap-3 pt-1">
+                <div className="flex flex-wrap gap-2 pt-1">
                   <button
                     onClick={() => logoInputRef.current?.click()}
                     className="flex items-center gap-1.5 text-xs font-semibold text-indigo-600 border border-indigo-200 rounded-lg px-3 py-1.5 hover:bg-indigo-50 transition-colors"
                   >
                     <Upload className="h-3.5 w-3.5" /> Upload Logo
+                  </button>
+                  <button
+                    onClick={() => setShowLogoStudio(true)}
+                    className="flex items-center gap-1.5 text-xs font-semibold text-violet-700 border border-violet-200 rounded-lg px-3 py-1.5 hover:bg-violet-50 transition-colors"
+                  >
+                    <Sparkles className="h-3.5 w-3.5" /> Logo Studio ✨
                   </button>
                   {logoPreview && (
                     <button
@@ -347,6 +355,15 @@ export default function Settings() {
               <input ref={logoInputRef} type="file" accept="image/*" className="hidden" onChange={handleLogoChange} />
             </div>
           </Section>
+
+          <LogoGenerator
+            open={showLogoStudio}
+            onClose={() => setShowLogoStudio(false)}
+            onApply={(url) => {
+              setLogoPreview(url);
+              setForm(f => ({ ...f, logo_url: url }));
+            }}
+          />
 
           <Section title="Company Information" emoji="🏢">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
