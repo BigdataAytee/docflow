@@ -279,10 +279,10 @@ export default function CompanySetup() {
             <Button
               variant="outline"
               className="flex-1 h-11 text-slate-600"
-              onClick={() => window.location.href = "/"}
+              onClick={() => window.location.href = "/login"}
               disabled={saving}
             >
-              ← Back to Home
+              ← Back to Welcome Page
             </Button>
             <Button
               className="flex-1 h-11 font-bold gap-2"
