@@ -9,6 +9,35 @@ import {
 import GoogleIcon from "@/components/GoogleIcon";
 import LoginBackground from "@/components/auth/LoginBackground";
 
+/* ─── testimonials ──────────────────────────────────────────────── */
+const TESTIMONIALS = [
+  { name: "Sarah K.",       title: "Freelance Consultant",       text: "DocFlow transformed how I bill clients. Fast, beautiful, and my customers always compliment the invoices." },
+  { name: "James O.",       title: "E-commerce Owner",           text: "I used to dread invoicing. Now I send professional receipts in under a minute. Absolutely love it." },
+  { name: "Amaka T.",       title: "Creative Director",          text: "My clients think I have a whole finance team. It's just me and DocFlow." },
+  { name: "Daniel R.",      title: "Logistics Manager",          text: "The waybill feature alone saved us hours every week. Drivers get clear delivery docs instantly." },
+  { name: "Fatima A.",      title: "Boutique Owner",             text: "Looks so professional. Customers actually comment on how beautiful my receipts look!" },
+  { name: "Mark L.",        title: "IT Contractor",              text: "Billing used to take half my day. DocFlow cuts it to 5 minutes. My accountant is happy too." },
+  { name: "Chisom N.",      title: "Event Planner",              text: "Quotations are sent in seconds. Clients approve faster and I close deals quicker." },
+  { name: "Priya M.",       title: "Marketing Consultant",       text: "The branding on the documents is spot-on. Clients always ask which tool I use." },
+  { name: "Kevin B.",       title: "Freelance Developer",        text: "Clean, fast, and no clutter. Exactly what I needed for sending project invoices." },
+  { name: "Ngozi E.",       title: "Catering Business Owner",    text: "I send waybills with delivery proof now. No more disputes with customers!" },
+  { name: "Luis G.",        title: "Import/Export Trader",       text: "Multi-currency support is a game changer. I deal in 4 currencies and it handles all of them." },
+  { name: "Blessing I.",    title: "Beauty Salon Owner",         text: "My receipts look like they came from a luxury brand. Clients keep coming back." },
+  { name: "Tom W.",         title: "Construction Contractor",    text: "Professional quotations that win jobs. I've noticed clients respond faster since I switched." },
+  { name: "Aisha M.",       title: "Fashion Designer",           text: "Sending styled invoices that match my brand aesthetic was always my dream. DocFlow delivers." },
+  { name: "Emmanuel C.",    title: "Accountant",                 text: "I recommend DocFlow to all my small business clients. It saves them time and looks credible." },
+  { name: "Sophie L.",      title: "Online Tutor",               text: "Invoicing parents for lessons used to be awkward. Now it's clean and totally professional." },
+  { name: "Rahul P.",       title: "Restaurant Owner",           text: "Daily receipts, supplier waybills — all handled in one place. Makes life so much easier." },
+  { name: "Grace U.",       title: "Freelance Writer",           text: "I never thought invoice software could be beautiful. DocFlow proved me wrong." },
+  { name: "Olumide F.",     title: "Real Estate Agent",          text: "My quote documents look premium now. Clients take my pricing more seriously." },
+  { name: "Anna V.",        title: "Interior Designer",          text: "From mood boards to invoices, my brand stays consistent. DocFlow fits right in." },
+  { name: "Chukwuemeka A.", title: "Pharmacy Owner",             text: "Managing receipts for hundreds of transactions daily is seamless. Zero errors." },
+  { name: "Ravi S.",        title: "Tech Startup Founder",       text: "Our investors were impressed by our polished financial documents. DocFlow helped us look big from day one." },
+  { name: "Adaeze O.",      title: "Bakery Owner",               text: "Customers love receiving a proper receipt. It builds trust and they come back more." },
+  { name: "Jake T.",        title: "Plumber & Tradesman",        text: "Used to write invoices by hand. Now I'm done before I leave the client's house." },
+  { name: "Miriam K.",      title: "NGO Coordinator",            text: "Donor receipts and expense reports look so credible now. Makes fundraising easier." },
+];
+
 /* ─── helpers ──────────────────────────────────────────────────── */
 function getGreeting() {
   const h = new Date().getHours();
@@ -119,6 +148,8 @@ export default function Login() {
   const [heroIn, setHeroIn]             = useState(false);
   const [formIn, setFormIn]             = useState(false);
   const [docsIn, setDocsIn]             = useState(false);
+  const [testimonialIdx, setTestimonialIdx] = useState(() => Math.floor(Math.random() * TESTIMONIALS.length));
+  const [testimonialVisible, setTestimonialVisible] = useState(true);
 
   const greeting = getGreeting();
 
@@ -127,7 +158,17 @@ export default function Login() {
     const t2 = setTimeout(() => setHeroIn(true), 240);
     const t3 = setTimeout(() => setFormIn(true), 360);
     const t4 = setTimeout(() => setDocsIn(true), 540);
-    return () => [t1, t2, t3, t4].forEach(clearTimeout);
+
+    // rotate testimonial every 6 seconds with a fade
+    const interval = setInterval(() => {
+      setTestimonialVisible(false);
+      setTimeout(() => {
+        setTestimonialIdx(i => (i + 1) % TESTIMONIALS.length);
+        setTestimonialVisible(true);
+      }, 400);
+    }, 6000);
+
+    return () => { [t1, t2, t3, t4].forEach(clearTimeout); clearInterval(interval); };
   }, []);
 
   const handleSubmit = async (e) => {
@@ -308,16 +349,20 @@ export default function Login() {
             ))}
           </div>
 
-          {/* Testimonial */}
+          {/* Testimonial — rotates every 6s */}
           <div style={{ ...fadeUp(docsIn,100), borderTop:"1px solid rgba(255,255,255,0.07)" }} className="pt-5">
-            <div className="flex items-start gap-3.5">
-              <div className="w-9 h-9 rounded-xl flex items-center justify-center font-black text-sm text-white shrink-0"
-                style={{ background:"linear-gradient(135deg,#818cf8,#a78bfa)" }}>S</div>
+            <div className="flex items-start gap-3.5" style={{ opacity: testimonialVisible ? 1 : 0, transition: "opacity 0.4s ease" }}>
+              <div className="w-9 h-9 rounded-xl flex items-center justify-center font-black text-sm text-white shrink-0 uppercase"
+                style={{ background:"linear-gradient(135deg,#818cf8,#a78bfa)", flexShrink: 0 }}>
+                {TESTIMONIALS[testimonialIdx].name[0]}
+              </div>
               <div>
                 <p className="text-[12px] italic leading-relaxed" style={{ color:"rgba(255,255,255,0.52)" }}>
-                  "DocFlow transformed how I bill clients. Fast, beautiful, and my customers always compliment the invoices."
+                  "{TESTIMONIALS[testimonialIdx].text}"
                 </p>
-                <p className="text-[10px] mt-1.5 font-semibold" style={{ color:"rgba(255,255,255,0.22)" }}>Sarah K. · Freelance Consultant</p>
+                <p className="text-[10px] mt-1.5 font-semibold" style={{ color:"rgba(255,255,255,0.22)" }}>
+                  {TESTIMONIALS[testimonialIdx].name} · {TESTIMONIALS[testimonialIdx].title}
+                </p>
               </div>
             </div>
           </div>
