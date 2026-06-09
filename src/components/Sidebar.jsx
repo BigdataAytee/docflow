@@ -1,8 +1,8 @@
 import { Link, useLocation } from "react-router-dom";
 import { Users, Settings, LogOut, ShieldAlert, Home, HelpCircle } from "lucide-react";
-import { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
+import { useAuth } from "@/lib/AuthContext";
 
 const navItems = [
   { label: "Home",        icon: Home,       path: "/" },
@@ -15,21 +15,12 @@ const navItems = [
 
 export default function Sidebar({ onClose }) {
   const location = useLocation();
-  const [companyName, setCompanyName] = useState("");
-  const [companyEmail, setCompanyEmail] = useState("");
-  const [isAdmin, setIsAdmin] = useState(false);
-  const [logoUrl, setLogoUrl] = useState("");
+  const { user } = useAuth();
 
-  useEffect(() => {
-    base44.auth.me().then(user => {
-      if (user) {
-        setCompanyName(user.company_name || user.full_name || "");
-        setCompanyEmail(user.company_email || user.email || "");
-        setIsAdmin(user.role === "admin");
-        setLogoUrl(user.logo_url || "");
-      }
-    });
-  }, []);
+  const companyName = user?.company_name || user?.full_name || "";
+  const companyEmail = user?.company_email || user?.email || "";
+  const isAdmin = user?.role === "admin";
+  const logoUrl = user?.logo_url || "";
 
   const initials = companyName
     ? companyName.split(" ").map(w => w[0]).slice(0, 2).join("").toUpperCase()

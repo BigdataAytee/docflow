@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "@/lib/AuthContext";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -48,6 +49,7 @@ export default function Settings() {
   const [savedForm, setSavedForm] = useState(null);
   const [userInfo, setUserInfo] = useState(null);
   const navigate = useNavigate();
+  const { refreshUser } = useAuth();
   const [showLeaveModal, setShowLeaveModal] = useState(false);
   const [pendingNav, setPendingNav] = useState(null);
   const [form, setForm] = useState({
@@ -221,6 +223,7 @@ export default function Settings() {
     ));
     setSavedManagerSig(managerSig);
     setSavedForm({ ...form });
+    await refreshUser();
     setSaving(false);
     toast.success("Settings saved and applied to all documents");
   };
