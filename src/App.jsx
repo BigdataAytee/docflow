@@ -24,6 +24,7 @@ import Apps from './pages/Apps';
 import WaybillSign from './pages/WaybillSign';
 import AdminDashboard from './pages/AdminDashboard';
 import Help from './pages/Help';
+import CompanySetup from './pages/CompanySetup';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -52,6 +53,7 @@ const AuthenticatedApp = () => {
   return (
     <Routes>
       <Route path="/waybill-sign" element={<WaybillSign />} />
+      <Route path="/company-setup" element={<CompanySetup />} />
       <Route path="/login" element={<Login />} />
       <Route path="/register" element={<Register />} />
       <Route path="/forgot-password" element={<ForgotPassword />} />
