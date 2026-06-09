@@ -29,7 +29,7 @@ const FEATURES = [
 const STATS = [
   { icon: Zap,        value: "< 2 min", label: "per document" },
   { icon: Shield,     value: "256-bit", label: "encryption"   },
-  { icon: TrendingUp, value: "10,000+", label: "businesses"   },
+  { icon: TrendingUp, value: "1000s", label: "of businesses"   },
 ];
 
 const DOCS = [
@@ -241,7 +241,7 @@ export default function Login() {
               <div className="inline-flex items-center gap-2 bg-white/[0.06] border border-white/[0.11] rounded-full px-4 py-1.5 mb-7">
                 <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
                 <span className="text-[11px] font-semibold tracking-wide" style={{ color: "rgba(255,255,255,0.72)" }}>
-                  Trusted by 10,000+ businesses
+                  Trusted by thousands of businesses
                 </span>
               </div>
             </div>
