@@ -170,13 +170,26 @@ export default function LogoGenerator({ open, onClose, onApply }) {
             <div>
               <Label className="text-xs font-bold">Industry</Label>
               <select
-                value={industry}
-                onChange={e => setIndustry(e.target.value)}
+                value={INDUSTRIES.includes(industry) ? industry : industry ? "other" : ""}
+                onChange={e => {
+                  if (e.target.value === "other") setIndustry("other");
+                  else setIndustry(e.target.value);
+                }}
                 className="mt-1.5 flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
               >
                 <option value="">Select industry (optional)</option>
                 {INDUSTRIES.map(i => <option key={i} value={i}>{i}</option>)}
+                <option value="other">Other (type below)</option>
               </select>
+              {(industry === "other" || (!INDUSTRIES.includes(industry) && industry !== "")) && (
+                <Input
+                  className="mt-2 text-sm"
+                  value={industry === "other" ? "" : industry}
+                  onChange={e => setIndustry(e.target.value)}
+                  placeholder="Type your industry..."
+                  autoFocus
+                />
+              )}
             </div>
 
             {/* Logo Type */}
