@@ -93,11 +93,17 @@ export default function LogoGenerator({ open, onClose, onApply }) {
     try {
       const { file_url } = await base44.integrations.Core.UploadFile({ file });
       setReferenceUrl(file_url);
-      toast.success("Reference logo uploaded!");
+      // Auto-generate enhanced preview immediately
+      setGenerating(true);
+      const basePrompt = buildPrompt({ companyName, industry, style, logoType, color, extraDetails });
+      const prompt = `${basePrompt}\nUse the provided reference image as inspiration — enhance, modernise, and reimagine it while keeping recognisable brand elements.`;
+      const result = await base44.integrations.Core.GenerateImage({ prompt, existing_image_urls: [file_url] });
+      setPreviewUrl(result.url);
     } catch {
-      toast.error("Upload failed.");
+      toast.error("Upload or generation failed.");
     } finally {
       setUploadingRef(false);
+      setGenerating(false);
     }
   };
 
