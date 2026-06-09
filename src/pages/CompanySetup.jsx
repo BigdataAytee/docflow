@@ -77,10 +77,6 @@ export default function CompanySetup() {
     window.location.href = "/";
   };
 
-  const handleSkip = () => {
-    window.location.href = "/";
-  };
-
   const filled = [
     form.company_name,
     form.company_address,
@@ -281,12 +277,12 @@ export default function CompanySetup() {
           {/* Actions */}
           <div className="flex items-center gap-3 pt-1">
             <Button
-              variant="ghost"
-              className="flex-1 h-11 text-slate-500"
-              onClick={handleSkip}
+              variant="outline"
+              className="flex-1 h-11 text-slate-600"
+              onClick={() => window.location.href = "/"}
               disabled={saving}
             >
-              Skip for now
+              ← Back to Home
             </Button>
             <Button
               className="flex-1 h-11 font-bold gap-2"
