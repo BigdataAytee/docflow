@@ -45,12 +45,14 @@ const COLORS = [
 ];
 
 const ENHANCE_MODES = [
-  { id: "polish",    label: "Polish",     icon: Sparkles,   desc: "Sharpen lines & boost quality",   prompt: "Professionally polish and sharpen this logo. Improve line crispness, contrast, and overall print quality. Keep every element, shape, colour and composition exactly as-is. White background. Do NOT redesign anything." },
-  { id: "colorize",  label: "Recolour",   icon: Palette,    desc: "Apply a fresh colour palette",    prompt: "Recolour this logo with a more vibrant and modern colour palette while keeping every shape, icon, and layout completely identical. Only change the colours — do not move, remove, or add any design element. White background." },
-  { id: "contrast",  label: "Contrast",   icon: Contrast,   desc: "Boost contrast & vibrancy",       prompt: "Enhance the contrast, saturation, and vibrancy of this logo dramatically. Preserve every shape, text, and layout element exactly. Make it pop visually. White background. Do NOT change the design." },
-  { id: "clean",     label: "Clean Up",   icon: Crop,       desc: "Remove noise & artefacts",        prompt: "Clean up this logo: remove any compression artefacts, jagged edges, noise or blurriness. Produce a crisp vector-like result. Keep all shapes, colours, and text 100% identical. White background only." },
-  { id: "style",     label: "Restyle",    icon: Brush,      desc: "Apply a new visual style",        prompt: "Apply a refined visual style to this logo while keeping the exact same icon, shapes, text, and layout. Only update the artistic rendering — stroke weight, finish, and depth. White background. Do NOT alter the composition." },
-  { id: "pro",       label: "Make Pro",   icon: ShieldCheck, desc: "Make it look premium & pro",     prompt: "Transform this logo into a premium, agency-grade design. Keep the exact same elements, layout, text, and icon — only elevate the execution: cleaner geometry, professional typography spacing, and polished finish. White background." },
+  { id: "polish",    label: "Polish & Sharpen",  icon: Sparkles,   desc: "Crisp lines, clean edges",       prompt: "Professionally polish and sharpen this logo. Improve line crispness, edge clarity, and overall print quality. Keep every element, shape, colour and composition exactly as-is. White background. Do NOT redesign anything." },
+  { id: "colorize",  label: "Recolour",           icon: Palette,    desc: "Fresher, richer palette",        prompt: "Recolour this logo with a more vibrant, modern and harmonious colour palette. Keep every shape, icon, text and layout completely identical — only update the colours. White background. Do NOT move or change any element." },
+  { id: "contrast",  label: "Boost Vibrancy",     icon: Contrast,   desc: "Bold contrast & saturation",     prompt: "Dramatically boost the contrast, saturation and vibrancy of this logo so it pops on any background. Preserve every shape, text and layout element exactly. White background. Do NOT change the design structure." },
+  { id: "clean",     label: "Clean Up",           icon: Crop,       desc: "Remove noise & artefacts",       prompt: "Remove all compression artefacts, pixelation, jagged edges and blurriness from this logo. Produce a razor-crisp vector-quality result. Keep all shapes, colours, text and layout 100% identical. White background only." },
+  { id: "pro",       label: "Make Premium",        icon: ShieldCheck, desc: "Agency-grade pro finish",       prompt: "Elevate this logo to premium agency-grade quality. Refine geometry, tighten spacing, improve depth and shadow, and add a polished high-end finish. Keep the same icon, shapes, text and layout — only raise the execution quality. White background." },
+  { id: "3d",        label: "Add Depth",          icon: Brush,      desc: "3D effect & dimension",          prompt: "Add subtle 3D depth, soft shadow, and dimensional shading to this logo to make it feel modern and elevated. Keep the exact same shapes, text, colours and composition — only add depth and dimension. White background." },
+  { id: "dark",      label: "Dark Edition",       icon: Zap,        desc: "Sleek dark background version",  prompt: "Create a dark-mode edition of this logo: place the original logo on a deep dark (#0f0f0f) background. Adapt colours so they shine on dark — keep all shapes, icons and text absolutely identical, just optimise for dark presentation." },
+  { id: "gold",      label: "Gold Luxury",        icon: Sparkles,   desc: "Premium gold metallic finish",   prompt: "Apply a luxurious gold and platinum metallic finish to this logo. Convert all main elements to rich gold tones with subtle metallic sheen. Keep every shape, text and layout completely identical. White or very light background." },
 ];
 
 function buildPrompt({ companyName, industry, style, logoType, color, extraDetails }) {
@@ -155,9 +157,6 @@ export default function LogoGenerator({ open, onClose, onApply }) {
   const [referenceUrl, setReferenceUrl]   = useState(null);
   const [uploadingRef, setUploadingRef]   = useState(false);
   const [enhanceMode, setEnhanceMode]     = useState("polish");
-  const [enhanceColor, setEnhanceColor]   = useState("indigo");
-  const [enhanceStyle, setEnhanceStyle]   = useState("modern");
-  const [enhanceHint, setEnhanceHint]     = useState("");
   const [enhancePreview, setEnhancePreview] = useState(null);
   const [enhanceGenerating, setEnhanceGenerating] = useState(false);
   const refInputRef = useRef(null);
@@ -193,17 +192,13 @@ export default function LogoGenerator({ open, onClose, onApply }) {
     }
   };
 
-  const generateEnhance = async (refUrl) => {
+  const generateEnhance = async (refUrl, modeOverride) => {
     const url = refUrl || referenceUrl;
     if (!url) return;
     setEnhanceGenerating(true);
     try {
-      const mode = ENHANCE_MODES.find(m => m.id === enhanceMode);
-      const c = COLORS.find(c => c.id === enhanceColor);
-      const s = STYLES.find(s => s.id === enhanceStyle);
-      const hint = enhanceHint.trim();
-      const prompt = `${mode.prompt}${hint ? ` Additional instruction: ${hint}.` : ""} Preferred colour accent: ${c?.hex}. Visual style feel: ${s?.label}.`;
-      const result = await base44.integrations.Core.GenerateImage({ prompt, existing_image_urls: [url] });
+      const mode = ENHANCE_MODES.find(m => m.id === (modeOverride || enhanceMode));
+      const result = await base44.integrations.Core.GenerateImage({ prompt: mode.prompt, existing_image_urls: [url] });
       setEnhancePreview(result.url);
     } catch {
       toast.error("Enhancement failed.");
@@ -211,6 +206,13 @@ export default function LogoGenerator({ open, onClose, onApply }) {
       setEnhanceGenerating(false);
     }
   };
+
+  // Auto-regenerate when mode changes (if logo already uploaded)
+  useEffect(() => {
+    if (activeTab === "enhance" && referenceUrl) {
+      generateEnhance(referenceUrl, enhanceMode);
+    }
+  }, [enhanceMode]);
 
   const handleRefUpload = async (e) => {
     const file = e.target.files[0];
@@ -253,7 +255,7 @@ export default function LogoGenerator({ open, onClose, onApply }) {
     setCompanyName(""); setIndustry(""); setStyle("modern"); setLogoType("icon");
     setColor("indigo"); setExtraDetails(""); setCreatePreview(null); setCreateGenerating(false);
     setReferenceUrl(null); setEnhancePreview(null); setEnhanceGenerating(false);
-    setEnhanceMode("polish"); setEnhanceColor("indigo"); setEnhanceStyle("modern"); setEnhanceHint("");
+    setEnhanceMode("polish");
     setApplying(false);
     onClose();
   };
@@ -415,7 +417,7 @@ export default function LogoGenerator({ open, onClose, onApply }) {
               {/* Enhancement mode */}
               <div>
                 <Label className="text-xs font-bold mb-2 block">Enhancement Type</Label>
-                <div className="grid grid-cols-3 gap-2">
+                <div className="grid grid-cols-2 gap-2">
                   {ENHANCE_MODES.map(m => {
                     const Icon = m.icon;
                     return (
@@ -430,50 +432,10 @@ export default function LogoGenerator({ open, onClose, onApply }) {
                 </div>
               </div>
 
-              {/* Color accent */}
-              <div>
-                <Label className="text-xs font-bold mb-2 block">Colour Accent</Label>
-                <div className="flex flex-wrap gap-2">
-                  {COLORS.map(c => (
-                    <button key={c.id} onClick={() => setEnhanceColor(c.id)} title={c.label}
-                      className={`w-8 h-8 rounded-full border-2 transition-all hover:scale-110 ${enhanceColor === c.id ? "border-foreground ring-2 ring-offset-2 ring-foreground/30 scale-110" : "border-white shadow-sm"}`}
-                      style={{ background: `linear-gradient(135deg,${c.hex},${c.dark})` }}
-                    />
-                  ))}
-                </div>
-              </div>
-
-              {/* Style feel */}
-              <div>
-                <Label className="text-xs font-bold mb-2 block">Style Feel</Label>
-                <div className="grid grid-cols-4 gap-1.5">
-                  {STYLES.map(s => (
-                    <button key={s.id} onClick={() => setEnhanceStyle(s.id)}
-                      className={`relative flex flex-col items-center gap-1.5 p-2 rounded-xl border-2 text-center transition-all ${enhanceStyle === s.id ? "border-indigo-500 bg-indigo-50" : "border-border hover:border-indigo-200 hover:bg-slate-50"}`}>
-                      <div className="w-7 h-7 rounded-lg flex items-center justify-center text-sm shadow-sm" style={{ background: s.bg }}>{s.emoji}</div>
-                      <span className={`text-[10px] font-semibold leading-tight ${enhanceStyle === s.id ? "text-indigo-700" : "text-muted-foreground"}`}>{s.label}</span>
-                      {enhanceStyle === s.id && <div className="absolute top-1 right-1 w-3 h-3 rounded-full bg-indigo-500 flex items-center justify-center"><CheckCircle2 className="h-2.5 w-2.5 text-white" /></div>}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* Custom hint */}
-              <div>
-                <Label className="text-xs font-bold">Custom Instruction (optional)</Label>
-                <Input className="mt-1.5 text-sm" value={enhanceHint} onChange={e => setEnhanceHint(e.target.value)} placeholder="e.g. make it more vibrant, add depth, sharpen the icon" />
-              </div>
-
               {referenceUrl && (
-                <Button
-                  className="w-full gap-2 font-semibold"
-                  onClick={() => generateEnhance(null)}
-                  disabled={enhanceGenerating}
-                  style={{ background: "linear-gradient(135deg,#6366f1,#8b5cf6)" }}
-                >
-                  {enhanceGenerating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Zap className="h-4 w-4" />}
-                  {enhanceGenerating ? "Enhancing…" : "Enhance Logo"}
-                </Button>
+                <p className="text-xs text-indigo-600 font-medium bg-indigo-50 border border-indigo-100 rounded-xl px-3 py-2 text-center">
+                  ✦ Select an enhancement type above — preview updates automatically
+                </p>
               )}
             </div>
           )}
