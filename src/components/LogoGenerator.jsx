@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
-import { Sparkles, X, Loader2, CheckCircle2, RefreshCw, Wand2 } from "lucide-react";
+import { Sparkles, X, Loader2, CheckCircle2, RefreshCw, Wand2, Upload, ImagePlus } from "lucide-react";
 import { toast } from "sonner";
 
 const STYLES = [
@@ -67,7 +67,10 @@ export default function LogoGenerator({ open, onClose, onApply }) {
   const [previewUrl, setPreviewUrl]     = useState(null);
   const [generating, setGenerating]     = useState(false);
   const [applying, setApplying]         = useState(false);
+  const [referenceUrl, setReferenceUrl] = useState(null);
+  const [uploadingRef, setUploadingRef] = useState(false);
   const debounceRef = useRef(null);
+  const refInputRef = useRef(null);
 
   // Auto-generate whenever any parameter changes (debounced)
   useEffect(() => {
@@ -82,12 +85,34 @@ export default function LogoGenerator({ open, onClose, onApply }) {
     return () => clearTimeout(debounceRef.current);
   }, [companyName, industry, style, logoType, color]);
 
+  const handleRefUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    e.target.value = "";
+    setUploadingRef(true);
+    try {
+      const { file_url } = await base44.integrations.Core.UploadFile({ file });
+      setReferenceUrl(file_url);
+      toast.success("Reference logo uploaded!");
+    } catch {
+      toast.error("Upload failed.");
+    } finally {
+      setUploadingRef(false);
+    }
+  };
+
   const generatePreview = async () => {
     if (!companyName.trim()) return;
     setGenerating(true);
     try {
-      const prompt = buildPrompt({ companyName, industry, style, logoType, color, extraDetails });
-      const result = await base44.integrations.Core.GenerateImage({ prompt });
+      const basePrompt = buildPrompt({ companyName, industry, style, logoType, color, extraDetails });
+      const prompt = referenceUrl
+        ? `${basePrompt}\nUse the provided reference image as inspiration — enhance, modernise, and reimagine it while keeping recognisable brand elements.`
+        : basePrompt;
+      const result = await base44.integrations.Core.GenerateImage({
+        prompt,
+        ...(referenceUrl ? { existing_image_urls: [referenceUrl] } : {}),
+      });
       setPreviewUrl(result.url);
     } catch {
       toast.error("Preview generation failed.");
@@ -125,6 +150,7 @@ export default function LogoGenerator({ open, onClose, onApply }) {
     setColor("indigo");
     setExtraDetails("");
     setPreviewUrl(null);
+    setReferenceUrl(null);
     setGenerating(false);
     setApplying(false);
     onClose();
@@ -164,6 +190,38 @@ export default function LogoGenerator({ open, onClose, onApply }) {
               {!companyName.trim() && (
                 <p className="text-xs text-muted-foreground mt-1">Type your company name to generate a preview →</p>
               )}
+            </div>
+
+            {/* Reference Logo Upload */}
+            <div>
+              <Label className="text-xs font-bold">Enhance Existing Logo (optional)</Label>
+              <p className="text-xs text-muted-foreground mt-0.5 mb-2">Upload your current logo and AI will reimagine it in the chosen style.</p>
+              {referenceUrl ? (
+                <div className="flex items-center gap-3 p-2.5 rounded-xl border border-indigo-200 bg-indigo-50">
+                  <img src={referenceUrl} alt="Reference" className="h-12 w-12 object-contain rounded-lg border border-white bg-white shrink-0" />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs font-semibold text-indigo-700">Reference logo set</p>
+                    <p className="text-[10px] text-muted-foreground">AI will use this as inspiration</p>
+                  </div>
+                  <button onClick={() => setReferenceUrl(null)} className="w-6 h-6 rounded-full bg-white border border-slate-200 flex items-center justify-center hover:bg-red-50 hover:border-red-200 transition-colors">
+                    <X className="h-3 w-3 text-slate-400" />
+                  </button>
+                </div>
+              ) : (
+                <button
+                  onClick={() => refInputRef.current?.click()}
+                  disabled={uploadingRef}
+                  className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl border-2 border-dashed border-slate-200 hover:border-indigo-300 hover:bg-indigo-50/50 transition-all text-left"
+                >
+                  {uploadingRef ? (
+                    <Loader2 className="h-4 w-4 text-indigo-400 animate-spin shrink-0" />
+                  ) : (
+                    <ImagePlus className="h-4 w-4 text-slate-400 shrink-0" />
+                  )}
+                  <span className="text-xs text-muted-foreground">{uploadingRef ? "Uploading…" : "Click to upload your existing logo"}</span>
+                </button>
+              )}
+              <input ref={refInputRef} type="file" accept="image/*" className="hidden" onChange={handleRefUpload} />
             </div>
 
             {/* Industry */}
