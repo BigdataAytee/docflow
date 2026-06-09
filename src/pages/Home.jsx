@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { FileText, FileCheck, Receipt, Truck, Mail, Plus, Clock, Search, X, ArrowRight, Sparkles } from "lucide-react";
 import AIAssistant from "../components/AIAssistant";
@@ -90,6 +90,12 @@ export default function Home() {
     queryKey: ["me"],
     queryFn: () => base44.auth.me(),
   });
+
+  useEffect(() => {
+    if (user && !user.company_name) {
+      navigate("/company-setup");
+    }
+  }, [user]);
 
   const { data: docs = [] } = useQuery({
     queryKey: ["home-docs", user?.email],
