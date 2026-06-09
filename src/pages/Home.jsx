@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { FileText, FileCheck, Receipt, Truck, Mail, Plus, Clock, Search, X, ArrowRight, Sparkles } from "lucide-react";
 import AIAssistant from "../components/AIAssistant";
+import SetupChecklist from "../components/onboarding/SetupChecklist";
 import { useQuery } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 
@@ -98,11 +99,20 @@ export default function Home() {
   }, [user]);
 
   const { data: docs = [] } = useQuery({
-    queryKey: ["home-docs", user?.email],
-    queryFn: () => user?.email
-      ? base44.entities.Document.filter({ created_by: user.email }, "-created_date", 50)
+    queryKey: ["home-docs", user?.id],
+    queryFn: () => user?.id
+      ? base44.entities.Document.filter({ created_by_id: user.id }, "-created_date", 50)
       : [],
-    enabled: !!user?.email,
+    enabled: !!user?.id,
+  });
+
+  const { data: customerCount = 0 } = useQuery({
+    queryKey: ["home-customer-count"],
+    queryFn: async () => {
+      const list = await base44.entities.Customer.list();
+      return list.length;
+    },
+    enabled: !!user,
   });
 
   const countByType = (type) => docs.filter((d) => d.type === type).length;
@@ -168,6 +178,14 @@ export default function Home() {
           </div>
         </div>
       </div>
+
+      {/* Setup checklist — shown until dismissed */}
+      {user && (
+        <SetupChecklist
+          user={user}
+          counts={{ documents: docs.length, customers: customerCount }}
+        />
+      )}
 
       {/* Search */}
       <div className="relative">
