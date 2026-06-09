@@ -25,6 +25,12 @@ const LOGO_TYPES = [
   { id: "emblem",     label: "Emblem",    desc: "Badge / crest" },
 ];
 
+const INDUSTRIES = [
+  "Technology", "Finance & Banking", "Healthcare", "Education", "Retail & Fashion",
+  "Food & Beverage", "Real Estate", "Legal & Law", "Creative & Agency",
+  "Logistics & Transport", "Construction", "Consulting", "Beauty & Wellness", "Non-Profit"
+];
+
 const COLORS = [
   { id: "indigo", hex: "#6366f1", dark: "#3730a3", label: "Indigo" },
   { id: "blue",   hex: "#3b82f6", dark: "#1d4ed8", label: "Blue" },
@@ -38,11 +44,12 @@ const COLORS = [
   { id: "slate",  hex: "#475569", dark: "#1e293b", label: "Slate" },
 ];
 
-function buildPrompt({ companyName, style, logoType, color, extraDetails }) {
+function buildPrompt({ companyName, industry, style, logoType, color, extraDetails }) {
   const s = STYLES.find(s => s.id === style);
   const t = LOGO_TYPES.find(t => t.id === logoType);
   const c = COLORS.find(c => c.id === color);
   return `Design a professional company logo for "${companyName}".
+${industry ? `Industry: ${industry}. The design should reflect the norms and aesthetics of this sector.` : ""}
 Logo type: ${t?.label} style (${t?.desc}).
 Visual style: ${s?.prompt}.
 Primary color: ${c?.hex} with dark accent ${c?.dark}. Use these colors prominently.
@@ -52,6 +59,7 @@ Pure white background, perfectly centered, high resolution, crisp clean edges, s
 
 export default function LogoGenerator({ open, onClose, onApply }) {
   const [companyName, setCompanyName]   = useState("");
+  const [industry, setIndustry]         = useState("");
   const [style, setStyle]               = useState("modern");
   const [logoType, setLogoType]         = useState("icon");
   const [color, setColor]               = useState("indigo");
@@ -72,13 +80,13 @@ export default function LogoGenerator({ open, onClose, onApply }) {
       generatePreview();
     }, 800);
     return () => clearTimeout(debounceRef.current);
-  }, [companyName, style, logoType, color]);
+  }, [companyName, industry, style, logoType, color]);
 
   const generatePreview = async () => {
     if (!companyName.trim()) return;
     setGenerating(true);
     try {
-      const prompt = buildPrompt({ companyName, style, logoType, color, extraDetails });
+      const prompt = buildPrompt({ companyName, industry, style, logoType, color, extraDetails });
       const result = await base44.integrations.Core.GenerateImage({ prompt });
       setPreviewUrl(result.url);
     } catch {
@@ -111,6 +119,7 @@ export default function LogoGenerator({ open, onClose, onApply }) {
   const handleClose = () => {
     clearTimeout(debounceRef.current);
     setCompanyName("");
+    setIndustry("");
     setStyle("modern");
     setLogoType("icon");
     setColor("indigo");
@@ -155,6 +164,19 @@ export default function LogoGenerator({ open, onClose, onApply }) {
               {!companyName.trim() && (
                 <p className="text-xs text-muted-foreground mt-1">Type your company name to generate a preview →</p>
               )}
+            </div>
+
+            {/* Industry */}
+            <div>
+              <Label className="text-xs font-bold">Industry</Label>
+              <select
+                value={industry}
+                onChange={e => setIndustry(e.target.value)}
+                className="mt-1.5 flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+              >
+                <option value="">Select industry (optional)</option>
+                {INDUSTRIES.map(i => <option key={i} value={i}>{i}</option>)}
+              </select>
             </div>
 
             {/* Logo Type */}
