@@ -8,19 +8,21 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
-import { ImageIcon, Building2, FileText, Hash, User, Save, Upload, X, CheckCircle2, AlertTriangle, Paintbrush, Sparkles } from "lucide-react";
+import { ImageIcon, Building2, FileText, Hash, User, Save, Upload, X, CheckCircle2, AlertTriangle, Paintbrush, Sparkles, ShieldCheck } from "lucide-react";
 import DocumentDesign from "./settings/DocumentDesign";
 import SignaturePad from "../components/SignaturePad";
 import BankDetailsFields from "../components/BankDetailsFields";
 import CurrencySelect from "@/components/CurrencySelect";
 import LogoGenerator from "@/components/LogoGenerator";
+import PermissionsPanel from "@/components/settings/PermissionsPanel";
 
 const TABS = [
-  { id: "company",   label: "Company",   icon: Building2,  emoji: "🏢" },
-  { id: "documents", label: "Documents", icon: FileText,   emoji: "📄" },
-  { id: "numbering", label: "Numbering", icon: Hash,       emoji: "#️⃣" },
-  { id: "account",   label: "Account",   icon: User,       emoji: "👤" },
-  { id: "design",    label: "Design",    icon: Paintbrush, emoji: "🎨" },
+  { id: "company",     label: "Company",     icon: Building2,   emoji: "🏢" },
+  { id: "documents",   label: "Documents",   icon: FileText,    emoji: "📄" },
+  { id: "numbering",   label: "Numbering",   icon: Hash,        emoji: "#️⃣" },
+  { id: "account",     label: "Account",     icon: User,        emoji: "👤" },
+  { id: "design",      label: "Design",      icon: Paintbrush,  emoji: "🎨" },
+  { id: "permissions", label: "Permissions", icon: ShieldCheck, emoji: "🔐" },
 ];
 
 const ACCENT = { gradient: "linear-gradient(135deg,#6366f1 0%,#4f46e5 60%,#3730a3 100%)", glow: "rgba(99,102,241,0.25)", accent: "#6366f1", light: "#eef2ff", border: "#c7d2fe" };
@@ -562,28 +564,35 @@ export default function Settings() {
         </div>
       )}
 
-      {/* Save button */}
-      <div className="mt-6 flex items-center justify-between gap-4 bg-card rounded-2xl border border-border p-4 shadow-sm">
-        <p className="text-sm text-muted-foreground hidden sm:block">
-          {isDirty ? <span className="text-amber-600 font-medium">⚠ You have unsaved changes</span> : "Changes apply to all existing documents."}
-        </p>
-        <div className="flex gap-2 w-full sm:w-auto">
-          {isDirty && (
-            <Button variant="outline" onClick={discard} className="flex-1 sm:flex-none">
-              Discard
+      {/* ── Permissions Tab ── */}
+      {activeTab === "permissions" && (
+        <PermissionsPanel />
+      )}
+
+      {/* Save button — hidden on permissions tab */}
+      {activeTab !== "permissions" && (
+        <div className="mt-6 flex items-center justify-between gap-4 bg-card rounded-2xl border border-border p-4 shadow-sm">
+          <p className="text-sm text-muted-foreground hidden sm:block">
+            {isDirty ? <span className="text-amber-600 font-medium">⚠ You have unsaved changes</span> : "Changes apply to all existing documents."}
+          </p>
+          <div className="flex gap-2 w-full sm:w-auto">
+            {isDirty && (
+              <Button variant="outline" onClick={discard} className="flex-1 sm:flex-none">
+                Discard
+              </Button>
+            )}
+            <Button
+              onClick={save}
+              disabled={saving || hasDuplicatePrefixes}
+              className="flex-1 sm:flex-none gap-2 font-bold px-8"
+              style={{ background: isDirty ? "linear-gradient(135deg,#f59e0b,#d97706)" : ACCENT.gradient }}
+            >
+              <Save className="h-4 w-4" />
+              {saving ? "Saving…" : "Save Settings"}
             </Button>
-          )}
-          <Button
-            onClick={save}
-            disabled={saving || hasDuplicatePrefixes}
-            className="flex-1 sm:flex-none gap-2 font-bold px-8"
-            style={{ background: isDirty ? "linear-gradient(135deg,#f59e0b,#d97706)" : ACCENT.gradient }}
-          >
-            <Save className="h-4 w-4" />
-            {saving ? "Saving…" : "Save Settings"}
-          </Button>
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Leave confirmation modal */}
       {showLeaveModal && (

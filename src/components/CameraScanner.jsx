@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import { Camera, X, ZoomIn, RotateCcw, Loader2, ScanLine } from "lucide-react";
+import { usePermissions } from "@/hooks/usePermissions";
 
 /**
  * CameraScanner — full-screen live camera viewfinder with document alignment overlay.
@@ -17,19 +18,7 @@ export default function CameraScanner({ onCapture, onClose }) {
   const [torchSupported, setTorchSupported] = useState(false);
   const [error, setError] = useState(null); // null | "denied" | "unavailable"
   const [retryKey, setRetryKey] = useState(0);
-
-  const openDeviceSettings = () => {
-    // Works on iOS Safari (app-settings:) and Android Chrome (chrome://settings)
-    // Fallback: show instructions overlay
-    const ua = navigator.userAgent;
-    if (/iPhone|iPad|iPod/.test(ua)) {
-      window.location.href = "app-settings:";
-    } else if (/Android/.test(ua)) {
-      // Android doesn't allow deep-linking to settings from web, so we open chrome settings
-      window.open("chrome://settings/content/camera", "_blank");
-    }
-    // For desktop browsers, just instruct the user via the UI (no API to open settings)
-  };
+  const { openSettings } = usePermissions();
 
   // Start camera
   useEffect(() => {
@@ -211,7 +200,7 @@ export default function CameraScanner({ onCapture, onClose }) {
               <div className="flex flex-col gap-2 w-full max-w-xs">
                 {/* Open device settings (works on iOS & some Android) */}
                 <button
-                  onClick={openDeviceSettings}
+                  onClick={openSettings}
                   className="w-full bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-bold px-6 py-3 rounded-2xl transition-colors flex items-center justify-center gap-2"
                 >
                   <span>⚙️</span> Open Device Settings

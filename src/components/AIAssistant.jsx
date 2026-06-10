@@ -1,9 +1,10 @@
 import { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
-import { Sparkles, X, ArrowRight, Check, ChevronLeft, FileText, FileCheck, Receipt, Truck, Loader2, Wand2, MessageSquare, ImagePlus, Camera, ScanSearch } from "lucide-react";
+import { Sparkles, X, ArrowRight, Check, ChevronLeft, FileText, FileCheck, Receipt, Truck, Loader2, Wand2, MessageSquare, ImagePlus, ScanSearch } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import CameraScanner from "./CameraScanner";
+import PermissionGate from "./PermissionGate";
 
 const DOC_TYPES = [
   { type: "invoice",   label: "Invoice",   icon: FileText,  gradient: "linear-gradient(135deg,#3b82f6,#1d4ed8)", desc: "Bill a client" },
@@ -210,17 +211,21 @@ ${inputText}
               </div>
 
               {/* Camera scan button */}
-                  <button
-                    onClick={() => setShowCamera(true)}
-                    disabled={uploadingImage}
-                    className="relative z-10 mt-4 flex items-center gap-2 bg-white/15 hover:bg-white/25 border border-white/20 text-white text-xs font-bold px-3.5 py-2 rounded-xl transition-all active:scale-95 disabled:opacity-60"
-                  >
-                    {uploadingImage ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <ScanSearch className="h-3.5 w-3.5" />}
-                    {uploadingImage ? "Uploading scan…" : "Scan Document with Camera"}
-                    {!uploadingImage && (
-                      <span className="ml-1 text-[9px] font-black uppercase tracking-widest bg-yellow-400/30 text-yellow-300 px-1.5 py-0.5 rounded-full">Live</span>
+                  <PermissionGate permission="camera" onGranted={() => setShowCamera(true)}>
+                    {(handleClick) => (
+                      <button
+                        onClick={handleClick}
+                        disabled={uploadingImage}
+                        className="relative z-10 mt-4 flex items-center gap-2 bg-white/15 hover:bg-white/25 border border-white/20 text-white text-xs font-bold px-3.5 py-2 rounded-xl transition-all active:scale-95 disabled:opacity-60"
+                      >
+                        {uploadingImage ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <ScanSearch className="h-3.5 w-3.5" />}
+                        {uploadingImage ? "Uploading scan…" : "Scan Document with Camera"}
+                        {!uploadingImage && (
+                          <span className="ml-1 text-[9px] font-black uppercase tracking-widest bg-yellow-400/30 text-yellow-300 px-1.5 py-0.5 rounded-full">Live</span>
+                        )}
+                      </button>
                     )}
-                  </button>
+                  </PermissionGate>
 
               {/* Step pills */}
               <div className="relative z-10 flex items-center gap-2 mt-4">
@@ -278,13 +283,17 @@ ${inputText}
                         <input ref={imageInputRef} type="file" accept="image/*" className="hidden" onChange={e => e.target.files[0] && handleImageUpload(e.target.files[0])} />
                       </label>
                       {/* Camera scan */}
-                      <button
-                        type="button"
-                        onClick={() => setShowCamera(true)}
-                        className="flex items-center justify-center gap-2 border-2 border-dashed border-violet-300 bg-violet-50 hover:bg-violet-100 rounded-2xl px-4 text-violet-600 transition-colors text-xs font-bold"
-                      >
-                        <ScanSearch className="h-4 w-4" /> Scan
-                      </button>
+                      <PermissionGate permission="camera" onGranted={() => setShowCamera(true)}>
+                        {(handleClick) => (
+                          <button
+                            type="button"
+                            onClick={handleClick}
+                            className="flex items-center justify-center gap-2 border-2 border-dashed border-violet-300 bg-violet-50 hover:bg-violet-100 rounded-2xl px-4 text-violet-600 transition-colors text-xs font-bold"
+                          >
+                            <ScanSearch className="h-4 w-4" /> Scan
+                          </button>
+                        )}
+                      </PermissionGate>
                     </div>
                   )}
 
