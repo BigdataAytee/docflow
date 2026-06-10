@@ -1,7 +1,8 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { FileText, FileCheck, Receipt, Truck, Mail, Plus, Clock, Search, X, ArrowRight, Sparkles, BarChart2, Zap } from "lucide-react";
+import { FileText, FileCheck, Receipt, Truck, Mail, Plus, Clock, Search, X, ArrowRight, Sparkles, BarChart2, Zap, ScanSearch, Loader2 } from "lucide-react";
 import AIAssistant from "../components/AIAssistant";
+import CameraScanner from "../components/CameraScanner";
 import SetupChecklist from "../components/onboarding/SetupChecklist";
 import { useQuery } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
@@ -81,12 +82,48 @@ export default function Home() {
 
   const firstName = user?.full_name?.split(" ")[0] || "";
 
+  const [cameraStream, setCameraStream] = useState(null);
+  const [uploadingImage, setUploadingImage] = useState(false);
+
+  const openCamera = async (e) => {
+    if (e) e.stopPropagation();
+    if (!navigator.mediaDevices?.getUserMedia) return;
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: { ideal: "environment" } },
+        audio: false,
+      });
+      setCameraStream(stream);
+    } catch (err) {
+      console.error("Camera error:", err.name, err.message);
+    }
+  };
+
+  const handleCameraCapture = async (blob) => {
+    setCameraStream(null);
+    setUploadingImage(true);
+    const file = new File([blob], "scan.jpg", { type: "image/jpeg" });
+    const { file_url } = await base44.integrations.Core.UploadFile({ file });
+    setUploadingImage(false);
+    // Store image and open AI assistant with it pre-loaded via sessionStorage
+    sessionStorage.setItem("ai_scan_image", JSON.stringify({ url: file_url, name: "scanned-document.jpg" }));
+    // Trigger AI assistant to open with the scan
+    window.dispatchEvent(new CustomEvent("open-ai-assistant-scan"));
+  };
+
   // Quick revenue stat for analytics card
   const paidRevenue = docs.filter(d => d.type === "invoice" && d.status === "paid").reduce((s, d) => s + (d.total || 0), 0);
   const fmtRevenue = paidRevenue >= 1_000_000 ? `₦${(paidRevenue/1_000_000).toFixed(1)}M` : paidRevenue >= 1_000 ? `₦${(paidRevenue/1_000).toFixed(1)}K` : `₦${paidRevenue}`;
 
   return (
     <div className="max-w-4xl mx-auto space-y-8">
+      {cameraStream && (
+        <CameraScanner
+          initialStream={cameraStream}
+          onCapture={handleCameraCapture}
+          onClose={() => { cameraStream?.getTracks().forEach(t => t.stop()); setCameraStream(null); }}
+        />
+      )}
 
       {/* Hero greeting */}
       <div
@@ -105,6 +142,14 @@ export default function Home() {
               {greeting()}{firstName ? `, ${firstName}` : ""}! 👋
             </h1>
             <p className="text-white/60 mt-1.5 text-sm">Manage your documents and business communications.</p>
+            <button
+              onClick={openCamera}
+              disabled={uploadingImage}
+              className="mt-3 flex items-center gap-2 bg-white/15 hover:bg-white/25 border border-white/20 text-white text-xs font-bold px-3.5 py-2 rounded-xl transition-all active:scale-95 disabled:opacity-60 w-fit"
+            >
+              {uploadingImage ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <ScanSearch className="h-3.5 w-3.5" />}
+              {uploadingImage ? "Uploading scan…" : "Scan Document"}
+            </button>
           </div>
           <div className="flex flex-wrap gap-3 shrink-0">
             <div className="bg-white/10 backdrop-blur-sm border border-white/10 rounded-2xl px-4 py-3 text-center min-w-[72px]">

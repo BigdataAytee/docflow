@@ -101,6 +101,22 @@ export default function AIAssistant() {
     if (stage === "input" && textareaRef.current) textareaRef.current.focus();
   }, [stage]);
 
+  // Listen for scan from Home page
+  useEffect(() => {
+    const handler = () => {
+      const stored = sessionStorage.getItem("ai_scan_image");
+      if (stored) {
+        const img = JSON.parse(stored);
+        sessionStorage.removeItem("ai_scan_image");
+        setAttachedImage(img);
+        setOpen(true);
+        setStage("input");
+      }
+    };
+    window.addEventListener("open-ai-assistant-scan", handler);
+    return () => window.removeEventListener("open-ai-assistant-scan", handler);
+  }, []);
+
   const handleExtract = async () => {
     if (!inputText.trim() && !attachedImage) return;
     setStage("extracting");
