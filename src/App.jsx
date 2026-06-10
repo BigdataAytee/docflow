@@ -23,6 +23,7 @@ import Mail from './pages/Mail';
 import Apps from './pages/Apps';
 import WaybillSign from './pages/WaybillSign';
 import AdminDashboard from './pages/AdminDashboard';
+import Analytics from './pages/Analytics';
 import Help from './pages/Help';
 import CompanySetup from './pages/CompanySetup';
 
@@ -69,6 +70,7 @@ const AuthenticatedApp = () => {
           <Route path="/mail" element={<Mail />} />
           <Route path="/apps" element={<Apps />} />
           <Route path="/admin" element={<AdminDashboard />} />
+          <Route path="/analytics" element={<Analytics />} />
           <Route path="/help" element={<Help />} />
         </Route>
       </Route>
