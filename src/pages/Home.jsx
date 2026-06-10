@@ -85,18 +85,12 @@ export default function Home() {
   const [cameraStream, setCameraStream] = useState(null);
   const [uploadingImage, setUploadingImage] = useState(false);
 
-  const openCamera = async (e) => {
+  const openCamera = (e) => {
     if (e) e.stopPropagation();
     if (!navigator.mediaDevices?.getUserMedia) return;
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: { ideal: "environment" } },
-        audio: false
-      });
-      setCameraStream(stream);
-    } catch (err) {
-      console.error("Camera error:", err.name, err.message);
-    }
+    navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: "environment" } }, audio: false })
+      .then((stream) => setCameraStream(stream))
+      .catch((err) => console.error("Camera error:", err.name, err.message));
   };
 
   const handleCameraCapture = async (blob) => {

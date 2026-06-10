@@ -39,59 +39,12 @@ export default function AIAssistant() {
     await handleImageUpload(file);
   };
 
-  // DIAGNOSTIC: Full camera permission diagnosis
-  const openCamera = async (e) => {
+  const openCamera = (e) => {
     if (e) e.stopPropagation();
-
-    console.group("🎥 CAMERA DIAGNOSIS");
-    console.log("1. Click event received:", !!e, "| isTrusted:", e?.isTrusted);
-    console.log("2. Protocol:", window.location.protocol, "| HTTPS required for getUserMedia");
-    console.log("3. navigator.mediaDevices:", typeof navigator.mediaDevices);
-    console.log("4. getUserMedia available:", typeof navigator.mediaDevices?.getUserMedia);
-    console.log("5. In iframe:", window !== window.top);
-    console.log("6. User agent:", navigator.userAgent);
-
-    // Check Permissions API state
-    if (navigator.permissions) {
-      try {
-        const perm = await navigator.permissions.query({ name: "camera" });
-        console.log("7. Permissions API camera state:", perm.state); // 'granted' | 'denied' | 'prompt'
-      } catch (pe) {
-        console.log("7. Permissions API error:", pe.message);
-      }
-    } else {
-      console.log("7. Permissions API: NOT available");
-    }
-
-    // Check if getUserMedia exists at all
-    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-      console.error("❌ FATAL: navigator.mediaDevices.getUserMedia is NOT available.");
-      console.error("   Likely cause: HTTP (not HTTPS), or unsupported browser.");
-      console.groupEnd();
-      return;
-    }
-
-    console.log("8. Calling getUserMedia NOW...");
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: { ideal: "environment" } },
-        audio: false,
-      });
-      console.log("✅ SUCCESS: Camera stream obtained:", stream.id);
-      console.log("   Video tracks:", stream.getVideoTracks().map(t => t.label));
-      console.groupEnd();
-      setCameraStream(stream);
-    } catch (err) {
-      console.error("❌ FAILED:", err.name, "-", err.message);
-      console.error("   name:", err.name);
-      console.error("   Common causes:");
-      console.error("   - NotAllowedError: User denied OR site is blocked in browser settings");
-      console.error("   - NotFoundError: No camera device found");
-      console.error("   - NotReadableError: Camera in use by another app");
-      console.error("   - SecurityError: Insecure context or iframe sandbox restriction");
-      console.error("   - TypeError: Constraints invalid");
-      console.groupEnd();
-    }
+    if (!navigator.mediaDevices?.getUserMedia) return;
+    navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: "environment" } }, audio: false })
+      .then((stream) => setCameraStream(stream))
+      .catch((err) => console.error("Camera error:", err.name, err.message));
   };
 
   const reset = () => { setStage("idle"); setInputText(""); setExtractedItems([]); setExtractedNotes(""); setAttachedImage(null); setCameraStream(null); };
