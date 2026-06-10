@@ -1,8 +1,9 @@
 import { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
-import { Sparkles, X, ArrowRight, Check, ChevronLeft, FileText, FileCheck, Receipt, Truck, Loader2, Wand2, MessageSquare, ImagePlus } from "lucide-react";
+import { Sparkles, X, ArrowRight, Check, ChevronLeft, FileText, FileCheck, Receipt, Truck, Loader2, Wand2, MessageSquare, ImagePlus, Camera } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import AIProductScanner from "./AIProductScanner";
 
 const DOC_TYPES = [
   { type: "invoice",   label: "Invoice",   icon: FileText,  gradient: "linear-gradient(135deg,#3b82f6,#1d4ed8)", desc: "Bill a client" },
@@ -14,6 +15,7 @@ const DOC_TYPES = [
 export default function AIAssistant() {
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
+  const [mode, setMode] = useState("doc"); // "doc" | "product"
   const [stage, setStage] = useState("idle");
   const [inputText, setInputText] = useState("");
   const [extractedItems, setExtractedItems] = useState([]);
@@ -32,7 +34,7 @@ export default function AIAssistant() {
   };
 
   const reset = () => { setStage("idle"); setInputText(""); setExtractedItems([]); setExtractedNotes(""); setAttachedImage(null); };
-  const close = () => { setOpen(false); setTimeout(reset, 400); };
+  const close = () => { setOpen(false); setTimeout(() => { reset(); setMode("doc"); }, 400); };
 
   useEffect(() => {
     if (stage === "input" && textareaRef.current) textareaRef.current.focus();
@@ -193,25 +195,47 @@ ${inputText}
                 </button>
               </div>
 
-              {/* Step pills */}
+              {/* Mode tabs */}
               <div className="relative z-10 flex items-center gap-2 mt-4">
-                {["Paste", "Review", "Choose Type"].map((label, i) => (
-                  <div key={label} className="flex items-center gap-2">
-                    <div className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold transition-all ${i < stepIndex ? "bg-emerald-400 text-white" : i === stepIndex ? "bg-white text-indigo-700" : "bg-white/15 text-white/40"}`}>
-                      {i < stepIndex ? <Check className="h-3 w-3" /> : <span>{i + 1}</span>}
-                      <span>{label}</span>
-                    </div>
-                    {i < 2 && <div className="w-3 h-px bg-white/25" />}
-                  </div>
-                ))}
+                <button
+                  onClick={() => setMode("doc")}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold transition-all ${mode === "doc" ? "bg-white text-indigo-700" : "bg-white/15 text-white/60 hover:bg-white/25"}`}
+                >
+                  <Wand2 className="h-3 w-3" /> Document AI
+                </button>
+                <button
+                  onClick={() => setMode("product")}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold transition-all ${mode === "product" ? "bg-emerald-400 text-white" : "bg-white/15 text-white/60 hover:bg-white/25"}`}
+                >
+                  <Camera className="h-3 w-3" /> Product Scanner
+                  <span className="text-[9px] font-black bg-yellow-300 text-yellow-900 px-1 rounded-full">NEW</span>
+                </button>
               </div>
+
+              {/* Step pills — only shown in doc mode */}
+              {mode === "doc" && (
+                <div className="relative z-10 flex items-center gap-2 mt-2">
+                  {["Paste", "Review", "Choose Type"].map((label, i) => (
+                    <div key={label} className="flex items-center gap-2">
+                      <div className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold transition-all ${i < stepIndex ? "bg-emerald-400 text-white" : i === stepIndex ? "bg-white text-indigo-700" : "bg-white/15 text-white/40"}`}>
+                        {i < stepIndex ? <Check className="h-3 w-3" /> : <span>{i + 1}</span>}
+                        <span>{label}</span>
+                      </div>
+                      {i < 2 && <div className="w-3 h-px bg-white/25" />}
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
 
             {/* Scrollable body */}
             <div className="overflow-y-auto flex-1">
 
-              {/* STEP 1 — INPUT */}
-              {(stage === "input" || stage === "extracting") && (
+              {/* PRODUCT SCANNER MODE */}
+              {mode === "product" && <AIProductScanner onClose={close} />}
+
+              {/* DOC MODE */}
+              {mode === "doc" && (stage === "input" || stage === "extracting") && (
                 <div className="p-5 space-y-4">
                   <div className="flex items-center gap-2 text-sm font-semibold text-foreground">
                     <MessageSquare className="h-4 w-4 text-indigo-500" />
@@ -266,7 +290,7 @@ ${inputText}
               )}
 
               {/* STEP 2 — CONFIRM */}
-              {stage === "confirm" && (
+              {mode === "doc" && stage === "confirm" && (
                 <div className="p-5 space-y-4">
                   <div className="flex items-center justify-between">
                     <p className="text-sm font-semibold">
@@ -357,7 +381,7 @@ ${inputText}
               )}
 
               {/* STEP 3 — DOCUMENT TYPE */}
-              {stage === "doctype" && (
+              {mode === "doc" && stage === "doctype" && (
                 <div className="p-5 space-y-4">
                   <div className="flex items-center justify-between">
                     <p className="text-sm font-semibold">Which document type would you like?</p>

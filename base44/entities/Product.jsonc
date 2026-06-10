@@ -1,0 +1,146 @@
+{
+  "name": "Product",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "title": "Product Name"
+    },
+    "description": {
+      "type": "string",
+      "title": "Description"
+    },
+    "sku": {
+      "type": "string",
+      "title": "SKU / Item Code"
+    },
+    "brand": {
+      "type": "string",
+      "title": "Brand"
+    },
+    "category": {
+      "type": "string",
+      "title": "Category"
+    },
+    "model_number": {
+      "type": "string",
+      "title": "Model Number"
+    },
+    "manufacturer": {
+      "type": "string",
+      "title": "Manufacturer"
+    },
+    "barcode": {
+      "type": "string",
+      "title": "Barcode"
+    },
+    "cost_price": {
+      "type": "number",
+      "title": "Cost Price",
+      "default": 0
+    },
+    "selling_price": {
+      "type": "number",
+      "title": "Selling Price",
+      "default": 0
+    },
+    "quantity": {
+      "type": "number",
+      "title": "Quantity",
+      "default": 1
+    },
+    "unit": {
+      "type": "string",
+      "title": "Unit"
+    },
+    "packaging_type": {
+      "type": "string",
+      "title": "Packaging Type"
+    },
+    "weight": {
+      "type": "string",
+      "title": "Weight"
+    },
+    "dimensions": {
+      "type": "string",
+      "title": "Dimensions"
+    },
+    "specifications": {
+      "type": "string",
+      "title": "Specifications"
+    },
+    "warranty": {
+      "type": "string",
+      "title": "Warranty"
+    },
+    "tags": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "title": "Tags"
+    },
+    "image_url": {
+      "type": "string",
+      "title": "Product Image URL"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "active",
+        "draft",
+        "archived"
+      ],
+      "default": "active",
+      "title": "Status"
+    },
+    "raw_scan_text": {
+      "type": "string",
+      "title": "Raw Scanned Text"
+    }
+  },
+  "required": [
+    "name"
+  ],
+  "rls": {
+    "create": {
+      "created_by_id": "{{user.id}}"
+    },
+    "read": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "update": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "delete": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    }
+  }
+}
