@@ -108,6 +108,21 @@ const SAMPLE = {
 const DOC_W = 794;
 const DOC_H = 1123;
 
+// ─── Helper: resolve section visibility from fieldLayout or design toggles ────
+function getSectionVisibility(design) {
+  const fl = design.fieldLayout || [];
+  const isVisible = (id, fallback) => {
+    if (fl.length === 0) return fallback;
+    const s = fl.find(x => x.id === id);
+    return s ? s.visible : fallback;
+  };
+  return {
+    showNotes:       isVisible("notes",      design.showNotes),
+    showBankDetails: isVisible("bank",       design.showBankDetails),
+    showSignature:   isVisible("signatures", design.showSignature),
+  };
+}
+
 // ─── MiniPreview — always-visible document thumbnail ─────────────────────────
 function MiniPreview({ design, userInfo, fixedHeight }) {
   const containerRef = useRef(null);
@@ -128,6 +143,8 @@ function MiniPreview({ design, userInfo, fixedHeight }) {
     return () => { cancelAnimationFrame(raf); ro.disconnect(); };
   }, []);
 
+  const { showNotes, showBankDetails, showSignature } = getSectionVisibility(design);
+
   const previewDoc = {
     ...SAMPLE,
     template: design.template, template_color: design.color,
@@ -136,11 +153,11 @@ function MiniPreview({ design, userInfo, fixedHeight }) {
     company_address: userInfo?.company_address || "Your Business Address",
     company_phone: userInfo?.company_phone || "",
     company_email: userInfo?.company_email || "",
-    manager_signature: design.showSignature ? (userInfo?.manager_signature || "") : "",
-    notes: design.showNotes ? "Thank you for your continued business." : "",
-    bank_name: design.showBankDetails ? (userInfo?.default_bank_name || "First Bank") : "",
-    account_number: design.showBankDetails ? (userInfo?.default_account_number || "0123456789") : "",
-    account_holder_name: design.showBankDetails ? (userInfo?.default_account_holder_name || "Your Company") : "",
+    manager_signature: showSignature ? (userInfo?.manager_signature || "") : "",
+    notes: showNotes ? "Thank you for your continued business." : "",
+    bank_name: showBankDetails ? (userInfo?.default_bank_name || "First Bank") : "",
+    account_number: showBankDetails ? (userInfo?.default_account_number || "0123456789") : "",
+    account_holder_name: showBankDetails ? (userInfo?.default_account_holder_name || "Your Company") : "",
   };
 
   return (
@@ -200,6 +217,8 @@ function DesktopPreview({ design, userInfo }) {
     return () => { cancelAnimationFrame(raf); ro.disconnect(); };
   }, [device, previewW]);
 
+  const { showNotes, showBankDetails, showSignature } = getSectionVisibility(design);
+
   const previewDoc = {
     ...SAMPLE,
     template: design.template, template_color: design.color,
@@ -208,11 +227,11 @@ function DesktopPreview({ design, userInfo }) {
     company_address: userInfo?.company_address || "Your Business Address",
     company_phone: userInfo?.company_phone || "",
     company_email: userInfo?.company_email || "",
-    manager_signature: design.showSignature ? (userInfo?.manager_signature || "") : "",
-    notes: design.showNotes ? "Thank you for your continued business. Payment is due within 14 days." : "",
-    bank_name: design.showBankDetails ? (userInfo?.default_bank_name || "First Bank") : "",
-    account_number: design.showBankDetails ? (userInfo?.default_account_number || "0123456789") : "",
-    account_holder_name: design.showBankDetails ? (userInfo?.default_account_holder_name || "Your Company") : "",
+    manager_signature: showSignature ? (userInfo?.manager_signature || "") : "",
+    notes: showNotes ? "Thank you for your continued business. Payment is due within 14 days." : "",
+    bank_name: showBankDetails ? (userInfo?.default_bank_name || "First Bank") : "",
+    account_number: showBankDetails ? (userInfo?.default_account_number || "0123456789") : "",
+    account_holder_name: showBankDetails ? (userInfo?.default_account_holder_name || "Your Company") : "",
   };
 
   return (
