@@ -36,92 +36,157 @@ const STATUS_CONFIG = {
   unknown:  { label: "Unknown",  icon: CheckCircle2, color: "text-gray-400",    bg: "bg-gray-50",     border: "border-gray-200" },
 };
 
+// In-app "Ask first" confirmation dialogue shown before every permission request
+function ConfirmDialog({ perm, onCancel, confirmBtnRef }) {
+  const Icon = perm.icon;
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: "rgba(0,0,0,0.5)" }}>
+      <div className="bg-white rounded-3xl shadow-2xl w-full max-w-sm p-6 space-y-5">
+        <div className="flex flex-col items-center text-center gap-3">
+          <div className="w-16 h-16 rounded-2xl flex items-center justify-center" style={{ background: `${perm.color}18` }}>
+            <Icon className="h-8 w-8" style={{ color: perm.color }} />
+          </div>
+          <div>
+            <p className="font-bold text-base text-foreground">Allow {perm.label} Access?</p>
+            <p className="text-sm text-muted-foreground mt-1">{perm.description}</p>
+          </div>
+        </div>
+        <p className="text-xs text-center text-muted-foreground bg-muted/40 rounded-xl px-4 py-3">
+          Your browser will now ask you to confirm. Tap <strong>Allow</strong> when the prompt appears.
+        </p>
+        <div className="flex gap-3">
+          <button
+            onClick={onCancel}
+            className="flex-1 py-3 rounded-xl border border-border text-sm font-semibold text-muted-foreground hover:bg-muted transition-colors"
+          >
+            Cancel
+          </button>
+          <button
+            ref={confirmBtnRef}
+            className="flex-1 py-3 rounded-xl text-sm font-bold text-white transition-colors"
+            style={{ background: perm.color }}
+          >
+            Allow Access
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function PermissionRow({ perm, refresh }) {
   const [isOn, setIsOn] = useState(false);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
+  const [showConfirm, setShowConfirm] = useState(false);
   const Icon = perm.icon;
   const btnRef = useRef(null);
 
-  // Native DOM handler — required for getUserMedia to fire within a real user gesture on mobile
+  const handleToggle = () => {
+    setMessage("");
+    if (isOn) {
+      // Turning OFF — just flip visually
+      setIsOn(false);
+      return;
+    }
+    // Turning ON — show in-app confirm dialogue first
+    setShowConfirm(true);
+  };
+
+  // This fires when user taps "Allow Access" in our confirm dialogue.
+  // Must be attached as a native click on the confirm button to satisfy
+  // the browser's user-gesture requirement for getUserMedia on mobile.
+  const confirmBtnRef = useRef(null);
   useEffect(() => {
-    const btn = btnRef.current;
+    const btn = confirmBtnRef.current;
     if (!btn) return;
-
     const handler = function () {
-      setMessage("");
-
-      // Turning OFF — just flip the visual, no browser API needed
-      if (isOn) {
-        setIsOn(false);
-        return;
-      }
-
-      // Turning ON — always trigger the native permission prompt
+      setShowConfirm(false);
       setLoading(true);
 
-      let promise;
-      if (perm.key === "camera") {
-        promise = navigator.mediaDevices.getUserMedia({ video: true, audio: false });
-      } else if (perm.key === "microphone") {
-        promise = navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+      // Try to revoke first (supported in some browsers) so the native prompt re-appears
+      const revokeAndRequest = () => {
+        let promise;
+        if (perm.key === "camera") {
+          promise = navigator.mediaDevices.getUserMedia({ video: true, audio: false });
+        } else if (perm.key === "microphone") {
+          promise = navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+        } else {
+          promise = new Promise((resolve, reject) =>
+            navigator.geolocation
+              ? navigator.geolocation.getCurrentPosition(resolve, reject, { timeout: 8000 })
+              : reject(new Error("unavailable"))
+          );
+        }
+        promise
+          .then((result) => {
+            if (result && result.getTracks) result.getTracks().forEach((t) => t.stop());
+            setIsOn(true);
+            setLoading(false);
+            setMessage("✓ Access granted!");
+            refresh();
+          })
+          .catch(() => {
+            setIsOn(false);
+            setLoading(false);
+            setMessage("Denied. Go to browser site settings → set to Allow, then try again.");
+            refresh();
+          });
+      };
+
+      // Attempt revoke so browser re-prompts next time (Chrome supports this)
+      if (navigator.permissions && navigator.permissions.revoke) {
+        const permName = perm.key === "camera" ? "camera" : perm.key === "microphone" ? "microphone" : "geolocation";
+        navigator.permissions.revoke({ name: permName }).then(revokeAndRequest).catch(revokeAndRequest);
       } else {
-        promise = new Promise((resolve, reject) =>
-          navigator.geolocation
-            ? navigator.geolocation.getCurrentPosition(resolve, reject, { timeout: 8000 })
-            : reject(new Error("unavailable"))
-        );
+        revokeAndRequest();
       }
-
-      promise
-        .then((result) => {
-          if (result && result.getTracks) result.getTracks().forEach((t) => t.stop());
-          setIsOn(true);
-          setLoading(false);
-          setMessage("✓ Access granted!");
-          refresh();
-        })
-        .catch(() => {
-          setIsOn(false);
-          setLoading(false);
-          setMessage("Permission denied. Go to your browser site settings and set this to Allow.");
-          refresh();
-        });
     };
-
     btn.addEventListener("click", handler);
     return () => btn.removeEventListener("click", handler);
-  }, [isOn, perm.key, refresh]);
+  }, [perm.key, refresh, showConfirm]);
 
   return (
-    <div className="flex items-center gap-4 p-4 rounded-2xl border border-border bg-white hover:shadow-sm transition-shadow">
-      <div className="w-11 h-11 rounded-xl flex items-center justify-center shrink-0"
-        style={{ background: `${perm.color}18` }}>
-        <Icon className="h-5 w-5" style={{ color: perm.color }} />
-      </div>
+    <>
+      {showConfirm && (
+        <ConfirmDialog
+          perm={perm}
+          onCancel={() => setShowConfirm(false)}
+          onConfirm={() => {}} // handled natively via confirmBtnRef
+          confirmBtnRef={confirmBtnRef}
+        />
+      )}
 
-      <div className="flex-1 min-w-0">
-        <p className="font-semibold text-sm text-foreground">{perm.label}</p>
-        <p className="text-xs text-muted-foreground mt-0.5">{perm.description}</p>
-        {message && (
-          <p className={`text-[11px] mt-1 font-medium leading-tight ${message.startsWith("✓") ? "text-emerald-600" : "text-red-500"}`}>
-            {message}
-          </p>
-        )}
-      </div>
+      <div className="flex items-center gap-4 p-4 rounded-2xl border border-border bg-white hover:shadow-sm transition-shadow">
+        <div className="w-11 h-11 rounded-xl flex items-center justify-center shrink-0"
+          style={{ background: `${perm.color}18` }}>
+          <Icon className="h-5 w-5" style={{ color: perm.color }} />
+        </div>
 
-      <div className="flex items-center gap-2 shrink-0">
-        {loading && <div className="w-4 h-4 border-2 border-gray-300 border-t-indigo-500 rounded-full animate-spin" />}
-        <button
-          ref={btnRef}
-          disabled={loading}
-          className="relative w-12 h-6 rounded-full transition-colors duration-200 focus:outline-none focus-visible:ring-2 disabled:opacity-50"
-          style={{ background: isOn ? perm.color : "#d1d5db" }}
-        >
-          <span className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform duration-200 ${isOn ? "translate-x-6" : "translate-x-0"}`} />
-        </button>
+        <div className="flex-1 min-w-0">
+          <p className="font-semibold text-sm text-foreground">{perm.label}</p>
+          <p className="text-xs text-muted-foreground mt-0.5">{perm.description}</p>
+          {message && (
+            <p className={`text-[11px] mt-1 font-medium leading-tight ${message.startsWith("✓") ? "text-emerald-600" : "text-red-500"}`}>
+              {message}
+            </p>
+          )}
+        </div>
+
+        <div className="flex items-center gap-2 shrink-0">
+          {loading && <div className="w-4 h-4 border-2 border-gray-300 border-t-indigo-500 rounded-full animate-spin" />}
+          <button
+            ref={btnRef}
+            onClick={handleToggle}
+            disabled={loading}
+            className="relative w-12 h-6 rounded-full transition-colors duration-200 focus:outline-none focus-visible:ring-2 disabled:opacity-50"
+            style={{ background: isOn ? perm.color : "#d1d5db" }}
+          >
+            <span className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform duration-200 ${isOn ? "translate-x-6" : "translate-x-0"}`} />
+          </button>
+        </div>
       </div>
-    </div>
+    </>
   );
 }
 
