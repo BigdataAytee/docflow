@@ -23,7 +23,7 @@ export default function AIAssistant() {
 
   const [attachedImage, setAttachedImage] = useState(null); // { url, name }
   const [uploadingImage, setUploadingImage] = useState(false);
-  const [showCamera, setShowCamera] = useState(false);
+  const [cameraStream, setCameraStream] = useState(null); // non-null = camera open
   const imageInputRef = useRef(null);
 
   const handleImageUpload = async (file) => {
@@ -34,24 +34,24 @@ export default function AIAssistant() {
   };
 
   const handleCameraCapture = async (blob) => {
-    setShowCamera(false);
+    setCameraStream(null);
     const file = new File([blob], "scan.jpg", { type: "image/jpeg" });
     await handleImageUpload(file);
   };
 
-  // Call getUserMedia directly — triggers native OS permission popup immediately
+  // Directly call getUserMedia inside the click — triggers native OS permission popup
   const openCamera = () => {
-    navigator.mediaDevices.getUserMedia({ video: true, audio: false })
-      .then((stream) => {
-        stream.getTracks().forEach(t => t.stop()); // release probe stream
-        setShowCamera(true);
-      })
-      .catch((err) => {
-        console.warn("Camera access denied:", err.name, err.message);
-      });
+    navigator.mediaDevices.getUserMedia({
+      video: { facingMode: "environment" },
+      audio: false,
+    }).then((stream) => {
+      setCameraStream(stream);
+    }).catch((err) => {
+      console.warn("Camera denied:", err.name);
+    });
   };
 
-  const reset = () => { setStage("idle"); setInputText(""); setExtractedItems([]); setExtractedNotes(""); setAttachedImage(null); };
+  const reset = () => { setStage("idle"); setInputText(""); setExtractedItems([]); setExtractedNotes(""); setAttachedImage(null); setCameraStream(null); };
   const close = () => { setOpen(false); setTimeout(reset, 400); };
 
   useEffect(() => {
@@ -142,11 +142,12 @@ ${inputText}
 
   return (
     <>
-      {/* Live camera scanner overlay */}
-      {showCamera && (
+      {/* Live camera scanner — only mounts when we have a live stream */}
+      {cameraStream && (
         <CameraScanner
+          initialStream={cameraStream}
           onCapture={handleCameraCapture}
-          onClose={() => setShowCamera(false)}
+          onClose={() => { cameraStream?.getTracks().forEach(t => t.stop()); setCameraStream(null); }}
         />
       )}
 
