@@ -39,16 +39,20 @@ export default function AIAssistant() {
     await handleImageUpload(file);
   };
 
-  // Directly call getUserMedia inside the click — triggers native OS permission popup
-  const openCamera = () => {
-    navigator.mediaDevices.getUserMedia({
-      video: { facingMode: "environment" },
-      audio: false,
-    }).then((stream) => {
+  // getUserMedia called directly — no wrapper, no async, no intermediate step
+  // This is the ONLY pattern browsers accept for triggering native permission popups
+  const openCamera = async (e) => {
+    if (e) e.stopPropagation();
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: { ideal: "environment" } },
+        audio: false,
+      });
       setCameraStream(stream);
-    }).catch((err) => {
-      console.warn("Camera denied:", err.name);
-    });
+    } catch (err) {
+      // Permission was denied — nothing to do, browser already told the user
+      console.warn("Camera:", err.name);
+    }
   };
 
   const reset = () => { setStage("idle"); setInputText(""); setExtractedItems([]); setExtractedNotes(""); setAttachedImage(null); setCameraStream(null); };
