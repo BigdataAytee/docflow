@@ -1,5 +1,6 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { Camera, Mic, MapPin, RefreshCw, Settings, ChevronRight, CheckCircle2 } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
 import { usePermissions } from "@/hooks/usePermissions";
 
 const PERMISSIONS = [
@@ -116,19 +117,7 @@ function PermissionRow({ perm, status, onRequest, refresh }) {
       {/* Toggle switch */}
       <div className="flex items-center gap-2 shrink-0">
         {loading && <div className="w-4 h-4 border-2 border-gray-300 border-t-indigo-500 rounded-full animate-spin" />}
-        <button
-          onClick={handleToggle}
-          disabled={loading}
-          className={`relative w-12 h-6 rounded-full transition-colors duration-300 focus:outline-none disabled:opacity-60 ${isOn ? "bg-emerald-500" : "bg-gray-300"}`}
-          style={isOn ? { background: `linear-gradient(135deg, ${perm.color}, ${perm.color}cc)` } : {}}
-        >
-          <span
-            className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow-md transition-transform duration-300 ${isOn ? "translate-x-6" : "translate-x-0"}`}
-          />
-        </button>
-        <span className={`text-xs font-bold ${isOn ? "text-emerald-600" : "text-gray-400"}`}>
-          {isOn ? "On" : "Off"}
-        </span>
+        <Switch checked={isOn} onCheckedChange={handleToggle} disabled={loading} />
       </div>
     </div>
   );
