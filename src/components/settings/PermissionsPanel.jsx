@@ -36,11 +36,27 @@ const STATUS_CONFIG = {
   unknown:  { label: "Unknown",  icon: AlertCircle,  color: "text-gray-400",    bg: "bg-gray-50",     border: "border-gray-200" },
 };
 
-function PermissionRow({ perm, status, onRequest, openSettings }) {
+function PermissionRow({ perm, status, onRequest, refresh, openSettings }) {
   const [loading, setLoading] = useState(false);
   const cfg = STATUS_CONFIG[status] || STATUS_CONFIG.unknown;
   const StatusIcon = cfg.icon;
   const Icon = perm.icon;
+
+  // Camera MUST be triggered synchronously via .then() to satisfy browser user-gesture requirement
+  const handleCameraClick = () => {
+    if (!navigator.mediaDevices?.getUserMedia) return;
+    setLoading(true);
+    navigator.mediaDevices.getUserMedia({ video: true, audio: false })
+      .then((stream) => {
+        stream.getTracks().forEach((t) => t.stop());
+        refresh();
+        setLoading(false);
+      })
+      .catch(() => {
+        refresh();
+        setLoading(false);
+      });
+  };
 
   const handleRequest = async () => {
     setLoading(true);
@@ -72,7 +88,7 @@ function PermissionRow({ perm, status, onRequest, openSettings }) {
       <div className="flex items-center gap-2 shrink-0">
         {status !== "granted" && (
           <button
-            onClick={handleRequest}
+            onClick={perm.key === "camera" ? handleCameraClick : handleRequest}
             disabled={loading}
             className="text-xs font-bold px-3 py-1.5 rounded-xl text-white transition-all active:scale-95 disabled:opacity-60"
             style={{ background: `linear-gradient(135deg, ${perm.color}, ${perm.color}cc)` }}
@@ -98,6 +114,7 @@ function PermissionRow({ perm, status, onRequest, openSettings }) {
 
 export default function PermissionsPanel() {
   const { statuses, refresh, requestCamera, requestMicrophone, requestLocation, openSettings } = usePermissions();
+
   const [refreshing, setRefreshing] = useState(false);
 
   const requestMap = { camera: requestCamera, microphone: requestMicrophone, location: requestLocation };
@@ -141,6 +158,7 @@ export default function PermissionsPanel() {
               perm={perm}
               status={statuses[perm.key]}
               onRequest={requestMap[perm.key]}
+              refresh={refresh}
               openSettings={openSettings}
             />
           ))}
