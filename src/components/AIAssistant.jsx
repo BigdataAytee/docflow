@@ -1,8 +1,9 @@
 import { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
-import { Sparkles, X, ArrowRight, Check, ChevronLeft, FileText, FileCheck, Receipt, Truck, Loader2, Wand2, MessageSquare, ImagePlus, Camera } from "lucide-react";
+import { Sparkles, X, ArrowRight, Check, ChevronLeft, FileText, FileCheck, Receipt, Truck, Loader2, Wand2, MessageSquare, ImagePlus, Camera, ScanSearch } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import CameraScanner from "./CameraScanner";
 
 const DOC_TYPES = [
   { type: "invoice",   label: "Invoice",   icon: FileText,  gradient: "linear-gradient(135deg,#3b82f6,#1d4ed8)", desc: "Bill a client" },
@@ -22,18 +23,20 @@ export default function AIAssistant() {
 
   const [attachedImage, setAttachedImage] = useState(null); // { url, name }
   const [uploadingImage, setUploadingImage] = useState(false);
+  const [showCamera, setShowCamera] = useState(false);
   const imageInputRef = useRef(null);
-  const cameraInputRef = useRef(null);
 
   const handleImageUpload = async (file) => {
     setUploadingImage(true);
     const { file_url } = await base44.integrations.Core.UploadFile({ file });
-    setAttachedImage({ url: file_url, name: file.name });
+    setAttachedImage({ url: file_url, name: file.name || "scanned-document.jpg" });
     setUploadingImage(false);
   };
 
-  const handleCameraScan = () => {
-    cameraInputRef.current?.click();
+  const handleCameraCapture = async (blob) => {
+    setShowCamera(false);
+    const file = new File([blob], "scan.jpg", { type: "image/jpeg" });
+    await handleImageUpload(file);
   };
 
   const reset = () => { setStage("idle"); setInputText(""); setExtractedItems([]); setExtractedNotes(""); setAttachedImage(null); };
@@ -47,20 +50,40 @@ export default function AIAssistant() {
     if (!inputText.trim() && !attachedImage) return;
     setStage("extracting");
     const hasImage = !!attachedImage;
-    const promptText = hasImage && !inputText.trim()
-      ? "Extract product/service line items from this image. If it is a photo of a list, receipt, invoice, handwritten note or any business document, extract all items with their descriptions, quantities, and prices."
-      : `You are a document data extractor for a business invoicing app.
-Extract product/service line items from the following text${hasImage ? " and the attached image" : ""}. Each item should have a description, quantity (default 1 if not mentioned), and unit_price (0 if not mentioned).
-Also extract any general notes that are not a specific line item.
+
+    const promptText = hasImage
+      ? `You are a highly accurate OCR and document data extraction engine for a business invoicing application.
+
+TASK: Extract ALL product/service line items from the ${inputText.trim() ? "text and " : ""}attached image with maximum precision.
+
+EXTRACTION RULES:
+1. Read EVERY line item, product, service, SKU, or charge listed.
+2. For each item extract: exact description (preserve original spelling/names), quantity (default 1 if not stated), unit_price (numeric only, strip currency symbols, default 0 if not found).
+3. Detect and parse common document formats: invoices, receipts, price lists, purchase orders, handwritten notes, tables, delivery notes, waybills.
+4. If prices appear as totals (qty × price), back-calculate unit_price when quantity is clear.
+5. Ignore headers, footers, subtotals, taxes, signatures — only extract individual line items.
+6. For handwritten documents, infer unclear characters from context.
+7. Extract any important notes, payment terms, or delivery info separately.
+${inputText.trim() ? `\nADDITIONAL TEXT INPUT:\n"""\n${inputText}\n"""` : ""}
+
+Return a structured JSON with every line item found. Be thorough — missing items is worse than including extras.`
+      : `You are a precise document data extractor for a business invoicing app.
+
+Extract ALL product/service line items from the text below.
+Rules:
+- Each item: description (exact), quantity (default 1), unit_price (numeric, default 0)
+- Parse formats like "5x cement @ ₦5,000", "3 bags flour - N2500 each", "labour: 2hrs @ $50"
+- Extract notes/terms separately
 
 Text:
 """
-${inputText || "(see attached image)"}
+${inputText}
 """`;
+
     const result = await base44.integrations.Core.InvokeLLM({
       prompt: promptText,
       ...(hasImage ? { file_urls: [attachedImage.url] } : {}),
-      model: hasImage ? "gemini_3_flash" : undefined,
+      model: "claude_sonnet_4_6", // Best vision + reasoning model for OCR accuracy
       response_json_schema: {
         type: "object",
         properties: {
@@ -70,19 +93,30 @@ ${inputText || "(see attached image)"}
               type: "object",
               properties: {
                 description: { type: "string" },
-                quantity: { type: "number" },
-                unit_price: { type: "number" }
+                quantity:    { type: "number" },
+                unit_price:  { type: "number" }
               }
             }
           },
-          notes: { type: "string" }
+          notes:            { type: "string" },
+          customer_name:    { type: "string" },
+          document_number:  { type: "string" },
+          document_date:    { type: "string" },
         }
       }
     });
 
     const items = (result?.items || []).filter(it => it.description?.trim());
-    setExtractedItems(items.length > 0 ? items : [{ description: inputText.trim(), quantity: 1, unit_price: 0 }]);
-    setExtractedNotes(result?.notes || "");
+    setExtractedItems(items.length > 0 ? items : [{ description: inputText.trim() || "Item", quantity: 1, unit_price: 0 }]);
+
+    // Combine all extracted metadata into notes
+    const metaParts = [];
+    if (result?.customer_name) metaParts.push(`Customer: ${result.customer_name}`);
+    if (result?.document_number) metaParts.push(`Ref: ${result.document_number}`);
+    if (result?.document_date) metaParts.push(`Date: ${result.document_date}`);
+    if (result?.notes) metaParts.push(result.notes);
+    setExtractedNotes(metaParts.join("\n").trim());
+
     setStage("confirm");
   };
 
@@ -96,6 +130,14 @@ ${inputText || "(see attached image)"}
 
   return (
     <>
+      {/* Live camera scanner overlay */}
+      {showCamera && (
+        <CameraScanner
+          onCapture={handleCameraCapture}
+          onClose={() => setShowCamera(false)}
+        />
+      )}
+
       {/* Floating launcher */}
       <div
         className="fixed z-40 group"
@@ -168,26 +210,17 @@ ${inputText || "(see attached image)"}
               </div>
 
               {/* Camera scan button */}
-              <button
-                onClick={handleCameraScan}
-                disabled={uploadingImage}
-                className="relative z-10 mt-4 flex items-center gap-2 bg-white/15 hover:bg-white/25 border border-white/20 text-white text-xs font-bold px-3.5 py-2 rounded-xl transition-all active:scale-95 disabled:opacity-60"
-              >
-                {uploadingImage ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Camera className="h-3.5 w-3.5" />}
-                {uploadingImage ? "Processing…" : "Scan Document with Camera"}
-                {!uploadingImage && (
-                  <span className="ml-1 text-[9px] font-black uppercase tracking-widest bg-yellow-400/30 text-yellow-300 px-1.5 py-0.5 rounded-full">New</span>
-                )}
-              </button>
-              {/* Hidden camera input */}
-              <input
-                ref={cameraInputRef}
-                type="file"
-                accept="image/*"
-                capture="environment"
-                className="hidden"
-                onChange={e => e.target.files[0] && handleImageUpload(e.target.files[0])}
-              />
+                  <button
+                    onClick={() => setShowCamera(true)}
+                    disabled={uploadingImage}
+                    className="relative z-10 mt-4 flex items-center gap-2 bg-white/15 hover:bg-white/25 border border-white/20 text-white text-xs font-bold px-3.5 py-2 rounded-xl transition-all active:scale-95 disabled:opacity-60"
+                  >
+                    {uploadingImage ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <ScanSearch className="h-3.5 w-3.5" />}
+                    {uploadingImage ? "Uploading scan…" : "Scan Document with Camera"}
+                    {!uploadingImage && (
+                      <span className="ml-1 text-[9px] font-black uppercase tracking-widest bg-yellow-400/30 text-yellow-300 px-1.5 py-0.5 rounded-full">Live</span>
+                    )}
+                  </button>
 
               {/* Step pills */}
               <div className="relative z-10 flex items-center gap-2 mt-4">
@@ -231,7 +264,9 @@ ${inputText || "(see attached image)"}
                       </div>
                       <div className="flex-1 min-w-0">
                         <p className="text-xs font-semibold text-indigo-700 truncate">{attachedImage.name}</p>
-                        <p className="text-xs text-indigo-500 mt-0.5">AI will read text from this image</p>
+                        <p className="text-xs text-indigo-500 mt-0.5">
+                          {attachedImage.name === "scan.jpg" ? "📷 Camera scan ready — AI will extract all text" : "AI will read text from this image"}
+                        </p>
                       </div>
                       <button onClick={() => setAttachedImage(null)} className="text-indigo-300 hover:text-red-400 transition-colors shrink-0"><X className="h-4 w-4" /></button>
                     </div>
@@ -245,10 +280,10 @@ ${inputText || "(see attached image)"}
                       {/* Camera scan */}
                       <button
                         type="button"
-                        onClick={handleCameraScan}
+                        onClick={() => setShowCamera(true)}
                         className="flex items-center justify-center gap-2 border-2 border-dashed border-violet-300 bg-violet-50 hover:bg-violet-100 rounded-2xl px-4 text-violet-600 transition-colors text-xs font-bold"
                       >
-                        <Camera className="h-4 w-4" /> Scan
+                        <ScanSearch className="h-4 w-4" /> Scan
                       </button>
                     </div>
                   )}
