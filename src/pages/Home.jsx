@@ -142,14 +142,14 @@ export default function Home() {
               {greeting()}{firstName ? `, ${firstName}` : ""}! 👋
             </h1>
             <p className="text-white/60 mt-1.5 text-sm">Manage your documents and business communications.</p>
-            <button
-              onClick={openCamera}
-              disabled={uploadingImage}
-              className="mt-3 flex items-center gap-2 bg-white/15 hover:bg-white/25 border border-white/20 text-white text-xs font-bold px-3.5 py-2 rounded-xl transition-all active:scale-95 disabled:opacity-60 w-fit hidden">
-              
-              {uploadingImage ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <ScanSearch className="h-3.5 w-3.5" />}
-              {uploadingImage ? "Uploading scan…" : "Scan Document"}
-            </button>
+            
+
+
+
+
+
+
+            
           </div>
           <div className="flex flex-wrap gap-3 shrink-0">
             <div className="bg-white/10 backdrop-blur-sm border border-white/10 rounded-2xl px-4 py-3 text-center min-w-[72px]">
