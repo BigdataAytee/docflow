@@ -1,153 +1,111 @@
 import { useState } from "react";
-import { Camera, Mic, MapPin, Settings, RefreshCw, X, CheckCircle2, ShieldAlert } from "lucide-react";
+import { ShieldAlert, Settings, RefreshCw, X } from "lucide-react";
 import { usePermissions } from "@/hooks/usePermissions";
 
-const PERM_META = {
-  camera: {
-    icon: Camera,
-    color: "#6366f1",
-    bg: "bg-indigo-50",
-    border: "border-indigo-200",
-    title: "Camera Access Blocked",
-    description: "Camera permission was denied. To use this feature, you'll need to allow access in your browser settings.",
-    steps: {
-      chrome: ['Click the 🔒 or 📷 icon in the address bar', 'Select "Site settings"', 'Set Camera to "Allow"', 'Click "Retry" below'],
-      safari: ['Tap "AA" or the 🔒 icon in the address bar', 'Select "Website Settings"', 'Set Camera to "Allow"', 'Tap "Retry" below'],
-      android: ['Open your browser Settings → Site Settings → Camera', 'Find this site and set Camera to "Allow"', 'Return here and tap "Retry"'],
-      default: ['Look for a camera/lock icon in your browser\'s address bar', 'Allow camera access for this site', 'Click "Retry" below'],
-    },
-  },
-  microphone: {
-    icon: Mic,
-    color: "#8b5cf6",
-    bg: "bg-violet-50",
-    border: "border-violet-200",
-    title: "Microphone Access Blocked",
-    description: "Microphone permission was denied. Please allow access in your browser settings.",
-    steps: {
-      default: ['Look for a microphone icon in your browser\'s address bar', 'Allow microphone access for this site', 'Click "Retry" below'],
-    },
-  },
-  location: {
-    icon: MapPin,
-    color: "#10b981",
-    bg: "bg-emerald-50",
-    border: "border-emerald-200",
-    title: "Location Access Blocked",
-    description: "Location permission was denied. Please allow access in your browser settings.",
-    steps: {
-      default: ['Allow location access when your browser asks', 'Or check your browser site settings', 'Click "Retry" below'],
-    },
-  },
+const STEPS = {
+  chrome:  ['Click the 🔒 icon in the address bar', 'Select "Site settings"', 'Set Camera to "Allow"', 'Click "Retry" below'],
+  safari:  ['Tap "AA" in the address bar', 'Select "Website Settings"', 'Set Camera to "Allow"', 'Tap "Retry" below'],
+  android: ['Open browser Settings → Site Settings → Camera', 'Find this site and set Camera to "Allow"', 'Return here and tap "Retry"'],
+  default: ['Look for a lock/camera icon in your browser address bar', 'Allow camera access for this site', 'Click "Retry" below'],
 };
 
-function getSteps(meta) {
+function getSteps() {
   const ua = navigator.userAgent;
-  if (/Chrome/.test(ua) && !/Edg/.test(ua)) return meta.steps.chrome || meta.steps.default;
-  if (/Safari/.test(ua) && !/Chrome/.test(ua)) return meta.steps.safari || meta.steps.default;
-  if (/Android/.test(ua)) return meta.steps.android || meta.steps.default;
-  return meta.steps.default;
-}
-
-// Directly calls getUserMedia — must be called from a user gesture for native popup to appear
-async function requestCameraAccess() {
-  const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
-  // Stop the tracks immediately — caller will open its own stream
-  stream.getTracks().forEach(t => t.stop());
-  return "granted";
+  if (/Android/.test(ua)) return STEPS.android;
+  if (/Safari/.test(ua) && !/Chrome/.test(ua)) return STEPS.safari;
+  if (/Chrome/.test(ua)) return STEPS.chrome;
+  return STEPS.default;
 }
 
 /**
- * PermissionGate — wraps camera buttons.
- * On click: immediately fires getUserMedia() to trigger the native OS permission popup.
- * Only shows a UI modal if permission was previously denied.
+ * PermissionGate — camera permission wrapper.
+ *
+ * The ONLY job of handleClick is to call getUserMedia() immediately
+ * as the first synchronous action inside the user gesture, so every
+ * browser (iOS Safari, Android Chrome, Desktop) shows its native popup.
+ *
+ * A denial modal is shown ONLY after the browser has already rejected access.
  */
 export default function PermissionGate({ permission = "camera", onGranted, children }) {
   const { openSettings } = usePermissions();
-  const [showDeniedModal, setShowDeniedModal] = useState(false);
+  const [denied, setDenied] = useState(false);
   const [retrying, setRetrying] = useState(false);
 
-  const meta = PERM_META[permission] || PERM_META.camera;
-  const Icon = meta.icon;
-  const steps = getSteps(meta);
-
-  // This is called directly from a user click — browser will show native popup
-  const handleClick = async () => {
+  // Called directly by the button — NO awaits before getUserMedia
+  const handleClick = () => {
     if (permission !== "camera") {
-      // For non-camera permissions, just proceed
       onGranted?.();
       return;
     }
 
-    try {
-      await requestCameraAccess();
-      // Permission granted — open the feature
-      onGranted?.();
-    } catch (err) {
-      // NotAllowedError = denied; any other error = unavailable
-      setShowDeniedModal(true);
+    if (!navigator.mediaDevices?.getUserMedia) {
+      console.error("[PermissionGate] navigator.mediaDevices.getUserMedia is not available");
+      setDenied(true);
+      return;
     }
+
+    console.log("[PermissionGate] Requesting camera — triggering native permission popup");
+
+    // getUserMedia called synchronously within the click event — this is what triggers the OS popup
+    navigator.mediaDevices.getUserMedia({ video: true, audio: false })
+      .then((stream) => {
+        console.log("[PermissionGate] Camera permission granted");
+        // Stop the probe stream immediately — the real camera will be opened by onGranted
+        stream.getTracks().forEach(t => t.stop());
+        onGranted?.();
+      })
+      .catch((err) => {
+        console.warn("[PermissionGate] Camera permission denied or error:", err.name, err.message);
+        setDenied(true);
+      });
   };
 
-  const handleRetry = async () => {
+  const handleRetry = () => {
     setRetrying(true);
-    try {
-      await requestCameraAccess();
-      setRetrying(false);
-      setShowDeniedModal(false);
-      onGranted?.();
-    } catch {
-      setRetrying(false);
-      // still denied — modal stays open
-    }
+    navigator.mediaDevices.getUserMedia({ video: true, audio: false })
+      .then((stream) => {
+        stream.getTracks().forEach(t => t.stop());
+        setRetrying(false);
+        setDenied(false);
+        onGranted?.();
+      })
+      .catch((err) => {
+        console.warn("[PermissionGate] Retry denied:", err.name);
+        setRetrying(false);
+      });
   };
 
   return (
     <>
       {children(handleClick)}
 
-      {showDeniedModal && (
+      {denied && (
         <div
           className="fixed inset-0 z-[70] flex items-end sm:items-center justify-center p-4"
           style={{ background: "rgba(0,0,0,0.6)", backdropFilter: "blur(4px)" }}
         >
           <div className="w-full max-w-sm bg-white rounded-3xl shadow-2xl overflow-hidden">
-            {/* Header */}
-            <div
-              className="px-6 pt-6 pb-5"
-              style={{ background: `linear-gradient(135deg, ${meta.color}18, ${meta.color}08)`, borderBottom: `1px solid ${meta.color}22` }}
-            >
+            <div className="px-6 pt-6 pb-5 bg-indigo-50 border-b border-indigo-100">
               <div className="flex items-start justify-between mb-3">
-                <div
-                  className="w-14 h-14 rounded-2xl flex items-center justify-center shadow-lg"
-                  style={{ background: `linear-gradient(135deg, ${meta.color}, ${meta.color}cc)` }}
-                >
+                <div className="w-14 h-14 rounded-2xl bg-indigo-600 flex items-center justify-center shadow-lg">
                   <ShieldAlert className="h-7 w-7 text-white" />
                 </div>
-                <button
-                  onClick={() => setShowDeniedModal(false)}
-                  className="p-2 rounded-xl hover:bg-black/5 text-gray-400 transition-colors"
-                >
+                <button onClick={() => setDenied(false)} className="p-2 rounded-xl hover:bg-black/5 text-gray-400">
                   <X className="h-4 w-4" />
                 </button>
               </div>
-              <h2 className="font-bold text-lg text-gray-900">{meta.title}</h2>
-              <p className="text-sm text-gray-500 mt-1 leading-relaxed">{meta.description}</p>
+              <h2 className="font-bold text-lg text-gray-900">Camera Access Blocked</h2>
+              <p className="text-sm text-gray-500 mt-1 leading-relaxed">
+                Your browser has blocked camera access. Follow these steps to enable it:
+              </p>
             </div>
 
             <div className="px-6 py-5 space-y-4">
-              {/* Step-by-step instructions */}
-              <div className={`rounded-2xl p-4 ${meta.bg} ${meta.border} border`}>
-                <p className="text-xs font-bold mb-3" style={{ color: meta.color }}>
-                  How to enable camera access:
-                </p>
+              <div className="rounded-2xl p-4 bg-indigo-50 border border-indigo-200">
                 <div className="space-y-2">
-                  {steps.map((step, i) => (
+                  {getSteps().map((step, i) => (
                     <div key={i} className="flex items-start gap-2.5">
-                      <span
-                        className="w-5 h-5 rounded-full text-white text-[10px] font-black flex items-center justify-center shrink-0 mt-0.5"
-                        style={{ background: meta.color }}
-                      >
+                      <span className="w-5 h-5 rounded-full bg-indigo-600 text-white text-[10px] font-black flex items-center justify-center shrink-0 mt-0.5">
                         {i + 1}
                       </span>
                       <p className="text-xs text-gray-700 leading-relaxed">{step}</p>
@@ -159,8 +117,7 @@ export default function PermissionGate({ permission = "camera", onGranted, child
               <div className="space-y-2">
                 <button
                   onClick={openSettings}
-                  className="w-full flex items-center justify-center gap-2 py-3 rounded-2xl text-sm font-bold text-white transition-all active:scale-95"
-                  style={{ background: `linear-gradient(135deg, ${meta.color}, ${meta.color}cc)` }}
+                  className="w-full flex items-center justify-center gap-2 py-3 rounded-2xl text-sm font-bold text-white bg-indigo-600 hover:bg-indigo-500 transition-all active:scale-95"
                 >
                   <Settings className="h-4 w-4" /> Open Device Settings
                 </button>
@@ -174,10 +131,7 @@ export default function PermissionGate({ permission = "camera", onGranted, child
                 </button>
               </div>
 
-              <button
-                onClick={() => setShowDeniedModal(false)}
-                className="w-full text-center text-xs text-gray-400 hover:text-gray-600 transition-colors py-1"
-              >
+              <button onClick={() => setDenied(false)} className="w-full text-center text-xs text-gray-400 hover:text-gray-600 py-1">
                 Cancel
               </button>
             </div>
