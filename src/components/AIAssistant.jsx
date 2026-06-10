@@ -1,9 +1,8 @@
 import { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
-import { Sparkles, X, ArrowRight, Check, ChevronLeft, FileText, FileCheck, Receipt, Truck, Loader2, Wand2, MessageSquare, ImagePlus, ScanSearch } from "lucide-react";
+import { Sparkles, X, ArrowRight, Check, ChevronLeft, FileText, FileCheck, Receipt, Truck, Loader2, Wand2, MessageSquare, ImagePlus } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import CameraScanner from "./CameraScanner";
 
 const DOC_TYPES = [
   { type: "invoice",   label: "Invoice",   icon: FileText,  gradient: "linear-gradient(135deg,#3b82f6,#1d4ed8)", desc: "Bill a client" },
@@ -23,7 +22,6 @@ export default function AIAssistant() {
 
   const [attachedImage, setAttachedImage] = useState(null); // { url, name }
   const [uploadingImage, setUploadingImage] = useState(false);
-  const [cameraStream, setCameraStream] = useState(null); // non-null = camera open
   const imageInputRef = useRef(null);
 
   const handleImageUpload = async (file) => {
@@ -33,68 +31,7 @@ export default function AIAssistant() {
     setUploadingImage(false);
   };
 
-  const handleCameraCapture = async (blob) => {
-    setCameraStream(null);
-    const file = new File([blob], "scan.jpg", { type: "image/jpeg" });
-    await handleImageUpload(file);
-  };
-
-  // DIAGNOSTIC: Full camera permission diagnosis
-  const openCamera = async (e) => {
-    if (e) e.stopPropagation();
-
-    console.group("🎥 CAMERA DIAGNOSIS");
-    console.log("1. Click event received:", !!e, "| isTrusted:", e?.isTrusted);
-    console.log("2. Protocol:", window.location.protocol, "| HTTPS required for getUserMedia");
-    console.log("3. navigator.mediaDevices:", typeof navigator.mediaDevices);
-    console.log("4. getUserMedia available:", typeof navigator.mediaDevices?.getUserMedia);
-    console.log("5. In iframe:", window !== window.top);
-    console.log("6. User agent:", navigator.userAgent);
-
-    // Check Permissions API state
-    if (navigator.permissions) {
-      try {
-        const perm = await navigator.permissions.query({ name: "camera" });
-        console.log("7. Permissions API camera state:", perm.state); // 'granted' | 'denied' | 'prompt'
-      } catch (pe) {
-        console.log("7. Permissions API error:", pe.message);
-      }
-    } else {
-      console.log("7. Permissions API: NOT available");
-    }
-
-    // Check if getUserMedia exists at all
-    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-      console.error("❌ FATAL: navigator.mediaDevices.getUserMedia is NOT available.");
-      console.error("   Likely cause: HTTP (not HTTPS), or unsupported browser.");
-      console.groupEnd();
-      return;
-    }
-
-    console.log("8. Calling getUserMedia NOW...");
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: { ideal: "environment" } },
-        audio: false,
-      });
-      console.log("✅ SUCCESS: Camera stream obtained:", stream.id);
-      console.log("   Video tracks:", stream.getVideoTracks().map(t => t.label));
-      console.groupEnd();
-      setCameraStream(stream);
-    } catch (err) {
-      console.error("❌ FAILED:", err.name, "-", err.message);
-      console.error("   name:", err.name);
-      console.error("   Common causes:");
-      console.error("   - NotAllowedError: User denied OR site is blocked in browser settings");
-      console.error("   - NotFoundError: No camera device found");
-      console.error("   - NotReadableError: Camera in use by another app");
-      console.error("   - SecurityError: Insecure context or iframe sandbox restriction");
-      console.error("   - TypeError: Constraints invalid");
-      console.groupEnd();
-    }
-  };
-
-  const reset = () => { setStage("idle"); setInputText(""); setExtractedItems([]); setExtractedNotes(""); setAttachedImage(null); setCameraStream(null); };
+  const reset = () => { setStage("idle"); setInputText(""); setExtractedItems([]); setExtractedNotes(""); setAttachedImage(null); };
   const close = () => { setOpen(false); setTimeout(reset, 400); };
 
   useEffect(() => {
@@ -185,15 +122,6 @@ ${inputText}
 
   return (
     <>
-      {/* Live camera scanner — only mounts when we have a live stream */}
-      {cameraStream && (
-        <CameraScanner
-          initialStream={cameraStream}
-          onCapture={handleCameraCapture}
-          onClose={() => { cameraStream?.getTracks().forEach(t => t.stop()); setCameraStream(null); }}
-        />
-      )}
-
       {/* Floating launcher */}
       <div
         className="fixed z-40 group"
@@ -265,19 +193,6 @@ ${inputText}
                 </button>
               </div>
 
-              {/* Camera scan button */}
-              <button
-                onClick={openCamera}
-                disabled={uploadingImage}
-                className="relative z-10 mt-4 flex items-center gap-2 bg-white/15 hover:bg-white/25 border border-white/20 text-white text-xs font-bold px-3.5 py-2 rounded-xl transition-all active:scale-95 disabled:opacity-60"
-              >
-                {uploadingImage ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <ScanSearch className="h-3.5 w-3.5" />}
-                {uploadingImage ? "Uploading scan…" : "Scan Document with Camera"}
-                {!uploadingImage && (
-                  <span className="ml-1 text-[9px] font-black uppercase tracking-widest bg-yellow-400/30 text-yellow-300 px-1.5 py-0.5 rounded-full">Live</span>
-                )}
-              </button>
-
               {/* Step pills */}
               <div className="relative z-10 flex items-center gap-2 mt-4">
                 {["Paste", "Review", "Choose Type"].map((label, i) => (
@@ -328,19 +243,10 @@ ${inputText}
                     </div>
                   ) : (
                     <div className={`flex items-stretch gap-2 ${uploadingImage ? "opacity-60 pointer-events-none" : ""}`}>
-                      {/* Gallery upload */}
                       <label className="flex-1 flex items-center justify-center gap-2 border-2 border-dashed border-indigo-200 rounded-2xl py-3 text-indigo-500 hover:bg-indigo-50 transition-colors cursor-pointer text-xs font-medium">
-                        {uploadingImage ? <><Loader2 className="h-4 w-4 animate-spin" /> Uploading…</> : <><ImagePlus className="h-4 w-4" /> From Gallery</>}
+                        {uploadingImage ? <><Loader2 className="h-4 w-4 animate-spin" /> Uploading…</> : <><ImagePlus className="h-4 w-4" /> Attach Image</>}
                         <input ref={imageInputRef} type="file" accept="image/*" className="hidden" onChange={e => e.target.files[0] && handleImageUpload(e.target.files[0])} />
                       </label>
-                      {/* Camera scan */}
-                      <button
-                        type="button"
-                        onClick={openCamera}
-                        className="flex items-center justify-center gap-2 border-2 border-dashed border-violet-300 bg-violet-50 hover:bg-violet-100 rounded-2xl px-4 text-violet-600 transition-colors text-xs font-bold"
-                      >
-                        <ScanSearch className="h-4 w-4" /> Scan
-                      </button>
                     </div>
                   )}
 
