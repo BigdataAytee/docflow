@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from "react";
-import { Camera, X, ZoomIn, RotateCcw, Check, Loader2, ScanLine, AlertCircle } from "lucide-react";
+import { Camera, X, ZoomIn, RotateCcw, Loader2, ScanLine } from "lucide-react";
 
 /**
  * CameraScanner — full-screen live camera viewfinder with document alignment overlay.
@@ -15,18 +15,33 @@ export default function CameraScanner({ onCapture, onClose }) {
   const [flashActive, setFlashActive] = useState(false);
   const [torch, setTorch] = useState(false);
   const [torchSupported, setTorchSupported] = useState(false);
-  const [error, setError] = useState(null);
-  const [countdown, setCountdown] = useState(null);
+  const [error, setError] = useState(null); // null | "denied" | "unavailable"
+  const [retryKey, setRetryKey] = useState(0);
+
+  const openDeviceSettings = () => {
+    // Works on iOS Safari (app-settings:) and Android Chrome (chrome://settings)
+    // Fallback: show instructions overlay
+    const ua = navigator.userAgent;
+    if (/iPhone|iPad|iPod/.test(ua)) {
+      window.location.href = "app-settings:";
+    } else if (/Android/.test(ua)) {
+      // Android doesn't allow deep-linking to settings from web, so we open chrome settings
+      window.open("chrome://settings/content/camera", "_blank");
+    }
+    // For desktop browsers, just instruct the user via the UI (no API to open settings)
+  };
 
   // Start camera
   useEffect(() => {
     let cancelled = false;
+    setReady(false);
+    setError(null);
     async function startCamera() {
       try {
         const stream = await navigator.mediaDevices.getUserMedia({
           video: {
             facingMode: { ideal: "environment" },
-            width: { ideal: 3840 },   // request max resolution
+            width: { ideal: 3840 },
             height: { ideal: 2160 },
             focusMode: { ideal: "continuous" },
           },
@@ -40,14 +55,15 @@ export default function CameraScanner({ onCapture, onClose }) {
             if (!cancelled) setReady(true);
           };
         }
-        // Check torch support
         const track = stream.getVideoTracks()[0];
         const caps = track.getCapabilities?.() || {};
         if (caps.torch) setTorchSupported(true);
       } catch (err) {
-        if (!cancelled) setError(err.name === "NotAllowedError"
-          ? "Camera permission denied. Please allow camera access and try again."
-          : "Could not access camera. Try uploading from your gallery instead.");
+        if (!cancelled) {
+          setError(err.name === "NotAllowedError" || err.name === "PermissionDeniedError"
+            ? "denied"
+            : "unavailable");
+        }
       }
     }
     startCamera();
@@ -55,7 +71,7 @@ export default function CameraScanner({ onCapture, onClose }) {
       cancelled = true;
       streamRef.current?.getTracks().forEach(t => t.stop());
     };
-  }, []);
+  }, [retryKey]);
 
   const toggleTorch = useCallback(async () => {
     const track = streamRef.current?.getVideoTracks()[0];
@@ -164,15 +180,70 @@ export default function CameraScanner({ onCapture, onClose }) {
 
       {/* Error */}
       {error && (
-        <div className="flex-1 flex flex-col items-center justify-center gap-4 px-8 text-center">
-          <div className="w-16 h-16 rounded-2xl bg-red-500/20 flex items-center justify-center">
-            <AlertCircle className="h-8 w-8 text-red-400" />
+        <div className="flex-1 flex flex-col items-center justify-center gap-5 px-8 text-center">
+          <div className="w-20 h-20 rounded-3xl bg-red-500/20 flex items-center justify-center">
+            <Camera className="h-10 w-10 text-red-400" />
           </div>
-          <p className="text-white font-semibold">{error}</p>
-          <button onClick={onClose}
-            className="mt-2 bg-white/10 hover:bg-white/20 text-white text-sm font-bold px-6 py-2.5 rounded-2xl transition-colors">
-            Go Back
-          </button>
+
+          {error === "denied" ? (
+            <>
+              <div>
+                <p className="text-white font-bold text-lg mb-1">Camera Access Blocked</p>
+                <p className="text-white/60 text-sm leading-relaxed">
+                  Your browser has blocked camera access. To fix this:
+                </p>
+              </div>
+
+              {/* Step-by-step instructions */}
+              <div className="w-full max-w-xs bg-white/10 rounded-2xl p-4 text-left space-y-2.5">
+                {[
+                  { icon: "1", text: "Look for a 🔒 or 📷 icon in your browser's address bar" },
+                  { icon: "2", text: 'Click it and set Camera to "Allow"' },
+                  { icon: "3", text: 'Tap "Retry" below — no page reload needed' },
+                ].map(({ icon, text }) => (
+                  <div key={icon} className="flex items-start gap-3">
+                    <span className="w-5 h-5 rounded-full bg-indigo-500 text-white text-[10px] font-black flex items-center justify-center shrink-0 mt-0.5">{icon}</span>
+                    <p className="text-white/80 text-xs leading-relaxed">{text}</p>
+                  </div>
+                ))}
+              </div>
+
+              <div className="flex flex-col gap-2 w-full max-w-xs">
+                {/* Open device settings (works on iOS & some Android) */}
+                <button
+                  onClick={openDeviceSettings}
+                  className="w-full bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-bold px-6 py-3 rounded-2xl transition-colors flex items-center justify-center gap-2"
+                >
+                  <span>⚙️</span> Open Device Settings
+                </button>
+                <button
+                  onClick={() => setRetryKey(k => k + 1)}
+                  className="w-full bg-white/15 hover:bg-white/25 text-white text-sm font-bold px-6 py-3 rounded-2xl transition-colors"
+                >
+                  🔄 Retry Camera
+                </button>
+                <button onClick={onClose} className="text-white/40 text-xs hover:text-white/70 transition-colors py-1">
+                  Cancel — use gallery instead
+                </button>
+              </div>
+            </>
+          ) : (
+            <>
+              <div>
+                <p className="text-white font-bold text-lg mb-1">Camera Unavailable</p>
+                <p className="text-white/60 text-sm">Could not access your camera. Try uploading an image from your gallery instead.</p>
+              </div>
+              <button
+                onClick={() => setRetryKey(k => k + 1)}
+                className="bg-white/15 hover:bg-white/25 text-white text-sm font-bold px-6 py-2.5 rounded-2xl transition-colors"
+              >
+                🔄 Try Again
+              </button>
+              <button onClick={onClose} className="text-white/40 text-xs hover:text-white/70 transition-colors">
+                Go Back
+              </button>
+            </>
+          )}
         </div>
       )}
 
