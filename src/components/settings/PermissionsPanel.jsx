@@ -96,7 +96,21 @@ function PermissionRow({ perm, status, onRequest, refresh, openSettings }) {
 
       {/* Actions */}
       <div className="flex items-center gap-2 shrink-0">
-        {status !== "granted" && (
+        {status === "granted" && (
+          <CheckCircle2 className="h-5 w-5 text-emerald-500" />
+        )}
+        {status === "denied" && (
+          <div className="flex flex-col items-end gap-1">
+            <button
+              onClick={openSettings}
+              className="text-xs font-semibold px-3 py-1.5 rounded-xl border border-gray-200 text-gray-600 hover:bg-gray-50 transition-colors flex items-center gap-1"
+            >
+              <Settings className="h-3 w-3" /> Open Settings
+            </button>
+            <p className="text-[10px] text-red-400 text-right">Must be re-enabled in browser settings</p>
+          </div>
+        )}
+        {(status === "prompt" || status === "unknown") && (
           perm.key === "camera" ? (
             <button
               ref={cameraBtnRef}
@@ -106,26 +120,15 @@ function PermissionRow({ perm, status, onRequest, refresh, openSettings }) {
               Allow
             </button>
           ) : (
-          <button
-            onClick={handleRequest}
-            disabled={loading}
-            className="text-xs font-bold px-3 py-1.5 rounded-xl text-white transition-all active:scale-95 disabled:opacity-60"
-            style={{ background: `linear-gradient(135deg, ${perm.color}, ${perm.color}cc)` }}
-          >
-            {loading ? "…" : "Allow"}
-          </button>
+            <button
+              onClick={handleRequest}
+              disabled={loading}
+              className="text-xs font-bold px-3 py-1.5 rounded-xl text-white transition-all active:scale-95 disabled:opacity-60"
+              style={{ background: `linear-gradient(135deg, ${perm.color}, ${perm.color}cc)` }}
+            >
+              {loading ? "…" : "Allow"}
+            </button>
           )
-        )}
-        {status === "denied" && (
-          <button
-            onClick={openSettings}
-            className="text-xs font-semibold px-3 py-1.5 rounded-xl border border-gray-200 text-gray-600 hover:bg-gray-50 transition-colors flex items-center gap-1"
-          >
-            <Settings className="h-3 w-3" /> Settings
-          </button>
-        )}
-        {status === "granted" && (
-          <CheckCircle2 className="h-5 w-5 text-emerald-500" />
         )}
       </div>
     </div>
