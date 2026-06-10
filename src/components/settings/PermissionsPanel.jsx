@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from "react";
-import { Camera, Mic, MapPin, FolderOpen, RefreshCw, Settings, ChevronRight, CheckCircle2, XCircle, HelpCircle, AlertCircle } from "lucide-react";
+import { Camera, Mic, MapPin, RefreshCw, Settings, ChevronRight, CheckCircle2 } from "lucide-react";
 import { usePermissions } from "@/hooks/usePermissions";
 
 const PERMISSIONS = [
@@ -31,48 +31,68 @@ const PERMISSIONS = [
 
 const STATUS_CONFIG = {
   granted:  { label: "Granted",  icon: CheckCircle2, color: "text-emerald-600", bg: "bg-emerald-50",  border: "border-emerald-200" },
-  denied:   { label: "Denied",   icon: XCircle,      color: "text-red-500",     bg: "bg-red-50",      border: "border-red-200" },
-  prompt:   { label: "Not asked yet", icon: HelpCircle,   color: "text-amber-600",  bg: "bg-amber-50",    border: "border-amber-200" },
-  unknown:  { label: "Unknown",  icon: AlertCircle,  color: "text-gray-400",    bg: "bg-gray-50",     border: "border-gray-200" },
+  denied:   { label: "Denied",   icon: CheckCircle2, color: "text-red-500",     bg: "bg-red-50",      border: "border-red-200" },
+  prompt:   { label: "Not asked yet", icon: CheckCircle2, color: "text-amber-600", bg: "bg-amber-50",  border: "border-amber-200" },
+  unknown:  { label: "Unknown",  icon: CheckCircle2, color: "text-gray-400",    bg: "bg-gray-50",     border: "border-gray-200" },
 };
 
-function PermissionRow({ perm, status, onRequest, refresh, openSettings }) {
+function PermissionRow({ perm, status, onRequest, refresh }) {
   const [loading, setLoading] = useState(false);
-  const cfg = STATUS_CONFIG[status] || STATUS_CONFIG.unknown;
-  const StatusIcon = cfg.icon;
+  const [localOn, setLocalOn] = useState(status === "granted");
+  const [message, setMessage] = useState("");
   const Icon = perm.icon;
 
-  const cameraBtnRef = useRef(null);
-
+  // Keep localOn in sync when status changes externally
   useEffect(() => {
-    if (perm.key !== "camera" || !cameraBtnRef.current) return;
-    const btn = cameraBtnRef.current;
-    const handler = function () {
-      if (!navigator.mediaDevices?.getUserMedia) return;
-      btn.disabled = true;
-      btn.textContent = "…";
-      navigator.mediaDevices.getUserMedia({ video: true, audio: false })
-        .then((stream) => {
-          stream.getTracks().forEach((t) => t.stop());
-          refresh();
-          btn.disabled = false;
-          btn.textContent = "Allow";
-        })
-        .catch(() => {
-          refresh();
-          btn.disabled = false;
-          btn.textContent = "Allow";
-        });
-    };
-    btn.addEventListener("click", handler);
-    return () => btn.removeEventListener("click", handler);
-  }, [perm.key, refresh]);
+    setLocalOn(status === "granted");
+  }, [status]);
 
-  const handleRequest = async () => {
+  const handleToggle = () => {
+    const turningOn = !localOn;
+    setLocalOn(turningOn);
+    setMessage("");
+
+    if (!turningOn) {
+      setMessage("To fully revoke, go to browser site settings.");
+      return;
+    }
+
+    // Turning ON — try to request the permission
     setLoading(true);
-    await onRequest();
-    setLoading(false);
+
+    const request = perm.key === "camera"
+      ? navigator.mediaDevices?.getUserMedia({ video: true, audio: false })
+      : perm.key === "microphone"
+      ? navigator.mediaDevices?.getUserMedia({ audio: true, video: false })
+      : new Promise((resolve, reject) =>
+          navigator.geolocation
+            ? navigator.geolocation.getCurrentPosition(resolve, reject, { timeout: 8000 })
+            : reject(new Error("unavailable"))
+        );
+
+    (request || Promise.reject(new Error("unavailable")))
+      .then((result) => {
+        // Release media streams
+        if (result && result.getTracks) result.getTracks().forEach((t) => t.stop());
+        setLocalOn(true);
+        setMessage("✓ Permission granted!");
+        setLoading(false);
+        refresh();
+      })
+      .catch((err) => {
+        setLoading(false);
+        refresh();
+        if (err?.name === "NotAllowedError" || err?.name === "PermissionDeniedError" || err?.code === 1) {
+          setLocalOn(true); // keep switch ON visually — user must fix in settings
+          setMessage("Blocked by browser. Go to site settings → allow, then retry.");
+        } else {
+          setLocalOn(true);
+          setMessage("Could not access device. Check it is connected.");
+        }
+      });
   };
+
+  const isOn = localOn;
 
   return (
     <div className="flex items-center gap-4 p-4 rounded-2xl border border-border bg-white hover:shadow-sm transition-shadow">
@@ -84,47 +104,31 @@ function PermissionRow({ perm, status, onRequest, refresh, openSettings }) {
 
       {/* Info */}
       <div className="flex-1 min-w-0">
-        <div className="flex items-center gap-2 flex-wrap">
-          <p className="font-semibold text-sm text-foreground">{perm.label}</p>
-          <span className={`inline-flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 rounded-full border ${cfg.color} ${cfg.bg} ${cfg.border}`}>
-            <StatusIcon className="h-3 w-3" />
-            {cfg.label}
-          </span>
-        </div>
+        <p className="font-semibold text-sm text-foreground">{perm.label}</p>
         <p className="text-xs text-muted-foreground mt-0.5">{perm.description}</p>
+        {message && (
+          <p className={`text-[11px] mt-1 font-medium leading-tight ${message.startsWith("✓") ? "text-emerald-600" : "text-amber-600"}`}>
+            {message}
+          </p>
+        )}
       </div>
 
-      {/* Actions */}
+      {/* Toggle switch */}
       <div className="flex items-center gap-2 shrink-0">
-        {status === "granted" ? (
-          <CheckCircle2 className="h-5 w-5 text-emerald-500" />
-        ) : (
-          <div className="flex flex-col items-end gap-1">
-            {perm.key === "camera" ? (
-              <button
-                ref={cameraBtnRef}
-                className="text-xs font-bold px-3 py-1.5 rounded-xl text-white transition-all active:scale-95"
-                style={{ background: `linear-gradient(135deg, ${perm.color}, ${perm.color}cc)` }}
-              >
-                Allow
-              </button>
-            ) : (
-              <button
-                onClick={handleRequest}
-                disabled={loading}
-                className="text-xs font-bold px-3 py-1.5 rounded-xl text-white transition-all active:scale-95 disabled:opacity-60"
-                style={{ background: `linear-gradient(135deg, ${perm.color}, ${perm.color}cc)` }}
-              >
-                {loading ? "…" : "Allow"}
-              </button>
-            )}
-            {status === "denied" && (
-              <p className="text-[10px] text-red-400 text-right leading-tight">
-                Blocked — go to browser site settings to re-enable
-              </p>
-            )}
-          </div>
-        )}
+        {loading && <div className="w-4 h-4 border-2 border-gray-300 border-t-indigo-500 rounded-full animate-spin" />}
+        <button
+          onClick={handleToggle}
+          disabled={loading}
+          className={`relative w-12 h-6 rounded-full transition-colors duration-300 focus:outline-none disabled:opacity-60 ${isOn ? "bg-emerald-500" : "bg-gray-300"}`}
+          style={isOn ? { background: `linear-gradient(135deg, ${perm.color}, ${perm.color}cc)` } : {}}
+        >
+          <span
+            className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow-md transition-transform duration-300 ${isOn ? "translate-x-6" : "translate-x-0"}`}
+          />
+        </button>
+        <span className={`text-xs font-bold ${isOn ? "text-emerald-600" : "text-gray-400"}`}>
+          {isOn ? "On" : "Off"}
+        </span>
       </div>
     </div>
   );
@@ -177,7 +181,6 @@ export default function PermissionsPanel() {
               status={statuses[perm.key]}
               onRequest={requestMap[perm.key]}
               refresh={refresh}
-              openSettings={openSettings}
             />
           ))}
         </div>
