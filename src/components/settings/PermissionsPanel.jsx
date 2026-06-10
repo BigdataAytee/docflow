@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { Camera, Mic, MapPin, FolderOpen, RefreshCw, Settings, ChevronRight, CheckCircle2, XCircle, HelpCircle, AlertCircle } from "lucide-react";
 import { usePermissions } from "@/hooks/usePermissions";
 
@@ -42,21 +42,31 @@ function PermissionRow({ perm, status, onRequest, refresh, openSettings }) {
   const StatusIcon = cfg.icon;
   const Icon = perm.icon;
 
-  // Camera MUST be triggered synchronously via .then() to satisfy browser user-gesture requirement
-  const handleCameraClick = () => {
-    if (!navigator.mediaDevices?.getUserMedia) return;
-    setLoading(true);
-    navigator.mediaDevices.getUserMedia({ video: true, audio: false })
-      .then((stream) => {
-        stream.getTracks().forEach((t) => t.stop());
-        refresh();
-        setLoading(false);
-      })
-      .catch(() => {
-        refresh();
-        setLoading(false);
-      });
-  };
+  const cameraBtnRef = useRef(null);
+
+  useEffect(() => {
+    if (perm.key !== "camera" || !cameraBtnRef.current) return;
+    const btn = cameraBtnRef.current;
+    const handler = function () {
+      if (!navigator.mediaDevices?.getUserMedia) return;
+      btn.disabled = true;
+      btn.textContent = "…";
+      navigator.mediaDevices.getUserMedia({ video: true, audio: false })
+        .then((stream) => {
+          stream.getTracks().forEach((t) => t.stop());
+          refresh();
+          btn.disabled = false;
+          btn.textContent = "Allow";
+        })
+        .catch(() => {
+          refresh();
+          btn.disabled = false;
+          btn.textContent = "Allow";
+        });
+    };
+    btn.addEventListener("click", handler);
+    return () => btn.removeEventListener("click", handler);
+  }, [perm.key, refresh]);
 
   const handleRequest = async () => {
     setLoading(true);
@@ -87,14 +97,24 @@ function PermissionRow({ perm, status, onRequest, refresh, openSettings }) {
       {/* Actions */}
       <div className="flex items-center gap-2 shrink-0">
         {status !== "granted" && (
+          perm.key === "camera" ? (
+            <button
+              ref={cameraBtnRef}
+              className="text-xs font-bold px-3 py-1.5 rounded-xl text-white transition-all active:scale-95"
+              style={{ background: `linear-gradient(135deg, ${perm.color}, ${perm.color}cc)` }}
+            >
+              Allow
+            </button>
+          ) : (
           <button
-            onClick={perm.key === "camera" ? handleCameraClick : handleRequest}
+            onClick={handleRequest}
             disabled={loading}
             className="text-xs font-bold px-3 py-1.5 rounded-xl text-white transition-all active:scale-95 disabled:opacity-60"
             style={{ background: `linear-gradient(135deg, ${perm.color}, ${perm.color}cc)` }}
           >
             {loading ? "…" : "Allow"}
           </button>
+          )
         )}
         {status === "denied" && (
           <button
