@@ -183,6 +183,7 @@ function MiniPreview({ design, userInfo, fixedHeight }) {
             template={design.template} templateColor={design.color} templateFont={design.font}
             customColor={design.customColor}
             cornerRadius={design.cornerRadius} shadowEffect={design.shadowEffect}
+            fieldLayout={design.fieldLayout}
           />
         </div>
       </div>
@@ -284,6 +285,7 @@ function DesktopPreview({ design, userInfo }) {
               template={design.template} templateColor={design.color} templateFont={design.font}
               customColor={design.customColor}
               cornerRadius={design.cornerRadius} shadowEffect={design.shadowEffect}
+              fieldLayout={design.fieldLayout}
             />
           </div>
         </div>

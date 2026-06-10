@@ -532,22 +532,267 @@ const SHADOW_MAP = {
   lg:   "0 8px 32px rgba(0,0,0,0.22)",
 };
 
+// ─── Ordered body sections renderer ─────────────────────────────────────────
+// Renders the reorderable sections (items, totals, bank, notes, signatures, footer)
+// in the order specified by fieldLayout. "header" and "client" are always rendered
+// by the individual layout components because they differ per template.
+function OrderedSections({ form, items, calcs, sym, docType, managerSig, customerSig, T, fieldLayout, amountLabel, footerContent }) {
+  const DEFAULT_ORDER = ["items", "totals", "bank", "notes", "signatures", "footer"];
+
+  // Build ordered list from fieldLayout (only include visible ones)
+  const order = (fieldLayout && fieldLayout.length > 0)
+    ? fieldLayout.filter(s => s.visible !== false).map(s => s.id)
+    : DEFAULT_ORDER;
+
+  // Ensure all sections appear (append any missing ones at the end)
+  const seen = new Set(order);
+  DEFAULT_ORDER.forEach(id => { if (!seen.has(id)) order.push(id); });
+
+  return (
+    <>
+      {order.map(id => {
+        if (id === "items") return (
+          <div key="items">
+            <ItemsTable items={items} docType={docType} T={T} />
+            <ExtraFields form={form} docType={docType} T={T} />
+          </div>
+        );
+        if (id === "totals" && docType !== "waybill") return (
+          <TotalsBlock key="totals" calcs={calcs} form={form} sym={sym} T={T} amountLabel={amountLabel} />
+        );
+        if (id === "bank") return null; // bank is shown inside SigsAndPayment via payment_method
+        if (id === "notes") return <NotesBlock key="notes" form={form} T={T} />;
+        if (id === "signatures") return (
+          <SigsAndPayment key="signatures" managerSig={managerSig} customerSig={customerSig} form={form} T={T} docType={docType} sym={sym} />
+        );
+        if (id === "footer") return footerContent ? (
+          <div key="footer" style={{ marginTop: "auto" }}>{footerContent}</div>
+        ) : null;
+        return null;
+      })}
+    </>
+  );
+}
+
 // ─── Main export ─────────────────────────────────────────────────────────────
-export default function DocumentPreview({ form, items, calcs, sym, docType, managerSig, customerSig, template, templateColor, templateFont, customColor, cornerRadius, shadowEffect }) {
+export default function DocumentPreview({ form, items, calcs, sym, docType, managerSig, customerSig, template, templateColor, templateFont, customColor, cornerRadius, shadowEffect, fieldLayout }) {
   const T = buildTheme(template || form?.template || "classic", templateColor || form?.template_color || "slate", templateFont || form?.template_font, customColor || form?.custom_color);
   const lineItems = items || [];
-  const shared = { form, items: lineItems, calcs, sym, docType, managerSig, customerSig, T };
   const layout = template || form?.template || "classic";
   const radius = CORNER_RADIUS_MAP[cornerRadius] ?? 8;
   const shadow = SHADOW_MAP[shadowEffect] ?? SHADOW_MAP.sm;
+  const amountLabel = AMOUNT_LABEL[docType] || "BALANCE DUE";
+  const billToLabel = BILL_TO_LABEL[docType] || "BILL TO";
+  const label = TYPE_LABELS[docType] || "INVOICE";
+
+  // Shared props for ordered sections
+  const orderedProps = { form, items: lineItems, calcs, sym, docType, managerSig, customerSig, T, fieldLayout, amountLabel };
+
+  // If no fieldLayout is provided, fall back to original layout components
+  if (!fieldLayout || fieldLayout.length === 0) {
+    const shared = { form, items: lineItems, calcs, sym, docType, managerSig, customerSig, T };
+    return (
+      <div style={{ width: 794, border: "1px solid #e2e8f0", borderRadius: radius, overflow: "hidden", fontFamily: T.font, boxShadow: shadow }}>
+        {layout === "modern"  && <ModernDoc  {...shared} />}
+        {layout === "minimal" && <MinimalDoc {...shared} />}
+        {layout === "bold"    && <BoldDoc    {...shared} />}
+        {layout === "elegant" && <ElegantDoc {...shared} />}
+        {(layout === "classic" || !["modern","minimal","bold","elegant"].includes(layout)) && <ClassicDoc {...shared} />}
+      </div>
+    );
+  }
+
+  // With fieldLayout: render header+client per template, then ordered body
+  const isColoredHeader = T.headerBg !== "#ffffff" && T.headerBg !== "#fffbeb";
+
+  const renderHeader = () => {
+    if (layout === "bold") return (
+      <div style={{ display: "grid", gridTemplateColumns: "55% 45%" }}>
+        <div style={{ background: T.headerBg, padding: "32px 32px", minHeight: 200, display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
+          <div>
+            {form.logo_url && <img src={form.logo_url} alt="logo" style={{ height: 90, maxWidth: 160, objectFit: "contain", display: "block", marginBottom: 10, filter: isColoredHeader ? "brightness(0) invert(1)" : "none", opacity: 0.9 }} />}
+            <div style={{ fontSize: 20, fontWeight: 900, color: T.headerColor }}>{form.company_name || "Your Company"}</div>
+            {form.company_address && <div style={{ fontSize: 10, color: T.headerColor, opacity: 0.6, marginTop: 4, whiteSpace: "pre-line" }}>{form.company_address}</div>}
+          </div>
+          <div style={{ marginTop: 20 }}>
+            <div style={{ fontSize: 8, fontWeight: 700, color: T.headerColor, opacity: 0.5, textTransform: "uppercase", letterSpacing: 1.5, marginBottom: 4 }}>{billToLabel}</div>
+            <div style={{ fontSize: 13, fontWeight: 700, color: T.headerColor }}>{form.customer_name || "—"}</div>
+            {form.customer_address && <div style={{ fontSize: 10, color: T.headerColor, opacity: 0.65, whiteSpace: "pre-line", marginTop: 2 }}>{form.customer_address}</div>}
+          </div>
+        </div>
+        <div style={{ background: isColoredHeader ? "#ffffff" : T.stripBg, borderLeft: `4px solid ${T.accentColor}`, padding: "32px 28px", display: "flex", flexDirection: "column", justifyContent: "space-between", alignItems: "flex-end" }}>
+          <div style={{ textAlign: "right" }}>
+            <div style={{ fontSize: 40, fontWeight: 900, color: T.accentColor, lineHeight: 1 }}>{label}</div>
+            <div style={{ fontSize: 12, fontFamily: "monospace", color: "#94a3b8", marginTop: 6 }}>{form.number || "—"}</div>
+          </div>
+          {docType !== "waybill" && (
+            <div style={{ textAlign: "right", borderTop: `1px solid ${T.stripBorder}`, paddingTop: 8 }}>
+              <div style={{ fontSize: 9, color: T.tableHeaderColor, textTransform: "uppercase" }}>{amountLabel}</div>
+              <div style={{ fontSize: 22, fontWeight: 900, color: T.accentColor }}>{sym}{fmt(calcs?.total || 0)}</div>
+            </div>
+          )}
+        </div>
+      </div>
+    );
+
+    if (layout === "elegant") return (
+      <>
+        <div style={{ height: 2, background: T.accentColor }} />
+        <div style={{ height: 2, background: T.accentColor, margin: "3px 0 0", opacity: 0.3 }} />
+        <div style={{ padding: "28px 40px 20px", textAlign: "center", borderBottom: `1px solid ${T.stripBorder}` }}>
+          {form.logo_url && <img src={form.logo_url} alt="logo" style={{ height: 90, maxWidth: 200, objectFit: "contain", display: "inline-block", marginBottom: 10 }} />}
+          <div style={{ fontSize: 22, fontWeight: 700, color: T.headerColor, letterSpacing: 1 }}>{form.company_name || "Your Company"}</div>
+          {form.company_address && <div style={{ fontSize: 10, color: "#9ca3af", marginTop: 4 }}>{form.company_address.replace(/\n/g, "  ·  ")}</div>}
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 10, margin: "14px auto", maxWidth: 300 }}>
+            <div style={{ flex: 1, height: 1, background: T.accentColor, opacity: 0.4 }} />
+            <div style={{ width: 6, height: 6, background: T.accentColor, transform: "rotate(45deg)" }} />
+            <div style={{ flex: 1, height: 1, background: T.accentColor, opacity: 0.4 }} />
+          </div>
+          <div style={{ fontSize: 14, fontWeight: 700, letterSpacing: 6, color: T.docTitleColor, textTransform: "uppercase" }}>{label}</div>
+          <div style={{ fontSize: 11, color: "#9ca3af", fontFamily: "monospace", marginTop: 4 }}>{form.number || "—"}</div>
+        </div>
+        <div style={{ background: T.stripBg, borderBottom: `1px solid ${T.stripBorder}`, display: "flex", justifyContent: "space-between", alignItems: "flex-start", padding: "14px 24px" }}>
+          <div>
+            <div style={{ fontSize: 8, fontWeight: 700, letterSpacing: 2, color: T.tableHeaderColor, textTransform: "uppercase", marginBottom: 6 }}>{billToLabel}</div>
+            <div style={{ fontSize: 12, fontWeight: 700, color: "#1e293b" }}>{form.customer_name || "—"}</div>
+            {form.customer_address && <div style={{ fontSize: 10, color: "#6b7280", marginTop: 3, whiteSpace: "pre-line" }}>{form.customer_address}</div>}
+          </div>
+          <div style={{ textAlign: "right" }}>
+            {form.issue_date && <div style={{ fontSize: 10, color: "#6b7280" }}>{ISSUE_LABEL[docType] || "Date"}: <span style={{ fontWeight: 600 }}>{form.issue_date}</span></div>}
+            {docType !== "waybill" && <div style={{ marginTop: 8 }}><div style={{ fontSize: 8, color: T.tableHeaderColor, textTransform: "uppercase" }}>{amountLabel}</div><div style={{ fontSize: 18, fontWeight: 900, color: T.accentColor }}>{sym}{fmt(calcs?.total || 0)}</div></div>}
+          </div>
+        </div>
+      </>
+    );
+
+    if (layout === "minimal") return (
+      <>
+        <div style={{ height: 4, background: T.accentColor }} />
+        <div style={{ padding: "28px 40px 18px", display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+          <div>
+            {form.logo_url && <img src={form.logo_url} alt="logo" style={{ height: 80, maxWidth: 160, objectFit: "contain", display: "block", marginBottom: 6 }} />}
+            <div style={{ fontSize: 15, fontWeight: 700, color: "#111827" }}>{form.company_name || "Your Company"}</div>
+            {form.company_address && <div style={{ fontSize: 9, color: "#9ca3af", marginTop: 3, whiteSpace: "pre-line" }}>{form.company_address}</div>}
+          </div>
+          <div style={{ textAlign: "right" }}>
+            <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: 4, color: T.accentColor, textTransform: "uppercase" }}>{label}</div>
+            <div style={{ fontSize: 11, fontFamily: "monospace", color: "#9ca3af", marginTop: 4 }}>{form.number || "—"}</div>
+          </div>
+        </div>
+        <div style={{ borderTop: "1px solid #f3f4f6", margin: "0 40px" }} />
+        <div style={{ padding: "16px 40px", display: "flex", justifyContent: "space-between" }}>
+          <div>
+            <div style={{ fontSize: 8, fontWeight: 700, letterSpacing: 2, color: T.accentColor, textTransform: "uppercase", marginBottom: 5 }}>{billToLabel}</div>
+            <div style={{ fontSize: 13, fontWeight: 700, color: "#111827" }}>{form.customer_name || "—"}</div>
+            {form.customer_address && <div style={{ fontSize: 10, color: "#6b7280", whiteSpace: "pre-line", marginTop: 2 }}>{form.customer_address}</div>}
+          </div>
+          {docType !== "waybill" && <div style={{ textAlign: "right" }}><div style={{ fontSize: 8, fontWeight: 700, letterSpacing: 2, color: T.accentColor, textTransform: "uppercase", marginBottom: 3 }}>{amountLabel}</div><div style={{ fontSize: 28, fontWeight: 900, color: "#111827" }}>{sym}{fmt(calcs?.total || 0)}</div></div>}
+        </div>
+        <div style={{ borderTop: "1px solid #f3f4f6", margin: "0 40px" }} />
+      </>
+    );
+
+    if (layout === "modern") return (
+      <>
+        <div style={{ background: T.headerBg, padding: "0" }}>
+          <div style={{ padding: "28px 36px 0", display: "flex", alignItems: "flex-end", justifyContent: "space-between" }}>
+            <div>
+              {form.logo_url && <img src={form.logo_url} alt="logo" style={{ height: 100, maxWidth: 180, objectFit: "contain", display: "block", marginBottom: 10, filter: isColoredHeader ? "brightness(0) invert(1)" : "none", opacity: 0.9 }} />}
+              <div style={{ fontSize: 22, fontWeight: 900, color: T.headerColor }}>{form.company_name || "Your Company"}</div>
+              {form.company_address && <div style={{ fontSize: 10, color: T.headerColor, opacity: 0.6, marginTop: 4, whiteSpace: "pre-line" }}>{form.company_address}</div>}
+            </div>
+            <div style={{ textAlign: "right" }}>
+              <div style={{ fontSize: 48, fontWeight: 900, color: T.docTitleColor, lineHeight: 1 }}>{label}</div>
+              <div style={{ fontSize: 13, color: T.headerColor, opacity: 0.5, fontFamily: "monospace", marginTop: 6 }}>{form.number || "—"}</div>
+            </div>
+          </div>
+          <div style={{ height: 6, background: T.accentColor, marginTop: 20 }} />
+        </div>
+        <div style={{ borderBottom: `1px solid ${T.stripBorder}`, background: T.stripBg, display: "flex", justifyContent: "space-between", alignItems: "flex-start", padding: "14px 20px" }}>
+          <div>
+            <div style={{ fontSize: 8, fontWeight: 700, color: T.tableHeaderColor, textTransform: "uppercase", letterSpacing: 1.5, marginBottom: 5 }}>{billToLabel}</div>
+            <div style={{ fontSize: 12, fontWeight: 700, color: "#1e293b" }}>{form.customer_name || "—"}</div>
+            {form.customer_address && <div style={{ fontSize: 10, color: "#64748b", marginTop: 2, whiteSpace: "pre-line" }}>{form.customer_address}</div>}
+          </div>
+          <div style={{ textAlign: "right" }}>
+            {form.issue_date && <div style={{ fontSize: 10, color: "#64748b" }}>{ISSUE_LABEL[docType] || "Date"}: {form.issue_date}</div>}
+            {docType !== "waybill" && <div style={{ marginTop: 8, borderTop: `1px solid ${T.stripBorder}`, paddingTop: 6 }}><div style={{ fontSize: 8, color: T.tableHeaderColor, textTransform: "uppercase" }}>{amountLabel}</div><div style={{ fontSize: 18, fontWeight: 900, color: T.accentColor }}>{sym}{fmt(calcs?.total || 0)}</div></div>}
+          </div>
+        </div>
+      </>
+    );
+
+    // classic (default)
+    return (
+      <>
+        <div style={{ background: T.headerBg, borderBottom: `2px solid ${T.accentColor}`, padding: "36px 48px", display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+          <div>
+            {form.logo_url ? <img src={form.logo_url} alt="logo" style={{ height: 110, maxWidth: 200, objectFit: "contain", display: "block", marginBottom: 8 }} /> : <div style={{ height: 8 }} />}
+            <div style={{ fontWeight: 900, fontSize: 18, color: T.headerColor }}>{form.company_name || "Your Company"}</div>
+            {form.company_address && <div style={{ fontSize: 10, color: T.headerColor, opacity: 0.65, marginTop: 3, whiteSpace: "pre-line" }}>{form.company_address}</div>}
+          </div>
+          <div style={{ textAlign: "right" }}>
+            <div style={{ fontSize: 30, fontWeight: 900, letterSpacing: 3, color: T.docTitleColor }}>{label}</div>
+            <div style={{ fontSize: 12, color: T.headerColor, opacity: 0.5, marginTop: 4, fontFamily: "monospace" }}>{form.number || "—"}</div>
+            {docType !== "waybill" && <div style={{ marginTop: 12, borderTop: `2px solid ${isColoredHeader ? "rgba(255,255,255,0.35)" : T.accentColor}`, paddingTop: 8 }}><div style={{ fontSize: 9, color: isColoredHeader ? "rgba(255,255,255,0.75)" : "#94a3b8", textTransform: "uppercase", letterSpacing: 1 }}>{amountLabel}</div><div style={{ fontSize: 22, fontWeight: 900, color: isColoredHeader ? "#ffffff" : "#111827", marginTop: 2 }}>{sym}{fmt(calcs?.total || 0)}</div></div>}
+          </div>
+        </div>
+        <div style={{ background: T.stripBg, borderBottom: `1px solid ${T.stripBorder}`, display: "flex", justifyContent: "space-between", alignItems: "flex-start", padding: "18px 48px" }}>
+          <div>
+            <div style={{ fontSize: 8, color: T.tableHeaderColor, textTransform: "uppercase", letterSpacing: 1.5, fontWeight: 700, marginBottom: 6 }}>{billToLabel}</div>
+            <div style={{ fontSize: 12, fontWeight: 700, color: "#1e293b" }}>{form.customer_name || "—"}</div>
+            {form.customer_address && <div style={{ fontSize: 10, color: "#64748b", marginTop: 3, whiteSpace: "pre-line" }}>{form.customer_address}</div>}
+          </div>
+          <div style={{ textAlign: "right", fontSize: 11 }}>
+            {form.issue_date && <div><span style={{ color: "#94a3b8" }}>{ISSUE_LABEL[docType] || "Date"}: </span><span style={{ fontWeight: 600, color: "#334155" }}>{form.issue_date}</span></div>}
+            {form.due_date && DUE_LABEL[docType] && <div style={{ marginTop: 3 }}><span style={{ color: "#94a3b8" }}>{DUE_LABEL[docType]}: </span><span style={{ fontWeight: 600, color: "#334155" }}>{form.due_date}</span></div>}
+          </div>
+        </div>
+      </>
+    );
+  };
+
+  const renderFooterBar = () => {
+    const content = [form.company_phone && `☎ ${form.company_phone}`, form.company_email && `✉ ${form.company_email}`, form.company_website && `🌐 ${form.company_website}`].filter(Boolean).join("  ·  ");
+    if (layout === "elegant") return (
+      <>
+        <div style={{ padding: "12px 40px", textAlign: "center", borderTop: `1px solid ${T.stripBorder}` }}>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 10, marginBottom: 6 }}>
+            <div style={{ flex: 1, height: 1, background: T.accentColor, opacity: 0.3 }} />
+            <div style={{ width: 4, height: 4, background: T.accentColor, transform: "rotate(45deg)", opacity: 0.5 }} />
+            <div style={{ flex: 1, height: 1, background: T.accentColor, opacity: 0.3 }} />
+          </div>
+          <div style={{ fontSize: 9, color: "#d1d5db", letterSpacing: 1 }}>{content}</div>
+        </div>
+        <div style={{ height: 2, background: T.accentColor, opacity: 0.3 }} />
+        <div style={{ height: 2, background: T.accentColor, margin: "3px 0 0" }} />
+      </>
+    );
+    if (layout === "modern") return (
+      <>
+        <div style={{ height: 6, background: T.accentColor }} />
+        <div style={{ padding: "8px 36px", background: T.stripBg, textAlign: "center", fontSize: 9, color: T.tableHeaderColor }}>{content}</div>
+      </>
+    );
+    if (layout === "bold") return (
+      <>
+        <div style={{ height: 4, background: T.accentColor }} />
+        <div style={{ padding: "8px 32px", background: T.stripBg, textAlign: "center", fontSize: 9, color: T.tableHeaderColor }}>{content}</div>
+      </>
+    );
+    if (layout === "minimal") return (
+      <div style={{ padding: "10px 40px", borderTop: "1px solid #f3f4f6", textAlign: "center", fontSize: 9, color: "#d1d5db", letterSpacing: 1 }}>{content}</div>
+    );
+    // classic
+    return (
+      <div style={{ padding: "14px 48px", background: T.stripBg, borderTop: `1px solid ${T.stripBorder}`, textAlign: "center", fontSize: 9, color: T.tableHeaderColor }}>{content}</div>
+    );
+  };
 
   return (
-    <div style={{ width: 794, border: "1px solid #e2e8f0", borderRadius: radius, overflow: "hidden", fontFamily: T.font, boxShadow: shadow }}>
-      {layout === "modern"  && <ModernDoc  {...shared} />}
-      {layout === "minimal" && <MinimalDoc {...shared} />}
-      {layout === "bold"    && <BoldDoc    {...shared} />}
-      {layout === "elegant" && <ElegantDoc {...shared} />}
-      {(layout === "classic" || !["modern","minimal","bold","elegant"].includes(layout)) && <ClassicDoc {...shared} />}
+    <div style={{ width: 794, border: "1px solid #e2e8f0", borderRadius: radius, overflow: "hidden", fontFamily: T.font, boxShadow: shadow, background: "#fff", minHeight: 1123, display: "flex", flexDirection: "column" }}>
+      {renderHeader()}
+      <OrderedSections {...orderedProps} footerContent={renderFooterBar()} />
     </div>
   );
 }
