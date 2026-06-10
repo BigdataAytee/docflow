@@ -464,9 +464,9 @@ ${inputText}
               <p className="text-xs text-muted-foreground flex items-center gap-1.5">
                 <Sparkles className="h-3 w-3 text-indigo-400" /> Powered by AI
               </p>
-              <button onClick={reset} className="text-xs text-muted-foreground hover:text-foreground hover:underline transition-colors hidden">
-                Start over
-              </button>
+              
+
+            
             </div>
           </div>
         </div>
