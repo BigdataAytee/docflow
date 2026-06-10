@@ -188,6 +188,14 @@ export default function AnalyticsDashboard({ user }) {
     return { month: nextMonth, value: nextVal, confidence: 72 };
   }, [monthlyRevenue]);
 
+  // Detect dominant currency from documents
+  const dominantCurrency = useMemo(() => {
+    const map = {};
+    docs.forEach(d => { if (d.currency) map[d.currency] = (map[d.currency] || 0) + 1; });
+    const sorted = Object.entries(map).sort(([,a],[,b]) => b - a);
+    return sorted[0]?.[0] || "NGN";
+  }, [docs]);
+
   const generateInsights = async () => {
     setAiLoading(true);
     try {
@@ -200,9 +208,10 @@ export default function AnalyticsDashboard({ user }) {
         outstanding: kpis.outstanding,
         monthGrowth: kpis.monthGrowth.toFixed(1),
         productCount: topProducts.length,
+        currency: dominantCurrency,
       };
       const result = await base44.integrations.Core.InvokeLLM({
-        prompt: `You are a business analytics AI. Analyze this business data and return 5 concise, actionable insights and recommendations. Be specific and data-driven. Data: ${JSON.stringify(summary)}`,
+        prompt: `You are a business analytics AI. Analyze this business data and return 5 concise, actionable insights and recommendations. Be specific and data-driven. IMPORTANT: All monetary values are in ${dominantCurrency} — always use the ${dominantCurrency} currency symbol/code when mentioning amounts, never use $ unless the currency is USD. Data: ${JSON.stringify(summary)}`,
         response_json_schema: {
           type: "object",
           properties: {

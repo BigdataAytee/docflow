@@ -19,7 +19,13 @@ export default function NLQueryBar({ docs, customers, onResult }) {
     if (!text.trim()) return;
     setLoading(true);
     try {
+      // Detect dominant currency
+      const currencyMap = {};
+      docs.forEach(d => { if (d.currency) currencyMap[d.currency] = (currencyMap[d.currency] || 0) + 1; });
+      const currency = Object.entries(currencyMap).sort(([,a],[,b]) => b-a)[0]?.[0] || "NGN";
+
       const summary = {
+        currency,
         totalDocs: docs.length,
         invoices: docs.filter(d => d.type === "invoice").length,
         paidInvoices: docs.filter(d => d.type === "invoice" && d.status === "paid").length,
@@ -40,7 +46,7 @@ export default function NLQueryBar({ docs, customers, onResult }) {
         })(),
       };
       const result = await base44.integrations.Core.InvokeLLM({
-        prompt: `You are a business analytics assistant. Answer this question clearly and concisely using the provided data. Question: "${text}"\n\nBusiness data: ${JSON.stringify(summary)}`,
+        prompt: `You are a business analytics assistant. Answer this question clearly and concisely using the provided data. IMPORTANT: All monetary values are in ${currency} — always use the ${currency} currency symbol/code when mentioning amounts, never use $ unless the currency is USD. Question: "${text}"\n\nBusiness data: ${JSON.stringify(summary)}`,
       });
       onResult(result);
     } catch {
