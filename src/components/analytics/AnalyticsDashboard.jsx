@@ -1,4 +1,5 @@
 import { useState, useMemo } from "react";
+import ReactMarkdown from "react-markdown";
 import { useQuery } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import {
@@ -470,7 +471,7 @@ export default function AnalyticsDashboard({ user }) {
               <X className="h-4 w-4" />
             </button>
           </div>
-          <p className="text-sm text-foreground leading-relaxed whitespace-pre-line">{nlResult}</p>
+          <ReactMarkdown className="text-sm text-foreground leading-relaxed prose prose-sm max-w-none prose-strong:font-bold prose-strong:text-foreground">{nlResult}</ReactMarkdown>
         </div>
       )}
 
