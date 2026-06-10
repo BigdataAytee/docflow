@@ -36,40 +36,28 @@ const STATUS_CONFIG = {
   unknown:  { label: "Unknown",  icon: CheckCircle2, color: "text-gray-400",    bg: "bg-gray-50",     border: "border-gray-200" },
 };
 
-function PermissionRow({ perm, status, refresh }) {
-  const [localOn, setLocalOn] = useState(status === "granted");
+function PermissionRow({ perm, refresh }) {
+  const [isOn, setIsOn] = useState(false);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
   const Icon = perm.icon;
   const btnRef = useRef(null);
 
-  useEffect(() => {
-    setLocalOn(status === "granted");
-  }, [status]);
-
-  // Use a ref to always read the latest localOn value inside the native handler
-  const localOnRef = useRef(localOn);
-  useEffect(() => { localOnRef.current = localOn; }, [localOn]);
-
-  // Attach a native DOM click handler so getUserMedia fires synchronously
-  // within the user gesture on mobile browsers
+  // Native DOM handler — required for getUserMedia to fire within a real user gesture on mobile
   useEffect(() => {
     const btn = btnRef.current;
     if (!btn) return;
 
     const handler = function () {
-      const currentlyOn = localOnRef.current;
       setMessage("");
 
-      // Turning OFF
-      if (currentlyOn) {
-        setLocalOn(false);
-        setMessage("To fully revoke, open your browser's site settings.");
+      // Turning OFF — just flip the visual, no browser API needed
+      if (isOn) {
+        setIsOn(false);
         return;
       }
 
-      // Turning ON — request the permission
-      setLocalOn(true);
+      // Turning ON — always trigger the native permission prompt
       setLoading(true);
 
       let promise;
@@ -88,22 +76,22 @@ function PermissionRow({ perm, status, refresh }) {
       promise
         .then((result) => {
           if (result && result.getTracks) result.getTracks().forEach((t) => t.stop());
-          setLocalOn(true);
+          setIsOn(true);
           setLoading(false);
-          setMessage("✓ Permission granted!");
+          setMessage("✓ Access granted!");
           refresh();
         })
         .catch(() => {
+          setIsOn(false);
           setLoading(false);
-          setLocalOn(false);
-          setMessage("Blocked. Open browser site settings → set to Allow, then retry.");
+          setMessage("Permission denied. Go to your browser site settings and set this to Allow.");
           refresh();
         });
     };
 
     btn.addEventListener("click", handler);
     return () => btn.removeEventListener("click", handler);
-  }, [perm.key, refresh]);
+  }, [isOn, perm.key, refresh]);
 
   return (
     <div className="flex items-center gap-4 p-4 rounded-2xl border border-border bg-white hover:shadow-sm transition-shadow">
@@ -116,7 +104,7 @@ function PermissionRow({ perm, status, refresh }) {
         <p className="font-semibold text-sm text-foreground">{perm.label}</p>
         <p className="text-xs text-muted-foreground mt-0.5">{perm.description}</p>
         {message && (
-          <p className={`text-[11px] mt-1 font-medium leading-tight ${message.startsWith("✓") ? "text-emerald-600" : "text-amber-600"}`}>
+          <p className={`text-[11px] mt-1 font-medium leading-tight ${message.startsWith("✓") ? "text-emerald-600" : "text-red-500"}`}>
             {message}
           </p>
         )}
@@ -124,17 +112,13 @@ function PermissionRow({ perm, status, refresh }) {
 
       <div className="flex items-center gap-2 shrink-0">
         {loading && <div className="w-4 h-4 border-2 border-gray-300 border-t-indigo-500 rounded-full animate-spin" />}
-        {/* Native button styled as toggle — avoids React synthetic event batching on mobile */}
         <button
           ref={btnRef}
-          data-ison={String(localOn)}
           disabled={loading}
-          className={`relative w-12 h-6 rounded-full transition-colors duration-200 focus:outline-none disabled:opacity-50`}
-          style={{ background: localOn ? perm.color : "#d1d5db" }}
+          className="relative w-12 h-6 rounded-full transition-colors duration-200 focus:outline-none focus-visible:ring-2 disabled:opacity-50"
+          style={{ background: isOn ? perm.color : "#d1d5db" }}
         >
-          <span
-            className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform duration-200 ${localOn ? "translate-x-6" : "translate-x-0"}`}
-          />
+          <span className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform duration-200 ${isOn ? "translate-x-6" : "translate-x-0"}`} />
         </button>
       </div>
     </div>
@@ -185,7 +169,6 @@ export default function PermissionsPanel() {
             <PermissionRow
               key={perm.key}
               perm={perm}
-              status={statuses[perm.key]}
               refresh={refresh}
             />
           ))}
