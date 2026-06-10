@@ -533,8 +533,8 @@ const SHADOW_MAP = {
 };
 
 // ─── Main export ─────────────────────────────────────────────────────────────
-export default function DocumentPreview({ form, items, calcs, sym, docType, managerSig, customerSig, template, templateColor, templateFont, cornerRadius, shadowEffect }) {
-  const T = buildTheme(template || form?.template || "classic", templateColor || form?.template_color || "slate", templateFont || form?.template_font);
+export default function DocumentPreview({ form, items, calcs, sym, docType, managerSig, customerSig, template, templateColor, templateFont, customColor, cornerRadius, shadowEffect }) {
+  const T = buildTheme(template || form?.template || "classic", templateColor || form?.template_color || "slate", templateFont || form?.template_font, customColor || form?.custom_color);
   const lineItems = items || [];
   const shared = { form, items: lineItems, calcs, sym, docType, managerSig, customerSig, T };
   const layout = template || form?.template || "classic";

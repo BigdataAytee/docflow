@@ -44,11 +44,25 @@ export const COLOR_SCHEMES = {
 
 // Merge a layout + color scheme into the final theme object used by DocumentPreview / UnifiedTemplate
 // Pass fontId to override the layout default with the user's chosen typography
-export function buildTheme(layoutId, colorId, fontId) {
+// Pass customColor (hex) to fully override the accent/header with a brand color
+export function buildTheme(layoutId, colorId, fontId, customColor) {
   const layout = LAYOUTS[layoutId] || LAYOUTS.classic;
   const color  = COLOR_SCHEMES[colorId] || COLOR_SCHEMES.slate;
   const font   = fontId ? (FONT_CSS_MAP[fontId] || layout.font) : layout.font;
-  return { ...color, font };
+  const base   = { ...color, font };
+  if (customColor && /^#[0-9a-fA-F]{6}$/.test(customColor)) {
+    // Override key color tokens with the custom brand color
+    return {
+      ...base,
+      accentColor: customColor,
+      headerBg: customColor,
+      headerColor: "#ffffff",
+      docTitleColor: "#ffffff",
+      totalBorder: customColor,
+      tableHeaderColor: customColor,
+    };
+  }
+  return base;
 }
 
 // Keep for backwards-compat (used by old ViewDocument templates stored without template_color)

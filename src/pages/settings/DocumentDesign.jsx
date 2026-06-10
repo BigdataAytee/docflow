@@ -5,8 +5,11 @@ import { Button } from "@/components/ui/button";
 import DocumentPreview from "../../components/DocumentPreview";
 import {
   Save, ZoomIn, ZoomOut, Monitor, Tablet, Smartphone, ChevronDown, ChevronUp,
-  Palette, Type, Layout, Sparkles, CheckCircle2, Trash2, Star, RotateCcw, Eye
+  Palette, Type, Layout, Sparkles, CheckCircle2, Trash2, Star, RotateCcw, Eye,
+  Layers, Pipette
 } from "lucide-react";
+import FieldLayoutEditor from "../../components/settings/FieldLayoutEditor";
+import BrandColorPicker from "../../components/settings/BrandColorPicker";
 
 // ─── DATA ─────────────────────────────────────────────────────────────────────
 const FONTS = [
@@ -161,6 +164,7 @@ function MiniPreview({ design, userInfo, fixedHeight }) {
             sym="₦" docType="invoice"
             managerSig={previewDoc.manager_signature} customerSig=""
             template={design.template} templateColor={design.color} templateFont={design.font}
+            customColor={design.customColor}
             cornerRadius={design.cornerRadius} shadowEffect={design.shadowEffect}
           />
         </div>
@@ -259,6 +263,7 @@ function DesktopPreview({ design, userInfo }) {
               sym="₦" docType="invoice"
               managerSig={previewDoc.manager_signature} customerSig=""
               template={design.template} templateColor={design.color} templateFont={design.font}
+              customColor={design.customColor}
               cornerRadius={design.cornerRadius} shadowEffect={design.shadowEffect}
             />
           </div>
@@ -311,7 +316,17 @@ function DesignControls({ design, update }) {
               style={{ background: p.swatch }} />
           ))}
         </div>
-        <p className="text-[10px] text-muted-foreground">{COLOR_PALETTES.find(p => p.id === design.color)?.label}</p>
+        <p className="text-[10px] text-muted-foreground mb-3">{COLOR_PALETTES.find(p => p.id === design.color)?.label}</p>
+        <BrandColorPicker
+          label="Custom Brand Color"
+          value={design.customColor || COLOR_PALETTES.find(p => p.id === design.color)?.swatch || "#4f46e5"}
+          onChange={(hex) => update("customColor", hex)}
+        />
+        {design.customColor && (
+          <button onClick={() => update("customColor", null)} className="mt-1.5 text-[10px] text-muted-foreground hover:text-destructive transition-colors">
+            ✕ Clear custom color
+          </button>
+        )}
       </AccordionSection>
 
       <AccordionSection title="Typography" IconComp={Type}>
@@ -345,6 +360,18 @@ function DesignControls({ design, update }) {
             </div>
           </label>
         ))}
+      </AccordionSection>
+
+      <AccordionSection title="Field Layout & Order" IconComp={Layers}>
+        <FieldLayoutEditor
+          layout={design.fieldLayout || []}
+          onChange={(fl) => update("fieldLayout", fl)}
+        />
+        {design.fieldLayout?.length > 0 && (
+          <button onClick={() => update("fieldLayout", [])} className="mt-2 text-[10px] text-muted-foreground hover:text-destructive transition-colors">
+            ✕ Reset to default order
+          </button>
+        )}
       </AccordionSection>
 
       <AccordionSection title="Visual Style" IconComp={Sparkles}>
@@ -445,6 +472,7 @@ export default function DocumentDesign() {
     template: "classic", color: "slate", font: "inter", fontSize: "base",
     showNotes: true, showBankDetails: true, showSignature: true,
     cornerRadius: "lg", shadowEffect: "sm", pageSize: "a4",
+    customColor: null, fieldLayout: [],
   });
   const [savedDesign, setSavedDesign]         = useState(null);
   const [userInfo, setUserInfo]               = useState(null);
@@ -469,13 +497,15 @@ export default function DocumentDesign() {
         cornerRadius:    user.doc_design_cornerRadius    || "lg",
         shadowEffect:    user.doc_design_shadowEffect    || "sm",
         pageSize:        user.doc_design_pageSize        || "a4",
+        customColor:     user.doc_design_customColor     || null,
+        fieldLayout:     (() => { try { return JSON.parse(user.doc_design_fieldLayout || "[]"); } catch { return []; } })(),
       };
       setDesign(saved); setSavedDesign(saved);
       try { setSavedThemes(JSON.parse(user.doc_design_saved_themes || "[]")); } catch { /**/ }
     });
   }, []);
 
-  const DEFAULT_DESIGN = { template: "classic", color: "slate", font: "inter", fontSize: "base", showNotes: true, showBankDetails: true, showSignature: true, cornerRadius: "lg", shadowEffect: "sm", pageSize: "a4" };
+  const DEFAULT_DESIGN = { template: "classic", color: "slate", font: "inter", fontSize: "base", showNotes: true, showBankDetails: true, showSignature: true, cornerRadius: "lg", shadowEffect: "sm", pageSize: "a4", customColor: null, fieldLayout: [] };
 
   const isDirty = savedDesign && JSON.stringify(design) !== JSON.stringify(savedDesign);
   const update  = (k, v) => { setDesign(d => ({ ...d, [k]: v })); setActivePresetId(null); };
@@ -505,6 +535,8 @@ export default function DocumentDesign() {
       doc_design_showNotes: design.showNotes, doc_design_showBankDetails: design.showBankDetails,
       doc_design_showSignature: design.showSignature, doc_design_cornerRadius: design.cornerRadius,
       doc_design_shadowEffect: design.shadowEffect, doc_design_pageSize: design.pageSize,
+      doc_design_customColor: design.customColor || null,
+      doc_design_fieldLayout: JSON.stringify(design.fieldLayout || []),
     });
     setSavedDesign({ ...design }); setSaving(false);
     toast.success("Document design saved! New documents will use this design.");
