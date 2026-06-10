@@ -1,6 +1,5 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Camera, Mic, MapPin, RefreshCw, Settings, ChevronRight, CheckCircle2 } from "lucide-react";
-import { Switch } from "@/components/ui/switch";
 import { usePermissions } from "@/hooks/usePermissions";
 
 const PERMISSIONS = [
@@ -37,73 +36,76 @@ const STATUS_CONFIG = {
   unknown:  { label: "Unknown",  icon: CheckCircle2, color: "text-gray-400",    bg: "bg-gray-50",     border: "border-gray-200" },
 };
 
-function PermissionRow({ perm, status, onRequest, refresh }) {
-  const [loading, setLoading] = useState(false);
+function PermissionRow({ perm, status, refresh }) {
   const [localOn, setLocalOn] = useState(status === "granted");
+  const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
   const Icon = perm.icon;
+  const btnRef = useRef(null);
 
-  // Keep localOn in sync when status changes externally
   useEffect(() => {
     setLocalOn(status === "granted");
   }, [status]);
 
-  const handleToggle = () => {
-    const turningOn = !localOn;
-    setLocalOn(turningOn);
-    setMessage("");
+  // Attach a native DOM click handler so the getUserMedia call fires
+  // synchronously within the user gesture on mobile browsers
+  useEffect(() => {
+    const btn = btnRef.current;
+    if (!btn) return;
 
-    if (!turningOn) {
-      setMessage("To fully revoke, go to browser site settings.");
-      return;
-    }
+    const handler = function () {
+      const turningOn = !btn.dataset.ison === false ? true : btn.dataset.ison !== "true";
+      setMessage("");
 
-    // Turning ON — try to request the permission
-    setLoading(true);
+      if (!turningOn) {
+        setLocalOn(false);
+        setMessage("To fully revoke, go to browser site settings.");
+        return;
+      }
 
-    const request = perm.key === "camera"
-      ? navigator.mediaDevices?.getUserMedia({ video: true, audio: false })
-      : perm.key === "microphone"
-      ? navigator.mediaDevices?.getUserMedia({ audio: true, video: false })
-      : new Promise((resolve, reject) =>
+      setLocalOn(true);
+      setLoading(true);
+
+      let promise;
+      if (perm.key === "camera") {
+        promise = navigator.mediaDevices.getUserMedia({ video: true, audio: false });
+      } else if (perm.key === "microphone") {
+        promise = navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+      } else {
+        promise = new Promise((resolve, reject) =>
           navigator.geolocation
             ? navigator.geolocation.getCurrentPosition(resolve, reject, { timeout: 8000 })
             : reject(new Error("unavailable"))
         );
+      }
 
-    (request || Promise.reject(new Error("unavailable")))
-      .then((result) => {
-        // Release media streams
-        if (result && result.getTracks) result.getTracks().forEach((t) => t.stop());
-        setLocalOn(true);
-        setMessage("✓ Permission granted!");
-        setLoading(false);
-        refresh();
-      })
-      .catch((err) => {
-        setLoading(false);
-        refresh();
-        if (err?.name === "NotAllowedError" || err?.name === "PermissionDeniedError" || err?.code === 1) {
-          setLocalOn(true); // keep switch ON visually — user must fix in settings
-          setMessage("Blocked by browser. Go to site settings → allow, then retry.");
-        } else {
+      promise
+        .then((result) => {
+          if (result && result.getTracks) result.getTracks().forEach((t) => t.stop());
           setLocalOn(true);
-          setMessage("Could not access device. Check it is connected.");
-        }
-      });
-  };
+          setLoading(false);
+          setMessage("✓ Permission granted!");
+          refresh();
+        })
+        .catch(() => {
+          setLoading(false);
+          setLocalOn(true);
+          setMessage("Blocked. Open browser site settings → set to Allow, then retry.");
+          refresh();
+        });
+    };
 
-  const isOn = localOn;
+    btn.addEventListener("click", handler);
+    return () => btn.removeEventListener("click", handler);
+  }, [perm.key, refresh]);
 
   return (
     <div className="flex items-center gap-4 p-4 rounded-2xl border border-border bg-white hover:shadow-sm transition-shadow">
-      {/* Icon */}
       <div className="w-11 h-11 rounded-xl flex items-center justify-center shrink-0"
         style={{ background: `${perm.color}18` }}>
         <Icon className="h-5 w-5" style={{ color: perm.color }} />
       </div>
 
-      {/* Info */}
       <div className="flex-1 min-w-0">
         <p className="font-semibold text-sm text-foreground">{perm.label}</p>
         <p className="text-xs text-muted-foreground mt-0.5">{perm.description}</p>
@@ -114,10 +116,20 @@ function PermissionRow({ perm, status, onRequest, refresh }) {
         )}
       </div>
 
-      {/* Toggle switch */}
       <div className="flex items-center gap-2 shrink-0">
         {loading && <div className="w-4 h-4 border-2 border-gray-300 border-t-indigo-500 rounded-full animate-spin" />}
-        <Switch checked={isOn} onCheckedChange={handleToggle} disabled={loading} />
+        {/* Native button styled as toggle — avoids React synthetic event batching on mobile */}
+        <button
+          ref={btnRef}
+          data-ison={String(localOn)}
+          disabled={loading}
+          className={`relative w-12 h-6 rounded-full transition-colors duration-200 focus:outline-none disabled:opacity-50`}
+          style={{ background: localOn ? perm.color : "#d1d5db" }}
+        >
+          <span
+            className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform duration-200 ${localOn ? "translate-x-6" : "translate-x-0"}`}
+          />
+        </button>
       </div>
     </div>
   );
@@ -168,7 +180,6 @@ export default function PermissionsPanel() {
               key={perm.key}
               perm={perm}
               status={statuses[perm.key]}
-              onRequest={requestMap[perm.key]}
               refresh={refresh}
             />
           ))}
