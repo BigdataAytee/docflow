@@ -47,22 +47,28 @@ function PermissionRow({ perm, status, refresh }) {
     setLocalOn(status === "granted");
   }, [status]);
 
-  // Attach a native DOM click handler so the getUserMedia call fires
-  // synchronously within the user gesture on mobile browsers
+  // Use a ref to always read the latest localOn value inside the native handler
+  const localOnRef = useRef(localOn);
+  useEffect(() => { localOnRef.current = localOn; }, [localOn]);
+
+  // Attach a native DOM click handler so getUserMedia fires synchronously
+  // within the user gesture on mobile browsers
   useEffect(() => {
     const btn = btnRef.current;
     if (!btn) return;
 
     const handler = function () {
-      const turningOn = !btn.dataset.ison === false ? true : btn.dataset.ison !== "true";
+      const currentlyOn = localOnRef.current;
       setMessage("");
 
-      if (!turningOn) {
+      // Turning OFF
+      if (currentlyOn) {
         setLocalOn(false);
-        setMessage("To fully revoke, go to browser site settings.");
+        setMessage("To fully revoke, open your browser's site settings.");
         return;
       }
 
+      // Turning ON — request the permission
       setLocalOn(true);
       setLoading(true);
 
@@ -89,7 +95,7 @@ function PermissionRow({ perm, status, refresh }) {
         })
         .catch(() => {
           setLoading(false);
-          setLocalOn(true);
+          setLocalOn(false);
           setMessage("Blocked. Open browser site settings → set to Allow, then retry.");
           refresh();
         });
