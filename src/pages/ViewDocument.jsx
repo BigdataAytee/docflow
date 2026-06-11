@@ -555,7 +555,7 @@ export default function ViewDocument() {
       )}
 
       {/* Hidden off-screen render container for PDF generation */}
-      <div style={{ position: "fixed", top: 0, left: "-9999px", width: "794px", zIndex: -1, pointerEvents: "none", visibility: "hidden" }}>
+      <div style={{ position: "fixed", top: 0, left: "-9999px", width: "794px", zIndex: -1, pointerEvents: "none", opacity: 0 }}>
         <div ref={pdfDocRef} style={{ width: "794px" }}>
           {doc && (
             <UnifiedTemplate
