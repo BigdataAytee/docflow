@@ -86,20 +86,25 @@ export default function AIAssistant() {
     const hasImage = !!attachedImage;
 
     const basePrompt = hasImage
-      ? `You are an expert OCR and invoice data extraction AI. Your job is to read the attached document image and extract every single line item exactly as written.
+      ? `You are an expert OCR and document data extraction AI. Carefully read the attached document image and extract every line item from any table or list present.
 
-RULES:
-- Extract EVERY product, service, item or charge listed — do not skip any.
-- For each item: description = exact text as written, quantity = number (default 1), unit_price = price per unit as a plain number (strip ₦ $ £ etc, default 0).
-- If only a total is shown for a line (qty × price), back-calculate unit_price where possible.
-- Ignore grand totals, subtotals, tax lines, headers, footers, and signatures.
-- For handwritten text, use context to infer unclear words.
-- Also extract: customer name, document number/reference, document date, and any notes or payment terms.${inputText.trim() ? `\n\nAdditional typed context from user:\n"""\n${inputText}\n"""` : ""}`
+CRITICAL EXTRACTION RULES:
+1. Look for any table with columns like: S/N, QTY/Qty/Quantity, Description/Item, Unit Price/Rate, Amount/Total.
+2. For EACH row in the table extract:
+   - description: the full item name/description text (e.g. "HOSE ASSEMBLY RL618365", "BRAKE RL616561")
+   - quantity: the numeric quantity (e.g. 05 → 5, 20 → 20)
+   - unit_price: the UNIT PRICE column value as a plain number with NO currency symbols or commas (e.g. "N150,000" → 150000, "N2,750,000" → 2750000)
+3. IMPORTANT: unit_price is the "Unit Price" or "Rate" column — NOT the "Amount" or "Total" column.
+4. Nigerian Naira prices appear as "N150,000" or "₦150,000" or "N2,750,000" — strip all letters, symbols and commas, keep only digits and decimal point.
+5. Do NOT skip any rows. Do NOT include subtotal, tax, or grand total rows.
+6. Also extract: customer_name (who the document is addressed to), document_number, document_date, and notes (delivery terms, validity, VAT notes, etc).
+${inputText.trim() ? `\nAdditional context from user:\n"""\n${inputText}\n"""` : ""}`
       : `You are a precise invoice data extraction AI. Extract every line item from the text below.
 
 RULES:
-- Each item must have: description (exact wording), quantity (default 1), unit_price (plain number, default 0).
+- Each item must have: description (exact wording), quantity (default 1), unit_price (plain number, no currency symbols or commas).
 - Parse natural language like "5 bags of cement @ ₦5,000", "2hrs labour - $100/hr", "3x iPhone cases N3500 each".
+- Nigerian Naira: "N150,000" → 150000, "N2,750,000" → 2750000.
 - Also extract: customer name, document number, document date, notes or payment terms.
 
 TEXT:
