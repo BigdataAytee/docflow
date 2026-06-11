@@ -41,8 +41,24 @@ export default function Customers() {
   useEffect(() => { load(); }, []);
 
   const handleSave = async (data) => {
-    if (editing) await base44.entities.Customer.update(editing.id, data);
-    else await base44.entities.Customer.create(data);
+    if (editing) {
+      await base44.entities.Customer.update(editing.id, data);
+      // Propagate contact changes to all linked documents
+      try {
+        const user = await base44.auth.me();
+        const docs = await base44.entities.Document.filter({ customer_id: editing.id, created_by: user.email }, "-created_date", 200);
+        await Promise.all(docs.map(doc =>
+          base44.entities.Document.update(doc.id, {
+            customer_name: data.full_name || doc.customer_name,
+            customer_company: data.company_name || "",
+            customer_email: data.email || "",
+            customer_address: data.billing_address || doc.customer_address || "",
+          })
+        ));
+      } catch (e) { /* non-critical */ }
+    } else {
+      await base44.entities.Customer.create(data);
+    }
     setShowForm(false);
     setEditing(null);
     load();

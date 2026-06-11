@@ -75,39 +75,32 @@ export default function AIAssistant() {
     setStage("extracting");
     const hasImage = !!attachedImage;
 
-    const promptText = hasImage ?
-    `You are a highly accurate OCR and document data extraction engine for a business invoicing application.
+    const basePrompt = hasImage
+      ? `You are an expert OCR and invoice data extraction AI. Your job is to read the attached document image and extract every single line item exactly as written.
 
-TASK: Extract ALL product/service line items from the ${inputText.trim() ? "text and " : ""}attached image with maximum precision.
+RULES:
+- Extract EVERY product, service, item or charge listed — do not skip any.
+- For each item: description = exact text as written, quantity = number (default 1), unit_price = price per unit as a plain number (strip ₦ $ £ etc, default 0).
+- If only a total is shown for a line (qty × price), back-calculate unit_price where possible.
+- Ignore grand totals, subtotals, tax lines, headers, footers, and signatures.
+- For handwritten text, use context to infer unclear words.
+- Also extract: customer name, document number/reference, document date, and any notes or payment terms.${inputText.trim() ? `\n\nAdditional typed context from user:\n"""\n${inputText}\n"""` : ""}`
+      : `You are a precise invoice data extraction AI. Extract every line item from the text below.
 
-EXTRACTION RULES:
-1. Read EVERY line item, product, service, SKU, or charge listed.
-2. For each item extract: exact description (preserve original spelling/names), quantity (default 1 if not stated), unit_price (numeric only, strip currency symbols, default 0 if not found).
-3. Detect and parse common document formats: invoices, receipts, price lists, purchase orders, handwritten notes, tables, delivery notes, waybills.
-4. If prices appear as totals (qty × price), back-calculate unit_price when quantity is clear.
-5. Ignore headers, footers, subtotals, taxes, signatures — only extract individual line items.
-6. For handwritten documents, infer unclear characters from context.
-7. Extract any important notes, payment terms, or delivery info separately.
-${inputText.trim() ? `\nADDITIONAL TEXT INPUT:\n"""\n${inputText}\n"""` : ""}
+RULES:
+- Each item must have: description (exact wording), quantity (default 1), unit_price (plain number, default 0).
+- Parse natural language like "5 bags of cement @ ₦5,000", "2hrs labour - $100/hr", "3x iPhone cases N3500 each".
+- Also extract: customer name, document number, document date, notes or payment terms.
 
-Return a structured JSON with every line item found. Be thorough — missing items is worse than including extras.` :
-    `You are a precise document data extractor for a business invoicing app.
-
-Extract ALL product/service line items from the text below.
-Rules:
-- Each item: description (exact), quantity (default 1), unit_price (numeric, default 0)
-- Parse formats like "5x cement @ ₦5,000", "3 bags flour - N2500 each", "labour: 2hrs @ $50"
-- Extract notes/terms separately
-
-Text:
+TEXT:
 """
 ${inputText}
 """`;
 
     const result = await base44.integrations.Core.InvokeLLM({
-      prompt: promptText,
+      prompt: basePrompt,
       ...(hasImage ? { file_urls: [attachedImage.url] } : {}),
-      model: "claude_sonnet_4_6", // Best vision + reasoning model for OCR accuracy
+      model: "claude_sonnet_4_6",
       response_json_schema: {
         type: "object",
         properties: {

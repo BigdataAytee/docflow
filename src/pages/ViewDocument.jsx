@@ -848,13 +848,17 @@ function UnifiedTemplate({ doc, onSaveManagerSig, onSaveCustomerSig, onOpenSignM
               <div>
                 <img src={doc.manager_signature} alt="Manager Signature" className="h-20 object-contain mb-2" />
                 <div className="border-t border-gray-400 pt-1.5">
-                  <p className="text-xs text-gray-500">{doc.company_name || "Company"}</p>
+                  {doc.manager_name && <p className="text-xs font-semibold text-gray-700">{doc.manager_name}</p>}
+                  {doc.manager_title && <p className="text-xs text-gray-500">{doc.manager_title}</p>}
+                  {!doc.manager_name && <p className="text-xs text-gray-500">{doc.company_name || "Company"}</p>}
                 </div>
               </div>
             ) : (
               <div>
                 <div style={{ height: 64, borderBottom: "2px solid #374151", marginBottom: 8 }} />
-                <p className="text-xs text-gray-500 mt-1">{doc.company_name || "Company"}</p>
+                {doc.manager_name && <p className="text-xs font-semibold text-gray-700 mt-1">{doc.manager_name}</p>}
+                {doc.manager_title && <p className="text-xs text-gray-500">{doc.manager_title}</p>}
+                {!doc.manager_name && <p className="text-xs text-gray-500 mt-1">{doc.company_name || "Company"}</p>}
                 {!isPdf && <p className="text-xs text-muted-foreground mt-1">Sign in the document editor to add your signature.</p>}
               </div>
             )}
