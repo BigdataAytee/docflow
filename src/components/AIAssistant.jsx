@@ -26,20 +26,10 @@ export default function AIAssistant() {
   const [cameraStream, setCameraStream] = useState(null); // non-null = camera open
   const imageInputRef = useRef(null);
 
-  const fileToDataUrl = (file) => new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = (e) => resolve(e.target.result);
-    reader.onerror = reject;
-    reader.readAsDataURL(file);
-  });
-
   const handleImageUpload = async (file) => {
     setUploadingImage(true);
-    // Convert to base64 data URL for reliable vision model access
-    const dataUrl = await fileToDataUrl(file);
-    // Also upload for storage/preview URL
     const { file_url } = await base44.integrations.Core.UploadFile({ file });
-    setAttachedImage({ url: file_url, dataUrl, name: file.name || "scanned-document.jpg" });
+    setAttachedImage({ url: file_url, name: file.name || "scanned-document.jpg" });
     setUploadingImage(false);
   };
 
@@ -114,7 +104,7 @@ ${inputText}
 
     const result = await base44.integrations.Core.InvokeLLM({
       prompt: basePrompt,
-      ...(hasImage ? { file_urls: [attachedImage.dataUrl || attachedImage.url] } : {}),
+      ...(hasImage ? { file_urls: [attachedImage.url] } : {}),
       model: "claude_sonnet_4_6",
       response_json_schema: {
         type: "object",
