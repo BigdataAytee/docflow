@@ -105,7 +105,7 @@ ${inputText}
     const result = await base44.integrations.Core.InvokeLLM({
       prompt: basePrompt,
       ...(hasImage ? { file_urls: [attachedImage.url] } : {}),
-      model: "claude_sonnet_4_6",
+      model: "gemini_3_1_pro",
       response_json_schema: {
         type: "object",
         properties: {
