@@ -4,8 +4,8 @@ import { base44 } from "@/api/base44Client";
 import {
   Sparkles, X, ArrowRight, Check, ChevronLeft,
   FileText, FileCheck, Receipt, Truck, Loader2,
-  Wand2, MessageSquare, ImagePlus, Camera, ScanLine,
-  ZoomIn, Zap, CheckCircle2
+  Wand2, MessageSquare, ImagePlus, Camera,
+  ScanLine, ZoomIn, Zap, CheckCircle2
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -16,8 +16,7 @@ const DOC_TYPES = [
   { type: "waybill",   label: "Waybill",   icon: Truck,      gradient: "linear-gradient(135deg,#f59e0b,#d97706)", desc: "Track a delivery" },
 ];
 
-/* ─── Inline Camera Tab ─────────────────────────────────────────────────── */
-// initialStream: a MediaStream already obtained inside a click handler (guarantees browser permission prompt)
+/* ─── Inline Camera Tab (kept for potential future use) ─────────────────── */
 function InlineCameraTab({ initialStream, onCapture, onUploading }) {
   const videoRef = useRef(null);
   const canvasRef = useRef(null);
@@ -285,10 +284,7 @@ export default function AIAssistant() {
   const [attachedImage, setAttachedImage] = useState(null);
   const [uploadingImage, setUploadingImage] = useState(false);
   const imageInputRef = useRef(null);
-  // Stream obtained synchronously in the click handler so browser shows permission prompt
-  const [cameraStream, setCameraStream] = useState(null);
-  // null = not started, "loading" = waiting for permission, "denied" = failed
-  const [cameraStatus, setCameraStatus] = useState(null);
+  const cameraInputRef = useRef(null);
 
   const handleImageUpload = async (file) => {
     setUploadingImage(true);
@@ -297,34 +293,14 @@ export default function AIAssistant() {
     setUploadingImage(false);
   };
 
-  // Called by InlineCameraTab when user confirms a captured image
-  const handleCameraCapture = (img) => {
-    setAttachedImage(img);
-    setCameraStream(null);
-    setActiveTab("type"); // Switch back to type tab to show preview + extract button
-    setStage("input");
-  };
-
-  const startCamera = () => {
-    // Stop any existing stream
-    setCameraStream(prev => { if (prev) prev.getTracks().forEach(t => t.stop()); return null; });
-    setActiveTab("scan");
-    setStage(s => s === "idle" ? "input" : s);
-
-    // Call getUserMedia FIRST before any async state updates so it stays
-    // within the synchronous user-gesture context on all mobile browsers
-    navigator.mediaDevices.getUserMedia({
-      video: { facingMode: { ideal: "environment" }, width: { ideal: 1280 }, height: { ideal: 720 } },
-      audio: false,
-    }).then((stream) => {
-      setCameraStream(stream);
-      setCameraStatus("ready");
-    }).catch(() => {
-      setCameraStatus("denied");
-    });
-
-    // Show loading indicator (set after getUserMedia call to not break gesture)
-    setCameraStatus("loading");
+  const handleCameraScan = async (file) => {
+    if (!file) return;
+    setUploadingImage(true);
+    setActiveTab("type");
+    if (stage === "idle") setStage("input");
+    const { file_url } = await base44.integrations.Core.UploadFile({ file });
+    setAttachedImage({ url: file_url, name: "scan.jpg" });
+    setUploadingImage(false);
   };
 
   const reset = () => {
@@ -334,12 +310,8 @@ export default function AIAssistant() {
     setExtractedNotes("");
     setAttachedImage(null);
     setActiveTab("type");
-    setCameraStream(null);
-    setCameraStatus(null);
   };
   const close = () => {
-    // Stop any active camera stream immediately
-    if (cameraStream) { cameraStream.getTracks().forEach(t => t.stop()); }
     setOpen(false);
     setTimeout(reset, 400);
   };
@@ -506,21 +478,23 @@ ${inputText}
               {!isInFlow && (
                 <div className="relative z-10 flex gap-1 bg-white/10 rounded-xl p-1">
                   <button
-                    onClick={() => {
-                      if (cameraStream) { cameraStream.getTracks().forEach(t => t.stop()); setCameraStream(null); }
-                      setCameraStatus(null);
-                      setActiveTab("type");
-                      if (stage === "idle") setStage("input");
-                    }}
+                    onClick={() => { setActiveTab("type"); if (stage === "idle") setStage("input"); }}
                     className={`flex-1 py-2 rounded-lg text-xs font-bold transition-all duration-200 ${activeTab === "type" ? "bg-white text-indigo-700 shadow-sm" : "text-white/60 hover:text-white/90"}`}>
                     ✏️ Type / Paste
                   </button>
-                  <button
-                    onClick={startCamera}
-                    className={`flex-1 py-2 rounded-lg text-xs font-bold transition-all duration-200 ${activeTab === "scan" ? "bg-white text-indigo-700 shadow-sm" : "text-white/60 hover:text-white/90"}`}
+                  <label
+                    className={`flex-1 py-2 rounded-lg text-xs font-bold transition-all duration-200 text-center cursor-pointer ${activeTab === "scan" ? "bg-white text-indigo-700 shadow-sm" : "text-white/60 hover:text-white/90"}`}
                   >
                     📷 Scan Document
-                  </button>
+                    <input
+                      ref={cameraInputRef}
+                      type="file"
+                      accept="image/*"
+                      capture="environment"
+                      className="hidden"
+                      onChange={(e) => e.target.files[0] && handleCameraScan(e.target.files[0])}
+                    />
+                  </label>
                 </div>
               )}
 
@@ -546,44 +520,6 @@ ${inputText}
 
             {/* ── Scrollable Body ── */}
             <div className="overflow-y-auto flex-1">
-
-              {/* SCAN TAB */}
-              {!isInFlow && activeTab === "scan" && (
-                <>
-                  {cameraStatus === "loading" && (
-                    <div className="flex flex-col items-center justify-center gap-3 py-16 px-6 text-center">
-                      <Loader2 className="h-8 w-8 text-indigo-400 animate-spin" />
-                      <p className="text-sm text-muted-foreground">Starting camera…</p>
-                    </div>
-                  )}
-                  {cameraStatus === "denied" && (
-                    <div className="flex flex-col items-center justify-center gap-3 py-12 px-6 text-center">
-                      <div className="w-14 h-14 rounded-2xl bg-amber-50 flex items-center justify-center">
-                        <Camera className="h-6 w-6 text-amber-500" />
-                      </div>
-                      <p className="text-sm font-semibold text-foreground">Camera Permission Needed</p>
-                      <p className="text-xs text-muted-foreground leading-relaxed">
-                        If you already tapped <strong>Allow</strong> in your browser, tap <strong>Try Again</strong> below to open the camera.<br /><br />
-                        If the prompt doesn't appear, go to your browser site settings and allow camera access for this site.
-                      </p>
-                      <button
-                        onClick={startCamera}
-                        className="mt-2 px-6 py-3 rounded-xl text-sm font-bold text-white"
-                        style={{ background: "linear-gradient(135deg,#6366f1,#8b5cf6)" }}>
-                        Try Again
-                      </button>
-                    </div>
-                  )}
-                  {cameraStatus === "ready" && cameraStream && (
-                    <InlineCameraTab
-                      key="with-stream"
-                      initialStream={cameraStream}
-                      onCapture={handleCameraCapture}
-                      onUploading={setUploadingImage}
-                    />
-                  )}
-                </>
-              )}
 
               {/* TYPE TAB — input stage */}
               {!isInFlow && activeTab === "type" && (stage === "input" || stage === "extracting") && (
