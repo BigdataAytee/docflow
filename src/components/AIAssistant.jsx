@@ -318,8 +318,16 @@ export default function AIAssistant() {
     }).then((stream) => {
       setCameraStream(stream);
       setCameraStatus("ready");
-    }).catch(() => {
-      setCameraStatus("denied");
+    }).catch((err) => {
+      // NotAllowedError can mean: user dismissed, user denied, or permissions policy blocked.
+      // If it's a permissions policy block (iframe), show a specific message.
+      // Otherwise keep "denied" so the user can try again after granting permission.
+      const isDismissed = err.name === "NotAllowedError" && err.message?.toLowerCase().includes("dismissed");
+      setCameraStatus(isDismissed ? "loading" : "denied");
+      if (isDismissed) {
+        // User dismissed without choosing — wait and let them try again
+        setTimeout(() => setCameraStatus("denied"), 1500);
+      }
     });
   };
 
@@ -554,14 +562,17 @@ ${inputText}
                   )}
                   {cameraStatus === "denied" && (
                     <div className="flex flex-col items-center justify-center gap-3 py-12 px-6 text-center">
-                      <div className="w-14 h-14 rounded-2xl bg-red-50 flex items-center justify-center">
-                        <Camera className="h-6 w-6 text-red-400" />
+                      <div className="w-14 h-14 rounded-2xl bg-amber-50 flex items-center justify-center">
+                        <Camera className="h-6 w-6 text-amber-500" />
                       </div>
-                      <p className="text-sm font-semibold text-foreground">Camera Access Denied</p>
-                      <p className="text-xs text-muted-foreground">Please allow camera permission in your browser settings, then try again.</p>
+                      <p className="text-sm font-semibold text-foreground">Camera Permission Needed</p>
+                      <p className="text-xs text-muted-foreground leading-relaxed">
+                        If you already tapped <strong>Allow</strong> in your browser, tap <strong>Try Again</strong> below to open the camera.<br /><br />
+                        If the prompt doesn't appear, go to your browser site settings and allow camera access for this site.
+                      </p>
                       <button
                         onClick={startCamera}
-                        className="mt-2 px-4 py-2 rounded-xl text-xs font-bold text-white"
+                        className="mt-2 px-6 py-3 rounded-xl text-sm font-bold text-white"
                         style={{ background: "linear-gradient(135deg,#6366f1,#8b5cf6)" }}>
                         Try Again
                       </button>
