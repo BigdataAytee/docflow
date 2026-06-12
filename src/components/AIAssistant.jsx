@@ -305,7 +305,8 @@ export default function AIAssistant() {
     setStage("input");
   };
 
-  // Native DOM handler for getUserMedia — works on iOS/Android where React synthetic events don't count as user gestures
+  // Directly call getUserMedia inside the click handler — this IS a valid user gesture
+  // on all modern browsers including iOS Safari and Android Chrome
   const startCamera = () => {
     setActiveTab("scan");
     setStage(s => s === "idle" ? "input" : s);
@@ -321,17 +322,6 @@ export default function AIAssistant() {
       setCameraStatus("denied");
     });
   };
-
-  // ref-callback: attaches native click listener the moment the button mounts
-  const scanBtnRef = useCallback((btn) => {
-    if (!btn) return;
-    btn.addEventListener("click", startCamera);
-  }, []);
-
-  const tryAgainRef = useCallback((btn) => {
-    if (!btn) return;
-    btn.addEventListener("click", startCamera);
-  }, []);
 
   const reset = () => {
     setStage("idle");
@@ -522,7 +512,7 @@ ${inputText}
                     ✏️ Type / Paste
                   </button>
                   <button
-                    ref={scanBtnRef}
+                    onClick={startCamera}
                     className={`flex-1 py-2 rounded-lg text-xs font-bold transition-all duration-200 ${activeTab === "scan" ? "bg-white text-indigo-700 shadow-sm" : "text-white/60 hover:text-white/90"}`}
                   >
                     📷 Scan Document
@@ -570,7 +560,7 @@ ${inputText}
                       <p className="text-sm font-semibold text-foreground">Camera Access Denied</p>
                       <p className="text-xs text-muted-foreground">Please allow camera permission in your browser settings, then try again.</p>
                       <button
-                        ref={tryAgainRef}
+                        onClick={startCamera}
                         className="mt-2 px-4 py-2 rounded-xl text-xs font-bold text-white"
                         style={{ background: "linear-gradient(135deg,#6366f1,#8b5cf6)" }}>
                         Try Again
