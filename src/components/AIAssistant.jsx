@@ -287,6 +287,8 @@ export default function AIAssistant() {
   const imageInputRef = useRef(null);
   // Stream obtained synchronously in the click handler so browser shows permission prompt
   const [cameraStream, setCameraStream] = useState(null);
+  // null = not started, "loading" = waiting for permission, "denied" = failed
+  const [cameraStatus, setCameraStatus] = useState(null);
 
   const handleImageUpload = async (file) => {
     setUploadingImage(true);
@@ -308,15 +310,17 @@ export default function AIAssistant() {
     if (activeTab === "scan") return; // already on scan tab
     setActiveTab("scan");
     if (stage === "idle") setStage("input");
+    setCameraStatus("loading");
+    setCameraStream(null);
     // Fire getUserMedia synchronously within the click event to trigger the browser permission prompt
     navigator.mediaDevices?.getUserMedia({
       video: { facingMode: { ideal: "environment" }, width: { ideal: 1920 }, height: { ideal: 1080 } },
       audio: false,
     }).then((stream) => {
       setCameraStream(stream);
+      setCameraStatus("ready");
     }).catch(() => {
-      // Permission denied — InlineCameraTab will show error via its own fallback
-      setCameraStream(null);
+      setCameraStatus("denied");
     });
   };
 
@@ -328,6 +332,7 @@ export default function AIAssistant() {
     setAttachedImage(null);
     setActiveTab("type");
     setCameraStream(null);
+    setCameraStatus(null);
   };
   const close = () => {
     // Stop any active camera stream immediately
@@ -509,6 +514,7 @@ ${inputText}
                         } else {
                           // Switching to type — stop camera stream
                           if (cameraStream) { cameraStream.getTracks().forEach(t => t.stop()); setCameraStream(null); }
+                          setCameraStatus(null);
                           setActiveTab("type");
                           if (stage === "idle") setStage("input");
                         }
@@ -549,12 +555,37 @@ ${inputText}
 
               {/* SCAN TAB */}
               {!isInFlow && activeTab === "scan" && (
-                <InlineCameraTab
-                  key={cameraStream ? "with-stream" : "no-stream"}
-                  initialStream={cameraStream}
-                  onCapture={handleCameraCapture}
-                  onUploading={setUploadingImage}
-                />
+                <>
+                  {cameraStatus === "loading" && (
+                    <div className="flex flex-col items-center justify-center gap-3 py-16 px-6 text-center">
+                      <Loader2 className="h-8 w-8 text-indigo-400 animate-spin" />
+                      <p className="text-sm text-muted-foreground">Starting camera…</p>
+                    </div>
+                  )}
+                  {cameraStatus === "denied" && (
+                    <div className="flex flex-col items-center justify-center gap-3 py-12 px-6 text-center">
+                      <div className="w-14 h-14 rounded-2xl bg-red-50 flex items-center justify-center">
+                        <Camera className="h-6 w-6 text-red-400" />
+                      </div>
+                      <p className="text-sm font-semibold text-foreground">Camera Access Denied</p>
+                      <p className="text-xs text-muted-foreground">Please allow camera permission in your browser settings, then try again.</p>
+                      <button
+                        onClick={() => { setCameraStatus(null); handleScanTabClick(); }}
+                        className="mt-2 px-4 py-2 rounded-xl text-xs font-bold text-white"
+                        style={{ background: "linear-gradient(135deg,#6366f1,#8b5cf6)" }}>
+                        Try Again
+                      </button>
+                    </div>
+                  )}
+                  {cameraStatus === "ready" && cameraStream && (
+                    <InlineCameraTab
+                      key="with-stream"
+                      initialStream={cameraStream}
+                      onCapture={handleCameraCapture}
+                      onUploading={setUploadingImage}
+                    />
+                  )}
+                </>
               )}
 
               {/* TYPE TAB — input stage */}
