@@ -283,6 +283,7 @@ export default function AIAssistant() {
 
   const [attachedImage, setAttachedImage] = useState(null);
   const [uploadingImage, setUploadingImage] = useState(false);
+  const [scanHint, setScanHint] = useState(false);
   const imageInputRef = useRef(null);
   const cameraInputRef = useRef(null);
 
@@ -310,6 +311,7 @@ export default function AIAssistant() {
     setExtractedNotes("");
     setAttachedImage(null);
     setActiveTab("type");
+    setScanHint(false);
   };
   const close = () => {
     setOpen(false);
@@ -484,6 +486,7 @@ ${inputText}
                   </button>
                   <label
                     className={`flex-1 py-2 rounded-lg text-xs font-bold transition-all duration-200 text-center cursor-pointer ${activeTab === "scan" ? "bg-white text-indigo-700 shadow-sm" : "text-white/60 hover:text-white/90"}`}
+                    onClick={() => setScanHint(true)}
                   >
                     📷 Scan Document
                     <input
@@ -492,7 +495,10 @@ ${inputText}
                       accept="image/*"
                       capture="environment"
                       className="hidden"
-                      onChange={(e) => e.target.files[0] && handleCameraScan(e.target.files[0])}
+                      onChange={(e) => {
+                        setScanHint(false);
+                        if (e.target.files[0]) handleCameraScan(e.target.files[0]);
+                      }}
                     />
                   </label>
                 </div>
@@ -524,6 +530,21 @@ ${inputText}
               {/* TYPE TAB — input stage */}
               {!isInFlow && activeTab === "type" && (stage === "input" || stage === "extracting") && (
                 <div className="p-5 space-y-4">
+                  {scanHint && (
+                    <div className="flex items-start gap-3 bg-amber-50 border border-amber-200 rounded-2xl px-4 py-3">
+                      <span className="text-lg shrink-0">📷</span>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-xs font-semibold text-amber-800">Camera didn't open?</p>
+                        <p className="text-xs text-amber-700 mt-0.5 leading-relaxed">
+                          Your device may not support the scan shortcut. Instead, use <strong>"Attach image from gallery"</strong> below to pick a photo, or type / paste your document details here.
+                        </p>
+                      </div>
+                      <button onClick={() => setScanHint(false)} className="text-amber-400 hover:text-amber-600 shrink-0">
+                        <X className="h-4 w-4" />
+                      </button>
+                    </div>
+                  )}
+
                   <div className="flex items-center gap-2 text-sm font-semibold text-foreground">
                     <MessageSquare className="h-4 w-4 text-indigo-500" />
                     Describe your products or services
