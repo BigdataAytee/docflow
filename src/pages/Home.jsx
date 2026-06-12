@@ -1,8 +1,7 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { FileText, FileCheck, Receipt, Truck, Mail, Plus, Clock, Search, X, ArrowRight, Sparkles, BarChart2, Zap, ScanSearch, Loader2 } from "lucide-react";
 import AIAssistant from "../components/AIAssistant";
-import CameraScanner from "../components/CameraScanner";
 import SetupChecklist from "../components/onboarding/SetupChecklist";
 import { useQuery } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
@@ -82,26 +81,15 @@ export default function Home() {
 
   const firstName = user?.full_name?.split(" ")[0] || "";
 
-  const [cameraStream, setCameraStream] = useState(null);
   const [uploadingImage, setUploadingImage] = useState(false);
+  const scanInputRef = useRef(null);
 
-  const openCamera = (e) => {
-    if (e) e.stopPropagation();
-    if (!navigator.mediaDevices?.getUserMedia) return;
-    navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: "environment" } }, audio: false })
-      .then((stream) => setCameraStream(stream))
-      .catch((err) => console.error("Camera error:", err.name, err.message));
-  };
-
-  const handleCameraCapture = async (blob) => {
-    setCameraStream(null);
+  const handleScanFile = async (file) => {
+    if (!file) return;
     setUploadingImage(true);
-    const file = new File([blob], "scan.jpg", { type: "image/jpeg" });
     const { file_url } = await base44.integrations.Core.UploadFile({ file });
     setUploadingImage(false);
-    // Store image and open AI assistant with it pre-loaded via sessionStorage
     sessionStorage.setItem("ai_scan_image", JSON.stringify({ url: file_url, name: "scanned-document.jpg" }));
-    // Trigger AI assistant to open with the scan
     window.dispatchEvent(new CustomEvent("open-ai-assistant-scan"));
   };
 
@@ -111,13 +99,15 @@ export default function Home() {
 
   return (
     <div className="max-w-4xl mx-auto space-y-8">
-      {cameraStream &&
-      <CameraScanner
-        initialStream={cameraStream}
-        onCapture={handleCameraCapture}
-        onClose={() => {cameraStream?.getTracks().forEach((t) => t.stop());setCameraStream(null);}} />
-
-      }
+      {/* Hidden native camera input */}
+      <input
+        ref={scanInputRef}
+        type="file"
+        accept="image/*"
+        capture="environment"
+        className="hidden"
+        onChange={(e) => e.target.files[0] && handleScanFile(e.target.files[0])}
+      />
 
       {/* Hero greeting */}
       <div
