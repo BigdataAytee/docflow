@@ -67,7 +67,7 @@ function InlineCameraTab({ initialStream, onCapture, onUploading }) {
 
     return () => {
       cancelled = true;
-      streamRef.current?.getTracks().forEach(t => t.stop());
+      // Do NOT stop the stream here — parent owns the stream lifecycle
     };
   }, []);
 
@@ -305,14 +305,12 @@ export default function AIAssistant() {
     setStage("input");
   };
 
-  // Called when user clicks the Scan tab — request camera synchronously inside click handler
-  const handleScanTabClick = () => {
-    if (activeTab === "scan") return; // already on scan tab
+  // Request camera — can be called from tab click or "Try Again"
+  const requestCamera = () => {
     setActiveTab("scan");
     if (stage === "idle") setStage("input");
     setCameraStatus("loading");
     setCameraStream(null);
-    // Fire getUserMedia synchronously within the click event to trigger the browser permission prompt
     navigator.mediaDevices?.getUserMedia({
       video: { facingMode: { ideal: "environment" }, width: { ideal: 1920 }, height: { ideal: 1080 } },
       audio: false,
@@ -510,7 +508,7 @@ ${inputText}
                       key={tab.id}
                       onClick={() => {
                         if (tab.id === "scan") {
-                          handleScanTabClick();
+                          requestCamera();
                         } else {
                           // Switching to type — stop camera stream
                           if (cameraStream) { cameraStream.getTracks().forEach(t => t.stop()); setCameraStream(null); }
@@ -570,7 +568,7 @@ ${inputText}
                       <p className="text-sm font-semibold text-foreground">Camera Access Denied</p>
                       <p className="text-xs text-muted-foreground">Please allow camera permission in your browser settings, then try again.</p>
                       <button
-                        onClick={() => { setCameraStatus(null); handleScanTabClick(); }}
+                        onClick={requestCamera}
                         className="mt-2 px-4 py-2 rounded-xl text-xs font-bold text-white"
                         style={{ background: "linear-gradient(135deg,#6366f1,#8b5cf6)" }}>
                         Try Again
