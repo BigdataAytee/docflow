@@ -285,6 +285,7 @@ export default function AIAssistant() {
   const [attachedImage, setAttachedImage] = useState(null);
   const [uploadingImage, setUploadingImage] = useState(false);
   const imageInputRef = useRef(null);
+  const scanBtnRef = useRef(null);
   // Stream obtained synchronously in the click handler so browser shows permission prompt
   const [cameraStream, setCameraStream] = useState(null);
   // null = not started, "loading" = waiting for permission, "denied" = failed
@@ -305,23 +306,52 @@ export default function AIAssistant() {
     setStage("input");
   };
 
-  // Request camera — must be called directly inside a click handler for mobile permission prompt
-  const requestCamera = () => {
-    setActiveTab("scan");
-    if (stage === "idle") setStage("input");
-    setCameraStatus("loading");
-    // Stop any existing stream first
-    if (cameraStream) { cameraStream.getTracks().forEach(t => t.stop()); setCameraStream(null); }
-    navigator.mediaDevices.getUserMedia({
-      video: { facingMode: { ideal: "environment" }, width: { ideal: 1920 }, height: { ideal: 1080 } },
-      audio: false,
-    }).then((stream) => {
-      setCameraStream(stream);
-      setCameraStatus("ready");
-    }).catch(() => {
-      setCameraStatus("denied");
-    });
-  };
+  // Attach native DOM click handler to scan button — required for getUserMedia to fire
+  // as a real user gesture on iOS/Android (React synthetic events don't count)
+  useEffect(() => {
+    const btn = scanBtnRef.current;
+    if (!btn) return;
+    const handler = () => {
+      setActiveTab("scan");
+      setStage(s => s === "idle" ? "input" : s);
+      setCameraStatus("loading");
+      // Stop any existing stream
+      setCameraStream(prev => { if (prev) prev.getTracks().forEach(t => t.stop()); return null; });
+      navigator.mediaDevices.getUserMedia({
+        video: { facingMode: { ideal: "environment" }, width: { ideal: 1280 }, height: { ideal: 720 } },
+        audio: false,
+      }).then((stream) => {
+        setCameraStream(stream);
+        setCameraStatus("ready");
+      }).catch(() => {
+        setCameraStatus("denied");
+      });
+    };
+    btn.addEventListener("click", handler);
+    return () => btn.removeEventListener("click", handler);
+  }, []);  // empty deps — handler reads latest state via setters
+
+  // Try Again uses the same native pattern via a ref
+  const tryAgainRef = useRef(null);
+  useEffect(() => {
+    const btn = tryAgainRef.current;
+    if (!btn) return;
+    const handler = () => {
+      setCameraStatus("loading");
+      setCameraStream(prev => { if (prev) prev.getTracks().forEach(t => t.stop()); return null; });
+      navigator.mediaDevices.getUserMedia({
+        video: { facingMode: { ideal: "environment" }, width: { ideal: 1280 }, height: { ideal: 720 } },
+        audio: false,
+      }).then((stream) => {
+        setCameraStream(stream);
+        setCameraStatus("ready");
+      }).catch(() => {
+        setCameraStatus("denied");
+      });
+    };
+    btn.addEventListener("click", handler);
+    return () => btn.removeEventListener("click", handler);
+  }, [cameraStatus]); // re-attach when denied state renders the button
 
   const reset = () => {
     setStage("idle");
@@ -512,7 +542,7 @@ ${inputText}
                     ✏️ Type / Paste
                   </button>
                   <button
-                    onClick={requestCamera}
+                    ref={scanBtnRef}
                     className={`flex-1 py-2 rounded-lg text-xs font-bold transition-all duration-200 ${activeTab === "scan" ? "bg-white text-indigo-700 shadow-sm" : "text-white/60 hover:text-white/90"}`}>
                     📷 Scan Document
                   </button>
@@ -559,7 +589,7 @@ ${inputText}
                       <p className="text-sm font-semibold text-foreground">Camera Access Denied</p>
                       <p className="text-xs text-muted-foreground">Please allow camera permission in your browser settings, then try again.</p>
                       <button
-                        onClick={requestCamera}
+                        ref={tryAgainRef}
                         className="mt-2 px-4 py-2 rounded-xl text-xs font-bold text-white"
                         style={{ background: "linear-gradient(135deg,#6366f1,#8b5cf6)" }}>
                         Try Again
