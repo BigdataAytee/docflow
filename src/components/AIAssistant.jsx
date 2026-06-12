@@ -305,30 +305,26 @@ export default function AIAssistant() {
     setStage("input");
   };
 
-  // Directly call getUserMedia inside the click handler — this IS a valid user gesture
-  // on all modern browsers including iOS Safari and Android Chrome
   const startCamera = () => {
+    // Stop any existing stream
+    setCameraStream(prev => { if (prev) prev.getTracks().forEach(t => t.stop()); return null; });
     setActiveTab("scan");
     setStage(s => s === "idle" ? "input" : s);
-    setCameraStatus("loading");
-    setCameraStream(prev => { if (prev) prev.getTracks().forEach(t => t.stop()); return null; });
+
+    // Call getUserMedia FIRST before any async state updates so it stays
+    // within the synchronous user-gesture context on all mobile browsers
     navigator.mediaDevices.getUserMedia({
       video: { facingMode: { ideal: "environment" }, width: { ideal: 1280 }, height: { ideal: 720 } },
       audio: false,
     }).then((stream) => {
       setCameraStream(stream);
       setCameraStatus("ready");
-    }).catch((err) => {
-      // NotAllowedError can mean: user dismissed, user denied, or permissions policy blocked.
-      // If it's a permissions policy block (iframe), show a specific message.
-      // Otherwise keep "denied" so the user can try again after granting permission.
-      const isDismissed = err.name === "NotAllowedError" && err.message?.toLowerCase().includes("dismissed");
-      setCameraStatus(isDismissed ? "loading" : "denied");
-      if (isDismissed) {
-        // User dismissed without choosing — wait and let them try again
-        setTimeout(() => setCameraStatus("denied"), 1500);
-      }
+    }).catch(() => {
+      setCameraStatus("denied");
     });
+
+    // Show loading indicator (set after getUserMedia call to not break gesture)
+    setCameraStatus("loading");
   };
 
   const reset = () => {
