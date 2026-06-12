@@ -17,7 +17,8 @@ const DOC_TYPES = [
 ];
 
 /* ─── Inline Camera Tab ─────────────────────────────────────────────────── */
-function InlineCameraTab({ onCapture, onUploading }) {
+// initialStream: a MediaStream already obtained inside a click handler (guarantees browser permission prompt)
+function InlineCameraTab({ initialStream, onCapture, onUploading }) {
   const videoRef = useRef(null);
   const canvasRef = useRef(null);
   const streamRef = useRef(null);
@@ -27,27 +28,42 @@ function InlineCameraTab({ onCapture, onUploading }) {
   const [flash, setFlash] = useState(false);
   const [torch, setTorch] = useState(false);
   const [torchOk, setTorchOk] = useState(false);
-  const [captured, setCaptured] = useState(null); // preview blob URL after snap
+  const [captured, setCaptured] = useState(null);
   const [error, setError] = useState(null);
 
-  // Start camera when tab mounts
+  // Attach the stream passed in from the click handler
   useEffect(() => {
     let cancelled = false;
-    navigator.mediaDevices?.getUserMedia({
-      video: { facingMode: { ideal: "environment" }, width: { ideal: 3840 }, height: { ideal: 2160 } },
-      audio: false,
-    }).then((stream) => {
+
+    const attach = (stream) => {
       if (cancelled) { stream.getTracks().forEach(t => t.stop()); return; }
       streamRef.current = stream;
-      if (videoRef.current) {
-        videoRef.current.srcObject = stream;
-        videoRef.current.onloadedmetadata = () => { if (!cancelled) setReady(true); };
-      }
+      // Try to upgrade to max resolution
       const track = stream.getVideoTracks()[0];
-      if (track.getCapabilities?.()?.torch) setTorchOk(true);
-    }).catch(() => {
-      if (!cancelled) setError("Camera access denied. Please allow camera permission.");
-    });
+      track.applyConstraints({
+        facingMode: { ideal: "environment" },
+        width: { ideal: 3840 }, height: { ideal: 2160 },
+      }).catch(() => {}).finally(() => {
+        if (videoRef.current && !cancelled) {
+          videoRef.current.srcObject = stream;
+          videoRef.current.onloadedmetadata = () => { if (!cancelled) setReady(true); };
+          videoRef.current.play().catch(() => {});
+        }
+        if (track.getCapabilities?.()?.torch) setTorchOk(true);
+      });
+    };
+
+    if (initialStream) {
+      attach(initialStream);
+    } else {
+      // Fallback: browser already granted permission (e.g. retake flow)
+      navigator.mediaDevices?.getUserMedia({
+        video: { facingMode: { ideal: "environment" }, width: { ideal: 1920 }, height: { ideal: 1080 } },
+        audio: false,
+      }).then(attach).catch(() => {
+        if (!cancelled) setError("Camera access denied. Please allow camera permission and try again.");
+      });
+    }
 
     return () => {
       cancelled = true;
@@ -99,7 +115,7 @@ function InlineCameraTab({ onCapture, onUploading }) {
       const previewUrl = URL.createObjectURL(blob);
       setCaptured({ blob, previewUrl });
       setCapturing(false);
-      streamRef.current?.getTracks().forEach(t => t.stop());
+      // Keep stream alive for retake — stopped only when tab unmounts
     }, "image/jpeg", 0.97);
   }, [capturing]);
 
@@ -108,17 +124,26 @@ function InlineCameraTab({ onCapture, onUploading }) {
     setCaptured(null);
     setReady(false);
     setCapturing(false);
-    // Restart stream
-    navigator.mediaDevices?.getUserMedia({
-      video: { facingMode: { ideal: "environment" }, width: { ideal: 3840 }, height: { ideal: 2160 } },
-      audio: false,
-    }).then((stream) => {
-      streamRef.current = stream;
+    // Re-use existing stream if still alive, otherwise request again
+    if (streamRef.current?.active) {
       if (videoRef.current) {
-        videoRef.current.srcObject = stream;
+        videoRef.current.srcObject = streamRef.current;
         videoRef.current.onloadedmetadata = () => setReady(true);
+        videoRef.current.play().catch(() => {});
       }
-    }).catch(() => setError("Camera unavailable."));
+    } else {
+      navigator.mediaDevices?.getUserMedia({
+        video: { facingMode: { ideal: "environment" }, width: { ideal: 1920 }, height: { ideal: 1080 } },
+        audio: false,
+      }).then((stream) => {
+        streamRef.current = stream;
+        if (videoRef.current) {
+          videoRef.current.srcObject = stream;
+          videoRef.current.onloadedmetadata = () => setReady(true);
+          videoRef.current.play().catch(() => {});
+        }
+      }).catch(() => setError("Camera unavailable."));
+    }
   };
 
   const useCapture = async () => {
@@ -260,6 +285,8 @@ export default function AIAssistant() {
   const [attachedImage, setAttachedImage] = useState(null);
   const [uploadingImage, setUploadingImage] = useState(false);
   const imageInputRef = useRef(null);
+  // Stream obtained synchronously in the click handler so browser shows permission prompt
+  const [cameraStream, setCameraStream] = useState(null);
 
   const handleImageUpload = async (file) => {
     setUploadingImage(true);
@@ -271,8 +298,26 @@ export default function AIAssistant() {
   // Called by InlineCameraTab when user confirms a captured image
   const handleCameraCapture = (img) => {
     setAttachedImage(img);
+    setCameraStream(null);
     setActiveTab("type"); // Switch back to type tab to show preview + extract button
     setStage("input");
+  };
+
+  // Called when user clicks the Scan tab — request camera synchronously inside click handler
+  const handleScanTabClick = () => {
+    if (activeTab === "scan") return; // already on scan tab
+    setActiveTab("scan");
+    if (stage === "idle") setStage("input");
+    // Fire getUserMedia synchronously within the click event to trigger the browser permission prompt
+    navigator.mediaDevices?.getUserMedia({
+      video: { facingMode: { ideal: "environment" }, width: { ideal: 1920 }, height: { ideal: 1080 } },
+      audio: false,
+    }).then((stream) => {
+      setCameraStream(stream);
+    }).catch(() => {
+      // Permission denied — InlineCameraTab will show error via its own fallback
+      setCameraStream(null);
+    });
   };
 
   const reset = () => {
@@ -282,8 +327,14 @@ export default function AIAssistant() {
     setExtractedNotes("");
     setAttachedImage(null);
     setActiveTab("type");
+    setCameraStream(null);
   };
-  const close = () => { setOpen(false); setTimeout(reset, 400); };
+  const close = () => {
+    // Stop any active camera stream immediately
+    if (cameraStream) { cameraStream.getTracks().forEach(t => t.stop()); }
+    setOpen(false);
+    setTimeout(reset, 400);
+  };
 
   useEffect(() => {
     if (stage === "input" && textareaRef.current) textareaRef.current.focus();
@@ -447,12 +498,21 @@ ${inputText}
               {!isInFlow && (
                 <div className="relative z-10 flex gap-1 bg-white/10 rounded-xl p-1">
                   {[
-                    { id: "type", label: "✏️ Type / Paste", },
-                    { id: "scan", label: "📷 Scan Document", },
+                    { id: "type", label: "✏️ Type / Paste" },
+                    { id: "scan", label: "📷 Scan Document" },
                   ].map(tab => (
                     <button
                       key={tab.id}
-                      onClick={() => { setActiveTab(tab.id); if (stage === "idle") setStage("input"); }}
+                      onClick={() => {
+                        if (tab.id === "scan") {
+                          handleScanTabClick();
+                        } else {
+                          // Switching to type — stop camera stream
+                          if (cameraStream) { cameraStream.getTracks().forEach(t => t.stop()); setCameraStream(null); }
+                          setActiveTab("type");
+                          if (stage === "idle") setStage("input");
+                        }
+                      }}
                       className={`flex-1 py-2 rounded-lg text-xs font-bold transition-all duration-200 ${
                         activeTab === tab.id
                           ? "bg-white text-indigo-700 shadow-sm"
@@ -490,6 +550,8 @@ ${inputText}
               {/* SCAN TAB */}
               {!isInFlow && activeTab === "scan" && (
                 <InlineCameraTab
+                  key={cameraStream ? "with-stream" : "no-stream"}
+                  initialStream={cameraStream}
                   onCapture={handleCameraCapture}
                   onUploading={setUploadingImage}
                 />
