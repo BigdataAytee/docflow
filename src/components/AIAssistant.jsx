@@ -305,13 +305,14 @@ export default function AIAssistant() {
     setStage("input");
   };
 
-  // Request camera — can be called from tab click or "Try Again"
+  // Request camera — must be called directly inside a click handler for mobile permission prompt
   const requestCamera = () => {
     setActiveTab("scan");
     if (stage === "idle") setStage("input");
     setCameraStatus("loading");
-    setCameraStream(null);
-    navigator.mediaDevices?.getUserMedia({
+    // Stop any existing stream first
+    if (cameraStream) { cameraStream.getTracks().forEach(t => t.stop()); setCameraStream(null); }
+    navigator.mediaDevices.getUserMedia({
       video: { facingMode: { ideal: "environment" }, width: { ideal: 1920 }, height: { ideal: 1080 } },
       audio: false,
     }).then((stream) => {
@@ -500,31 +501,21 @@ ${inputText}
               {/* Tabs — only visible in input stage */}
               {!isInFlow && (
                 <div className="relative z-10 flex gap-1 bg-white/10 rounded-xl p-1">
-                  {[
-                    { id: "type", label: "✏️ Type / Paste" },
-                    { id: "scan", label: "📷 Scan Document" },
-                  ].map(tab => (
-                    <button
-                      key={tab.id}
-                      onClick={() => {
-                        if (tab.id === "scan") {
-                          requestCamera();
-                        } else {
-                          // Switching to type — stop camera stream
-                          if (cameraStream) { cameraStream.getTracks().forEach(t => t.stop()); setCameraStream(null); }
-                          setCameraStatus(null);
-                          setActiveTab("type");
-                          if (stage === "idle") setStage("input");
-                        }
-                      }}
-                      className={`flex-1 py-2 rounded-lg text-xs font-bold transition-all duration-200 ${
-                        activeTab === tab.id
-                          ? "bg-white text-indigo-700 shadow-sm"
-                          : "text-white/60 hover:text-white/90"
-                      }`}>
-                      {tab.label}
-                    </button>
-                  ))}
+                  <button
+                    onClick={() => {
+                      if (cameraStream) { cameraStream.getTracks().forEach(t => t.stop()); setCameraStream(null); }
+                      setCameraStatus(null);
+                      setActiveTab("type");
+                      if (stage === "idle") setStage("input");
+                    }}
+                    className={`flex-1 py-2 rounded-lg text-xs font-bold transition-all duration-200 ${activeTab === "type" ? "bg-white text-indigo-700 shadow-sm" : "text-white/60 hover:text-white/90"}`}>
+                    ✏️ Type / Paste
+                  </button>
+                  <button
+                    onClick={requestCamera}
+                    className={`flex-1 py-2 rounded-lg text-xs font-bold transition-all duration-200 ${activeTab === "scan" ? "bg-white text-indigo-700 shadow-sm" : "text-white/60 hover:text-white/90"}`}>
+                    📷 Scan Document
+                  </button>
                 </div>
               )}
 
