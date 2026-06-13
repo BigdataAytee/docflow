@@ -13,6 +13,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import CustomerForm from "../components/CustomerForm";
+import CustomerSelect from "../components/CustomerSelect";
 import BankDetailsFields from "../components/BankDetailsFields";
 import CurrencySelect, { CURRENCIES } from "../components/CurrencySelect";
 import SignaturePad from "../components/SignaturePad";
@@ -788,29 +789,13 @@ export default function CreateDocument() {
               </div>
               <div>
                 <Label>{L.customer}</Label>
-                <Select value={form.customer_id} onValueChange={selectCustomer}>
-                  <SelectTrigger>
-                    {form.customer_id ? (
-                      <div className="flex flex-col text-left leading-tight overflow-hidden">
-                        <span className="font-medium truncate">{form.customer_name}{form.customer_company ? ` — ${form.customer_company}` : ""}</span>
-                        {form.customer_address && <span className="text-xs text-muted-foreground truncate">{form.customer_address}</span>}
-                      </div>
-                    ) : (
-                      <span className="text-muted-foreground">Select customer</span>
-                    )}
-                  </SelectTrigger>
-                  <SelectContent>
-                    {customers.map(c => (
-                      <SelectItem key={c.id} value={c.id}>
-                        <span className="flex flex-col py-0.5">
-                          <span className="font-medium">{c.full_name}{c.company_name ? ` — ${c.company_name}` : ""}</span>
-                          {c.billing_address && <span className="text-xs text-muted-foreground truncate max-w-[280px]">{c.billing_address}</span>}
-                        </span>
-                      </SelectItem>
-                    ))}
-                    <SelectItem value="__add_new__" className="text-primary font-semibold border-t border-border mt-1 pt-2">＋ Add New Customer</SelectItem>
-                  </SelectContent>
-                </Select>
+                <CustomerSelect
+                  customers={customers}
+                  value={form.customer_id}
+                  onSelect={selectCustomer}
+                  onAddNew={() => setShowAddCustomer(true)}
+                  label={L.customer}
+                />
                 {!form.customer_id && (
                   <Input className="mt-2" placeholder="Or type customer name manually" value={form.customer_name}
                     onChange={e => setForm(f => ({ ...f, customer_name: e.target.value }))} />
