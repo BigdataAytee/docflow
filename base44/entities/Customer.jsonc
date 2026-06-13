@@ -53,8 +53,7 @@
     },
     "currency": {
       "type": "string",
-      "title": "Currency",
-      "default": "USD"
+      "title": "Currency"
     },
     "notes": {
       "type": "string",
