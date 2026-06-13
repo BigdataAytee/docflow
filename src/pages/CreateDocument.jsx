@@ -819,30 +819,32 @@ export default function CreateDocument() {
               )}
               <div className="sm:col-span-1"><Label>{L.issueDate}</Label><Input type="date" value={form.issue_date} onChange={e => setForm(f => ({ ...f, issue_date: e.target.value }))} /></div>
               {L.showDue && <div><Label>{L.dueDate}</Label><Input type="date" value={form.due_date} onChange={e => setForm(f => ({ ...f, due_date: e.target.value }))} /></div>}
-              <div className="sm:col-span-2">
-                <Label>Tax Identification Number (TIN)</Label>
-                <div className="flex items-center gap-2 mt-1">
-                  <Input value={form.tax_number} onChange={e => setForm(f => ({ ...f, tax_number: e.target.value }))} placeholder="e.g. 1234567-0001" className="flex-1" />
-                  {form.tax_number && form.tax_number === savedTaxNumber ? (
-                    <span className="text-xs text-emerald-600 font-medium whitespace-nowrap">✓ Saved</span>
-                  ) : (
-                    <button
-                      type="button"
-                      disabled={savingTaxNumber || !form.tax_number}
-                      onClick={async () => {
-                        setSavingTaxNumber(true);
-                        await base44.auth.updateMe({ default_tax_number: form.tax_number });
-                        setSavedTaxNumber(form.tax_number);
-                        setSavingTaxNumber(false);
-                        toast.success("TIN saved — it will auto-fill on new documents.");
-                      }}
-                      className="text-xs text-slate-600 hover:text-slate-900 border border-slate-300 rounded-full px-3 py-1 hover:bg-slate-50 transition-colors disabled:opacity-40 whitespace-nowrap shrink-0"
-                    >
-                      {savingTaxNumber ? "Saving…" : "💾 Save"}
-                    </button>
-                  )}
+              {docType === "invoice" && (
+                <div className="sm:col-span-2">
+                  <Label>Tax Identification Number (TIN)</Label>
+                  <div className="flex items-center gap-2 mt-1">
+                    <Input value={form.tax_number} onChange={e => setForm(f => ({ ...f, tax_number: e.target.value }))} placeholder="e.g. 1234567-0001" className="flex-1" />
+                    {form.tax_number && form.tax_number === savedTaxNumber ? (
+                      <span className="text-xs text-emerald-600 font-medium whitespace-nowrap">✓ Saved</span>
+                    ) : (
+                      <button
+                        type="button"
+                        disabled={savingTaxNumber || !form.tax_number}
+                        onClick={async () => {
+                          setSavingTaxNumber(true);
+                          await base44.auth.updateMe({ default_tax_number: form.tax_number });
+                          setSavedTaxNumber(form.tax_number);
+                          setSavingTaxNumber(false);
+                          toast.success("TIN saved — it will auto-fill on new documents.");
+                        }}
+                        className="text-xs text-slate-600 hover:text-slate-900 border border-slate-300 rounded-full px-3 py-1 hover:bg-slate-50 transition-colors disabled:opacity-40 whitespace-nowrap shrink-0"
+                      >
+                        {savingTaxNumber ? "Saving…" : "💾 Save"}
+                      </button>
+                    )}
+                  </div>
                 </div>
-              </div>
+              )}
             </div>
           </div>
 
