@@ -1,5 +1,6 @@
 import { Link, useLocation } from "react-router-dom";
 import { Users, Settings, LogOut, ShieldAlert, Home, HelpCircle } from "lucide-react";
+import NotificationBell from "@/components/NotificationBell";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/lib/AuthContext";
@@ -145,10 +146,11 @@ export default function Sidebar({ onClose }) {
 
       {/* Bottom sign out */}
       <div className="mx-4 h-px bg-white/[0.07] mt-2" />
-      <div className="p-3">
+      <div className="p-3 flex items-center gap-2">
+        <NotificationBell />
         <button
           onClick={() => base44.auth.logout()}
-          className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-white/40 hover:text-white hover:bg-white/[0.06] transition-all w-full group"
+          className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-white/40 hover:text-white hover:bg-white/[0.06] transition-all flex-1 group"
         >
           <div className="w-7 h-7 rounded-lg bg-white/5 group-hover:bg-white/10 flex items-center justify-center shrink-0 transition-all">
             <LogOut className="h-3.5 w-3.5" />

@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import { FileText, FileCheck, Receipt, Truck, Mail, Plus, Clock, Search, X, ArrowRight, Sparkles, BarChart2, Zap, ScanSearch, Loader2 } from "lucide-react";
+import { FileText, FileCheck, Receipt, Truck, Mail, Plus, Clock, Search, X, ArrowRight, Sparkles, BarChart2, Zap, ScanSearch, Loader2, CreditCard, CheckCircle2, AlertCircle } from "lucide-react";
 import AIAssistant from "../components/AIAssistant";
 import SetupChecklist from "../components/onboarding/SetupChecklist";
 import { useQuery } from "@tanstack/react-query";
@@ -96,6 +96,12 @@ export default function Home() {
   // Quick revenue stat for analytics card
   const paidRevenue = docs.filter((d) => d.type === "invoice" && d.status === "paid").reduce((s, d) => s + (d.total || 0), 0);
   const fmtRevenue = paidRevenue >= 1_000_000 ? `₦${(paidRevenue / 1_000_000).toFixed(1)}M` : paidRevenue >= 1_000 ? `₦${(paidRevenue / 1_000).toFixed(1)}K` : `₦${paidRevenue}`;
+
+  // Payment stats
+  const unpaidInvoices = docs.filter(d => (d.type === "invoice" || d.type === "quotation") && d.status !== "paid" && d.status !== "cancelled").length;
+  const paidToday = docs.filter(d => d.status === "paid" && d.updated_date && new Date(d.updated_date).toDateString() === new Date().toDateString()).length;
+  const totalOutstanding = docs.filter(d => (d.type === "invoice" || d.type === "quotation") && d.status !== "paid").reduce((s, d) => s + (d.balance_due || d.total || 0), 0);
+  const fmtOutstanding = totalOutstanding >= 1_000_000 ? `${(totalOutstanding / 1_000_000).toFixed(1)}M` : totalOutstanding >= 1_000 ? `${(totalOutstanding / 1_000).toFixed(0)}K` : String(Math.round(totalOutstanding));
 
   return (
     <div className="max-w-4xl mx-auto space-y-8">
@@ -257,6 +263,39 @@ export default function Home() {
                   </div>);
 
             })}
+
+              {/* Payment summary strip */}
+              {docs.length > 0 && (
+                <div className="col-span-2 md:col-span-3 grid grid-cols-3 gap-3">
+                  <div className="bg-card border border-border rounded-2xl p-4 flex items-center gap-3 shadow-sm">
+                    <div className="w-10 h-10 rounded-xl bg-red-100 flex items-center justify-center shrink-0">
+                      <AlertCircle className="h-5 w-5 text-red-500" />
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-xs text-muted-foreground">Unpaid</p>
+                      <p className="text-lg font-black text-foreground">{unpaidInvoices}</p>
+                    </div>
+                  </div>
+                  <div className="bg-card border border-border rounded-2xl p-4 flex items-center gap-3 shadow-sm">
+                    <div className="w-10 h-10 rounded-xl bg-emerald-100 flex items-center justify-center shrink-0">
+                      <CheckCircle2 className="h-5 w-5 text-emerald-500" />
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-xs text-muted-foreground">Paid Today</p>
+                      <p className="text-lg font-black text-emerald-600">{paidToday}</p>
+                    </div>
+                  </div>
+                  <div className="bg-card border border-border rounded-2xl p-4 flex items-center gap-3 shadow-sm cursor-pointer hover:bg-muted/40 transition-colors" onClick={() => navigate("/settings?tab=payments")}>
+                    <div className="w-10 h-10 rounded-xl bg-indigo-100 flex items-center justify-center shrink-0">
+                      <CreditCard className="h-5 w-5 text-indigo-500" />
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-xs text-muted-foreground">Outstanding</p>
+                      <p className="text-sm font-black text-indigo-600 truncate">{fmtOutstanding}</p>
+                    </div>
+                  </div>
+                </div>
+              )}
 
               {/* Analytics card — full width, dark, navigates to /analytics */}
               <div
