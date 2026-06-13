@@ -197,7 +197,7 @@ export default function DocumentList() {
                         {doc.created_date ? format(new Date(doc.created_date), "MMM d, yyyy") : "—"}
                       </td>
                       <td className="px-5 py-4" onClick={e => e.stopPropagation()}>
-                        <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity">
                           <Link to={`/documents/${doc.id}`} className="h-7 w-7 flex items-center justify-center rounded-lg hover:bg-muted text-muted-foreground hover:text-foreground">
                             <Eye className="h-3.5 w-3.5" />
                           </Link>

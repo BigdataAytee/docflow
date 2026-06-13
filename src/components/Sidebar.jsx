@@ -1,8 +1,9 @@
 import { Link, useLocation } from "react-router-dom";
-import { Users, Settings, LogOut, ShieldAlert, Home, HelpCircle } from "lucide-react";
+import { Users, Settings, LogOut, ShieldAlert, Home, HelpCircle, FileText, FileCheck, Receipt, Truck, ChevronDown, ChevronRight } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/lib/AuthContext";
+import { useState } from "react";
 
 const navItems = [
   { label: "Home",        icon: Home,       path: "/" },
@@ -11,11 +12,20 @@ const navItems = [
   { label: "Help Center", icon: HelpCircle, path: "/help" },
 ];
 
+const docItems = [
+  { label: "Invoices",    icon: FileText,  path: "/documents?type=invoice" },
+  { label: "Quotations",  icon: FileCheck, path: "/documents?type=quotation" },
+  { label: "Receipts",    icon: Receipt,   path: "/documents?type=receipt" },
+  { label: "Waybills",    icon: Truck,     path: "/documents?type=waybill" },
+];
+
 
 
 export default function Sidebar({ onClose }) {
   const location = useLocation();
   const { user } = useAuth();
+  const isDocsActive = location.pathname.startsWith("/documents");
+  const [docsOpen, setDocsOpen] = useState(isDocsActive);
 
   const companyName = user?.company_name || user?.full_name || "";
   const companyEmail = user?.company_email || user?.email || "";
@@ -96,6 +106,44 @@ export default function Sidebar({ onClose }) {
       <p className="px-5 text-[10px] font-bold uppercase tracking-widest text-white/30 mb-2">Navigation</p>
 
       <nav className="flex-1 px-3 space-y-0.5 overflow-y-auto">
+        {/* Documents collapsible group */}
+        <div>
+          <button
+            onClick={() => setDocsOpen(o => !o)}
+            className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all group ${
+              isDocsActive ? "bg-white/10 text-white shadow-sm" : "text-white/50 hover:text-white hover:bg-white/[0.06]"
+            }`}
+          >
+            <div className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 transition-all ${
+              isDocsActive ? "bg-white/15" : "bg-white/5 group-hover:bg-white/10"
+            }`}>
+              <FileText className={`h-3.5 w-3.5 ${isDocsActive ? "text-white" : "text-white/50 group-hover:text-white/80"}`} />
+            </div>
+            <span className="flex-1 text-left">Documents</span>
+            {docsOpen ? <ChevronDown className="h-3.5 w-3.5 opacity-50" /> : <ChevronRight className="h-3.5 w-3.5 opacity-50" />}
+          </button>
+          {docsOpen && (
+            <div className="ml-4 mt-0.5 space-y-0.5 border-l border-white/10 pl-3">
+              {docItems.map(item => {
+                const active = location.pathname + location.search === item.path;
+                return (
+                  <Link
+                    key={item.path}
+                    to={item.path}
+                    onClick={() => onClose && onClose()}
+                    className={`flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-medium transition-all group ${
+                      active ? "bg-white/10 text-white" : "text-white/45 hover:text-white hover:bg-white/[0.06]"
+                    }`}
+                  >
+                    <item.icon className={`h-3 w-3 shrink-0 ${active ? "text-white" : "text-white/45 group-hover:text-white/70"}`} />
+                    {item.label}
+                  </Link>
+                );
+              })}
+            </div>
+          )}
+        </div>
+
         {isAdmin && (
           <Link
             to="/admin"

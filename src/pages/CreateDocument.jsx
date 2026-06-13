@@ -1227,7 +1227,7 @@ export default function CreateDocument() {
                 {saving ? "Saving..." : (form.type || docType) === "waybill" ? "Save — To Be Delivered" : "Save as Draft"}
               </Button>
               <Button variant="outline" className="w-full" onClick={() => handleSave("sent")} disabled={saving || !form.customer_name}>
-                Save &amp; Send
+                Save &amp; Mark as Sent
               </Button>
               <Button variant="ghost" className="w-full" onClick={() => setShowPdfPreview(true)}>
                 <FileDown className="h-4 w-4 mr-1" />
@@ -1278,7 +1278,7 @@ export default function CreateDocument() {
             onClick={() => handleSave("sent")}
             disabled={saving || !form.customer_name}
           >
-            {saving ? "Saving…" : "Save Document"}
+            {saving ? "Saving…" : "Save & Mark as Sent"}
           </Button>
         </div>
       </div>
