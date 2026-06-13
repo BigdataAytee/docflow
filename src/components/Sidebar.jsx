@@ -1,14 +1,12 @@
 import { Link, useLocation } from "react-router-dom";
-import { Users, Settings, LogOut, ShieldAlert, Home, HelpCircle, FileText, Mail } from "lucide-react";
+import { Users, Settings, LogOut, ShieldAlert, Home, HelpCircle } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/lib/AuthContext";
 
 const navItems = [
   { label: "Home",        icon: Home,       path: "/" },
-  { label: "Documents",   icon: FileText,   path: "/documents" },
   { label: "Customers",   icon: Users,      path: "/customers" },
-  { label: "Mail",        icon: Mail,       path: "/mail" },
   { label: "Settings",    icon: Settings,   path: "/settings" },
   { label: "Help Center", icon: HelpCircle, path: "/help" },
 ];
@@ -93,6 +91,9 @@ export default function Sidebar({ onClose }) {
 
       {/* Divider */}
       <div className="mx-4 h-px bg-white/[0.07] mb-3" />
+
+      {/* Nav label */}
+      <p className="px-5 text-[10px] font-bold uppercase tracking-widest text-white/30 mb-2">Navigation</p>
 
       <nav className="flex-1 px-3 space-y-0.5 overflow-y-auto">
         {isAdmin && (

@@ -125,7 +125,7 @@ export default function Home() {
             <h1 className="text-2xl md:text-3xl font-bold text-white leading-tight">
               {greeting()}{firstName ? `, ${firstName}` : ""}! 👋
             </h1>
-            <p className="text-white/60 mt-1.5 text-sm">Create invoices, quotations, receipts & waybills — then track every payment and delivery.</p>
+            <p className="text-white/60 mt-1.5 text-sm">Manage your documents and business communications.</p>
             
 
 
@@ -160,7 +160,7 @@ export default function Home() {
           type="text"
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
-          placeholder="Search documents by customer, reference or status…"
+          placeholder="Search by document reference number, customer name, status, tracking number…"
           className="w-full h-12 pl-11 pr-11 rounded-2xl border border-border bg-card text-sm focus:outline-none focus:ring-2 focus:ring-ring shadow-sm placeholder:text-muted-foreground transition-shadow focus:shadow-md" />
         
         {searchQuery &&
@@ -212,7 +212,7 @@ export default function Home() {
       {!searchQuery &&
       <>
           <div>
-            <h2 className="font-bold text-base text-foreground mb-4">What would you like to do?</h2>
+            <h2 className="font-bold text-base text-foreground mb-4">Quick Access</h2>
             <div className="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-4">
 
               {/* Regular doc type cards */}
@@ -241,12 +241,12 @@ export default function Home() {
                       </div>
                       <div className="flex-1">
                         <h3 className="font-bold text-white text-base md:text-lg leading-tight">{label}</h3>
-                        <p className="text-white/70 text-xs mt-0.5 leading-relaxed">{description}</p>
+                        <p className="text-white/70 text-xs mt-0.5 leading-relaxed hidden sm:block">{description}</p>
                       </div>
                       {newPath ?
                     <button onClick={(e) => {e.stopPropagation();navigate(newPath);}}
                     className="flex items-center gap-1.5 text-xs font-bold text-white bg-white/20 hover:bg-white/30 backdrop-blur-sm rounded-xl px-3 py-1.5 w-fit transition-colors">
-                          <Plus className="h-3 w-3" /> Create New
+                          <Plus className="h-3 w-3" /> New
                         </button> :
 
                     <div className="flex items-center gap-1 text-xs font-semibold text-white/80">
@@ -296,9 +296,14 @@ export default function Home() {
 
                   {/* Text */}
                   <div className="flex-1 min-w-0">
-                    <h3 className="text-lg font-black text-white leading-tight">Reports & Analytics</h3>
-                    <p className="text-xs mt-1" style={{ color: "rgba(255,255,255,0.45)" }}>
-                      See how much you've earned, who owes you, and your busiest periods
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className="text-[10px] font-black uppercase tracking-[0.2em]" style={{ color: "rgba(99,102,241,0.9)" }}>Business Intelligence</span>
+                      <span className="text-[9px] font-bold px-2 py-0.5 rounded-full"
+                    style={{ background: "rgba(16,185,129,0.15)", color: "#34d399", border: "1px solid rgba(16,185,129,0.3)" }}>AI-Powered</span>
+                    </div>
+                    <h3 className="text-xl font-black text-white leading-tight">Analytics & Insights</h3>
+                    <p className="text-xs mt-1 hidden sm:block" style={{ color: "rgba(255,255,255,0.38)" }}>
+                      Revenue trends · Top customers · Sales funnel · AI recommendations
                     </p>
                   </div>
 
@@ -337,7 +342,7 @@ export default function Home() {
                   <Clock className="h-4 w-4 text-muted-foreground" />
                   <h2 className="font-bold text-base text-foreground">Recent Documents</h2>
                 </div>
-                <button onClick={() => navigate("/documents")}
+                <button onClick={() => navigate("/documents?type=invoice")}
             className="text-xs text-primary font-semibold flex items-center gap-1 hover:underline">
                   View all <ArrowRight className="h-3 w-3" />
                 </button>
@@ -355,7 +360,7 @@ export default function Home() {
                       </div>
                       <div className="flex-1 min-w-0">
                         <p className="font-semibold text-sm truncate">{doc.number || "—"}</p>
-                        <p className="text-xs text-muted-foreground truncate">{doc.customer_name || "—"}</p>
+                        <p className="text-xs text-muted-foreground truncate">{doc.customer_name || "No customer"}</p>
                       </div>
                       <div className="flex items-center gap-3 shrink-0">
                         <div className="text-right hidden sm:block">
