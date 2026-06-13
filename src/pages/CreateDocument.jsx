@@ -398,6 +398,12 @@ export default function CreateDocument() {
     if (!/^\d$/.test(e.key)) e.preventDefault();
   };
 
+  // Strips non-numeric chars (except a single decimal point) — covers mobile paste/autocomplete
+  const sanitizeNumeric = (val) => {
+    const parts = val.replace(/[^\d.]/g, "").split(".");
+    return parts.length > 1 ? parts[0] + "." + parts.slice(1).join("") : parts[0];
+  };
+
   const handleItemImageUpload = async (i, file) => {
     setUploadingItemImg(prev => ({ ...prev, [i]: true }));
     const { file_url } = await base44.integrations.Core.UploadFile({ file });
@@ -785,7 +791,14 @@ export default function CreateDocument() {
                 <Select value={form.customer_id} onValueChange={selectCustomer}>
                   <SelectTrigger><SelectValue placeholder="Select customer" /></SelectTrigger>
                   <SelectContent>
-                    {customers.map(c => <SelectItem key={c.id} value={c.id}>{c.full_name}{c.company_name ? ` — ${c.company_name}` : ""}</SelectItem>)}
+                    {customers.map(c => (
+                      <SelectItem key={c.id} value={c.id}>
+                        <span className="flex flex-col">
+                          <span>{c.full_name}{c.company_name ? ` — ${c.company_name}` : ""}</span>
+                          {c.billing_address && <span className="text-xs text-muted-foreground truncate max-w-[260px]">{c.billing_address}</span>}
+                        </span>
+                      </SelectItem>
+                    ))}
                     <SelectItem value="__add_new__" className="text-primary font-semibold border-t border-border mt-1 pt-2">＋ Add New Customer</SelectItem>
                   </SelectContent>
                 </Select>
@@ -990,12 +1003,12 @@ export default function CreateDocument() {
                               </div>
                               {L.showPrices ? (
                                 <div className="grid grid-cols-3 gap-2">
-                                  <div><Label className="text-xs text-muted-foreground">{L.itemQty}</Label><Input value={item.quantity} onChange={e => updateItem(i, "quantity", e.target.value)} onKeyDown={numericOnly} onFocus={e => e.target.select()} placeholder="0" className="mt-1" /></div>
-                                  <div><Label className="text-xs text-muted-foreground">Unit Price</Label><Input value={item.unit_price} onChange={e => updateItem(i, "unit_price", e.target.value)} onKeyDown={numericOnly} onFocus={e => e.target.select()} placeholder="0" className="mt-1" /></div>
-                                  <div><Label className="text-xs text-muted-foreground">Disc %</Label><Input value={item.discount} onChange={e => updateItem(i, "discount", e.target.value)} onKeyDown={numericOnly} onFocus={e => e.target.select()} placeholder="0" className="mt-1" /></div>
+                                  <div><Label className="text-xs text-muted-foreground">{L.itemQty}</Label><Input value={item.quantity} onChange={e => updateItem(i, "quantity", sanitizeNumeric(e.target.value))} onKeyDown={numericOnly} onFocus={e => e.target.select()} placeholder="0" className="mt-1" /></div>
+                                  <div><Label className="text-xs text-muted-foreground">Unit Price</Label><Input value={item.unit_price} onChange={e => updateItem(i, "unit_price", sanitizeNumeric(e.target.value))} onKeyDown={numericOnly} onFocus={e => e.target.select()} placeholder="0" className="mt-1" /></div>
+                                  <div><Label className="text-xs text-muted-foreground">Disc %</Label><Input value={item.discount} onChange={e => updateItem(i, "discount", sanitizeNumeric(e.target.value))} onKeyDown={numericOnly} onFocus={e => e.target.select()} placeholder="0" className="mt-1" /></div>
                                 </div>
                               ) : (
-                                <div><Label className="text-xs text-muted-foreground">{L.itemQty}</Label><Input value={item.quantity} onChange={e => updateItem(i, "quantity", e.target.value)} onKeyDown={numericOnly} onFocus={e => e.target.select()} placeholder="0" className="mt-1 w-28" /></div>
+                                <div><Label className="text-xs text-muted-foreground">{L.itemQty}</Label><Input value={item.quantity} onChange={e => updateItem(i, "quantity", sanitizeNumeric(e.target.value))} onKeyDown={numericOnly} onFocus={e => e.target.select()} placeholder="0" className="mt-1 w-28" /></div>
                               )}
                               {L.showPrices && (
                                 <div className="text-right text-xs font-semibold text-foreground">{sym}{((parseFloat(item.quantity) || 0) * (parseFloat(item.unit_price) || 0) * (1 - (parseFloat(item.discount) || 0) / 100)).toLocaleString("en", { minimumFractionDigits: 2 })}</div>
@@ -1024,9 +1037,9 @@ export default function CreateDocument() {
                                   </div>
                                 )}
                               </div>
-                              <div className="col-span-2"><Input value={item.quantity} onChange={e => updateItem(i, "quantity", e.target.value)} onKeyDown={numericOnly} onFocus={e => e.target.select()} placeholder="0" /></div>
-                              {L.showPrices && <div className="col-span-2"><Input value={item.unit_price} onChange={e => updateItem(i, "unit_price", e.target.value)} onKeyDown={numericOnly} onFocus={e => e.target.select()} placeholder="0" /></div>}
-                              {L.showDisc && <div className="col-span-2"><Input value={item.discount} onChange={e => updateItem(i, "discount", e.target.value)} onKeyDown={numericOnly} onFocus={e => e.target.select()} placeholder="0" /></div>}
+                              <div className="col-span-2"><Input value={item.quantity} onChange={e => updateItem(i, "quantity", sanitizeNumeric(e.target.value))} onKeyDown={numericOnly} onFocus={e => e.target.select()} placeholder="0" /></div>
+                              {L.showPrices && <div className="col-span-2"><Input value={item.unit_price} onChange={e => updateItem(i, "unit_price", sanitizeNumeric(e.target.value))} onKeyDown={numericOnly} onFocus={e => e.target.select()} placeholder="0" /></div>}
+                              {L.showDisc && <div className="col-span-2"><Input value={item.discount} onChange={e => updateItem(i, "discount", sanitizeNumeric(e.target.value))} onKeyDown={numericOnly} onFocus={e => e.target.select()} placeholder="0" /></div>}
                               <div className="col-span-1">
                                 <Button variant="ghost" size="icon" onClick={() => setItems(prev => prev.filter((_, idx) => idx !== i))} disabled={items.length === 1}>
                                   <Trash2 className="h-4 w-4 text-muted-foreground" />
@@ -1063,7 +1076,7 @@ export default function CreateDocument() {
                   <div className="flex items-center justify-between gap-2">
                     <Label className="text-muted-foreground font-normal">Global Discount %</Label>
                     <div className="flex items-center gap-2">
-                      <Input className="w-20 h-8 text-xs" value={form.global_discount_rate} onChange={e => setForm(f => ({ ...f, global_discount_rate: e.target.value }))} onKeyDown={numericOnly} onFocus={e => e.target.select()} placeholder="0" />
+                      <Input className="w-20 h-8 text-xs" value={form.global_discount_rate} onChange={e => setForm(f => ({ ...f, global_discount_rate: sanitizeNumeric(e.target.value) }))} onKeyDown={numericOnly} onFocus={e => e.target.select()} placeholder="0" />
                       <span className="text-orange-600 text-xs w-24 text-right">-{sym}{calcs.globalDiscAmt.toLocaleString("en", { minimumFractionDigits: 2 })}</span>
                     </div>
                   </div>
@@ -1072,7 +1085,7 @@ export default function CreateDocument() {
                   <div className="flex items-center justify-between gap-2">
                     <Label className="text-muted-foreground font-normal">VAT %</Label>
                     <div className="flex items-center gap-2">
-                      <Input className="w-20 h-8 text-xs" value={form.tax_rate} onChange={e => setForm(f => ({ ...f, tax_rate: e.target.value }))} onKeyDown={numericOnly} onFocus={e => e.target.select()} placeholder="0" />
+                      <Input className="w-20 h-8 text-xs" value={form.tax_rate} onChange={e => setForm(f => ({ ...f, tax_rate: sanitizeNumeric(e.target.value) }))} onKeyDown={numericOnly} onFocus={e => e.target.select()} placeholder="0" />
                       <span className="text-muted-foreground text-xs w-24 text-right">{sym}{calcs.taxAmt.toLocaleString("en", { minimumFractionDigits: 2 })}</span>
                     </div>
                   </div>
@@ -1080,14 +1093,14 @@ export default function CreateDocument() {
                 {L.showTax && (
                   <div className="flex items-center justify-between gap-2">
                     <Label className="text-muted-foreground font-normal">Shipping</Label>
-                    <Input className="w-32 h-8 text-xs text-right" value={form.shipping} onChange={e => setForm(f => ({ ...f, shipping: e.target.value }))} onKeyDown={numericOnly} onFocus={e => e.target.select()} placeholder="0" />
+                    <Input className="w-32 h-8 text-xs text-right" value={form.shipping} onChange={e => setForm(f => ({ ...f, shipping: sanitizeNumeric(e.target.value) }))} onKeyDown={numericOnly} onFocus={e => e.target.select()} placeholder="0" />
                   </div>
                 )}
                 {L.showTax && (
                   <div className="flex items-center justify-between gap-2">
                     <Label className="text-muted-foreground font-normal">Withholding VAT %</Label>
                     <div className="flex items-center gap-2">
-                      <Input className="w-20 h-8 text-xs" value={form.withholding_vat_rate} onChange={e => setForm(f => ({ ...f, withholding_vat_rate: e.target.value }))} onKeyDown={numericOnly} onFocus={e => e.target.select()} placeholder="0" />
+                      <Input className="w-20 h-8 text-xs" value={form.withholding_vat_rate} onChange={e => setForm(f => ({ ...f, withholding_vat_rate: sanitizeNumeric(e.target.value) }))} onKeyDown={numericOnly} onFocus={e => e.target.select()} placeholder="0" />
                       <span className="text-red-500 text-xs w-24 text-right">-{sym}{(calcs.withholdingVatAmt || 0).toLocaleString("en", { minimumFractionDigits: 2 })}</span>
                     </div>
                   </div>
