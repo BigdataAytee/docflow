@@ -8,14 +8,13 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
-import { ImageIcon, Building2, FileText, Hash, User, Save, Upload, X, CheckCircle2, AlertTriangle, Paintbrush, Sparkles, ShieldCheck, CreditCard } from "lucide-react";
+import { ImageIcon, Building2, FileText, Hash, User, Save, Upload, X, CheckCircle2, AlertTriangle, Paintbrush, Sparkles, ShieldCheck } from "lucide-react";
 import DocumentDesign from "./settings/DocumentDesign";
 import SignaturePad from "../components/SignaturePad";
 import BankDetailsFields from "../components/BankDetailsFields";
 import CurrencySelect from "@/components/CurrencySelect";
 import LogoGenerator from "@/components/LogoGenerator";
 import PermissionsPanel from "@/components/settings/PermissionsPanel";
-import PaymentSettingsPanel from "@/components/settings/PaymentSettingsPanel";
 
 const TABS = [
   { id: "company",     label: "Company",     icon: Building2,   emoji: "🏢" },
@@ -23,7 +22,6 @@ const TABS = [
   { id: "numbering",   label: "Numbering",   icon: Hash,        emoji: "#️⃣" },
   { id: "account",     label: "Account",     icon: User,        emoji: "👤" },
   { id: "design",      label: "Design",      icon: Paintbrush,  emoji: "🎨" },
-  { id: "payments",    label: "Payments",    icon: CreditCard,  emoji: "💳" },
   { id: "permissions", label: "Permissions", icon: ShieldCheck, emoji: "🔐" },
 ];
 
@@ -566,20 +564,13 @@ export default function Settings() {
         </div>
       )}
 
-      {/* ── Payments Tab ── */}
-      {activeTab === "payments" && (
-        <div className="space-y-5">
-          <PaymentSettingsPanel />
-        </div>
-      )}
-
       {/* ── Permissions Tab ── */}
       {activeTab === "permissions" && (
         <PermissionsPanel />
       )}
 
-      {/* Save button — hidden on permissions/payments tab */}
-      {activeTab !== "permissions" && activeTab !== "payments" && (
+      {/* Save button — hidden on permissions tab */}
+      {activeTab !== "permissions" && (
         <div className="mt-6 flex items-center justify-between gap-4 bg-card rounded-2xl border border-border p-4 shadow-sm">
           <p className="text-sm text-muted-foreground hidden sm:block">
             {isDirty ? <span className="text-amber-600 font-medium">⚠ You have unsaved changes</span> : "Changes apply to all existing documents."}

@@ -2,8 +2,6 @@ import { useState, useEffect, useRef } from "react";
 import { base44 } from "@/api/base44Client";
 import { useParams, useNavigate } from "react-router-dom";
 import { ArrowLeft, Trash2, Printer, Send, Pencil, Share2, FileDown, MoreVertical, Upload, Copy, GitMerge, PenLine, CheckCircle2, Receipt, Truck } from "lucide-react";
-import PaymentSection from "../components/PaymentSection";
-import PaymentQRBlock from "../components/PaymentQRBlock";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -61,7 +59,6 @@ export default function ViewDocument() {
   const navigate = useNavigate();
   const [doc, setDoc] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [paymentRecord, setPaymentRecord] = useState(null);
   const [showPdfPreview, setShowPdfPreview] = useState(false);
   const [showSignModal, setShowSignModal] = useState(false);
   const [generatingPdf, setGeneratingPdf] = useState(false);
@@ -115,12 +112,6 @@ export default function ViewDocument() {
       }
       setDoc(d);
       setLoading(false);
-      // Load payment record if applicable
-      if (d && (d.type === "invoice" || d.type === "quotation")) {
-        base44.entities.PaymentRecord.filter({ document_id: docId }).then(records => {
-          if (records[0]) setPaymentRecord(records[0]);
-        });
-      }
     });
   }, [docId]);
 
@@ -530,16 +521,9 @@ export default function ViewDocument() {
         </div>
       )}
 
-      {/* Payment section — invoice & quotation only */}
-      {(doc.type === "invoice" || doc.type === "quotation") && (
-        <div className="print:hidden mb-4">
-          <PaymentSection document={doc} onStatusChange={(status) => setDoc(prev => ({ ...prev, status }))} />
-        </div>
-      )}
-
       {/* Document view — scaled to fit on mobile */}
       <ScaledDocument scale={previewScale}>
-        <UnifiedTemplate doc={doc} paymentLink={paymentRecord?.payment_link} paymentReference={paymentRecord?.payment_reference} onSaveManagerSig={saveManagerSig} onSaveCustomerSig={saveCustomerSig} onOpenSignModal={() => setShowSignModal(true)} />
+        <UnifiedTemplate doc={doc} onSaveManagerSig={saveManagerSig} onSaveCustomerSig={saveCustomerSig} onOpenSignModal={() => setShowSignModal(true)} />
       </ScaledDocument>
 
       {/* Inline Signature Capture Overlay */}
@@ -576,8 +560,6 @@ export default function ViewDocument() {
           {doc && (
             <UnifiedTemplate
               doc={doc}
-              paymentLink={paymentRecord?.payment_link}
-              paymentReference={paymentRecord?.payment_reference}
               isPdf={true}
               onSaveManagerSig={() => {}}
               onSaveCustomerSig={() => {}}
@@ -720,7 +702,7 @@ function ScaledDocument({ scale, children }) {
   );
 }
 
-function UnifiedTemplate({ doc, paymentLink, paymentReference, onSaveManagerSig, onSaveCustomerSig, onOpenSignModal, isPdf = false }) {
+function UnifiedTemplate({ doc, onSaveManagerSig, onSaveCustomerSig, onOpenSignModal, isPdf = false }) {
   const items = doc.items || [];
   const curr = doc.currency || "NGN";
   const fmtAmt = (n) => `${(n || 0).toLocaleString("en", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
@@ -931,20 +913,6 @@ function UnifiedTemplate({ doc, paymentLink, paymentReference, onSaveManagerSig,
           )}
         </div>
       </div>
-
-      {/* Payment QR block — invoice/quotation in PDF */}
-      {(doc.type === "invoice" || doc.type === "quotation") && paymentLink && (
-        <div className="px-0 pb-2">
-          <PaymentQRBlock
-            paymentLink={paymentLink}
-            paymentReference={paymentReference}
-            sym={CURRENCY_SYMBOLS[doc.currency] || doc.currency || ""}
-            amount={doc.balance_due || doc.total || 0}
-            currency={doc.currency}
-            accentColor={T.accentColor}
-          />
-        </div>
-      )}
 
       {/* Footer */}
       <div className="px-12 py-4 bg-gray-50 border-t border-gray-200 text-center">
