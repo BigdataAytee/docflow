@@ -356,7 +356,7 @@ export default function ViewDocument() {
             <h1 className="text-base md:text-xl font-bold truncate">{doc.number}</h1>
             <p className="text-xs text-muted-foreground hidden sm:block">{TYPE_LABELS[doc.type]}</p>
           </div>
-          <span className={`px-2 py-0.5 rounded-full text-xs font-medium shrink-0 ${STATUS_COLORS[doc.status]}`}>{(doc.status || "").replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase())}</span>
+          <span className={`px-2 py-0.5 rounded-full text-xs font-medium capitalize shrink-0 ${STATUS_COLORS[doc.status]}`}>{doc.status}</span>
         </div>
 
         <div className="flex items-center gap-1.5 shrink-0">
@@ -365,7 +365,7 @@ export default function ViewDocument() {
               <SelectTrigger className="w-[140px] h-8 text-xs"><SelectValue /></SelectTrigger>
               <SelectContent>
                 {(STATUS_BY_TYPE[doc.type] || STATUS_BY_TYPE.invoice).map(s => (
-                  <SelectItem key={s} value={s} className="text-xs">{s.replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase())}</SelectItem>
+                  <SelectItem key={s} value={s} className="capitalize text-xs">{s.replace(/_/g, " ")}</SelectItem>
                 ))}
               </SelectContent>
             </Select>

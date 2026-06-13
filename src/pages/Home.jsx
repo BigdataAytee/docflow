@@ -342,7 +342,7 @@ export default function Home() {
                   <Clock className="h-4 w-4 text-muted-foreground" />
                   <h2 className="font-bold text-base text-foreground">Recent Documents</h2>
                 </div>
-                <button onClick={() => navigate("/documents")}
+                <button onClick={() => navigate("/documents?type=invoice")}
             className="text-xs text-primary font-semibold flex items-center gap-1 hover:underline">
                   View all <ArrowRight className="h-3 w-3" />
                 </button>

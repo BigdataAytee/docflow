@@ -1,16 +1,16 @@
 import { useState, useEffect } from "react";
 import { Outlet, Link, useLocation } from "react-router-dom";
 import Sidebar from "./Sidebar";
-import { Menu, Home, Users, Mail, Settings, Search, FileText } from "lucide-react";
+import { Menu, Home, Users, Mail, Settings, Search, LayoutGrid } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import CommandPalette from "./CommandPalette";
 import OnboardingGuide from "./OnboardingGuide";
 
 const bottomNavItems = [
 { label: "Home", icon: Home, path: "/" },
-{ label: "Documents", icon: FileText, path: "/documents" },
 { label: "Customers", icon: Users, path: "/customers" },
 { label: "Mail", icon: Mail, path: "/mail" },
+{ label: "Apps", icon: LayoutGrid, path: "/apps" },
 { label: "Settings", icon: Settings, path: "/settings" }];
 
 
@@ -103,7 +103,7 @@ export default function Layout() {
         {bottomNavItems.map((item) => {
           const active =
           location.pathname === item.path ||
-          (item.path !== "/" && location.pathname.startsWith(item.path.split("?")[0]));
+          item.path !== "/" && location.pathname.startsWith(item.path);
           return (
             <Link
               key={item.path}
