@@ -331,7 +331,7 @@ export default function ViewDocument() {
       issue_date: formData.issue_date ? new Date(formData.issue_date).toISOString() : new Date().toISOString(),
       due_date: formData.due_date ? new Date(formData.due_date).toISOString() : null,
       notes: formData.notes,
-      manager_signature: "",
+      manager_signature: rest.manager_signature || "",
       customer_signature: "",
       payment_method: formData.payment_method || rest.payment_method || undefined,
       ...(isReceipt ? { paid_amount: rest.total || 0, balance_due: 0 } : { paid_amount: 0 }),
