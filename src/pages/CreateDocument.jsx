@@ -789,13 +789,22 @@ export default function CreateDocument() {
               <div>
                 <Label>{L.customer}</Label>
                 <Select value={form.customer_id} onValueChange={selectCustomer}>
-                  <SelectTrigger><SelectValue placeholder="Select customer" /></SelectTrigger>
+                  <SelectTrigger>
+                    {form.customer_id ? (
+                      <div className="flex flex-col text-left leading-tight overflow-hidden">
+                        <span className="font-medium truncate">{form.customer_name}{form.customer_company ? ` — ${form.customer_company}` : ""}</span>
+                        {form.customer_address && <span className="text-xs text-muted-foreground truncate">{form.customer_address}</span>}
+                      </div>
+                    ) : (
+                      <span className="text-muted-foreground">Select customer</span>
+                    )}
+                  </SelectTrigger>
                   <SelectContent>
                     {customers.map(c => (
                       <SelectItem key={c.id} value={c.id}>
-                        <span className="flex flex-col">
-                          <span>{c.full_name}{c.company_name ? ` — ${c.company_name}` : ""}</span>
-                          {c.billing_address && <span className="text-xs text-muted-foreground truncate max-w-[260px]">{c.billing_address}</span>}
+                        <span className="flex flex-col py-0.5">
+                          <span className="font-medium">{c.full_name}{c.company_name ? ` — ${c.company_name}` : ""}</span>
+                          {c.billing_address && <span className="text-xs text-muted-foreground truncate max-w-[280px]">{c.billing_address}</span>}
                         </span>
                       </SelectItem>
                     ))}
