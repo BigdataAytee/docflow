@@ -32,9 +32,9 @@ const TYPE_THEMES = {
 };
 
 const DOC_LABELS = {
-  invoice:   { number: "Invoice Number",   issueDate: "Invoice Date",  dueDate: "Due Date",      customer: "Bill To",       items: "Line Items",                itemDesc: "Item Description",      itemQty: "Quantity",    notes: "Notes to Customer",     sig: "Authorized Signature",    sigDesc: "Sign to authorize this invoice.",                                    showTax: false, showDisc: true,  showDue: true,  showPrices: true  },
+  invoice:   { number: "Invoice Number",   issueDate: "Invoice Date",  dueDate: "Due Date",      customer: "Bill To",       items: "Line Items",                itemDesc: "Item Description",      itemQty: "Quantity",    notes: "Notes to Customer",     sig: "Authorized Signature",    sigDesc: "Sign to authorize this invoice.",                                    showTax: true,  showDisc: true,  showDue: true,  showPrices: true  },
   quotation: { number: "Quotation Number", issueDate: "Issue Date",    dueDate: "Expiry Date",   customer: "Prepared For",  items: "Proposed Items / Services", itemDesc: "Item / Service",         itemQty: "Est. Qty",    notes: "Notes",                 sig: "Prepared By (Signature)", sigDesc: "Sign to authorize this quotation.",                                  showTax: true,  showDisc: true,  showDue: true,  showPrices: true  },
-  receipt:   { number: "Receipt Number",   issueDate: "Payment Date",  dueDate: null,            customer: "Received From", items: "Payment For",               itemDesc: "Description of Payment", itemQty: "Quantity",    notes: "Notes",                 sig: "Manager's Signature",     sigDesc: "Sign to confirm this receipt.",                                      showTax: false, showDisc: false, showDue: false, showPrices: true  },
+  receipt:   { number: "Receipt Number",   issueDate: "Payment Date",  dueDate: null,            customer: "Received From", items: "Payment For",               itemDesc: "Description of Payment", itemQty: "Quantity",    notes: "Notes",                 sig: "Manager's Signature",     sigDesc: "Sign to confirm this receipt.",                                      showTax: true,  showDisc: false, showDue: false, showPrices: true  },
   waybill:   { number: "Waybill Number",   issueDate: "Dispatch Date", dueDate: "Delivery Date", customer: "Receiver",      items: "Goods Description",         itemDesc: "Goods / Items",          itemQty: "Qty Shipped", notes: "Delivery Instructions", sig: "Manager's Signature",     sigDesc: "Sign as the dispatcher/manager authorizing this waybill.",           showTax: false, showDisc: false, showDue: true,  showPrices: false },
 };
 
@@ -1088,13 +1088,13 @@ export default function CreateDocument() {
                     </div>
                   </div>
                 )}
-                {L.showTax && (
+                {L.showTax && docType !== "receipt" && (
                   <div className="flex items-center justify-between gap-2">
                     <Label className="text-muted-foreground font-normal">Shipping</Label>
                     <Input className="w-32 h-8 text-xs text-right" value={form.shipping} onChange={e => setForm(f => ({ ...f, shipping: sanitizeNumeric(e.target.value) }))} onKeyDown={numericOnly} onFocus={e => e.target.select()} placeholder="0" />
                   </div>
                 )}
-                {L.showTax && (
+                {L.showTax && docType !== "receipt" && (
                   <div className="flex items-center justify-between gap-2">
                     <Label className="text-muted-foreground font-normal">Withholding VAT %</Label>
                     <div className="flex items-center gap-2">
