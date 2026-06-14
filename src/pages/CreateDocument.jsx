@@ -1094,7 +1094,7 @@ export default function CreateDocument() {
                     <Input className="w-32 h-8 text-xs text-right" value={form.shipping} onChange={e => setForm(f => ({ ...f, shipping: sanitizeNumeric(e.target.value) }))} onKeyDown={numericOnly} onFocus={e => e.target.select()} placeholder="0" />
                   </div>
                 )}
-                {L.showTax && (docType === "invoice" || docType === "quotation") && (
+                {(docType === "invoice" || docType === "receipt") && (
                   <div className="flex items-center justify-between gap-2">
                     <Label className="text-muted-foreground font-normal">Withholding VAT %</Label>
                     <div className="flex items-center gap-2">
