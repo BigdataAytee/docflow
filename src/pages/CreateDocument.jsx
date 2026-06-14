@@ -425,10 +425,10 @@ export default function CreateDocument() {
     const globalDiscAmt = subtotal * ((parseFloat(form.global_discount_rate) || 0) / 100);
     const discountedSubtotal = subtotal - globalDiscAmt;
     const taxAmt = discountedSubtotal * ((parseFloat(form.tax_rate) || 0) / 100);
-    const withholdingVatAmt = taxAmt * ((parseFloat(form.withholding_vat_rate) || 0) / 100);
+    const withholdingTaxAmt = discountedSubtotal * ((parseFloat(form.withholding_vat_rate) || 0) / 100);
     const total = discountedSubtotal + taxAmt + (parseFloat(form.shipping) || 0);
-    const netPayable = total - withholdingVatAmt;
-    return { lineItems, subtotal, globalDiscAmt, taxAmt, withholdingVatAmt, netPayable, total };
+    const netPayable = total - withholdingTaxAmt;
+    return { lineItems, subtotal, globalDiscAmt, taxAmt, withholdingVatAmt: withholdingTaxAmt, withholdingTaxAmt, netPayable, total };
   }, [items, form.tax_rate, form.shipping, form.global_discount_rate, form.withholding_vat_rate]);
 
   const handleBackClick = (e) => {
@@ -1096,7 +1096,7 @@ export default function CreateDocument() {
                 )}
                 {(docType === "invoice" || docType === "receipt") && (
                   <div className="flex items-center justify-between gap-2">
-                    <Label className="text-muted-foreground font-normal">Withholding VAT %</Label>
+                    <Label className="text-muted-foreground font-normal">Withholding Tax %</Label>
                     <div className="flex items-center gap-2">
                       <Input className="w-20 h-8 text-xs" value={form.withholding_vat_rate} onChange={e => setForm(f => ({ ...f, withholding_vat_rate: sanitizeNumeric(e.target.value) }))} onKeyDown={numericOnly} onFocus={e => e.target.select()} placeholder="0" />
                       <span className="text-red-500 text-xs w-24 text-right">-{sym}{(calcs.withholdingVatAmt || 0).toLocaleString("en", { minimumFractionDigits: 2 })}</span>
@@ -1107,9 +1107,12 @@ export default function CreateDocument() {
                   <span className="font-bold">{docType === "receipt" ? "Amount Received" : "Total"}</span>
                   <span className="text-xl font-black text-primary">{sym}{calcs.total.toLocaleString("en", { minimumFractionDigits: 2 })}</span>
                 </div>
-                {L.showTax && (calcs.withholdingVatAmt || 0) > 0 && (
+                {(calcs.withholdingTaxAmt || 0) > 0 && (
                   <div className="border-t border-dashed border-border pt-3 flex justify-between items-center">
-                    <span className="font-bold text-emerald-700">Net Payable</span>
+                    <div>
+                      <span className="font-bold text-emerald-700">Net Payable</span>
+                      <p className="text-xs text-muted-foreground">After Withholding Tax deduction</p>
+                    </div>
                     <span className="text-xl font-black text-emerald-700">{sym}{(calcs.netPayable || 0).toLocaleString("en", { minimumFractionDigits: 2 })}</span>
                   </div>
                 )}
