@@ -218,6 +218,22 @@ export default function CreateDocument() {
     return () => window.removeEventListener("beforeunload", handler);
   }, [isDirty]);
 
+  // Intercept mobile hardware back button via popstate
+  useEffect(() => {
+    if (!isDirty) return;
+    // Push a dummy state so pressing back fires popstate instead of navigating away
+    window.history.pushState({ interceptBack: true }, "");
+    const handler = (e) => {
+      if (isDirty) {
+        // Push the state again so repeated back presses keep getting caught
+        window.history.pushState({ interceptBack: true }, "");
+        setShowLeaveModal(true);
+      }
+    };
+    window.addEventListener("popstate", handler);
+    return () => window.removeEventListener("popstate", handler);
+  }, [isDirty]);
+
   const [pendingNav, setPendingNav] = useState(null);
 
   useEffect(() => {
@@ -1314,6 +1330,8 @@ export default function CreateDocument() {
               <Button variant="ghost" className="w-full" onClick={() => {
                 setShowLeaveModal(false);
                 setPendingNav(null);
+                // Re-push the guard state so back button is still trapped
+                window.history.pushState({ interceptBack: true }, "");
               }}>
                 Keep Editing
               </Button>
