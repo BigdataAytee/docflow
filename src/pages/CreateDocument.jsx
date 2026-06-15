@@ -1120,16 +1120,21 @@ export default function CreateDocument() {
                   </div>
                 )}
                 <div className="border-t border-border pt-3 flex justify-between">
-                  <span className="font-bold">{docType === "receipt" ? "Amount Received" : "Total"}</span>
-                  <span className="text-xl font-black text-primary">{sym}{calcs.total.toLocaleString("en", { minimumFractionDigits: 2 })}</span>
+                  <span className="font-bold text-muted-foreground">{docType === "receipt" ? "Gross Amount" : "Gross Total"}</span>
+                  <span className="font-semibold">{sym}{calcs.total.toLocaleString("en", { minimumFractionDigits: 2 })}</span>
                 </div>
-                {(calcs.withholdingTaxAmt || 0) > 0 && (
-                  <div className="border-t border-dashed border-border pt-3 flex justify-between items-center">
+                {(calcs.withholdingTaxAmt || 0) > 0 ? (
+                  <div className="border-t-2 border-primary pt-3 flex justify-between items-center">
                     <div>
-                      <span className="font-bold text-emerald-700">Net Payable</span>
+                      <span className="font-bold text-lg">{docType === "receipt" ? "Amount Received" : "Net Payable"}</span>
                       <p className="text-xs text-muted-foreground">After Withholding Tax deduction</p>
                     </div>
-                    <span className="text-xl font-black text-emerald-700">{sym}{(calcs.netPayable || 0).toLocaleString("en", { minimumFractionDigits: 2 })}</span>
+                    <span className="text-xl font-black text-primary">{sym}{(calcs.netPayable || 0).toLocaleString("en", { minimumFractionDigits: 2 })}</span>
+                  </div>
+                ) : (
+                  <div className="border-t-2 border-primary pt-3 flex justify-between items-center">
+                    <span className="font-bold text-lg">{docType === "receipt" ? "Amount Received" : "Total"}</span>
+                    <span className="text-xl font-black text-primary">{sym}{calcs.total.toLocaleString("en", { minimumFractionDigits: 2 })}</span>
                   </div>
                 )}
               </div>
