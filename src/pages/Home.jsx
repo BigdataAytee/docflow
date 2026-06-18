@@ -43,7 +43,7 @@ export default function Home() {
 
   const { data: docs = [] } = useQuery({
     queryKey: ["home-docs", user?.id],
-    queryFn: () => user?.id ? base44.entities.Document.filter({ created_by_id: user.id }, "-created_date", 500) : [],
+    queryFn: () => user?.id ? base44.entities.Document.filter({ created_by_id: user.id }, "-created_date", 10000) : [],
     enabled: !!user?.id
   });
 

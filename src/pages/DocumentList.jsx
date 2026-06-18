@@ -64,7 +64,7 @@ export default function DocumentList() {
     setSearch("");
     base44.auth.me().then(user => {
       if (!user) return;
-      base44.entities.Document.filter({ created_by: user.email, type }, "-created_date", 200)
+      base44.entities.Document.filter({ created_by: user.email, type }, "-created_date", 10000)
         .then(d => { setDocuments(d); setLoading(false); });
     });
   }, [type]);
