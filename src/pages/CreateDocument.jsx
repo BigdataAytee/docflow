@@ -1299,7 +1299,7 @@ export default function CreateDocument() {
               <Button variant="outline" className="w-full" onClick={() => handleSave("sent")} disabled={saving || !form.customer_name}>
                 Save &amp; Send
               </Button>
-              <Button variant="ghost" className="w-full" onClick={() => setShowPdfPreview(true)}>
+              <Button variant="ghost" className="w-full" onClick={() => { setShowPdfPreview(true); setShowMobileDesignPanel(false); }}>
                 <FileDown className="h-4 w-4 mr-1" />
                 Preview
               </Button>
@@ -1326,7 +1326,7 @@ export default function CreateDocument() {
               variant="outline"
               size="sm"
               className="flex-1 gap-1.5 h-9 text-sm font-medium"
-              onClick={() => setShowPdfPreview(true)}
+              onClick={() => { setShowPdfPreview(true); setShowMobileDesignPanel(false); }}
               disabled={saving}>
               
               <FileDown className="h-4 w-4" />
@@ -1504,10 +1504,11 @@ export default function CreateDocument() {
               </div>
             </div>
 
-            {/* ── Mobile layout picker tray ── */}
+            {/* ── Mobile layout picker tray — overlays document, slides up from bottom bar ── */}
             {showMobileDesignPanel && (
-              <div className="md:hidden shrink-0 relative z-10 flex gap-3 px-3 py-3 overflow-x-auto"
-                style={{ background: "rgba(10,14,30,0.98)", borderTop: "1px solid rgba(255,255,255,0.06)", scrollbarWidth: "none" }}
+              <div
+                className="md:hidden absolute bottom-[52px] left-0 right-0 z-20 flex gap-3 px-3 py-3 overflow-x-auto"
+                style={{ background: "rgba(10,14,30,0.98)", borderTop: "1px solid rgba(255,255,255,0.12)", scrollbarWidth: "none" }}
                 onClick={(e) => e.stopPropagation()}>
                 {Object.values(LAYOUTS).map((l) => (
                   <button key={l.id} onClick={() => { handleSetTemplate(l.id); setShowMobileDesignPanel(false); }}
