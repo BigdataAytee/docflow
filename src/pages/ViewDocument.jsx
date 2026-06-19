@@ -1,7 +1,8 @@
 import { useState, useEffect, useRef } from "react";
 import { base44 } from "@/api/base44Client";
 import { useParams, useNavigate } from "react-router-dom";
-import { ArrowLeft, Trash2, Printer, Send, Pencil, Share2, FileDown, MoreVertical, Upload, Copy, GitMerge, PenLine, CheckCircle2, Receipt, Truck } from "lucide-react";
+import { ArrowLeft, Trash2, Printer, Send, Pencil, Share2, FileDown, MoreVertical, Upload, Copy, GitMerge, PenLine, CheckCircle2, Receipt, Truck, Palette } from "lucide-react";
+import { LAYOUTS, COLOR_SCHEMES, LayoutThumb } from "../components/TemplateSelector";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -12,6 +13,7 @@ import WaybillSignatureModal from "../components/WaybillSignatureModal";
 import ConvertDocumentModal from "../components/ConvertDocumentModal";
 import { buildTheme } from "../components/TemplateSelector";
 import DocumentPreview from "../components/DocumentPreview";
+import ViewDocPdfModal from "../components/ViewDocPdfModal";
 
 const CURRENCY_SYMBOLS = { NGN: "₦", USD: "$", GBP: "£", EUR: "€", GHS: "₵", KES: "KSh", ZAR: "R", CAD: "CA$", AUD: "A$" };
 
@@ -578,25 +580,7 @@ export default function ViewDocument() {
         </div>
       )}
 
-      {/* Hidden off-screen render container for PDF generation */}
-      <div style={{ position: "fixed", top: 0, left: "-9999px", width: "794px", zIndex: -1, pointerEvents: "none", opacity: 0 }}>
-        <div ref={pdfDocRef} style={{ width: "794px" }}>
-          {doc && (
-            <DocumentPreview
-              form={doc}
-              items={doc.items || []}
-              calcs={{ subtotal: doc.subtotal, taxAmt: doc.tax_amount, globalDiscAmt: doc.global_discount_amount || 0, total: doc.total, withholdingVatAmt: doc.withholding_vat_amount || 0, netPayable: doc.balance_due || doc.total }}
-              sym={CURRENCY_SYMBOLS[doc.currency] || doc.currency || "₦"}
-              docType={doc.type}
-              managerSig={doc.manager_signature}
-              customerSig={doc.customer_signature}
-              template={doc.template || "classic"}
-              templateColor={doc.template_color || "slate"}
-              templateFont={doc.template_font}
-            />
-          )}
-        </div>
-      </div>
+
 
       {showSignModal && doc.type === "waybill" && (
         <WaybillSignatureModal
@@ -616,92 +600,17 @@ export default function ViewDocument() {
       )}
 
       {showPdfPreview && (
-        <div className="fixed inset-0 z-50 bg-black/60 flex flex-col" onClick={() => setShowPdfPreview(false)}>
-          <div className="flex items-center justify-between px-4 py-3 bg-white border-b shrink-0" onClick={e => e.stopPropagation()}>
-            <div className="min-w-0 mr-2">
-              <p className="font-semibold text-sm truncate">Document Preview</p>
-              <p className="text-xs text-muted-foreground truncate">{doc.number}</p>
-            </div>
-            <div className="flex items-center gap-1.5 overflow-x-auto flex-nowrap justify-end shrink-0 max-w-[65vw] sm:max-w-none">
-              <>
-                  <Button size="sm" onClick={handleDownloadPdf} disabled={generatingPdf} className="shrink-0">
-                    <FileDown className="h-4 w-4 mr-1" />
-                    {generatingPdf ? "..." : "Download"}
-                  </Button>
-                  <Button size="sm" variant="outline" onClick={handleSharePdf} disabled={generatingPdf} className="shrink-0">
-                    <Upload className="h-4 w-4 mr-1" />
-                    Share
-                  </Button>
-                </>
-              <button className="p-2 hover:bg-muted rounded-lg text-muted-foreground shrink-0" onClick={() => setShowPdfPreview(false)}>✕</button>
-            </div>
-          </div>
-          <div className="flex-1 overflow-auto bg-gray-100" onClick={e => e.stopPropagation()}>
-            {doc.type === "waybill" && pdfMode === "soft" && !doc.customer_signature && (
-              <div className="sticky top-0 z-10 bg-emerald-600 text-white px-4 py-3 flex items-center justify-between shadow-md">
-                <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center shrink-0">
-                    <PenLine className="h-4 w-4" />
-                  </div>
-                  <div>
-                    <p className="font-bold text-sm leading-tight">Receiver Signature Required</p>
-                    <p className="text-xs text-emerald-100 hidden sm:block">Tap below to sign digitally</p>
-                  </div>
-                </div>
-                <button onClick={() => setShowInlineSigPad(true)} className="bg-white text-emerald-700 font-bold text-sm px-3 py-2 rounded-xl hover:bg-emerald-50 transition-colors flex items-center gap-2 shrink-0">
-                  <PenLine className="h-4 w-4" /> Sign
-                </button>
-              </div>
-            )}
-            {doc.type === "waybill" && pdfMode === "soft" && doc.customer_signature && (
-              <div className="sticky top-0 z-10 bg-emerald-700 text-white px-4 py-3 flex items-center justify-between shadow-md">
-                <div className="flex items-center gap-3">
-                  <CheckCircle2 className="h-5 w-5 text-emerald-300 shrink-0" />
-                  <div>
-                    <p className="font-bold text-sm">Document Signed</p>
-                    <p className="text-xs text-emerald-200">Signature locked into PDF</p>
-                  </div>
-                </div>
-                <button onClick={() => setShowInlineSigPad(true)} className="text-xs text-emerald-200 hover:text-white underline">Re-sign</button>
-              </div>
-            )}
-            <div className="p-2 sm:p-4">
-              <div className="max-w-4xl mx-auto">
-                {/* Scale to fit mobile viewport */}
-                <ScaledDocument scale={previewScale}>
-                  <div ref={pdfRef}>
-                    <DocumentPreview
-                      form={doc}
-                      items={doc.items || []}
-                      calcs={{ subtotal: doc.subtotal, taxAmt: doc.tax_amount, total: doc.total, withholdingVatAmt: doc.withholding_vat_amount || 0, netPayable: doc.balance_due || doc.total }}
-                      sym={CURRENCY_SYMBOLS[doc.currency] || doc.currency || "₦"}
-                      docType={doc.type}
-                      managerSig={doc.manager_signature}
-                      customerSig={doc.type === "waybill" && pdfMode === "paper" ? "" : doc.customer_signature}
-                      template={doc.template || "classic"}
-                      templateColor={doc.template_color || "slate"}
-                      templateFont={doc.template_font}
-                    />
-                  </div>
-                </ScaledDocument>
-                {doc.type === "waybill" && pdfMode === "soft" && !doc.customer_signature && (
-                  <button
-                    onClick={() => setShowInlineSigPad(true)}
-                    className="mt-4 w-full border-2 border-emerald-400 rounded-2xl p-8 flex flex-col items-center gap-3 text-emerald-600 hover:bg-emerald-50 hover:border-emerald-500 transition-all group"
-                  >
-                    <div className="w-14 h-14 rounded-full bg-emerald-100 group-hover:bg-emerald-200 flex items-center justify-center transition-colors">
-                      <PenLine className="h-7 w-7" />
-                    </div>
-                    <div className="text-center">
-                      <p className="font-bold text-lg">Tap to Sign Here</p>
-                      <p className="text-sm text-emerald-500 mt-1">Touch, mouse, or stylus</p>
-                    </div>
-                  </button>
-                )}
-              </div>
-            </div>
-          </div>
-        </div>
+        <ViewDocPdfModal
+          doc={doc}
+          pdfRef={pdfRef}
+          pdfDocRef={pdfDocRef}
+          generatingPdf={generatingPdf}
+          onClose={() => setShowPdfPreview(false)}
+          onDownload={handleDownloadPdf}
+          onShare={handleSharePdf}
+          onSign={() => setShowInlineSigPad(true)}
+          previewScale={previewScale}
+        />
       )}
     </div>
   );
