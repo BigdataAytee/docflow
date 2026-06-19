@@ -1297,10 +1297,10 @@ export default function CreateDocument() {
                 <FileDown className="h-4 w-4 mr-1" />
                 Preview &amp; Download PDF
               </Button>
-              <Button variant="ghost" className="w-full hidden" onClick={() => setShowPdfPreview(true)}>
-                <Upload className="h-4 w-4 mr-1" />
-                Share PDF
-              </Button>
+              
+
+
+              
 
             </div>
           </div>
