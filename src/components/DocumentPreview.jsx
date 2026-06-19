@@ -249,6 +249,7 @@ function ClassicDoc({ form, items, calcs, sym, docType, managerSig, customerSig,
         <div>
           {form.logo_url ? <img src={form.logo_url} alt="logo" style={{ height: 110, maxWidth: 200, objectFit: "contain", display: "block", marginBottom: 8 }} /> : <div style={{ height: 8 }} />}
           <div style={{ fontWeight: 900, fontSize: 18, color: T.headerColor }}>{form.company_name || "Your Company"}</div>
+          {form.company_description && <div style={{ fontSize: 9, color: T.headerColor, opacity: 0.55, marginTop: 2, fontStyle: "italic" }}>{form.company_description}</div>}
           {form.company_address && <div style={{ fontSize: 10, color: T.headerColor, opacity: 0.65, marginTop: 3, whiteSpace: "pre-line" }}>{form.company_address}</div>}
         </div>
         <div style={{ textAlign: "right" }}>
@@ -301,6 +302,7 @@ function ModernDoc({ form, items, calcs, sym, docType, managerSig, customerSig, 
           <div style={{ flex: 1 }}>
             {form.logo_url && <img src={form.logo_url} alt="logo" style={{ height: 100, maxWidth: 180, objectFit: "contain", display: "block", marginBottom: 10, filter: T.headerBg !== "#ffffff" && T.headerBg !== "#fffbeb" ? "brightness(0) invert(1)" : "none", opacity: 0.9 }} />}
             <div style={{ fontSize: 22, fontWeight: 900, color: T.headerColor, letterSpacing: -0.5 }}>{form.company_name || "Your Company"}</div>
+            {form.company_description && <div style={{ fontSize: 9, color: T.headerColor, opacity: 0.55, marginTop: 2, fontStyle: "italic" }}>{form.company_description}</div>}
             {form.company_address && <div style={{ fontSize: 10, color: T.headerColor, opacity: 0.6, marginTop: 4, whiteSpace: "pre-line" }}>{form.company_address}</div>}
           </div>
           <div style={{ textAlign: "right" }}>
@@ -827,10 +829,10 @@ function SikkyDoc({ form, items, calcs, sym, docType, managerSig, customerSig, T
           {form.company_website && <div style={{ fontSize: 10, color: "#2563eb", marginTop: 1 }}>{form.company_website}</div>}
         </div>
       </div>
-      {/* Tagline bar — shown when document_tagline present */}
-      {form.document_tagline && (
+      {/* Tagline/description bar */}
+      {(form.document_tagline || form.company_description) && (
         <div style={{ padding: "6px 40px 6px 24px", borderTop: "1px solid #e5e7eb", borderBottom: "1px solid #e5e7eb" }}>
-          <div style={{ fontSize: 11, color: accent, fontWeight: 700, textAlign: "center" }}>{form.document_tagline}</div>
+          <div style={{ fontSize: 11, color: accent, fontWeight: 700, textAlign: "center" }}>{form.document_tagline || form.company_description}</div>
         </div>
       )}
     </>

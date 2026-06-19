@@ -292,6 +292,7 @@ export default function CreateDocument() {
     company_phone: "",
     company_address: "",
     company_website: "",
+    company_description: "",
   });
   const [items, setItems] = useState([{ description: "", quantity: "", unit_price: "", discount: "" }]);
 
@@ -327,6 +328,7 @@ export default function CreateDocument() {
         company_phone: user.company_phone || "",
         company_address: user.company_address || "",
         company_website: user.company_website || "",
+        company_description: user.company_description || user.document_tagline || "",
         logo_url: user.logo_url || "",
         currency: user.default_currency || "NGN",
         tax_rate: user.default_tax_rate ?? "",
@@ -501,6 +503,7 @@ export default function CreateDocument() {
     company_phone: form.company_phone || "",
     company_address: form.company_address || "",
     company_website: form.company_website || "",
+    company_description: form.company_description || "",
     manager_name: form.manager_name || "",
     manager_title: form.manager_title || "",
     manager_signature: managerSig || "",
@@ -1153,6 +1156,11 @@ export default function CreateDocument() {
 
           {/* Notes */}
           <div className="bg-card rounded-2xl border border-border p-6 space-y-4 shadow-sm" style={{ borderLeft: `3px solid ${theme.accent}` }}>
+            <div>
+              <Label>Company Description / Tagline</Label>
+              <Textarea value={form.company_description} onChange={e => setForm(f => ({ ...f, company_description: e.target.value }))} rows={2}
+                placeholder="e.g. Leading provider of quality goods and services since 2010." />
+            </div>
             <div>
               <Label>{L.notes}</Label>
               <Textarea value={form.notes} onChange={e => setForm(f => ({ ...f, notes: e.target.value }))} rows={2}

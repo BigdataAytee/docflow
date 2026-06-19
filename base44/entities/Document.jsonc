@@ -103,6 +103,10 @@
       "type": "string",
       "title": "Company Name"
     },
+    "company_description": {
+      "type": "string",
+      "title": "Company Description"
+    },
     "company_email": {
       "type": "string",
       "title": "Company Email"
