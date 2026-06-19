@@ -691,12 +691,22 @@ export default function CreateDocument() {
   }, []);
   // For the editor scroll area (not modal)
   const previewScale = Math.min(1, (Math.min(viewportWidth, 826) - 32) / 794);
-  // Scale PDF to fit both width AND height — fully visible at once, no scroll
-  const MODAL_LEFT_W = 190;
-  const MODAL_TOP_H = 52; // top bar height
+  // Scale PDF to fit both width AND height of the right panel — fully visible at once
+  const previewPanelRef = useRef(null);
+  const [panelSize, setPanelSize] = useState({ w: 800, h: 600 });
+  useEffect(() => {
+    if (!previewPanelRef.current) return;
+    const ro = new ResizeObserver(entries => {
+      const { width, height } = entries[0].contentRect;
+      setPanelSize({ w: width, h: height });
+    });
+    ro.observe(previewPanelRef.current);
+    return () => ro.disconnect();
+  }, [showPdfPreview]);
+  const MODAL_TOP_H = 52;
   const pdfModalScale = Math.min(
-    (viewportWidth - MODAL_LEFT_W) / 794,
-    (viewportHeight - MODAL_TOP_H) / 1123
+    panelSize.w / 794,
+    (panelSize.h - MODAL_TOP_H) / 1123
   );
 
   const L = DOC_LABELS[docType] || DOC_LABELS.invoice;
@@ -1422,7 +1432,7 @@ export default function CreateDocument() {
           </div>
 
           {/* ── Right: preview area ── */}
-          <div className="flex-1 flex flex-col overflow-hidden" style={{ position: "relative" }} onClick={e => e.stopPropagation()}>
+          <div ref={previewPanelRef} className="flex-1 flex flex-col overflow-hidden" style={{ position: "relative" }} onClick={e => e.stopPropagation()}>
 
             {/* Subtle dot-grid background texture */}
             <div style={{ position: "absolute", inset: 0, backgroundImage: "radial-gradient(circle, rgba(99,102,241,0.07) 1px, transparent 1px)", backgroundSize: "28px 28px", pointerEvents: "none" }} />
