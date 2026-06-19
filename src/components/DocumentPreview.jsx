@@ -357,6 +357,7 @@ function MinimalDoc({ form, items, calcs, sym, docType, managerSig, customerSig,
         <div>
           {form.logo_url ? <img src={form.logo_url} alt="logo" style={{ height: 80, maxWidth: 160, objectFit: "contain", display: "block", marginBottom: 6 }} /> : null}
           <div style={{ fontSize: 15, fontWeight: 700, color: "#111827" }}>{form.company_name || "Your Company"}</div>
+          {form.company_description && <div style={{ fontSize: 9, marginTop: 3, fontWeight: 800, letterSpacing: 0.8, background: "linear-gradient(135deg, #f59e0b, #ef4444, #8b5cf6)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text", display: "inline-block", textTransform: "uppercase" }}>{form.company_description}</div>}
           {form.company_address && <div style={{ fontSize: 9, color: "#9ca3af", marginTop: 3, whiteSpace: "pre-line" }}>{form.company_address}</div>}
           {form.company_email && <div style={{ fontSize: 9, color: "#9ca3af" }}>{form.company_email}</div>}
         </div>
@@ -418,6 +419,7 @@ function BoldDoc({ form, items, calcs, sym, docType, managerSig, customerSig, T 
           <div>
             {form.logo_url && <img src={form.logo_url} alt="logo" style={{ height: 90, maxWidth: 160, objectFit: "contain", display: "block", marginBottom: 10, filter: isColoredHeader ? "brightness(0) invert(1)" : "none", opacity: 0.9 }} />}
             <div style={{ fontSize: 20, fontWeight: 900, color: T.headerColor }}>{form.company_name || "Your Company"}</div>
+            {form.company_description && <div style={{ fontSize: 9, marginTop: 3, fontWeight: 800, letterSpacing: 0.8, background: "linear-gradient(135deg, #f59e0b, #ef4444, #8b5cf6)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text", display: "inline-block", textTransform: "uppercase" }}>{form.company_description}</div>}
             {form.company_address && <div style={{ fontSize: 10, color: T.headerColor, opacity: 0.6, marginTop: 4, whiteSpace: "pre-line" }}>{form.company_address}</div>}
             {form.company_email && <div style={{ fontSize: 10, color: T.headerColor, opacity: 0.5, marginTop: 2 }}>{form.company_email}</div>}
           </div>
@@ -476,6 +478,7 @@ function ElegantDoc({ form, items, calcs, sym, docType, managerSig, customerSig,
       <div style={{ padding: "28px 40px 20px", textAlign: "center", borderBottom: `1px solid ${T.stripBorder}` }}>
         {form.logo_url && <img src={form.logo_url} alt="logo" style={{ height: 90, maxWidth: 200, objectFit: "contain", display: "inline-block", marginBottom: 10 }} />}
         <div style={{ fontSize: 22, fontWeight: 700, color: T.headerColor, letterSpacing: 1 }}>{form.company_name || "Your Company"}</div>
+        {form.company_description && <div style={{ fontSize: 9, marginTop: 3, fontWeight: 800, letterSpacing: 0.8, background: "linear-gradient(135deg, #f59e0b, #ef4444, #8b5cf6)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text", display: "inline-block", textTransform: "uppercase" }}>{form.company_description}</div>}
         {form.company_address && <div style={{ fontSize: 10, color: "#9ca3af", marginTop: 4 }}>{form.company_address.replace(/\n/g, "  ·  ")}</div>}
         <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 10, margin: "14px auto", maxWidth: 300 }}>
           <div style={{ flex: 1, height: 1, background: T.accentColor, opacity: 0.4 }} />
@@ -538,6 +541,7 @@ function SidebarDoc({ form, items, calcs, sym, docType, managerSig, customerSig,
       <div style={{ width: 220, background: T.headerBg, display: "flex", flexDirection: "column", padding: "36px 24px", flexShrink: 0 }}>
         {form.logo_url && <img src={form.logo_url} alt="logo" style={{ height: 80, maxWidth: 170, objectFit: "contain", display: "block", marginBottom: 16, filter: isColoredHeader ? "brightness(0) invert(1)" : "none" }} />}
         <div style={{ fontSize: 15, fontWeight: 900, color: T.headerColor, lineHeight: 1.2 }}>{form.company_name || "Your Company"}</div>
+        {form.company_description && <div style={{ fontSize: 9, marginTop: 3, fontWeight: 800, letterSpacing: 0.8, background: "linear-gradient(135deg, #f59e0b, #ef4444, #8b5cf6)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text", display: "inline-block", textTransform: "uppercase" }}>{form.company_description}</div>}
         {form.company_address && <div style={{ fontSize: 9, color: T.headerColor, opacity: 0.55, marginTop: 6, whiteSpace: "pre-line", lineHeight: 1.5 }}>{form.company_address}</div>}
         {form.company_phone && <div style={{ fontSize: 9, color: T.headerColor, opacity: 0.55, marginTop: 4 }}>☎ {form.company_phone}</div>}
         {form.company_email && <div style={{ fontSize: 9, color: T.headerColor, opacity: 0.55, marginTop: 2 }}>✉ {form.company_email}</div>}
@@ -598,6 +602,7 @@ function ExecutiveDoc({ form, items, calcs, sym, docType, managerSig, customerSi
           <div>
             {form.logo_url && <img src={form.logo_url} alt="logo" style={{ height: 80, maxWidth: 160, objectFit: "contain", display: "block", marginBottom: 10, filter: isColoredHeader ? "brightness(0) invert(1)" : "none" }} />}
             <div style={{ fontSize: 20, fontWeight: 900, color: T.headerColor }}>{form.company_name || "Your Company"}</div>
+            {form.company_description && <div style={{ fontSize: 9, marginTop: 3, fontWeight: 800, letterSpacing: 0.8, background: "linear-gradient(135deg, #f59e0b, #ef4444, #8b5cf6)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text", display: "inline-block", textTransform: "uppercase" }}>{form.company_description}</div>}
             {form.company_address && <div style={{ fontSize: 9, color: T.headerColor, opacity: 0.6, marginTop: 4, whiteSpace: "pre-line" }}>{form.company_address}</div>}
           </div>
           <div style={{ textAlign: "right" }}>
@@ -661,6 +666,7 @@ function WaveDoc({ form, items, calcs, sym, docType, managerSig, customerSig, T 
           <div>
             {form.logo_url && <img src={form.logo_url} alt="logo" style={{ height: 75, maxWidth: 160, objectFit: "contain", display: "block", marginBottom: 8, filter: isColoredHeader ? "brightness(0) invert(1)" : "none" }} />}
             <div style={{ fontSize: 18, fontWeight: 900, color: T.headerColor }}>{form.company_name || "Your Company"}</div>
+            {form.company_description && <div style={{ fontSize: 9, marginTop: 3, fontWeight: 800, letterSpacing: 0.8, background: "linear-gradient(135deg, #f59e0b, #ef4444, #8b5cf6)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text", display: "inline-block", textTransform: "uppercase" }}>{form.company_description}</div>}
             {form.company_address && <div style={{ fontSize: 9, color: T.headerColor, opacity: 0.55, marginTop: 3, whiteSpace: "pre-line" }}>{form.company_address}</div>}
           </div>
           <div style={{ textAlign: "right" }}>
@@ -720,6 +726,7 @@ function CompactDoc({ form, items, calcs, sym, docType, managerSig, customerSig,
           {form.logo_url && <img src={form.logo_url} alt="logo" style={{ height: 60, maxWidth: 120, objectFit: "contain" }} />}
           <div>
             <div style={{ fontSize: 14, fontWeight: 800, color: "#0f172a" }}>{form.company_name || "Your Company"}</div>
+            {form.company_description && <div style={{ fontSize: 8, marginTop: 2, fontWeight: 800, letterSpacing: 0.8, background: "linear-gradient(135deg, #f59e0b, #ef4444, #8b5cf6)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text", display: "inline-block", textTransform: "uppercase" }}>{form.company_description}</div>}
             {form.company_address && <div style={{ fontSize: 8, color: "#94a3b8", marginTop: 2, whiteSpace: "pre-line" }}>{form.company_address}</div>}
           </div>
         </div>
