@@ -1371,17 +1371,17 @@ export default function CreateDocument() {
             </div>
 
             {/* Layout section */}
-            <div className="px-3 pt-3 pb-2 shrink-0">
-              <p className="text-[9px] font-bold uppercase tracking-[0.15em] text-white/40 mb-2">Layout</p>
-              <div className="flex gap-1.5">
+            <div className="pt-3 pb-2 shrink-0">
+              <p className="text-[9px] font-bold uppercase tracking-[0.15em] text-white/40 mb-2 px-3">Layout</p>
+              <div className="flex gap-2 overflow-x-auto px-3 pb-1" style={{ scrollbarWidth: "none" }}>
                 {Object.values(LAYOUTS).map(l => (
-                  <button key={l.id} onClick={() => setTemplate(l.id)} title={l.name}
-                    className="flex flex-col items-center gap-1 flex-1 group">
-                    <div className={`rounded overflow-hidden transition-all w-full ${template === l.id ? "ring-2 ring-indigo-400" : "opacity-50 hover:opacity-80"}`}
-                      style={{ aspectRatio: "3/4", background: "#fff" }}>
+                  <button key={l.id} onClick={() => setTemplate(l.id)}
+                    className="flex flex-col items-center gap-1.5 shrink-0 group">
+                    <div className={`rounded-lg overflow-hidden transition-all ${template === l.id ? "ring-2 ring-indigo-400 shadow-lg shadow-indigo-500/30" : "opacity-50 hover:opacity-90 hover:ring-1 hover:ring-white/20"}`}
+                      style={{ width: 72, height: 96, background: "#fff" }}>
                       <LayoutThumb id={l.id} accentColor={COLOR_SCHEMES[templateColor]?.swatch} />
                     </div>
-                    <span className={`text-[8px] font-semibold leading-none ${template === l.id ? "text-indigo-300" : "text-white/40"}`}>{l.name}</span>
+                    <span className={`text-[9px] font-semibold leading-none ${template === l.id ? "text-indigo-300" : "text-white/40"}`}>{l.name}</span>
                   </button>
                 ))}
               </div>
