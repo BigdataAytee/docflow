@@ -1491,20 +1491,20 @@ export default function CreateDocument() {
             <div className="md:hidden shrink-0 relative z-10" style={{ background: "rgba(10,14,30,0.97)", borderTop: "1px solid rgba(255,255,255,0.08)" }} onClick={(e) => e.stopPropagation()}>
               {/* Download/Share row */}
               <div className="flex items-center gap-2 px-3 py-2 border-b border-white/[0.06]">
-                <button
-                className="flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-lg text-xs font-bold text-white/80 hidden"
-                style={{ background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.1)" }}
-                onClick={handleSharePdf}>
-                  <FileDown className="h-3.5 w-3.5 text-white/60" />
-                  Share PDF
-                </button>
-                <button
-                className="flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-lg text-xs font-bold text-white/80 hidden"
-                style={{ background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.1)" }}
-                onClick={handleDownloadPdf}>
-                  <Printer className="h-3.5 w-3.5 text-white/60" />
-                  Download
-                </button>
+                
+
+
+
+
+
+              
+                
+
+
+
+
+
+              
               </div>
               {/* Layout + colour row */}
               <div className="flex items-center gap-2 px-3 py-2">
