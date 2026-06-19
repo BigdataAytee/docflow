@@ -60,6 +60,7 @@ export default function Settings() {
     company_phone: "",
     company_address: "",
     company_website: "",
+    company_description: "",
     logo_url: "",
     default_currency: "NGN",
     default_tax_rate: 7.5,
@@ -91,6 +92,7 @@ export default function Settings() {
           company_phone: user.company_phone || "",
           company_address: user.company_address || "",
           company_website: user.company_website || "",
+          company_description: user.company_description || "",
           logo_url: user.logo_url || "",
           default_currency: user.default_currency || "NGN",
           default_tax_rate: user.default_tax_rate ?? 7.5,
@@ -216,6 +218,7 @@ export default function Settings() {
     const companyPatch = {
       logo_url: form.logo_url,
       company_name: form.company_name,
+      company_description: form.company_description,
       company_email: form.company_email,
       company_phone: form.company_phone,
       company_address: form.company_address,
@@ -384,6 +387,11 @@ export default function Settings() {
               <div className="sm:col-span-2">
                 <Label>Business Address</Label>
                 <Textarea className="mt-1" value={form.company_address} onChange={e => update("company_address", e.target.value)} rows={3} placeholder="Full registered business address" />
+              </div>
+              <div className="sm:col-span-2">
+                <Label>Company Description</Label>
+                <p className="text-xs text-muted-foreground mb-1.5">A short description or slogan that appears on your documents, below the company name.</p>
+                <Textarea className="mt-1" value={form.company_description} onChange={e => update("company_description", e.target.value)} rows={2} placeholder="e.g. Leading provider of quality goods and services since 2010." />
               </div>
             </div>
           </Section>
