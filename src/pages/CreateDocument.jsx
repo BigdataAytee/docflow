@@ -19,6 +19,7 @@ import BankDetailsFields from "../components/BankDetailsFields";
 import CurrencySelect, { CURRENCIES } from "../components/CurrencySelect";
 import SignaturePad from "../components/SignaturePad";
 import DocumentPreview from "../components/DocumentPreview";
+import LivePreviewScaled from "../components/LivePreviewScaled";
 import LayoutPickerStrip from "../components/LayoutPickerStrip";
 import { toast } from "sonner";
 
@@ -1277,11 +1278,7 @@ export default function CreateDocument() {
                 <span className="text-xs text-white/60 capitalize font-medium">{theme.emoji} {typeLabels[docType]}</span>
               </div>
             </div>
-            <div className="overflow-hidden" style={{ height: 460, width: "100%", position: "relative" }}>
-              <div style={{ transform: "scale(0.40)", transformOrigin: "top left", width: 794, pointerEvents: "none", position: "absolute", top: 0, left: 0 }}>
-                <DocumentPreview key={`${template}-${templateColor}-${templateFont}`} form={form} items={calcs.lineItems} calcs={calcs} sym={sym} docType={docType} template={template} templateColor={templateColor} templateFont={templateFont} />
-              </div>
-            </div>
+            <LivePreviewScaled template={template} templateColor={templateColor} templateFont={templateFont} form={form} calcs={calcs} sym={sym} docType={docType} />
 
           </div>
 
