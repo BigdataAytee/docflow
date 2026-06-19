@@ -1360,7 +1360,7 @@ export default function CreateDocument() {
 
       {/* PDF Preview Modal */}
       {showPdfPreview && (
-        <div className="fixed inset-0 z-50 flex" style={{ background: "rgba(10,12,20,0.92)" }} onClick={() => setShowPdfPreview(false)}>
+        <div className="fixed inset-0 z-50 flex" style={{ background: "radial-gradient(ellipse at 60% 40%, #0d1117 0%, #080b14 60%, #050709 100%)" }} onClick={() => setShowPdfPreview(false)}>
 
           {/* ── Left panel: design controls ── */}
           <div className="shrink-0 flex flex-col h-full overflow-hidden" style={{ width: 190, background: "linear-gradient(180deg,#0f172a 0%,#1e1b4b 100%)" }} onClick={e => e.stopPropagation()}>
@@ -1424,20 +1424,33 @@ export default function CreateDocument() {
           </div>
 
           {/* ── Right: preview area ── */}
-          <div className="flex-1 flex flex-col overflow-hidden" onClick={e => e.stopPropagation()}>
-            {/* Thin top bar */}
-            <div className="shrink-0 flex items-center justify-between px-5 py-3" style={{ background: "rgba(255,255,255,0.04)", borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
-              <div>
-                <p className="text-white font-semibold text-sm">Document Preview</p>
-                <p className="text-white/40 text-xs">{form.customer_name ? `For ${form.customer_name}` : "No customer selected"}</p>
+          <div className="flex-1 flex flex-col overflow-hidden" style={{ position: "relative" }} onClick={e => e.stopPropagation()}>
+
+            {/* Subtle dot-grid background texture */}
+            <div style={{ position: "absolute", inset: 0, backgroundImage: "radial-gradient(circle, rgba(99,102,241,0.07) 1px, transparent 1px)", backgroundSize: "28px 28px", pointerEvents: "none" }} />
+
+            {/* Ambient glow behind doc */}
+            <div style={{ position: "absolute", top: "50%", left: "50%", transform: "translate(-50%,-50%)", width: 600, height: 700, background: "radial-gradient(ellipse, rgba(99,102,241,0.08) 0%, transparent 70%)", borderRadius: "50%", pointerEvents: "none" }} />
+
+            {/* Top bar */}
+            <div className="shrink-0 flex items-center justify-between px-5 py-3 relative z-10" style={{ borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
+              <div className="flex items-center gap-3">
+                {/* Doc type badge */}
+                <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest" style={{ background: "rgba(99,102,241,0.15)", color: "#a5b4fc", border: "1px solid rgba(99,102,241,0.25)" }}>
+                  <span>{(typeLabels[form.type || docType] || "Document").toUpperCase()}</span>
+                </div>
+                <div>
+                  <p className="text-white/80 font-semibold text-sm leading-tight">{form.number || "Draft"}</p>
+                  {form.customer_name && <p className="text-white/30 text-[11px]">for {form.customer_name}</p>}
+                </div>
               </div>
-              <button className="w-8 h-8 rounded-lg flex items-center justify-center text-white/50 hover:text-white hover:bg-white/10 transition-all text-lg leading-none" onClick={() => setShowPdfPreview(false)}>✕</button>
+              <button className="w-8 h-8 rounded-full flex items-center justify-center text-white/30 hover:text-white hover:bg-white/10 transition-all text-base leading-none" style={{ border: "1px solid rgba(255,255,255,0.1)" }} onClick={() => setShowPdfPreview(false)}>✕</button>
             </div>
 
             {/* Waybill sign banners */}
             {(form.type || docType) === "waybill" && pdfMode === "soft" && !customerSig && (
-              <div className="shrink-0 bg-emerald-600 text-white px-5 py-2.5 flex items-center justify-between">
-                <div className="flex items-center gap-2">
+              <div className="shrink-0 relative z-10 flex items-center justify-between px-5 py-2.5" style={{ background: "rgba(5,150,105,0.85)", backdropFilter: "blur(8px)" }}>
+                <div className="flex items-center gap-2 text-white">
                   <PenLine className="h-4 w-4" />
                   <span className="font-bold text-sm">Receiver Signature Required</span>
                 </div>
@@ -1447,8 +1460,8 @@ export default function CreateDocument() {
               </div>
             )}
             {(form.type || docType) === "waybill" && pdfMode === "soft" && customerSig && (
-              <div className="shrink-0 bg-emerald-700 text-white px-5 py-2.5 flex items-center justify-between">
-                <div className="flex items-center gap-2">
+              <div className="shrink-0 relative z-10 flex items-center justify-between px-5 py-2.5" style={{ background: "rgba(4,120,87,0.85)", backdropFilter: "blur(8px)" }}>
+                <div className="flex items-center gap-2 text-white">
                   <CheckCircle2 className="h-4 w-4 text-emerald-300" />
                   <span className="font-bold text-sm">Document Signed</span>
                 </div>
@@ -1456,26 +1469,43 @@ export default function CreateDocument() {
               </div>
             )}
 
-            {/* Document centered */}
-            <div className="flex-1 flex items-center justify-center p-4">
-              <div style={{ width: 794 * pdfModalScale, height: 1123 * pdfModalScale, overflow: "hidden", flexShrink: 0, borderRadius: 6, boxShadow: "0 32px 80px rgba(0,0,0,0.7)" }}>
-                <div style={{ width: 794, height: 1123, transformOrigin: "top left", transform: `scale(${pdfModalScale})` }}>
-                  <div ref={pdfRef} style={{ width: 794 }}>
-                    <DocumentPreview
-                      form={form}
-                      items={calcs.lineItems}
-                      calcs={calcs}
-                      sym={sym}
-                      docType={form.type || docType}
-                      managerSig={managerSig}
-                      customerSig={(form.type || docType) === "waybill" && pdfMode === "paper" ? "" : customerSig}
-                      template={template}
-                      templateColor={templateColor}
-                      templateFont={templateFont}
-                    />
+            {/* Document stage */}
+            <div className="flex-1 flex flex-col items-center justify-center relative z-10" style={{ padding: "16px 24px 20px" }}>
+              {/* Page counter label */}
+              <div className="mb-3 flex items-center gap-2">
+                <div className="h-px flex-1" style={{ background: "rgba(255,255,255,0.06)" }} />
+                <span className="text-[10px] text-white/20 font-medium tracking-widest uppercase px-2">Page 1 of 1 · A4</span>
+                <div className="h-px flex-1" style={{ background: "rgba(255,255,255,0.06)" }} />
+              </div>
+
+              {/* Document with layered shadow for depth */}
+              <div style={{ position: "relative", flexShrink: 0 }}>
+                {/* Back page shadow layers for paper stack illusion */}
+                <div style={{ position: "absolute", bottom: -6, left: 6, right: -6, height: "100%", background: "rgba(255,255,255,0.04)", borderRadius: 8, border: "1px solid rgba(255,255,255,0.06)" }} />
+                <div style={{ position: "absolute", bottom: -3, left: 3, right: -3, height: "100%", background: "rgba(255,255,255,0.07)", borderRadius: 8, border: "1px solid rgba(255,255,255,0.08)" }} />
+                {/* Main doc */}
+                <div style={{ width: 794 * pdfModalScale, height: 1123 * pdfModalScale, overflow: "hidden", borderRadius: 8, boxShadow: "0 40px 100px rgba(0,0,0,0.8), 0 0 0 1px rgba(255,255,255,0.08)", position: "relative" }}>
+                  <div style={{ width: 794, height: 1123, transformOrigin: "top left", transform: `scale(${pdfModalScale})` }}>
+                    <div ref={pdfRef} style={{ width: 794 }}>
+                      <DocumentPreview
+                        form={form}
+                        items={calcs.lineItems}
+                        calcs={calcs}
+                        sym={sym}
+                        docType={form.type || docType}
+                        managerSig={managerSig}
+                        customerSig={(form.type || docType) === "waybill" && pdfMode === "paper" ? "" : customerSig}
+                        template={template}
+                        templateColor={templateColor}
+                        templateFont={templateFont}
+                      />
+                    </div>
                   </div>
                 </div>
               </div>
+
+              {/* Bottom hint */}
+              <p className="mt-4 text-[10px] text-white/15 tracking-wide">Click outside to close</p>
             </div>
           </div>
           {/* Inline Receiver Signature Overlay (waybill soft signage) */}
