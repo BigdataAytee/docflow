@@ -77,7 +77,7 @@ export default function AnalyticsDashboard({ user }) {
 
   const { data: docs = [], isLoading } = useQuery({
     queryKey: ["analytics-docs", user?.id],
-    queryFn: () => base44.entities.Document.filter({ created_by_id: user.id }, "-created_date", 500),
+    queryFn: () => base44.entities.Document.filter({ created_by_id: user.id }, "-created_date", 10000),
     enabled: !!user?.id,
     staleTime: 60_000,
   });
@@ -97,7 +97,7 @@ export default function AnalyticsDashboard({ user }) {
     else if (dateRange === "30d") cutoff.setDate(now.getDate() - 30);
     else if (dateRange === "90d") cutoff.setDate(now.getDate() - 90);
     else if (dateRange === "ytd") cutoff.setMonth(0, 1);
-    return docs.filter(d => new Date(d.created_date) >= cutoff);
+    return docs.filter(d => new Date(d.issue_date || d.created_date) >= cutoff);
   }, [docs, dateRange]);
 
   const kpis = useMemo(() => {
