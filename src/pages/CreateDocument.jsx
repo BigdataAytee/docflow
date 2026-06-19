@@ -691,15 +691,9 @@ export default function CreateDocument() {
   }, []);
   // For the editor scroll area (not modal)
   const previewScale = Math.min(1, (Math.min(viewportWidth, 826) - 32) / 794);
-  // For the full-screen PDF modal: left panel = 190px, top bar ~52px, padding = 16px
+  // Scale PDF to fill the available width exactly (height scrolls if needed)
   const MODAL_LEFT_W = 190;
-  const MODAL_TOP_H = 52;
-  const MODAL_PAD = 16;
-  const pdfModalScale = Math.min(
-    (viewportWidth - MODAL_LEFT_W - MODAL_PAD) / 794,
-    (viewportHeight - MODAL_TOP_H - MODAL_PAD) / 1123,
-    1
-  );
+  const pdfModalScale = Math.min((viewportWidth - MODAL_LEFT_W) / 794, 1);
 
   const L = DOC_LABELS[docType] || DOC_LABELS.invoice;
 
@@ -1470,14 +1464,14 @@ export default function CreateDocument() {
             )}
 
             {/* Document stage */}
-            <div className="flex-1 flex items-center justify-center relative z-10" style={{ padding: "8px 8px" }}>
+            <div className="flex-1 overflow-y-auto relative z-10" style={{ padding: "0" }}>
               {/* Document with layered shadow for depth */}
-              <div style={{ position: "relative", flexShrink: 0 }}>
+              <div style={{ position: "relative", width: "100%" }}>
                 {/* Back page shadow layers for paper stack illusion */}
-                <div style={{ position: "absolute", bottom: -6, left: 6, right: -6, height: "100%", background: "rgba(255,255,255,0.04)", borderRadius: 8, border: "1px solid rgba(255,255,255,0.06)" }} />
-                <div style={{ position: "absolute", bottom: -3, left: 3, right: -3, height: "100%", background: "rgba(255,255,255,0.07)", borderRadius: 8, border: "1px solid rgba(255,255,255,0.08)" }} />
+                <div style={{ position: "absolute", bottom: -6, left: 6, right: -6, height: "100%", background: "rgba(255,255,255,0.04)", borderRadius: 0, border: "1px solid rgba(255,255,255,0.06)" }} />
+                <div style={{ position: "absolute", bottom: -3, left: 3, right: -3, height: "100%", background: "rgba(255,255,255,0.07)", borderRadius: 0, border: "1px solid rgba(255,255,255,0.08)" }} />
                 {/* Main doc */}
-                <div style={{ width: 794 * pdfModalScale, height: 1123 * pdfModalScale, overflow: "hidden", borderRadius: 8, boxShadow: "0 40px 100px rgba(0,0,0,0.8), 0 0 0 1px rgba(255,255,255,0.08)", position: "relative" }}>
+                <div style={{ width: 794 * pdfModalScale, height: 1123 * pdfModalScale, overflow: "hidden", borderRadius: 0, boxShadow: "0 20px 60px rgba(0,0,0,0.7)", position: "relative" }}>
                   <div style={{ width: 794, height: 1123, transformOrigin: "top left", transform: `scale(${pdfModalScale})` }}>
                     <div ref={pdfRef} style={{ width: 794 }}>
                       <DocumentPreview
