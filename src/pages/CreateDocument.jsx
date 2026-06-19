@@ -1288,14 +1288,14 @@ export default function CreateDocument() {
             </div>
             <div className="space-y-2">
               <Button className="w-full text-white font-semibold" style={{ background: theme.gradient }} onClick={() => handleSave("draft")} disabled={saving || !form.customer_name}>
-                {saving ? "Saving..." : (form.type || docType) === "waybill" ? "Save — To Be Delivered" : "Save as Draft"}
+                {saving ? "Saving..." : (form.type || docType) === "waybill" ? "Save — To Be Delivered" : "Save"}
               </Button>
               <Button variant="outline" className="w-full" onClick={() => handleSave("sent")} disabled={saving || !form.customer_name}>
                 Save &amp; Send
               </Button>
               <Button variant="ghost" className="w-full" onClick={() => setShowPdfPreview(true)}>
                 <FileDown className="h-4 w-4 mr-1" />
-                Preview &amp; Download PDF
+                Preview
               </Button>
               
 
