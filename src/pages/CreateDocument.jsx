@@ -691,9 +691,13 @@ export default function CreateDocument() {
   }, []);
   // For the editor scroll area (not modal)
   const previewScale = Math.min(1, (Math.min(viewportWidth, 826) - 32) / 794);
-  // Scale PDF to fill the available width exactly (height scrolls if needed)
+  // Scale PDF to fit both width AND height — fully visible at once, no scroll
   const MODAL_LEFT_W = 190;
-  const pdfModalScale = Math.min((viewportWidth - MODAL_LEFT_W) / 794, 1);
+  const MODAL_TOP_H = 52; // top bar height
+  const pdfModalScale = Math.min(
+    (viewportWidth - MODAL_LEFT_W) / 794,
+    (viewportHeight - MODAL_TOP_H) / 1123
+  );
 
   const L = DOC_LABELS[docType] || DOC_LABELS.invoice;
 
@@ -1464,7 +1468,7 @@ export default function CreateDocument() {
             )}
 
             {/* Document stage */}
-            <div className="flex-1 overflow-y-auto relative z-10" style={{ padding: "0" }}>
+            <div className="flex-1 flex items-center justify-center relative z-10" style={{ overflow: "hidden" }}>
               {/* Document with layered shadow for depth */}
               <div style={{ position: "relative", width: "100%" }}>
                 {/* Back page shadow layers for paper stack illusion */}
