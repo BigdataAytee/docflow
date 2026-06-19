@@ -691,10 +691,10 @@ export default function CreateDocument() {
   }, []);
   // For the editor scroll area (not modal)
   const previewScale = Math.min(1, (Math.min(viewportWidth, 826) - 32) / 794);
-  // For the full-screen PDF modal: left panel = 200px, top bar = 64px, padding = 32px
+  // For the full-screen PDF modal: left panel = 190px, top bar ~52px, padding = 16px
   const MODAL_LEFT_W = 190;
-  const MODAL_TOP_H = 64;
-  const MODAL_PAD = 32;
+  const MODAL_TOP_H = 52;
+  const MODAL_PAD = 16;
   const pdfModalScale = Math.min(
     (viewportWidth - MODAL_LEFT_W - MODAL_PAD) / 794,
     (viewportHeight - MODAL_TOP_H - MODAL_PAD) / 1123,
@@ -1470,14 +1470,7 @@ export default function CreateDocument() {
             )}
 
             {/* Document stage */}
-            <div className="flex-1 flex flex-col items-center justify-center relative z-10" style={{ padding: "16px 24px 20px" }}>
-              {/* Page counter label */}
-              <div className="mb-3 flex items-center gap-2">
-                <div className="h-px flex-1" style={{ background: "rgba(255,255,255,0.06)" }} />
-                <span className="text-[10px] text-white/20 font-medium tracking-widest uppercase px-2">Page 1 of 1 · A4</span>
-                <div className="h-px flex-1" style={{ background: "rgba(255,255,255,0.06)" }} />
-              </div>
-
+            <div className="flex-1 flex items-center justify-center relative z-10" style={{ padding: "8px 8px" }}>
               {/* Document with layered shadow for depth */}
               <div style={{ position: "relative", flexShrink: 0 }}>
                 {/* Back page shadow layers for paper stack illusion */}
@@ -1503,9 +1496,6 @@ export default function CreateDocument() {
                   </div>
                 </div>
               </div>
-
-              {/* Bottom hint */}
-              <p className="mt-4 text-[10px] text-white/15 tracking-wide">Click outside to close</p>
             </div>
           </div>
           {/* Inline Receiver Signature Overlay (waybill soft signage) */}
