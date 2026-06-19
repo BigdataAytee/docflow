@@ -691,12 +691,13 @@ export default function CreateDocument() {
   }, []);
   // For the editor scroll area (not modal)
   const previewScale = Math.min(1, (Math.min(viewportWidth, 826) - 32) / 794);
-  // For the full-screen PDF modal: fit the entire A4 document in the visible area at once
-  // Modal header ~56px + controls bar ~72px + padding ~32px = ~160px reserved
-  const MODAL_HEADER_H = 160;
+  // For the full-screen PDF modal: left panel = 200px, top bar = 64px, padding = 32px
+  const MODAL_LEFT_W = 200;
+  const MODAL_TOP_H = 64;
+  const MODAL_PAD = 32;
   const pdfModalScale = Math.min(
-    (viewportWidth - 48) / 794,
-    (viewportHeight - MODAL_HEADER_H) / 1123,
+    (viewportWidth - MODAL_LEFT_W - MODAL_PAD) / 794,
+    (viewportHeight - MODAL_TOP_H - MODAL_PAD) / 1123,
     1
   );
 
@@ -1384,86 +1385,102 @@ export default function CreateDocument() {
 
       {/* PDF Preview Modal */}
       {showPdfPreview && (
-        <div className="fixed inset-0 z-50 bg-black/60 flex flex-col" onClick={() => setShowPdfPreview(false)}>
-          <div className="shrink-0 bg-white border-b" onClick={e => e.stopPropagation()}>
-            {/* Top bar: title + actions */}
-            <div className="flex items-center justify-between px-6 py-3">
-              <div>
-                <p className="font-semibold text-sm">Document Preview</p>
-                <p className="text-xs text-muted-foreground">{form.number || "Draft"}</p>
+        <div className="fixed inset-0 z-50 flex" style={{ background: "rgba(10,12,20,0.92)" }} onClick={() => setShowPdfPreview(false)}>
+
+          {/* ── Left panel: design controls ── */}
+          <div className="shrink-0 flex flex-col h-full overflow-y-auto" style={{ width: 200, background: "linear-gradient(180deg,#0f172a 0%,#1e1b4b 100%)" }} onClick={e => e.stopPropagation()}>
+            {/* Panel header */}
+            <div className="px-4 pt-5 pb-3 border-b border-white/10">
+              <div className="flex items-center gap-2 mb-0.5">
+                <Palette className="h-4 w-4 text-indigo-400" />
+                <span className="text-xs font-bold text-white tracking-wide">Design</span>
               </div>
-              <div className="flex items-center gap-2 overflow-x-auto flex-nowrap sm:flex-wrap justify-end">
-                <Button size="sm" variant="outline" onClick={handleDownloadPdf} disabled={generatingPdf} className="shrink-0">
-                  <FileDown className="h-4 w-4 mr-1" />
-                  {generatingPdf ? "Generating..." : "Download PDF"}
-                </Button>
-                <Button size="sm" variant="outline" onClick={handleSharePdf} disabled={generatingPdf} className="shrink-0">
-                  <Upload className="h-4 w-4 mr-1" />
-                  {generatingPdf ? "Generating..." : "Share PDF"}
-                </Button>
-                <button className="p-2 hover:bg-muted rounded-lg text-muted-foreground shrink-0" onClick={() => setShowPdfPreview(false)}>✕</button>
-              </div>
+              <p className="text-[10px] text-white/40">{form.number || "Draft"}</p>
             </div>
-            {/* Style controls bar */}
-            <div className="flex items-center gap-4 px-6 py-2 border-t border-border bg-muted/30 overflow-x-auto">
-              <div className="flex items-center gap-1.5 shrink-0">
-                <Palette className="h-3.5 w-3.5 text-muted-foreground" />
-                <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Template</span>
-              </div>
-              <div className="flex gap-2 shrink-0">
+
+            {/* Layout section */}
+            <div className="px-4 pt-4 pb-3">
+              <p className="text-[9px] font-bold uppercase tracking-[0.15em] text-white/40 mb-2.5">Layout</p>
+              <div className="grid grid-cols-2 gap-2">
                 {Object.values(LAYOUTS).map(l => (
                   <button key={l.id} onClick={() => setTemplate(l.id)} title={l.name}
-                    className={`flex flex-col items-center gap-1 transition-all`}>
-                    <div className={`rounded border-2 overflow-hidden transition-all ${template === l.id ? "border-indigo-500 ring-2 ring-indigo-200" : "border-border hover:border-indigo-300"}`}
-                      style={{ width: 40, height: 52, background: "#fff" }}>
+                    className="flex flex-col items-center gap-1.5 group">
+                    <div className={`rounded-lg overflow-hidden transition-all w-full ${template === l.id ? "ring-2 ring-indigo-400 ring-offset-2 ring-offset-transparent" : "opacity-60 hover:opacity-90"}`}
+                      style={{ aspectRatio: "3/4", background: "#fff" }}>
                       <LayoutThumb id={l.id} accentColor={COLOR_SCHEMES[templateColor]?.swatch} />
                     </div>
-                    <span className={`text-[9px] font-semibold ${template === l.id ? "text-indigo-600" : "text-muted-foreground"}`}>{l.name}</span>
+                    <span className={`text-[9px] font-semibold leading-none ${template === l.id ? "text-indigo-300" : "text-white/50 group-hover:text-white/70"}`}>{l.name}</span>
                   </button>
                 ))}
               </div>
-              <div className="w-px h-4 bg-border shrink-0" />
-              <div className="flex items-center gap-1.5 shrink-0">
-                <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Colour</span>
-              </div>
-              <div className="flex gap-1.5 shrink-0">
+            </div>
+
+            {/* Divider */}
+            <div className="mx-4 border-t border-white/10" />
+
+            {/* Colour section */}
+            <div className="px-4 pt-3 pb-4 flex-1">
+              <p className="text-[9px] font-bold uppercase tracking-[0.15em] text-white/40 mb-2.5">Colour</p>
+              <div className="flex flex-wrap gap-2">
                 {Object.values(COLOR_SCHEMES).map(c => (
                   <button key={c.id} onClick={() => setTemplateColor(c.id)} title={c.name}
-                    className={`w-3.5 h-3.5 rounded-full border-2 transition-all hover:scale-125 ${templateColor === c.id ? "border-foreground scale-125 shadow" : "border-transparent"}`}
+                    className={`w-5 h-5 rounded-full border-2 transition-all hover:scale-110 ${templateColor === c.id ? "border-white scale-125 shadow-lg shadow-white/20" : "border-transparent"}`}
                     style={{ background: c.swatch }} />
                 ))}
               </div>
+              {/* Active colour name */}
+              <p className="text-[10px] text-white/50 mt-2.5">{COLOR_SCHEMES[templateColor]?.name}</p>
+            </div>
+
+            {/* Action buttons at bottom */}
+            <div className="px-3 pb-4 space-y-2 border-t border-white/10 pt-3">
+              <Button size="sm" className="w-full bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold gap-1.5" onClick={handleDownloadPdf} disabled={generatingPdf}>
+                <FileDown className="h-3.5 w-3.5" />
+                {generatingPdf ? "Generating…" : "Download PDF"}
+              </Button>
+              <Button size="sm" variant="outline" className="w-full text-xs font-semibold border-white/20 text-white/80 hover:bg-white/10 hover:text-white gap-1.5 bg-transparent" onClick={handleSharePdf} disabled={generatingPdf}>
+                <Upload className="h-3.5 w-3.5" />
+                {generatingPdf ? "Generating…" : "Share"}
+              </Button>
             </div>
           </div>
-          <div className="flex-1 overflow-hidden bg-gray-100 flex flex-col items-center justify-center" style={{ position: "relative" }} onClick={e => e.stopPropagation()}>
+
+          {/* ── Right: preview area ── */}
+          <div className="flex-1 flex flex-col overflow-hidden" onClick={e => e.stopPropagation()}>
+            {/* Thin top bar */}
+            <div className="shrink-0 flex items-center justify-between px-5 py-3" style={{ background: "rgba(255,255,255,0.04)", borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
+              <div>
+                <p className="text-white font-semibold text-sm">Document Preview</p>
+                <p className="text-white/40 text-xs">{form.customer_name ? `For ${form.customer_name}` : "No customer selected"}</p>
+              </div>
+              <button className="w-8 h-8 rounded-lg flex items-center justify-center text-white/50 hover:text-white hover:bg-white/10 transition-all text-lg leading-none" onClick={() => setShowPdfPreview(false)}>✕</button>
+            </div>
+
+            {/* Waybill sign banners */}
             {(form.type || docType) === "waybill" && pdfMode === "soft" && !customerSig && (
-              <div className="sticky top-0 z-10 bg-emerald-600 text-white px-5 py-3 flex items-center justify-between shadow-md">
-                <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center shrink-0"><PenLine className="h-4 w-4" /></div>
-                  <div>
-                    <p className="font-bold text-sm leading-tight">Receiver Signature Required</p>
-                    <p className="text-xs text-emerald-100">Tap below or use the button to sign digitally</p>
-                  </div>
+              <div className="shrink-0 bg-emerald-600 text-white px-5 py-2.5 flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <PenLine className="h-4 w-4" />
+                  <span className="font-bold text-sm">Receiver Signature Required</span>
                 </div>
-                <button onClick={() => setShowInlineSigPad(true)} className="bg-white text-emerald-700 font-bold text-sm px-4 py-2 rounded-xl hover:bg-emerald-50 transition-colors flex items-center gap-2 shrink-0">
-                  <PenLine className="h-4 w-4" /> Sign Here
+                <button onClick={() => setShowInlineSigPad(true)} className="bg-white text-emerald-700 font-bold text-xs px-3 py-1.5 rounded-lg hover:bg-emerald-50 transition-colors flex items-center gap-1.5">
+                  <PenLine className="h-3.5 w-3.5" /> Sign Here
                 </button>
               </div>
             )}
             {(form.type || docType) === "waybill" && pdfMode === "soft" && customerSig && (
-              <div className="sticky top-0 z-10 bg-emerald-700 text-white px-5 py-3 flex items-center justify-between shadow-md">
-                <div className="flex items-center gap-3">
-                  <CheckCircle2 className="h-5 w-5 text-emerald-300 shrink-0" />
-                  <div>
-                    <p className="font-bold text-sm">Document Signed</p>
-                    <p className="text-xs text-emerald-200">Signature is locked into the PDF</p>
-                  </div>
+              <div className="shrink-0 bg-emerald-700 text-white px-5 py-2.5 flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <CheckCircle2 className="h-4 w-4 text-emerald-300" />
+                  <span className="font-bold text-sm">Document Signed</span>
                 </div>
                 <button onClick={() => setShowInlineSigPad(true)} className="text-xs text-emerald-200 hover:text-white underline">Re-sign</button>
               </div>
             )}
-            <div className="flex flex-col items-center justify-center p-2 w-full h-full">
-              <div style={{ width: 794 * pdfModalScale, height: 1123 * pdfModalScale, overflow: "hidden", flexShrink: 0 }}>
+
+            {/* Document centered */}
+            <div className="flex-1 flex items-center justify-center p-4">
+              <div style={{ width: 794 * pdfModalScale, height: 1123 * pdfModalScale, overflow: "hidden", flexShrink: 0, borderRadius: 6, boxShadow: "0 32px 80px rgba(0,0,0,0.7)" }}>
                 <div style={{ width: 794, height: 1123, transformOrigin: "top left", transform: `scale(${pdfModalScale})` }}>
                   <div ref={pdfRef} style={{ width: 794 }}>
                     <DocumentPreview
@@ -1481,7 +1498,6 @@ export default function CreateDocument() {
                   </div>
                 </div>
               </div>
-
             </div>
           </div>
           {/* Inline Receiver Signature Overlay (waybill soft signage) */}
