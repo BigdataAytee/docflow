@@ -160,6 +160,8 @@ function MiniPreview({ design, userInfo, fixedHeight }) {
     account_holder_name: showBankDetails ? (userInfo?.default_account_holder_name || "Your Company") : "",
   };
 
+  const designKey = `${design.template}-${design.color}-${design.font}-${design.cornerRadius}-${design.shadowEffect}-${design.customColor || ""}`;
+
   return (
     <div
       ref={containerRef}
@@ -176,6 +178,7 @@ function MiniPreview({ design, userInfo, fixedHeight }) {
           pointerEvents: "none", transition: "transform 0.2s",
         }}>
           <DocumentPreview
+            key={designKey}
             form={previewDoc} items={previewDoc.items}
             calcs={{ subtotal: previewDoc.subtotal, taxAmt: previewDoc.tax_amount, total: previewDoc.total }}
             sym="₦" docType="invoice"
@@ -204,6 +207,7 @@ function DesktopPreview({ design, userInfo }) {
   const previewW = device === "desktop" ? DOC_W : device === "tablet" ? 600 : 375;
   const scale    = useAutoFit ? fitScale : ZOOM_LEVELS[manualZoom];
   const fontCss  = FONTS.find(f => f.id === design.font)?.css || FONTS[0].css;
+  const designKey = `${design.template}-${design.color}-${design.font}-${design.cornerRadius}-${design.shadowEffect}-${design.customColor || ""}`;
 
   useEffect(() => {
     if (!containerRef.current) return;
@@ -278,6 +282,7 @@ function DesktopPreview({ design, userInfo }) {
             fontFamily: fontCss, pointerEvents: "none", transition: "transform 0.25s ease",
           }}>
             <DocumentPreview
+              key={designKey}
               form={previewDoc} items={previewDoc.items}
               calcs={{ subtotal: previewDoc.subtotal, taxAmt: previewDoc.tax_amount, total: previewDoc.total }}
               sym="₦" docType="invoice"
