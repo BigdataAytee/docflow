@@ -347,7 +347,7 @@ export default function ViewDocument() {
   if (!doc) return <div className="text-center py-12 text-muted-foreground">Document not found</div>;
 
   return (
-    <div className="max-w-4xl mx-auto">
+    <div className="max-w-4xl mx-auto px-2 sm:px-0">
       {/* Toolbar */}
       <div className="flex items-center justify-between gap-2 mb-5 print:hidden flex-wrap">
         <div className="flex items-center gap-2 min-w-0">
@@ -522,6 +522,7 @@ export default function ViewDocument() {
       )}
 
       {/* Document view — scaled to fit on mobile */}
+      <div className="w-full overflow-x-hidden rounded-xl shadow-sm border border-border bg-white">
       <ScaledDocument scale={previewScale}>
         <DocumentPreview
           form={doc}
@@ -536,6 +537,18 @@ export default function ViewDocument() {
           templateFont={doc.template_font}
         />
       </ScaledDocument>
+      </div>
+
+      {/* Mobile PDF/Download action bar */}
+      <div className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-white border-t border-border px-4 py-3 flex gap-2 shadow-lg" style={{ paddingBottom: "calc(0.75rem + env(safe-area-inset-bottom, 0px))" }}>
+        <Button className="flex-1 gap-1.5" size="sm" onClick={handleDownloadPdf} disabled={generatingPdf}>
+          <FileDown className="h-4 w-4" />{generatingPdf ? "Generating…" : "Download PDF"}
+        </Button>
+        <Button variant="outline" className="flex-1 gap-1.5" size="sm" onClick={handleSharePdf} disabled={generatingPdf}>
+          <Share2 className="h-4 w-4" />Share
+        </Button>
+      </div>
+      <div className="md:hidden h-16" />
 
       {/* Inline Signature Capture Overlay */}
       {showInlineSigPad && (
@@ -652,7 +665,7 @@ export default function ViewDocument() {
                 <button onClick={() => setShowInlineSigPad(true)} className="text-xs text-emerald-200 hover:text-white underline">Re-sign</button>
               </div>
             )}
-            <div className="p-2 sm:p-6">
+            <div className="p-2 sm:p-4">
               <div className="max-w-4xl mx-auto">
                 {/* Scale to fit mobile viewport */}
                 <ScaledDocument scale={previewScale}>
@@ -710,7 +723,7 @@ function ScaledDocument({ scale, children }) {
   }, [scale]);
 
   return (
-    <div style={{ width: "100%", overflow: "hidden", height: scaledHeight ?? "auto" }}>
+    <div style={{ width: "100%", overflow: "hidden", height: scaledHeight ?? "auto", borderRadius: 12 }}>
       <div ref={innerRef} style={{ width: 794, transformOrigin: "top left", transform: `scale(${scale})` }}>
         {children}
       </div>
