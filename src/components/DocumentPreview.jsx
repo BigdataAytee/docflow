@@ -897,25 +897,34 @@ function SikkyDoc({ form, items, calcs, sym, docType, managerSig, customerSig, T
 
         {/* ── SIGNATURES ── */}
         <div style={{ padding: "32px 40px 32px 24px", display: "flex", justifyContent: "space-between", alignItems: "flex-end" }}>
-          {/* Manager signature */}
+          {/* Manager / primary signature — always shown */}
           <div style={{ minWidth: 200 }}>
             {(managerSig || form?.manager_signature)
               ? <img src={managerSig || form.manager_signature} alt="" style={{ height: 55, objectFit: "contain", display: "block", marginBottom: 6 }} />
               : <div style={{ borderBottom: "1px dotted #555", width: 200, marginBottom: 6, height: 40 }} />
             }
-            <div style={{ fontSize: 12, color: "#111" }}>Manager's Signature</div>
+            <div style={{ fontSize: 12, color: "#111" }}>{SIG_LABEL[docType] || "Authorized Signatory"}</div>
             {form?.manager_name && <div style={{ fontSize: 11, color: "#555", marginTop: 2 }}>{form.manager_name}</div>}
             {form?.manager_title && <div style={{ fontSize: 10, color: "#777" }}>{form.manager_title}</div>}
           </div>
-          {/* Customer signature */}
-          <div style={{ minWidth: 200, textAlign: "left" }}>
-            {(customerSig || form?.customer_signature)
-              ? <img src={customerSig || form.customer_signature} alt="" style={{ height: 55, objectFit: "contain", display: "block", marginBottom: 6 }} />
-              : <div style={{ borderBottom: "1px dotted #555", width: 200, marginBottom: 6, height: 40 }} />
-            }
-            <div style={{ fontSize: 12, color: "#111" }}>Customer's Signature</div>
-            {form?.receiver_name && <div style={{ fontSize: 11, color: "#555", marginTop: 2 }}>{form.receiver_name}</div>}
-          </div>
+
+          {/* Secondary signature — waybill (receiver) and quotation (customer acceptance) */}
+          {(docType === "waybill" || docType === "quotation") && (
+            <div style={{ minWidth: 200, textAlign: "left" }}>
+              {(customerSig || form?.customer_signature)
+                ? <img src={customerSig || form.customer_signature} alt="" style={{ height: 55, objectFit: "contain", display: "block", marginBottom: 6 }} />
+                : <div style={{ borderBottom: "1px dotted #555", width: 200, marginBottom: 6, height: 40 }} />
+              }
+              <div style={{ fontSize: 12, color: "#111" }}>{SIG2_LABEL[docType] || "Customer's Signature"}</div>
+              {docType === "waybill" && (
+                <div style={{ fontSize: 10, color: "#555", marginTop: 2 }}>
+                  {form?.receiver_name || form?.customer_name || ""}
+                  {form?.receiver_date && <span style={{ marginLeft: 8 }}>Date: {form.receiver_date}</span>}
+                  {!form?.receiver_date && <div style={{ fontSize: 9, color: "#9ca3af" }}>Name: ____________  Date: ____________</div>}
+                </div>
+              )}
+            </div>
+          )}
         </div>
 
       </div>{/* end main content */}
