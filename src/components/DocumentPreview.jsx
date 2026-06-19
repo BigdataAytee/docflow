@@ -771,151 +771,154 @@ const SHADOW_MAP = {
 function SikkyDoc({ form, items, calcs, sym, docType, managerSig, customerSig, T }) {
   const label = TYPE_LABELS[docType] || "INVOICE";
   const amountLabel = AMOUNT_LABEL[docType] || "BALANCE DUE";
-  const issueLabel = ISSUE_LABEL[docType] || "Date";
   const showPrice = docType !== "waybill";
+  const accent = T.accentColor || "#d97706";
+  const sidebarBg = "#fde8d0"; // peach/cream left panel
 
-  // Format date nicely e.g. "19th June 2026."
-  const fmtDate = (d) => {
+  const fmtDateShort = (d) => {
     if (!d) return "";
     const dt = new Date(d);
     if (isNaN(dt)) return d;
-    const day = dt.getDate();
-    const suffix = day === 1 || day === 21 || day === 31 ? "st" : day === 2 || day === 22 ? "nd" : day === 3 || day === 23 ? "rd" : "th";
-    const months = ["January","February","March","April","May","June","July","August","September","October","November","December"];
-    return `${day}${suffix} ${months[dt.getMonth()]} ${dt.getFullYear()}.`;
+    return dt.toLocaleDateString("en-GB", { day: "2-digit", month: "2-digit", year: "numeric" });
   };
 
-  const accent = T.accentColor || "#d97706";
-  const lightBg = "#fff8f0";
-
   return (
-    <div style={{ background: "#fff", minHeight: 1123, display: "flex", flexDirection: "row", fontFamily: "Arial, sans-serif", fontSize: 13 }}>
-      {/* Full-height left orange accent strip */}
-      <div style={{ width: 8, background: accent, flexShrink: 0, alignSelf: "stretch" }} />
+    <div style={{ background: "#fff", minHeight: 1123, display: "flex", flexDirection: "row", fontFamily: "'Times New Roman', Times, serif", fontSize: 13 }}>
 
-      {/* Right: all content */}
+      {/* ── Wide peach left sidebar strip ── */}
+      <div style={{ width: 100, background: sidebarBg, flexShrink: 0, alignSelf: "stretch" }} />
+
+      {/* ── Main content area ── */}
       <div style={{ flex: 1, display: "flex", flexDirection: "column" }}>
-        {/* Header: logo area + company contact details */}
-        <div style={{ display: "flex", borderBottom: `1px solid #e5e7eb` }}>
-          {/* Logo area */}
-          <div style={{ background: lightBg, padding: "20px 24px", display: "flex", alignItems: "center", justifyContent: "center", width: 200, flexShrink: 0, borderRight: "1px solid #f3e8d0" }}>
+
+        {/* ── HEADER: logo left, office address right ── */}
+        <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", padding: "24px 40px 16px 24px" }}>
+          {/* Logo / company name */}
+          <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-start" }}>
             {form.logo_url
-              ? <img src={form.logo_url} alt="logo" style={{ maxHeight: 80, maxWidth: 170, objectFit: "contain" }} />
-              : <div style={{ fontSize: 22, fontWeight: 900, color: accent }}>{form.company_name || "Company"}</div>
+              ? <img src={form.logo_url} alt="logo" style={{ maxHeight: 90, maxWidth: 200, objectFit: "contain" }} />
+              : <div style={{ fontSize: 32, fontWeight: 900, color: accent, fontFamily: "serif" }}>{form.company_name || "Company"}</div>
             }
           </div>
-          {/* Company contact details */}
-          <div style={{ flex: 1, padding: "16px 24px", borderLeft: "2px solid #f3e8d0" }}>
-            <div style={{ fontSize: 9, color: accent, fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, marginBottom: 4 }}>Office:</div>
-            {form.company_name && <div style={{ fontWeight: 700, fontSize: 12, color: "#111", marginBottom: 2 }}>{form.company_name}</div>}
-            {form.company_address && <div style={{ fontSize: 10, color: "#374151", whiteSpace: "pre-line", lineHeight: 1.5 }}>{form.company_address}</div>}
-            {form.company_phone && <div style={{ fontSize: 10, color: "#374151", marginTop: 3 }}>Tel: {form.company_phone}</div>}
-            {form.company_email && <div style={{ fontSize: 10, color: "#2563eb", marginTop: 1 }}>Email: {form.company_email}</div>}
+          {/* Office address block */}
+          <div style={{ textAlign: "left", maxWidth: 320 }}>
+            <div style={{ fontSize: 10, color: accent, fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.8, marginBottom: 4, borderLeft: `2px solid ${accent}`, paddingLeft: 6 }}>OFFICE:</div>
+            {form.company_address && <div style={{ fontSize: 10, color: "#1a1a1a", whiteSpace: "pre-line", lineHeight: 1.6 }}>{form.company_address}</div>}
+            {form.company_phone && <div style={{ fontSize: 10, color: "#1a1a1a", marginTop: 2 }}>Tel: {form.company_phone}</div>}
+            {form.company_email && <div style={{ fontSize: 10, color: "#2563eb", marginTop: 2 }}>Email: <span style={{ color: "#2563eb", textDecoration: "underline" }}>{form.company_email}</span></div>}
             {form.company_website && <div style={{ fontSize: 10, color: "#2563eb", marginTop: 1 }}>{form.company_website}</div>}
           </div>
         </div>
 
-        {/* Tagline / specialisation bar */}
+        {/* ── Tagline / specialisation bar ── */}
         {form.notes && (
-          <div style={{ background: lightBg, borderBottom: `1px solid #f3e8d0`, padding: "6px 24px" }}>
-            <div style={{ fontSize: 9, color: accent, fontWeight: 700, letterSpacing: 0.5, textAlign: "center" }}>{form.notes}</div>
+          <div style={{ padding: "8px 40px 8px 24px", borderTop: "1px solid #e5e7eb", borderBottom: "1px solid #e5e7eb" }}>
+            <div style={{ fontSize: 11, color: accent, fontWeight: 700, textAlign: "center", letterSpacing: 0.3 }}>{form.notes}</div>
           </div>
         )}
 
-        {/* Body */}
-        <div style={{ padding: "28px 40px 20px", flex: 1 }}>
-          {/* Date line */}
-          <div style={{ fontSize: 13, color: "#111", marginBottom: 16 }}>
-            <span style={{ fontSize: 11, verticalAlign: "super" }}>{form.issue_date ? new Date(form.issue_date).getDate() + (["st","nd","rd"][[...new Date(form.issue_date).getDate().toString()].pop() - 1] || "th") : ""}</span>{" "}
-            {form.issue_date ? new Date(form.issue_date).toLocaleDateString("en-GB", { month: "long", year: "numeric" }) + "." : ""}
-          </div>
+        {/* ── BODY ── */}
+        <div style={{ padding: "24px 40px 20px 24px", flex: 1 }}>
 
-          {/* Addressee block */}
-          {form.customer_name && (
-            <div style={{ marginBottom: 20, lineHeight: 1.7, fontSize: 13, color: "#111" }}>
-              {form.customer_company && <div>{form.customer_company}</div>}
-              <div>{form.customer_name}</div>
-              {form.customer_address && form.customer_address.split("\n").map((l, i) => <div key={i}>{l}</div>)}
+          {/* To: block (left) + Doc number / LPO / Date / TIN (right) */}
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 28, gap: 20 }}>
+            {/* Left: addressee */}
+            <div style={{ fontSize: 13, color: "#111", lineHeight: 1.8 }}>
+              {form.customer_name && <div>To:&nbsp; {form.customer_name}</div>}
+              {form.customer_company && <div style={{ paddingLeft: 24 }}>{form.customer_company}</div>}
+              {form.customer_address && form.customer_address.split("\n").map((l, i) => (
+                <div key={i} style={{ paddingLeft: 24 }}>{l}</div>
+              ))}
             </div>
-          )}
-
-          {/* Salutation */}
-          <div style={{ marginBottom: 16, fontSize: 13 }}>Dear Sir,</div>
-
-          {/* Subject */}
-          <div style={{ textAlign: "center", fontWeight: 700, fontSize: 13, textDecoration: "underline", marginBottom: 18, textTransform: "uppercase" }}>
-            {label} {form.lpo_number ? `FOR ${form.lpo_number}` : ""}
+            {/* Right: doc meta */}
+            <div style={{ fontSize: 13, color: "#111", lineHeight: 1.8, textAlign: "left", minWidth: 200, flexShrink: 0 }}>
+              {form.number && <div style={{ fontWeight: 700, fontSize: 14, marginBottom: 2 }}>{form.number}</div>}
+              {form.lpo_number && <div>L.P.O: {form.lpo_number}</div>}
+              {form.issue_date && <div>Date:&nbsp;&nbsp; {fmtDateShort(form.issue_date)}</div>}
+              {form.tax_number && <div>TIN NO: {form.tax_number}</div>}
+              {form.due_date && DUE_LABEL[docType] && <div>{DUE_LABEL[docType]}: {fmtDateShort(form.due_date)}</div>}
+            </div>
           </div>
 
-          {/* Items table — letter style */}
-          <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12 }}>
+          {/* ── Document type title centered ── */}
+          <div style={{ textAlign: "center", fontWeight: 700, fontSize: 15, marginBottom: 20, letterSpacing: 2, textTransform: "uppercase" }}>
+            {label}
+          </div>
+
+          {/* ── Items table ── */}
+          <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
             <thead>
               <tr>
-                <th style={{ textAlign: "left", padding: "6px 8px", fontWeight: 700, fontSize: 12, borderBottom: "1px solid #111" }}>S/N</th>
-                <th style={{ textAlign: "left", padding: "6px 8px", fontWeight: 700, fontSize: 12, borderBottom: "1px solid #111" }}>QTY</th>
-                <th style={{ textAlign: "left", padding: "6px 8px", fontWeight: 700, fontSize: 12, borderBottom: "1px solid #111" }}>DESCRIPTION</th>
-                {showPrice && <th style={{ textAlign: "right", padding: "6px 8px", fontWeight: 700, fontSize: 12, borderBottom: "1px solid #111" }}>UNIT PRICE</th>}
-                {showPrice && <th style={{ textAlign: "right", padding: "6px 8px", fontWeight: 700, fontSize: 12, borderBottom: "1px solid #111" }}>AMOUNT</th>}
+                <th style={{ textAlign: "left", padding: "6px 8px", fontWeight: 700, fontSize: 13 }}>S/N</th>
+                <th style={{ textAlign: "left", padding: "6px 8px", fontWeight: 700, fontSize: 13 }}>QTY</th>
+                <th style={{ textAlign: "left", padding: "6px 8px", fontWeight: 700, fontSize: 13 }}>DESCRIPTION</th>
+                {showPrice && <th style={{ textAlign: "right", padding: "6px 8px", fontWeight: 700, fontSize: 13 }}>UNIT PRICE</th>}
+                {showPrice && <th style={{ textAlign: "right", padding: "6px 8px", fontWeight: 700, fontSize: 13 }}>AMOUNT</th>}
               </tr>
+              <tr><td colSpan={showPrice ? 5 : 3} style={{ borderBottom: "1px solid #111", padding: 0 }} /></tr>
             </thead>
             <tbody>
               {items.length > 0 ? items.map((item, i) => (
                 <tr key={i}>
-                  <td style={{ padding: "8px 8px 4px", verticalAlign: "top", color: "#111", fontSize: 12 }}>{i + 1}.</td>
-                  <td style={{ padding: "8px 8px 4px", verticalAlign: "top", color: "#111", fontSize: 12 }}>{(parseFloat(item.quantity) || 0).toFixed(0).padStart(2,"0")}</td>
-                  <td style={{ padding: "8px 8px 4px", verticalAlign: "top", color: "#111", fontSize: 12, fontWeight: 500 }}>{item.description || "—"}</td>
-                  {showPrice && <td style={{ padding: "8px 8px 4px", verticalAlign: "top", textAlign: "right", color: "#111", fontSize: 12 }}>{sym}{fmt(item.unit_price)}</td>}
-                  {showPrice && <td style={{ padding: "8px 8px 4px", verticalAlign: "top", textAlign: "right", color: "#111", fontWeight: 700, fontSize: 12 }}>{sym}{fmt(item.amount)}</td>}
+                  <td style={{ padding: "10px 8px 6px", verticalAlign: "top", color: "#111", fontSize: 13 }}>{i + 1}.</td>
+                  <td style={{ padding: "10px 8px 6px", verticalAlign: "top", color: "#111", fontSize: 13 }}>{(parseFloat(item.quantity) || 0).toFixed(0).padStart(2,"0")}</td>
+                  <td style={{ padding: "10px 8px 6px", verticalAlign: "top", color: "#111", fontSize: 13 }}>{item.description || "—"}</td>
+                  {showPrice && <td style={{ padding: "10px 8px 6px", verticalAlign: "top", textAlign: "right", color: "#111", fontSize: 13 }}>{sym}{fmt(item.unit_price)}</td>}
+                  {showPrice && <td style={{ padding: "10px 8px 6px", verticalAlign: "top", textAlign: "right", color: "#111", fontWeight: 700, fontSize: 13 }}>{sym}{fmt(item.amount)}</td>}
                 </tr>
               )) : (
-                <tr><td colSpan={5} style={{ padding: "16px 8px", textAlign: "center", color: "#9ca3af", fontSize: 11 }}>No items</td></tr>
+                <tr><td colSpan={showPrice ? 5 : 3} style={{ padding: "20px 8px", textAlign: "center", color: "#9ca3af", fontSize: 12 }}>No items added yet</td></tr>
               )}
             </tbody>
           </table>
 
-          {/* Totals */}
+          {/* ── Totals ── */}
           {showPrice && calcs && (
-            <div style={{ marginTop: 16, display: "flex", justifyContent: "flex-end" }}>
-              <div style={{ width: 280, fontSize: 12 }}>
+            <div style={{ marginTop: 20, display: "flex", justifyContent: "flex-end" }}>
+              <div style={{ width: 300, fontSize: 13 }}>
+                {(calcs.globalDiscAmt || 0) > 0 && <div style={{ display: "flex", justifyContent: "space-between", padding: "4px 0" }}><span>Discount</span><span>-{sym}{fmt(calcs.globalDiscAmt)}</span></div>}
                 {(calcs.taxAmt || 0) > 0 && <div style={{ display: "flex", justifyContent: "space-between", padding: "4px 0" }}><span>VAT ({form.tax_rate}%)</span><span>{sym}{fmt(calcs.taxAmt)}</span></div>}
                 {(parseFloat(form.shipping) || 0) > 0 && <div style={{ display: "flex", justifyContent: "space-between", padding: "4px 0" }}><span>Shipping</span><span>{sym}{fmt(form.shipping)}</span></div>}
-                <div style={{ display: "flex", justifyContent: "space-between", padding: "8px 0 4px", borderTop: "1px solid #111", fontWeight: 700, fontSize: 13 }}>
+                <div style={{ display: "flex", justifyContent: "space-between", padding: "8px 0 4px", borderTop: "1px solid #555", fontWeight: 700, fontSize: 14, marginTop: 4 }}>
                   <span>{amountLabel}</span><span>{sym}{fmt(calcs.total)}</span>
                 </div>
               </div>
             </div>
           )}
 
-          {/* Footer notes / delivery terms */}
+          {/* ── Terms / delivery / payment notes ── */}
           {(form.terms || form.payment_instructions) && (
-            <div style={{ marginTop: 28, fontSize: 12, lineHeight: 1.8 }}>
+            <div style={{ marginTop: 24, fontSize: 12, color: "#333", lineHeight: 1.9 }}>
               {form.terms && <div><strong>DELIVERY TIME:</strong> {form.terms}</div>}
               {form.payment_instructions && <div style={{ marginTop: 4, whiteSpace: "pre-line" }}>{form.payment_instructions}</div>}
             </div>
           )}
         </div>
 
-        {/* Signature area */}
-        <div style={{ padding: "16px 40px 24px", borderTop: "1px solid #e5e7eb", display: "flex", alignItems: "flex-end", justifyContent: "space-between" }}>
-          <div style={{ minWidth: 160 }}>
-            {(managerSig || form?.manager_signature) && <img src={managerSig || form.manager_signature} alt="" style={{ height: 60, objectFit: "contain", display: "block", marginBottom: 4 }} />}
-            <div style={{ borderTop: `1px solid ${accent}`, paddingTop: 3 }}>
-              <div style={{ fontSize: 9, color: accent, textTransform: "uppercase", letterSpacing: 1 }}>Authorized Signatory</div>
-              {form?.manager_name && <div style={{ fontSize: 11, fontWeight: 700, color: "#111", marginTop: 2 }}>{form.manager_name}</div>}
-              {form?.manager_title && <div style={{ fontSize: 9, color: "#64748b" }}>{form.manager_title}</div>}
-            </div>
+        {/* ── SIGNATURES ── */}
+        <div style={{ padding: "32px 40px 32px 24px", display: "flex", justifyContent: "space-between", alignItems: "flex-end" }}>
+          {/* Manager signature */}
+          <div style={{ minWidth: 200 }}>
+            {(managerSig || form?.manager_signature)
+              ? <img src={managerSig || form.manager_signature} alt="" style={{ height: 55, objectFit: "contain", display: "block", marginBottom: 6 }} />
+              : <div style={{ borderBottom: "1px dotted #555", width: 200, marginBottom: 6, height: 40 }} />
+            }
+            <div style={{ fontSize: 12, color: "#111" }}>Manager's Signature</div>
+            {form?.manager_name && <div style={{ fontSize: 11, color: "#555", marginTop: 2 }}>{form.manager_name}</div>}
+            {form?.manager_title && <div style={{ fontSize: 10, color: "#777" }}>{form.manager_title}</div>}
           </div>
-          {form?.company_phone && (
-            <div style={{ textAlign: "right", fontSize: 10, color: "#6b7280" }}>
-              <div>{form.company_phone}</div>
-              {form.company_email && <div>{form.company_email}</div>}
-            </div>
-          )}
+          {/* Customer signature */}
+          <div style={{ minWidth: 200, textAlign: "left" }}>
+            {(customerSig || form?.customer_signature)
+              ? <img src={customerSig || form.customer_signature} alt="" style={{ height: 55, objectFit: "contain", display: "block", marginBottom: 6 }} />
+              : <div style={{ borderBottom: "1px dotted #555", width: 200, marginBottom: 6, height: 40 }} />
+            }
+            <div style={{ fontSize: 12, color: "#111" }}>Customer's Signature</div>
+            {form?.receiver_name && <div style={{ fontSize: 11, color: "#555", marginTop: 2 }}>{form.receiver_name}</div>}
+          </div>
         </div>
 
-        {/* Bottom accent strip */}
-        <div style={{ height: 8, background: accent }} />
-      </div>
+      </div>{/* end main content */}
     </div>
   );
 }
