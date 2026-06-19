@@ -394,6 +394,10 @@ export default function ViewDocument() {
           <Button variant="outline" size="sm" className="h-9 px-3" onClick={() => navigate(`/documents/new?edit=${docId}&type=${doc.type}`)}>
             <Pencil className="h-4 w-4" /><span className="hidden sm:inline ml-1.5">Edit</span>
           </Button>
+          <Button variant="outline" size="sm" className="hidden md:flex h-9" onClick={() => setShowPdfPreview(true)}>
+            <FileDown className="h-4 w-4" /><span className="ml-1.5">PDF</span>
+          </Button>
+
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="outline" size="icon" className="h-9 w-9"><MoreVertical className="h-4 w-4" /></Button>
@@ -407,6 +411,13 @@ export default function ViewDocument() {
                 ))}
               </div>
               <DropdownMenuSeparator className="md:hidden" />
+              <DropdownMenuItem onClick={() => setShowPdfPreview(true)}>
+                <FileDown className="h-4 w-4 mr-2" /> Download PDF
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={handleSharePdf} disabled={generatingPdf}>
+                <Upload className="h-4 w-4 mr-2" /> Share PDF
+              </DropdownMenuItem>
+
               <DropdownMenuItem onClick={() => window.print()}>
                 <Printer className="h-4 w-4 mr-2" /> Print
               </DropdownMenuItem>
@@ -598,7 +609,17 @@ export default function ViewDocument() {
               <p className="font-semibold text-sm truncate">Document Preview</p>
               <p className="text-xs text-muted-foreground truncate">{doc.number}</p>
             </div>
-            <div className="flex items-center gap-1.5 justify-end shrink-0">
+            <div className="flex items-center gap-1.5 overflow-x-auto flex-nowrap justify-end shrink-0 max-w-[65vw] sm:max-w-none">
+              <>
+                  <Button size="sm" onClick={handleDownloadPdf} disabled={generatingPdf} className="shrink-0">
+                    <FileDown className="h-4 w-4 mr-1" />
+                    {generatingPdf ? "..." : "Download"}
+                  </Button>
+                  <Button size="sm" variant="outline" onClick={handleSharePdf} disabled={generatingPdf} className="shrink-0">
+                    <Upload className="h-4 w-4 mr-1" />
+                    Share
+                  </Button>
+                </>
               <button className="p-2 hover:bg-muted rounded-lg text-muted-foreground shrink-0" onClick={() => setShowPdfPreview(false)}>✕</button>
             </div>
           </div>
