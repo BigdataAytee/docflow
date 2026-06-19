@@ -563,6 +563,16 @@ export default function CreateDocument() {
   const [templateColor, setTemplateColor] = useState("slate");
   const [templateFont, setTemplateFont] = useState("");
 
+  // Auto-persist design changes so ViewDocument reflects them immediately
+  const saveDesign = async (tmpl, color, font) => {
+    const targetId = draftIdRef.current || editId;
+    if (!targetId) return;
+    await base44.entities.Document.update(targetId, { template: tmpl, template_color: color, template_font: font || "" });
+  };
+
+  const handleSetTemplate = (val) => { setTemplate(val); saveDesign(val, templateColor, templateFont); };
+  const handleSetTemplateColor = (val) => { setTemplateColor(val); saveDesign(template, val, templateFont); };
+
   const generatePdfBlob = async () => {
     const canvas = await html2canvas(pdfRef.current, { scale: 2, useCORS: true, logging: false, backgroundColor: "#ffffff", width: 794, windowWidth: 794 });
     const imgData = canvas.toDataURL("image/jpeg", 0.88);
@@ -1395,7 +1405,7 @@ export default function CreateDocument() {
             layouts={LAYOUTS}
             template={template}
             templateColor={templateColor}
-            onSelect={setTemplate}
+            onSelect={handleSetTemplate}
             form={form}
             items={calcs.lineItems}
             calcs={calcs}
@@ -1426,7 +1436,7 @@ export default function CreateDocument() {
               </div>
               <div className="flex flex-wrap gap-1.5">
                 {Object.values(COLOR_SCHEMES).map((c) =>
-              <button key={c.id} onClick={() => setTemplateColor(c.id)} title={c.name}
+                <button key={c.id} onClick={() => handleSetTemplateColor(c.id)} title={c.name}
               className={`w-4 h-4 rounded-full border-2 transition-all hover:scale-110 ${templateColor === c.id ? "border-white scale-125 shadow-lg shadow-white/20" : "border-transparent"}`}
               style={{ background: c.swatch }} />
               )}
