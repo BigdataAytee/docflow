@@ -692,7 +692,7 @@ export default function CreateDocument() {
   // For the editor scroll area (not modal)
   const previewScale = Math.min(1, (Math.min(viewportWidth, 826) - 32) / 794);
   // For the full-screen PDF modal: left panel = 200px, top bar = 64px, padding = 32px
-  const MODAL_LEFT_W = 200;
+  const MODAL_LEFT_W = 190;
   const MODAL_TOP_H = 64;
   const MODAL_PAD = 32;
   const pdfModalScale = Math.min(
@@ -1363,59 +1363,62 @@ export default function CreateDocument() {
         <div className="fixed inset-0 z-50 flex" style={{ background: "rgba(10,12,20,0.92)" }} onClick={() => setShowPdfPreview(false)}>
 
           {/* ── Left panel: design controls ── */}
-          <div className="shrink-0 flex flex-col h-full overflow-y-auto" style={{ width: 200, background: "linear-gradient(180deg,#0f172a 0%,#1e1b4b 100%)" }} onClick={e => e.stopPropagation()}>
+          <div className="shrink-0 flex flex-col h-full overflow-hidden" style={{ width: 190, background: "linear-gradient(180deg,#0f172a 0%,#1e1b4b 100%)" }} onClick={e => e.stopPropagation()}>
             {/* Panel header */}
-            <div className="px-4 pt-5 pb-3 border-b border-white/10">
-              <div className="flex items-center gap-2 mb-0.5">
-                <Palette className="h-4 w-4 text-indigo-400" />
+            <div className="px-3 pt-4 pb-2.5 border-b border-white/10 shrink-0">
+              <div className="flex items-center gap-1.5">
+                <Palette className="h-3.5 w-3.5 text-indigo-400" />
                 <span className="text-xs font-bold text-white tracking-wide">Design</span>
               </div>
-              <p className="text-[10px] text-white/40">{form.number || "Draft"}</p>
             </div>
 
             {/* Layout section */}
-            <div className="px-4 pt-4 pb-3">
-              <p className="text-[9px] font-bold uppercase tracking-[0.15em] text-white/40 mb-2.5">Layout</p>
-              <div className="grid grid-cols-2 gap-2">
+            <div className="px-3 pt-3 pb-2 shrink-0">
+              <p className="text-[9px] font-bold uppercase tracking-[0.15em] text-white/40 mb-2">Layout</p>
+              <div className="flex gap-1.5">
                 {Object.values(LAYOUTS).map(l => (
                   <button key={l.id} onClick={() => setTemplate(l.id)} title={l.name}
-                    className="flex flex-col items-center gap-1.5 group">
-                    <div className={`rounded-lg overflow-hidden transition-all w-full ${template === l.id ? "ring-2 ring-indigo-400 ring-offset-2 ring-offset-transparent" : "opacity-60 hover:opacity-90"}`}
+                    className="flex flex-col items-center gap-1 flex-1 group">
+                    <div className={`rounded overflow-hidden transition-all w-full ${template === l.id ? "ring-2 ring-indigo-400" : "opacity-50 hover:opacity-80"}`}
                       style={{ aspectRatio: "3/4", background: "#fff" }}>
                       <LayoutThumb id={l.id} accentColor={COLOR_SCHEMES[templateColor]?.swatch} />
                     </div>
-                    <span className={`text-[9px] font-semibold leading-none ${template === l.id ? "text-indigo-300" : "text-white/50 group-hover:text-white/70"}`}>{l.name}</span>
+                    <span className={`text-[8px] font-semibold leading-none ${template === l.id ? "text-indigo-300" : "text-white/40"}`}>{l.name}</span>
                   </button>
                 ))}
               </div>
             </div>
 
             {/* Divider */}
-            <div className="mx-4 border-t border-white/10" />
+            <div className="mx-3 border-t border-white/10 shrink-0" />
 
             {/* Colour section */}
-            <div className="px-4 pt-3 pb-4 flex-1">
-              <p className="text-[9px] font-bold uppercase tracking-[0.15em] text-white/40 mb-2.5">Colour</p>
-              <div className="flex flex-wrap gap-2">
+            <div className="px-3 pt-2.5 pb-2 shrink-0">
+              <div className="flex items-center justify-between mb-2">
+                <p className="text-[9px] font-bold uppercase tracking-[0.15em] text-white/40">Colour</p>
+                <p className="text-[9px] text-indigo-300 font-semibold">{COLOR_SCHEMES[templateColor]?.name}</p>
+              </div>
+              <div className="flex flex-wrap gap-1.5">
                 {Object.values(COLOR_SCHEMES).map(c => (
                   <button key={c.id} onClick={() => setTemplateColor(c.id)} title={c.name}
-                    className={`w-5 h-5 rounded-full border-2 transition-all hover:scale-110 ${templateColor === c.id ? "border-white scale-125 shadow-lg shadow-white/20" : "border-transparent"}`}
+                    className={`w-4 h-4 rounded-full border-2 transition-all hover:scale-110 ${templateColor === c.id ? "border-white scale-125 shadow-lg shadow-white/20" : "border-transparent"}`}
                     style={{ background: c.swatch }} />
                 ))}
               </div>
-              {/* Active colour name */}
-              <p className="text-[10px] text-white/50 mt-2.5">{COLOR_SCHEMES[templateColor]?.name}</p>
             </div>
 
-            {/* Action buttons at bottom */}
-            <div className="px-3 pb-4 space-y-2 border-t border-white/10 pt-3">
+            {/* Divider */}
+            <div className="mx-3 border-t border-white/10 shrink-0" />
+
+            {/* Action buttons */}
+            <div className="px-3 pt-2.5 pb-3 space-y-2 shrink-0">
               <Button size="sm" className="w-full bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold gap-1.5" onClick={handleDownloadPdf} disabled={generatingPdf}>
                 <FileDown className="h-3.5 w-3.5" />
                 {generatingPdf ? "Generating…" : "Download PDF"}
               </Button>
               <Button size="sm" variant="outline" className="w-full text-xs font-semibold border-white/20 text-white/80 hover:bg-white/10 hover:text-white gap-1.5 bg-transparent" onClick={handleSharePdf} disabled={generatingPdf}>
                 <Upload className="h-3.5 w-3.5" />
-                {generatingPdf ? "Generating…" : "Share"}
+                {generatingPdf ? "Generating…" : "Share PDF"}
               </Button>
             </div>
           </div>
