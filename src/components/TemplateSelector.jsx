@@ -71,9 +71,9 @@ export const TEMPLATES = Object.fromEntries(
 );
 
 // Mini visual thumbnails showing each layout's structural arrangement
-function LayoutThumb({ id }) {
-  const acc = "#94a3b8";
-  const dark = "#1e293b";
+export function LayoutThumb({ id, accentColor }) {
+  const acc = accentColor || "#94a3b8";
+  const dark = accentColor || "#1e293b";
   const light = "#e2e8f0";
   const mid = "#f1f5f9";
 

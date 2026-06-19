@@ -4,7 +4,7 @@ import jsPDF from "jspdf";
 import { base44 } from "@/api/base44Client";
 import { useNavigate } from "react-router-dom";
 import { Plus, Trash2, ArrowLeft, Settings2, FileDown, Upload, GripVertical, PenLine, Printer, CheckCircle2, ImagePlus, X, Palette } from "lucide-react";
-import { COLOR_SCHEMES, LAYOUTS } from "../components/TemplateSelector";
+import { COLOR_SCHEMES, LAYOUTS, LayoutThumb } from "../components/TemplateSelector";
 import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
@@ -1400,11 +1400,15 @@ export default function CreateDocument() {
                 <Palette className="h-3.5 w-3.5 text-muted-foreground" />
                 <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Template</span>
               </div>
-              <div className="flex gap-1 shrink-0">
+              <div className="flex gap-2 shrink-0">
                 {Object.values(LAYOUTS).map(l => (
-                  <button key={l.id} onClick={() => setTemplate(l.id)}
-                    className={`px-2.5 py-1 rounded text-[11px] font-semibold border transition-all ${template === l.id ? "border-indigo-400 bg-indigo-50 text-indigo-700" : "border-border hover:bg-muted text-muted-foreground"}`}>
-                    {l.name}
+                  <button key={l.id} onClick={() => setTemplate(l.id)} title={l.name}
+                    className={`flex flex-col items-center gap-1 transition-all`}>
+                    <div className={`rounded border-2 overflow-hidden transition-all ${template === l.id ? "border-indigo-500 ring-2 ring-indigo-200" : "border-border hover:border-indigo-300"}`}
+                      style={{ width: 40, height: 52, background: "#fff" }}>
+                      <LayoutThumb id={l.id} accentColor={COLOR_SCHEMES[templateColor]?.swatch} />
+                    </div>
+                    <span className={`text-[9px] font-semibold ${template === l.id ? "text-indigo-600" : "text-muted-foreground"}`}>{l.name}</span>
                   </button>
                 ))}
               </div>
