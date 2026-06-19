@@ -249,7 +249,7 @@ function ClassicDoc({ form, items, calcs, sym, docType, managerSig, customerSig,
         <div>
           {form.logo_url ? <img src={form.logo_url} alt="logo" style={{ height: 110, maxWidth: 200, objectFit: "contain", display: "block", marginBottom: 8 }} /> : <div style={{ height: 8 }} />}
           <div style={{ fontWeight: 900, fontSize: 18, color: T.headerColor }}>{form.company_name || "Your Company"}</div>
-          {form.company_description && <div style={{ fontSize: 10, color: T.headerColor, opacity: 0.75, marginTop: 2, fontWeight: 700, letterSpacing: 0.3 }}>{form.company_description}</div>}
+          {form.company_description && <div style={{ fontSize: 10, color: T.headerColor, opacity: 0.8, marginTop: 3, fontWeight: 700, letterSpacing: 0.5, textAlign: "center", background: "rgba(255,255,255,0.12)", borderRadius: 4, padding: "3px 8px", display: "inline-block" }}>{form.company_description}</div>}
           {form.company_address && <div style={{ fontSize: 10, color: T.headerColor, opacity: 0.65, marginTop: 3, whiteSpace: "pre-line" }}>{form.company_address}</div>}
         </div>
         <div style={{ textAlign: "right" }}>
@@ -302,7 +302,7 @@ function ModernDoc({ form, items, calcs, sym, docType, managerSig, customerSig, 
           <div style={{ flex: 1 }}>
             {form.logo_url && <img src={form.logo_url} alt="logo" style={{ height: 100, maxWidth: 180, objectFit: "contain", display: "block", marginBottom: 10, filter: T.headerBg !== "#ffffff" && T.headerBg !== "#fffbeb" ? "brightness(0) invert(1)" : "none", opacity: 0.9 }} />}
             <div style={{ fontSize: 22, fontWeight: 900, color: T.headerColor, letterSpacing: -0.5 }}>{form.company_name || "Your Company"}</div>
-            {form.company_description && <div style={{ fontSize: 10, color: T.headerColor, opacity: 0.75, marginTop: 2, fontWeight: 700, letterSpacing: 0.3 }}>{form.company_description}</div>}
+            {form.company_description && <div style={{ fontSize: 10, color: T.headerColor, opacity: 0.8, marginTop: 3, fontWeight: 700, letterSpacing: 0.5, textAlign: "center", background: "rgba(255,255,255,0.12)", borderRadius: 4, padding: "3px 8px", display: "inline-block" }}>{form.company_description}</div>}
             {form.company_address && <div style={{ fontSize: 10, color: T.headerColor, opacity: 0.6, marginTop: 4, whiteSpace: "pre-line" }}>{form.company_address}</div>}
           </div>
           <div style={{ textAlign: "right" }}>
@@ -831,8 +831,8 @@ function SikkyDoc({ form, items, calcs, sym, docType, managerSig, customerSig, T
       </div>
       {/* Company description bar */}
       {form.company_description && (
-        <div style={{ padding: "5px 40px 5px 24px", borderTop: "1px solid #e5e7eb", borderBottom: "1px solid #e5e7eb" }}>
-          <div style={{ fontSize: 11, color: "#1a1a1a", fontWeight: 800, letterSpacing: 0.5 }}>{form.company_description}</div>
+        <div style={{ padding: "5px 40px 5px 24px", borderTop: "1px solid #e5e7eb", borderBottom: "1px solid #e5e7eb", textAlign: "center" }}>
+          <div style={{ fontSize: 11, color: "#1a1a1a", fontWeight: 800, letterSpacing: 0.5, display: "inline-block" }}>{form.company_description}</div>
         </div>
       )}
       {/* Tagline bar */}

@@ -1160,6 +1160,19 @@ export default function CreateDocument() {
               <Label>Company Description / Tagline</Label>
               <Textarea value={form.company_description} onChange={e => setForm(f => ({ ...f, company_description: e.target.value }))} rows={2}
                 placeholder="e.g. Leading provider of quality goods and services since 2010." />
+              <div className="flex items-center gap-3 mt-2">
+                <button
+                  type="button"
+                  disabled={!form.company_description}
+                  onClick={async () => {
+                    await base44.auth.updateMe({ company_description: form.company_description });
+                    toast.success("Company description saved — it will auto-fill on new documents.");
+                  }}
+                  className="text-xs text-slate-600 hover:text-slate-900 border border-slate-300 rounded-full px-3 py-1 hover:bg-slate-50 transition-colors disabled:opacity-40"
+                >
+                  💾 Save as default
+                </button>
+              </div>
             </div>
             <div>
               <Label>{L.notes}</Label>
