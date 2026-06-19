@@ -10,6 +10,7 @@ import {
 } from "lucide-react";
 import FieldLayoutEditor from "../../components/settings/FieldLayoutEditor";
 import BrandColorPicker from "../../components/settings/BrandColorPicker";
+import { LayoutThumb } from "../../components/TemplateSelector";
 
 // ─── DATA ─────────────────────────────────────────────────────────────────────
 const FONTS = [
@@ -322,13 +323,22 @@ function DesignControls({ design, update }) {
   return (
     <>
       <AccordionSection title="Templates" IconComp={Layout} defaultOpen>
-        <div className="space-y-1">
+        <div className="grid grid-cols-5 gap-2">
           {LAYOUT_TEMPLATES.map(t => (
-            <button key={t.id} onClick={() => update("template", t.id)}
-              className={`w-full flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-medium transition-all border ${design.template === t.id ? "border-indigo-400 bg-indigo-50 text-indigo-700" : "border-transparent hover:border-border hover:bg-muted/40"}`}>
-              <span className={`w-2 h-2 rounded-full shrink-0 ${design.template === t.id ? "bg-indigo-500" : "bg-muted-foreground/30"}`} />
-              {t.label}
-              {design.template === t.id && <CheckCircle2 className="h-3.5 w-3.5 ml-auto text-indigo-500" />}
+            <button key={t.id} onClick={() => update("template", t.id)} title={t.label}
+              className="flex flex-col items-center gap-1 group">
+              <div className={`relative rounded-lg border-2 overflow-hidden transition-all w-full ${design.template === t.id ? "border-indigo-500 ring-2 ring-indigo-200" : "border-border hover:border-indigo-300"}`}
+                style={{ aspectRatio: "3/4", background: "#fff" }}>
+                <LayoutThumb id={t.id} accentColor={COLOR_PALETTES.find(p => p.id === design.color)?.swatch} />
+                {design.template === t.id && (
+                  <div className="absolute inset-0 flex items-end justify-center pb-1 bg-indigo-500/10">
+                    <div className="w-3.5 h-3.5 rounded-full bg-indigo-500 flex items-center justify-center">
+                      <CheckCircle2 className="h-2.5 w-2.5 text-white" />
+                    </div>
+                  </div>
+                )}
+              </div>
+              <span className={`text-[9px] font-semibold leading-tight text-center ${design.template === t.id ? "text-indigo-600" : "text-muted-foreground"}`}>{t.label}</span>
             </button>
           ))}
         </div>

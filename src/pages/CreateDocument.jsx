@@ -1416,10 +1416,10 @@ export default function CreateDocument() {
               <div className="flex items-center gap-1.5 shrink-0">
                 <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Colour</span>
               </div>
-              <div className="flex gap-2 shrink-0">
+              <div className="flex gap-1.5 shrink-0">
                 {Object.values(COLOR_SCHEMES).map(c => (
                   <button key={c.id} onClick={() => setTemplateColor(c.id)} title={c.name}
-                    className={`w-5 h-5 rounded-full border-2 transition-all hover:scale-110 ${templateColor === c.id ? "border-foreground scale-110 shadow" : "border-transparent"}`}
+                    className={`w-3.5 h-3.5 rounded-full border-2 transition-all hover:scale-125 ${templateColor === c.id ? "border-foreground scale-125 shadow" : "border-transparent"}`}
                     style={{ background: c.swatch }} />
                 ))}
               </div>
