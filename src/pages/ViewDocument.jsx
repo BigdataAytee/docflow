@@ -602,14 +602,12 @@ export default function ViewDocument() {
       {showPdfPreview && (
         <ViewDocPdfModal
           doc={doc}
-          pdfRef={pdfRef}
-          pdfDocRef={pdfDocRef}
+          pdfRef={pdfDocRef}
           generatingPdf={generatingPdf}
           onClose={() => setShowPdfPreview(false)}
           onDownload={handleDownloadPdf}
           onShare={handleSharePdf}
-          onSign={() => setShowInlineSigPad(true)}
-          previewScale={previewScale}
+          onSign={() => { setShowPdfPreview(false); setShowInlineSigPad(true); }}
         />
       )}
     </div>
