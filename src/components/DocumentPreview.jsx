@@ -895,33 +895,37 @@ function SikkyDoc({ form, items, calcs, sym, docType, managerSig, customerSig, T
           )}
         </div>
 
-        {/* ── SIGNATURES ── */}
-        <div style={{ padding: "32px 40px 32px 24px", display: "flex", justifyContent: "space-between", alignItems: "flex-end" }}>
-          {/* Manager / primary signature — always shown */}
-          <div style={{ minWidth: 200 }}>
+        {/* ── SIGNATURES — same rules as Sigs component ── */}
+        <div style={{ padding: "32px 40px 32px 24px", display: "flex", gap: 40, alignItems: "flex-start" }}>
+          {/* Primary / manager signature — always shown */}
+          <div style={{ minWidth: 180 }}>
             {(managerSig || form?.manager_signature)
-              ? <img src={managerSig || form.manager_signature} alt="" style={{ height: 55, objectFit: "contain", display: "block", marginBottom: 6 }} />
-              : <div style={{ borderBottom: "1px dotted #555", width: 200, marginBottom: 6, height: 40 }} />
+              ? <img src={managerSig || form.manager_signature} alt="" style={{ height: 60, objectFit: "contain", display: "block", marginBottom: 6 }} />
+              : <div style={{ height: 60 }} />
             }
-            <div style={{ fontSize: 12, color: "#111" }}>{SIG_LABEL[docType] || "Authorized Signatory"}</div>
-            {form?.manager_name && <div style={{ fontSize: 11, color: "#555", marginTop: 2 }}>{form.manager_name}</div>}
+            <div style={{ borderBottom: "1px dotted #555", width: 180, marginBottom: 5 }} />
+            <div style={{ fontSize: 11, color: "#111", fontWeight: 600 }}>{SIG_LABEL[docType] || "Authorized Signatory"}</div>
+            {form?.manager_name && <div style={{ fontSize: 11, color: "#333", marginTop: 2 }}>{form.manager_name}</div>}
             {form?.manager_title && <div style={{ fontSize: 10, color: "#777" }}>{form.manager_title}</div>}
           </div>
 
-          {/* Secondary signature — waybill (receiver) and quotation (customer acceptance) */}
+          {/* Secondary signature — only waybill and quotation */}
           {(docType === "waybill" || docType === "quotation") && (
-            <div style={{ minWidth: 200, textAlign: "left" }}>
+            <div style={{ minWidth: 180 }}>
               {(customerSig || form?.customer_signature)
-                ? <img src={customerSig || form.customer_signature} alt="" style={{ height: 55, objectFit: "contain", display: "block", marginBottom: 6 }} />
-                : <div style={{ borderBottom: "1px dotted #555", width: 200, marginBottom: 6, height: 40 }} />
+                ? <img src={customerSig || form.customer_signature} alt="" style={{ height: 60, objectFit: "contain", display: "block", marginBottom: 6 }} />
+                : <div style={{ height: 60 }} />
               }
-              <div style={{ fontSize: 12, color: "#111" }}>{SIG2_LABEL[docType] || "Customer's Signature"}</div>
+              <div style={{ borderBottom: "1px dotted #555", width: 180, marginBottom: 5 }} />
+              <div style={{ fontSize: 11, color: "#111", fontWeight: 600 }}>{SIG2_LABEL[docType] || "Customer Signature"}</div>
               {docType === "waybill" && (
-                <div style={{ fontSize: 10, color: "#555", marginTop: 2 }}>
-                  {form?.receiver_name || form?.customer_name || ""}
-                  {form?.receiver_date && <span style={{ marginLeft: 8 }}>Date: {form.receiver_date}</span>}
-                  {!form?.receiver_date && <div style={{ fontSize: 9, color: "#9ca3af" }}>Name: ____________  Date: ____________</div>}
-                </div>
+                <>
+                  <div style={{ fontSize: 11, color: "#333", marginTop: 2 }}>{form?.receiver_name || form?.customer_name || ""}</div>
+                  <div style={{ fontSize: 9, color: "#9ca3af", marginTop: 1 }}>
+                    {form?.receiver_date ? `Date: ${form.receiver_date}` : "Name: ____________  Date: ____________"}
+                    {form?.receiver_date && form?.receiver_time && `  ·  Time: ${form.receiver_time}`}
+                  </div>
+                </>
               )}
             </div>
           )}
