@@ -1360,17 +1360,15 @@ export default function CreateDocument() {
 
       {/* PDF Preview Modal */}
       {showPdfPreview && (
-        <div className="fixed inset-0 z-50 flex" style={{ background: "linear-gradient(135deg, #0a0015 0%, #0d0a2e 40%, #001a0a 100%)" }} onClick={() => setShowPdfPreview(false)}>
+        <div className="fixed inset-0 z-50 flex" style={{ background: "radial-gradient(ellipse at 60% 40%, #0d1117 0%, #080b14 60%, #050709 100%)" }} onClick={() => setShowPdfPreview(false)}>
 
           {/* ── Left panel: design controls ── */}
-          <div className="shrink-0 flex flex-col h-full overflow-hidden" style={{ width: 190, background: "linear-gradient(180deg, #12082a 0%, #0e1a3a 50%, #091a12 100%)", borderRight: "1px solid rgba(255,255,255,0.07)" }} onClick={e => e.stopPropagation()}>
+          <div className="shrink-0 flex flex-col h-full overflow-hidden" style={{ width: 190, background: "linear-gradient(180deg,#0f172a 0%,#1e1b4b 100%)" }} onClick={e => e.stopPropagation()}>
             {/* Panel header */}
-            <div className="px-3 pt-4 pb-2.5 shrink-0" style={{ borderBottom: "1px solid rgba(255,255,255,0.08)", background: "linear-gradient(180deg,rgba(99,102,241,0.15) 0%,transparent 100%)" }}>
-              <div className="flex items-center gap-2">
-                <div className="w-6 h-6 rounded-lg flex items-center justify-center" style={{ background: "linear-gradient(135deg,#6366f1,#8b5cf6)" }}>
-                  <Palette className="h-3.5 w-3.5 text-white" />
-                </div>
-                <span className="text-xs font-bold text-white tracking-wide">Design Studio</span>
+            <div className="px-3 pt-4 pb-2.5 border-b border-white/10 shrink-0">
+              <div className="flex items-center gap-1.5">
+                <Palette className="h-3.5 w-3.5 text-indigo-400" />
+                <span className="text-xs font-bold text-white tracking-wide">Design</span>
               </div>
             </div>
 
@@ -1414,52 +1412,44 @@ export default function CreateDocument() {
 
             {/* Action buttons */}
             <div className="px-3 pt-2.5 pb-3 space-y-2 shrink-0">
-              <button
-                onClick={handleDownloadPdf} disabled={generatingPdf}
-                className="w-full flex items-center justify-center gap-1.5 text-xs font-bold text-white rounded-lg py-2 transition-all disabled:opacity-50"
-                style={{ background: "linear-gradient(135deg,#6366f1 0%,#8b5cf6 100%)", boxShadow: "0 4px 15px rgba(99,102,241,0.4)" }}>
+              <Button size="sm" className="w-full bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold gap-1.5" onClick={handleDownloadPdf} disabled={generatingPdf}>
                 <FileDown className="h-3.5 w-3.5" />
                 {generatingPdf ? "Generating…" : "Download PDF"}
-              </button>
-              <button
-                onClick={handleSharePdf} disabled={generatingPdf}
-                className="w-full flex items-center justify-center gap-1.5 text-xs font-semibold rounded-lg py-2 transition-all disabled:opacity-50"
-                style={{ background: "rgba(255,255,255,0.07)", color: "rgba(255,255,255,0.75)", border: "1px solid rgba(255,255,255,0.12)" }}>
+              </Button>
+              <Button size="sm" variant="outline" className="w-full text-xs font-semibold border-white/20 text-white/80 hover:bg-white/10 hover:text-white gap-1.5 bg-transparent" onClick={handleSharePdf} disabled={generatingPdf}>
                 <Upload className="h-3.5 w-3.5" />
                 {generatingPdf ? "Generating…" : "Share PDF"}
-              </button>
+              </Button>
             </div>
           </div>
 
           {/* ── Right: preview area ── */}
           <div className="flex-1 flex flex-col overflow-hidden" style={{ position: "relative" }} onClick={e => e.stopPropagation()}>
 
-            {/* Rich layered background */}
-            <div style={{ position: "absolute", inset: 0, background: "linear-gradient(135deg, #0a0020 0%, #0f0a35 35%, #001525 70%, #050f05 100%)", pointerEvents: "none" }} />
-            {/* Animated colour orbs */}
-            <div style={{ position: "absolute", top: "15%", left: "30%", width: 420, height: 420, background: "radial-gradient(ellipse, rgba(139,92,246,0.18) 0%, transparent 65%)", borderRadius: "50%", pointerEvents: "none" }} />
-            <div style={{ position: "absolute", bottom: "10%", right: "20%", width: 300, height: 300, background: "radial-gradient(ellipse, rgba(16,185,129,0.12) 0%, transparent 65%)", borderRadius: "50%", pointerEvents: "none" }} />
-            <div style={{ position: "absolute", top: "50%", left: "50%", transform: "translate(-50%,-50%)", width: 500, height: 600, background: "radial-gradient(ellipse, rgba(99,102,241,0.1) 0%, transparent 70%)", borderRadius: "50%", pointerEvents: "none" }} />
-            {/* Fine grid */}
-            <div style={{ position: "absolute", inset: 0, backgroundImage: "linear-gradient(rgba(255,255,255,0.025) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.025) 1px, transparent 1px)", backgroundSize: "40px 40px", pointerEvents: "none" }} />
+            {/* Subtle dot-grid background texture */}
+            <div style={{ position: "absolute", inset: 0, backgroundImage: "radial-gradient(circle, rgba(99,102,241,0.07) 1px, transparent 1px)", backgroundSize: "28px 28px", pointerEvents: "none" }} />
+
+            {/* Ambient glow behind doc */}
+            <div style={{ position: "absolute", top: "50%", left: "50%", transform: "translate(-50%,-50%)", width: 600, height: 700, background: "radial-gradient(ellipse, rgba(99,102,241,0.08) 0%, transparent 70%)", borderRadius: "50%", pointerEvents: "none" }} />
 
             {/* Top bar */}
-            <div className="shrink-0 flex items-center justify-between px-5 py-3 relative z-10" style={{ borderBottom: "1px solid rgba(255,255,255,0.08)", background: "rgba(0,0,0,0.25)", backdropFilter: "blur(12px)" }}>
+            <div className="shrink-0 flex items-center justify-between px-5 py-3 relative z-10" style={{ borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
               <div className="flex items-center gap-3">
-                <div className="flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest" style={{ background: "linear-gradient(135deg,rgba(99,102,241,0.3),rgba(139,92,246,0.3))", color: "#c4b5fd", border: "1px solid rgba(139,92,246,0.4)" }}>
-                  ✦ {(typeLabels[form.type || docType] || "Document").toUpperCase()}
+                {/* Doc type badge */}
+                <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest" style={{ background: "rgba(99,102,241,0.15)", color: "#a5b4fc", border: "1px solid rgba(99,102,241,0.25)" }}>
+                  <span>{(typeLabels[form.type || docType] || "Document").toUpperCase()}</span>
                 </div>
                 <div>
-                  <p className="text-white font-bold text-sm leading-tight">{form.number || "Draft"}</p>
-                  {form.customer_name && <p className="text-white/40 text-[11px]">for {form.customer_name}</p>}
+                  <p className="text-white/80 font-semibold text-sm leading-tight">{form.number || "Draft"}</p>
+                  {form.customer_name && <p className="text-white/30 text-[11px]">for {form.customer_name}</p>}
                 </div>
               </div>
-              <button className="w-8 h-8 rounded-full flex items-center justify-center font-bold text-white/40 hover:text-white transition-all text-sm" style={{ border: "1px solid rgba(255,255,255,0.12)", background: "rgba(255,255,255,0.05)" }} onClick={() => setShowPdfPreview(false)}>✕</button>
+              <button className="w-8 h-8 rounded-full flex items-center justify-center text-white/30 hover:text-white hover:bg-white/10 transition-all text-base leading-none" style={{ border: "1px solid rgba(255,255,255,0.1)" }} onClick={() => setShowPdfPreview(false)}>✕</button>
             </div>
 
             {/* Waybill sign banners */}
             {(form.type || docType) === "waybill" && pdfMode === "soft" && !customerSig && (
-              <div className="shrink-0 relative z-10 flex items-center justify-between px-5 py-2.5" style={{ background: "linear-gradient(135deg,rgba(5,150,105,0.9),rgba(6,95,70,0.9))", backdropFilter: "blur(8px)" }}>
+              <div className="shrink-0 relative z-10 flex items-center justify-between px-5 py-2.5" style={{ background: "rgba(5,150,105,0.85)", backdropFilter: "blur(8px)" }}>
                 <div className="flex items-center gap-2 text-white">
                   <PenLine className="h-4 w-4" />
                   <span className="font-bold text-sm">Receiver Signature Required</span>
@@ -1470,7 +1460,7 @@ export default function CreateDocument() {
               </div>
             )}
             {(form.type || docType) === "waybill" && pdfMode === "soft" && customerSig && (
-              <div className="shrink-0 relative z-10 flex items-center justify-between px-5 py-2.5" style={{ background: "linear-gradient(135deg,rgba(4,120,87,0.9),rgba(6,95,70,0.9))", backdropFilter: "blur(8px)" }}>
+              <div className="shrink-0 relative z-10 flex items-center justify-between px-5 py-2.5" style={{ background: "rgba(4,120,87,0.85)", backdropFilter: "blur(8px)" }}>
                 <div className="flex items-center gap-2 text-white">
                   <CheckCircle2 className="h-4 w-4 text-emerald-300" />
                   <span className="font-bold text-sm">Document Signed</span>
@@ -1480,24 +1470,21 @@ export default function CreateDocument() {
             )}
 
             {/* Document stage */}
-            <div className="flex-1 flex flex-col items-center justify-center relative z-10" style={{ padding: "12px 24px 16px" }}>
-
-              {/* Floating label */}
-              <div className="mb-3 flex items-center gap-3">
-                <div style={{ flex: 1, height: 1, background: "linear-gradient(90deg, transparent, rgba(139,92,246,0.4))" }} />
-                <span className="text-[10px] font-semibold tracking-[0.2em] uppercase px-3 py-1 rounded-full" style={{ color: "#a78bfa", background: "rgba(139,92,246,0.1)", border: "1px solid rgba(139,92,246,0.2)" }}>A4 · Live Preview</span>
-                <div style={{ flex: 1, height: 1, background: "linear-gradient(90deg, rgba(139,92,246,0.4), transparent)" }} />
+            <div className="flex-1 flex flex-col items-center justify-center relative z-10" style={{ padding: "16px 24px 20px" }}>
+              {/* Page counter label */}
+              <div className="mb-3 flex items-center gap-2">
+                <div className="h-px flex-1" style={{ background: "rgba(255,255,255,0.06)" }} />
+                <span className="text-[10px] text-white/20 font-medium tracking-widest uppercase px-2">Page 1 of 1 · A4</span>
+                <div className="h-px flex-1" style={{ background: "rgba(255,255,255,0.06)" }} />
               </div>
 
-              {/* Document with premium depth effect */}
+              {/* Document with layered shadow for depth */}
               <div style={{ position: "relative", flexShrink: 0 }}>
-                {/* Glow ring behind document */}
-                <div style={{ position: "absolute", inset: -8, background: "radial-gradient(ellipse, rgba(99,102,241,0.25) 0%, transparent 70%)", borderRadius: 16, pointerEvents: "none", filter: "blur(8px)" }} />
-                {/* Stacked paper layers */}
-                <div style={{ position: "absolute", bottom: -8, left: 8, right: -8, height: "100%", background: "rgba(255,255,255,0.03)", borderRadius: 10, border: "1px solid rgba(255,255,255,0.05)" }} />
-                <div style={{ position: "absolute", bottom: -4, left: 4, right: -4, height: "100%", background: "rgba(255,255,255,0.06)", borderRadius: 9, border: "1px solid rgba(255,255,255,0.07)" }} />
-                {/* Main document */}
-                <div style={{ width: 794 * pdfModalScale, height: 1123 * pdfModalScale, overflow: "hidden", borderRadius: 8, position: "relative", boxShadow: "0 0 0 1px rgba(255,255,255,0.1), 0 30px 80px rgba(0,0,0,0.9), 0 0 60px rgba(99,102,241,0.15)" }}>
+                {/* Back page shadow layers for paper stack illusion */}
+                <div style={{ position: "absolute", bottom: -6, left: 6, right: -6, height: "100%", background: "rgba(255,255,255,0.04)", borderRadius: 8, border: "1px solid rgba(255,255,255,0.06)" }} />
+                <div style={{ position: "absolute", bottom: -3, left: 3, right: -3, height: "100%", background: "rgba(255,255,255,0.07)", borderRadius: 8, border: "1px solid rgba(255,255,255,0.08)" }} />
+                {/* Main doc */}
+                <div style={{ width: 794 * pdfModalScale, height: 1123 * pdfModalScale, overflow: "hidden", borderRadius: 8, boxShadow: "0 40px 100px rgba(0,0,0,0.8), 0 0 0 1px rgba(255,255,255,0.08)", position: "relative" }}>
                   <div style={{ width: 794, height: 1123, transformOrigin: "top left", transform: `scale(${pdfModalScale})` }}>
                     <div ref={pdfRef} style={{ width: 794 }}>
                       <DocumentPreview
@@ -1517,7 +1504,8 @@ export default function CreateDocument() {
                 </div>
               </div>
 
-              <p className="mt-4 text-[10px] tracking-widest uppercase" style={{ color: "rgba(255,255,255,0.12)" }}>click outside to close</p>
+              {/* Bottom hint */}
+              <p className="mt-4 text-[10px] text-white/15 tracking-wide">Click outside to close</p>
             </div>
           </div>
           {/* Inline Receiver Signature Overlay (waybill soft signage) */}
