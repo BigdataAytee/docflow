@@ -769,11 +769,8 @@ const SHADOW_MAP = {
 
 // ─── Layout 10: Sikky ────────────────────────────────────────────────────────
 function SikkyDoc({ form, items, calcs, sym, docType, managerSig, customerSig, T }) {
-  const label = TYPE_LABELS[docType] || "INVOICE";
-  const amountLabel = AMOUNT_LABEL[docType] || "BALANCE DUE";
-  const showPrice = docType !== "waybill";
   const accent = T.accentColor || "#d97706";
-  const sidebarBg = "#fde8d0"; // peach/cream left panel
+  const sidebarBg = "#fde8d0";
 
   const fmtDateShort = (d) => {
     if (!d) return "";
@@ -782,156 +779,322 @@ function SikkyDoc({ form, items, calcs, sym, docType, managerSig, customerSig, T
     return dt.toLocaleDateString("en-GB", { day: "2-digit", month: "2-digit", year: "numeric" });
   };
 
-  return (
-    <div style={{ background: "#fff", minHeight: 1123, display: "flex", flexDirection: "row", fontFamily: "'Times New Roman', Times, serif", fontSize: 13 }}>
+  // Superscript ordinal date: "19TH June 2026."
+  const fmtDateLong = (d) => {
+    if (!d) return "";
+    const dt = new Date(d);
+    if (isNaN(dt)) return d;
+    const day = dt.getDate();
+    const suffix = [,"st","nd","rd"][day % 10 > 3 || Math.floor(day / 10) === 1 ? 0 : day % 10] || "th";
+    const months = ["January","February","March","April","May","June","July","August","September","October","November","December"];
+    return { day, suffix, month: months[dt.getMonth()], year: dt.getFullYear() };
+  };
 
-      {/* ── Wide peach left sidebar strip ── */}
-      <div style={{ width: 100, background: sidebarBg, flexShrink: 0, alignSelf: "stretch" }} />
+  // Number to words (simplified, good up to millions)
+  const numToWords = (n) => {
+    const ones = ["","One","Two","Three","Four","Five","Six","Seven","Eight","Nine","Ten","Eleven","Twelve","Thirteen","Fourteen","Fifteen","Sixteen","Seventeen","Eighteen","Nineteen"];
+    const tens = ["","","Twenty","Thirty","Forty","Fifty","Sixty","Seventy","Eighty","Ninety"];
+    const toWords = (num) => {
+      if (num === 0) return "";
+      if (num < 20) return ones[num];
+      if (num < 100) return tens[Math.floor(num/10)] + (num % 10 ? " " + ones[num % 10] : "");
+      if (num < 1000) return ones[Math.floor(num/100)] + " Hundred" + (num % 100 ? " " + toWords(num % 100) : "");
+      if (num < 1000000) return toWords(Math.floor(num/1000)) + " Thousand" + (num % 1000 ? " " + toWords(num % 1000) : "");
+      return toWords(Math.floor(num/1000000)) + " Million" + (num % 1000000 ? " " + toWords(num % 1000000) : "");
+    };
+    const int = Math.floor(Math.abs(n));
+    const dec = Math.round((Math.abs(n) - int) * 100);
+    let result = toWords(int) || "Zero";
+    if (dec > 0) result += " and " + toWords(dec) + " Kobo";
+    return result + " Only";
+  };
 
-      {/* ── Main content area ── */}
-      <div style={{ flex: 1, display: "flex", flexDirection: "column" }}>
-
-        {/* ── HEADER: logo left, office address right ── */}
-        <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", padding: "24px 40px 16px 24px" }}>
-          {/* Logo / company name */}
-          <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-start" }}>
-            {form.logo_url
-              ? <img src={form.logo_url} alt="logo" style={{ maxHeight: 90, maxWidth: 200, objectFit: "contain" }} />
-              : <div style={{ fontSize: 32, fontWeight: 900, color: accent, fontFamily: "serif" }}>{form.company_name || "Company"}</div>
-            }
-          </div>
-          {/* Office address block */}
-          <div style={{ textAlign: "left", maxWidth: 320 }}>
-            <div style={{ fontSize: 10, color: accent, fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.8, marginBottom: 4, borderLeft: `2px solid ${accent}`, paddingLeft: 6 }}>OFFICE:</div>
-            {form.company_address && <div style={{ fontSize: 10, color: "#1a1a1a", whiteSpace: "pre-line", lineHeight: 1.6 }}>{form.company_address}</div>}
-            {form.company_phone && <div style={{ fontSize: 10, color: "#1a1a1a", marginTop: 2 }}>Tel: {form.company_phone}</div>}
-            {form.company_email && <div style={{ fontSize: 10, color: "#2563eb", marginTop: 2 }}>Email: <span style={{ color: "#2563eb", textDecoration: "underline" }}>{form.company_email}</span></div>}
-            {form.company_website && <div style={{ fontSize: 10, color: "#2563eb", marginTop: 1 }}>{form.company_website}</div>}
-          </div>
+  // ── Shared header (same for all doc types) ──
+  const Header = () => (
+    <>
+      <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", padding: "24px 40px 16px 24px" }}>
+        <div>
+          {form.logo_url
+            ? <img src={form.logo_url} alt="logo" style={{ maxHeight: 90, maxWidth: 220, objectFit: "contain" }} />
+            : <div style={{ fontSize: 32, fontWeight: 900, color: accent, fontFamily: "serif" }}>{form.company_name || "Company"}</div>
+          }
         </div>
+        <div style={{ textAlign: "left", maxWidth: 320 }}>
+          <div style={{ fontSize: 10, color: accent, fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.8, marginBottom: 4, borderLeft: `2px solid ${accent}`, paddingLeft: 6 }}>OFFICE:</div>
+          {form.company_address && <div style={{ fontSize: 10, color: "#1a1a1a", whiteSpace: "pre-line", lineHeight: 1.6 }}>{form.company_address}</div>}
+          {form.company_phone && <div style={{ fontSize: 10, color: "#1a1a1a", marginTop: 2 }}>Tel: {form.company_phone}</div>}
+          {form.company_email && <div style={{ fontSize: 10, color: "#2563eb", marginTop: 2 }}>Email: <span style={{ textDecoration: "underline" }}>{form.company_email}</span></div>}
+          {form.company_website && <div style={{ fontSize: 10, color: "#2563eb", marginTop: 1 }}>{form.company_website}</div>}
+        </div>
+      </div>
+      {/* Tagline bar — shown when notes present */}
+      {form.notes && (
+        <div style={{ padding: "6px 40px 6px 24px", borderTop: "1px solid #e5e7eb", borderBottom: "1px solid #e5e7eb" }}>
+          <div style={{ fontSize: 11, color: accent, fontWeight: 700, textAlign: "center" }}>{form.notes}</div>
+        </div>
+      )}
+    </>
+  );
 
-        {/* ── Tagline / specialisation bar ── */}
-        {form.notes && (
-          <div style={{ padding: "8px 40px 8px 24px", borderTop: "1px solid #e5e7eb", borderBottom: "1px solid #e5e7eb" }}>
-            <div style={{ fontSize: 11, color: accent, fontWeight: 700, textAlign: "center", letterSpacing: 0.3 }}>{form.notes}</div>
+  // ── Shared signature footer ──
+  const SigRow = () => {
+    const showCustomer = docType === "waybill" || docType === "quotation" || docType === "invoice";
+    return (
+      <div style={{ padding: "28px 40px 32px 24px", display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+        <div style={{ minWidth: 180 }}>
+          {(managerSig || form?.manager_signature)
+            ? <img src={managerSig || form.manager_signature} alt="" style={{ height: 55, objectFit: "contain", display: "block", marginBottom: 6 }} />
+            : <div style={{ height: 40 }} />
+          }
+          <div style={{ borderBottom: "1px dotted #555", width: 200, marginBottom: 5 }} />
+          <div style={{ fontSize: 12, color: "#111" }}>{SIG_LABEL[docType] || "Manager's Signature"}</div>
+          {form?.manager_name && <div style={{ fontSize: 11, color: "#555", marginTop: 2 }}>{form.manager_name}</div>}
+        </div>
+        {showCustomer && (
+          <div style={{ minWidth: 180 }}>
+            {(customerSig || form?.customer_signature)
+              ? <img src={customerSig || form.customer_signature} alt="" style={{ height: 55, objectFit: "contain", display: "block", marginBottom: 6 }} />
+              : <div style={{ height: 40 }} />
+            }
+            <div style={{ borderBottom: "1px dotted #555", width: 200, marginBottom: 5 }} />
+            <div style={{ fontSize: 12, color: "#111" }}>{SIG2_LABEL[docType] || "Customer's Signature"}</div>
+            {docType === "waybill" && form?.receiver_name && <div style={{ fontSize: 11, color: "#555", marginTop: 2 }}>{form.receiver_name}</div>}
+            {docType === "waybill" && !form?.receiver_date && <div style={{ fontSize: 9, color: "#bbb", marginTop: 2 }}>Name: ____________  Date: ____________</div>}
+            {docType === "waybill" && form?.receiver_date && <div style={{ fontSize: 9, color: "#555", marginTop: 2 }}>Date: {form.receiver_date}{form.receiver_time ? `  ·  ${form.receiver_time}` : ""}</div>}
           </div>
         )}
+      </div>
+    );
+  };
 
-        {/* ── BODY ── */}
-        <div style={{ padding: "24px 40px 20px 24px", flex: 1 }}>
+  // ══════════════════════════════════════════════
+  // WAYBILL — S/N, QTY, DESCRIPTION only, no prices
+  // ══════════════════════════════════════════════
+  if (docType === "waybill") {
+    return (
+      <div style={{ background: "#fff", minHeight: 1123, display: "flex", flexDirection: "row", fontFamily: "'Times New Roman', Times, serif", fontSize: 13 }}>
+        <div style={{ width: 100, background: sidebarBg, flexShrink: 0, alignSelf: "stretch" }} />
+        <div style={{ flex: 1, display: "flex", flexDirection: "column" }}>
+          <Header />
+          <div style={{ padding: "20px 40px 16px 24px" }}>
+            {/* To: + meta */}
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 24, gap: 20 }}>
+              <div style={{ fontSize: 13, color: "#111", lineHeight: 1.8 }}>
+                {form.customer_name && <div>To:&nbsp;&nbsp;{form.customer_name}</div>}
+                {form.customer_company && <div style={{ paddingLeft: 32 }}>{form.customer_company}</div>}
+                {form.customer_address && form.customer_address.split("\n").map((l, i) => <div key={i} style={{ paddingLeft: 32 }}>{l}</div>)}
+              </div>
+              <div style={{ fontSize: 13, color: "#111", lineHeight: 1.8, minWidth: 190, flexShrink: 0 }}>
+                {form.number && <div style={{ fontWeight: 700 }}>{form.number}</div>}
+                {form.lpo_number && <div>L.P.O:{form.lpo_number}</div>}
+                {form.issue_date && <div>Date:&nbsp;&nbsp;{fmtDateShort(form.issue_date)}</div>}
+                {form.tax_number && <div>TIN NO: {form.tax_number}</div>}
+              </div>
+            </div>
+            {/* Title */}
+            <div style={{ textAlign: "center", fontWeight: 700, fontSize: 15, marginBottom: 16, letterSpacing: 2 }}>WAYBILL</div>
+            {/* Table */}
+            <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
+              <thead>
+                <tr>
+                  <th style={{ textAlign: "left", padding: "6px 8px", fontWeight: 700 }}>S/N</th>
+                  <th style={{ textAlign: "left", padding: "6px 8px", fontWeight: 700 }}>QTY</th>
+                  <th style={{ textAlign: "left", padding: "6px 8px", fontWeight: 700 }}>DESCRIPTION</th>
+                </tr>
+                <tr><td colSpan={3} style={{ borderBottom: "1px solid #111", padding: 0 }} /></tr>
+              </thead>
+              <tbody>
+                {items.length > 0 ? items.map((item, i) => (
+                  <tr key={i}>
+                    <td style={{ padding: "8px 8px 4px", verticalAlign: "top" }}>{i + 1}.</td>
+                    <td style={{ padding: "8px 8px 4px", verticalAlign: "top" }}>{String(parseFloat(item.quantity) || 0).padStart(2,"0")}</td>
+                    <td style={{ padding: "8px 8px 4px", verticalAlign: "top" }}>{item.description || "—"}</td>
+                  </tr>
+                )) : <tr><td colSpan={3} style={{ padding: "20px 8px", textAlign: "center", color: "#9ca3af" }}>No items</td></tr>}
+              </tbody>
+            </table>
+          </div>
+          <div style={{ flex: 1 }} />
+          <SigRow />
+        </div>
+      </div>
+    );
+  }
 
-          {/* To: block (left) + Doc number / LPO / Date / TIN (right) */}
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 28, gap: 20 }}>
-            {/* Left: addressee */}
+  // ══════════════════════════════════════════════
+  // QUOTATION — letter style with date, Dear Sir, subject line, prices, terms
+  // ══════════════════════════════════════════════
+  if (docType === "quotation") {
+    const dateObj = fmtDateLong(form.issue_date);
+    return (
+      <div style={{ background: "#fff", minHeight: 1123, display: "flex", flexDirection: "row", fontFamily: "'Times New Roman', Times, serif", fontSize: 13 }}>
+        <div style={{ width: 100, background: sidebarBg, flexShrink: 0, alignSelf: "stretch" }} />
+        <div style={{ flex: 1, display: "flex", flexDirection: "column" }}>
+          <Header />
+          <div style={{ padding: "20px 40px 16px 24px" }}>
+            {/* Date superscript */}
+            {dateObj && (
+              <div style={{ fontSize: 13, color: "#111", marginBottom: 14 }}>
+                {dateObj.day}<sup style={{ fontSize: 9 }}>{dateObj.suffix}</sup> {dateObj.month} {dateObj.year}.
+              </div>
+            )}
+            {/* Addressee */}
+            <div style={{ fontSize: 13, color: "#111", lineHeight: 1.8, marginBottom: 18 }}>
+              {form.customer_name && <div>{form.customer_name}</div>}
+              {form.customer_company && <div>{form.customer_company}</div>}
+              {form.customer_address && form.customer_address.split("\n").map((l, i) => <div key={i}>{l}</div>)}
+            </div>
+            {/* Dear Sir */}
+            <div style={{ fontSize: 13, marginBottom: 14 }}>Dear Sir,</div>
+            {/* Subject */}
+            <div style={{ textAlign: "center", fontWeight: 700, fontSize: 13, textDecoration: "underline", marginBottom: 16, textTransform: "uppercase" }}>
+              QUOTATION{form.lpo_number ? ` FOR ${form.lpo_number}` : ""}
+            </div>
+            {/* Table */}
+            <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
+              <thead>
+                <tr>
+                  <th style={{ textAlign: "left", padding: "6px 8px", fontWeight: 700 }}>S/N</th>
+                  <th style={{ textAlign: "left", padding: "6px 8px", fontWeight: 700 }}>QTY</th>
+                  <th style={{ textAlign: "left", padding: "6px 8px", fontWeight: 700 }}>DESCRIPTION</th>
+                  <th style={{ textAlign: "right", padding: "6px 8px", fontWeight: 700 }}>UNIT PRICE</th>
+                  <th style={{ textAlign: "right", padding: "6px 8px", fontWeight: 700 }}>AMOUNT</th>
+                </tr>
+                <tr><td colSpan={5} style={{ borderBottom: "1px solid #111", padding: 0 }} /></tr>
+              </thead>
+              <tbody>
+                {items.length > 0 ? items.map((item, i) => (
+                  <tr key={i}>
+                    <td style={{ padding: "8px 8px 4px", verticalAlign: "top" }}>{i + 1}.</td>
+                    <td style={{ padding: "8px 8px 4px", verticalAlign: "top" }}>{String(parseFloat(item.quantity) || 0).padStart(2,"0")}</td>
+                    <td style={{ padding: "8px 8px 4px", verticalAlign: "top" }}>{item.description || "—"}</td>
+                    <td style={{ padding: "8px 8px 4px", verticalAlign: "top", textAlign: "right" }}>{sym}{fmt(item.unit_price)}</td>
+                    <td style={{ padding: "8px 8px 4px", verticalAlign: "top", textAlign: "right", fontWeight: 700 }}>{sym}{fmt(item.amount)}</td>
+                  </tr>
+                )) : <tr><td colSpan={5} style={{ padding: "20px 8px", textAlign: "center", color: "#9ca3af" }}>No items</td></tr>}
+              </tbody>
+            </table>
+            {/* Terms block */}
+            {(form.terms || form.payment_instructions) && (
+              <div style={{ marginTop: 24, fontSize: 13, color: "#111", lineHeight: 2 }}>
+                {form.terms && <div>DELIVERY TIME: {form.terms}</div>}
+                {form.payment_instructions && <div style={{ whiteSpace: "pre-line" }}>{form.payment_instructions}</div>}
+              </div>
+            )}
+          </div>
+          <div style={{ flex: 1 }} />
+          <SigRow />
+        </div>
+      </div>
+    );
+  }
+
+  // ══════════════════════════════════════════════
+  // INVOICE & RECEIPT — bordered table, TOTAL/VAT/WHT/GRAND TOTAL rows, amount in words
+  // ══════════════════════════════════════════════
+  const withholdingAmt = calcs?.withholdingVatAmt || 0;
+  const grandTotal = calcs?.netPayable ?? calcs?.total ?? 0;
+  const totalAmt = calcs?.total ?? 0;
+  const taxAmt = calcs?.taxAmt ?? 0;
+  const isReceipt = docType === "receipt";
+
+  return (
+    <div style={{ background: "#fff", minHeight: 1123, display: "flex", flexDirection: "row", fontFamily: "'Times New Roman', Times, serif", fontSize: 13 }}>
+      <div style={{ width: 100, background: sidebarBg, flexShrink: 0, alignSelf: "stretch" }} />
+      <div style={{ flex: 1, display: "flex", flexDirection: "column" }}>
+        <Header />
+        <div style={{ padding: "16px 40px 16px 24px" }}>
+          {/* Tagline centered if no notes (notes shown in Header) */}
+          {/* Title */}
+          <div style={{ textAlign: "center", fontWeight: 700, fontSize: 15, marginBottom: 14, letterSpacing: 2 }}>
+            {isReceipt ? "RECEIPT" : "INVOICE"}
+          </div>
+          {/* To: + meta two-column */}
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 16, gap: 20 }}>
             <div style={{ fontSize: 13, color: "#111", lineHeight: 1.8 }}>
-              {form.customer_name && <div>To:&nbsp; {form.customer_name}</div>}
-              {form.customer_company && <div style={{ paddingLeft: 24 }}>{form.customer_company}</div>}
-              {form.customer_address && form.customer_address.split("\n").map((l, i) => (
-                <div key={i} style={{ paddingLeft: 24 }}>{l}</div>
-              ))}
+              {form.customer_name && <div>TO:&nbsp;&nbsp;&nbsp;{form.customer_name},</div>}
+              {form.customer_company && <div style={{ paddingLeft: 42 }}>{form.customer_company}</div>}
+              {form.customer_address && form.customer_address.split("\n").map((l, i) => <div key={i} style={{ paddingLeft: 42 }}>{l}</div>)}
             </div>
-            {/* Right: doc meta */}
-            <div style={{ fontSize: 13, color: "#111", lineHeight: 1.8, textAlign: "left", minWidth: 200, flexShrink: 0 }}>
-              {form.number && <div style={{ fontWeight: 700, fontSize: 14, marginBottom: 2 }}>{form.number}</div>}
+            <div style={{ fontSize: 13, color: "#111", lineHeight: 1.8, minWidth: 190, flexShrink: 0 }}>
+              {form.number && <div style={{ fontWeight: 700 }}>{form.number}</div>}
               {form.lpo_number && <div>L.P.O: {form.lpo_number}</div>}
-              {form.issue_date && <div>Date:&nbsp;&nbsp; {fmtDateShort(form.issue_date)}</div>}
+              {form.issue_date && <div>DATE:&nbsp;&nbsp; {fmtDateShort(form.issue_date)}</div>}
               {form.tax_number && <div>TIN NO: {form.tax_number}</div>}
-              {form.due_date && DUE_LABEL[docType] && <div>{DUE_LABEL[docType]}: {fmtDateShort(form.due_date)}</div>}
+              {form.due_date && <div>Due: {fmtDateShort(form.due_date)}</div>}
             </div>
           </div>
-
-          {/* ── Document type title centered ── */}
-          <div style={{ textAlign: "center", fontWeight: 700, fontSize: 15, marginBottom: 20, letterSpacing: 2, textTransform: "uppercase" }}>
-            {label}
-          </div>
-
-          {/* ── Items table ── */}
-          <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
+          {/* Bordered items table */}
+          <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13, border: "1px solid #111" }}>
             <thead>
-              <tr>
-                <th style={{ textAlign: "left", padding: "6px 8px", fontWeight: 700, fontSize: 13 }}>S/N</th>
-                <th style={{ textAlign: "left", padding: "6px 8px", fontWeight: 700, fontSize: 13 }}>QTY</th>
-                <th style={{ textAlign: "left", padding: "6px 8px", fontWeight: 700, fontSize: 13 }}>DESCRIPTION</th>
-                {showPrice && <th style={{ textAlign: "right", padding: "6px 8px", fontWeight: 700, fontSize: 13 }}>UNIT PRICE</th>}
-                {showPrice && <th style={{ textAlign: "right", padding: "6px 8px", fontWeight: 700, fontSize: 13 }}>AMOUNT</th>}
+              <tr style={{ borderBottom: "1px solid #111" }}>
+                <th style={{ textAlign: "left", padding: "7px 10px", fontWeight: 700, borderRight: "1px solid #111", width: "8%" }}>QTY</th>
+                <th style={{ textAlign: "left", padding: "7px 10px", fontWeight: 700, borderRight: "1px solid #111" }}>DESCRIPTION</th>
+                <th style={{ textAlign: "right", padding: "7px 10px", fontWeight: 700, borderRight: "1px solid #111", width: "20%" }}>UNIT PRICE</th>
+                <th style={{ textAlign: "right", padding: "7px 10px", fontWeight: 700, width: "20%" }}>AMOUNT</th>
               </tr>
-              <tr><td colSpan={showPrice ? 5 : 3} style={{ borderBottom: "1px solid #111", padding: 0 }} /></tr>
             </thead>
             <tbody>
               {items.length > 0 ? items.map((item, i) => (
-                <tr key={i}>
-                  <td style={{ padding: "10px 8px 6px", verticalAlign: "top", color: "#111", fontSize: 13 }}>{i + 1}.</td>
-                  <td style={{ padding: "10px 8px 6px", verticalAlign: "top", color: "#111", fontSize: 13 }}>{(parseFloat(item.quantity) || 0).toFixed(0).padStart(2,"0")}</td>
-                  <td style={{ padding: "10px 8px 6px", verticalAlign: "top", color: "#111", fontSize: 13 }}>{item.description || "—"}</td>
-                  {showPrice && <td style={{ padding: "10px 8px 6px", verticalAlign: "top", textAlign: "right", color: "#111", fontSize: 13 }}>{sym}{fmt(item.unit_price)}</td>}
-                  {showPrice && <td style={{ padding: "10px 8px 6px", verticalAlign: "top", textAlign: "right", color: "#111", fontWeight: 700, fontSize: 13 }}>{sym}{fmt(item.amount)}</td>}
+                <tr key={i} style={{ borderBottom: "1px solid #ddd" }}>
+                  <td style={{ padding: "8px 10px", verticalAlign: "top", borderRight: "1px solid #ddd" }}>{String(parseFloat(item.quantity) || 0).padStart(2,"0")}</td>
+                  <td style={{ padding: "8px 10px", verticalAlign: "top", borderRight: "1px solid #ddd" }}>{item.description || "—"}</td>
+                  <td style={{ padding: "8px 10px", verticalAlign: "top", textAlign: "right", borderRight: "1px solid #ddd" }}>{sym}{fmt(item.unit_price)}</td>
+                  <td style={{ padding: "8px 10px", verticalAlign: "top", textAlign: "right" }}>{sym}{fmt(item.amount)}</td>
                 </tr>
-              )) : (
-                <tr><td colSpan={showPrice ? 5 : 3} style={{ padding: "20px 8px", textAlign: "center", color: "#9ca3af", fontSize: 12 }}>No items added yet</td></tr>
+              )) : null}
+              {/* Empty filler rows */}
+              {Array.from({ length: Math.max(0, 8 - items.length) }).map((_, i) => (
+                <tr key={`empty-${i}`} style={{ borderBottom: "1px solid #ddd" }}>
+                  <td style={{ padding: "8px 10px", borderRight: "1px solid #ddd" }}>&nbsp;</td>
+                  <td style={{ padding: "8px 10px", borderRight: "1px solid #ddd" }}>&nbsp;</td>
+                  <td style={{ padding: "8px 10px", borderRight: "1px solid #ddd" }}>&nbsp;</td>
+                  <td style={{ padding: "8px 10px" }}>&nbsp;</td>
+                </tr>
+              ))}
+              {/* Totals rows */}
+              <tr style={{ borderTop: "1px solid #111" }}>
+                <td colSpan={2} style={{ padding: "6px 10px", borderRight: "1px solid #ddd" }} />
+                <td style={{ padding: "6px 10px", fontWeight: 700, borderRight: "1px solid #ddd", borderLeft: "1px solid #ddd" }}>TOTAL</td>
+                <td style={{ padding: "6px 10px", textAlign: "right", fontWeight: 700 }}>{sym}{fmt(totalAmt)}</td>
+              </tr>
+              {taxAmt > 0 && (
+                <tr style={{ borderTop: "1px solid #ddd" }}>
+                  <td colSpan={2} style={{ padding: "6px 10px", borderRight: "1px solid #ddd" }} />
+                  <td style={{ padding: "6px 10px", fontWeight: 700, borderRight: "1px solid #ddd", borderLeft: "1px solid #ddd" }}>VAT</td>
+                  <td style={{ padding: "6px 10px", textAlign: "right", fontWeight: 700 }}>{sym}{fmt(taxAmt)}</td>
+                </tr>
               )}
+              {withholdingAmt > 0 && (
+                <tr style={{ borderTop: "1px solid #ddd" }}>
+                  <td colSpan={2} style={{ padding: "6px 10px", borderRight: "1px solid #ddd" }} />
+                  <td style={{ padding: "6px 10px", fontWeight: 700, borderRight: "1px solid #ddd", borderLeft: "1px solid #ddd" }}>WHT</td>
+                  <td style={{ padding: "6px 10px", textAlign: "right", fontWeight: 700 }}>-{sym}{fmt(withholdingAmt)}</td>
+                </tr>
+              )}
+              <tr style={{ borderTop: "1px solid #111" }}>
+                <td colSpan={2} style={{ padding: "8px 10px", borderRight: "1px solid #ddd" }} />
+                <td style={{ padding: "8px 10px", fontWeight: 900, borderRight: "1px solid #ddd", borderLeft: "1px solid #ddd" }}>GRAND{"\n"}TOTAL</td>
+                <td style={{ padding: "8px 10px", textAlign: "right", fontWeight: 900 }}>{sym}{fmt(grandTotal)}</td>
+              </tr>
             </tbody>
           </table>
-
-          {/* ── Totals ── */}
-          {showPrice && calcs && (
-            <div style={{ marginTop: 20, display: "flex", justifyContent: "flex-end" }}>
-              <div style={{ width: 300, fontSize: 13 }}>
-                {(calcs.globalDiscAmt || 0) > 0 && <div style={{ display: "flex", justifyContent: "space-between", padding: "4px 0" }}><span>Discount</span><span>-{sym}{fmt(calcs.globalDiscAmt)}</span></div>}
-                {(calcs.taxAmt || 0) > 0 && <div style={{ display: "flex", justifyContent: "space-between", padding: "4px 0" }}><span>VAT ({form.tax_rate}%)</span><span>{sym}{fmt(calcs.taxAmt)}</span></div>}
-                {(parseFloat(form.shipping) || 0) > 0 && <div style={{ display: "flex", justifyContent: "space-between", padding: "4px 0" }}><span>Shipping</span><span>{sym}{fmt(form.shipping)}</span></div>}
-                <div style={{ display: "flex", justifyContent: "space-between", padding: "8px 0 4px", borderTop: "1px solid #555", fontWeight: 700, fontSize: 14, marginTop: 4 }}>
-                  <span>{amountLabel}</span><span>{sym}{fmt(calcs.total)}</span>
-                </div>
-              </div>
+          {/* Amount in words */}
+          {grandTotal > 0 && (
+            <div style={{ marginTop: 10, fontSize: 12, color: "#111", lineHeight: 1.8 }}>
+              <strong>AMOUNT IN WORDS:</strong> {numToWords(grandTotal)}.
             </div>
           )}
-
-          {/* ── Terms / delivery / payment notes ── */}
-          {(form.terms || form.payment_instructions) && (
-            <div style={{ marginTop: 24, fontSize: 12, color: "#333", lineHeight: 1.9 }}>
-              {form.terms && <div><strong>DELIVERY TIME:</strong> {form.terms}</div>}
-              {form.payment_instructions && <div style={{ marginTop: 4, whiteSpace: "pre-line" }}>{form.payment_instructions}</div>}
+          {/* Payment instructions */}
+          {form.payment_instructions && (
+            <div style={{ marginTop: 8, fontSize: 12, color: "#333", whiteSpace: "pre-line", lineHeight: 1.9 }}>
+              {form.payment_instructions}
             </div>
           )}
         </div>
-
-        {/* ── SIGNATURES — same rules as Sigs component ── */}
-        <div style={{ padding: "32px 40px 32px 24px", display: "flex", gap: 40, alignItems: "flex-start" }}>
-          {/* Primary / manager signature — always shown */}
-          <div style={{ minWidth: 180 }}>
-            {(managerSig || form?.manager_signature)
-              ? <img src={managerSig || form.manager_signature} alt="" style={{ height: 60, objectFit: "contain", display: "block", marginBottom: 6 }} />
-              : <div style={{ height: 60 }} />
-            }
-            <div style={{ borderBottom: "1px dotted #555", width: 180, marginBottom: 5 }} />
-            <div style={{ fontSize: 11, color: "#111", fontWeight: 600 }}>{SIG_LABEL[docType] || "Authorized Signatory"}</div>
-            {form?.manager_name && <div style={{ fontSize: 11, color: "#333", marginTop: 2 }}>{form.manager_name}</div>}
-            {form?.manager_title && <div style={{ fontSize: 10, color: "#777" }}>{form.manager_title}</div>}
-          </div>
-
-          {/* Secondary signature — only waybill and quotation */}
-          {(docType === "waybill" || docType === "quotation") && (
-            <div style={{ minWidth: 180 }}>
-              {(customerSig || form?.customer_signature)
-                ? <img src={customerSig || form.customer_signature} alt="" style={{ height: 60, objectFit: "contain", display: "block", marginBottom: 6 }} />
-                : <div style={{ height: 60 }} />
-              }
-              <div style={{ borderBottom: "1px dotted #555", width: 180, marginBottom: 5 }} />
-              <div style={{ fontSize: 11, color: "#111", fontWeight: 600 }}>{SIG2_LABEL[docType] || "Customer Signature"}</div>
-              {docType === "waybill" && (
-                <>
-                  <div style={{ fontSize: 11, color: "#333", marginTop: 2 }}>{form?.receiver_name || form?.customer_name || ""}</div>
-                  <div style={{ fontSize: 9, color: "#9ca3af", marginTop: 1 }}>
-                    {form?.receiver_date ? `Date: ${form.receiver_date}` : "Name: ____________  Date: ____________"}
-                    {form?.receiver_date && form?.receiver_time && `  ·  Time: ${form.receiver_time}`}
-                  </div>
-                </>
-              )}
-            </div>
-          )}
-        </div>
-
-      </div>{/* end main content */}
+        <div style={{ flex: 1 }} />
+        <SigRow />
+      </div>
     </div>
   );
 }
