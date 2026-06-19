@@ -157,16 +157,16 @@ export default function DocumentList() {
                 {deletingAll ? "Deleting…" : "Delete All"}
               </button>
             }
-            {type === "receipt" && documents.length > 0 &&
-            <button
-              onClick={() => setShowConvertConfirm(true)}
-              disabled={converting}
-              className="inline-flex items-center gap-2 bg-white/20 hover:bg-white/30 backdrop-blur-sm text-white px-5 py-2.5 rounded-2xl text-sm font-bold transition-all active:scale-95 w-fit border border-white/20 disabled:opacity-50 hidden">
-              
-                {converting ? <Loader2 className="h-4 w-4 animate-spin" /> : <GitMerge className="h-4 w-4" />}
-                {converting ? "Converting…" : "Convert All to Invoice"}
-              </button>
-            }
+            
+
+
+
+
+
+
+
+
+            
             <button
               onClick={() => navigate(`/documents/new?type=${type}`)}
               className="inline-flex items-center gap-2 bg-white/20 hover:bg-white/30 backdrop-blur-sm text-white px-5 py-2.5 rounded-2xl text-sm font-bold transition-all active:scale-95 w-fit border border-white/20">
