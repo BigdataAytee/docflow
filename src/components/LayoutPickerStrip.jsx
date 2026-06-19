@@ -1,82 +1,82 @@
-import { useRef, useState, useCallback } from "react";
-import { buildTheme, LAYOUTS } from "./TemplateSelector";
+import { useRef, useState } from "react";
+import { LAYOUTS } from "./TemplateSelector";
 import DocumentPreview from "./DocumentPreview";
 
-export default function LayoutPickerStrip({ layouts, colorSchemes, template, templateColor, onSelect, form, items, calcs, sym, docType, managerSig }) {
-  const stripRef = useRef(null);
+export default function LayoutPickerStrip({ layouts, template, templateColor, onSelect, form, items, calcs, sym, docType, managerSig }) {
+  const listRef = useRef(null);
   const isDragging = useRef(false);
-  const startX = useRef(0);
-  const scrollLeft = useRef(0);
-  const [dragged, setDragged] = useState(false);
+  const startY = useRef(0);
+  const scrollTop = useRef(0);
+  const didDrag = useRef(false);
 
-  // Mouse drag to scroll
-  const onMouseDown = (e) => {
+  const onPointerDown = (e) => {
     isDragging.current = true;
-    setDragged(false);
-    startX.current = e.pageX - stripRef.current.offsetLeft;
-    scrollLeft.current = stripRef.current.scrollLeft;
-    stripRef.current.style.cursor = "grabbing";
+    didDrag.current = false;
+    startY.current = e.clientY;
+    scrollTop.current = listRef.current.scrollTop;
+    listRef.current.setPointerCapture(e.pointerId);
+    listRef.current.style.cursor = "grabbing";
   };
 
-  const onMouseMove = useCallback((e) => {
+  const onPointerMove = (e) => {
     if (!isDragging.current) return;
-    e.preventDefault();
-    const x = e.pageX - stripRef.current.offsetLeft;
-    const walk = (x - startX.current) * 1.5;
-    stripRef.current.scrollLeft = scrollLeft.current - walk;
-    if (Math.abs(walk) > 4) setDragged(true);
-  }, []);
-
-  const onMouseUp = () => {
-    isDragging.current = false;
-    if (stripRef.current) stripRef.current.style.cursor = "grab";
+    const dy = startY.current - e.clientY;
+    if (Math.abs(dy) > 4) didDrag.current = true;
+    listRef.current.scrollTop = scrollTop.current + dy;
   };
 
-  const PREVIEW_W = 200;
-  const PREVIEW_H = 283; // A4 ratio: 200 * (1123/794)
+  const onPointerUp = () => {
+    isDragging.current = false;
+    if (listRef.current) listRef.current.style.cursor = "grab";
+  };
+
+  const CARD_W = 124;
+  const CARD_H = Math.round(CARD_W * (1123 / 794)); // A4 ratio ≈ 175px
 
   return (
-    <div className="shrink-0 relative z-10" style={{ borderTop: "1px solid rgba(255,255,255,0.08)" }}>
+    <div
+      className="shrink-0 flex flex-col h-full overflow-hidden"
+      style={{ width: CARD_W + 32, background: "linear-gradient(180deg,#0f172a 0%,#1e1b4b 100%)", borderRight: "1px solid rgba(255,255,255,0.07)" }}
+    >
       {/* Header */}
-      <div className="flex items-center justify-between px-5 py-2">
-        <div className="flex items-center gap-2">
-          <span className="text-[10px] font-bold uppercase tracking-widest text-white/40">Layout</span>
-          <span className="text-xs font-semibold text-indigo-300">{LAYOUTS[template]?.name}</span>
-        </div>
-        <span className="text-[10px] text-white/20 italic">← drag to browse →</span>
+      <div className="px-3 pt-4 pb-2 shrink-0 border-b border-white/10">
+        <p className="text-[9px] font-bold uppercase tracking-[0.15em] text-white/40">Layout</p>
+        <p className="text-[11px] font-semibold text-indigo-300 mt-0.5">{LAYOUTS[template]?.name || "Classic"}</p>
       </div>
 
-      {/* Scrollable strip */}
+      {/* Drag hint */}
+      <div className="px-3 py-1.5 shrink-0">
+        <p className="text-[9px] text-white/20 italic text-center">↕ drag to browse</p>
+      </div>
+
+      {/* Vertically scrollable card list */}
       <div
-        ref={stripRef}
-        className="flex gap-4 px-5 pb-4 overflow-x-auto select-none"
-        style={{ scrollbarWidth: "none", cursor: "grab" }}
-        onMouseDown={onMouseDown}
-        onMouseMove={onMouseMove}
-        onMouseUp={onMouseUp}
-        onMouseLeave={onMouseUp}
+        ref={listRef}
+        className="flex-1 overflow-y-auto overflow-x-hidden px-3 pb-4 space-y-3 select-none"
+        style={{ scrollbarWidth: "none", cursor: "grab", touchAction: "pan-y" }}
+        onPointerDown={onPointerDown}
+        onPointerMove={onPointerMove}
+        onPointerUp={onPointerUp}
+        onPointerLeave={onPointerUp}
       >
         {Object.values(layouts).map((l) => {
           const isActive = template === l.id;
-          const T = buildTheme(l.id, templateColor);
           return (
-            <button
+            <div
               key={l.id}
-              onMouseDown={(e) => e.stopPropagation()}
-              onClick={() => { if (!dragged) onSelect(l.id); }}
-              className="shrink-0 flex flex-col items-center gap-2 group"
-              style={{ userSelect: "none" }}
+              onClick={() => { if (!didDrag.current) onSelect(l.id); }}
+              className="shrink-0 flex flex-col items-center gap-1.5 cursor-pointer group"
             >
-              {/* Live mini preview */}
+              {/* Live document preview card */}
               <div
-                className={`overflow-hidden transition-all duration-200 ${
+                className={`overflow-hidden transition-all duration-200 w-full ${
                   isActive
-                    ? "ring-2 ring-indigo-400 shadow-xl shadow-indigo-500/40 scale-[1.03]"
-                    : "opacity-60 hover:opacity-90 hover:ring-1 hover:ring-white/25 hover:scale-[1.01]"
+                    ? "ring-2 ring-indigo-400 shadow-lg shadow-indigo-500/40 scale-[1.02]"
+                    : "opacity-55 hover:opacity-85 hover:ring-1 hover:ring-white/20"
                 }`}
-                style={{ width: PREVIEW_W, height: PREVIEW_H, background: "#fff", borderRadius: 4, pointerEvents: "none" }}
+                style={{ height: CARD_H, borderRadius: 4, background: "#fff", pointerEvents: "none" }}
               >
-                <div style={{ width: 794, height: 1123, transformOrigin: "top left", transform: `scale(${PREVIEW_W / 794})`, pointerEvents: "none" }}>
+                <div style={{ width: 794, transformOrigin: "top left", transform: `scale(${CARD_W / 794})`, pointerEvents: "none" }}>
                   <DocumentPreview
                     form={form}
                     items={items || []}
@@ -89,11 +89,11 @@ export default function LayoutPickerStrip({ layouts, colorSchemes, template, tem
                   />
                 </div>
               </div>
-              {/* Name label */}
-              <span className={`text-[11px] font-semibold leading-none transition-colors ${isActive ? "text-indigo-300" : "text-white/35 group-hover:text-white/60"}`}>
+              {/* Label */}
+              <span className={`text-[10px] font-semibold leading-none transition-colors ${isActive ? "text-indigo-300" : "text-white/30 group-hover:text-white/60"}`}>
                 {l.name}
               </span>
-            </button>
+            </div>
           );
         })}
       </div>

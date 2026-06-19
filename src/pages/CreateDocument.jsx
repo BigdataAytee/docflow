@@ -693,12 +693,10 @@ export default function CreateDocument() {
   // For the editor scroll area (not modal)
   const previewScale = Math.min(1, (Math.min(viewportWidth, 826) - 32) / 794);
   // Scale PDF to fill the right panel completely
-  const MODAL_LEFT_W = 160;
-  const MODAL_TOP_H = 56;    // top bar height
-  const STRIP_H = 210;       // bottom layout picker strip height
+  const MODAL_LEFT_W = 160 + 124 + 32; // colour panel + layout strip
+  const MODAL_TOP_H = 56;
   const availW = viewportWidth - MODAL_LEFT_W;
-  const availH = viewportHeight - MODAL_TOP_H - STRIP_H;
-  // Fit the full A4 page (794×1123) within the available area, keeping aspect ratio
+  const availH = viewportHeight - MODAL_TOP_H;
   const pdfModalScale = Math.min(availW / 794, availH / 1123);
 
   const L = DOC_LABELS[docType] || DOC_LABELS.invoice;
@@ -1362,7 +1360,23 @@ export default function CreateDocument() {
       {showPdfPreview && (
         <div className="fixed inset-0 z-50 flex" style={{ background: "radial-gradient(ellipse at 60% 40%, #0d1117 0%, #080b14 60%, #050709 100%)" }} onClick={() => setShowPdfPreview(false)}>
 
-          {/* ── Left panel: design controls ── */}
+          {/* ── Layout picker strip (far left, tall, draggable) ── */}
+          <div onClick={e => e.stopPropagation()}>
+            <LayoutPickerStrip
+              layouts={LAYOUTS}
+              template={template}
+              templateColor={templateColor}
+              onSelect={setTemplate}
+              form={form}
+              items={calcs.lineItems}
+              calcs={calcs}
+              sym={sym}
+              docType={form.type || docType}
+              managerSig={managerSig}
+            />
+          </div>
+
+          {/* ── Design controls panel ── */}
           <div className="shrink-0 flex flex-col h-full overflow-hidden" style={{ width: 160, background: "linear-gradient(180deg,#0f172a 0%,#1e1b4b 100%)" }} onClick={e => e.stopPropagation()}>
             {/* Panel header */}
             <div className="px-3 pt-4 pb-2.5 border-b border-white/10 shrink-0">
@@ -1370,13 +1384,6 @@ export default function CreateDocument() {
                 <Palette className="h-3.5 w-3.5 text-indigo-400" />
                 <span className="text-xs font-bold text-white tracking-wide">Design</span>
               </div>
-            </div>
-
-            {/* Layout section — selected name only */}
-            <div className="pt-3 pb-2 shrink-0 px-3">
-              <p className="text-[9px] font-bold uppercase tracking-[0.15em] text-white/40 mb-1">Layout</p>
-              <p className="text-[11px] font-semibold text-indigo-300">{LAYOUTS[template]?.name || "Classic"}</p>
-              <p className="text-[9px] text-white/30 mt-0.5">↓ Scroll picker below</p>
             </div>
 
             {/* Divider */}
@@ -1488,20 +1495,6 @@ export default function CreateDocument() {
               </div>
             </div>
 
-            {/* Bottom layout picker strip */}
-            <LayoutPickerStrip
-              layouts={LAYOUTS}
-              colorSchemes={COLOR_SCHEMES}
-              template={template}
-              templateColor={templateColor}
-              onSelect={setTemplate}
-              form={form}
-              items={calcs.lineItems}
-              calcs={calcs}
-              sym={sym}
-              docType={form.type || docType}
-              managerSig={managerSig}
-            />
           </div>
           {/* Inline Receiver Signature Overlay (waybill soft signage) */}
           {showInlineSigPad && (
