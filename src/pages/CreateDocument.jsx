@@ -692,21 +692,12 @@ export default function CreateDocument() {
   // For the editor scroll area (not modal)
   const previewScale = Math.min(1, (Math.min(viewportWidth, 826) - 32) / 794);
   // Scale PDF to fit both width AND height of the right panel — fully visible at once
-  const previewPanelRef = useRef(null);
-  const [panelSize, setPanelSize] = useState({ w: 800, h: 600 });
-  useEffect(() => {
-    if (!previewPanelRef.current) return;
-    const ro = new ResizeObserver(entries => {
-      const { width, height } = entries[0].contentRect;
-      setPanelSize({ w: width, h: height });
-    });
-    ro.observe(previewPanelRef.current);
-    return () => ro.disconnect();
-  }, [showPdfPreview]);
+  // Modal is fixed inset-0, left panel = 190px, top bar ~52px
+  const MODAL_LEFT_W = 190;
   const MODAL_TOP_H = 52;
   const pdfModalScale = Math.min(
-    panelSize.w / 794,
-    (panelSize.h - MODAL_TOP_H) / 1123
+    (viewportWidth - MODAL_LEFT_W) / 794,
+    (viewportHeight - MODAL_TOP_H) / 1123
   );
 
   const L = DOC_LABELS[docType] || DOC_LABELS.invoice;
@@ -1432,7 +1423,7 @@ export default function CreateDocument() {
           </div>
 
           {/* ── Right: preview area ── */}
-          <div ref={previewPanelRef} className="flex-1 flex flex-col overflow-hidden" style={{ position: "relative" }} onClick={e => e.stopPropagation()}>
+          <div className="flex-1 flex flex-col overflow-hidden" style={{ position: "relative" }} onClick={e => e.stopPropagation()}>
 
             {/* Subtle dot-grid background texture */}
             <div style={{ position: "absolute", inset: 0, backgroundImage: "radial-gradient(circle, rgba(99,102,241,0.07) 1px, transparent 1px)", backgroundSize: "28px 28px", pointerEvents: "none" }} />
@@ -1480,7 +1471,7 @@ export default function CreateDocument() {
             {/* Document stage */}
             <div className="flex-1 flex items-center justify-center relative z-10" style={{ overflow: "hidden" }}>
               {/* Document with layered shadow for depth */}
-              <div style={{ position: "relative", width: "100%" }}>
+              <div style={{ position: "relative", flexShrink: 0 }}>
                 {/* Back page shadow layers for paper stack illusion */}
                 <div style={{ position: "absolute", bottom: -6, left: 6, right: -6, height: "100%", background: "rgba(255,255,255,0.04)", borderRadius: 0, border: "1px solid rgba(255,255,255,0.06)" }} />
                 <div style={{ position: "absolute", bottom: -3, left: 3, right: -3, height: "100%", background: "rgba(255,255,255,0.07)", borderRadius: 0, border: "1px solid rgba(255,255,255,0.08)" }} />
