@@ -390,7 +390,7 @@ export default function Settings() {
               </div>
               <div className="sm:col-span-2">
                 <Label>Company Description</Label>
-                <p className="text-xs text-muted-foreground mb-1.5">A short description or slogan that appears on your documents, below the company name.</p>
+                <p className="text-xs text-muted-foreground mb-1.5">A short description or slogan that appears on your documents, below the company name. Saved automatically when you click Save Settings.</p>
                 <Textarea className="mt-1" value={form.company_description} onChange={e => update("company_description", e.target.value)} rows={2} placeholder="e.g. Leading provider of quality goods and services since 2010." />
               </div>
             </div>

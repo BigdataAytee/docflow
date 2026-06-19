@@ -1164,9 +1164,10 @@ export default function CreateDocument() {
                 <button
                   type="button"
                   disabled={!form.company_description}
-                  onClick={async () => {
-                    await base44.auth.updateMe({ company_description: form.company_description });
-                    toast.success("Company description saved — it will auto-fill on new documents.");
+                  onClick={() => {
+                    base44.auth.updateMe({ company_description: form.company_description })
+                      .then(() => toast.success("Company description saved — it will auto-fill on new documents."))
+                      .catch(() => toast.error("Failed to save. Please try again."));
                   }}
                   className="text-xs text-slate-600 hover:text-slate-900 border border-slate-300 rounded-full px-3 py-1 hover:bg-slate-50 transition-colors disabled:opacity-40"
                 >
