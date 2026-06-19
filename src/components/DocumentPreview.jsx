@@ -999,10 +999,10 @@ function SikkyDoc({ form, items, calcs, sym, docType, managerSig, customerSig, T
               </div>
             )}
             {/* Terms block */}
-            {(form.terms || form.payment_instructions) && (
+            {form.terms && (
               <div style={{ marginTop: 20, fontSize: 13, color: "#111", lineHeight: 2 }}>
-                {form.terms && <div>DELIVERY TIME: {form.terms}</div>}
-                {form.payment_instructions && <div style={{ whiteSpace: "pre-line" }}>{form.payment_instructions}</div>}
+                <div>DELIVERY TIME: {form.terms}</div>
+                {form.payment_method && form.payment_instructions && <div style={{ whiteSpace: "pre-line" }}>{form.payment_instructions}</div>}
               </div>
             )}
             {/* Notes */}
@@ -1151,7 +1151,7 @@ function SikkyDoc({ form, items, calcs, sym, docType, managerSig, customerSig, T
             </div>
           )}
           {/* Payment instructions */}
-          {form.payment_instructions && (
+          {form.payment_method && form.payment_instructions && (
             <div style={{ marginTop: 8, fontSize: 12, color: "#333", whiteSpace: "pre-line", lineHeight: 1.9 }}>
               {form.payment_instructions}
             </div>
