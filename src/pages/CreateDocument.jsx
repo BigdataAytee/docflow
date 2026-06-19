@@ -3,7 +3,8 @@ import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
 import { base44 } from "@/api/base44Client";
 import { useNavigate } from "react-router-dom";
-import { Plus, Trash2, ArrowLeft, Settings2, FileDown, Upload, GripVertical, PenLine, Printer, CheckCircle2, ImagePlus, X } from "lucide-react";
+import { Plus, Trash2, ArrowLeft, Settings2, FileDown, Upload, GripVertical, PenLine, Printer, CheckCircle2, ImagePlus, X, Palette } from "lucide-react";
+import { COLOR_SCHEMES, LAYOUTS } from "../components/TemplateSelector";
 import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
@@ -1237,7 +1238,33 @@ export default function CreateDocument() {
             </div>
             <div className="overflow-hidden" style={{ height: 460, width: "100%", position: "relative" }}>
               <div style={{ transform: "scale(0.40)", transformOrigin: "top left", width: 794, pointerEvents: "none", position: "absolute", top: 0, left: 0 }}>
-                <DocumentPreview form={form} items={calcs.lineItems} calcs={calcs} sym={sym} docType={docType} template={template} templateColor={templateColor} templateFont={templateFont} />
+                <DocumentPreview key={`${template}-${templateColor}-${templateFont}`} form={form} items={calcs.lineItems} calcs={calcs} sym={sym} docType={docType} template={template} templateColor={templateColor} templateFont={templateFont} />
+              </div>
+            </div>
+            {/* Inline style controls */}
+            <div className="border-t border-border px-3 py-3 space-y-2.5 bg-muted/20">
+              {/* Templates */}
+              <div>
+                <p className="text-[9px] font-bold uppercase tracking-widest text-muted-foreground mb-1.5">Template</p>
+                <div className="flex gap-1">
+                  {Object.values(LAYOUTS).map(l => (
+                    <button key={l.id} onClick={() => setTemplate(l.id)}
+                      className={`flex-1 py-1 rounded text-[10px] font-semibold border transition-all ${template === l.id ? "border-indigo-400 bg-indigo-50 text-indigo-700" : "border-border hover:bg-muted/60 text-muted-foreground"}`}>
+                      {l.name}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              {/* Colors */}
+              <div>
+                <p className="text-[9px] font-bold uppercase tracking-widest text-muted-foreground mb-1.5">Colour</p>
+                <div className="flex flex-wrap gap-1.5">
+                  {Object.values(COLOR_SCHEMES).map(c => (
+                    <button key={c.id} onClick={() => setTemplateColor(c.id)} title={c.name}
+                      className={`w-5 h-5 rounded-full border-2 transition-all hover:scale-110 ${templateColor === c.id ? "border-foreground scale-110 shadow" : "border-transparent"}`}
+                      style={{ background: c.swatch }} />
+                  ))}
+                </div>
               </div>
             </div>
           </div>
