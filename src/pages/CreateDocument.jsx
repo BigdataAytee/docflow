@@ -1442,7 +1442,7 @@ export default function CreateDocument() {
                 <FileDown className="h-3.5 w-3.5" />
                 {generatingPdf ? "Generating…" : "Download PDF"}
               </Button>
-              <Button size="sm" variant="outline" className="w-full text-xs font-semibold border-white/20 text-white/80 hover:bg-white/10 hover:text-white gap-1.5 bg-transparent" onClick={handleSharePdf} disabled={generatingPdf}>
+              <Button size="sm" variant="outline" className="w-full text-xs font-semibold border-white/20 text-white/80 hover:bg-white/10 hover:text-white gap-1.5 bg-transparent hidden" onClick={handleSharePdf} disabled={generatingPdf}>
                 <Upload className="h-3.5 w-3.5" />
                 {generatingPdf ? "Generating…" : "Share PDF"}
               </Button>
