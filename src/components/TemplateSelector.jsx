@@ -21,6 +21,7 @@ export const LAYOUTS = {
   executive: { id: "executive", name: "Executive", font: "'Montserrat', sans-serif" },
   wave:      { id: "wave",      name: "Wave",      font: "'Poppins', sans-serif" },
   compact:   { id: "compact",   name: "Compact",   font: "'Roboto', sans-serif" },
+  sikky:     { id: "sikky",    name: "Sikky",     font: "'Arial', sans-serif" },
 };
 
 // Color schemes — control all colors
@@ -228,6 +229,37 @@ export function LayoutThumb({ id, accentColor }) {
       <div style={{ display: "flex", justifyContent: "flex-end", marginTop: 1 }}>
         <div style={{ width: "35%", height: 5, background: acc, borderRadius: 1, opacity: 0.6 }} />
       </div>
+    </div>
+  );
+
+  if (id === "sikky") return (
+    <div style={{ width: "100%", height: "100%", display: "flex", flexDirection: "column", gap: 0 }}>
+      {/* Header row: orange strip + logo area + address */}
+      <div style={{ display: "flex", height: "28%", borderBottom: "1px solid #f3e8d0" }}>
+        <div style={{ width: 4, background: acc, flexShrink: 0 }} />
+        <div style={{ width: "38%", background: "#fff8f0", display: "flex", alignItems: "center", justifyContent: "center", borderRight: "1px solid #f3e8d0" }}>
+          <div style={{ width: "70%", height: 6, background: acc, borderRadius: 1, opacity: 0.7 }} />
+        </div>
+        <div style={{ flex: 1, padding: 2, display: "flex", flexDirection: "column", gap: 1 }}>
+          {[100, 70, 55, 65].map((w, i) => <div key={i} style={{ height: 1.5, background: "#d1d5db", borderRadius: 1, width: `${w}%` }} />)}
+        </div>
+      </div>
+      {/* Tagline bar */}
+      <div style={{ background: "#fff8f0", padding: "1.5px 3px", borderBottom: "1px solid #f3e8d0" }}>
+        <div style={{ width: "80%", height: 1.5, background: acc, borderRadius: 1, opacity: 0.5, margin: "0 auto" }} />
+      </div>
+      {/* Body */}
+      <div style={{ flex: 1, padding: "2px 3px", display: "flex", flexDirection: "column", gap: 1 }}>
+        <div style={{ height: 2, width: "40%", background: "#e5e7eb", borderRadius: 1 }} />
+        <div style={{ height: 2, width: "55%", background: "#e5e7eb", borderRadius: 1 }} />
+        <div style={{ height: 1.5, width: "30%", background: "#e5e7eb", borderRadius: 1, marginTop: 2 }} />
+        <div style={{ height: 1, background: "#111", width: "100%", marginTop: 3 }} />
+        {[90, 75, 80].map((w, i) => <div key={i} style={{ height: 2, background: "#f3f4f6", borderRadius: 1, width: `${w}%` }} />)}
+        <div style={{ height: 1, background: "#e5e7eb", width: "60%", alignSelf: "flex-end", marginTop: 3 }} />
+        <div style={{ height: 3, background: acc, borderRadius: 1, width: "35%", alignSelf: "flex-end", opacity: 0.7 }} />
+      </div>
+      {/* Bottom strip */}
+      <div style={{ height: 4, background: acc }} />
     </div>
   );
 

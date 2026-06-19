@@ -51,7 +51,8 @@
         "sidebar",
         "executive",
         "wave",
-        "compact"
+        "compact",
+        "sikky"
       ],
       "title": "Layout Template",
       "default": "classic"
