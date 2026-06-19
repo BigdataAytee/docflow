@@ -4,9 +4,11 @@ import { Link, useNavigate, useLocation } from "react-router-dom";
 import { format } from "date-fns";
 import {
   Search, FileText, FileCheck, Receipt, Truck, Plus, Eye, Pencil,
-  Trash2, Clock, Send, CheckCircle2, AlertCircle, X, PenLine
+  Trash2, Clock, Send, CheckCircle2, AlertCircle, X, PenLine, GitMerge, Loader2
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { toast } from "sonner";
 
 const TYPE_CONFIG = {
   invoice:   { label: "Invoice",   plural: "Invoices",   icon: FileText,  gradient: "linear-gradient(135deg,#3b82f6 0%,#1d4ed8 100%)", glow: "rgba(59,130,246,0.18)",  emoji: "📄" },
@@ -58,6 +60,8 @@ export default function DocumentList() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [confirmDelete, setConfirmDelete] = useState(null);
+  const [converting, setConverting] = useState(false);
+  const [showConvertConfirm, setShowConvertConfirm] = useState(false);
 
   useEffect(() => {
     setLoading(true);
@@ -84,6 +88,29 @@ export default function DocumentList() {
     await base44.entities.Document.delete(doc.id);
   };
 
+  const handleBulkConvertToInvoice = async () => {
+    setShowConvertConfirm(false);
+    setConverting(true);
+    let created = 0;
+    for (const doc of documents) {
+      const { id, created_date, updated_date, created_by, created_by_id, ...rest } = doc;
+      const newNumber = (doc.number || "").replace(/\b(REC)\b/gi, "INV");
+      await base44.entities.Document.create({
+        ...rest,
+        type: "invoice",
+        number: newNumber,
+        status: "draft",
+        customer_signature: "",
+        paid_amount: 0,
+        balance_due: doc.total || 0,
+      });
+      created++;
+    }
+    setConverting(false);
+    toast.success(`${created} receipt${created !== 1 ? "s" : ""} converted to invoices!`);
+    navigate("/documents?type=invoice");
+  };
+
   return (
     <div className="space-y-6">
       {/* Header banner */}
@@ -103,13 +130,25 @@ export default function DocumentList() {
               {loading ? "Loading…" : `${filtered.length} ${cfg.label.toLowerCase()}${filtered.length !== 1 ? "s" : ""}`}
             </p>
           </div>
-          <button
-            onClick={() => navigate(`/documents/new?type=${type}`)}
-            className="inline-flex items-center gap-2 bg-white/20 hover:bg-white/30 backdrop-blur-sm text-white px-5 py-2.5 rounded-2xl text-sm font-bold transition-all active:scale-95 w-fit border border-white/20"
-          >
-            <Plus className="h-4 w-4" />
-            New {cfg.label}
-          </button>
+          <div className="flex flex-wrap gap-2">
+            {type === "receipt" && documents.length > 0 && (
+              <button
+                onClick={() => setShowConvertConfirm(true)}
+                disabled={converting}
+                className="inline-flex items-center gap-2 bg-white/20 hover:bg-white/30 backdrop-blur-sm text-white px-5 py-2.5 rounded-2xl text-sm font-bold transition-all active:scale-95 w-fit border border-white/20 disabled:opacity-50"
+              >
+                {converting ? <Loader2 className="h-4 w-4 animate-spin" /> : <GitMerge className="h-4 w-4" />}
+                {converting ? "Converting…" : "Convert All to Invoice"}
+              </button>
+            )}
+            <button
+              onClick={() => navigate(`/documents/new?type=${type}`)}
+              className="inline-flex items-center gap-2 bg-white/20 hover:bg-white/30 backdrop-blur-sm text-white px-5 py-2.5 rounded-2xl text-sm font-bold transition-all active:scale-95 w-fit border border-white/20"
+            >
+              <Plus className="h-4 w-4" />
+              New {cfg.label}
+            </button>
+          </div>
         </div>
       </div>
 
@@ -247,6 +286,29 @@ export default function DocumentList() {
           </>
         )}
       </div>
+
+      {/* Confirm Convert All Modal */}
+      {showConvertConfirm && (
+        <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4" onClick={() => setShowConvertConfirm(false)}>
+          <div className="bg-card rounded-2xl border border-border shadow-2xl p-6 w-full max-w-sm" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-center h-12 w-12 rounded-full bg-indigo-50 border border-indigo-100 mx-auto mb-4">
+              <GitMerge className="h-5 w-5 text-indigo-600" />
+            </div>
+            <h3 className="text-base font-bold text-center">Convert All Receipts to Invoices?</h3>
+            <p className="text-sm text-muted-foreground text-center mt-1.5 mb-5">
+              This will create <span className="font-semibold text-foreground">{documents.length}</span> new invoice{documents.length !== 1 ? "s" : ""} from your existing receipts. The original receipts will remain unchanged.
+            </p>
+            <div className="flex gap-2">
+              <button onClick={() => setShowConvertConfirm(false)} className="flex-1 px-4 py-2.5 rounded-xl border border-border text-sm font-semibold hover:bg-muted/50 transition-colors">
+                Cancel
+              </button>
+              <button onClick={handleBulkConvertToInvoice} className="flex-1 px-4 py-2.5 rounded-xl bg-indigo-600 text-white text-sm font-semibold hover:bg-indigo-700 transition-colors">
+                Convert All
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Confirm Delete Modal */}
       {confirmDelete && (
