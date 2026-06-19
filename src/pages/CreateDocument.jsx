@@ -21,6 +21,7 @@ import SignaturePad from "../components/SignaturePad";
 import DocumentPreview from "../components/DocumentPreview";
 import LivePreviewScaled from "../components/LivePreviewScaled";
 import LayoutPickerStrip from "../components/LayoutPickerStrip";
+import PdfDocStage from "../components/PdfDocStage";
 import { toast } from "sonner";
 
 const typeLabels = {
@@ -705,16 +706,8 @@ export default function CreateDocument() {
     window.addEventListener("resize", onResize);
     return () => window.removeEventListener("resize", onResize);
   }, []);
-  // For the editor scroll area (not modal)
+  // For the editor live preview scale (sidebar)
   const previewScale = Math.min(1, (Math.min(viewportWidth, 826) - 32) / 794);
-  // Scale PDF to fill the right panel completely
-  const isMobileModal = viewportWidth < 768;
-  const MODAL_LEFT_W = isMobileModal ? 0 : 160 + 124 + 32; // on mobile panels are hidden
-  const MODAL_TOP_H = isMobileModal ? 48 : 56; // top bar only
-  const MODAL_BOTTOM_H = isMobileModal ? 72 : 0; // mobile bottom controls
-  const availW = viewportWidth - MODAL_LEFT_W - (isMobileModal ? 16 : 0);
-  const availH = viewportHeight - MODAL_TOP_H - MODAL_BOTTOM_H;
-  const pdfModalScale = Math.min(availW / 794, availH / 1123);
   const [showMobileDesignPanel, setShowMobileDesignPanel] = useState(false);
 
   const L = DOC_LABELS[docType] || DOC_LABELS.invoice;
@@ -1400,10 +1393,10 @@ export default function CreateDocument() {
 
       {/* PDF Preview Modal */}
       {showPdfPreview &&
-      <div className="fixed inset-0 z-50 flex" style={{ background: "radial-gradient(ellipse at 60% 40%, #0d1117 0%, #080b14 60%, #050709 100%)" }} onClick={() => setShowPdfPreview(false)}>
+      <div className="fixed inset-0 z-50 flex" style={{ background: "radial-gradient(ellipse at 60% 40%, #0d1117 0%, #080b14 60%, #050709 100%)" }}>
 
           {/* ── Layout picker strip — desktop only ── */}
-          <div className="hidden md:block" onClick={(e) => e.stopPropagation()}>
+          <div className="hidden md:block shrink-0 h-full" onClick={(e) => e.stopPropagation()}>
             <LayoutPickerStrip
             layouts={LAYOUTS}
             template={template}
@@ -1425,7 +1418,6 @@ export default function CreateDocument() {
                 <span className="text-xs font-bold text-white tracking-wide">Design</span>
               </div>
             </div>
-            <div className="mx-3 border-t border-white/10 shrink-0" />
             <div className="px-3 pt-2.5 pb-2 shrink-0">
               <div className="flex items-center justify-between mb-2">
                 <p className="text-[9px] font-bold uppercase tracking-[0.15em] text-white/40">Colour</p>
@@ -1439,122 +1431,100 @@ export default function CreateDocument() {
               )}
               </div>
             </div>
-            <div className="mx-3 border-t border-white/10 shrink-0" />
           </div>
 
-          {/* ── Main area: preview + mobile controls ── */}
-          <div className="flex-1 flex flex-col overflow-hidden" style={{ position: "relative" }} onClick={(e) => e.stopPropagation()}>
+          {/* ── Main area: full column with preview + mobile controls ── */}
+          <div className="flex-1 flex flex-col min-w-0 h-full" style={{ position: "relative" }} onClick={(e) => e.stopPropagation()}>
 
-            {/* Subtle dot-grid background texture */}
+            {/* Dot-grid background texture */}
             <div style={{ position: "absolute", inset: 0, backgroundImage: "radial-gradient(circle, rgba(99,102,241,0.07) 1px, transparent 1px)", backgroundSize: "28px 28px", pointerEvents: "none" }} />
 
-            {/* Ambient glow behind doc */}
-            <div style={{ position: "absolute", top: "50%", left: "50%", transform: "translate(-50%,-50%)", width: 600, height: 700, background: "radial-gradient(ellipse, rgba(99,102,241,0.08) 0%, transparent 70%)", borderRadius: "50%", pointerEvents: "none" }} />
-
             {/* Top bar */}
-            <div className="shrink-0 flex items-center justify-between px-3 md:px-5 py-2 md:py-3 relative z-10" style={{ borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
-              <div className="flex items-center gap-2 md:gap-3">
+            <div className="shrink-0 flex items-center justify-between px-3 md:px-5 py-2.5 relative z-10" style={{ borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
+              <div className="flex items-center gap-2">
                 <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-widest" style={{ background: "rgba(99,102,241,0.15)", color: "#a5b4fc", border: "1px solid rgba(99,102,241,0.25)" }}>
-                  <span>{(typeLabels[form.type || docType] || "Document").toUpperCase()}</span>
+                  {(typeLabels[form.type || docType] || "Document").toUpperCase()}
                 </div>
-                <p className="text-white/70 font-semibold text-xs md:text-sm leading-tight truncate max-w-[120px] md:max-w-none">{form.number || "Draft"}</p>
+                <p className="text-white/70 font-semibold text-xs leading-tight truncate" style={{ maxWidth: "calc(100vw - 200px)" }}>{form.number || "Draft"}</p>
               </div>
-              <button className="hidden md:flex w-8 h-8 rounded-full items-center justify-center text-white/30 hover:text-white hover:bg-white/10 transition-all text-base leading-none" style={{ border: "1px solid rgba(255,255,255,0.1)" }} onClick={() => setShowPdfPreview(false)}>✕</button>
+              <button className="w-8 h-8 rounded-full flex items-center justify-center text-white/40 hover:text-white hover:bg-white/10 transition-all text-lg leading-none shrink-0" onClick={() => setShowPdfPreview(false)}>✕</button>
             </div>
 
             {/* Waybill sign banners */}
             {(form.type || docType) === "waybill" && pdfMode === "soft" && !customerSig &&
-          <div className="shrink-0 relative z-10 flex items-center justify-between px-5 py-2.5" style={{ background: "rgba(5,150,105,0.85)", backdropFilter: "blur(8px)" }}>
+          <div className="shrink-0 relative z-10 flex items-center justify-between px-4 py-2" style={{ background: "rgba(5,150,105,0.85)" }}>
                 <div className="flex items-center gap-2 text-white">
                   <PenLine className="h-4 w-4" />
-                  <span className="font-bold text-sm">Receiver Signature Required</span>
+                  <span className="font-bold text-sm">Signature Required</span>
                 </div>
-                <button onClick={() => setShowInlineSigPad(true)} className="bg-white text-emerald-700 font-bold text-xs px-3 py-1.5 rounded-lg hover:bg-emerald-50 transition-colors flex items-center gap-1.5">
-                  <PenLine className="h-3.5 w-3.5" /> Sign Here
+                <button onClick={() => setShowInlineSigPad(true)} className="bg-white text-emerald-700 font-bold text-xs px-3 py-1.5 rounded-lg flex items-center gap-1">
+                  <PenLine className="h-3.5 w-3.5" /> Sign
                 </button>
               </div>
           }
             {(form.type || docType) === "waybill" && pdfMode === "soft" && customerSig &&
-          <div className="shrink-0 relative z-10 flex items-center justify-between px-5 py-2.5" style={{ background: "rgba(4,120,87,0.85)", backdropFilter: "blur(8px)" }}>
+          <div className="shrink-0 relative z-10 flex items-center justify-between px-4 py-2" style={{ background: "rgba(4,120,87,0.85)" }}>
                 <div className="flex items-center gap-2 text-white">
                   <CheckCircle2 className="h-4 w-4 text-emerald-300" />
-                  <span className="font-bold text-sm">Document Signed</span>
+                  <span className="font-bold text-sm">Signed</span>
                 </div>
                 <button onClick={() => setShowInlineSigPad(true)} className="text-xs text-emerald-200 hover:text-white underline">Re-sign</button>
               </div>
           }
 
-            {/* Document stage */}
-            <div className="flex-1 flex items-center justify-center relative z-10" style={{ overflow: "hidden" }}>
-              {/* Document with layered shadow for depth */}
-              <div style={{ position: "relative", flexShrink: 0 }}>
-                {/* Back page shadow layers for paper stack illusion */}
-                <div style={{ position: "absolute", bottom: -6, left: 6, right: -6, height: "100%", background: "rgba(255,255,255,0.04)", borderRadius: 0, border: "1px solid rgba(255,255,255,0.06)" }} />
-                <div style={{ position: "absolute", bottom: -3, left: 3, right: -3, height: "100%", background: "rgba(255,255,255,0.07)", borderRadius: 0, border: "1px solid rgba(255,255,255,0.08)" }} />
-                {/* Main doc */}
-                <div style={{ width: 794 * pdfModalScale, height: 1123 * pdfModalScale, overflow: "hidden", borderRadius: 0, boxShadow: "0 20px 60px rgba(0,0,0,0.7)", position: "relative" }}>
-                  <div style={{ width: 794, height: 1123, transformOrigin: "top left", transform: `scale(${pdfModalScale})` }}>
-                    <div ref={pdfRef} style={{ width: 794 }}>
-                      <DocumentPreview
-                      form={form}
-                      items={calcs.lineItems}
-                      calcs={calcs}
-                      sym={sym}
-                      docType={form.type || docType}
-                      managerSig={managerSig}
-                      customerSig={(form.type || docType) === "waybill" && pdfMode === "paper" ? "" : customerSig}
-                      template={template}
-                      templateColor={templateColor}
-                      templateFont={templateFont} />
-                    
-                    </div>
-                  </div>
-                </div>
+            {/* Document stage — fills remaining space */}
+            <PdfDocStage
+              pdfRef={pdfRef}
+              form={form}
+              calcs={calcs}
+              sym={sym}
+              docType={form.type || docType}
+              managerSig={managerSig}
+              customerSig={customerSig}
+              pdfMode={pdfMode}
+              template={template}
+              templateColor={templateColor}
+              templateFont={templateFont}
+            />
+
+            {/* ── Mobile bottom controls bar ── */}
+            <div className="md:hidden shrink-0 relative z-10 flex items-center gap-2 px-3 py-2" style={{ background: "rgba(10,14,30,0.97)", borderTop: "1px solid rgba(255,255,255,0.08)" }} onClick={(e) => e.stopPropagation()}>
+              <button onClick={() => setShowMobileDesignPanel(!showMobileDesignPanel)}
+                className="shrink-0 flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-bold text-white/80"
+                style={{ background: "rgba(99,102,241,0.2)", border: "1px solid rgba(99,102,241,0.3)" }}>
+                <Palette className="h-3.5 w-3.5 text-indigo-400" />
+                <span className="max-w-[60px] truncate">{LAYOUTS[template]?.name || "Classic"}</span>
+              </button>
+              <div className="flex gap-1 overflow-x-auto flex-1 py-1" style={{ scrollbarWidth: "none" }}>
+                {Object.values(COLOR_SCHEMES).map((c) =>
+                  <button key={c.id} onClick={() => handleSetTemplateColor(c.id)} title={c.name}
+                    className={`shrink-0 w-6 h-6 rounded-full border-2 transition-all ${templateColor === c.id ? "border-white scale-125" : "border-white/20"}`}
+                    style={{ background: c.swatch }} />
+                )}
               </div>
             </div>
 
-          </div>
-
-          {/* ── Mobile bottom controls ── */}
-          <div className="md:hidden shrink-0 flex items-center gap-2 px-3 py-2.5 relative z-10" style={{ background: "rgba(15,23,42,0.95)", borderTop: "1px solid rgba(255,255,255,0.08)" }} onClick={(e) => e.stopPropagation()}>
-            {/* Layout name */}
-            <button onClick={() => setShowMobileDesignPanel(!showMobileDesignPanel)}
-              className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-bold text-white/80"
-              style={{ background: "rgba(99,102,241,0.2)", border: "1px solid rgba(99,102,241,0.3)" }}>
-              <Palette className="h-3.5 w-3.5 text-indigo-400" />
-              <span>{LAYOUTS[template]?.name || "Classic"}</span>
-            </button>
-            {/* Colour swatches — compact row */}
-            <div className="flex gap-1 overflow-x-auto flex-1" style={{ scrollbarWidth: "none" }}>
-              {Object.values(COLOR_SCHEMES).map((c) =>
-                <button key={c.id} onClick={() => handleSetTemplateColor(c.id)} title={c.name}
-                  className={`shrink-0 w-5 h-5 rounded-full border-2 transition-all ${templateColor === c.id ? "border-white scale-125" : "border-transparent"}`}
-                  style={{ background: c.swatch }} />
-              )}
-            </div>
-            <button className="shrink-0 w-8 h-8 rounded-full flex items-center justify-center text-white/50 hover:text-white text-lg leading-none"
-              onClick={() => setShowPdfPreview(false)}>✕</button>
-          </div>
-
-          {/* ── Mobile layout picker sheet ── */}
-          {showMobileDesignPanel && (
-            <div className="md:hidden absolute bottom-14 left-0 right-0 z-20 flex gap-2 px-3 py-3 overflow-x-auto"
-              style={{ background: "rgba(15,23,42,0.97)", borderTop: "1px solid rgba(255,255,255,0.08)", scrollbarWidth: "none" }}
-              onClick={(e) => e.stopPropagation()}>
-              {Object.values(LAYOUTS).map((l) => (
-                <button key={l.id} onClick={() => { handleSetTemplate(l.id); setShowMobileDesignPanel(false); }}
-                  className={`shrink-0 flex flex-col items-center gap-1 p-1.5 rounded-lg border-2 transition-all ${template === l.id ? "border-indigo-400" : "border-white/10"}`}
-                  style={{ background: "rgba(255,255,255,0.05)", width: 64 }}>
-                  <div style={{ width: 48, height: 64, borderRadius: 4, overflow: "hidden", background: "#fff" }}>
-                    <div style={{ transform: "scale(0.18)", transformOrigin: "top left", width: 794, height: 1123 }}>
-                      <DocumentPreview form={form} items={calcs.lineItems} calcs={calcs} sym={sym} docType={form.type || docType} managerSig={managerSig} template={l.id} templateColor={templateColor} />
+            {/* ── Mobile layout picker tray ── */}
+            {showMobileDesignPanel && (
+              <div className="md:hidden shrink-0 relative z-10 flex gap-3 px-3 py-3 overflow-x-auto"
+                style={{ background: "rgba(10,14,30,0.98)", borderTop: "1px solid rgba(255,255,255,0.06)", scrollbarWidth: "none" }}
+                onClick={(e) => e.stopPropagation()}>
+                {Object.values(LAYOUTS).map((l) => (
+                  <button key={l.id} onClick={() => { handleSetTemplate(l.id); setShowMobileDesignPanel(false); }}
+                    className={`shrink-0 flex flex-col items-center gap-1 p-1.5 rounded-lg border-2 transition-all ${template === l.id ? "border-indigo-400" : "border-white/10"}`}
+                    style={{ background: "rgba(255,255,255,0.04)", width: 64 }}>
+                    <div style={{ width: 48, height: 64, borderRadius: 3, overflow: "hidden", background: "#fff", position: "relative" }}>
+                      <div style={{ transform: "scale(0.0605)", transformOrigin: "top left", width: 794, height: 1123, position: "absolute" }}>
+                        <DocumentPreview form={form} items={calcs.lineItems} calcs={calcs} sym={sym} docType={form.type || docType} managerSig={managerSig} template={l.id} templateColor={templateColor} />
+                      </div>
                     </div>
-                  </div>
-                  <span className="text-[9px] text-white/60 font-medium">{l.name}</span>
-                </button>
-              ))}
-            </div>
-          )}
+                    <span className="text-[9px] text-white/60 font-medium">{l.name}</span>
+                  </button>
+                ))}
+              </div>
+            )}
+
+          </div>
 
           {/* Inline Receiver Signature Overlay (waybill soft signage) */}
           {showInlineSigPad &&
