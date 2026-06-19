@@ -1488,34 +1488,54 @@ export default function CreateDocument() {
             />
 
             {/* ── Mobile bottom controls bar ── */}
-            <div className="md:hidden shrink-0 relative z-10 flex items-center gap-2 px-3 py-2" style={{ background: "rgba(10,14,30,0.97)", borderTop: "1px solid rgba(255,255,255,0.08)" }} onClick={(e) => e.stopPropagation()}>
-              <button onClick={() => setShowMobileDesignPanel(!showMobileDesignPanel)}
-                className="shrink-0 flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-bold text-white/80"
-                style={{ background: "rgba(99,102,241,0.2)", border: "1px solid rgba(99,102,241,0.3)" }}>
-                <Palette className="h-3.5 w-3.5 text-indigo-400" />
-                <span className="max-w-[60px] truncate">{LAYOUTS[template]?.name || "Classic"}</span>
-              </button>
-              <div className="flex gap-1 overflow-x-auto flex-1 py-1" style={{ scrollbarWidth: "none" }}>
-                {Object.values(COLOR_SCHEMES).map((c) =>
-                  <button key={c.id} onClick={() => handleSetTemplateColor(c.id)} title={c.name}
-                    className={`shrink-0 w-6 h-6 rounded-full border-2 transition-all ${templateColor === c.id ? "border-white scale-125" : "border-white/20"}`}
-                    style={{ background: c.swatch }} />
-                )}
+            <div className="md:hidden shrink-0 relative z-10" style={{ background: "rgba(10,14,30,0.97)", borderTop: "1px solid rgba(255,255,255,0.08)" }} onClick={(e) => e.stopPropagation()}>
+              {/* Download/Share row */}
+              <div className="flex items-center gap-2 px-3 py-2 border-b border-white/[0.06]">
+                <button
+                  className="flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-lg text-xs font-bold text-white/80"
+                  style={{ background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.1)" }}
+                  onClick={handleSharePdf}>
+                  <FileDown className="h-3.5 w-3.5 text-white/60" />
+                  Share PDF
+                </button>
+                <button
+                  className="flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-lg text-xs font-bold text-white/80"
+                  style={{ background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.1)" }}
+                  onClick={handleDownloadPdf}>
+                  <Printer className="h-3.5 w-3.5 text-white/60" />
+                  Download
+                </button>
+              </div>
+              {/* Layout + colour row */}
+              <div className="flex items-center gap-2 px-3 py-2">
+                <button onClick={() => setShowMobileDesignPanel(!showMobileDesignPanel)}
+                  className="shrink-0 flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-bold text-white/80"
+                  style={{ background: showMobileDesignPanel ? "rgba(99,102,241,0.4)" : "rgba(99,102,241,0.2)", border: "1px solid rgba(99,102,241,0.3)" }}>
+                  <Palette className="h-3.5 w-3.5 text-indigo-400" />
+                  <span className="max-w-[60px] truncate">{LAYOUTS[template]?.name || "Classic"}</span>
+                </button>
+                <div className="flex gap-1 overflow-x-auto flex-1 py-1" style={{ scrollbarWidth: "none" }}>
+                  {Object.values(COLOR_SCHEMES).map((c) =>
+                    <button key={c.id} onClick={() => handleSetTemplateColor(c.id)} title={c.name}
+                      className={`shrink-0 w-6 h-6 rounded-full border-2 transition-all ${templateColor === c.id ? "border-white scale-125" : "border-white/20"}`}
+                      style={{ background: c.swatch }} />
+                  )}
+                </div>
               </div>
             </div>
 
-            {/* ── Mobile layout picker tray — overlays document, slides up from bottom bar ── */}
+            {/* ── Mobile layout picker tray — overlays above the bottom bar ── */}
             {showMobileDesignPanel && (
               <div
-                className="md:hidden absolute bottom-[52px] left-0 right-0 z-20 flex gap-3 px-3 py-3 overflow-x-auto"
-                style={{ background: "rgba(10,14,30,0.98)", borderTop: "1px solid rgba(255,255,255,0.12)", scrollbarWidth: "none" }}
+                className="md:hidden absolute bottom-[88px] left-0 right-0 z-20 flex gap-3 px-3 py-3 overflow-x-auto"
+                style={{ background: "rgba(10,14,30,0.98)", borderTop: "1px solid rgba(255,255,255,0.12)", borderBottom: "1px solid rgba(255,255,255,0.06)", scrollbarWidth: "none" }}
                 onClick={(e) => e.stopPropagation()}>
                 {Object.values(LAYOUTS).map((l) => (
                   <button key={l.id} onClick={() => { handleSetTemplate(l.id); setShowMobileDesignPanel(false); }}
                     className={`shrink-0 flex flex-col items-center gap-1 p-1.5 rounded-lg border-2 transition-all ${template === l.id ? "border-indigo-400" : "border-white/10"}`}
-                    style={{ background: "rgba(255,255,255,0.04)", width: 64 }}>
-                    <div style={{ width: 48, height: 64, borderRadius: 3, overflow: "hidden", background: "#fff", position: "relative" }}>
-                      <div style={{ transform: "scale(0.0605)", transformOrigin: "top left", width: 794, height: 1123, position: "absolute" }}>
+                    style={{ background: "rgba(255,255,255,0.04)", width: 72 }}>
+                    <div style={{ width: 56, height: 74, borderRadius: 4, overflow: "hidden", background: "#fff", position: "relative" }}>
+                      <div style={{ transform: "scale(0.0705)", transformOrigin: "top left", width: 794, height: 1123, position: "absolute" }}>
                         <DocumentPreview form={form} items={calcs.lineItems} calcs={calcs} sym={sym} docType={form.type || docType} managerSig={managerSig} template={l.id} templateColor={templateColor} />
                       </div>
                     </div>
