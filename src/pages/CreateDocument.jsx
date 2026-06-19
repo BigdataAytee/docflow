@@ -683,12 +683,22 @@ export default function CreateDocument() {
   };
 
   const [viewportWidth, setViewportWidth] = useState(window.innerWidth);
+  const [viewportHeight, setViewportHeight] = useState(window.innerHeight);
   useEffect(() => {
-    const onResize = () => setViewportWidth(window.innerWidth);
+    const onResize = () => { setViewportWidth(window.innerWidth); setViewportHeight(window.innerHeight); };
     window.addEventListener("resize", onResize);
     return () => window.removeEventListener("resize", onResize);
   }, []);
+  // For the editor scroll area (not modal)
   const previewScale = Math.min(1, (Math.min(viewportWidth, 826) - 32) / 794);
+  // For the full-screen PDF modal: fit the entire A4 document in the visible area at once
+  // Modal header ~56px + controls bar ~72px + padding ~32px = ~160px reserved
+  const MODAL_HEADER_H = 160;
+  const pdfModalScale = Math.min(
+    (viewportWidth - 48) / 794,
+    (viewportHeight - MODAL_HEADER_H) / 1123,
+    1
+  );
 
   const L = DOC_LABELS[docType] || DOC_LABELS.invoice;
 
@@ -1425,7 +1435,7 @@ export default function CreateDocument() {
               </div>
             </div>
           </div>
-          <div className="flex-1 overflow-auto bg-gray-100" style={{ position: "relative" }} onClick={e => e.stopPropagation()}>
+          <div className="flex-1 overflow-hidden bg-gray-100 flex flex-col items-center justify-center" style={{ position: "relative" }} onClick={e => e.stopPropagation()}>
             {(form.type || docType) === "waybill" && pdfMode === "soft" && !customerSig && (
               <div className="sticky top-0 z-10 bg-emerald-600 text-white px-5 py-3 flex items-center justify-between shadow-md">
                 <div className="flex items-center gap-3">
@@ -1452,9 +1462,9 @@ export default function CreateDocument() {
                 <button onClick={() => setShowInlineSigPad(true)} className="text-xs text-emerald-200 hover:text-white underline">Re-sign</button>
               </div>
             )}
-            <div className="flex flex-col items-center p-4">
-              <div style={{ width: 794 * previewScale, minHeight: 1123 * previewScale, overflow: "hidden" }}>
-                <div style={{ width: 794, transformOrigin: "top left", transform: `scale(${previewScale})`, display: "block" }}>
+            <div className="flex flex-col items-center justify-center p-2 w-full h-full">
+              <div style={{ width: 794 * pdfModalScale, height: 1123 * pdfModalScale, overflow: "hidden", flexShrink: 0 }}>
+                <div style={{ width: 794, height: 1123, transformOrigin: "top left", transform: `scale(${pdfModalScale})` }}>
                   <div ref={pdfRef} style={{ width: 794 }}>
                     <DocumentPreview
                       form={form}
@@ -1471,20 +1481,7 @@ export default function CreateDocument() {
                   </div>
                 </div>
               </div>
-              {(form.type || docType) === "waybill" && pdfMode === "soft" && !customerSig && (
-                <button
-                  onClick={() => setShowInlineSigPad(true)}
-                  className="mt-4 w-full max-w-3xl border-2 border-dashed border-emerald-400 rounded-2xl p-8 flex flex-col items-center gap-3 text-emerald-600 hover:bg-emerald-50 hover:border-emerald-500 transition-all group"
-                >
-                  <div className="w-14 h-14 rounded-full bg-emerald-100 group-hover:bg-emerald-200 flex items-center justify-center transition-colors">
-                    <PenLine className="h-7 w-7" />
-                  </div>
-                  <div className="text-center">
-                    <p className="font-bold text-lg">Tap to Sign Here</p>
-                    <p className="text-sm text-emerald-500 mt-1">Touch, mouse, or stylus — sign in the Receiver Signature field</p>
-                  </div>
-                </button>
-              )}
+
             </div>
           </div>
           {/* Inline Receiver Signature Overlay (waybill soft signage) */}
