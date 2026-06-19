@@ -12,11 +12,15 @@ export const FONT_CSS_MAP = {
 
 // Layouts — control structural style (font is now overridden by user's typography setting)
 export const LAYOUTS = {
-  classic:  { id: "classic",  name: "Classic",  font: "'Inter', sans-serif" },
-  modern:   { id: "modern",   name: "Modern",   font: "'Inter', sans-serif" },
-  minimal:  { id: "minimal",  name: "Minimal",  font: "'Lato', sans-serif" },
-  bold:     { id: "bold",     name: "Bold",     font: "'Montserrat', sans-serif" },
-  elegant:  { id: "elegant",  name: "Elegant",  font: "'Playfair Display', serif" },
+  classic:   { id: "classic",   name: "Classic",   font: "'Inter', sans-serif" },
+  modern:    { id: "modern",    name: "Modern",    font: "'Inter', sans-serif" },
+  minimal:   { id: "minimal",   name: "Minimal",   font: "'Lato', sans-serif" },
+  bold:      { id: "bold",      name: "Bold",      font: "'Montserrat', sans-serif" },
+  elegant:   { id: "elegant",   name: "Elegant",   font: "'Playfair Display', serif" },
+  sidebar:   { id: "sidebar",   name: "Sidebar",   font: "'Inter', sans-serif" },
+  executive: { id: "executive", name: "Executive", font: "'Montserrat', sans-serif" },
+  wave:      { id: "wave",      name: "Wave",      font: "'Poppins', sans-serif" },
+  compact:   { id: "compact",   name: "Compact",   font: "'Roboto', sans-serif" },
 };
 
 // Color schemes — control all colors
@@ -158,6 +162,75 @@ export function LayoutThumb({ id, accentColor }) {
     </div>
   );
 
+  if (id === "sidebar") return (
+    <div style={{ width: "100%", height: "100%", display: "flex", gap: 0 }}>
+      <div style={{ width: "28%", background: dark, display: "flex", flexDirection: "column", padding: "3px 2px", gap: 2 }}>
+        <div style={{ width: "80%", height: 6, background: "rgba(255,255,255,0.25)", borderRadius: 1, marginBottom: 2 }} />
+        {[1,2,3,4,5].map(i => <div key={i} style={{ height: 2, background: "rgba(255,255,255,0.15)", borderRadius: 1 }} />)}
+        <div style={{ marginTop: "auto", height: 2.5, background: acc, borderRadius: 1, opacity: 0.7 }} />
+      </div>
+      <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: 1, padding: "3px 2px" }}>
+        <div style={{ height: 5, background: light, borderRadius: 1, width: "70%" }} />
+        <div style={{ height: 1, background: "#f3f4f6" }} />
+        {[1,2,3].map(i => <div key={i} style={{ height: 2, background: "#f3f4f6", borderRadius: 1, width: `${90-i*10}%` }} />)}
+        <div style={{ marginTop: "auto", height: 4, background: mid, borderRadius: 1, width: "50%", alignSelf: "flex-end" }} />
+      </div>
+    </div>
+  );
+
+  if (id === "executive") return (
+    <div style={{ width: "100%", height: "100%", display: "flex", flexDirection: "column" }}>
+      <div style={{ background: dark, padding: "4px 3px", position: "relative", overflow: "hidden" }}>
+        <div style={{ position: "absolute", right: -8, top: -8, width: 30, height: 30, background: acc, opacity: 0.15, borderRadius: "50%" }} />
+        <div style={{ width: "55%", height: 5, background: "rgba(255,255,255,0.3)", borderRadius: 1, marginBottom: 2 }} />
+        <div style={{ width: "35%", height: 3, background: "rgba(255,255,255,0.15)", borderRadius: 1 }} />
+        <div style={{ position: "absolute", right: 3, top: 3, width: 18, height: 8, background: acc, borderRadius: 1, opacity: 0.8 }} />
+      </div>
+      <div style={{ height: 3, background: acc }} />
+      <div style={{ flex: 1, padding: "2px 3px", display: "flex", flexDirection: "column", gap: 1 }}>
+        <div style={{ display: "flex", gap: 2 }}>
+          <div style={{ flex: 1, height: 8, background: mid, borderRadius: 1 }} />
+          <div style={{ flex: 1, height: 8, background: mid, borderRadius: 1 }} />
+        </div>
+        {[80, 65, 75, 55].map((w, i) => <div key={i} style={{ height: 2, background: light, borderRadius: 1, width: `${w}%` }} />)}
+      </div>
+    </div>
+  );
+
+  if (id === "wave") return (
+    <div style={{ width: "100%", height: "100%", display: "flex", flexDirection: "column", overflow: "hidden" }}>
+      <div style={{ position: "relative", background: dark, padding: "5px 3px 10px" }}>
+        <div style={{ width: "45%", height: 5, background: "rgba(255,255,255,0.3)", borderRadius: 1, marginBottom: 2 }} />
+        <div style={{ position: "absolute", right: 3, top: 4, width: "30%", height: 8, background: acc, borderRadius: 1, opacity: 0.9 }} />
+        <svg style={{ position: "absolute", bottom: -1, left: 0, width: "100%" }} viewBox="0 0 100 8" preserveAspectRatio="none" height="8">
+          <path d="M0,4 C20,8 40,0 60,4 C80,8 90,2 100,4 L100,8 L0,8 Z" fill="#fff" />
+        </svg>
+      </div>
+      <div style={{ flex: 1, padding: "2px 3px", display: "flex", flexDirection: "column", gap: 1 }}>
+        <div style={{ height: 5, background: light, borderRadius: 1, width: "60%", marginBottom: 1 }} />
+        {[85, 65, 75].map((w, i) => <div key={i} style={{ height: 2, background: "#f3f4f6", borderRadius: 1, width: `${w}%` }} />)}
+        <div style={{ marginTop: "auto", height: 4, background: acc, borderRadius: 1, width: "40%", alignSelf: "flex-end", opacity: 0.7 }} />
+      </div>
+    </div>
+  );
+
+  if (id === "compact") return (
+    <div style={{ width: "100%", height: "100%", display: "flex", flexDirection: "column", gap: 1, padding: 2 }}>
+      <div style={{ display: "flex", justifyContent: "space-between", borderBottom: `1.5px solid ${acc}`, paddingBottom: 2, marginBottom: 1 }}>
+        <div style={{ width: "40%", height: 5, background: light, borderRadius: 1 }} />
+        <div style={{ width: "22%", height: 5, background: acc, borderRadius: 1, opacity: 0.8 }} />
+      </div>
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 1 }}>
+        {[1,2,3].map(i => <div key={i} style={{ background: mid, height: 8, borderRadius: 1 }} />)}
+      </div>
+      <div style={{ height: 1, background: "#f3f4f6" }} />
+      {[90, 70, 80, 60].map((w, i) => <div key={i} style={{ height: 1.5, background: "#f3f4f6", borderRadius: 1, width: `${w}%` }} />)}
+      <div style={{ display: "flex", justifyContent: "flex-end", marginTop: 1 }}>
+        <div style={{ width: "35%", height: 5, background: acc, borderRadius: 1, opacity: 0.6 }} />
+      </div>
+    </div>
+  );
+
   return null;
 }
 
@@ -167,7 +240,7 @@ export default function TemplateSelector({ layout, color, onLayoutChange, onColo
       {/* Layout row */}
       <div>
         <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-1.5">Layout</p>
-        <div className="grid grid-cols-5 gap-1.5">
+        <div className="grid grid-cols-3 gap-1.5">
           {Object.values(LAYOUTS).map((l) => (
               <button
                 key={l.id}

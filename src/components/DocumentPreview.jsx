@@ -524,6 +524,241 @@ function ElegantDoc({ form, items, calcs, sym, docType, managerSig, customerSig,
 
 }
 
+// ─── Layout 6: Sidebar ───────────────────────────────────────────────────────
+function SidebarDoc({ form, items, calcs, sym, docType, managerSig, customerSig, T }) {
+  const label = TYPE_LABELS[docType] || "INVOICE";
+  const billToLabel = BILL_TO_LABEL[docType] || "BILL TO";
+  const amountLabel = AMOUNT_LABEL[docType] || "BALANCE DUE";
+  const isColoredHeader = T.headerBg !== "#ffffff" && T.headerBg !== "#fffbeb";
+  return (
+    <div style={{ background: "#fff", minHeight: 1123, display: "flex", flexDirection: "row" }}>
+      {/* Left accent sidebar */}
+      <div style={{ width: 220, background: T.headerBg, display: "flex", flexDirection: "column", padding: "36px 24px", flexShrink: 0 }}>
+        {form.logo_url && <img src={form.logo_url} alt="logo" style={{ height: 80, maxWidth: 170, objectFit: "contain", display: "block", marginBottom: 16, filter: isColoredHeader ? "brightness(0) invert(1)" : "none" }} />}
+        <div style={{ fontSize: 15, fontWeight: 900, color: T.headerColor, lineHeight: 1.2 }}>{form.company_name || "Your Company"}</div>
+        {form.company_address && <div style={{ fontSize: 9, color: T.headerColor, opacity: 0.55, marginTop: 6, whiteSpace: "pre-line", lineHeight: 1.5 }}>{form.company_address}</div>}
+        {form.company_phone && <div style={{ fontSize: 9, color: T.headerColor, opacity: 0.55, marginTop: 4 }}>☎ {form.company_phone}</div>}
+        {form.company_email && <div style={{ fontSize: 9, color: T.headerColor, opacity: 0.55, marginTop: 2 }}>✉ {form.company_email}</div>}
+        {form.company_website && <div style={{ fontSize: 9, color: T.headerColor, opacity: 0.55, marginTop: 2 }}>🌐 {form.company_website}</div>}
+        <div style={{ height: 1, background: isColoredHeader ? "rgba(255,255,255,0.2)" : T.accentColor, margin: "18px 0", opacity: 0.5 }} />
+        <div style={{ fontSize: 8, fontWeight: 700, color: T.headerColor, opacity: 0.5, textTransform: "uppercase", letterSpacing: 1.5, marginBottom: 8 }}>{billToLabel}</div>
+        <div style={{ fontSize: 11, fontWeight: 700, color: T.headerColor }}>{form.customer_name || "—"}</div>
+        {form.customer_company && <div style={{ fontSize: 9, color: T.headerColor, fontWeight: 600, opacity: 0.8, marginTop: 3 }}>{form.customer_company}</div>}
+        {form.customer_address && <div style={{ fontSize: 9, color: T.headerColor, opacity: 0.55, marginTop: 4, whiteSpace: "pre-line", lineHeight: 1.5 }}>{form.customer_address}</div>}
+        {form.customer_email && <div style={{ fontSize: 9, color: T.headerColor, opacity: 0.5, marginTop: 4 }}>{form.customer_email}</div>}
+        <div style={{ height: 1, background: isColoredHeader ? "rgba(255,255,255,0.2)" : T.accentColor, margin: "18px 0", opacity: 0.5 }} />
+        <div style={{ fontSize: 9, color: T.headerColor, opacity: 0.6, lineHeight: 1.7 }}>
+          {form.issue_date && <div><span style={{ opacity: 0.7 }}>{ISSUE_LABEL[docType] || "Date"}:</span><br /><strong>{form.issue_date}</strong></div>}
+          {form.due_date && DUE_LABEL[docType] && <div style={{ marginTop: 6 }}><span style={{ opacity: 0.7 }}>{DUE_LABEL[docType]}:</span><br /><strong>{form.due_date}</strong></div>}
+          {form.lpo_number && <div style={{ marginTop: 6 }}><span style={{ opacity: 0.7 }}>LPO:</span><br /><strong>{form.lpo_number}</strong></div>}
+          {form.tax_number && <div style={{ marginTop: 6 }}><span style={{ opacity: 0.7 }}>TIN:</span><br /><strong>{form.tax_number}</strong></div>}
+        </div>
+        {docType !== "waybill" && (
+          <div style={{ marginTop: "auto", background: isColoredHeader ? "rgba(255,255,255,0.12)" : "rgba(0,0,0,0.06)", borderRadius: 8, padding: "12px 14px" }}>
+            <div style={{ fontSize: 8, color: T.headerColor, opacity: 0.6, textTransform: "uppercase", letterSpacing: 1 }}>{amountLabel}</div>
+            <div style={{ fontSize: 22, fontWeight: 900, color: isColoredHeader ? "#fff" : T.accentColor, marginTop: 4 }}>{sym}{fmt(calcs?.total || 0)}</div>
+          </div>
+        )}
+      </div>
+      {/* Right content */}
+      <div style={{ flex: 1, display: "flex", flexDirection: "column" }}>
+        <div style={{ padding: "36px 36px 20px", borderBottom: `3px solid ${T.accentColor}` }}>
+          <div style={{ fontSize: 32, fontWeight: 900, letterSpacing: 4, color: T.accentColor }}>{label}</div>
+          <div style={{ fontSize: 12, fontFamily: "monospace", color: "#94a3b8", marginTop: 4 }}>{form.number || "—"}</div>
+        </div>
+        <ItemsTable items={items} docType={docType} T={T} />
+        <ExtraFields form={form} docType={docType} T={T} />
+        {docType !== "waybill" && <TotalsBlock calcs={calcs} form={form} sym={sym} T={T} amountLabel={amountLabel} />}
+        <NotesBlock form={form} T={T} />
+        <SigsAndPayment managerSig={managerSig} customerSig={customerSig} form={form} T={T} docType={docType} sym={sym} />
+        <div style={{ marginTop: "auto", padding: "10px 36px", borderTop: `1px solid ${T.stripBorder}`, background: T.stripBg, fontSize: 9, color: T.tableHeaderColor, textAlign: "center" }}>
+          {[form.company_phone && `☎ ${form.company_phone}`, form.company_email && `✉ ${form.company_email}`, form.company_website && `🌐 ${form.company_website}`].filter(Boolean).join("  ·  ")}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── Layout 7: Executive ─────────────────────────────────────────────────────
+function ExecutiveDoc({ form, items, calcs, sym, docType, managerSig, customerSig, T }) {
+  const label = TYPE_LABELS[docType] || "INVOICE";
+  const billToLabel = BILL_TO_LABEL[docType] || "BILL TO";
+  const amountLabel = AMOUNT_LABEL[docType] || "BALANCE DUE";
+  const isColoredHeader = T.headerBg !== "#ffffff" && T.headerBg !== "#fffbeb";
+  return (
+    <div style={{ background: "#fff", minHeight: 1123, display: "flex", flexDirection: "column" }}>
+      {/* Top banner with diagonal accent */}
+      <div style={{ background: T.headerBg, padding: "32px 48px 28px", position: "relative", overflow: "hidden" }}>
+        {/* Decorative circles */}
+        <div style={{ position: "absolute", right: -40, top: -40, width: 180, height: 180, borderRadius: "50%", background: T.accentColor, opacity: 0.12 }} />
+        <div style={{ position: "absolute", right: 60, bottom: -60, width: 130, height: 130, borderRadius: "50%", background: T.accentColor, opacity: 0.08 }} />
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", position: "relative", zIndex: 1 }}>
+          <div>
+            {form.logo_url && <img src={form.logo_url} alt="logo" style={{ height: 80, maxWidth: 160, objectFit: "contain", display: "block", marginBottom: 10, filter: isColoredHeader ? "brightness(0) invert(1)" : "none" }} />}
+            <div style={{ fontSize: 20, fontWeight: 900, color: T.headerColor }}>{form.company_name || "Your Company"}</div>
+            {form.company_address && <div style={{ fontSize: 9, color: T.headerColor, opacity: 0.6, marginTop: 4, whiteSpace: "pre-line" }}>{form.company_address}</div>}
+          </div>
+          <div style={{ textAlign: "right" }}>
+            <div style={{ background: T.accentColor, color: "#fff", fontSize: 20, fontWeight: 900, letterSpacing: 4, padding: "10px 20px", borderRadius: 6, display: "inline-block" }}>{label}</div>
+            <div style={{ fontSize: 12, fontFamily: "monospace", color: T.headerColor, opacity: 0.5, marginTop: 8 }}>{form.number || "—"}</div>
+            {docType !== "waybill" && (
+              <div style={{ marginTop: 8 }}>
+                <div style={{ fontSize: 8, color: T.headerColor, opacity: 0.6, textTransform: "uppercase", letterSpacing: 1 }}>{amountLabel}</div>
+                <div style={{ fontSize: 22, fontWeight: 900, color: isColoredHeader ? "#fff" : T.accentColor, marginTop: 2 }}>{sym}{fmt(calcs?.total || 0)}</div>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+      <div style={{ height: 4, background: T.accentColor }} />
+      {/* Client + dates bar */}
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 0, borderBottom: `1px solid ${T.stripBorder}`, background: T.stripBg }}>
+        <div style={{ padding: "16px 24px", borderRight: `1px solid ${T.stripBorder}` }}>
+          <div style={{ fontSize: 8, fontWeight: 700, color: T.tableHeaderColor, textTransform: "uppercase", letterSpacing: 1.5, marginBottom: 6 }}>{billToLabel}</div>
+          <div style={{ fontSize: 12, fontWeight: 700, color: "#1e293b" }}>{form.customer_name || "—"}</div>
+          {form.customer_company && <div style={{ fontSize: 10, color: "#334155", fontWeight: 600, marginTop: 2 }}>{form.customer_company}</div>}
+          {form.customer_address && <div style={{ fontSize: 9, color: "#64748b", marginTop: 3, whiteSpace: "pre-line" }}>{form.customer_address}</div>}
+        </div>
+        <div style={{ padding: "16px 24px", borderRight: `1px solid ${T.stripBorder}` }}>
+          <div style={{ fontSize: 8, fontWeight: 700, color: T.tableHeaderColor, textTransform: "uppercase", letterSpacing: 1.5, marginBottom: 6 }}>Document Info</div>
+          {form.issue_date && <div style={{ fontSize: 10, color: "#64748b" }}><span style={{ color: "#94a3b8" }}>{ISSUE_LABEL[docType] || "Date"}: </span><span style={{ fontWeight: 600, color: "#1e293b" }}>{form.issue_date}</span></div>}
+          {form.due_date && DUE_LABEL[docType] && <div style={{ fontSize: 10, color: "#64748b", marginTop: 4 }}><span style={{ color: "#94a3b8" }}>{DUE_LABEL[docType]}: </span><span style={{ fontWeight: 600, color: "#1e293b" }}>{form.due_date}</span></div>}
+          {form.lpo_number && <div style={{ fontSize: 10, color: "#64748b", marginTop: 4 }}><span style={{ color: "#94a3b8" }}>LPO: </span><span style={{ fontWeight: 600, color: "#1e293b" }}>{form.lpo_number}</span></div>}
+        </div>
+        <div style={{ padding: "16px 24px" }}>
+          <div style={{ fontSize: 8, fontWeight: 700, color: T.tableHeaderColor, textTransform: "uppercase", letterSpacing: 1.5, marginBottom: 6 }}>From</div>
+          <div style={{ fontSize: 10, fontWeight: 700, color: "#1e293b" }}>{form.company_name || "Your Company"}</div>
+          {form.company_email && <div style={{ fontSize: 9, color: "#64748b", marginTop: 3 }}>{form.company_email}</div>}
+          {form.company_phone && <div style={{ fontSize: 9, color: "#64748b", marginTop: 2 }}>{form.company_phone}</div>}
+          {form.tax_number && <div style={{ fontSize: 9, color: "#64748b", marginTop: 2 }}>TIN: {form.tax_number}</div>}
+        </div>
+      </div>
+      <ItemsTable items={items} docType={docType} T={T} />
+      <ExtraFields form={form} docType={docType} T={T} />
+      {docType !== "waybill" && <TotalsBlock calcs={calcs} form={form} sym={sym} T={T} amountLabel={amountLabel} />}
+      <NotesBlock form={form} T={T} />
+      <SigsAndPayment managerSig={managerSig} customerSig={customerSig} form={form} T={T} docType={docType} sym={sym} />
+      <div style={{ padding: "14px 48px", background: T.stripBg, borderTop: `1px solid ${T.stripBorder}`, textAlign: "center", fontSize: 9, color: T.tableHeaderColor, marginTop: "auto" }}>
+        {[form.company_phone && `☎ ${form.company_phone}`, form.company_email && `✉ ${form.company_email}`, form.company_website && `🌐 ${form.company_website}`].filter(Boolean).join("  ·  ")}
+      </div>
+    </div>
+  );
+}
+
+// ─── Layout 8: Wave ──────────────────────────────────────────────────────────
+function WaveDoc({ form, items, calcs, sym, docType, managerSig, customerSig, T }) {
+  const label = TYPE_LABELS[docType] || "INVOICE";
+  const billToLabel = BILL_TO_LABEL[docType] || "BILL TO";
+  const amountLabel = AMOUNT_LABEL[docType] || "BALANCE DUE";
+  const isColoredHeader = T.headerBg !== "#ffffff" && T.headerBg !== "#fffbeb";
+  return (
+    <div style={{ background: "#fff", minHeight: 1123, display: "flex", flexDirection: "column" }}>
+      {/* Wave header */}
+      <div style={{ position: "relative", background: T.headerBg, paddingBottom: 40 }}>
+        <div style={{ padding: "30px 48px 0", display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+          <div>
+            {form.logo_url && <img src={form.logo_url} alt="logo" style={{ height: 75, maxWidth: 160, objectFit: "contain", display: "block", marginBottom: 8, filter: isColoredHeader ? "brightness(0) invert(1)" : "none" }} />}
+            <div style={{ fontSize: 18, fontWeight: 900, color: T.headerColor }}>{form.company_name || "Your Company"}</div>
+            {form.company_address && <div style={{ fontSize: 9, color: T.headerColor, opacity: 0.55, marginTop: 3, whiteSpace: "pre-line" }}>{form.company_address}</div>}
+          </div>
+          <div style={{ textAlign: "right" }}>
+            <div style={{ fontSize: 36, fontWeight: 900, color: T.docTitleColor, letterSpacing: 2, lineHeight: 1 }}>{label}</div>
+            <div style={{ fontSize: 12, fontFamily: "monospace", color: T.headerColor, opacity: 0.4, marginTop: 6 }}>{form.number || "—"}</div>
+            {docType !== "waybill" && <div style={{ marginTop: 8 }}><div style={{ fontSize: 8, color: T.headerColor, opacity: 0.6, textTransform: "uppercase", letterSpacing: 1 }}>{amountLabel}</div><div style={{ fontSize: 20, fontWeight: 900, color: isColoredHeader ? "#fff" : T.accentColor, marginTop: 2 }}>{sym}{fmt(calcs?.total || 0)}</div></div>}
+          </div>
+        </div>
+        {/* SVG wave */}
+        <svg style={{ position: "absolute", bottom: 0, left: 0, width: "100%", display: "block" }} viewBox="0 0 794 48" preserveAspectRatio="none" height="48">
+          <path d="M0,24 C120,48 240,0 397,24 C554,48 674,8 794,24 L794,48 L0,48 Z" fill="#ffffff" />
+        </svg>
+      </div>
+      {/* Client info bar */}
+      <div style={{ padding: "12px 48px 16px", background: "#fff", borderBottom: `1px solid ${T.stripBorder}`, display: "flex", justifyContent: "space-between" }}>
+        <div>
+          <div style={{ fontSize: 8, fontWeight: 700, color: T.accentColor, textTransform: "uppercase", letterSpacing: 1.5, marginBottom: 5 }}>{billToLabel}</div>
+          <div style={{ fontSize: 12, fontWeight: 700, color: "#1e293b" }}>{form.customer_name || "—"}</div>
+          {form.customer_company && <div style={{ fontSize: 10, color: "#334155", marginTop: 2 }}>{form.customer_company}</div>}
+          {form.customer_address && <div style={{ fontSize: 9, color: "#64748b", marginTop: 3, whiteSpace: "pre-line" }}>{form.customer_address}</div>}
+        </div>
+        <div style={{ textAlign: "right", fontSize: 10 }}>
+          {form.issue_date && <div><span style={{ color: "#94a3b8" }}>{ISSUE_LABEL[docType] || "Date"}: </span><span style={{ fontWeight: 600, color: "#1e293b" }}>{form.issue_date}</span></div>}
+          {form.due_date && DUE_LABEL[docType] && <div style={{ marginTop: 3 }}><span style={{ color: "#94a3b8" }}>{DUE_LABEL[docType]}: </span><span style={{ fontWeight: 600, color: "#1e293b" }}>{form.due_date}</span></div>}
+          {form.lpo_number && <div style={{ marginTop: 3 }}><span style={{ color: "#94a3b8" }}>LPO: </span><span style={{ fontWeight: 600, color: "#1e293b" }}>{form.lpo_number}</span></div>}
+          {form.tax_number && <div style={{ marginTop: 3 }}><span style={{ color: "#94a3b8" }}>TIN: </span><span style={{ fontWeight: 600, color: "#1e293b" }}>{form.tax_number}</span></div>}
+        </div>
+      </div>
+      <ItemsTable items={items} docType={docType} T={T} />
+      <ExtraFields form={form} docType={docType} T={T} />
+      {docType !== "waybill" && <TotalsBlock calcs={calcs} form={form} sym={sym} T={T} amountLabel={amountLabel} />}
+      <NotesBlock form={form} T={T} />
+      <SigsAndPayment managerSig={managerSig} customerSig={customerSig} form={form} T={T} docType={docType} sym={sym} />
+      {/* Wave footer */}
+      <div style={{ marginTop: "auto", position: "relative" }}>
+        <svg style={{ display: "block", width: "100%" }} viewBox="0 0 794 32" preserveAspectRatio="none" height="32">
+          <path d="M0,16 C120,0 240,32 397,16 C554,0 674,24 794,16 L794,32 L0,32 Z" fill={T.accentColor} />
+        </svg>
+        <div style={{ background: T.accentColor, padding: "6px 48px 12px", textAlign: "center", fontSize: 9, color: isColoredHeader ? "rgba(255,255,255,0.7)" : "#fff" }}>
+          {[form.company_phone && `☎ ${form.company_phone}`, form.company_email && `✉ ${form.company_email}`, form.company_website && `🌐 ${form.company_website}`].filter(Boolean).join("  ·  ")}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── Layout 9: Compact ───────────────────────────────────────────────────────
+function CompactDoc({ form, items, calcs, sym, docType, managerSig, customerSig, T }) {
+  const label = TYPE_LABELS[docType] || "INVOICE";
+  const billToLabel = BILL_TO_LABEL[docType] || "BILL TO";
+  const amountLabel = AMOUNT_LABEL[docType] || "BALANCE DUE";
+  return (
+    <div style={{ background: "#fff", minHeight: 1123, display: "flex", flexDirection: "column" }}>
+      {/* Compact header: logo left, title+number+amount right, sharp border bottom */}
+      <div style={{ padding: "24px 40px", display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: `3px solid ${T.accentColor}` }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
+          {form.logo_url && <img src={form.logo_url} alt="logo" style={{ height: 60, maxWidth: 120, objectFit: "contain" }} />}
+          <div>
+            <div style={{ fontSize: 14, fontWeight: 800, color: "#0f172a" }}>{form.company_name || "Your Company"}</div>
+            {form.company_address && <div style={{ fontSize: 8, color: "#94a3b8", marginTop: 2, whiteSpace: "pre-line" }}>{form.company_address}</div>}
+          </div>
+        </div>
+        <div style={{ textAlign: "right" }}>
+          <div style={{ fontSize: 28, fontWeight: 900, letterSpacing: 3, color: T.accentColor }}>{label}</div>
+          <div style={{ fontSize: 11, fontFamily: "monospace", color: "#94a3b8", marginTop: 2 }}>{form.number || "—"}</div>
+          {docType !== "waybill" && <div style={{ fontSize: 18, fontWeight: 900, color: "#0f172a", marginTop: 4 }}>{sym}{fmt(calcs?.total || 0)}</div>}
+        </div>
+      </div>
+      {/* Three-column info bar */}
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", background: T.stripBg, borderBottom: `1px solid ${T.stripBorder}` }}>
+        <div style={{ padding: "12px 20px", borderRight: `1px solid ${T.stripBorder}` }}>
+          <div style={{ fontSize: 7, fontWeight: 800, color: T.tableHeaderColor, textTransform: "uppercase", letterSpacing: 1.5, marginBottom: 5 }}>{billToLabel}</div>
+          <div style={{ fontSize: 11, fontWeight: 700, color: "#1e293b" }}>{form.customer_name || "—"}</div>
+          {form.customer_company && <div style={{ fontSize: 9, color: "#334155", marginTop: 2 }}>{form.customer_company}</div>}
+          {form.customer_address && <div style={{ fontSize: 9, color: "#64748b", marginTop: 2, whiteSpace: "pre-line" }}>{form.customer_address}</div>}
+        </div>
+        <div style={{ padding: "12px 20px", borderRight: `1px solid ${T.stripBorder}` }}>
+          <div style={{ fontSize: 7, fontWeight: 800, color: T.tableHeaderColor, textTransform: "uppercase", letterSpacing: 1.5, marginBottom: 5 }}>Dates</div>
+          {form.issue_date && <div style={{ fontSize: 9, color: "#64748b" }}><span style={{ color: "#94a3b8" }}>{ISSUE_LABEL[docType] || "Date"}: </span><span style={{ fontWeight: 600, color: "#1e293b" }}>{form.issue_date}</span></div>}
+          {form.due_date && DUE_LABEL[docType] && <div style={{ fontSize: 9, color: "#64748b", marginTop: 3 }}><span style={{ color: "#94a3b8" }}>{DUE_LABEL[docType]}: </span><span style={{ fontWeight: 600, color: "#1e293b" }}>{form.due_date}</span></div>}
+        </div>
+        <div style={{ padding: "12px 20px" }}>
+          <div style={{ fontSize: 7, fontWeight: 800, color: T.tableHeaderColor, textTransform: "uppercase", letterSpacing: 1.5, marginBottom: 5 }}>References</div>
+          {form.lpo_number && <div style={{ fontSize: 9, color: "#64748b" }}><span style={{ color: "#94a3b8" }}>LPO: </span><span style={{ fontWeight: 600, color: "#1e293b" }}>{form.lpo_number}</span></div>}
+          {form.tax_number && <div style={{ fontSize: 9, color: "#64748b", marginTop: 3 }}><span style={{ color: "#94a3b8" }}>TIN: </span><span style={{ fontWeight: 600, color: "#1e293b" }}>{form.tax_number}</span></div>}
+          {form.company_phone && <div style={{ fontSize: 9, color: "#64748b", marginTop: 3 }}><span style={{ color: "#94a3b8" }}>Tel: </span><span style={{ fontWeight: 600, color: "#1e293b" }}>{form.company_phone}</span></div>}
+        </div>
+      </div>
+      <ItemsTable items={items} docType={docType} T={T} />
+      <ExtraFields form={form} docType={docType} T={T} />
+      {docType !== "waybill" && <TotalsBlock calcs={calcs} form={form} sym={sym} T={T} amountLabel={amountLabel} />}
+      <NotesBlock form={form} T={T} />
+      <SigsAndPayment managerSig={managerSig} customerSig={customerSig} form={form} T={T} docType={docType} sym={sym} />
+      <div style={{ padding: "10px 40px", background: T.stripBg, borderTop: `1px solid ${T.stripBorder}`, textAlign: "center", fontSize: 9, color: T.tableHeaderColor, marginTop: "auto" }}>
+        {[form.company_phone && `☎ ${form.company_phone}`, form.company_email && `✉ ${form.company_email}`, form.company_website && `🌐 ${form.company_website}`].filter(Boolean).join("  ·  ")}
+      </div>
+    </div>
+  );
+}
+
 const CORNER_RADIUS_MAP = { none: 0, sm: 4, lg: 8, full: 16 };
 const SHADOW_MAP = {
   none: "none",
@@ -593,11 +828,15 @@ export default function DocumentPreview({ form, items, calcs, sym, docType, mana
     const shared = { form, items: lineItems, calcs, sym, docType, managerSig, customerSig, T };
     return (
       <div style={{ width: 794, border: "1px solid #e2e8f0", borderRadius: radius, overflow: "hidden", fontFamily: T.font, boxShadow: shadow }}>
-        {layout === "modern" && <ModernDoc {...shared} />}
-        {layout === "minimal" && <MinimalDoc {...shared} />}
-        {layout === "bold" && <BoldDoc {...shared} />}
-        {layout === "elegant" && <ElegantDoc {...shared} />}
-        {(layout === "classic" || !["modern", "minimal", "bold", "elegant"].includes(layout)) && <ClassicDoc {...shared} />}
+        {layout === "modern"    && <ModernDoc    {...shared} />}
+        {layout === "minimal"   && <MinimalDoc   {...shared} />}
+        {layout === "bold"      && <BoldDoc      {...shared} />}
+        {layout === "elegant"   && <ElegantDoc   {...shared} />}
+        {layout === "sidebar"   && <SidebarDoc   {...shared} />}
+        {layout === "executive" && <ExecutiveDoc {...shared} />}
+        {layout === "wave"      && <WaveDoc      {...shared} />}
+        {layout === "compact"   && <CompactDoc   {...shared} />}
+        {(layout === "classic" || !["modern","minimal","bold","elegant","sidebar","executive","wave","compact"].includes(layout)) && <ClassicDoc {...shared} />}
       </div>);
 
   }

@@ -47,7 +47,11 @@
         "modern",
         "minimal",
         "bold",
-        "elegant"
+        "elegant",
+        "sidebar",
+        "executive",
+        "wave",
+        "compact"
       ],
       "title": "Layout Template",
       "default": "classic"
