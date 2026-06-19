@@ -708,11 +708,14 @@ export default function CreateDocument() {
   // For the editor scroll area (not modal)
   const previewScale = Math.min(1, (Math.min(viewportWidth, 826) - 32) / 794);
   // Scale PDF to fill the right panel completely
-  const MODAL_LEFT_W = 160 + 124 + 32; // colour panel + layout strip
-  const MODAL_TOP_H = 56;
-  const availW = viewportWidth - MODAL_LEFT_W;
-  const availH = viewportHeight - MODAL_TOP_H;
+  const isMobileModal = viewportWidth < 768;
+  const MODAL_LEFT_W = isMobileModal ? 0 : 160 + 124 + 32; // on mobile panels are hidden
+  const MODAL_TOP_H = isMobileModal ? 48 : 56; // top bar only
+  const MODAL_BOTTOM_H = isMobileModal ? 72 : 0; // mobile bottom controls
+  const availW = viewportWidth - MODAL_LEFT_W - (isMobileModal ? 16 : 0);
+  const availH = viewportHeight - MODAL_TOP_H - MODAL_BOTTOM_H;
   const pdfModalScale = Math.min(availW / 794, availH / 1123);
+  const [showMobileDesignPanel, setShowMobileDesignPanel] = useState(false);
 
   const L = DOC_LABELS[docType] || DOC_LABELS.invoice;
 
@@ -1399,8 +1402,8 @@ export default function CreateDocument() {
       {showPdfPreview &&
       <div className="fixed inset-0 z-50 flex" style={{ background: "radial-gradient(ellipse at 60% 40%, #0d1117 0%, #080b14 60%, #050709 100%)" }} onClick={() => setShowPdfPreview(false)}>
 
-          {/* ── Layout picker strip (far left, tall, draggable) ── */}
-          <div onClick={(e) => e.stopPropagation()}>
+          {/* ── Layout picker strip — desktop only ── */}
+          <div className="hidden md:block" onClick={(e) => e.stopPropagation()}>
             <LayoutPickerStrip
             layouts={LAYOUTS}
             template={template}
@@ -1412,23 +1415,17 @@ export default function CreateDocument() {
             sym={sym}
             docType={form.type || docType}
             managerSig={managerSig} />
-          
           </div>
 
-          {/* ── Design controls panel ── */}
-          <div className="shrink-0 flex flex-col h-full overflow-hidden" style={{ width: 160, background: "linear-gradient(180deg,#0f172a 0%,#1e1b4b 100%)" }} onClick={(e) => e.stopPropagation()}>
-            {/* Panel header */}
+          {/* ── Design controls panel — desktop only ── */}
+          <div className="hidden md:flex shrink-0 flex-col h-full overflow-hidden" style={{ width: 160, background: "linear-gradient(180deg,#0f172a 0%,#1e1b4b 100%)" }} onClick={(e) => e.stopPropagation()}>
             <div className="px-3 pt-4 pb-2.5 border-b border-white/10 shrink-0">
               <div className="flex items-center gap-1.5">
                 <Palette className="h-3.5 w-3.5 text-indigo-400" />
                 <span className="text-xs font-bold text-white tracking-wide">Design</span>
               </div>
             </div>
-
-            {/* Divider */}
             <div className="mx-3 border-t border-white/10 shrink-0" />
-
-            {/* Colour section */}
             <div className="px-3 pt-2.5 pb-2 shrink-0">
               <div className="flex items-center justify-between mb-2">
                 <p className="text-[9px] font-bold uppercase tracking-[0.15em] text-white/40">Colour</p>
@@ -1442,24 +1439,10 @@ export default function CreateDocument() {
               )}
               </div>
             </div>
-
-            {/* Divider */}
             <div className="mx-3 border-t border-white/10 shrink-0" />
-
-            {/* Action buttons */}
-            <div className="px-3 pt-2.5 pb-3 space-y-2 shrink-0">
-              
-
-
-            
-              
-
-
-            
-            </div>
           </div>
 
-          {/* ── Right: preview area ── */}
+          {/* ── Main area: preview + mobile controls ── */}
           <div className="flex-1 flex flex-col overflow-hidden" style={{ position: "relative" }} onClick={(e) => e.stopPropagation()}>
 
             {/* Subtle dot-grid background texture */}
@@ -1469,18 +1452,14 @@ export default function CreateDocument() {
             <div style={{ position: "absolute", top: "50%", left: "50%", transform: "translate(-50%,-50%)", width: 600, height: 700, background: "radial-gradient(ellipse, rgba(99,102,241,0.08) 0%, transparent 70%)", borderRadius: "50%", pointerEvents: "none" }} />
 
             {/* Top bar */}
-            <div className="shrink-0 flex items-center justify-between px-5 py-3 relative z-10" style={{ borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
-              <div className="flex items-center gap-3">
-                {/* Doc type badge */}
-                <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest" style={{ background: "rgba(99,102,241,0.15)", color: "#a5b4fc", border: "1px solid rgba(99,102,241,0.25)" }}>
+            <div className="shrink-0 flex items-center justify-between px-3 md:px-5 py-2 md:py-3 relative z-10" style={{ borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
+              <div className="flex items-center gap-2 md:gap-3">
+                <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-widest" style={{ background: "rgba(99,102,241,0.15)", color: "#a5b4fc", border: "1px solid rgba(99,102,241,0.25)" }}>
                   <span>{(typeLabels[form.type || docType] || "Document").toUpperCase()}</span>
                 </div>
-                <div>
-                  <p className="text-white/80 font-semibold text-sm leading-tight">{form.number || "Draft"}</p>
-                  {form.customer_name && <p className="text-white/30 text-[11px]">for {form.customer_name}</p>}
-                </div>
+                <p className="text-white/70 font-semibold text-xs md:text-sm leading-tight truncate max-w-[120px] md:max-w-none">{form.number || "Draft"}</p>
               </div>
-              <button className="w-8 h-8 rounded-full flex items-center justify-center text-white/30 hover:text-white hover:bg-white/10 transition-all text-base leading-none" style={{ border: "1px solid rgba(255,255,255,0.1)" }} onClick={() => setShowPdfPreview(false)}>✕</button>
+              <button className="hidden md:flex w-8 h-8 rounded-full items-center justify-center text-white/30 hover:text-white hover:bg-white/10 transition-all text-base leading-none" style={{ border: "1px solid rgba(255,255,255,0.1)" }} onClick={() => setShowPdfPreview(false)}>✕</button>
             </div>
 
             {/* Waybill sign banners */}
@@ -1535,6 +1514,48 @@ export default function CreateDocument() {
             </div>
 
           </div>
+
+          {/* ── Mobile bottom controls ── */}
+          <div className="md:hidden shrink-0 flex items-center gap-2 px-3 py-2.5 relative z-10" style={{ background: "rgba(15,23,42,0.95)", borderTop: "1px solid rgba(255,255,255,0.08)" }} onClick={(e) => e.stopPropagation()}>
+            {/* Layout name */}
+            <button onClick={() => setShowMobileDesignPanel(!showMobileDesignPanel)}
+              className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-bold text-white/80"
+              style={{ background: "rgba(99,102,241,0.2)", border: "1px solid rgba(99,102,241,0.3)" }}>
+              <Palette className="h-3.5 w-3.5 text-indigo-400" />
+              <span>{LAYOUTS[template]?.name || "Classic"}</span>
+            </button>
+            {/* Colour swatches — compact row */}
+            <div className="flex gap-1 overflow-x-auto flex-1" style={{ scrollbarWidth: "none" }}>
+              {Object.values(COLOR_SCHEMES).map((c) =>
+                <button key={c.id} onClick={() => handleSetTemplateColor(c.id)} title={c.name}
+                  className={`shrink-0 w-5 h-5 rounded-full border-2 transition-all ${templateColor === c.id ? "border-white scale-125" : "border-transparent"}`}
+                  style={{ background: c.swatch }} />
+              )}
+            </div>
+            <button className="shrink-0 w-8 h-8 rounded-full flex items-center justify-center text-white/50 hover:text-white text-lg leading-none"
+              onClick={() => setShowPdfPreview(false)}>✕</button>
+          </div>
+
+          {/* ── Mobile layout picker sheet ── */}
+          {showMobileDesignPanel && (
+            <div className="md:hidden absolute bottom-14 left-0 right-0 z-20 flex gap-2 px-3 py-3 overflow-x-auto"
+              style={{ background: "rgba(15,23,42,0.97)", borderTop: "1px solid rgba(255,255,255,0.08)", scrollbarWidth: "none" }}
+              onClick={(e) => e.stopPropagation()}>
+              {Object.values(LAYOUTS).map((l) => (
+                <button key={l.id} onClick={() => { handleSetTemplate(l.id); setShowMobileDesignPanel(false); }}
+                  className={`shrink-0 flex flex-col items-center gap-1 p-1.5 rounded-lg border-2 transition-all ${template === l.id ? "border-indigo-400" : "border-white/10"}`}
+                  style={{ background: "rgba(255,255,255,0.05)", width: 64 }}>
+                  <div style={{ width: 48, height: 64, borderRadius: 4, overflow: "hidden", background: "#fff" }}>
+                    <div style={{ transform: "scale(0.18)", transformOrigin: "top left", width: 794, height: 1123 }}>
+                      <DocumentPreview form={form} items={calcs.lineItems} calcs={calcs} sym={sym} docType={form.type || docType} managerSig={managerSig} template={l.id} templateColor={templateColor} />
+                    </div>
+                  </div>
+                  <span className="text-[9px] text-white/60 font-medium">{l.name}</span>
+                </button>
+              ))}
+            </div>
+          )}
+
           {/* Inline Receiver Signature Overlay (waybill soft signage) */}
           {showInlineSigPad &&
         <div className="fixed inset-0 z-[60] flex flex-col bg-black/80" onClick={() => {setShowInlineSigPad(false);setSigStep("info");}}>
