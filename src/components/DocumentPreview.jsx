@@ -913,6 +913,16 @@ function SikkyDoc({ form, items, calcs, sym, docType, managerSig, customerSig, T
                 )) : <tr><td colSpan={3} style={{ padding: "20px 8px", textAlign: "center", color: "#9ca3af" }}>No items</td></tr>}
               </tbody>
             </table>
+            {/* Logistics info */}
+            {(form.driver_name || form.vehicle_number || form.tracking_number) && (
+              <div style={{ marginTop: 16, fontSize: 12, color: "#111", lineHeight: 2 }}>
+                {form.driver_name && <div><strong>Driver:</strong> {form.driver_name}</div>}
+                {form.vehicle_number && <div><strong>Vehicle No:</strong> {form.vehicle_number}</div>}
+                {form.tracking_number && <div><strong>Tracking No:</strong> {form.tracking_number}</div>}
+              </div>
+            )}
+            {/* Notes */}
+            {form.notes && <div style={{ marginTop: 12, fontSize: 12, color: "#444", lineHeight: 1.8 }}><strong>Note:</strong> {form.notes}</div>}
           </div>
           <div style={{ flex: 1 }} />
           <SigRow />
@@ -974,11 +984,40 @@ function SikkyDoc({ form, items, calcs, sym, docType, managerSig, customerSig, T
                 )) : <tr><td colSpan={5} style={{ padding: "20px 8px", textAlign: "center", color: "#9ca3af" }}>No items</td></tr>}
               </tbody>
             </table>
+            {/* Quotation totals */}
+            {calcs && (
+              <div style={{ marginTop: 16, display: "flex", justifyContent: "flex-end" }}>
+                <div style={{ width: 300, fontSize: 13 }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", padding: "4px 0", borderTop: "1px solid #ddd" }}><span>Subtotal</span><span>{sym}{fmt(calcs.subtotal)}</span></div>
+                  {(calcs.globalDiscAmt || 0) > 0 && <div style={{ display: "flex", justifyContent: "space-between", padding: "4px 0" }}><span>Discount</span><span>-{sym}{fmt(calcs.globalDiscAmt)}</span></div>}
+                  {(calcs.taxAmt || 0) > 0 && <div style={{ display: "flex", justifyContent: "space-between", padding: "4px 0" }}><span>VAT ({form.tax_rate}%)</span><span>{sym}{fmt(calcs.taxAmt)}</span></div>}
+                  {(parseFloat(form.shipping) || 0) > 0 && <div style={{ display: "flex", justifyContent: "space-between", padding: "4px 0" }}><span>Shipping</span><span>{sym}{fmt(form.shipping)}</span></div>}
+                  <div style={{ display: "flex", justifyContent: "space-between", padding: "8px 0 4px", borderTop: "1px solid #111", fontWeight: 700, fontSize: 14 }}>
+                    <span>ESTIMATED TOTAL</span><span>{sym}{fmt(calcs.total)}</span>
+                  </div>
+                </div>
+              </div>
+            )}
             {/* Terms block */}
             {(form.terms || form.payment_instructions) && (
-              <div style={{ marginTop: 24, fontSize: 13, color: "#111", lineHeight: 2 }}>
+              <div style={{ marginTop: 20, fontSize: 13, color: "#111", lineHeight: 2 }}>
                 {form.terms && <div>DELIVERY TIME: {form.terms}</div>}
                 {form.payment_instructions && <div style={{ whiteSpace: "pre-line" }}>{form.payment_instructions}</div>}
+              </div>
+            )}
+            {/* Notes */}
+            {form.notes && (
+              <div style={{ marginTop: 12, fontSize: 12, color: "#444", lineHeight: 1.8 }}>
+                <strong>Note:</strong> {form.notes}
+              </div>
+            )}
+            {/* Bank details */}
+            {form.payment_method === "Bank Transfer" && form.bank_name && (
+              <div style={{ marginTop: 16, fontSize: 12, color: "#111", lineHeight: 1.9 }}>
+                <strong>PAYMENT DETAILS:</strong><br />
+                {form.bank_name && <div>Bank: {form.bank_name}</div>}
+                {form.account_number && <div>Account No: {form.account_number}</div>}
+                {form.account_holder_name && <div>Account Name: {form.account_holder_name}</div>}
               </div>
             )}
           </div>
@@ -1053,6 +1092,20 @@ function SikkyDoc({ form, items, calcs, sym, docType, managerSig, customerSig, T
                 </tr>
               ))}
               {/* Totals rows */}
+              {(calcs?.globalDiscAmt || 0) > 0 && (
+                <tr style={{ borderTop: "1px solid #ddd" }}>
+                  <td colSpan={2} style={{ padding: "6px 10px", borderRight: "1px solid #ddd" }} />
+                  <td style={{ padding: "6px 10px", fontWeight: 700, borderRight: "1px solid #ddd", borderLeft: "1px solid #ddd" }}>DISCOUNT</td>
+                  <td style={{ padding: "6px 10px", textAlign: "right", fontWeight: 700 }}>-{sym}{fmt(calcs.globalDiscAmt)}</td>
+                </tr>
+              )}
+              {(parseFloat(form.shipping) || 0) > 0 && (
+                <tr style={{ borderTop: "1px solid #ddd" }}>
+                  <td colSpan={2} style={{ padding: "6px 10px", borderRight: "1px solid #ddd" }} />
+                  <td style={{ padding: "6px 10px", fontWeight: 700, borderRight: "1px solid #ddd", borderLeft: "1px solid #ddd" }}>SHIPPING</td>
+                  <td style={{ padding: "6px 10px", textAlign: "right", fontWeight: 700 }}>{sym}{fmt(form.shipping)}</td>
+                </tr>
+              )}
               <tr style={{ borderTop: "1px solid #111" }}>
                 <td colSpan={2} style={{ padding: "6px 10px", borderRight: "1px solid #ddd" }} />
                 <td style={{ padding: "6px 10px", fontWeight: 700, borderRight: "1px solid #ddd", borderLeft: "1px solid #ddd" }}>TOTAL</td>
@@ -1085,10 +1138,31 @@ function SikkyDoc({ form, items, calcs, sym, docType, managerSig, customerSig, T
               <strong>AMOUNT IN WORDS:</strong> {numToWords(grandTotal)}.
             </div>
           )}
+          {/* Notes */}
+          {form.notes && (
+            <div style={{ marginTop: 10, fontSize: 12, color: "#444", lineHeight: 1.8 }}>
+              <strong>Note:</strong> {form.notes}
+            </div>
+          )}
+          {/* Terms */}
+          {form.terms && (
+            <div style={{ marginTop: 8, fontSize: 12, color: "#333", lineHeight: 1.8 }}>
+              <strong>Terms:</strong> {form.terms}
+            </div>
+          )}
           {/* Payment instructions */}
           {form.payment_instructions && (
             <div style={{ marginTop: 8, fontSize: 12, color: "#333", whiteSpace: "pre-line", lineHeight: 1.9 }}>
               {form.payment_instructions}
+            </div>
+          )}
+          {/* Bank details */}
+          {form.payment_method === "Bank Transfer" && form.bank_name && (
+            <div style={{ marginTop: 14, fontSize: 12, color: "#111", lineHeight: 1.9 }}>
+              <strong>PAYMENT DETAILS:</strong><br />
+              {form.bank_name && <div>Bank: {form.bank_name}</div>}
+              {form.account_number && <div>Account No: {form.account_number}</div>}
+              {form.account_holder_name && <div>Account Name: {form.account_holder_name}</div>}
             </div>
           )}
         </div>
