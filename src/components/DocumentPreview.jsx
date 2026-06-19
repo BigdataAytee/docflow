@@ -1,14 +1,14 @@
 import { buildTheme } from "./TemplateSelector";
 
 const TYPE_LABELS = {
-  invoice: "INVOICE", quotation: "QUOTATION", receipt: "RECEIPT", waybill: "WAYBILL",
+  invoice: "INVOICE", quotation: "QUOTATION", receipt: "RECEIPT", waybill: "WAYBILL"
 };
 const BILL_TO_LABEL = { invoice: "BILL TO", quotation: "PREPARED FOR", receipt: "RECEIVED FROM", waybill: "DELIVER TO" };
-const AMOUNT_LABEL  = { invoice: "BALANCE DUE", receipt: "AMOUNT RECEIVED", quotation: "ESTIMATED TOTAL", waybill: null };
-const ISSUE_LABEL   = { invoice: "Invoice Date", quotation: "Issue Date", receipt: "Payment Date", waybill: "Dispatch Date" };
-const DUE_LABEL     = { invoice: "Due Date", quotation: "Expiry Date", receipt: null, waybill: "Delivery Date" };
-const SIG_LABEL     = { invoice: "Authorized Signatory", quotation: "Prepared By", receipt: "Received By", waybill: "Dispatcher" };
-const SIG2_LABEL    = { quotation: "Customer Acceptance", waybill: "Receiver's Signature" };
+const AMOUNT_LABEL = { invoice: "BALANCE DUE", receipt: "AMOUNT RECEIVED", quotation: "ESTIMATED TOTAL", waybill: null };
+const ISSUE_LABEL = { invoice: "Invoice Date", quotation: "Issue Date", receipt: "Payment Date", waybill: "Dispatch Date" };
+const DUE_LABEL = { invoice: "Due Date", quotation: "Expiry Date", receipt: null, waybill: "Delivery Date" };
+const SIG_LABEL = { invoice: "Authorized Signatory", quotation: "Prepared By", receipt: "Received By", waybill: "Dispatcher" };
+const SIG2_LABEL = { quotation: "Customer Acceptance", waybill: "Receiver's Signature" };
 
 const fmt = (n) => (n || 0).toLocaleString("en", { minimumFractionDigits: 2 });
 
@@ -21,8 +21,8 @@ function ExtraFields({ form, docType, T }) {
         {form.payment_method && <div><span style={{ color: "#94a3b8", fontSize: 9, textTransform: "uppercase", letterSpacing: 1, display: "block", marginBottom: 2 }}>Payment Method</span><span style={{ fontWeight: 700, color: "#1e293b", fontSize: 12 }}>{form.payment_method}</span></div>}
         {form.transaction_id && <div><span style={{ color: "#94a3b8", fontSize: 9, textTransform: "uppercase", letterSpacing: 1, display: "block", marginBottom: 2 }}>Transaction ID</span><span style={{ fontWeight: 700, color: "#1e293b", fontSize: 12 }}>{form.transaction_id}</span></div>}
         {form.reference_number && <div><span style={{ color: "#94a3b8", fontSize: 9, textTransform: "uppercase", letterSpacing: 1, display: "block", marginBottom: 2 }}>Reference No.</span><span style={{ fontWeight: 700, color: "#1e293b", fontSize: 12 }}>{form.reference_number}</span></div>}
-      </div>
-    );
+      </div>);
+
   }
   if (docType === "waybill") {
     const hasExtra = form.driver_name || form.vehicle_number || form.tracking_number;
@@ -32,8 +32,8 @@ function ExtraFields({ form, docType, T }) {
         {form.driver_name && <div><span style={{ color: "#94a3b8", fontSize: 9, textTransform: "uppercase", letterSpacing: 1, display: "block", marginBottom: 2 }}>Driver</span><span style={{ fontWeight: 700, color: "#1e293b", fontSize: 12 }}>{form.driver_name}</span></div>}
         {form.vehicle_number && <div><span style={{ color: "#94a3b8", fontSize: 9, textTransform: "uppercase", letterSpacing: 1, display: "block", marginBottom: 2 }}>Vehicle No.</span><span style={{ fontWeight: 700, color: "#1e293b", fontSize: 12 }}>{form.vehicle_number}</span></div>}
         {form.tracking_number && <div><span style={{ color: "#94a3b8", fontSize: 9, textTransform: "uppercase", letterSpacing: 1, display: "block", marginBottom: 2 }}>Tracking No.</span><span style={{ fontWeight: 700, color: "#1e293b", fontSize: 12 }}>{form.tracking_number}</span></div>}
-      </div>
-    );
+      </div>);
+
   }
   return null;
 }
@@ -51,8 +51,8 @@ function ItemsTable({ items, docType, T }) {
         </tr>
       </thead>
       <tbody>
-        {items.length > 0 ? items.map((item, i) => (
-          <tr key={i} style={{ borderBottom: "1px solid #e2e8f0", background: i % 2 === 0 ? "transparent" : "#f8fafc" }}>
+        {items.length > 0 ? items.map((item, i) =>
+        <tr key={i} style={{ borderBottom: "1px solid #e2e8f0", background: i % 2 === 0 ? "transparent" : "#f8fafc" }}>
             <td style={{ padding: "14px 48px", color: "#1e293b", fontWeight: 500, fontSize: 14 }}>
               <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
                 {item.image_url && <img src={item.image_url} alt="" style={{ width: 90, height: 90, objectFit: "cover", borderRadius: 6, border: "1px solid #e2e8f0", flexShrink: 0, boxShadow: "0 1px 4px rgba(0,0,0,0.10)" }} />}
@@ -63,12 +63,12 @@ function ItemsTable({ items, docType, T }) {
             {showPrice && <td style={{ padding: "13px 12px", textAlign: "right", color: "#334155", fontWeight: 500, fontSize: 14 }}>{fmt(item.unit_price)}</td>}
             {showPrice && <td style={{ padding: "14px 48px 14px 12px", textAlign: "right", fontWeight: 700, color: "#0f172a", fontSize: 15 }}>{fmt(item.amount)}</td>}
           </tr>
-        )) : (
-          <tr><td colSpan={4} style={{ padding: "24px 28px", color: "#cbd5e1", textAlign: "center", fontSize: 11 }}>No items added yet</td></tr>
-        )}
+        ) :
+        <tr><td colSpan={4} style={{ padding: "24px 28px", color: "#cbd5e1", textAlign: "center", fontSize: 11 }}>No items added yet</td></tr>
+        }
       </tbody>
-    </table>
-  );
+    </table>);
+
 }
 
 function TotalsBlock({ calcs, form, sym, T, amountLabel }) {
@@ -84,8 +84,8 @@ function TotalsBlock({ calcs, form, sym, T, amountLabel }) {
         <div style={{ display: "flex", justifyContent: "space-between", padding: "14px 0 8px", borderTop: `2px solid ${T.totalBorder}`, marginTop: 10, fontWeight: 900, fontSize: 18, color: "#0f172a" }}>
           <span style={{ fontSize: 16 }}>{amountLabel}</span><span style={{ color: T.accentColor, fontSize: 20 }}>{sym}{fmt(calcs.total)}</span>
         </div>
-        {withholdingVatAmt > 0 && (
-          <>
+        {withholdingVatAmt > 0 &&
+        <>
             <div style={{ display: "flex", justifyContent: "space-between", padding: "7px 0", color: "#dc2626", fontWeight: 500, fontSize: 13 }}>
               <span>Withholding VAT ({form.withholding_vat_rate}%)</span>
               <span style={{ fontWeight: 600 }}>-{sym}{fmt(withholdingVatAmt)}</span>
@@ -94,10 +94,10 @@ function TotalsBlock({ calcs, form, sym, T, amountLabel }) {
               <span>Net Payable</span><span style={{ fontSize: 20 }}>{sym}{fmt(netPayable)}</span>
             </div>
           </>
-        )}
+        }
       </div>
-    </div>
-  );
+    </div>);
+
 }
 
 function PaymentDetailsBlock({ form, sym, T }) {
@@ -114,35 +114,35 @@ function PaymentDetailsBlock({ form, sym, T }) {
             <span style={{ color: "#94a3b8" }}>Method</span>
             <span style={{ fontWeight: 700, color: "#1e293b" }}>{form.payment_method}</span>
           </div>
-          {isBankTransfer && form.bank_name && (
-            <div style={{ display: "flex", justifyContent: "space-between", fontSize: 11 }}>
+          {isBankTransfer && form.bank_name &&
+          <div style={{ display: "flex", justifyContent: "space-between", fontSize: 11 }}>
               <span style={{ color: "#94a3b8" }}>Bank</span>
               <span style={{ fontWeight: 600, color: "#1e293b" }}>{form.bank_name}</span>
             </div>
-          )}
-          {isBankTransfer && form.account_number && (
-            <div style={{ display: "flex", justifyContent: "space-between", fontSize: 11 }}>
+          }
+          {isBankTransfer && form.account_number &&
+          <div style={{ display: "flex", justifyContent: "space-between", fontSize: 11 }}>
               <span style={{ color: "#94a3b8" }}>Account No.</span>
               <span style={{ fontWeight: 600, color: "#1e293b", fontFamily: "monospace" }}>{form.account_number}</span>
             </div>
-          )}
-          {isBankTransfer && form.account_holder_name && (
-            <div style={{ display: "flex", justifyContent: "space-between", fontSize: 11 }}>
+          }
+          {isBankTransfer && form.account_holder_name &&
+          <div style={{ display: "flex", justifyContent: "space-between", fontSize: 11 }}>
               <span style={{ color: "#94a3b8" }}>Account Name</span>
               <span style={{ fontWeight: 600, color: "#1e293b" }}>{form.account_holder_name}</span>
             </div>
-          )}
-          {form.transaction_id && (
-            <div style={{ display: "flex", justifyContent: "space-between", fontSize: 11 }}>
+          }
+          {form.transaction_id &&
+          <div style={{ display: "flex", justifyContent: "space-between", fontSize: 11 }}>
               <span style={{ color: "#94a3b8" }}>Transaction ID</span>
               <span style={{ fontWeight: 600, color: "#1e293b", fontFamily: "monospace" }}>{form.transaction_id}</span>
             </div>
-          )}
+          }
 
         </div>
       </div>
-    </div>
-  );
+    </div>);
+
 }
 
 function Sigs({ managerSig, customerSig, form, T, docType }) {
@@ -152,7 +152,7 @@ function Sigs({ managerSig, customerSig, form, T, docType }) {
   return (
     <div style={{ display: "flex", gap: 40, padding: "20px 48px", borderTop: "1px solid #e2e8f0", alignItems: "flex-start" }}>
       <div style={{ minWidth: 160 }}>
-        {(managerSig || form?.manager_signature) ? <img src={managerSig || form.manager_signature} alt="" style={{ height: 72, objectFit: "contain", display: "block", marginBottom: 4 }} /> : <div style={{ height: 72 }} />}
+        {managerSig || form?.manager_signature ? <img src={managerSig || form.manager_signature} alt="" style={{ height: 72, objectFit: "contain", display: "block", marginBottom: 4 }} /> : <div style={{ height: 72 }} />}
         <div style={{ borderTop: `1px solid ${T.accentColor}`, paddingTop: 3 }}>
           <div style={{ fontSize: 8, color: T.tableHeaderColor, textTransform: "uppercase", letterSpacing: 1 }}>{managerLabel}</div>
           {form?.manager_name && <div style={{ fontSize: 11, color: "#1e293b", fontWeight: 700, marginTop: 2 }}>{form.manager_name}</div>}
@@ -160,29 +160,29 @@ function Sigs({ managerSig, customerSig, form, T, docType }) {
           {!form?.manager_name && form?.company_name && <div style={{ fontSize: 10, color: "#475569", marginTop: 1 }}>{form.company_name}</div>}
         </div>
       </div>
-      {showCustomer && (docType === "waybill" || (customerSig || form?.customer_signature)) && (
-        <div style={{ minWidth: 180 }}>
-          {(customerSig || form?.customer_signature)
-            ? <img src={customerSig || form.customer_signature} alt="" style={{ height: 72, objectFit: "contain", display: "block", marginBottom: 4 }} />
-            : <div style={{ height: 72 }} />
-          }
-          {docType === "waybill" && (
-            <div style={{ borderTop: `1px solid ${T.accentColor}`, paddingTop: 3 }}>
+      {showCustomer && (docType === "waybill" || customerSig || form?.customer_signature) &&
+      <div style={{ minWidth: 180 }}>
+          {customerSig || form?.customer_signature ?
+        <img src={customerSig || form.customer_signature} alt="" style={{ height: 72, objectFit: "contain", display: "block", marginBottom: 4 }} /> :
+        <div style={{ height: 72 }} />
+        }
+          {docType === "waybill" &&
+        <div style={{ borderTop: `1px solid ${T.accentColor}`, paddingTop: 3 }}>
               <div style={{ fontSize: 10, color: "#334155", fontWeight: 600, marginTop: 2 }}>{form?.receiver_name || form?.customer_name || ""}</div>
               <div style={{ fontSize: 9, color: "#94a3b8", marginTop: 1 }}>
                 {form?.receiver_date && `Date: ${form.receiver_date}`}
                 {form?.receiver_date && form?.receiver_time && "  ·  "}
                 {form?.receiver_time && `Time: ${form.receiver_time}`}
               </div>
-              {!(form?.receiver_date) && (
-                <div style={{ fontSize: 9, color: "#cbd5e1", marginTop: 2 }}>Name: ____________  Date: ____________  Time: ____________</div>
-              )}
+              {!form?.receiver_date &&
+          <div style={{ fontSize: 9, color: "#cbd5e1", marginTop: 2 }}>Name: ____________  Date: ____________  Time: ____________</div>
+          }
             </div>
-          )}
+        }
         </div>
-      )}
-    </div>
-  );
+      }
+    </div>);
+
 }
 
 function NotesBlock({ form, T }) {
@@ -191,8 +191,8 @@ function NotesBlock({ form, T }) {
     <div style={{ padding: "12px 48px 16px", borderTop: `1px solid ${T.stripBorder}` }}>
       <div style={{ fontSize: 9, fontWeight: 700, color: T.tableHeaderColor, textTransform: "uppercase", letterSpacing: 1, marginBottom: 5 }}>Note to Customer</div>
       <div style={{ fontSize: 11, color: "#475569", whiteSpace: "pre-line", lineHeight: 1.6 }}>{form.notes}</div>
-    </div>
-  );
+    </div>);
+
 }
 
 function SigsAndPayment({ managerSig, customerSig, form, T, docType, sym }) {
@@ -201,8 +201,8 @@ function SigsAndPayment({ managerSig, customerSig, form, T, docType, sym }) {
       <div style={{ flex: 1 }}>
         <Sigs managerSig={managerSig} customerSig={customerSig} form={form} T={T} docType={docType} wrapperStyle={{ padding: 0, border: "none" }} />
       </div>
-      {form?.payment_method && (docType === "invoice" || docType === "quotation") && (
-        <div style={{ flexShrink: 0, width: 220, border: `1px solid ${T.stripBorder}`, borderRadius: 8, overflow: "hidden", background: T.stripBg, alignSelf: "flex-end" }}>
+      {form?.payment_method && (docType === "invoice" || docType === "quotation") &&
+      <div style={{ flexShrink: 0, width: 220, border: `1px solid ${T.stripBorder}`, borderRadius: 8, overflow: "hidden", background: T.stripBg, alignSelf: "flex-end" }}>
           <div style={{ padding: "7px 12px", background: T.tableHeaderBg, borderBottom: `1px solid ${T.stripBorder}` }}>
             <span style={{ fontSize: 9, fontWeight: 700, color: T.tableHeaderColor, textTransform: "uppercase", letterSpacing: 1 }}>Payment Details</span>
           </div>
@@ -231,9 +231,9 @@ function SigsAndPayment({ managerSig, customerSig, form, T, docType, sym }) {
             {form.payment_method === "Cheque" && form.account_holder_name && <div style={{ display: "flex", justifyContent: "space-between", fontSize: 10 }}><span style={{ color: "#94a3b8" }}>Drawer</span><span style={{ fontWeight: 600, color: "#1e293b" }}>{form.account_holder_name}</span></div>}
           </div>
         </div>
-      )}
-    </div>
-  );
+      }
+    </div>);
+
 }
 
 // ─── Layout 1: Classic ───────────────────────────────────────────────────────
@@ -244,7 +244,7 @@ function ClassicDoc({ form, items, calcs, sym, docType, managerSig, customerSig,
   const isColoredHeader = T.headerBg !== "#ffffff" && T.headerBg !== "#fffbeb";
 
   return (
-    <div style={{ background: "#fff", minHeight: 1123, display: "flex", flexDirection: "column" }}>
+    <div style={{ background: "#fff", minHeight: 1123, display: "flex", flexDirection: "column" }} className="pr-2">
       <div style={{ background: T.headerBg, borderBottom: `2px solid ${T.accentColor}`, padding: "36px 48px", display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
         <div>
           {form.logo_url ? <img src={form.logo_url} alt="logo" style={{ height: 110, maxWidth: 200, objectFit: "contain", display: "block", marginBottom: 8 }} /> : <div style={{ height: 8 }} />}
@@ -254,12 +254,12 @@ function ClassicDoc({ form, items, calcs, sym, docType, managerSig, customerSig,
         <div style={{ textAlign: "right" }}>
           <div style={{ fontSize: 30, fontWeight: 900, letterSpacing: 3, color: T.docTitleColor }}>{label}</div>
           <div style={{ fontSize: 12, color: T.headerColor, opacity: 0.5, marginTop: 4, fontFamily: "monospace" }}>{form.number || "—"}</div>
-          {docType !== "waybill" && (
-            <div style={{ marginTop: 12, borderTop: `2px solid ${isColoredHeader ? "rgba(255,255,255,0.35)" : T.accentColor}`, paddingTop: 8 }}>
+          {docType !== "waybill" &&
+          <div style={{ marginTop: 12, borderTop: `2px solid ${isColoredHeader ? "rgba(255,255,255,0.35)" : T.accentColor}`, paddingTop: 8 }}>
               <div style={{ fontSize: 9, color: isColoredHeader ? "rgba(255,255,255,0.75)" : "#94a3b8", textTransform: "uppercase", letterSpacing: 1 }}>{amountLabel}</div>
               <div style={{ fontSize: 22, fontWeight: 900, color: isColoredHeader ? "#ffffff" : "#111827", marginTop: 2 }}>{sym}{fmt(calcs?.total || 0)}</div>
             </div>
-          )}
+          }
         </div>
       </div>
       <div style={{ background: T.stripBg, borderBottom: `1px solid ${T.stripBorder}`, display: "flex", justifyContent: "space-between", alignItems: "flex-start", padding: "18px 48px" }}>
@@ -285,8 +285,8 @@ function ClassicDoc({ form, items, calcs, sym, docType, managerSig, customerSig,
       <div style={{ padding: "14px 48px", background: T.stripBg, borderTop: `1px solid ${T.stripBorder}`, textAlign: "center", fontSize: 9, color: T.tableHeaderColor, marginTop: "auto" }}>
         {[form.company_phone && `☎ ${form.company_phone}`, form.company_email && `✉ ${form.company_email}`, form.company_website && `🌐 ${form.company_website}`].filter(Boolean).join("  ·  ")}
       </div>
-    </div>
-  );
+    </div>);
+
 }
 
 // ─── Layout 2: Modern ────────────────────────────────────────────────────────
@@ -322,12 +322,12 @@ function ModernDoc({ form, items, calcs, sym, docType, managerSig, customerSig, 
           {form.issue_date && <div style={{ fontSize: 10, color: "#64748b" }}><span style={{ color: "#94a3b8" }}>{ISSUE_LABEL[docType] || "Date"}: </span>{form.issue_date}</div>}
           {form.due_date && DUE_LABEL[docType] && <div style={{ fontSize: 10, color: "#64748b", marginTop: 2 }}><span style={{ color: "#94a3b8" }}>{DUE_LABEL[docType]}: </span>{form.due_date}</div>}
           {form.tax_number && <div style={{ fontSize: 10, color: "#64748b", marginTop: 2 }}><span style={{ color: "#94a3b8" }}>TIN: </span>{form.tax_number}</div>}
-          {docType !== "waybill" && (
-            <div style={{ marginTop: 8, borderTop: `1px solid ${T.stripBorder}`, paddingTop: 6 }}>
+          {docType !== "waybill" &&
+          <div style={{ marginTop: 8, borderTop: `1px solid ${T.stripBorder}`, paddingTop: 6 }}>
               <div style={{ fontSize: 8, color: T.tableHeaderColor, textTransform: "uppercase" }}>{amountLabel}</div>
               <div style={{ fontSize: 18, fontWeight: 900, color: T.accentColor }}>{sym}{fmt(calcs?.total || 0)}</div>
             </div>
-          )}
+          }
         </div>
       </div>
       <ItemsTable items={items} docType={docType} T={T} />
@@ -339,8 +339,8 @@ function ModernDoc({ form, items, calcs, sym, docType, managerSig, customerSig, 
       <div style={{ padding: "8px 36px", background: T.stripBg, textAlign: "center", fontSize: 9, color: T.tableHeaderColor }}>
         {[form.company_phone && `☎ ${form.company_phone}`, form.company_email && `✉ ${form.company_email}`, form.company_website && `🌐 ${form.company_website}`].filter(Boolean).join("  ·  ")}
       </div>
-    </div>
-  );
+    </div>);
+
 }
 
 // ─── Layout 3: Minimal ────────────────────────────────────────────────────────
@@ -379,12 +379,12 @@ function MinimalDoc({ form, items, calcs, sym, docType, managerSig, customerSig,
           {form.issue_date && <div style={{ fontSize: 10, color: "#9ca3af" }}>{ISSUE_LABEL[docType] || "Date"}: <span style={{ fontWeight: 600, color: "#374151" }}>{form.issue_date}</span></div>}
           {form.due_date && DUE_LABEL[docType] && <div style={{ fontSize: 10, color: "#9ca3af", marginTop: 2 }}>{DUE_LABEL[docType]}: <span style={{ fontWeight: 600, color: "#374151" }}>{form.due_date}</span></div>}
           {form.tax_number && <div style={{ fontSize: 10, color: "#9ca3af", marginTop: 2 }}>TIN: <span style={{ fontWeight: 600, color: "#374151" }}>{form.tax_number}</span></div>}
-          {docType !== "waybill" && (
-            <div style={{ marginTop: 8 }}>
+          {docType !== "waybill" &&
+          <div style={{ marginTop: 8 }}>
               <div style={{ fontSize: 8, fontWeight: 700, letterSpacing: 2, color: T.accentColor, textTransform: "uppercase", marginBottom: 3 }}>{amountLabel}</div>
               <div style={{ fontSize: 28, fontWeight: 900, color: "#111827" }}>{sym}{fmt(calcs?.total || 0)}</div>
             </div>
-          )}
+          }
         </div>
       </div>
       <div style={{ borderTop: "1px solid #f3f4f6", margin: "0 40px 0" }} />
@@ -396,8 +396,8 @@ function MinimalDoc({ form, items, calcs, sym, docType, managerSig, customerSig,
       <div style={{ padding: "10px 40px", borderTop: "1px solid #f3f4f6", textAlign: "center", fontSize: 9, color: "#d1d5db", letterSpacing: 1, marginTop: "auto" }}>
         {[form.company_phone && `☎ ${form.company_phone}`, form.company_email && `✉ ${form.company_email}`, form.company_website && `🌐 ${form.company_website}`].filter(Boolean).join("  ·  ")}
       </div>
-    </div>
-  );
+    </div>);
+
 }
 
 // ─── Layout 4: Bold ──────────────────────────────────────────────────────────
@@ -440,12 +440,12 @@ function BoldDoc({ form, items, calcs, sym, docType, managerSig, customerSig, T 
             <div style={{ fontSize: 12, fontFamily: "monospace", color: "#94a3b8", marginTop: 6 }}>{form.number || "—"}</div>
           </div>
           <div style={{ textAlign: "right" }}>
-            {docType !== "waybill" && (
-              <div style={{ marginTop: 12, borderTop: "2px solid rgba(255,255,255,0.35)", paddingTop: 8, textAlign: "right" }}>
+            {docType !== "waybill" &&
+            <div style={{ marginTop: 12, borderTop: "2px solid rgba(255,255,255,0.35)", paddingTop: 8, textAlign: "right" }}>
                 <div style={{ fontSize: 9, color: "rgba(255,255,255,0.75)", textTransform: "uppercase", letterSpacing: 1 }}>{amountLabel}</div>
                 <div style={{ fontSize: 22, fontWeight: 900, color: "#fff", marginTop: 2 }}>{sym}{fmt(calcs?.total || 0)}</div>
               </div>
-            )}
+            }
           </div>
         </div>
       </div>
@@ -458,8 +458,8 @@ function BoldDoc({ form, items, calcs, sym, docType, managerSig, customerSig, T 
       <div style={{ padding: "8px 32px", background: T.stripBg, textAlign: "center", fontSize: 9, color: T.tableHeaderColor }}>
         {[form.company_phone && `☎ ${form.company_phone}`, form.company_email && `✉ ${form.company_email}`, form.company_website && `🌐 ${form.company_website}`].filter(Boolean).join("  ·  ")}
       </div>
-    </div>
-  );
+    </div>);
+
 }
 
 // ─── Layout 5: Elegant ───────────────────────────────────────────────────────
@@ -495,12 +495,12 @@ function ElegantDoc({ form, items, calcs, sym, docType, managerSig, customerSig,
           {form.issue_date && <div style={{ fontSize: 10, color: "#6b7280" }}>{ISSUE_LABEL[docType] || "Date"}: <span style={{ fontWeight: 600 }}>{form.issue_date}</span></div>}
           {form.due_date && DUE_LABEL[docType] && <div style={{ fontSize: 10, color: "#6b7280", marginTop: 2 }}>{DUE_LABEL[docType]}: <span style={{ fontWeight: 600 }}>{form.due_date}</span></div>}
           {form.tax_number && <div style={{ fontSize: 10, color: "#6b7280", marginTop: 2 }}>TIN: <span style={{ fontWeight: 600 }}>{form.tax_number}</span></div>}
-          {docType !== "waybill" && (
-            <div style={{ marginTop: 8 }}>
+          {docType !== "waybill" &&
+          <div style={{ marginTop: 8 }}>
               <div style={{ fontSize: 8, color: T.tableHeaderColor, textTransform: "uppercase", letterSpacing: 1 }}>{amountLabel}</div>
               <div style={{ fontSize: 18, fontWeight: 900, color: T.accentColor, marginTop: 2 }}>{sym}{fmt(calcs?.total || 0)}</div>
             </div>
-          )}
+          }
         </div>
       </div>
       <ItemsTable items={items} docType={docType} T={T} />
@@ -520,16 +520,16 @@ function ElegantDoc({ form, items, calcs, sym, docType, managerSig, customerSig,
       </div>
       <div style={{ height: 2, background: T.accentColor, opacity: 0.3 }} />
       <div style={{ height: 2, background: T.accentColor, margin: "3px 0 0" }} />
-    </div>
-  );
+    </div>);
+
 }
 
 const CORNER_RADIUS_MAP = { none: 0, sm: 4, lg: 8, full: 16 };
 const SHADOW_MAP = {
   none: "none",
-  sm:   "0 1px 4px rgba(0,0,0,0.08)",
-  md:   "0 4px 16px rgba(0,0,0,0.14)",
-  lg:   "0 8px 32px rgba(0,0,0,0.22)",
+  sm: "0 1px 4px rgba(0,0,0,0.08)",
+  md: "0 4px 16px rgba(0,0,0,0.14)",
+  lg: "0 8px 32px rgba(0,0,0,0.22)"
 };
 
 // ─── Ordered body sections renderer ─────────────────────────────────────────
@@ -540,38 +540,38 @@ function OrderedSections({ form, items, calcs, sym, docType, managerSig, custome
   const DEFAULT_ORDER = ["items", "totals", "bank", "notes", "signatures", "footer"];
 
   // Build ordered list from fieldLayout (only include visible ones)
-  const order = (fieldLayout && fieldLayout.length > 0)
-    ? fieldLayout.filter(s => s.visible !== false).map(s => s.id)
-    : DEFAULT_ORDER;
+  const order = fieldLayout && fieldLayout.length > 0 ?
+  fieldLayout.filter((s) => s.visible !== false).map((s) => s.id) :
+  DEFAULT_ORDER;
 
   // Ensure all sections appear (append any missing ones at the end)
   const seen = new Set(order);
-  DEFAULT_ORDER.forEach(id => { if (!seen.has(id)) order.push(id); });
+  DEFAULT_ORDER.forEach((id) => {if (!seen.has(id)) order.push(id);});
 
   return (
     <>
-      {order.map(id => {
+      {order.map((id) => {
         if (id === "items") return (
           <div key="items">
             <ItemsTable items={items} docType={docType} T={T} />
             <ExtraFields form={form} docType={docType} T={T} />
-          </div>
-        );
+          </div>);
+
         if (id === "totals" && docType !== "waybill") return (
-          <TotalsBlock key="totals" calcs={calcs} form={form} sym={sym} T={T} amountLabel={amountLabel} />
-        );
+          <TotalsBlock key="totals" calcs={calcs} form={form} sym={sym} T={T} amountLabel={amountLabel} />);
+
         if (id === "bank") return null; // bank is shown inside SigsAndPayment via payment_method
         if (id === "notes") return <NotesBlock key="notes" form={form} T={T} />;
         if (id === "signatures") return (
-          <SigsAndPayment key="signatures" managerSig={managerSig} customerSig={customerSig} form={form} T={T} docType={docType} sym={sym} />
-        );
-        if (id === "footer") return footerContent ? (
-          <div key="footer" style={{ marginTop: "auto" }}>{footerContent}</div>
-        ) : null;
+          <SigsAndPayment key="signatures" managerSig={managerSig} customerSig={customerSig} form={form} T={T} docType={docType} sym={sym} />);
+
+        if (id === "footer") return footerContent ?
+        <div key="footer" style={{ marginTop: "auto" }}>{footerContent}</div> :
+        null;
         return null;
       })}
-    </>
-  );
+    </>);
+
 }
 
 // ─── Main export ─────────────────────────────────────────────────────────────
@@ -593,13 +593,13 @@ export default function DocumentPreview({ form, items, calcs, sym, docType, mana
     const shared = { form, items: lineItems, calcs, sym, docType, managerSig, customerSig, T };
     return (
       <div style={{ width: 794, border: "1px solid #e2e8f0", borderRadius: radius, overflow: "hidden", fontFamily: T.font, boxShadow: shadow }}>
-        {layout === "modern"  && <ModernDoc  {...shared} />}
+        {layout === "modern" && <ModernDoc {...shared} />}
         {layout === "minimal" && <MinimalDoc {...shared} />}
-        {layout === "bold"    && <BoldDoc    {...shared} />}
+        {layout === "bold" && <BoldDoc {...shared} />}
         {layout === "elegant" && <ElegantDoc {...shared} />}
-        {(layout === "classic" || !["modern","minimal","bold","elegant"].includes(layout)) && <ClassicDoc {...shared} />}
-      </div>
-    );
+        {(layout === "classic" || !["modern", "minimal", "bold", "elegant"].includes(layout)) && <ClassicDoc {...shared} />}
+      </div>);
+
   }
 
   // With fieldLayout: render header+client per template, then ordered body
@@ -625,15 +625,15 @@ export default function DocumentPreview({ form, items, calcs, sym, docType, mana
             <div style={{ fontSize: 40, fontWeight: 900, color: T.accentColor, lineHeight: 1 }}>{label}</div>
             <div style={{ fontSize: 12, fontFamily: "monospace", color: "#94a3b8", marginTop: 6 }}>{form.number || "—"}</div>
           </div>
-          {docType !== "waybill" && (
-            <div style={{ textAlign: "right", borderTop: `1px solid ${T.stripBorder}`, paddingTop: 8 }}>
+          {docType !== "waybill" &&
+          <div style={{ textAlign: "right", borderTop: `1px solid ${T.stripBorder}`, paddingTop: 8 }}>
               <div style={{ fontSize: 9, color: T.tableHeaderColor, textTransform: "uppercase" }}>{amountLabel}</div>
               <div style={{ fontSize: 22, fontWeight: 900, color: T.accentColor }}>{sym}{fmt(calcs?.total || 0)}</div>
             </div>
-          )}
+          }
         </div>
-      </div>
-    );
+      </div>);
+
 
     if (layout === "elegant") return (
       <>
@@ -662,8 +662,8 @@ export default function DocumentPreview({ form, items, calcs, sym, docType, mana
             {docType !== "waybill" && <div style={{ marginTop: 8 }}><div style={{ fontSize: 8, color: T.tableHeaderColor, textTransform: "uppercase" }}>{amountLabel}</div><div style={{ fontSize: 18, fontWeight: 900, color: T.accentColor }}>{sym}{fmt(calcs?.total || 0)}</div></div>}
           </div>
         </div>
-      </>
-    );
+      </>);
+
 
     if (layout === "minimal") return (
       <>
@@ -689,8 +689,8 @@ export default function DocumentPreview({ form, items, calcs, sym, docType, mana
           {docType !== "waybill" && <div style={{ textAlign: "right" }}><div style={{ fontSize: 8, fontWeight: 700, letterSpacing: 2, color: T.accentColor, textTransform: "uppercase", marginBottom: 3 }}>{amountLabel}</div><div style={{ fontSize: 28, fontWeight: 900, color: "#111827" }}>{sym}{fmt(calcs?.total || 0)}</div></div>}
         </div>
         <div style={{ borderTop: "1px solid #f3f4f6", margin: "0 40px" }} />
-      </>
-    );
+      </>);
+
 
     if (layout === "modern") return (
       <>
@@ -719,8 +719,8 @@ export default function DocumentPreview({ form, items, calcs, sym, docType, mana
             {docType !== "waybill" && <div style={{ marginTop: 8, borderTop: `1px solid ${T.stripBorder}`, paddingTop: 6 }}><div style={{ fontSize: 8, color: T.tableHeaderColor, textTransform: "uppercase" }}>{amountLabel}</div><div style={{ fontSize: 18, fontWeight: 900, color: T.accentColor }}>{sym}{fmt(calcs?.total || 0)}</div></div>}
           </div>
         </div>
-      </>
-    );
+      </>);
+
 
     // classic (default)
     return (
@@ -748,8 +748,8 @@ export default function DocumentPreview({ form, items, calcs, sym, docType, mana
             {form.due_date && DUE_LABEL[docType] && <div style={{ marginTop: 3 }}><span style={{ color: "#94a3b8" }}>{DUE_LABEL[docType]}: </span><span style={{ fontWeight: 600, color: "#334155" }}>{form.due_date}</span></div>}
           </div>
         </div>
-      </>
-    );
+      </>);
+
   };
 
   const renderFooterBar = () => {
@@ -766,33 +766,33 @@ export default function DocumentPreview({ form, items, calcs, sym, docType, mana
         </div>
         <div style={{ height: 2, background: T.accentColor, opacity: 0.3 }} />
         <div style={{ height: 2, background: T.accentColor, margin: "3px 0 0" }} />
-      </>
-    );
+      </>);
+
     if (layout === "modern") return (
       <>
         <div style={{ height: 6, background: T.accentColor }} />
         <div style={{ padding: "8px 36px", background: T.stripBg, textAlign: "center", fontSize: 9, color: T.tableHeaderColor }}>{content}</div>
-      </>
-    );
+      </>);
+
     if (layout === "bold") return (
       <>
         <div style={{ height: 4, background: T.accentColor }} />
         <div style={{ padding: "8px 32px", background: T.stripBg, textAlign: "center", fontSize: 9, color: T.tableHeaderColor }}>{content}</div>
-      </>
-    );
+      </>);
+
     if (layout === "minimal") return (
-      <div style={{ padding: "10px 40px", borderTop: "1px solid #f3f4f6", textAlign: "center", fontSize: 9, color: "#d1d5db", letterSpacing: 1 }}>{content}</div>
-    );
+      <div style={{ padding: "10px 40px", borderTop: "1px solid #f3f4f6", textAlign: "center", fontSize: 9, color: "#d1d5db", letterSpacing: 1 }}>{content}</div>);
+
     // classic
     return (
-      <div style={{ padding: "14px 48px", background: T.stripBg, borderTop: `1px solid ${T.stripBorder}`, textAlign: "center", fontSize: 9, color: T.tableHeaderColor }}>{content}</div>
-    );
+      <div style={{ padding: "14px 48px", background: T.stripBg, borderTop: `1px solid ${T.stripBorder}`, textAlign: "center", fontSize: 9, color: T.tableHeaderColor }}>{content}</div>);
+
   };
 
   return (
     <div style={{ width: 794, border: "1px solid #e2e8f0", borderRadius: radius, overflow: "hidden", fontFamily: T.font, boxShadow: shadow, background: "#fff", minHeight: 1123, display: "flex", flexDirection: "column" }}>
       {renderHeader()}
       <OrderedSections {...orderedProps} footerContent={renderFooterBar()} />
-    </div>
-  );
+    </div>);
+
 }
