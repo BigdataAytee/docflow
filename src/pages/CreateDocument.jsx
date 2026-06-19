@@ -1524,10 +1524,10 @@ export default function CreateDocument() {
               </div>
             </div>
 
-            {/* ── Mobile layout picker tray — overlays above the bottom bar ── */}
-            {showMobileDesignPanel && (
+            {/* ── Mobile layout picker tray — always visible ── */}
+            {true && (
               <div
-                className="md:hidden absolute bottom-[88px] left-0 right-0 z-20 flex gap-3 px-3 py-3 overflow-x-auto"
+                className="md:hidden shrink-0 relative z-10 flex gap-3 px-3 py-3 overflow-x-auto"
                 style={{ background: "rgba(10,14,30,0.98)", borderTop: "1px solid rgba(255,255,255,0.12)", borderBottom: "1px solid rgba(255,255,255,0.06)", scrollbarWidth: "none" }}
                 onClick={(e) => e.stopPropagation()}>
                 {Object.values(LAYOUTS).map((l) => (
