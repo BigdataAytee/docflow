@@ -244,7 +244,7 @@ function ClassicDoc({ form, items, calcs, sym, docType, managerSig, customerSig,
   const isColoredHeader = T.headerBg !== "#ffffff" && T.headerBg !== "#fffbeb";
 
   return (
-    <div style={{ background: "#fff", minHeight: 1123, display: "flex", flexDirection: "column" }} className="pl-4">
+    <div style={{ background: "#fff", minHeight: 1123, display: "flex", flexDirection: "column" }}>
       <div style={{ background: T.headerBg, borderBottom: `2px solid ${T.accentColor}`, padding: "36px 48px", display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
         <div>
           {form.logo_url ? <img src={form.logo_url} alt="logo" style={{ height: 110, maxWidth: 200, objectFit: "contain", display: "block", marginBottom: 8 }} /> : <div style={{ height: 8 }} />}
