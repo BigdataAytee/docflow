@@ -1438,14 +1438,14 @@ export default function CreateDocument() {
 
             {/* Action buttons */}
             <div className="px-3 pt-2.5 pb-3 space-y-2 shrink-0">
-              <Button size="sm" className="w-full bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold gap-1.5 hidden" onClick={handleDownloadPdf} disabled={generatingPdf}>
-                <FileDown className="h-3.5 w-3.5" />
-                {generatingPdf ? "Generating…" : "Download PDF"}
-              </Button>
-              <Button size="sm" variant="outline" className="w-full text-xs font-semibold border-white/20 text-white/80 hover:bg-white/10 hover:text-white gap-1.5 bg-transparent hidden" onClick={handleSharePdf} disabled={generatingPdf}>
-                <Upload className="h-3.5 w-3.5" />
-                {generatingPdf ? "Generating…" : "Share PDF"}
-              </Button>
+              
+
+
+            
+              
+
+
+            
             </div>
           </div>
 
