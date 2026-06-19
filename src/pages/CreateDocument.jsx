@@ -571,8 +571,8 @@ export default function CreateDocument() {
     await base44.entities.Document.update(targetId, { template: tmpl, template_color: color, template_font: font || "" });
   };
 
-  const handleSetTemplate = (val) => { setTemplate(val); saveDesign(val, templateColor, templateFont); };
-  const handleSetTemplateColor = (val) => { setTemplateColor(val); saveDesign(template, val, templateFont); };
+  const handleSetTemplate = (val) => {setTemplate(val);saveDesign(val, templateColor, templateFont);};
+  const handleSetTemplateColor = (val) => {setTemplateColor(val);saveDesign(template, val, templateFont);};
 
   const generatePdfBlob = async () => {
     const canvas = await html2canvas(pdfRef.current, { scale: 2, useCORS: true, logging: false, backgroundColor: "#ffffff", width: 794, windowWidth: 794 });
@@ -1299,7 +1299,7 @@ export default function CreateDocument() {
               <Button variant="outline" className="w-full" onClick={() => handleSave("sent")} disabled={saving || !form.customer_name}>
                 Save &amp; Send
               </Button>
-              <Button variant="ghost" className="w-full" onClick={() => { setShowPdfPreview(true); setShowMobileDesignPanel(false); }}>
+              <Button variant="ghost" className="w-full" onClick={() => {setShowPdfPreview(true);setShowMobileDesignPanel(false);}}>
                 <FileDown className="h-4 w-4 mr-1" />
                 Preview
               </Button>
@@ -1326,7 +1326,7 @@ export default function CreateDocument() {
               variant="outline"
               size="sm"
               className="flex-1 gap-1.5 h-9 text-sm font-medium"
-              onClick={() => { setShowPdfPreview(true); setShowMobileDesignPanel(false); }}
+              onClick={() => {setShowPdfPreview(true);setShowMobileDesignPanel(false);}}
               disabled={saving}>
               
               <FileDown className="h-4 w-4" />
@@ -1425,7 +1425,7 @@ export default function CreateDocument() {
               </div>
               <div className="flex flex-wrap gap-1.5">
                 {Object.values(COLOR_SCHEMES).map((c) =>
-                <button key={c.id} onClick={() => handleSetTemplateColor(c.id)} title={c.name}
+              <button key={c.id} onClick={() => handleSetTemplateColor(c.id)} title={c.name}
               className={`w-4 h-4 rounded-full border-2 transition-all hover:scale-110 ${templateColor === c.id ? "border-white scale-125 shadow-lg shadow-white/20" : "border-transparent"}`}
               style={{ background: c.swatch }} />
               )}
@@ -1474,34 +1474,34 @@ export default function CreateDocument() {
 
             {/* Document stage — fills remaining space */}
             <PdfDocStage
-              pdfRef={pdfRef}
-              form={form}
-              calcs={calcs}
-              sym={sym}
-              docType={form.type || docType}
-              managerSig={managerSig}
-              customerSig={customerSig}
-              pdfMode={pdfMode}
-              template={template}
-              templateColor={templateColor}
-              templateFont={templateFont}
-            />
+            pdfRef={pdfRef}
+            form={form}
+            calcs={calcs}
+            sym={sym}
+            docType={form.type || docType}
+            managerSig={managerSig}
+            customerSig={customerSig}
+            pdfMode={pdfMode}
+            template={template}
+            templateColor={templateColor}
+            templateFont={templateFont} />
+          
 
             {/* ── Mobile bottom controls bar ── */}
             <div className="md:hidden shrink-0 relative z-10" style={{ background: "rgba(10,14,30,0.97)", borderTop: "1px solid rgba(255,255,255,0.08)" }} onClick={(e) => e.stopPropagation()}>
               {/* Download/Share row */}
               <div className="flex items-center gap-2 px-3 py-2 border-b border-white/[0.06]">
                 <button
-                  className="flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-lg text-xs font-bold text-white/80"
-                  style={{ background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.1)" }}
-                  onClick={handleSharePdf}>
+                className="flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-lg text-xs font-bold text-white/80 hidden"
+                style={{ background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.1)" }}
+                onClick={handleSharePdf}>
                   <FileDown className="h-3.5 w-3.5 text-white/60" />
                   Share PDF
                 </button>
                 <button
-                  className="flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-lg text-xs font-bold text-white/80"
-                  style={{ background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.1)" }}
-                  onClick={handleDownloadPdf}>
+                className="flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-lg text-xs font-bold text-white/80 hidden"
+                style={{ background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.1)" }}
+                onClick={handleDownloadPdf}>
                   <Printer className="h-3.5 w-3.5 text-white/60" />
                   Download
                 </button>
@@ -1509,31 +1509,31 @@ export default function CreateDocument() {
               {/* Layout + colour row */}
               <div className="flex items-center gap-2 px-3 py-2">
                 <button onClick={() => setShowMobileDesignPanel(!showMobileDesignPanel)}
-                  className="shrink-0 flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-bold text-white/80"
-                  style={{ background: showMobileDesignPanel ? "rgba(99,102,241,0.4)" : "rgba(99,102,241,0.2)", border: "1px solid rgba(99,102,241,0.3)" }}>
+              className="shrink-0 flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-bold text-white/80"
+              style={{ background: showMobileDesignPanel ? "rgba(99,102,241,0.4)" : "rgba(99,102,241,0.2)", border: "1px solid rgba(99,102,241,0.3)" }}>
                   <Palette className="h-3.5 w-3.5 text-indigo-400" />
                   <span className="max-w-[60px] truncate">{LAYOUTS[template]?.name || "Classic"}</span>
                 </button>
                 <div className="flex gap-1 overflow-x-auto flex-1 py-1" style={{ scrollbarWidth: "none" }}>
                   {Object.values(COLOR_SCHEMES).map((c) =>
-                    <button key={c.id} onClick={() => handleSetTemplateColor(c.id)} title={c.name}
-                      className={`shrink-0 w-6 h-6 rounded-full border-2 transition-all ${templateColor === c.id ? "border-white scale-125" : "border-white/20"}`}
-                      style={{ background: c.swatch }} />
-                  )}
+                <button key={c.id} onClick={() => handleSetTemplateColor(c.id)} title={c.name}
+                className={`shrink-0 w-6 h-6 rounded-full border-2 transition-all ${templateColor === c.id ? "border-white scale-125" : "border-white/20"}`}
+                style={{ background: c.swatch }} />
+                )}
                 </div>
               </div>
             </div>
 
             {/* ── Mobile layout picker tray — always visible ── */}
-            {true && (
-              <div
-                className="md:hidden shrink-0 relative z-10 flex gap-3 px-3 py-3 overflow-x-auto"
-                style={{ background: "rgba(10,14,30,0.98)", borderTop: "1px solid rgba(255,255,255,0.12)", borderBottom: "1px solid rgba(255,255,255,0.06)", scrollbarWidth: "none" }}
-                onClick={(e) => e.stopPropagation()}>
-                {Object.values(LAYOUTS).map((l) => (
-                  <button key={l.id} onClick={() => { handleSetTemplate(l.id); setShowMobileDesignPanel(false); }}
-                    className={`shrink-0 flex flex-col items-center gap-1 p-1.5 rounded-lg border-2 transition-all ${template === l.id ? "border-indigo-400" : "border-white/10"}`}
-                    style={{ background: "rgba(255,255,255,0.04)", width: 72 }}>
+            {true &&
+          <div
+            className="md:hidden shrink-0 relative z-10 flex gap-3 px-3 py-3 overflow-x-auto"
+            style={{ background: "rgba(10,14,30,0.98)", borderTop: "1px solid rgba(255,255,255,0.12)", borderBottom: "1px solid rgba(255,255,255,0.06)", scrollbarWidth: "none" }}
+            onClick={(e) => e.stopPropagation()}>
+                {Object.values(LAYOUTS).map((l) =>
+            <button key={l.id} onClick={() => {handleSetTemplate(l.id);setShowMobileDesignPanel(false);}}
+            className={`shrink-0 flex flex-col items-center gap-1 p-1.5 rounded-lg border-2 transition-all ${template === l.id ? "border-indigo-400" : "border-white/10"}`}
+            style={{ background: "rgba(255,255,255,0.04)", width: 72 }}>
                     <div style={{ width: 56, height: 74, borderRadius: 4, overflow: "hidden", background: "#fff", position: "relative" }}>
                       <div style={{ transform: "scale(0.0705)", transformOrigin: "top left", width: 794, height: 1123, position: "absolute" }}>
                         <DocumentPreview form={form} items={calcs.lineItems} calcs={calcs} sym={sym} docType={form.type || docType} managerSig={managerSig} template={l.id} templateColor={templateColor} />
@@ -1541,9 +1541,9 @@ export default function CreateDocument() {
                     </div>
                     <span className="text-[9px] text-white/60 font-medium">{l.name}</span>
                   </button>
-                ))}
-              </div>
             )}
+              </div>
+          }
 
           </div>
 
