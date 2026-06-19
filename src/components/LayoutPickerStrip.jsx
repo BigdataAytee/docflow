@@ -11,7 +11,6 @@ export default function LayoutPickerStrip({ layouts, template, templateColor, on
 
   const onPointerDown = (e) => {
     drag.current = { active: true, startY: e.clientY, scrollTop: listRef.current.scrollTop, moved: false };
-    listRef.current.setPointerCapture(e.pointerId);
   };
 
   const onPointerMove = (e) => {
@@ -23,6 +22,8 @@ export default function LayoutPickerStrip({ layouts, template, templateColor, on
 
   const onPointerUp = () => {
     drag.current.active = false;
+    // Reset moved after a tick so the click event can read it first
+    setTimeout(() => { drag.current.moved = false; }, 0);
   };
 
   return (
@@ -56,10 +57,9 @@ export default function LayoutPickerStrip({ layouts, template, templateColor, on
               key={l.id}
               className="shrink-0 flex flex-col items-center gap-1.5 group"
               style={{ cursor: "pointer" }}
-              onPointerUp={(e) => {
-                // Only fire select if we didn't drag
+              onClick={(e) => {
+                e.stopPropagation();
                 if (!drag.current.moved) {
-                  e.stopPropagation();
                   onSelect(l.id);
                 }
               }}
