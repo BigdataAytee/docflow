@@ -567,12 +567,23 @@ export default function CreateDocument() {
   // Auto-persist design changes so ViewDocument reflects them immediately
   const saveDesign = async (tmpl, color, font) => {
     const targetId = draftIdRef.current || editId;
-    if (!targetId) return;
-    await base44.entities.Document.update(targetId, { template: tmpl, template_color: color, template_font: font || "" });
+    if (targetId) {
+      await base44.entities.Document.update(targetId, { template: tmpl, template_color: color, template_font: font || "" });
+    } else {
+      // No draft yet — create one so the design choice is persisted
+      const docData = buildDocPayload((form.type || docType) === "waybill" ? "pending" : "draft");
+      docData.template = tmpl;
+      docData.template_color = color;
+      docData.template_font = font || "";
+      docData.customer_signature = "";
+      docData.paid_amount = 0;
+      const created = await base44.entities.Document.create(docData);
+      draftIdRef.current = created.id;
+    }
   };
 
-  const handleSetTemplate = (val) => {setTemplate(val);saveDesign(val, templateColor, templateFont);};
-  const handleSetTemplateColor = (val) => {setTemplateColor(val);saveDesign(template, val, templateFont);};
+  const handleSetTemplate = (val) => { setTemplate(val); saveDesign(val, templateColor, templateFont); };
+  const handleSetTemplateColor = (val) => { setTemplateColor(val); saveDesign(template, val, templateFont); };
 
   const generatePdfBlob = async () => {
     const canvas = await html2canvas(pdfRef.current, { scale: 2, useCORS: true, logging: false, backgroundColor: "#ffffff", width: 794, windowWidth: 794 });
