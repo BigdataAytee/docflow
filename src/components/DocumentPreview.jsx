@@ -827,10 +827,10 @@ function SikkyDoc({ form, items, calcs, sym, docType, managerSig, customerSig, T
           {form.company_website && <div style={{ fontSize: 10, color: "#2563eb", marginTop: 1 }}>{form.company_website}</div>}
         </div>
       </div>
-      {/* Tagline bar — shown when document_tagline present */}
-      {form.document_tagline && (
+      {/* Tagline bar — shown when notes present */}
+      {form.notes && (
         <div style={{ padding: "6px 40px 6px 24px", borderTop: "1px solid #e5e7eb", borderBottom: "1px solid #e5e7eb" }}>
-          <div style={{ fontSize: 11, color: accent, fontWeight: 700, textAlign: "center" }}>{form.document_tagline}</div>
+          <div style={{ fontSize: 11, color: accent, fontWeight: 700, textAlign: "center" }}>{form.notes}</div>
         </div>
       )}
     </>
