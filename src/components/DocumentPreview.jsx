@@ -1011,13 +1011,18 @@ function SikkyDoc({ form, items, calcs, sym, docType, managerSig, customerSig, T
                 <strong>Note:</strong> {form.notes}
               </div>
             )}
-            {/* Bank details */}
+            {/* Payment details */}
             {form.payment_method === "Bank Transfer" && form.bank_name && (
               <div style={{ marginTop: 16, fontSize: 12, color: "#111", lineHeight: 1.9 }}>
                 <strong>PAYMENT DETAILS:</strong><br />
-                {form.bank_name && <div>Bank: {form.bank_name}</div>}
+                <div>Bank: {form.bank_name}</div>
                 {form.account_number && <div>Account No: {form.account_number}</div>}
                 {form.account_holder_name && <div>Account Name: {form.account_holder_name}</div>}
+              </div>
+            )}
+            {form.payment_method && form.payment_method !== "Bank Transfer" && form.payment_instructions && (
+              <div style={{ marginTop: 8, fontSize: 12, color: "#333", whiteSpace: "pre-line", lineHeight: 1.9 }}>
+                {form.payment_instructions}
               </div>
             )}
           </div>
@@ -1150,19 +1155,18 @@ function SikkyDoc({ form, items, calcs, sym, docType, managerSig, customerSig, T
               <strong>Terms:</strong> {form.terms}
             </div>
           )}
-          {/* Payment instructions */}
-          {form.payment_method && form.payment_instructions && (
-            <div style={{ marginTop: 8, fontSize: 12, color: "#333", whiteSpace: "pre-line", lineHeight: 1.9 }}>
-              {form.payment_instructions}
-            </div>
-          )}
-          {/* Bank details */}
+          {/* Payment details — bank transfer shows structured fields; other methods show payment_instructions */}
           {form.payment_method === "Bank Transfer" && form.bank_name && (
             <div style={{ marginTop: 14, fontSize: 12, color: "#111", lineHeight: 1.9 }}>
               <strong>PAYMENT DETAILS:</strong><br />
-              {form.bank_name && <div>Bank: {form.bank_name}</div>}
+              <div>Bank: {form.bank_name}</div>
               {form.account_number && <div>Account No: {form.account_number}</div>}
               {form.account_holder_name && <div>Account Name: {form.account_holder_name}</div>}
+            </div>
+          )}
+          {form.payment_method && form.payment_method !== "Bank Transfer" && form.payment_instructions && (
+            <div style={{ marginTop: 8, fontSize: 12, color: "#333", whiteSpace: "pre-line", lineHeight: 1.9 }}>
+              {form.payment_instructions}
             </div>
           )}
         </div>
