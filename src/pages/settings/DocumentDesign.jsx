@@ -47,16 +47,11 @@ const COLOR_PALETTES = [
 ];
 
 const LAYOUT_TEMPLATES = [
-  { id: "classic",   label: "Classic"   },
-  { id: "modern",    label: "Modern"    },
-  { id: "minimal",   label: "Minimal"   },
-  { id: "bold",      label: "Bold"      },
-  { id: "elegant",   label: "Elegant"   },
-  { id: "sidebar",   label: "Sidebar"   },
-  { id: "executive", label: "Executive" },
-  { id: "wave",      label: "Wave"      },
-  { id: "compact",   label: "Compact"   },
-  { id: "sikky",     label: "Sikky"     },
+  { id: "classic", label: "Classic"  },
+  { id: "modern",  label: "Modern"   },
+  { id: "minimal", label: "Minimal"  },
+  { id: "bold",    label: "Bold"     },
+  { id: "elegant", label: "Elegant"  },
 ];
 
 const PRESETS = [
@@ -328,7 +323,7 @@ function DesignControls({ design, update }) {
   return (
     <>
       <AccordionSection title="Templates" IconComp={Layout} defaultOpen>
-        <div className="grid grid-cols-5 gap-2 mb-1">
+        <div className="grid grid-cols-5 gap-2">
           {LAYOUT_TEMPLATES.map(t => (
             <button key={t.id} onClick={() => update("template", t.id)} title={t.label}
               className="flex flex-col items-center gap-1 group">

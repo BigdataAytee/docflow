@@ -567,23 +567,12 @@ export default function CreateDocument() {
   // Auto-persist design changes so ViewDocument reflects them immediately
   const saveDesign = async (tmpl, color, font) => {
     const targetId = draftIdRef.current || editId;
-    if (targetId) {
-      await base44.entities.Document.update(targetId, { template: tmpl, template_color: color, template_font: font || "" });
-    } else {
-      // No draft yet — create one so the design choice is persisted
-      const docData = buildDocPayload((form.type || docType) === "waybill" ? "pending" : "draft");
-      docData.template = tmpl;
-      docData.template_color = color;
-      docData.template_font = font || "";
-      docData.customer_signature = "";
-      docData.paid_amount = 0;
-      const created = await base44.entities.Document.create(docData);
-      draftIdRef.current = created.id;
-    }
+    if (!targetId) return;
+    await base44.entities.Document.update(targetId, { template: tmpl, template_color: color, template_font: font || "" });
   };
 
-  const handleSetTemplate = (val) => { setTemplate(val); saveDesign(val, templateColor, templateFont); };
-  const handleSetTemplateColor = (val) => { setTemplateColor(val); saveDesign(template, val, templateFont); };
+  const handleSetTemplate = (val) => {setTemplate(val);saveDesign(val, templateColor, templateFont);};
+  const handleSetTemplateColor = (val) => {setTemplateColor(val);saveDesign(template, val, templateFont);};
 
   const generatePdfBlob = async () => {
     const canvas = await html2canvas(pdfRef.current, { scale: 2, useCORS: true, logging: false, backgroundColor: "#ffffff", width: 794, windowWidth: 794 });
@@ -1502,20 +1491,20 @@ export default function CreateDocument() {
             <div className="md:hidden shrink-0 relative z-10" style={{ background: "rgba(10,14,30,0.97)", borderTop: "1px solid rgba(255,255,255,0.08)" }} onClick={(e) => e.stopPropagation()}>
               {/* Download/Share row */}
               <div className="flex items-center gap-2 px-3 py-2 border-b border-white/[0.06]">
-                
-
-
-
-
-
-              
-                
-
-
-
-
-
-              
+                <button
+                className="flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-lg text-xs font-bold text-white/80 hidden"
+                style={{ background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.1)" }}
+                onClick={handleSharePdf}>
+                  <FileDown className="h-3.5 w-3.5 text-white/60" />
+                  Share PDF
+                </button>
+                <button
+                className="flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-lg text-xs font-bold text-white/80 hidden"
+                style={{ background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.1)" }}
+                onClick={handleDownloadPdf}>
+                  <Printer className="h-3.5 w-3.5 text-white/60" />
+                  Download
+                </button>
               </div>
               {/* Layout + colour row */}
               <div className="flex items-center gap-2 px-3 py-2">
