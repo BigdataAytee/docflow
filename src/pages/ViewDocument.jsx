@@ -523,7 +523,18 @@ export default function ViewDocument() {
 
       {/* Document view — scaled to fit on mobile */}
       <ScaledDocument scale={previewScale}>
-        <UnifiedTemplate doc={doc} onSaveManagerSig={saveManagerSig} onSaveCustomerSig={saveCustomerSig} onOpenSignModal={() => setShowSignModal(true)} />
+        <DocumentPreview
+          form={doc}
+          items={doc.items || []}
+          calcs={{ subtotal: doc.subtotal, taxAmt: doc.tax_amount, globalDiscAmt: doc.global_discount_amount || 0, total: doc.total, withholdingVatAmt: doc.withholding_vat_amount || 0, netPayable: doc.balance_due || doc.total }}
+          sym={CURRENCY_SYMBOLS[doc.currency] || doc.currency || "₦"}
+          docType={doc.type}
+          managerSig={doc.manager_signature}
+          customerSig={doc.customer_signature}
+          template={doc.template || "classic"}
+          templateColor={doc.template_color || "slate"}
+          templateFont={doc.template_font}
+        />
       </ScaledDocument>
 
       {/* Inline Signature Capture Overlay */}
@@ -558,12 +569,17 @@ export default function ViewDocument() {
       <div style={{ position: "fixed", top: 0, left: "-9999px", width: "794px", zIndex: -1, pointerEvents: "none", opacity: 0 }}>
         <div ref={pdfDocRef} style={{ width: "794px" }}>
           {doc && (
-            <UnifiedTemplate
-              doc={doc}
-              isPdf={true}
-              onSaveManagerSig={() => {}}
-              onSaveCustomerSig={() => {}}
-              onOpenSignModal={() => {}}
+            <DocumentPreview
+              form={doc}
+              items={doc.items || []}
+              calcs={{ subtotal: doc.subtotal, taxAmt: doc.tax_amount, globalDiscAmt: doc.global_discount_amount || 0, total: doc.total, withholdingVatAmt: doc.withholding_vat_amount || 0, netPayable: doc.balance_due || doc.total }}
+              sym={CURRENCY_SYMBOLS[doc.currency] || doc.currency || "₦"}
+              docType={doc.type}
+              managerSig={doc.manager_signature}
+              customerSig={doc.customer_signature}
+              template={doc.template || "classic"}
+              templateColor={doc.template_color || "slate"}
+              templateFont={doc.template_font}
             />
           )}
         </div>
