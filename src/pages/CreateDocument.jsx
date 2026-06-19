@@ -1375,22 +1375,50 @@ export default function CreateDocument() {
       {/* PDF Preview Modal */}
       {showPdfPreview && (
         <div className="fixed inset-0 z-50 bg-black/60 flex flex-col" onClick={() => setShowPdfPreview(false)}>
-          <div className="flex items-center justify-between px-6 py-3 bg-white border-b shrink-0" onClick={e => e.stopPropagation()}>
-            <div>
-              <p className="font-semibold text-sm">Document Preview</p>
-              <p className="text-xs text-muted-foreground">{form.number || "Draft"}</p>
+          <div className="shrink-0 bg-white border-b" onClick={e => e.stopPropagation()}>
+            {/* Top bar: title + actions */}
+            <div className="flex items-center justify-between px-6 py-3">
+              <div>
+                <p className="font-semibold text-sm">Document Preview</p>
+                <p className="text-xs text-muted-foreground">{form.number || "Draft"}</p>
+              </div>
+              <div className="flex items-center gap-2 overflow-x-auto flex-nowrap sm:flex-wrap justify-end">
+                <Button size="sm" variant="outline" onClick={handleDownloadPdf} disabled={generatingPdf} className="shrink-0">
+                  <FileDown className="h-4 w-4 mr-1" />
+                  {generatingPdf ? "Generating..." : "Download PDF"}
+                </Button>
+                <Button size="sm" variant="outline" onClick={handleSharePdf} disabled={generatingPdf} className="shrink-0">
+                  <Upload className="h-4 w-4 mr-1" />
+                  {generatingPdf ? "Generating..." : "Share PDF"}
+                </Button>
+                <button className="p-2 hover:bg-muted rounded-lg text-muted-foreground shrink-0" onClick={() => setShowPdfPreview(false)}>✕</button>
+              </div>
             </div>
-            <div className="flex items-center gap-2 overflow-x-auto flex-nowrap sm:flex-wrap justify-end">
-              <Button size="sm" variant="outline" onClick={handleDownloadPdf} disabled={generatingPdf} className="shrink-0">
-                <FileDown className="h-4 w-4 mr-1" />
-                {generatingPdf ? "Generating..." : "Download PDF"}
-              </Button>
-              <Button size="sm" variant="outline" onClick={handleSharePdf} disabled={generatingPdf} className="shrink-0">
-                <Upload className="h-4 w-4 mr-1" />
-                {generatingPdf ? "Generating..." : "Share PDF"}
-              </Button>
-
-              <button className="p-2 hover:bg-muted rounded-lg text-muted-foreground shrink-0" onClick={() => setShowPdfPreview(false)}>✕</button>
+            {/* Style controls bar */}
+            <div className="flex items-center gap-4 px-6 py-2 border-t border-border bg-muted/30 overflow-x-auto">
+              <div className="flex items-center gap-1.5 shrink-0">
+                <Palette className="h-3.5 w-3.5 text-muted-foreground" />
+                <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Template</span>
+              </div>
+              <div className="flex gap-1 shrink-0">
+                {Object.values(LAYOUTS).map(l => (
+                  <button key={l.id} onClick={() => setTemplate(l.id)}
+                    className={`px-2.5 py-1 rounded text-[11px] font-semibold border transition-all ${template === l.id ? "border-indigo-400 bg-indigo-50 text-indigo-700" : "border-border hover:bg-muted text-muted-foreground"}`}>
+                    {l.name}
+                  </button>
+                ))}
+              </div>
+              <div className="w-px h-4 bg-border shrink-0" />
+              <div className="flex items-center gap-1.5 shrink-0">
+                <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Colour</span>
+              </div>
+              <div className="flex gap-2 shrink-0">
+                {Object.values(COLOR_SCHEMES).map(c => (
+                  <button key={c.id} onClick={() => setTemplateColor(c.id)} title={c.name}
+                    className={`w-5 h-5 rounded-full border-2 transition-all hover:scale-110 ${templateColor === c.id ? "border-foreground scale-110 shadow" : "border-transparent"}`}
+                    style={{ background: c.swatch }} />
+                ))}
+              </div>
             </div>
           </div>
           <div className="flex-1 overflow-auto bg-gray-100" style={{ position: "relative" }} onClick={e => e.stopPropagation()}>
