@@ -609,17 +609,7 @@ export default function ViewDocument() {
               <p className="font-semibold text-sm truncate">Document Preview</p>
               <p className="text-xs text-muted-foreground truncate">{doc.number}</p>
             </div>
-            <div className="flex items-center gap-1.5 overflow-x-auto flex-nowrap justify-end shrink-0 max-w-[65vw] sm:max-w-none">
-              <>
-                  <Button size="sm" onClick={handleDownloadPdf} disabled={generatingPdf} className="shrink-0">
-                    <FileDown className="h-4 w-4 mr-1" />
-                    {generatingPdf ? "..." : "Download"}
-                  </Button>
-                  <Button size="sm" variant="outline" onClick={handleSharePdf} disabled={generatingPdf} className="shrink-0">
-                    <Upload className="h-4 w-4 mr-1" />
-                    Share
-                  </Button>
-                </>
+            <div className="flex items-center gap-1.5 justify-end shrink-0">
               <button className="p-2 hover:bg-muted rounded-lg text-muted-foreground shrink-0" onClick={() => setShowPdfPreview(false)}>✕</button>
             </div>
           </div>
