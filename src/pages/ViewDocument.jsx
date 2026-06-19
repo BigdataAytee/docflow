@@ -279,7 +279,7 @@ function DesktopPreview({ doc, design, calcs, sym }) {
 }
 
 // ── Mobile Mini Preview ────────────────────────────────────────────────────────
-function MiniPreview({ doc, design, calcs, sym }) {
+function MiniPreview({ doc, design, calcs, sym, fixedHeight = 380 }) {
   const containerRef = useRef(null);
   const [scale, setScale] = useState(0.3);
   useEffect(() => {
@@ -295,7 +295,7 @@ function MiniPreview({ doc, design, calcs, sym }) {
     return () => { cancelAnimationFrame(raf); ro.disconnect(); };
   }, []);
   return (
-    <div ref={containerRef} className="bg-slate-100 flex items-center justify-center w-full" style={{ height: 280, overflow: "hidden" }}>
+    <div ref={containerRef} className="bg-slate-100 flex items-center justify-center w-full" style={{ height: fixedHeight, overflow: "hidden" }}>
       <div style={{ width: DOC_W * scale, height: DOC_H * scale, flexShrink: 0, boxShadow: "0 4px 24px rgba(0,0,0,0.18)", borderRadius: 4, overflow: "hidden" }}>
         <div style={{ width: DOC_W, height: DOC_H, transformOrigin: "top left", transform: `scale(${scale})`, pointerEvents: "none" }}>
           <DocumentPreview form={doc} items={doc.items || []} calcs={calcs} sym={sym} docType={doc.type}
@@ -448,7 +448,7 @@ export default function ViewDocument() {
   const calcs = { subtotal: doc.subtotal, taxAmt: doc.tax_amount, globalDiscAmt: doc.global_discount_amount || 0, total: doc.total, withholdingVatAmt: doc.withholding_vat_amount || 0, netPayable: doc.balance_due || doc.total };
 
   return (
-    <div className="flex flex-col h-full -mx-4 md:-mx-6 lg:-mx-8 -my-4 md:-my-6 lg:-my-8" style={{ height: "calc(100vh - 64px)" }}>
+    <div className="flex flex-col h-full">
 
       {/* ── Top action bar ── */}
       <div className="flex items-center justify-between gap-2 px-3 md:px-4 py-2 bg-white border-b border-border shrink-0">
@@ -531,7 +531,7 @@ export default function ViewDocument() {
       {/* ── DESKTOP (lg+): 3-column like Settings Design tab ── */}
       <div className="hidden lg:flex flex-1 min-h-0 overflow-hidden">
         <div className="w-64 shrink-0 bg-white border-r border-border overflow-y-auto">
-          <div className="px-3 py-2 border-b border-border bg-indigo-50">
+          <div className="px-3 py-2 border-b border-border bg-indigo-50 sticky top-0 z-10">
             <p className="text-[10px] font-bold uppercase tracking-widest text-indigo-600">Design Controls</p>
           </div>
           <DesignControls design={design} update={update} />
@@ -540,7 +540,7 @@ export default function ViewDocument() {
           <DesktopPreview doc={doc} design={design} calcs={calcs} sym={sym} />
         </div>
         <div className="w-60 shrink-0 bg-white border-l border-border overflow-y-auto">
-          <div className="px-3 py-2 border-b border-border bg-amber-50">
+          <div className="px-3 py-2 border-b border-border bg-amber-50 sticky top-0 z-10">
             <p className="text-[10px] font-bold uppercase tracking-widest text-amber-600">Style Presets</p>
           </div>
           <StylePresets activePresetId={activePresetId} applyPreset={applyPreset} />
@@ -550,7 +550,7 @@ export default function ViewDocument() {
       {/* ── MOBILE/TABLET (<lg): same as Settings Design mobile layout ── */}
       <div className="flex lg:hidden flex-1 flex-col overflow-hidden bg-slate-50">
         <div className="shrink-0 border-b border-border bg-white">
-          <MiniPreview doc={doc} design={design} calcs={calcs} sym={sym} />
+          <MiniPreview doc={doc} design={design} calcs={calcs} sym={sym} fixedHeight={380} />
         </div>
         <div className="flex flex-1 overflow-y-auto min-h-0">
           <div className="flex-1 min-w-0 border-r border-border bg-white overflow-y-auto">
