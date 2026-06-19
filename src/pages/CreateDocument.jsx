@@ -692,12 +692,11 @@ export default function CreateDocument() {
   // For the editor scroll area (not modal)
   const previewScale = Math.min(1, (Math.min(viewportWidth, 826) - 32) / 794);
   // Scale PDF to fill the right panel completely
-  const MODAL_LEFT_W = 190;
+  const MODAL_LEFT_W = 160;
   const MODAL_TOP_H = 52;
-  const pdfModalScale = Math.min(
-    (viewportWidth - MODAL_LEFT_W) / 794,
-    (viewportHeight - MODAL_TOP_H) / 1123
-  );
+  const scaleByWidth = (viewportWidth - MODAL_LEFT_W) / 794;
+  const scaleByHeight = (viewportHeight - MODAL_TOP_H) / 1123;
+  const pdfModalScale = Math.min(scaleByWidth, scaleByHeight);
 
   const L = DOC_LABELS[docType] || DOC_LABELS.invoice;
 
@@ -1361,7 +1360,7 @@ export default function CreateDocument() {
         <div className="fixed inset-0 z-50 flex" style={{ background: "radial-gradient(ellipse at 60% 40%, #0d1117 0%, #080b14 60%, #050709 100%)" }} onClick={() => setShowPdfPreview(false)}>
 
           {/* ── Left panel: design controls ── */}
-          <div className="shrink-0 flex flex-col h-full overflow-hidden" style={{ width: 190, background: "linear-gradient(180deg,#0f172a 0%,#1e1b4b 100%)" }} onClick={e => e.stopPropagation()}>
+          <div className="shrink-0 flex flex-col h-full overflow-hidden" style={{ width: 160, background: "linear-gradient(180deg,#0f172a 0%,#1e1b4b 100%)" }} onClick={e => e.stopPropagation()}>
             {/* Panel header */}
             <div className="px-3 pt-4 pb-2.5 border-b border-white/10 shrink-0">
               <div className="flex items-center gap-1.5">
