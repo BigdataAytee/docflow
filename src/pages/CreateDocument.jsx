@@ -694,9 +694,8 @@ export default function CreateDocument() {
   // Scale PDF to fill the right panel completely
   const MODAL_LEFT_W = 160;
   const MODAL_TOP_H = 52;
-  const scaleByWidth = (viewportWidth - MODAL_LEFT_W) / 794;
-  const scaleByHeight = (viewportHeight - MODAL_TOP_H) / 1123;
-  const pdfModalScale = Math.min(scaleByWidth, scaleByHeight);
+  // Scale to fill the available width — user can scroll vertically to see full doc
+  const pdfModalScale = (viewportWidth - MODAL_LEFT_W) / 794;
 
   const L = DOC_LABELS[docType] || DOC_LABELS.invoice;
 
@@ -1467,7 +1466,7 @@ export default function CreateDocument() {
             )}
 
             {/* Document stage */}
-            <div className="flex-1 flex items-center justify-center relative z-10" style={{ overflow: "hidden" }}>
+            <div className="flex-1 flex justify-center relative z-10" style={{ overflowY: "auto", overflowX: "hidden", alignItems: "flex-start" }}>
               {/* Document with layered shadow for depth */}
               <div style={{ position: "relative", flexShrink: 0 }}>
                 {/* Back page shadow layers for paper stack illusion */}
