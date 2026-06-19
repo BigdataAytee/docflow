@@ -394,10 +394,6 @@ export default function ViewDocument() {
           <Button variant="outline" size="sm" className="h-9 px-3" onClick={() => navigate(`/documents/new?edit=${docId}&type=${doc.type}`)}>
             <Pencil className="h-4 w-4" /><span className="hidden sm:inline ml-1.5">Edit</span>
           </Button>
-          <Button variant="outline" size="sm" className="hidden md:flex h-9" onClick={() => setShowPdfPreview(true)}>
-            <FileDown className="h-4 w-4" /><span className="ml-1.5">PDF</span>
-          </Button>
-
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="outline" size="icon" className="h-9 w-9"><MoreVertical className="h-4 w-4" /></Button>
@@ -411,13 +407,6 @@ export default function ViewDocument() {
                 ))}
               </div>
               <DropdownMenuSeparator className="md:hidden" />
-              <DropdownMenuItem onClick={() => setShowPdfPreview(true)}>
-                <FileDown className="h-4 w-4 mr-2" /> Download PDF
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={handleSharePdf} disabled={generatingPdf}>
-                <Upload className="h-4 w-4 mr-2" /> Share PDF
-              </DropdownMenuItem>
-
               <DropdownMenuItem onClick={() => window.print()}>
                 <Printer className="h-4 w-4 mr-2" /> Print
               </DropdownMenuItem>
