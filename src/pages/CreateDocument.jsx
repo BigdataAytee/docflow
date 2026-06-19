@@ -199,6 +199,8 @@ export default function CreateDocument() {
   const [savingBankDetails, setSavingBankDetails] = useState(false);
   const [savedTaxNumber, setSavedTaxNumber] = useState("");
   const [savingTaxNumber, setSavingTaxNumber] = useState(false);
+  const [savedCompanyDescription, setSavedCompanyDescription] = useState("");
+  const [savingCompanyDescription, setSavingCompanyDescription] = useState(false);
   const [customerSig, setCustomerSig] = useState(null);
   const [showAddCustomer, setShowAddCustomer] = useState(false);
   const [savingCustomer, setSavingCustomer] = useState(false);
@@ -339,9 +341,8 @@ export default function CreateDocument() {
         tax_number: user.default_tax_number || "",
       }));
 
-      if (user.default_tax_number) {
-        setSavedTaxNumber(user.default_tax_number);
-      }
+      if (user.default_tax_number) setSavedTaxNumber(user.default_tax_number);
+      if (user.company_description) setSavedCompanyDescription(user.company_description);
 
       // Apply saved document design settings (only for new documents)
       if (!editId) {
@@ -1161,18 +1162,27 @@ export default function CreateDocument() {
               <Textarea value={form.company_description} onChange={e => setForm(f => ({ ...f, company_description: e.target.value }))} rows={2}
                 placeholder="e.g. Leading provider of quality goods and services since 2010." />
               <div className="flex items-center gap-3 mt-2">
-                <button
-                  type="button"
-                  disabled={!form.company_description}
-                  onClick={() => {
-                    base44.auth.updateMe({ company_description: form.company_description })
-                      .then(() => toast.success("Company description saved — it will auto-fill on new documents."))
-                      .catch(() => toast.error("Failed to save. Please try again."));
-                  }}
-                  className="text-xs text-slate-600 hover:text-slate-900 border border-slate-300 rounded-full px-3 py-1 hover:bg-slate-50 transition-colors disabled:opacity-40"
-                >
-                  💾 Save as default
-                </button>
+                {form.company_description && form.company_description === savedCompanyDescription ? (
+                  <span className="text-xs text-emerald-600 font-medium">✓ Saved as default</span>
+                ) : (
+                  <button
+                    type="button"
+                    disabled={savingCompanyDescription || !form.company_description}
+                    onClick={() => {
+                      setSavingCompanyDescription(true);
+                      base44.auth.updateMe({ company_description: form.company_description })
+                        .then(() => {
+                          setSavedCompanyDescription(form.company_description);
+                          setSavingCompanyDescription(false);
+                          toast.success("Company description saved — it will auto-fill on new documents.");
+                        })
+                        .catch(() => { setSavingCompanyDescription(false); toast.error("Failed to save. Please try again."); });
+                    }}
+                    className="text-xs text-slate-600 hover:text-slate-900 border border-slate-300 rounded-full px-3 py-1 hover:bg-slate-50 transition-colors disabled:opacity-40"
+                  >
+                    {savingCompanyDescription ? "Saving…" : "💾 Save as default"}
+                  </button>
+                )}
               </div>
             </div>
             <div>
