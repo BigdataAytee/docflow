@@ -62,6 +62,8 @@ export default function DocumentList() {
   const [confirmDelete, setConfirmDelete] = useState(null);
   const [converting, setConverting] = useState(false);
   const [showConvertConfirm, setShowConvertConfirm] = useState(false);
+  const [deletingAll, setDeletingAll] = useState(false);
+  const [showDeleteAllConfirm, setShowDeleteAllConfirm] = useState(false);
 
   useEffect(() => {
     setLoading(true);
@@ -91,24 +93,38 @@ export default function DocumentList() {
   const handleBulkConvertToInvoice = async () => {
     setShowConvertConfirm(false);
     setConverting(true);
-    let created = 0;
-    for (const doc of documents) {
+    const batch = documents.map(doc => {
       const { id, created_date, updated_date, created_by, created_by_id, ...rest } = doc;
-      const newNumber = (doc.number || "").replace(/\b(REC)\b/gi, "INV");
-      await base44.entities.Document.create({
+      return {
         ...rest,
         type: "invoice",
-        number: newNumber,
+        number: (doc.number || "").replace(/\b(REC)\b/gi, "INV"),
         status: "draft",
         customer_signature: "",
         paid_amount: 0,
         balance_due: doc.total || 0,
-      });
-      created++;
+      };
+    });
+    // Use bulkCreate for speed — process in chunks of 25
+    for (let i = 0; i < batch.length; i += 25) {
+      await base44.entities.Document.bulkCreate(batch.slice(i, i + 25));
     }
     setConverting(false);
-    toast.success(`${created} receipt${created !== 1 ? "s" : ""} converted to invoices!`);
+    toast.success(`${batch.length} receipt${batch.length !== 1 ? "s" : ""} converted to invoices!`);
     navigate("/documents?type=invoice");
+  };
+
+  const handleDeleteAll = async () => {
+    setShowDeleteAllConfirm(false);
+    setDeletingAll(true);
+    const ids = documents.map(d => d.id);
+    // Delete in parallel chunks of 10 for speed
+    for (let i = 0; i < ids.length; i += 10) {
+      await Promise.all(ids.slice(i, i + 10).map(id => base44.entities.Document.delete(id)));
+    }
+    setDocuments([]);
+    setDeletingAll(false);
+    toast.success(`${ids.length} ${cfg.label.toLowerCase()}${ids.length !== 1 ? "s" : ""} deleted!`);
   };
 
   return (
@@ -131,6 +147,16 @@ export default function DocumentList() {
             </p>
           </div>
           <div className="flex flex-wrap gap-2">
+            {type === "invoice" && documents.length > 0 && (
+              <button
+                onClick={() => setShowDeleteAllConfirm(true)}
+                disabled={deletingAll}
+                className="inline-flex items-center gap-2 bg-red-500/80 hover:bg-red-500/90 backdrop-blur-sm text-white px-5 py-2.5 rounded-2xl text-sm font-bold transition-all active:scale-95 w-fit border border-red-400/30 disabled:opacity-50"
+              >
+                {deletingAll ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
+                {deletingAll ? "Deleting…" : "Delete All"}
+              </button>
+            )}
             {type === "receipt" && documents.length > 0 && (
               <button
                 onClick={() => setShowConvertConfirm(true)}
@@ -286,6 +312,29 @@ export default function DocumentList() {
           </>
         )}
       </div>
+
+      {/* Confirm Delete All Modal */}
+      {showDeleteAllConfirm && (
+        <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4" onClick={() => setShowDeleteAllConfirm(false)}>
+          <div className="bg-card rounded-2xl border border-border shadow-2xl p-6 w-full max-w-sm" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-center h-12 w-12 rounded-full bg-red-50 border border-red-100 mx-auto mb-4">
+              <Trash2 className="h-5 w-5 text-red-500" />
+            </div>
+            <h3 className="text-base font-bold text-center">Delete All {cfg.plural}?</h3>
+            <p className="text-sm text-muted-foreground text-center mt-1.5 mb-5">
+              This will permanently delete <span className="font-semibold text-foreground">{documents.length}</span> {cfg.label.toLowerCase()}{documents.length !== 1 ? "s" : ""}. This action cannot be undone.
+            </p>
+            <div className="flex gap-2">
+              <button onClick={() => setShowDeleteAllConfirm(false)} className="flex-1 px-4 py-2.5 rounded-xl border border-border text-sm font-semibold hover:bg-muted/50 transition-colors">
+                Cancel
+              </button>
+              <button onClick={handleDeleteAll} className="flex-1 px-4 py-2.5 rounded-xl bg-red-600 text-white text-sm font-semibold hover:bg-red-700 transition-colors">
+                Delete All
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Confirm Convert All Modal */}
       {showConvertConfirm && (
