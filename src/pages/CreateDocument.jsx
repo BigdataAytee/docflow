@@ -19,6 +19,7 @@ import BankDetailsFields from "../components/BankDetailsFields";
 import CurrencySelect, { CURRENCIES } from "../components/CurrencySelect";
 import SignaturePad from "../components/SignaturePad";
 import DocumentPreview from "../components/DocumentPreview";
+import LayoutPickerStrip from "../components/LayoutPickerStrip";
 import { toast } from "sonner";
 
 const typeLabels = {
@@ -693,9 +694,10 @@ export default function CreateDocument() {
   const previewScale = Math.min(1, (Math.min(viewportWidth, 826) - 32) / 794);
   // Scale PDF to fill the right panel completely
   const MODAL_LEFT_W = 160;
-  const MODAL_TOP_H = 56; // top bar height
+  const MODAL_TOP_H = 56;    // top bar height
+  const STRIP_H = 210;       // bottom layout picker strip height
   const availW = viewportWidth - MODAL_LEFT_W;
-  const availH = viewportHeight - MODAL_TOP_H;
+  const availH = viewportHeight - MODAL_TOP_H - STRIP_H;
   // Fit the full A4 page (794×1123) within the available area, keeping aspect ratio
   const pdfModalScale = Math.min(availW / 794, availH / 1123);
 
@@ -1370,21 +1372,11 @@ export default function CreateDocument() {
               </div>
             </div>
 
-            {/* Layout section */}
-            <div className="pt-3 pb-2 shrink-0">
-              <p className="text-[9px] font-bold uppercase tracking-[0.15em] text-white/40 mb-2 px-3">Layout</p>
-              <div className="flex gap-2 overflow-x-auto px-3 pb-1" style={{ scrollbarWidth: "none" }}>
-                {Object.values(LAYOUTS).map(l => (
-                  <button key={l.id} onClick={() => setTemplate(l.id)}
-                    className="flex flex-col items-center gap-1.5 shrink-0 group">
-                    <div className={`rounded-lg overflow-hidden transition-all ${template === l.id ? "ring-2 ring-indigo-400 shadow-lg shadow-indigo-500/30" : "opacity-50 hover:opacity-90 hover:ring-1 hover:ring-white/20"}`}
-                      style={{ width: 72, height: 96, background: "#fff" }}>
-                      <LayoutThumb id={l.id} accentColor={COLOR_SCHEMES[templateColor]?.swatch} />
-                    </div>
-                    <span className={`text-[9px] font-semibold leading-none ${template === l.id ? "text-indigo-300" : "text-white/40"}`}>{l.name}</span>
-                  </button>
-                ))}
-              </div>
+            {/* Layout section — selected name only */}
+            <div className="pt-3 pb-2 shrink-0 px-3">
+              <p className="text-[9px] font-bold uppercase tracking-[0.15em] text-white/40 mb-1">Layout</p>
+              <p className="text-[11px] font-semibold text-indigo-300">{LAYOUTS[template]?.name || "Classic"}</p>
+              <p className="text-[9px] text-white/30 mt-0.5">↓ Scroll picker below</p>
             </div>
 
             {/* Divider */}
@@ -1495,6 +1487,21 @@ export default function CreateDocument() {
                 </div>
               </div>
             </div>
+
+            {/* Bottom layout picker strip */}
+            <LayoutPickerStrip
+              layouts={LAYOUTS}
+              colorSchemes={COLOR_SCHEMES}
+              template={template}
+              templateColor={templateColor}
+              onSelect={setTemplate}
+              form={form}
+              items={calcs.lineItems}
+              calcs={calcs}
+              sym={sym}
+              docType={form.type || docType}
+              managerSig={managerSig}
+            />
           </div>
           {/* Inline Receiver Signature Overlay (waybill soft signage) */}
           {showInlineSigPad && (
