@@ -213,14 +213,14 @@ export default function Home() {
       {/* Quick Access */}
       {!searchQuery &&
       <>
-          <div className="flex items-stretch gap-3 hidden">
-            <div className="flex-1 min-w-0 hidden">
-              <VoiceRecorder />
-            </div>
-            <div className="shrink-0">
-              <AIInputButtons />
-            </div>
-          </div>
+          
+
+
+
+
+
+
+        
 
           <div>
             <h2 className="font-bold text-base text-foreground mb-4">Quick Access</h2>

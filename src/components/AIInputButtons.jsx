@@ -92,7 +92,7 @@ export default function AIInputButtons() {
           className="flex flex-col items-center justify-center gap-1.5 w-[72px] flex-1 min-h-[52px] rounded-2xl transition-all hover:opacity-90 active:scale-95"
           style={{ background: "linear-gradient(135deg,#0f172a,#1e293b)", border: "1px solid rgba(99,102,241,0.25)" }}
           title="Paste text">
-          <FileText className="h-5 w-5 text-purple-400 hidden" />
+          
           <span className="text-white text-[10px] font-semibold leading-tight text-center">Paste</span>
         </button>
       </div>);
