@@ -824,7 +824,7 @@ function SikkyDoc({ form, items, calcs, sym, docType, managerSig, customerSig, T
       <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", padding: "12px 32px 12px 24px" }}>
         <div style={{ flex: 1 }}>
           {form.logo_url
-            ? <img src={form.logo_url} alt="logo" style={{ maxHeight: 120, maxWidth: 500, width: "100%", objectFit: "contain", objectPosition: "top left", display: "block" }} />
+            ? <img src={form.logo_url} alt="logo" style={{ maxHeight: 160, maxWidth: 560, width: "100%", objectFit: "contain", objectPosition: "top left", display: "block" }} />
             : <div style={{ fontSize: 32, fontWeight: 900, color: accent, fontFamily: "serif" }}>{form.company_name || "Company"}</div>
           }
         </div>
