@@ -25,23 +25,10 @@ function VoiceModal({ onClose, children }) {
   );
 }
 
-// Live text display using a DOM ref so every keystroke renders without React batching
-function LiveTextDisplay({ liveTextRef }) {
-  const domRef = useRef(null);
-
-  useEffect(() => {
-    // Poll the ref every 80ms and update the DOM directly — instant, no React re-render delay
-    const interval = setInterval(() => {
-      if (domRef.current && domRef.current.dataset.last !== liveTextRef.current) {
-        domRef.current.dataset.last = liveTextRef.current;
-        domRef.current.textContent = liveTextRef.current || "";
-      }
-    }, 80);
-    return () => clearInterval(interval);
-  }, [liveTextRef]);
-
+// Live text display — direct DOM mutation on every speech event for zero lag
+function LiveTextDisplay({ domRef }) {
   return (
-    <div ref={domRef} className="text-indigo-900 text-base leading-relaxed font-medium whitespace-pre-wrap" />
+    <div ref={domRef} className="text-indigo-900 text-base leading-relaxed font-medium whitespace-pre-wrap min-h-[1em]" />
   );
 }
 
@@ -49,7 +36,7 @@ export default function VoiceRecorder() {
   const navigate = useNavigate();
   const [modalOpen, setModalOpen] = useState(false);
   const [step, setStep] = useState(STEP.IDLE);
-  const [hasLiveText, setHasLiveText] = useState(false); // just to toggle placeholder
+  const [hasLiveText, setHasLiveText] = useState(false);
   const [transcript, setTranscript] = useState("");
   const [extracted, setExtracted] = useState(null);
   const [error, setError] = useState("");
@@ -60,7 +47,8 @@ export default function VoiceRecorder() {
   const mediaRecorderRef = useRef(null);
   const chunksRef = useRef([]);
   const finalLiveRef = useRef("");
-  const liveTextRef = useRef(""); // written directly, read by LiveTextDisplay
+  const liveTextRef = useRef("");
+  const liveDomRef = useRef(null); // direct DOM node for zero-lag text updates
 
   const fmtSecs = (s) => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
 
@@ -116,9 +104,14 @@ export default function VoiceRecorder() {
               interim = e.results[i][0].transcript;
             }
           }
-          liveTextRef.current = finalLiveRef.current + interim;
-          // Only update React state to toggle placeholder on first word
-          if (!hasLiveText && liveTextRef.current) setHasLiveText(true);
+          const combined = finalLiveRef.current + interim;
+          liveTextRef.current = combined;
+          // Write directly to DOM — no React re-render, instant display
+          if (liveDomRef.current) {
+            liveDomRef.current.textContent = combined;
+          }
+          // Hide placeholder once we have text
+          if (combined && !hasLiveText) setHasLiveText(true);
         };
 
         r.onend = () => { if (!stopped) startSR(); };
@@ -241,6 +234,7 @@ Rules:
     setHasLiveText(false);
     liveTextRef.current = "";
     finalLiveRef.current = "";
+    if (liveDomRef.current) liveDomRef.current.textContent = "";
     setTranscript("");
     setExtracted(null);
     setError("");
@@ -252,6 +246,7 @@ Rules:
     setHasLiveText(false);
     liveTextRef.current = "";
     finalLiveRef.current = "";
+    if (liveDomRef.current) liveDomRef.current.textContent = "";
     setTranscript("");
     setExtracted(null);
     setError("");
@@ -312,8 +307,7 @@ Rules:
             {step === STEP.RECORDING && (
               <div className="space-y-4">
                 <div className="relative rounded-2xl border-2 border-indigo-200 bg-indigo-50/50 p-4 overflow-y-auto" style={{ minHeight: 160, maxHeight: 260 }}>
-                  {/* Direct DOM update — zero React batching delay */}
-                  <LiveTextDisplay liveTextRef={liveTextRef} />
+                  <LiveTextDisplay domRef={liveDomRef} />
                   {!hasLiveText && (
                     <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 text-indigo-300 pointer-events-none">
                       <Mic className="h-10 w-10 opacity-30" />
