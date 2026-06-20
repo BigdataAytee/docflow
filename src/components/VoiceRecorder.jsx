@@ -25,67 +25,91 @@ export default function VoiceRecorder() {
 
   const timerRef = useRef(null);
   const recognitionRef = useRef(null);
-  const finalTextRef = useRef("");
+  const mediaRecorderRef = useRef(null);
+  const chunksRef = useRef([]);
 
-  const startRecording = useCallback(() => {
-    const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-    if (!SR) { setError("Speech recognition not supported in this browser. Try Chrome."); return; }
-
+  const startRecording = useCallback(async () => {
     setError("");
     setTranscript("");
     setLiveText("");
     setExtracted(null);
     setRecordingSeconds(0);
-    finalTextRef.current = "";
 
-    const recognition = new SR();
-    recognition.continuous = true;
-    recognition.interimResults = true;
-    recognition.lang = "en-US";
+    // ── 1. MediaRecorder — captures audio for Whisper (best multilingual model) ──
+    let stream;
+    try {
+      stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    } catch {
+      setError("Microphone access denied.");
+      return;
+    }
 
-    recognition.onresult = (e) => {
-      let interim = "";
-      for (let i = e.resultIndex; i < e.results.length; i++) {
-        if (e.results[i].isFinal) {
-          finalTextRef.current += e.results[i][0].transcript + " ";
-        } else {
-          interim = e.results[i][0].transcript;
+    chunksRef.current = [];
+    const mimeType = MediaRecorder.isTypeSupported("audio/webm") ? "audio/webm" : "audio/mp4";
+    const mr = new MediaRecorder(stream, { mimeType });
+    mr.ondataavailable = (e) => { if (e.data.size > 0) chunksRef.current.push(e.data); };
+    mr.start(250);
+    mediaRecorderRef.current = mr;
+
+    // ── 2. SpeechRecognition — live preview only (any language, auto-detected) ──
+    const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (SR) {
+      const recognition = new SR();
+      recognition.continuous = true;
+      recognition.interimResults = true;
+      // No lang set → browser auto-detects for best live preview
+      let finalLive = "";
+      recognition.onresult = (e) => {
+        let interim = "";
+        for (let i = e.resultIndex; i < e.results.length; i++) {
+          if (e.results[i].isFinal) finalLive += e.results[i][0].transcript + " ";
+          else interim = e.results[i][0].transcript;
         }
-      }
-      setLiveText(finalTextRef.current + interim);
-    };
+        setLiveText(finalLive + interim);
+      };
+      recognition.onerror = () => {};
+      recognition.start();
+      recognitionRef.current = recognition;
+    }
 
-    recognition.onerror = (e) => {
-      if (e.error !== "no-speech") setError("Microphone error: " + e.error);
-    };
-
-    recognition.onend = () => {
-      // Only proceed if we stopped intentionally (step won't be idle)
-      const text = finalTextRef.current.trim();
-      if (text) {
-        setTranscript(text);
-        setStep(STEP.EXTRACTING);
-        extractFromTranscript(text);
-      } else {
-        setStep(STEP.IDLE);
-      }
-      clearInterval(timerRef.current);
-    };
-
-    recognition.start();
-    recognitionRef.current = recognition;
     setStep(STEP.RECORDING);
     timerRef.current = setInterval(() => setRecordingSeconds(s => s + 1), 1000);
   }, []);
 
   const stopRecording = useCallback(() => {
     clearInterval(timerRef.current);
-    if (recognitionRef.current) {
+    // Stop live preview
+    if (recognitionRef.current) { recognitionRef.current.stop(); recognitionRef.current = null; }
+    // Stop MediaRecorder and trigger Whisper transcription
+    if (mediaRecorderRef.current) {
       setStep(STEP.TRANSCRIBING);
-      recognitionRef.current.stop();
-      recognitionRef.current = null;
+      mediaRecorderRef.current.onstop = handleWhisperTranscription;
+      mediaRecorderRef.current.stop();
+      mediaRecorderRef.current.stream?.getTracks().forEach(t => t.stop());
+      mediaRecorderRef.current = null;
     }
   }, []);
+
+  const handleWhisperTranscription = async () => {
+    const blob = new Blob(chunksRef.current, { type: chunksRef.current[0]?.type || "audio/webm" });
+    if (blob.size < 500) { setError("Recording too short."); setStep(STEP.IDLE); return; }
+    try {
+      const ext = blob.type.includes("mp4") ? "mp4" : "webm";
+      const file = new File([blob], `voice.${ext}`, { type: blob.type });
+      const { file_url } = await base44.integrations.Core.UploadFile({ file });
+      // Whisper — world's best multilingual transcription model
+      const text = await base44.integrations.Core.TranscribeAudio({ audio_url: file_url });
+      const finalText = (text || "").trim();
+      if (!finalText) { setError("Could not transcribe audio. Please try again."); setStep(STEP.IDLE); return; }
+      setTranscript(finalText);
+      setLiveText(finalText); // replace live preview with accurate Whisper result
+      setStep(STEP.EXTRACTING);
+      await extractFromTranscript(finalText);
+    } catch {
+      setError("Transcription failed. Please try again.");
+      setStep(STEP.IDLE);
+    }
+  };
 
   const extractFromTranscript = async (text) => {
     try {
