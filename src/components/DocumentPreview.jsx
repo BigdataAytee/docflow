@@ -821,8 +821,8 @@ function SikkyDoc({ form, items, calcs, sym, docType, managerSig, customerSig, T
   // ── Shared header (same for all doc types) ──
   const Header = () => (
     <>
-      <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", padding: "0 32px 8px 24px" }}>
-        <div style={{ flexShrink: 0 }}>
+      <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", padding: "8px 32px 8px 24px" }}>
+        <div style={{ flexShrink: 0, marginTop: -8 }}>
           {form.logo_url
             ? <img src={form.logo_url} alt="logo" style={{ maxHeight: 240, maxWidth: 380, objectFit: "contain", display: "block" }} />
             : <div style={{ fontSize: 32, fontWeight: 900, color: accent, fontFamily: "serif" }}>{form.company_name || "Company"}</div>
