@@ -423,13 +423,12 @@ ${inputText}
   const triggerButton = (
     <button
       onClick={() => { setOpen(true); if (stage === "idle") setStage("input"); }}
-      className="flex items-center gap-2 px-3 py-2 rounded-2xl shadow-lg transition-all duration-200 hover:scale-105 active:scale-95"
-      style={{ background: "linear-gradient(135deg,#6366f1 0%,#8b5cf6 50%,#a855f7 100%)", boxShadow: "0 4px 16px rgba(99,102,241,0.4)" }}>
-      <div className="relative flex items-center gap-1.5">
-        <ScanText className="h-4 w-4 text-white" />
-        <Sparkles className="h-3.5 w-3.5 text-yellow-300" />
-      </div>
-      <span className="text-white font-bold text-xs">AI Assistant</span>
+      className="relative flex items-center justify-center w-11 h-11 rounded-2xl shadow-lg transition-all duration-200 hover:scale-110 active:scale-95"
+      style={{ background: "linear-gradient(135deg,#6366f1 0%,#8b5cf6 50%,#a855f7 100%)", boxShadow: "0 4px 16px rgba(99,102,241,0.5)" }}
+      title="AI Assistant — scan & extract from images">
+      <span className="absolute inset-0 rounded-2xl animate-ping opacity-40" style={{ background: "linear-gradient(135deg,#6366f1,#a855f7)" }} />
+      <ScanText className="h-5 w-5 text-white relative z-10" />
+      <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-yellow-300 rounded-full border-2 border-white animate-pulse z-10" />
     </button>
   );
 
