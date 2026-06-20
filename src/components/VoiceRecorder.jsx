@@ -1,9 +1,8 @@
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Mic, Square, RotateCcw, Sparkles, Loader2, FileText, FileCheck, Receipt, Truck, ArrowRight, X } from "lucide-react";
+import { Mic, Square, Sparkles, Loader2, FileText, FileCheck, Receipt, Truck, ArrowRight, X, RotateCcw, MicOff } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
-// Note: uses browser SpeechRecognition for live display + final transcript
 
 const DOC_OPTIONS = [
   { type: "invoice",   label: "Invoice",   icon: FileText,  gradient: "linear-gradient(135deg,#3b82f6,#1d4ed8)" },
@@ -12,13 +11,29 @@ const DOC_OPTIONS = [
   { type: "waybill",   label: "Waybill",   icon: Truck,     gradient: "linear-gradient(135deg,#f59e0b,#d97706)" },
 ];
 
-const STEP = { IDLE: "idle", RECORDING: "recording", TRANSCRIBING: "transcribing", EXTRACTING: "extracting", REVIEW: "review", CHOOSE_DOC: "choose_doc" };
+const STEP = { IDLE: "idle", RECORDING: "recording", PROCESSING: "processing", REVIEW: "review", CHOOSE_DOC: "choose_doc" };
+
+// ── Modal overlay ─────────────────────────────────────────────────────────────
+function VoiceModal({ onClose, children }) {
+  return (
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4">
+      {/* Backdrop */}
+      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
+      {/* Panel */}
+      <div className="relative w-full sm:max-w-lg bg-background rounded-t-3xl sm:rounded-3xl shadow-2xl overflow-hidden flex flex-col"
+        style={{ maxHeight: "92vh" }}>
+        {children}
+      </div>
+    </div>
+  );
+}
 
 export default function VoiceRecorder() {
   const navigate = useNavigate();
+  const [modalOpen, setModalOpen] = useState(false);
   const [step, setStep] = useState(STEP.IDLE);
+  const [liveText, setLiveText] = useState("");
   const [transcript, setTranscript] = useState("");
-  const [liveText, setLiveText] = useState(""); // real-time interim speech
   const [extracted, setExtracted] = useState(null);
   const [error, setError] = useState("");
   const [recordingSeconds, setRecordingSeconds] = useState(0);
@@ -27,15 +42,28 @@ export default function VoiceRecorder() {
   const recognitionRef = useRef(null);
   const mediaRecorderRef = useRef(null);
   const chunksRef = useRef([]);
+  const finalLiveRef = useRef("");
+  const liveTextRef = useRef("");
+
+  const fmtSecs = (s) => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
+  const totalAmount = extracted?.items?.reduce((s, i) => s + (i.amount || 0), 0) || 0;
+
+  // Auto-start recording when modal opens
+  useEffect(() => {
+    if (modalOpen && step === STEP.IDLE) {
+      startRecording();
+    }
+  }, [modalOpen]);
 
   const startRecording = useCallback(async () => {
     setError("");
-    setTranscript("");
     setLiveText("");
+    setTranscript("");
     setExtracted(null);
     setRecordingSeconds(0);
+    finalLiveRef.current = "";
+    liveTextRef.current = "";
 
-    // ── 1. MediaRecorder — captures audio for Whisper (best multilingual model) ──
     let stream;
     try {
       stream = await navigator.mediaDevices.getUserMedia({ audio: true });
@@ -44,29 +72,36 @@ export default function VoiceRecorder() {
       return;
     }
 
+    // ── MediaRecorder for Whisper (best multilingual accuracy) ──
     chunksRef.current = [];
     const mimeType = MediaRecorder.isTypeSupported("audio/webm") ? "audio/webm" : "audio/mp4";
     const mr = new MediaRecorder(stream, { mimeType });
     mr.ondataavailable = (e) => { if (e.data.size > 0) chunksRef.current.push(e.data); };
-    mr.start(250);
+    mr.start(100); // collect chunks every 100ms for speed
     mediaRecorderRef.current = mr;
 
-    // ── 2. SpeechRecognition — live preview only (any language, auto-detected) ──
+    // ── SpeechRecognition for instant live display ──
     const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
     if (SR) {
       const recognition = new SR();
       recognition.continuous = true;
       recognition.interimResults = true;
-      // No lang set → browser auto-detects for best live preview
-      let finalLive = "";
+      recognition.maxAlternatives = 1;
+
       recognition.onresult = (e) => {
         let interim = "";
         for (let i = e.resultIndex; i < e.results.length; i++) {
-          if (e.results[i].isFinal) finalLive += e.results[i][0].transcript + " ";
-          else interim = e.results[i][0].transcript;
+          if (e.results[i].isFinal) {
+            finalLiveRef.current += e.results[i][0].transcript + " ";
+          } else {
+            interim = e.results[i][0].transcript;
+          }
         }
-        setLiveText(finalLive + interim);
+        const combined = finalLiveRef.current + interim;
+        liveTextRef.current = combined;
+        setLiveText(combined);
       };
+
       recognition.onerror = () => {};
       recognition.start();
       recognitionRef.current = recognition;
@@ -78,56 +113,62 @@ export default function VoiceRecorder() {
 
   const stopRecording = useCallback(() => {
     clearInterval(timerRef.current);
-    // Stop live preview
-    if (recognitionRef.current) { recognitionRef.current.stop(); recognitionRef.current = null; }
-    // Stop MediaRecorder and trigger Whisper transcription
+    if (recognitionRef.current) {
+      recognitionRef.current.stop();
+      recognitionRef.current = null;
+    }
     if (mediaRecorderRef.current) {
-      setStep(STEP.TRANSCRIBING);
-      mediaRecorderRef.current.onstop = handleWhisperTranscription;
+      setStep(STEP.PROCESSING);
+      mediaRecorderRef.current.onstop = runWhisper;
       mediaRecorderRef.current.stop();
       mediaRecorderRef.current.stream?.getTracks().forEach(t => t.stop());
       mediaRecorderRef.current = null;
     }
   }, []);
 
-  const handleWhisperTranscription = async () => {
+  const runWhisper = async () => {
     const blob = new Blob(chunksRef.current, { type: chunksRef.current[0]?.type || "audio/webm" });
-    if (blob.size < 500) { setError("Recording too short."); setStep(STEP.IDLE); return; }
+    if (blob.size < 500) {
+      setError("Recording too short. Try again.");
+      setStep(STEP.IDLE);
+      startRecording();
+      return;
+    }
     try {
       const ext = blob.type.includes("mp4") ? "mp4" : "webm";
       const file = new File([blob], `voice.${ext}`, { type: blob.type });
       const { file_url } = await base44.integrations.Core.UploadFile({ file });
-      // Whisper — world's best multilingual transcription model
       const text = await base44.integrations.Core.TranscribeAudio({ audio_url: file_url });
       const finalText = (text || "").trim();
-      if (!finalText) { setError("Could not transcribe audio. Please try again."); setStep(STEP.IDLE); return; }
+      if (!finalText) {
+        setError("Could not hear anything. Please try again.");
+        setStep(STEP.IDLE);
+        return;
+      }
       setTranscript(finalText);
-      setLiveText(finalText); // replace live preview with accurate Whisper result
-      setStep(STEP.EXTRACTING);
-      await extractFromTranscript(finalText);
+      setLiveText(finalText);
+      await extractData(finalText);
     } catch {
       setError("Transcription failed. Please try again.");
       setStep(STEP.IDLE);
     }
   };
 
-  const extractFromTranscript = async (text) => {
+  const extractData = async (text) => {
     try {
       const result = await base44.integrations.Core.InvokeLLM({
         prompt: `Extract structured document data from this spoken description.
 Transcript: "${text}"
 Rules:
-- Each item needs: description, quantity (number), unit_price (number), amount (qty * price)
+- Each item: description, quantity (number), unit_price (number), amount (qty * price)
 - If price not mentioned, set unit_price to 0
-- Extract customer_name and notes if mentioned
-- "three chairs at 120 each" → qty:3, unit_price:120, amount:360`,
+- Extract customer_name and notes if mentioned`,
         response_json_schema: {
           type: "object",
           properties: {
             items: { type: "array", items: { type: "object", properties: { description: { type: "string" }, quantity: { type: "number" }, unit_price: { type: "number" }, amount: { type: "number" } } } },
             customer_name: { type: "string" },
             notes: { type: "string" },
-            uncertain_fields: { type: "array", items: { type: "string" } }
           }
         }
       });
@@ -142,150 +183,225 @@ Rules:
   const handleCreateDocument = (docType) => {
     if (!extracted?.items?.length) return;
     const subtotal = extracted.items.reduce((s, i) => s + (i.amount || 0), 0);
-    sessionStorage.setItem("voice_draft", JSON.stringify({ type: docType, customer_name: extracted.customer_name || "", notes: extracted.notes || "", items: extracted.items, subtotal, total: subtotal }));
+    sessionStorage.setItem("voice_draft", JSON.stringify({
+      type: docType,
+      customer_name: extracted.customer_name || "",
+      notes: extracted.notes || "",
+      items: extracted.items,
+      subtotal,
+      total: subtotal
+    }));
+    closeModal();
     navigate(`/documents/new?type=${docType}&from=voice`);
   };
 
-  const reset = () => { setStep(STEP.IDLE); setTranscript(""); setLiveText(""); setExtracted(null); setError(""); setRecordingSeconds(0); };
-  const fmtSecs = (s) => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
-  const totalAmount = extracted?.items?.reduce((s, i) => s + (i.amount || 0), 0) || 0;
-  const isProcessing = step === STEP.TRANSCRIBING || step === STEP.EXTRACTING;
+  const closeModal = () => {
+    clearInterval(timerRef.current);
+    if (recognitionRef.current) { recognitionRef.current.stop(); recognitionRef.current = null; }
+    if (mediaRecorderRef.current) { mediaRecorderRef.current.stop(); mediaRecorderRef.current.stream?.getTracks().forEach(t => t.stop()); mediaRecorderRef.current = null; }
+    setModalOpen(false);
+    setStep(STEP.IDLE);
+    setLiveText("");
+    setTranscript("");
+    setExtracted(null);
+    setError("");
+    setRecordingSeconds(0);
+  };
 
-  // ── IDLE / RECORDING / PROCESSING: compact card with mic icon on left ──
-  if (step === STEP.IDLE || step === STEP.RECORDING || isProcessing) {
-    const isRecording = step === STEP.RECORDING;
+  const reRecord = () => {
+    setStep(STEP.IDLE);
+    setLiveText("");
+    setTranscript("");
+    setExtracted(null);
+    setError("");
+    setRecordingSeconds(0);
+    startRecording();
+  };
 
-    return (
-      <div className="flex flex-col gap-2">
-        {error && (
-          <div className="flex items-center gap-2 p-2.5 rounded-xl bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-900 text-xs text-red-600">
-            <X className="h-3.5 w-3.5 shrink-0" />{error}
-          </div>
-        )}
-        <div className="flex items-center gap-3">
-          {/* Bare mic icon button — no box */}
-          <button
-            onClick={isRecording ? stopRecording : isProcessing ? undefined : startRecording}
-            disabled={isProcessing}
-            className="shrink-0 transition-all active:scale-95 disabled:opacity-60 flex items-center justify-center"
-            title={isRecording ? "Stop recording" : "Start recording"}
-          >
-            {isProcessing
-              ? <Loader2 className="h-7 w-7 text-indigo-500 animate-spin" />
-              : isRecording
-                ? <Square className="h-7 w-7 fill-red-500 text-red-500" />
-                : <Mic className="h-7 w-7 text-indigo-500 hover:text-indigo-400 transition-colors" />
-            }
-          </button>
+  return (
+    <>
+      {/* ── Trigger: bare mic icon ── */}
+      <button
+        onClick={() => setModalOpen(true)}
+        className="shrink-0 transition-all active:scale-95 flex items-center justify-center"
+        title="Voice to Document"
+      >
+        <Mic className="h-7 w-7 text-indigo-500 hover:text-indigo-400 transition-colors" />
+      </button>
 
-          {/* Text */}
-          <div className="flex-1 min-w-0">
-            <p className="text-foreground font-bold text-sm leading-tight">
-              {isRecording ? `Recording… ${fmtSecs(recordingSeconds)}` : isProcessing ? (step === STEP.TRANSCRIBING ? "Transcribing…" : "Extracting…") : "Voice to Document"}
-            </p>
-            {isRecording && liveText ? (
-              <p className="text-indigo-500 text-xs mt-1 leading-relaxed line-clamp-3 italic">{liveText}</p>
-            ) : (
-              <p className="text-muted-foreground text-xs mt-0.5">
-                {isRecording
-                  ? "Speak now…"
-                  : isProcessing
-                    ? "AI is processing your audio"
-                    : "Tap mic, speak items & prices"}
-              </p>
-            )}
-          </div>
-
-          {/* Recording pulse indicator */}
-          {isRecording && (
-            <span className="flex h-2.5 w-2.5 shrink-0 relative">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75" />
-              <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-red-500" />
-            </span>
-          )}
-        </div>
-      </div>
-    );
-  }
-
-  // ── REVIEW ──
-  if (step === STEP.REVIEW) {
-    return (
-      <div className="bg-card border border-border rounded-2xl shadow-sm overflow-hidden">
-        <div className="px-4 py-3 flex items-center justify-between border-b border-border"
-          style={{ background: "linear-gradient(135deg,#6366f1,#8b5cf6)" }}>
-          <div className="flex items-center gap-2">
-            <Sparkles className="h-4 w-4 text-white" />
-            <span className="text-white font-bold text-sm">Extracted Items</span>
-          </div>
-          <button onClick={reset} className="text-white/60 hover:text-white"><X className="h-4 w-4" /></button>
-        </div>
-        <div className="p-4 space-y-4">
-          <div>
-            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1.5">Transcript</p>
-            <textarea value={transcript} onChange={e => setTranscript(e.target.value)} rows={2}
-              className="w-full text-sm border border-border rounded-xl px-3 py-2.5 bg-muted/30 focus:outline-none focus:ring-2 focus:ring-ring resize-none leading-relaxed" />
-            <button onClick={() => extractFromTranscript(transcript)} className="mt-1 text-xs text-primary font-semibold flex items-center gap-1 hover:underline">
-              <RotateCcw className="h-3 w-3" /> Re-extract
+      {/* ── Modal ── */}
+      {modalOpen && (
+        <VoiceModal onClose={closeModal}>
+          {/* Header */}
+          <div className="flex items-center justify-between px-5 py-4 border-b border-border shrink-0"
+            style={{ background: "linear-gradient(135deg,#1e1b4b,#312e81)" }}>
+            <div className="flex items-center gap-3">
+              {step === STEP.RECORDING && (
+                <span className="relative flex h-3 w-3">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75" />
+                  <span className="relative inline-flex rounded-full h-3 w-3 bg-red-500" />
+                </span>
+              )}
+              {(step === STEP.PROCESSING) && <Loader2 className="h-4 w-4 text-indigo-300 animate-spin" />}
+              {(step === STEP.REVIEW || step === STEP.CHOOSE_DOC) && <Sparkles className="h-4 w-4 text-yellow-300" />}
+              <div>
+                <p className="text-white font-bold text-sm leading-tight">
+                  {step === STEP.RECORDING && `Recording… ${fmtSecs(recordingSeconds)}`}
+                  {step === STEP.PROCESSING && "Processing with Whisper AI…"}
+                  {step === STEP.REVIEW && "Review Extracted Data"}
+                  {step === STEP.CHOOSE_DOC && "Choose Document Type"}
+                  {step === STEP.IDLE && "Voice to Document"}
+                </p>
+                <p className="text-white/50 text-xs mt-0.5">
+                  {step === STEP.RECORDING && "Speak clearly — transcribing in real time"}
+                  {step === STEP.PROCESSING && "Whisper multilingual model"}
+                  {step === STEP.REVIEW && "Check items then choose document"}
+                  {step === STEP.CHOOSE_DOC && "Select where to send your data"}
+                  {step === STEP.IDLE && "Tap mic to start"}
+                </p>
+              </div>
+            </div>
+            <button onClick={closeModal} className="p-1.5 rounded-xl bg-white/10 hover:bg-white/20 text-white/60 hover:text-white transition-colors">
+              <X className="h-4 w-4" />
             </button>
           </div>
-          <div className="space-y-1.5">
-            {extracted?.items?.map((item, i) => (
-              <div key={i} className={`flex items-center gap-2 px-3 py-2 rounded-xl text-sm ${extracted.uncertain_fields?.includes(item.description) ? "bg-amber-50 dark:bg-amber-950/30 border border-amber-200" : "bg-muted/40"}`}>
-                <div className="flex-1 min-w-0">
-                  <span className="font-medium block truncate">{item.description}</span>
-                  <span className="text-xs text-muted-foreground">Qty: {item.quantity} × {item.unit_price?.toLocaleString()}</span>
-                </div>
-                <span className="font-bold text-foreground shrink-0">{(item.amount || 0).toLocaleString()}</span>
+
+          {/* Body */}
+          <div className="flex-1 overflow-y-auto p-5 space-y-4">
+
+            {/* Error */}
+            {error && (
+              <div className="flex items-center gap-2 p-3 rounded-xl bg-red-50 border border-red-200 text-sm text-red-600">
+                <MicOff className="h-4 w-4 shrink-0" />{error}
               </div>
-            ))}
-          </div>
-          {extracted?.customer_name && <p className="text-xs text-muted-foreground">Customer: <span className="font-semibold text-foreground">{extracted.customer_name}</span></p>}
-          <div className="flex items-center justify-between pt-2 border-t border-border">
-            <div>
-              <p className="text-xs text-muted-foreground">{extracted?.items?.length || 0} item(s)</p>
-              <p className="text-base font-bold text-foreground">{totalAmount.toLocaleString()}</p>
-            </div>
-            <Button size="sm" onClick={() => setStep(STEP.CHOOSE_DOC)} className="gap-1.5">
-              Choose Document <ArrowRight className="h-3.5 w-3.5" />
-            </Button>
-          </div>
-        </div>
-      </div>
-    );
-  }
+            )}
 
-  // ── CHOOSE DOCUMENT TYPE ──
-  if (step === STEP.CHOOSE_DOC) {
-    return (
-      <div className="bg-card border border-border rounded-2xl shadow-sm overflow-hidden">
-        <div className="px-4 py-3 flex items-center justify-between border-b border-border"
-          style={{ background: "linear-gradient(135deg,#6366f1,#8b5cf6)" }}>
-          <div className="flex items-center gap-2">
-            <Sparkles className="h-4 w-4 text-white" />
-            <span className="text-white font-bold text-sm">Choose Document Type</span>
-          </div>
-          <button onClick={reset} className="text-white/60 hover:text-white"><X className="h-4 w-4" /></button>
-        </div>
-        <div className="p-4 space-y-3">
-          <p className="text-sm text-muted-foreground">Where would you like to send the extracted data?</p>
-          <div className="grid grid-cols-2 gap-3">
-            {DOC_OPTIONS.map(({ type, label, icon: Icon, gradient }) => (
-              <button key={type} onClick={() => handleCreateDocument(type)}
-                className="flex flex-col items-center gap-2 p-4 rounded-2xl transition-all hover:opacity-90 active:scale-95 shadow-sm"
-                style={{ background: gradient }}>
-                <div className="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center">
-                  <Icon className="h-5 w-5 text-white" />
+            {/* ── RECORDING: live transcript display ── */}
+            {step === STEP.RECORDING && (
+              <div className="space-y-4">
+                {/* Live text box */}
+                <div className="relative min-h-[160px] rounded-2xl border-2 border-indigo-200 bg-indigo-50/50 p-4 overflow-y-auto"
+                  style={{ maxHeight: 260 }}>
+                  {liveText ? (
+                    <p className="text-indigo-900 text-base leading-relaxed font-medium">{liveText}
+                      <span className="inline-block w-0.5 h-4 bg-indigo-400 ml-0.5 animate-pulse align-middle" />
+                    </p>
+                  ) : (
+                    <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 text-indigo-300">
+                      <Mic className="h-10 w-10 opacity-30" />
+                      <p className="text-sm font-medium">Start speaking…</p>
+                    </div>
+                  )}
                 </div>
-                <span className="text-white font-bold text-sm">{label}</span>
-              </button>
-            ))}
-          </div>
-          <button onClick={() => setStep(STEP.REVIEW)} className="w-full text-xs text-muted-foreground hover:text-foreground text-center py-1 transition-colors">← Back to review</button>
-        </div>
-      </div>
-    );
-  }
+                {/* Stop button */}
+                <button onClick={stopRecording}
+                  className="w-full py-4 rounded-2xl text-white font-bold text-base flex items-center justify-center gap-2 active:scale-95 transition-all shadow-lg"
+                  style={{ background: "linear-gradient(135deg,#ef4444,#b91c1c)" }}>
+                  <Square className="h-5 w-5 fill-white" /> Stop & Extract
+                </button>
+              </div>
+            )}
 
-  return null;
+            {/* ── PROCESSING: show what we captured + spinner ── */}
+            {step === STEP.PROCESSING && (
+              <div className="space-y-4">
+                <div className="min-h-[120px] rounded-2xl border border-border bg-muted/30 p-4 overflow-y-auto" style={{ maxHeight: 200 }}>
+                  <p className="text-foreground text-sm leading-relaxed">{liveText || "Processing…"}</p>
+                </div>
+                <div className="flex items-center justify-center gap-3 py-4">
+                  <Loader2 className="h-6 w-6 text-indigo-500 animate-spin" />
+                  <div>
+                    <p className="text-sm font-semibold text-foreground">Whisper AI transcribing…</p>
+                    <p className="text-xs text-muted-foreground">Then extracting items automatically</p>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* ── REVIEW ── */}
+            {step === STEP.REVIEW && (
+              <div className="space-y-4">
+                {/* Transcript */}
+                <div>
+                  <p className="text-xs font-bold text-muted-foreground uppercase tracking-wide mb-2">Transcript</p>
+                  <div className="rounded-xl border border-border bg-muted/30 px-3 py-2.5 text-sm text-foreground leading-relaxed max-h-24 overflow-y-auto">
+                    {transcript}
+                  </div>
+                </div>
+                {/* Items */}
+                <div>
+                  <p className="text-xs font-bold text-muted-foreground uppercase tracking-wide mb-2">Extracted Items</p>
+                  <div className="space-y-2">
+                    {extracted?.items?.map((item, i) => (
+                      <div key={i} className="flex items-center gap-3 px-3 py-2.5 rounded-xl bg-muted/40 border border-border">
+                        <div className="flex-1 min-w-0">
+                          <p className="font-semibold text-sm text-foreground truncate">{item.description}</p>
+                          <p className="text-xs text-muted-foreground">Qty {item.quantity} × {item.unit_price?.toLocaleString()}</p>
+                        </div>
+                        <span className="font-bold text-sm text-foreground shrink-0">{(item.amount || 0).toLocaleString()}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                {extracted?.customer_name && (
+                  <p className="text-xs text-muted-foreground">Customer: <span className="font-semibold text-foreground">{extracted.customer_name}</span></p>
+                )}
+                {/* Total + actions */}
+                <div className="flex items-center justify-between pt-3 border-t border-border">
+                  <div>
+                    <p className="text-xs text-muted-foreground">{extracted?.items?.length || 0} item(s)</p>
+                    <p className="text-lg font-bold text-foreground">{totalAmount.toLocaleString()}</p>
+                  </div>
+                  <div className="flex gap-2">
+                    <button onClick={reRecord}
+                      className="px-3 py-2 rounded-xl border border-border text-xs font-semibold text-muted-foreground hover:text-foreground flex items-center gap-1 transition-colors">
+                      <RotateCcw className="h-3 w-3" /> Re-record
+                    </button>
+                    <Button size="sm" onClick={() => setStep(STEP.CHOOSE_DOC)} className="gap-1.5">
+                      Create Doc <ArrowRight className="h-3.5 w-3.5" />
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* ── CHOOSE DOC ── */}
+            {step === STEP.CHOOSE_DOC && (
+              <div className="space-y-4">
+                <p className="text-sm text-muted-foreground text-center">Where would you like to send the extracted data?</p>
+                <div className="grid grid-cols-2 gap-3">
+                  {DOC_OPTIONS.map(({ type, label, icon: Icon, gradient }) => (
+                    <button key={type} onClick={() => handleCreateDocument(type)}
+                      className="flex flex-col items-center gap-3 p-5 rounded-2xl transition-all hover:opacity-90 active:scale-95 shadow-sm"
+                      style={{ background: gradient }}>
+                      <div className="w-12 h-12 rounded-2xl bg-white/20 flex items-center justify-center">
+                        <Icon className="h-6 w-6 text-white" />
+                      </div>
+                      <span className="text-white font-bold text-sm">{label}</span>
+                    </button>
+                  ))}
+                </div>
+                <button onClick={() => setStep(STEP.REVIEW)}
+                  className="w-full text-xs text-muted-foreground hover:text-foreground text-center py-2 transition-colors">
+                  ← Back to review
+                </button>
+              </div>
+            )}
+
+            {/* ── IDLE (shouldn't show but just in case) ── */}
+            {step === STEP.IDLE && !error && (
+              <div className="flex flex-col items-center justify-center py-10 gap-4">
+                <button onClick={startRecording}
+                  className="w-20 h-20 rounded-full flex items-center justify-center shadow-xl active:scale-95 transition-all"
+                  style={{ background: "linear-gradient(135deg,#6366f1,#8b5cf6)" }}>
+                  <Mic className="h-9 w-9 text-white" />
+                </button>
+                <p className="text-sm text-muted-foreground font-medium">Tap to start recording</p>
+              </div>
+            )}
+          </div>
+        </VoiceModal>
+      )}
+    </>
+  );
 }
