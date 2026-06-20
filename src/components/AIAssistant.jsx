@@ -286,6 +286,7 @@ export default function AIAssistant({ inlineTrigger = false }) {
   const [scanHint, setScanHint] = useState(false);
   const imageInputRef = useRef(null);
   const cameraInputRef = useRef(null);
+  const scanHintTimerRef = useRef(null);
 
   const handleImageUpload = async (file) => {
     setUploadingImage(true);
@@ -482,7 +483,11 @@ ${inputText}
                   </button>
                   <label
                     className={`flex-1 py-2 rounded-lg text-xs font-bold transition-all duration-200 text-center cursor-pointer ${activeTab === "scan" ? "bg-white text-indigo-700 shadow-sm" : "text-white/60 hover:text-white/90"}`}
-                    onClick={() => setScanHint(true)}
+                    onClick={() => {
+                      // Show hint only if camera doesn't open (no file selected after 3s)
+                      clearTimeout(scanHintTimerRef.current);
+                      scanHintTimerRef.current = setTimeout(() => setScanHint(true), 3000);
+                    }}
                   >
                     📷 Scan Document
                     <input
@@ -492,6 +497,7 @@ ${inputText}
                       capture="environment"
                       className="hidden"
                       onChange={(e) => {
+                        clearTimeout(scanHintTimerRef.current);
                         setScanHint(false);
                         if (e.target.files[0]) handleCameraScan(e.target.files[0]);
                       }}
