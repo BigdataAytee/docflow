@@ -40,6 +40,7 @@ export default function VoiceRecorder() {
   const mediaRecorderRef = useRef(null);
   const chunksRef = useRef([]);
   const finalTextRef = useRef(""); // accumulates final SR results across restarts
+  const livePadRef = useRef(null); // direct DOM write for zero-latency display
 
   const fmtSecs = (s) => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
   const totalAmount = (extracted?.items || []).reduce((s, i) => s + (parseFloat(i.amount) || 0), 0);
@@ -59,6 +60,7 @@ export default function VoiceRecorder() {
     setExtracted(null);
     setRecordingSeconds(0);
     finalTextRef.current = "";
+    if (livePadRef.current) livePadRef.current.value = "";
 
     let stream;
     try {
@@ -100,7 +102,13 @@ export default function VoiceRecorder() {
                 interim = e.results[i][0].transcript;
               }
             }
-            setLiveText(finalTextRef.current + interim);
+            const combined = finalTextRef.current + interim;
+            // Write directly to DOM for zero-latency display
+            if (livePadRef.current) {
+              livePadRef.current.value = combined;
+              livePadRef.current.scrollTop = livePadRef.current.scrollHeight;
+            }
+            setLiveText(combined);
           };
 
           r.onend = () => {
@@ -156,8 +164,13 @@ export default function VoiceRecorder() {
       const ext = blob.type.includes("mp4") ? "mp4" : "webm";
       const file = new File([blob], `voice.${ext}`, { type: blob.type });
       const { file_url } = await base44.integrations.Core.UploadFile({ file });
-      const text = await base44.integrations.Core.TranscribeAudio({ audio_url: file_url });
-      const finalText = (text || "").trim();
+      // Use Gemini Flash for high-accuracy multilingual transcription
+      const result = await base44.integrations.Core.InvokeLLM({
+        prompt: "Transcribe this audio recording accurately. Return only the transcribed text, nothing else.",
+        file_urls: [file_url],
+        model: "gemini_3_flash",
+      });
+      const finalText = (typeof result === "string" ? result : result?.text || "").trim();
       if (!finalText) { setError("Could not hear anything. Try again."); setStep(STEP.IDLE); return; }
       setTranscript(finalText);
       await extractData(finalText);
@@ -324,13 +337,13 @@ Rules:
                     </div>
                   )}
                 </div>
-                <div className="rounded-2xl border border-border bg-muted/30 p-3 min-h-[80px] max-h-[120px] overflow-y-auto">
-                  {liveText ? (
-                    <p className="text-sm text-foreground leading-relaxed whitespace-pre-wrap">{liveText}</p>
-                  ) : (
-                    <p className="text-sm text-muted-foreground italic">Transcription will appear here…</p>
-                  )}
-                </div>
+                <textarea
+                  ref={livePadRef}
+                  readOnly
+                  placeholder="Transcription will appear here as you speak…"
+                  className="w-full rounded-2xl border border-border bg-muted/30 p-3 text-sm text-foreground leading-relaxed resize-none focus:outline-none"
+                  style={{ minHeight: 90, maxHeight: 130 }}
+                />
                 <button onClick={stopRecording}
                   className="w-full py-4 rounded-2xl text-white font-bold text-base flex items-center justify-center gap-2 active:scale-95 transition-all shadow-lg"
                   style={{ background: "linear-gradient(135deg,#ef4444,#b91c1c)" }}>
