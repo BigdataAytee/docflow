@@ -17,6 +17,7 @@ export default function VoiceRecorder() {
   const navigate = useNavigate();
   const [step, setStep] = useState(STEP.IDLE);
   const [transcript, setTranscript] = useState("");
+  const [liveText, setLiveText] = useState(""); // real-time interim speech
   const [extracted, setExtracted] = useState(null);
   const [error, setError] = useState("");
   const [recordingSeconds, setRecordingSeconds] = useState(0);
@@ -24,10 +25,12 @@ export default function VoiceRecorder() {
   const mediaRecorderRef = useRef(null);
   const chunksRef = useRef([]);
   const timerRef = useRef(null);
+  const recognitionRef = useRef(null);
 
   const startRecording = useCallback(async () => {
     setError("");
     setTranscript("");
+    setLiveText("");
     setExtracted(null);
     setRecordingSeconds(0);
     try {
@@ -40,12 +43,37 @@ export default function VoiceRecorder() {
       mediaRecorderRef.current = mr;
       setStep(STEP.RECORDING);
       timerRef.current = setInterval(() => setRecordingSeconds(s => s + 1), 1000);
+
+      // Start live speech-to-text for real-time display
+      const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+      if (SR) {
+        const recognition = new SR();
+        recognition.continuous = true;
+        recognition.interimResults = true;
+        recognition.lang = "en-US";
+        let finalText = "";
+        recognition.onresult = (e) => {
+          let interim = "";
+          for (let i = e.resultIndex; i < e.results.length; i++) {
+            if (e.results[i].isFinal) finalText += e.results[i][0].transcript + " ";
+            else interim = e.results[i][0].transcript;
+          }
+          setLiveText(finalText + interim);
+        };
+        recognition.onerror = () => {};
+        recognition.start();
+        recognitionRef.current = recognition;
+      }
     } catch {
       setError("Microphone access denied.");
     }
   }, []);
 
   const stopRecording = useCallback(() => {
+    if (recognitionRef.current) {
+      recognitionRef.current.stop();
+      recognitionRef.current = null;
+    }
     if (mediaRecorderRef.current) {
       mediaRecorderRef.current.stop();
       mediaRecorderRef.current.stream?.getTracks().forEach(t => t.stop());
@@ -105,7 +133,7 @@ Rules:
     navigate(`/documents/new?type=${docType}&from=voice`);
   };
 
-  const reset = () => { setStep(STEP.IDLE); setTranscript(""); setExtracted(null); setError(""); setRecordingSeconds(0); };
+  const reset = () => { setStep(STEP.IDLE); setTranscript(""); setLiveText(""); setExtracted(null); setError(""); setRecordingSeconds(0); };
   const fmtSecs = (s) => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
   const totalAmount = extracted?.items?.reduce((s, i) => s + (i.amount || 0), 0) || 0;
   const isProcessing = step === STEP.TRANSCRIBING || step === STEP.EXTRACTING;
@@ -140,15 +168,19 @@ Rules:
           {/* Text */}
           <div className="flex-1 min-w-0">
             <p className="text-foreground font-bold text-sm leading-tight">
-              {isRecording ? "Recording…" : isProcessing ? (step === STEP.TRANSCRIBING ? "Transcribing…" : "Extracting…") : "Voice to Document"}
+              {isRecording ? `Recording… ${fmtSecs(recordingSeconds)}` : isProcessing ? (step === STEP.TRANSCRIBING ? "Transcribing…" : "Extracting…") : "Voice to Document"}
             </p>
-            <p className="text-muted-foreground text-xs mt-0.5">
-              {isRecording
-                ? `${fmtSecs(recordingSeconds)} · Tap to stop`
-                : isProcessing
-                  ? "AI is processing your audio"
-                  : "Tap mic, speak items & prices"}
-            </p>
+            {isRecording && liveText ? (
+              <p className="text-indigo-500 text-xs mt-1 leading-relaxed line-clamp-3 italic">{liveText}</p>
+            ) : (
+              <p className="text-muted-foreground text-xs mt-0.5">
+                {isRecording
+                  ? "Speak now…"
+                  : isProcessing
+                    ? "AI is processing your audio"
+                    : "Tap mic, speak items & prices"}
+              </p>
+            )}
           </div>
 
           {/* Recording pulse indicator */}
