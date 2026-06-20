@@ -16,12 +16,12 @@ const STEP = { IDLE: "idle", RECORDING: "recording", PROCESSING: "processing", R
 // ── Modal overlay ─────────────────────────────────────────────────────────────
 function VoiceModal({ onClose, children }) {
   return (
-    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       {/* Backdrop */}
       <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
       {/* Panel */}
-      <div className="relative w-full sm:max-w-lg bg-background rounded-t-3xl sm:rounded-3xl shadow-2xl overflow-hidden flex flex-col"
-        style={{ maxHeight: "92vh" }}>
+      <div className="relative w-full max-w-lg bg-background rounded-3xl shadow-2xl overflow-hidden flex flex-col"
+        style={{ maxHeight: "88vh" }}>
         {children}
       </div>
     </div>
@@ -83,28 +83,38 @@ export default function VoiceRecorder() {
     // ── SpeechRecognition for instant live display ──
     const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
     if (SR) {
-      const recognition = new SR();
-      recognition.continuous = true;
-      recognition.interimResults = true;
-      recognition.maxAlternatives = 1;
+      let stopped = false;
 
-      recognition.onresult = (e) => {
-        let interim = "";
-        for (let i = e.resultIndex; i < e.results.length; i++) {
-          if (e.results[i].isFinal) {
-            finalLiveRef.current += e.results[i][0].transcript + " ";
-          } else {
-            interim = e.results[i][0].transcript;
+      const startSR = () => {
+        if (stopped) return;
+        const recognition = new SR();
+        recognition.continuous = true;
+        recognition.interimResults = true;
+        recognition.maxAlternatives = 1;
+
+        recognition.onresult = (e) => {
+          let interim = "";
+          for (let i = e.resultIndex; i < e.results.length; i++) {
+            if (e.results[i].isFinal) {
+              finalLiveRef.current += e.results[i][0].transcript + " ";
+            } else {
+              interim = e.results[i][0].transcript;
+            }
           }
-        }
-        const combined = finalLiveRef.current + interim;
-        liveTextRef.current = combined;
-        setLiveText(combined);
+          const combined = finalLiveRef.current + interim;
+          liveTextRef.current = combined;
+          setLiveText(combined);
+        };
+
+        // Auto-restart on end to keep truly continuous
+        recognition.onend = () => { if (!stopped) startSR(); };
+        recognition.onerror = (e) => { if (e.error !== "aborted" && !stopped) startSR(); };
+
+        recognition.start();
+        recognitionRef.current = { stop: () => { stopped = true; recognition.stop(); } };
       };
 
-      recognition.onerror = () => {};
-      recognition.start();
-      recognitionRef.current = recognition;
+      startSR();
     }
 
     setStep(STEP.RECORDING);
