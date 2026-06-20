@@ -443,11 +443,11 @@ ${inputText}
 
       {/* Panel */}
       {open && (
-        <div className="fixed inset-0 z-50 flex items-end sm:items-center sm:justify-center"
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4"
           onClick={close}
           style={{ background: "rgba(0,0,0,0.55)", backdropFilter: "blur(4px)" }}>
           <div
-            className="w-full sm:max-w-lg bg-white rounded-t-3xl sm:rounded-3xl shadow-2xl overflow-hidden"
+            className="w-full max-w-lg bg-white rounded-3xl shadow-2xl overflow-hidden"
             style={{ maxHeight: "92dvh", display: "flex", flexDirection: "column" }}
             onClick={(e) => e.stopPropagation()}>
 
