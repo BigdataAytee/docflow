@@ -309,13 +309,18 @@ Rules:
             {/* RECORDING */}
             {step === STEP.RECORDING && (
               <div className="space-y-4">
-                <div className="relative rounded-2xl border-2 border-indigo-200 bg-indigo-50/50 p-4 overflow-y-auto" style={{ minHeight: 160, maxHeight: 260 }}>
+                {/* Live transcription — plain text, no box */}
+                <div className="min-h-[140px] flex flex-col justify-start">
                   {liveText ? (
-                    <p className="text-indigo-900 text-base leading-relaxed font-medium whitespace-pre-wrap">{liveText}</p>
+                    <p className="text-foreground text-base leading-relaxed whitespace-pre-wrap">{liveText}</p>
                   ) : (
-                    <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 text-indigo-300 pointer-events-none">
-                      <Mic className="h-10 w-10 opacity-30" />
-                      <p className="text-sm font-medium">Start speaking…</p>
+                    <div className="flex flex-col items-center justify-center gap-3 py-8 text-muted-foreground">
+                      <div className="flex gap-1">
+                        <span className="w-2 h-2 rounded-full bg-indigo-400 animate-bounce" style={{ animationDelay: "0ms" }} />
+                        <span className="w-2 h-2 rounded-full bg-indigo-400 animate-bounce" style={{ animationDelay: "150ms" }} />
+                        <span className="w-2 h-2 rounded-full bg-indigo-400 animate-bounce" style={{ animationDelay: "300ms" }} />
+                      </div>
+                      <p className="text-sm">Listening… start speaking</p>
                     </div>
                   )}
                 </div>
