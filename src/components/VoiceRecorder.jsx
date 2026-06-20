@@ -261,8 +261,9 @@ Rules:
 
   return (
     <>
-      <button onClick={() => setModalOpen(true)} className="shrink-0 transition-all active:scale-95 flex items-center justify-center" title="Voice to Document">
-        <Mic className="h-7 w-7 text-indigo-500 hover:text-indigo-400 transition-colors" />
+      <button onClick={() => setModalOpen(true)} className="shrink-0 transition-all active:scale-95 flex items-center justify-center relative" title="Voice to Document">
+        <span className="absolute inset-0 rounded-full bg-indigo-500 opacity-30 animate-ping" />
+        <Mic className="h-9 w-9 text-indigo-500 hover:text-indigo-400 transition-colors relative z-10" />
       </button>
 
       {modalOpen && (
