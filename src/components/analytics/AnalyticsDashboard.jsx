@@ -10,7 +10,7 @@ import {
   TrendingUp, DollarSign, FileText, FileCheck, Receipt,
   Users, ShoppingBag, Target, Zap, Sparkles, ArrowUpRight, ArrowDownRight,
   AlertCircle, ChevronRight, RefreshCw, Filter, X, Loader2,
-  Award, Package, BarChart2, PieChart as PieIcon
+  Award, Package, BarChart2, PieChart as PieIcon, Hash, Layers
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import NLQueryBar from "@/components/analytics/NLQueryBar";
@@ -53,9 +53,9 @@ function KpiCard({ label, value, sub, trend, icon: Icon, color, onClick }) {
   );
 }
 
-function SectionTitle({ icon: Icon, title, subtitle }) {
+function SectionTitle({ icon: Icon, title, subtitle, noMargin }) {
   return (
-    <div className="flex items-center gap-2 mb-4">
+    <div className={`flex items-center gap-2 ${noMargin ? "" : "mb-4"}`}>
       <div className="w-7 h-7 rounded-lg bg-primary/10 flex items-center justify-center">
         <Icon className="h-3.5 w-3.5 text-primary" />
       </div>
@@ -75,6 +75,8 @@ export default function AnalyticsDashboard({ user }) {
   const [drillDown, setDrillDown] = useState(null);
   const [aiLoading, setAiLoading] = useState(false);
   const [aiInsights, setAiInsights] = useState(null);
+  const [customerMode, setCustomerMode] = useState("revenue"); // "revenue" | "count"
+  const [productMode, setProductMode] = useState("revenue"); // "revenue" | "units"
 
   const { data: docs = [], isLoading } = useQuery({
     queryKey: ["analytics-docs", user?.id],
@@ -346,54 +348,116 @@ export default function AnalyticsDashboard({ user }) {
 
       {/* Top Customers + Top Products */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+        {/* Top Customers */}
         <div className="bg-card border border-border rounded-2xl p-5 shadow-sm">
-          <SectionTitle icon={Users} title="Top Customers" subtitle="By invoice revenue" />
+          <div className="flex items-center justify-between mb-4">
+            <SectionTitle icon={Users} title="Top Customers"
+              subtitle={customerMode === "revenue" ? "By invoice revenue" : "By document count"} noMargin />
+            <div className="flex items-center gap-1 bg-muted rounded-xl p-1 shrink-0">
+              <button onClick={() => setCustomerMode("revenue")}
+                className={`flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-semibold transition-all ${customerMode === "revenue" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}>
+                <DollarSign className="h-3 w-3" /> Revenue
+              </button>
+              <button onClick={() => setCustomerMode("count")}
+                className={`flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-semibold transition-all ${customerMode === "count" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}>
+                <Hash className="h-3 w-3" /> Docs
+              </button>
+            </div>
+          </div>
           {topCustomers.length === 0 ? (
             <p className="text-sm text-muted-foreground text-center py-8">No customer data yet</p>
           ) : (
             <div className="space-y-2">
-              {topCustomers.slice(0, 6).map((c, i) => (
-                <div key={c.name}
-                  className="flex items-center gap-3 p-2 rounded-xl hover:bg-muted/40 cursor-pointer transition-colors"
-                  onClick={() => setDrillDown({ type: "customer", data: c, allDocs: filtered })}>
-                  <div className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold text-white shrink-0"
-                    style={{ background: COLORS[i % COLORS.length] }}>
-                    {i + 1}
+              {[...topCustomers].sort((a, b) => customerMode === "revenue" ? b.revenue - a.revenue : b.count - a.count).slice(0, 6).map((c, i) => {
+                const maxVal = customerMode === "revenue"
+                  ? Math.max(...topCustomers.map(x => x.revenue))
+                  : Math.max(...topCustomers.map(x => x.count));
+                const val = customerMode === "revenue" ? c.revenue : c.count;
+                const pct = maxVal ? (val / maxVal) * 100 : 0;
+                return (
+                  <div key={c.name}
+                    className="flex items-center gap-3 p-2 rounded-xl hover:bg-muted/40 cursor-pointer transition-colors group"
+                    onClick={() => setDrillDown({ type: "customer", data: c, allDocs: filtered })}>
+                    <div className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold text-white shrink-0"
+                      style={{ background: COLORS[i % COLORS.length] }}>
+                      {i + 1}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex justify-between items-center mb-1">
+                        <p className="text-sm font-semibold truncate">{c.name}</p>
+                        <span className="text-xs font-bold ml-2 shrink-0" style={{ color: COLORS[i % COLORS.length] }}>
+                          {customerMode === "revenue" ? fmt(c.revenue, "₦") : `${c.count} doc${c.count !== 1 ? "s" : ""}`}
+                        </span>
+                      </div>
+                      <div className="h-1.5 rounded-full bg-muted overflow-hidden">
+                        <div className="h-full rounded-full transition-all duration-700"
+                          style={{ width: `${pct}%`, background: COLORS[i % COLORS.length] }} />
+                      </div>
+                      <p className="text-[10px] text-muted-foreground mt-0.5">
+                        {customerMode === "revenue" ? `${c.count} doc${c.count !== 1 ? "s" : ""}` : fmt(c.revenue, "₦")}
+                      </p>
+                    </div>
+                    <ChevronRight className="h-3.5 w-3.5 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity shrink-0" />
                   </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-semibold truncate">{c.name}</p>
-                    <p className="text-[10px] text-muted-foreground">{c.count} invoice{c.count !== 1 ? "s" : ""}</p>
-                  </div>
-                  <span className="text-sm font-bold text-foreground">{fmt(c.revenue, "₦")}</span>
-                  <ChevronRight className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </div>
 
+        {/* Top Products */}
         <div className="bg-card border border-border rounded-2xl p-5 shadow-sm">
-          <SectionTitle icon={Package} title="Top Products / Services" subtitle="By revenue generated" />
+          <div className="flex items-center justify-between mb-4">
+            <SectionTitle icon={Package} title="Top Products / Services"
+              subtitle={productMode === "revenue" ? "By revenue generated" : "By units sold"} noMargin />
+            <div className="flex items-center gap-1 bg-muted rounded-xl p-1 shrink-0">
+              <button onClick={() => setProductMode("revenue")}
+                className={`flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-semibold transition-all ${productMode === "revenue" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}>
+                <DollarSign className="h-3 w-3" /> Revenue
+              </button>
+              <button onClick={() => setProductMode("units")}
+                className={`flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-semibold transition-all ${productMode === "units" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}>
+                <Layers className="h-3 w-3" /> Units
+              </button>
+            </div>
+          </div>
           {topProducts.length === 0 ? (
             <p className="text-sm text-muted-foreground text-center py-8">No line-item data yet</p>
           ) : (
             <div className="space-y-2">
-              {topProducts.slice(0, 6).map((p, i) => (
-                <div key={p.name}
-                  className="flex items-center gap-3 p-2 rounded-xl hover:bg-muted/40 cursor-pointer transition-colors"
-                  onClick={() => setDrillDown({ type: "product", data: p, allDocs: filtered })}>
-                  <div className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold text-white shrink-0"
-                    style={{ background: COLORS[i % COLORS.length] }}>
-                    {i + 1}
+              {[...topProducts].sort((a, b) => productMode === "revenue" ? b.revenue - a.revenue : b.qty - a.qty).slice(0, 6).map((p, i) => {
+                const maxVal = productMode === "revenue"
+                  ? Math.max(...topProducts.map(x => x.revenue))
+                  : Math.max(...topProducts.map(x => x.qty));
+                const val = productMode === "revenue" ? p.revenue : p.qty;
+                const pct = maxVal ? (val / maxVal) * 100 : 0;
+                return (
+                  <div key={p.name}
+                    className="flex items-center gap-3 p-2 rounded-xl hover:bg-muted/40 cursor-pointer transition-colors group"
+                    onClick={() => setDrillDown({ type: "product", data: p, allDocs: filtered })}>
+                    <div className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold text-white shrink-0"
+                      style={{ background: COLORS[i % COLORS.length] }}>
+                      {i + 1}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex justify-between items-center mb-1">
+                        <p className="text-sm font-semibold truncate">{p.name}</p>
+                        <span className="text-xs font-bold ml-2 shrink-0" style={{ color: COLORS[i % COLORS.length] }}>
+                          {productMode === "revenue" ? fmt(p.revenue, "₦") : `${p.qty} unit${p.qty !== 1 ? "s" : ""}`}
+                        </span>
+                      </div>
+                      <div className="h-1.5 rounded-full bg-muted overflow-hidden">
+                        <div className="h-full rounded-full transition-all duration-700"
+                          style={{ width: `${pct}%`, background: COLORS[i % COLORS.length] }} />
+                      </div>
+                      <p className="text-[10px] text-muted-foreground mt-0.5">
+                        {productMode === "revenue" ? `${p.qty} unit${p.qty !== 1 ? "s" : ""}` : fmt(p.revenue, "₦")}
+                      </p>
+                    </div>
+                    <ChevronRight className="h-3.5 w-3.5 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity shrink-0" />
                   </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-semibold truncate">{p.name}</p>
-                    <p className="text-[10px] text-muted-foreground">Qty: {p.qty}</p>
-                  </div>
-                  <span className="text-sm font-bold text-foreground">{fmt(p.revenue, "₦")}</span>
-                  <ChevronRight className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </div>
