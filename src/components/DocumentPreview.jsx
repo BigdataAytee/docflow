@@ -821,14 +821,14 @@ function SikkyDoc({ form, items, calcs, sym, docType, managerSig, customerSig, T
   // ── Shared header (same for all doc types) ──
   const Header = () => (
     <>
-      <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between" }}>
-        <div style={{ flexShrink: 0, paddingLeft: 24, lineHeight: 0 }}>
+      <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", padding: "12px 32px 8px 24px" }}>
+        <div style={{ flexShrink: 0 }}>
           {form.logo_url
-            ? <img src={form.logo_url} alt="logo" style={{ maxHeight: 240, maxWidth: 380, objectFit: "contain", display: "block" }} />
-            : <div style={{ fontSize: 32, fontWeight: 900, color: accent, fontFamily: "serif", lineHeight: "normal" }}>{form.company_name || "Company"}</div>
+            ? <img src={form.logo_url} alt="logo" style={{ maxHeight: 200, maxWidth: 320, objectFit: "contain", objectPosition: "top left", display: "block" }} />
+            : <div style={{ fontSize: 32, fontWeight: 900, color: accent, fontFamily: "serif" }}>{form.company_name || "Company"}</div>
           }
         </div>
-        <div style={{ textAlign: "left", maxWidth: 260, flexShrink: 0, paddingRight: 32 }}>
+        <div style={{ textAlign: "left", maxWidth: 260, flexShrink: 0, paddingTop: 4 }}>
           <div style={{ fontSize: 10, color: accent, fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.8, marginBottom: 4, borderLeft: `2px solid ${accent}`, paddingLeft: 6 }}>OFFICE:</div>
           {form.company_address && <div style={{ fontSize: 10, color: "#1a1a1a", lineHeight: 1.4 }}>{form.company_address.trim().replace(/\n+/g, ", ")}</div>}
           {form.company_phone && <div style={{ fontSize: 10, color: "#1a1a1a", marginTop: 2 }}>Tel: {form.company_phone}</div>}
