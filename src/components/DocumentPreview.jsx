@@ -821,14 +821,14 @@ function SikkyDoc({ form, items, calcs, sym, docType, managerSig, customerSig, T
   // ── Shared header (same for all doc types) ──
   const Header = () => (
     <>
-      <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", padding: "24px 40px 16px 24px" }}>
+      <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", padding: "16px 40px 8px 24px" }}>
         <div>
           {form.logo_url
-            ? <img src={form.logo_url} alt="logo" style={{ maxHeight: 240, maxWidth: 400, objectFit: "contain" }} />
+            ? <img src={form.logo_url} alt="logo" style={{ maxHeight: 240, maxWidth: 400, objectFit: "contain", display: "block", verticalAlign: "top" }} />
             : <div style={{ fontSize: 32, fontWeight: 900, color: accent, fontFamily: "serif" }}>{form.company_name || "Company"}</div>
           }
         </div>
-        <div style={{ textAlign: "left", maxWidth: 320 }}>
+        <div style={{ textAlign: "left", maxWidth: 320, paddingTop: 0 }}>
           <div style={{ fontSize: 10, color: accent, fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.8, marginBottom: 4, borderLeft: `2px solid ${accent}`, paddingLeft: 6 }}>OFFICE:</div>
           {form.company_address && <div style={{ fontSize: 10, color: "#1a1a1a", lineHeight: 1.4 }}>{form.company_address.trim().replace(/\n+/g, ", ")}</div>}
           {form.company_phone && <div style={{ fontSize: 10, color: "#1a1a1a" }}>Tel: {form.company_phone}</div>}
