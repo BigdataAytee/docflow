@@ -213,9 +213,13 @@ export default function Home() {
       {/* Quick Access */}
       {!searchQuery &&
       <>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 items-start">
-            <VoiceRecorder />
-            <AIInputButtons />
+          <div className="flex items-stretch gap-3">
+            <div className="flex-1 min-w-0">
+              <VoiceRecorder />
+            </div>
+            <div className="shrink-0">
+              <AIInputButtons />
+            </div>
           </div>
 
           <div>
