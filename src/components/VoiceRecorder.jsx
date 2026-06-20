@@ -121,40 +121,30 @@ Rules:
             <X className="h-3.5 w-3.5 shrink-0" />{error}
           </div>
         )}
-        <div
-          className="flex items-center gap-3 px-4 py-3.5 rounded-2xl shadow-sm"
-          style={{ background: "linear-gradient(135deg,#0f172a 0%,#1e293b 100%)", border: "1px solid rgba(99,102,241,0.25)" }}
-        >
-          {/* Mic icon button on the left */}
+        <div className="flex items-center gap-3">
+          {/* Bare mic icon button — no box */}
           <button
             onClick={isRecording ? stopRecording : isProcessing ? undefined : startRecording}
             disabled={isProcessing}
-            className="w-11 h-11 rounded-xl flex items-center justify-center shrink-0 transition-all active:scale-95 disabled:opacity-60"
-            style={{
-              background: isRecording
-                ? "linear-gradient(135deg,#ef4444,#dc2626)"
-                : "linear-gradient(135deg,#6366f1,#8b5cf6)",
-              boxShadow: isRecording
-                ? "0 4px 16px rgba(239,68,68,0.4)"
-                : "0 4px 16px rgba(99,102,241,0.4)"
-            }}
+            className="shrink-0 transition-all active:scale-95 disabled:opacity-60 flex items-center justify-center"
+            title={isRecording ? "Stop recording" : "Start recording"}
           >
             {isProcessing
-              ? <Loader2 className="h-5 w-5 text-white animate-spin" />
+              ? <Loader2 className="h-7 w-7 text-indigo-500 animate-spin" />
               : isRecording
-                ? <Square className="h-5 w-5 text-white fill-white" />
-                : <Mic className="h-5 w-5 text-white" />
+                ? <Square className="h-7 w-7 fill-red-500 text-red-500" />
+                : <Mic className="h-7 w-7 text-indigo-500 hover:text-indigo-400 transition-colors" />
             }
           </button>
 
           {/* Text */}
           <div className="flex-1 min-w-0">
-            <p className="text-white font-bold text-sm leading-tight">
+            <p className="text-foreground font-bold text-sm leading-tight">
               {isRecording ? "Recording…" : isProcessing ? (step === STEP.TRANSCRIBING ? "Transcribing…" : "Extracting…") : "Voice to Document"}
             </p>
-            <p className="text-white/50 text-xs mt-0.5">
+            <p className="text-muted-foreground text-xs mt-0.5">
               {isRecording
-                ? `${fmtSecs(recordingSeconds)} · Tap mic to stop`
+                ? `${fmtSecs(recordingSeconds)} · Tap to stop`
                 : isProcessing
                   ? "AI is processing your audio"
                   : "Tap mic, speak items & prices"}
