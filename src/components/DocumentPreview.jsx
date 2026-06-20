@@ -830,10 +830,10 @@ function SikkyDoc({ form, items, calcs, sym, docType, managerSig, customerSig, T
         </div>
         <div style={{ textAlign: "left", maxWidth: 320 }}>
           <div style={{ fontSize: 10, color: accent, fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.8, marginBottom: 4, borderLeft: `2px solid ${accent}`, paddingLeft: 6 }}>OFFICE:</div>
-          {form.company_address && <div style={{ fontSize: 10, color: "#1a1a1a", whiteSpace: "pre-line", lineHeight: 1.6 }}>{form.company_address}</div>}
-          {form.company_phone && <div style={{ fontSize: 10, color: "#1a1a1a", marginTop: 2 }}>Tel: {form.company_phone}</div>}
-          {form.company_email && <div style={{ fontSize: 10, color: "#2563eb", marginTop: 2 }}>Email: <span style={{ textDecoration: "underline" }}>{form.company_email}</span></div>}
-          {form.company_website && <div style={{ fontSize: 10, color: "#2563eb", marginTop: 1 }}>{form.company_website}</div>}
+          {form.company_address && <div style={{ fontSize: 10, color: "#1a1a1a", whiteSpace: "pre-line", lineHeight: 1.4 }}>{form.company_address}</div>}
+          {form.company_phone && <div style={{ fontSize: 10, color: "#1a1a1a" }}>Tel: {form.company_phone}</div>}
+          {form.company_email && <div style={{ fontSize: 10, color: "#2563eb" }}>Email: <span style={{ textDecoration: "underline" }}>{form.company_email}</span></div>}
+          {form.company_website && <div style={{ fontSize: 10, color: "#2563eb" }}>{form.company_website}</div>}
         </div>
       </div>
       {/* Company description bar */}
