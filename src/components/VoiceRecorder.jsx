@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { Mic, Square, RotateCcw, Sparkles, Loader2, FileText, FileCheck, Receipt, Truck, ArrowRight, X } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
+// Note: uses browser SpeechRecognition for live display + final transcript
 
 const DOC_OPTIONS = [
   { type: "invoice",   label: "Invoice",   icon: FileText,  gradient: "linear-gradient(135deg,#3b82f6,#1d4ed8)" },
@@ -22,81 +23,69 @@ export default function VoiceRecorder() {
   const [error, setError] = useState("");
   const [recordingSeconds, setRecordingSeconds] = useState(0);
 
-  const mediaRecorderRef = useRef(null);
-  const chunksRef = useRef([]);
   const timerRef = useRef(null);
   const recognitionRef = useRef(null);
+  const finalTextRef = useRef("");
 
-  const startRecording = useCallback(async () => {
+  const startRecording = useCallback(() => {
+    const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SR) { setError("Speech recognition not supported in this browser. Try Chrome."); return; }
+
     setError("");
     setTranscript("");
     setLiveText("");
     setExtracted(null);
     setRecordingSeconds(0);
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      const mr = new MediaRecorder(stream, { mimeType: "audio/webm" });
-      chunksRef.current = [];
-      mr.ondataavailable = (e) => { if (e.data.size > 0) chunksRef.current.push(e.data); };
-      mr.onstop = handleRecordingStop;
-      mr.start(250);
-      mediaRecorderRef.current = mr;
-      setStep(STEP.RECORDING);
-      timerRef.current = setInterval(() => setRecordingSeconds(s => s + 1), 1000);
+    finalTextRef.current = "";
 
-      // Start live speech-to-text for real-time display
-      const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-      if (SR) {
-        const recognition = new SR();
-        recognition.continuous = true;
-        recognition.interimResults = true;
-        recognition.lang = "en-US";
-        let finalText = "";
-        recognition.onresult = (e) => {
-          let interim = "";
-          for (let i = e.resultIndex; i < e.results.length; i++) {
-            if (e.results[i].isFinal) finalText += e.results[i][0].transcript + " ";
-            else interim = e.results[i][0].transcript;
-          }
-          setLiveText(finalText + interim);
-        };
-        recognition.onerror = () => {};
-        recognition.start();
-        recognitionRef.current = recognition;
+    const recognition = new SR();
+    recognition.continuous = true;
+    recognition.interimResults = true;
+    recognition.lang = "en-US";
+
+    recognition.onresult = (e) => {
+      let interim = "";
+      for (let i = e.resultIndex; i < e.results.length; i++) {
+        if (e.results[i].isFinal) {
+          finalTextRef.current += e.results[i][0].transcript + " ";
+        } else {
+          interim = e.results[i][0].transcript;
+        }
       }
-    } catch {
-      setError("Microphone access denied.");
-    }
+      setLiveText(finalTextRef.current + interim);
+    };
+
+    recognition.onerror = (e) => {
+      if (e.error !== "no-speech") setError("Microphone error: " + e.error);
+    };
+
+    recognition.onend = () => {
+      // Only proceed if we stopped intentionally (step won't be idle)
+      const text = finalTextRef.current.trim();
+      if (text) {
+        setTranscript(text);
+        setStep(STEP.EXTRACTING);
+        extractFromTranscript(text);
+      } else {
+        setStep(STEP.IDLE);
+      }
+      clearInterval(timerRef.current);
+    };
+
+    recognition.start();
+    recognitionRef.current = recognition;
+    setStep(STEP.RECORDING);
+    timerRef.current = setInterval(() => setRecordingSeconds(s => s + 1), 1000);
   }, []);
 
   const stopRecording = useCallback(() => {
+    clearInterval(timerRef.current);
     if (recognitionRef.current) {
+      setStep(STEP.TRANSCRIBING);
       recognitionRef.current.stop();
       recognitionRef.current = null;
     }
-    if (mediaRecorderRef.current) {
-      mediaRecorderRef.current.stop();
-      mediaRecorderRef.current.stream?.getTracks().forEach(t => t.stop());
-      clearInterval(timerRef.current);
-    }
   }, []);
-
-  const handleRecordingStop = async () => {
-    const blob = new Blob(chunksRef.current, { type: "audio/webm" });
-    if (blob.size < 1000) { setError("Recording too short."); setStep(STEP.IDLE); return; }
-    setStep(STEP.TRANSCRIBING);
-    try {
-      const file = new File([blob], "voice.webm", { type: "audio/webm" });
-      const { file_url } = await base44.integrations.Core.UploadFile({ file });
-      const text = await base44.integrations.Core.TranscribeAudio({ audio_url: file_url });
-      setTranscript(text || "");
-      setStep(STEP.EXTRACTING);
-      await extractFromTranscript(text || "");
-    } catch {
-      setError("Transcription failed. Please try again.");
-      setStep(STEP.IDLE);
-    }
-  };
 
   const extractFromTranscript = async (text) => {
     try {
