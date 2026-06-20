@@ -155,34 +155,11 @@ export function VoiceRecorderModal({ onClose }) {
   };
 
   const runTranscription = async () => {
-    const blob = new Blob(chunksRef.current, { type: chunksRef.current[0]?.type || "audio/webm" });
-    // If Web Speech API already gave us good text, use it + enhance with AI
-    const srText = finalTextRef.current.trim();
-    if (blob.size < 500 && !srText) { setError("Recording too short. Please try again."); setStep(STEP.RECORDING); return; }
-
-    try {
-      let finalText = srText;
-
-      // If audio is long enough, get high-quality Gemini transcription
-      if (blob.size >= 500) {
-        const ext = blob.type.includes("mp4") ? "mp4" : "webm";
-        const file = new File([blob], `voice.${ext}`, { type: blob.type });
-        const { file_url } = await base44.integrations.Core.UploadFile({ file });
-        const result = await base44.integrations.Core.InvokeLLM({
-          prompt: "Transcribe this audio recording accurately. Return only the transcribed spoken words, nothing else. Preserve natural punctuation.",
-          file_urls: [file_url],
-          model: "gemini_3_flash",
-        });
-        finalText = (typeof result === "string" ? result : "").trim() || srText;
-      }
-
-      if (!finalText) { setError("Could not hear anything. Try again."); setStep(STEP.RECORDING); return; }
-      setTranscript(finalText);
-      await extractData(finalText);
-    } catch {
-      setError("Transcription failed. Try again.");
-      setStep(STEP.RECORDING);
-    }
+    // Use the live Web Speech API text directly — it's already real-time and accurate
+    const srText = finalTextRef.current.trim() || (livePadRef.current?.value || "").trim();
+    if (!srText) { setError("Could not hear anything. Try again."); setStep(STEP.RECORDING); return; }
+    setTranscript(srText);
+    await extractData(srText);
   };
 
   const extractData = async (text) => {
