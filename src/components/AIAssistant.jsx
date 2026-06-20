@@ -5,7 +5,7 @@ import {
   Sparkles, X, ArrowRight, Check, ChevronLeft,
   FileText, FileCheck, Receipt, Truck, Loader2,
   Wand2, MessageSquare, ImagePlus, Camera,
-  ScanLine, ZoomIn, Zap, CheckCircle2
+  ScanLine, ScanText, ZoomIn, Zap, CheckCircle2
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -425,10 +425,9 @@ ${inputText}
       onClick={() => { setOpen(true); if (stage === "idle") setStage("input"); }}
       className="flex items-center gap-2 px-3 py-2 rounded-2xl shadow-lg transition-all duration-200 hover:scale-105 active:scale-95"
       style={{ background: "linear-gradient(135deg,#6366f1 0%,#8b5cf6 50%,#a855f7 100%)", boxShadow: "0 4px 16px rgba(99,102,241,0.4)" }}>
-      <div className="relative">
-        <Sparkles className="h-4 w-4 text-white" />
-        <span className="absolute -top-1 -right-1 w-2 h-2 bg-yellow-300 rounded-full animate-ping" />
-        <span className="absolute -top-1 -right-1 w-2 h-2 bg-yellow-300 rounded-full" />
+      <div className="relative flex items-center gap-1.5">
+        <ScanText className="h-4 w-4 text-white" />
+        <Sparkles className="h-3.5 w-3.5 text-yellow-300" />
       </div>
       <span className="text-white font-bold text-xs">AI Assistant</span>
     </button>
