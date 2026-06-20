@@ -190,12 +190,11 @@ export default function Home() {
       {/* Quick Access */}
       {!searchQuery &&
       <>
-          <div className="flex items-center">
-            <VoiceRecorder />
-          </div>
-
           <div>
-            <h2 className="font-bold text-base text-foreground mb-4">Quick Access</h2>
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="font-bold text-base text-foreground">Quick Access</h2>
+              <VoiceRecorder />
+            </div>
             <div className="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-4">
 
               {/* Regular doc type cards */}
