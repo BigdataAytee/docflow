@@ -44,9 +44,12 @@ export default function VoiceRecorder() {
   const fmtSecs = (s) => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
   const totalAmount = (extracted?.items || []).reduce((s, i) => s + (parseFloat(i.amount) || 0), 0);
 
-  // Auto-start when modal opens
+  // Auto-start when modal opens — small delay so DOM is ready
   useEffect(() => {
-    if (modalOpen) startRecording();
+    if (modalOpen) {
+      const t = setTimeout(() => startRecording(), 300);
+      return () => clearTimeout(t);
+    }
   }, [modalOpen]);
 
   const startRecording = async () => {
@@ -77,35 +80,57 @@ export default function VoiceRecorder() {
     const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
     if (SR) {
       let stopped = false;
+      let activeRecognition = null;
 
       const startSR = () => {
         if (stopped) return;
-        const r = new SR();
-        r.continuous = true;
-        r.interimResults = true;
-        r.maxAlternatives = 1;
-        r.lang = "en-US";
+        try {
+          const r = new SR();
+          // NOTE: continuous=true is ignored on Android Chrome — we restart on onend instead
+          r.continuous = false;
+          r.interimResults = true;
+          r.maxAlternatives = 1;
 
-        r.onresult = (e) => {
-          let interim = "";
-          for (let i = e.resultIndex; i < e.results.length; i++) {
-            if (e.results[i].isFinal) {
-              finalTextRef.current += e.results[i][0].transcript + " ";
-            } else {
-              interim = e.results[i][0].transcript;
+          r.onresult = (e) => {
+            let interim = "";
+            for (let i = e.resultIndex; i < e.results.length; i++) {
+              if (e.results[i].isFinal) {
+                finalTextRef.current += e.results[i][0].transcript + " ";
+              } else {
+                interim = e.results[i][0].transcript;
+              }
             }
-          }
-          // Update React state — this IS fast enough for live display
-          setLiveText(finalTextRef.current + interim);
-        };
+            setLiveText(finalTextRef.current + interim);
+          };
 
-        r.onend = () => { if (!stopped) startSR(); };
-        r.onerror = (ev) => { if (ev.error !== "aborted" && !stopped) startSR(); };
-        r.start();
-        recognitionRef.current = { stop: () => { stopped = true; try { r.stop(); } catch {} } };
+          r.onend = () => {
+            activeRecognition = null;
+            // Immediately restart so there's no gap
+            if (!stopped) setTimeout(startSR, 100);
+          };
+
+          r.onerror = (ev) => {
+            activeRecognition = null;
+            if (!stopped && ev.error !== "aborted" && ev.error !== "not-allowed") {
+              setTimeout(startSR, 200);
+            }
+          };
+
+          r.start();
+          activeRecognition = r;
+        } catch (err) {
+          if (!stopped) setTimeout(startSR, 500);
+        }
       };
 
       startSR();
+
+      recognitionRef.current = {
+        stop: () => {
+          stopped = true;
+          try { if (activeRecognition) activeRecognition.stop(); } catch {}
+        }
+      };
     }
 
     setStep(STEP.RECORDING);
