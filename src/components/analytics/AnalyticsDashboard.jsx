@@ -15,6 +15,7 @@ import {
 import { Button } from "@/components/ui/button";
 import NLQueryBar from "@/components/analytics/NLQueryBar";
 import DrillDownModal from "@/components/analytics/DrillDownModal";
+import TopOrderedGoods from "@/components/analytics/TopOrderedGoods";
 
 const COLORS = ["#6366f1","#10b981","#f59e0b","#ef4444","#8b5cf6","#14b8a6","#f97316","#ec4899","#3b82f6","#84cc16"];
 
@@ -400,34 +401,7 @@ export default function AnalyticsDashboard({ user }) {
 
       {/* Top 5 Most Ordered Goods */}
       {topOrderedGoods.length > 0 && (
-        <div className="bg-card border border-border rounded-2xl p-5 shadow-sm">
-          <SectionTitle icon={ShoppingBag} title="Top 5 Most Ordered Goods" subtitle="By total quantity ordered across all documents" />
-          <div className="space-y-3">
-            {topOrderedGoods.map((item, i) => {
-              const maxQty = topOrderedGoods[0]?.qty || 1;
-              const pct = (item.qty / maxQty) * 100;
-              return (
-                <div key={item.name} className="flex items-center gap-3">
-                  <div className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold text-white shrink-0"
-                    style={{ background: COLORS[i % COLORS.length] }}>
-                    {i + 1}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex justify-between items-center mb-1">
-                      <p className="text-sm font-semibold truncate">{item.name}</p>
-                      <span className="text-sm font-bold text-foreground ml-2 shrink-0">{item.qty} units</span>
-                    </div>
-                    <div className="h-2 rounded-full bg-muted overflow-hidden">
-                      <div className="h-full rounded-full transition-all duration-700"
-                        style={{ width: `${pct}%`, background: COLORS[i % COLORS.length] }} />
-                    </div>
-                    <p className="text-[10px] text-muted-foreground mt-0.5">Ordered in {item.count} document{item.count !== 1 ? "s" : ""}</p>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </div>
+        <TopOrderedGoods items={topOrderedGoods} colors={COLORS} onDrillDown={(item) => setDrillDown({ type: "product", data: item, allDocs: filtered })} />
       )}
 
       {/* Sales Funnel + Doc Breakdown */}
