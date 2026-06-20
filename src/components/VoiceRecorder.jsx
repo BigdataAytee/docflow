@@ -140,10 +140,6 @@ export function VoiceRecorderModal({ onClose }) {
   const stopRecording = () => {
     clearInterval(timerRef.current);
     setIsRecording(false);
-    // Capture the live textarea value as the final SR text before stopping recognition
-    if (livePadRef.current && livePadRef.current.value.trim()) {
-      finalTextRef.current = livePadRef.current.value.trim() + " ";
-    }
     if (recognitionRef.current) { recognitionRef.current.stop(); recognitionRef.current = null; }
     if (mediaRecorderRef.current) {
       setStep(STEP.PROCESSING);
@@ -155,24 +151,53 @@ export function VoiceRecorderModal({ onClose }) {
   };
 
   const runTranscription = async () => {
-    // Use the live Web Speech API text directly — it's already real-time and accurate
-    const srText = finalTextRef.current.trim() || (livePadRef.current?.value || "").trim();
-    if (!srText) { setError("Could not hear anything. Try again."); setStep(STEP.RECORDING); return; }
-    setTranscript(srText);
-    await extractData(srText);
+    const blob = new Blob(chunksRef.current, { type: chunksRef.current[0]?.type || "audio/webm" });
+    const srFallback = finalTextRef.current.trim() || (livePadRef.current?.value || "").trim();
+
+    try {
+      let finalText = srFallback;
+
+      if (blob.size >= 1000) {
+        // Upload audio and use Gemini Flash — best model for multilingual/accent transcription
+        const ext = blob.type.includes("mp4") ? "mp4" : "webm";
+        const file = new File([blob], `voice.${ext}`, { type: blob.type });
+        const { file_url } = await base44.integrations.Core.UploadFile({ file });
+
+        // Run transcription + extraction in parallel for speed
+        const [transcribed] = await Promise.all([
+          base44.integrations.Core.InvokeLLM({
+            prompt: "Transcribe this audio exactly as spoken. Return only the spoken words with natural punctuation. No commentary.",
+            file_urls: [file_url],
+            model: "gemini_3_flash",
+          })
+        ]);
+        finalText = (typeof transcribed === "string" ? transcribed : "").trim() || srFallback;
+      }
+
+      if (!finalText) { setError("Could not hear anything. Try again."); setStep(STEP.RECORDING); return; }
+
+      // Update textarea with clean Gemini transcript
+      if (livePadRef.current) livePadRef.current.value = finalText;
+      setTranscript(finalText);
+      setLiveText(finalText);
+      await extractData(finalText);
+    } catch {
+      // Fallback to SR text if Gemini fails
+      if (srFallback) { setTranscript(srFallback); await extractData(srFallback); }
+      else { setError("Transcription failed. Try again."); setStep(STEP.RECORDING); }
+    }
   };
 
   const extractData = async (text) => {
     try {
       const result = await base44.integrations.Core.InvokeLLM({
-        prompt: `Extract structured document data from this spoken description. Be thorough.
-Transcript: "${text}"
-Rules:
-- Each item needs: description, quantity (number, default 1), unit_price (number, default 0), amount (qty * price)
-- Extract customer_name if mentioned (company or person name)
-- Extract delivery_date if mentioned (as a string like "next Friday" or ISO date)
-- Extract notes for any other relevant info
-- If a price is mentioned without quantity, assume qty = 1`,
+        prompt: `Parse this business document speech into structured JSON. Be fast and precise.
+"${text}"
+- items: array of {description, quantity (default 1), unit_price (default 0), amount = qty*price}
+- customer_name: person or company name if mentioned
+- delivery_date: any date/time reference
+- notes: anything else relevant`,
+        model: "gemini_3_flash",
         response_json_schema: {
           type: "object",
           properties: {
@@ -298,7 +323,7 @@ Rules:
               </p>
               <p className="text-white/50 text-xs mt-0.5">
                 {step === STEP.RECORDING && (isRecording ? "Speak naturally — transcribing in real time" : "Tap mic to begin")}
-                {step === STEP.PROCESSING && "Gemini AI transcribing your speech…"}
+                {step === STEP.PROCESSING && "Gemini Flash transcribing & extracting…"}
                 {step === STEP.REVIEW && "Edit items if needed, then fill your document"}
                 {step === STEP.CHOOSE_DOC && "Select which document to populate"}
               </p>
@@ -411,7 +436,7 @@ Rules:
                   <Loader2 className="h-8 w-8 text-white animate-spin" />
                 </div>
                 <p className="text-sm font-bold text-foreground">AI Transcribing & Extracting…</p>
-                <p className="text-xs text-muted-foreground text-center">Gemini AI is processing your speech<br />and extracting structured data</p>
+                <p className="text-xs text-muted-foreground text-center">Gemini Flash is transcribing your audio<br />and extracting structured data</p>
               </div>
             </div>
           )}
