@@ -316,9 +316,14 @@ Rules:
                   {/* Direct DOM update — zero React batching delay */}
                   <LiveTextDisplay liveTextRef={liveTextRef} />
                   {!hasLiveText && (
-                    <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 text-indigo-300 pointer-events-none">
-                      <Mic className="h-10 w-10 opacity-30" />
-                      <p className="text-sm font-medium">Start speaking…</p>
+                    <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 pointer-events-none px-4">
+                      <Mic className="h-8 w-8 text-indigo-300 opacity-40" />
+                      <div className="text-center space-y-1.5">
+                        <p className="text-xs font-bold text-indigo-400 uppercase tracking-wide">Example</p>
+                        <p className="text-sm text-indigo-400 italic leading-relaxed">
+                          "Invoice for John Smith — 3 bags of cement at ₦5,000 each, 2 hours labour at ₦3,000, delivery fee ₦1,500"
+                        </p>
+                      </div>
                     </div>
                   )}
                 </div>
