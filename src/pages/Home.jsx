@@ -1,9 +1,8 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { FileText, FileCheck, Receipt, Truck, Mail, Plus, Clock, Search, X, ArrowRight, Sparkles, BarChart2, Zap, ScanSearch, Loader2 } from "lucide-react";
+import { FileText, FileCheck, Receipt, Truck, Mail, Plus, Clock, Search, X, ArrowRight, Sparkles, BarChart2, Zap } from "lucide-react";
 import AIAssistant from "../components/AIAssistant";
 import VoiceRecorder from "../components/VoiceRecorder";
-import AIInputButtons from "../components/AIInputButtons";
 import SetupChecklist from "../components/onboarding/SetupChecklist";
 import { useQuery } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
@@ -83,34 +82,12 @@ export default function Home() {
 
   const firstName = user?.full_name?.split(" ")[0] || "";
 
-  const [uploadingImage, setUploadingImage] = useState(false);
-  const scanInputRef = useRef(null);
-
-  const handleScanFile = async (file) => {
-    if (!file) return;
-    setUploadingImage(true);
-    const { file_url } = await base44.integrations.Core.UploadFile({ file });
-    setUploadingImage(false);
-    sessionStorage.setItem("ai_scan_image", JSON.stringify({ url: file_url, name: "scanned-document.jpg" }));
-    window.dispatchEvent(new CustomEvent("open-ai-assistant-scan"));
-  };
-
   // Quick revenue stat for analytics card
   const paidRevenue = docs.filter((d) => d.type === "invoice" && d.status === "paid").reduce((s, d) => s + (d.total || 0), 0);
   const fmtRevenue = paidRevenue >= 1_000_000 ? `₦${(paidRevenue / 1_000_000).toFixed(1)}M` : paidRevenue >= 1_000 ? `₦${(paidRevenue / 1_000).toFixed(1)}K` : `₦${paidRevenue}`;
 
   return (
     <div className="max-w-4xl mx-auto space-y-8">
-      {/* Hidden native camera input */}
-      <input
-        ref={scanInputRef}
-        type="file"
-        accept="image/*"
-        capture="environment"
-        className="hidden"
-        onChange={(e) => e.target.files[0] && handleScanFile(e.target.files[0])}
-      />
-
       {/* Hero greeting */}
       <div
         className="relative rounded-3xl overflow-hidden px-6 py-8 md:px-10 md:py-10"
@@ -213,13 +190,8 @@ export default function Home() {
       {/* Quick Access */}
       {!searchQuery &&
       <>
-          <div className="flex items-stretch gap-3">
-            <div className="flex-1 min-w-0">
-              <VoiceRecorder />
-            </div>
-            <div className="shrink-0">
-              <AIInputButtons />
-            </div>
+          <div className="flex items-center">
+            <VoiceRecorder />
           </div>
 
           <div>
