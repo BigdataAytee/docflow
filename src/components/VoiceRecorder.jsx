@@ -324,6 +324,13 @@ Rules:
                     </div>
                   )}
                 </div>
+                <div className="rounded-2xl border border-border bg-muted/30 p-3 min-h-[80px] max-h-[120px] overflow-y-auto">
+                  {liveText ? (
+                    <p className="text-sm text-foreground leading-relaxed whitespace-pre-wrap">{liveText}</p>
+                  ) : (
+                    <p className="text-sm text-muted-foreground italic">Transcription will appear here…</p>
+                  )}
+                </div>
                 <button onClick={stopRecording}
                   className="w-full py-4 rounded-2xl text-white font-bold text-base flex items-center justify-center gap-2 active:scale-95 transition-all shadow-lg"
                   style={{ background: "linear-gradient(135deg,#ef4444,#b91c1c)" }}>
