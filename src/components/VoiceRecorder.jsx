@@ -1,6 +1,6 @@
 import { useState, useRef, useCallback, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Mic, Square, Sparkles, Loader2, FileText, FileCheck, Receipt, Truck, ArrowRight, X, RotateCcw, MicOff } from "lucide-react";
+import { Mic, Square, Sparkles, Loader2, FileText, FileCheck, Receipt, Truck, ArrowRight, X, RotateCcw, MicOff, Trash2, Plus } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 
@@ -13,13 +13,10 @@ const DOC_OPTIONS = [
 
 const STEP = { IDLE: "idle", RECORDING: "recording", PROCESSING: "processing", REVIEW: "review", CHOOSE_DOC: "choose_doc" };
 
-// ── Modal overlay ─────────────────────────────────────────────────────────────
 function VoiceModal({ onClose, children }) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      {/* Backdrop */}
       <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
-      {/* Panel */}
       <div className="relative w-full max-w-lg bg-background rounded-3xl shadow-2xl overflow-hidden flex flex-col"
         style={{ maxHeight: "88vh" }}>
         {children}
@@ -28,11 +25,31 @@ function VoiceModal({ onClose, children }) {
   );
 }
 
+// Live text display using a DOM ref so every keystroke renders without React batching
+function LiveTextDisplay({ liveTextRef }) {
+  const domRef = useRef(null);
+
+  useEffect(() => {
+    // Poll the ref every 80ms and update the DOM directly — instant, no React re-render delay
+    const interval = setInterval(() => {
+      if (domRef.current && domRef.current.dataset.last !== liveTextRef.current) {
+        domRef.current.dataset.last = liveTextRef.current;
+        domRef.current.textContent = liveTextRef.current || "";
+      }
+    }, 80);
+    return () => clearInterval(interval);
+  }, [liveTextRef]);
+
+  return (
+    <div ref={domRef} className="text-indigo-900 text-base leading-relaxed font-medium whitespace-pre-wrap" />
+  );
+}
+
 export default function VoiceRecorder() {
   const navigate = useNavigate();
   const [modalOpen, setModalOpen] = useState(false);
   const [step, setStep] = useState(STEP.IDLE);
-  const [liveText, setLiveText] = useState("");
+  const [hasLiveText, setHasLiveText] = useState(false); // just to toggle placeholder
   const [transcript, setTranscript] = useState("");
   const [extracted, setExtracted] = useState(null);
   const [error, setError] = useState("");
@@ -43,21 +60,19 @@ export default function VoiceRecorder() {
   const mediaRecorderRef = useRef(null);
   const chunksRef = useRef([]);
   const finalLiveRef = useRef("");
-  const liveTextRef = useRef("");
+  const liveTextRef = useRef(""); // written directly, read by LiveTextDisplay
 
   const fmtSecs = (s) => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
-  const totalAmount = extracted?.items?.reduce((s, i) => s + (i.amount || 0), 0) || 0;
 
-  // Auto-start recording when modal opens
+  const totalAmount = (extracted?.items || []).reduce((s, i) => s + (parseFloat(i.amount) || 0), 0);
+
   useEffect(() => {
-    if (modalOpen && step === STEP.IDLE) {
-      startRecording();
-    }
+    if (modalOpen && step === STEP.IDLE) startRecording();
   }, [modalOpen]);
 
   const startRecording = useCallback(async () => {
     setError("");
-    setLiveText("");
+    setHasLiveText(false);
     setTranscript("");
     setExtracted(null);
     setRecordingSeconds(0);
@@ -72,27 +87,27 @@ export default function VoiceRecorder() {
       return;
     }
 
-    // ── MediaRecorder for Whisper (best multilingual accuracy) ──
+    // MediaRecorder for Whisper
     chunksRef.current = [];
     const mimeType = MediaRecorder.isTypeSupported("audio/webm") ? "audio/webm" : "audio/mp4";
     const mr = new MediaRecorder(stream, { mimeType });
     mr.ondataavailable = (e) => { if (e.data.size > 0) chunksRef.current.push(e.data); };
-    mr.start(100); // collect chunks every 100ms for speed
+    mr.start(100);
     mediaRecorderRef.current = mr;
 
-    // ── SpeechRecognition for instant live display ──
+    // SpeechRecognition — write directly to ref, bypass React state for zero-lag display
     const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
     if (SR) {
       let stopped = false;
 
       const startSR = () => {
         if (stopped) return;
-        const recognition = new SR();
-        recognition.continuous = true;
-        recognition.interimResults = true;
-        recognition.maxAlternatives = 1;
+        const r = new SR();
+        r.continuous = true;
+        r.interimResults = true;
+        r.maxAlternatives = 1;
 
-        recognition.onresult = (e) => {
+        r.onresult = (e) => {
           let interim = "";
           for (let i = e.resultIndex; i < e.results.length; i++) {
             if (e.results[i].isFinal) {
@@ -101,17 +116,15 @@ export default function VoiceRecorder() {
               interim = e.results[i][0].transcript;
             }
           }
-          const combined = finalLiveRef.current + interim;
-          liveTextRef.current = combined;
-          setLiveText(combined);
+          liveTextRef.current = finalLiveRef.current + interim;
+          // Only update React state to toggle placeholder on first word
+          if (!hasLiveText && liveTextRef.current) setHasLiveText(true);
         };
 
-        // Auto-restart on end to keep truly continuous
-        recognition.onend = () => { if (!stopped) startSR(); };
-        recognition.onerror = (e) => { if (e.error !== "aborted" && !stopped) startSR(); };
-
-        recognition.start();
-        recognitionRef.current = { stop: () => { stopped = true; recognition.stop(); } };
+        r.onend = () => { if (!stopped) startSR(); };
+        r.onerror = (ev) => { if (ev.error !== "aborted" && !stopped) startSR(); };
+        r.start();
+        recognitionRef.current = { stop: () => { stopped = true; try { r.stop(); } catch {} } };
       };
 
       startSR();
@@ -123,10 +136,7 @@ export default function VoiceRecorder() {
 
   const stopRecording = useCallback(() => {
     clearInterval(timerRef.current);
-    if (recognitionRef.current) {
-      recognitionRef.current.stop();
-      recognitionRef.current = null;
-    }
+    if (recognitionRef.current) { recognitionRef.current.stop(); recognitionRef.current = null; }
     if (mediaRecorderRef.current) {
       setStep(STEP.PROCESSING);
       mediaRecorderRef.current.onstop = runWhisper;
@@ -138,28 +148,18 @@ export default function VoiceRecorder() {
 
   const runWhisper = async () => {
     const blob = new Blob(chunksRef.current, { type: chunksRef.current[0]?.type || "audio/webm" });
-    if (blob.size < 500) {
-      setError("Recording too short. Try again.");
-      setStep(STEP.IDLE);
-      startRecording();
-      return;
-    }
+    if (blob.size < 500) { setError("Recording too short."); setStep(STEP.IDLE); return; }
     try {
       const ext = blob.type.includes("mp4") ? "mp4" : "webm";
       const file = new File([blob], `voice.${ext}`, { type: blob.type });
       const { file_url } = await base44.integrations.Core.UploadFile({ file });
       const text = await base44.integrations.Core.TranscribeAudio({ audio_url: file_url });
       const finalText = (text || "").trim();
-      if (!finalText) {
-        setError("Could not hear anything. Please try again.");
-        setStep(STEP.IDLE);
-        return;
-      }
+      if (!finalText) { setError("Could not hear anything. Try again."); setStep(STEP.IDLE); return; }
       setTranscript(finalText);
-      setLiveText(finalText);
       await extractData(finalText);
     } catch {
-      setError("Transcription failed. Please try again.");
+      setError("Transcription failed. Try again.");
       setStep(STEP.IDLE);
     }
   };
@@ -185,14 +185,41 @@ Rules:
       setExtracted(result);
       setStep(STEP.REVIEW);
     } catch {
-      setError("AI extraction failed. Please try again.");
+      setError("AI extraction failed. Try again.");
       setStep(STEP.IDLE);
     }
   };
 
+  // ── Item editing helpers ──
+  const updateItem = (i, field, value) => {
+    setExtracted(prev => {
+      const items = prev.items.map((item, idx) => {
+        if (idx !== i) return item;
+        const updated = { ...item, [field]: value };
+        // recalculate amount when qty or price changes
+        if (field === "quantity" || field === "unit_price") {
+          updated.amount = (parseFloat(updated.quantity) || 0) * (parseFloat(updated.unit_price) || 0);
+        }
+        return updated;
+      });
+      return { ...prev, items };
+    });
+  };
+
+  const removeItem = (i) => {
+    setExtracted(prev => ({ ...prev, items: prev.items.filter((_, idx) => idx !== i) }));
+  };
+
+  const addItem = () => {
+    setExtracted(prev => ({
+      ...prev,
+      items: [...(prev.items || []), { description: "", quantity: 1, unit_price: 0, amount: 0 }]
+    }));
+  };
+
   const handleCreateDocument = (docType) => {
     if (!extracted?.items?.length) return;
-    const subtotal = extracted.items.reduce((s, i) => s + (i.amount || 0), 0);
+    const subtotal = extracted.items.reduce((s, i) => s + (parseFloat(i.amount) || 0), 0);
     sessionStorage.setItem("voice_draft", JSON.stringify({
       type: docType,
       customer_name: extracted.customer_name || "",
@@ -208,10 +235,12 @@ Rules:
   const closeModal = () => {
     clearInterval(timerRef.current);
     if (recognitionRef.current) { recognitionRef.current.stop(); recognitionRef.current = null; }
-    if (mediaRecorderRef.current) { mediaRecorderRef.current.stop(); mediaRecorderRef.current.stream?.getTracks().forEach(t => t.stop()); mediaRecorderRef.current = null; }
+    if (mediaRecorderRef.current) { try { mediaRecorderRef.current.stop(); } catch {} mediaRecorderRef.current.stream?.getTracks().forEach(t => t.stop()); mediaRecorderRef.current = null; }
     setModalOpen(false);
     setStep(STEP.IDLE);
-    setLiveText("");
+    setHasLiveText(false);
+    liveTextRef.current = "";
+    finalLiveRef.current = "";
     setTranscript("");
     setExtracted(null);
     setError("");
@@ -220,7 +249,9 @@ Rules:
 
   const reRecord = () => {
     setStep(STEP.IDLE);
-    setLiveText("");
+    setHasLiveText(false);
+    liveTextRef.current = "";
+    finalLiveRef.current = "";
     setTranscript("");
     setExtracted(null);
     setError("");
@@ -230,16 +261,10 @@ Rules:
 
   return (
     <>
-      {/* ── Trigger: bare mic icon ── */}
-      <button
-        onClick={() => setModalOpen(true)}
-        className="shrink-0 transition-all active:scale-95 flex items-center justify-center"
-        title="Voice to Document"
-      >
+      <button onClick={() => setModalOpen(true)} className="shrink-0 transition-all active:scale-95 flex items-center justify-center" title="Voice to Document">
         <Mic className="h-7 w-7 text-indigo-500 hover:text-indigo-400 transition-colors" />
       </button>
 
-      {/* ── Modal ── */}
       {modalOpen && (
         <VoiceModal onClose={closeModal}>
           {/* Header */}
@@ -252,22 +277,21 @@ Rules:
                   <span className="relative inline-flex rounded-full h-3 w-3 bg-red-500" />
                 </span>
               )}
-              {(step === STEP.PROCESSING) && <Loader2 className="h-4 w-4 text-indigo-300 animate-spin" />}
+              {step === STEP.PROCESSING && <Loader2 className="h-4 w-4 text-indigo-300 animate-spin" />}
               {(step === STEP.REVIEW || step === STEP.CHOOSE_DOC) && <Sparkles className="h-4 w-4 text-yellow-300" />}
               <div>
                 <p className="text-white font-bold text-sm leading-tight">
                   {step === STEP.RECORDING && `Recording… ${fmtSecs(recordingSeconds)}`}
                   {step === STEP.PROCESSING && "Processing with Whisper AI…"}
-                  {step === STEP.REVIEW && "Review Extracted Data"}
+                  {step === STEP.REVIEW && "Review & Edit Extracted Data"}
                   {step === STEP.CHOOSE_DOC && "Choose Document Type"}
                   {step === STEP.IDLE && "Voice to Document"}
                 </p>
                 <p className="text-white/50 text-xs mt-0.5">
-                  {step === STEP.RECORDING && "Speak clearly — transcribing in real time"}
+                  {step === STEP.RECORDING && "Transcribing in real time"}
                   {step === STEP.PROCESSING && "Whisper multilingual model"}
-                  {step === STEP.REVIEW && "Check items then choose document"}
+                  {step === STEP.REVIEW && "Edit items, then choose document"}
                   {step === STEP.CHOOSE_DOC && "Select where to send your data"}
-                  {step === STEP.IDLE && "Tap mic to start"}
                 </p>
               </div>
             </div>
@@ -278,32 +302,25 @@ Rules:
 
           {/* Body */}
           <div className="flex-1 overflow-y-auto p-5 space-y-4">
-
-            {/* Error */}
             {error && (
               <div className="flex items-center gap-2 p-3 rounded-xl bg-red-50 border border-red-200 text-sm text-red-600">
                 <MicOff className="h-4 w-4 shrink-0" />{error}
               </div>
             )}
 
-            {/* ── RECORDING: live transcript display ── */}
+            {/* RECORDING */}
             {step === STEP.RECORDING && (
               <div className="space-y-4">
-                {/* Live text box */}
-                <div className="relative min-h-[160px] rounded-2xl border-2 border-indigo-200 bg-indigo-50/50 p-4 overflow-y-auto"
-                  style={{ maxHeight: 260 }}>
-                  {liveText ? (
-                    <p className="text-indigo-900 text-base leading-relaxed font-medium">{liveText}
-                      <span className="inline-block w-0.5 h-4 bg-indigo-400 ml-0.5 animate-pulse align-middle" />
-                    </p>
-                  ) : (
-                    <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 text-indigo-300">
+                <div className="relative rounded-2xl border-2 border-indigo-200 bg-indigo-50/50 p-4 overflow-y-auto" style={{ minHeight: 160, maxHeight: 260 }}>
+                  {/* Direct DOM update — zero React batching delay */}
+                  <LiveTextDisplay liveTextRef={liveTextRef} />
+                  {!hasLiveText && (
+                    <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 text-indigo-300 pointer-events-none">
                       <Mic className="h-10 w-10 opacity-30" />
                       <p className="text-sm font-medium">Start speaking…</p>
                     </div>
                   )}
                 </div>
-                {/* Stop button */}
                 <button onClick={stopRecording}
                   className="w-full py-4 rounded-2xl text-white font-bold text-base flex items-center justify-center gap-2 active:scale-95 transition-all shadow-lg"
                   style={{ background: "linear-gradient(135deg,#ef4444,#b91c1c)" }}>
@@ -312,11 +329,11 @@ Rules:
               </div>
             )}
 
-            {/* ── PROCESSING: show what we captured + spinner ── */}
+            {/* PROCESSING */}
             {step === STEP.PROCESSING && (
               <div className="space-y-4">
-                <div className="min-h-[120px] rounded-2xl border border-border bg-muted/30 p-4 overflow-y-auto" style={{ maxHeight: 200 }}>
-                  <p className="text-foreground text-sm leading-relaxed">{liveText || "Processing…"}</p>
+                <div className="rounded-2xl border border-border bg-muted/30 p-4 text-sm text-foreground leading-relaxed max-h-40 overflow-y-auto">
+                  {liveTextRef.current || "Processing…"}
                 </div>
                 <div className="flex items-center justify-center gap-3 py-4">
                   <Loader2 className="h-6 w-6 text-indigo-500 animate-spin" />
@@ -328,34 +345,78 @@ Rules:
               </div>
             )}
 
-            {/* ── REVIEW ── */}
+            {/* REVIEW — fully editable */}
             {step === STEP.REVIEW && (
               <div className="space-y-4">
                 {/* Transcript */}
                 <div>
-                  <p className="text-xs font-bold text-muted-foreground uppercase tracking-wide mb-2">Transcript</p>
-                  <div className="rounded-xl border border-border bg-muted/30 px-3 py-2.5 text-sm text-foreground leading-relaxed max-h-24 overflow-y-auto">
+                  <p className="text-xs font-bold text-muted-foreground uppercase tracking-wide mb-1.5">Transcript</p>
+                  <div className="rounded-xl border border-border bg-muted/30 px-3 py-2 text-sm text-foreground leading-relaxed max-h-20 overflow-y-auto">
                     {transcript}
                   </div>
                 </div>
-                {/* Items */}
+
+                {/* Editable items */}
                 <div>
                   <p className="text-xs font-bold text-muted-foreground uppercase tracking-wide mb-2">Extracted Items</p>
                   <div className="space-y-2">
-                    {extracted?.items?.map((item, i) => (
-                      <div key={i} className="flex items-center gap-3 px-3 py-2.5 rounded-xl bg-muted/40 border border-border">
-                        <div className="flex-1 min-w-0">
-                          <p className="font-semibold text-sm text-foreground truncate">{item.description}</p>
-                          <p className="text-xs text-muted-foreground">Qty {item.quantity} × {item.unit_price?.toLocaleString()}</p>
+                    {(extracted?.items || []).map((item, i) => (
+                      <div key={i} className="rounded-xl border border-border bg-muted/30 p-3 space-y-2">
+                        {/* Description */}
+                        <input
+                          value={item.description}
+                          onChange={e => updateItem(i, "description", e.target.value)}
+                          placeholder="Item description"
+                          className="w-full text-sm font-semibold bg-transparent border-b border-border pb-1 focus:outline-none focus:border-primary text-foreground"
+                        />
+                        {/* Qty / Price / Amount */}
+                        <div className="grid grid-cols-3 gap-2">
+                          <div>
+                            <p className="text-[10px] text-muted-foreground mb-0.5">Qty</p>
+                            <input
+                              type="number"
+                              value={item.quantity}
+                              onChange={e => updateItem(i, "quantity", parseFloat(e.target.value) || 0)}
+                              className="w-full text-sm bg-background border border-border rounded-lg px-2 py-1 focus:outline-none focus:ring-1 focus:ring-ring text-foreground"
+                            />
+                          </div>
+                          <div>
+                            <p className="text-[10px] text-muted-foreground mb-0.5">Unit Price</p>
+                            <input
+                              type="number"
+                              value={item.unit_price}
+                              onChange={e => updateItem(i, "unit_price", parseFloat(e.target.value) || 0)}
+                              className="w-full text-sm bg-background border border-border rounded-lg px-2 py-1 focus:outline-none focus:ring-1 focus:ring-ring text-foreground"
+                            />
+                          </div>
+                          <div>
+                            <p className="text-[10px] text-muted-foreground mb-0.5">Amount</p>
+                            <input
+                              type="number"
+                              value={item.amount}
+                              onChange={e => updateItem(i, "amount", parseFloat(e.target.value) || 0)}
+                              className="w-full text-sm bg-background border border-border rounded-lg px-2 py-1 focus:outline-none focus:ring-1 focus:ring-ring text-foreground"
+                            />
+                          </div>
                         </div>
-                        <span className="font-bold text-sm text-foreground shrink-0">{(item.amount || 0).toLocaleString()}</span>
+                        {/* Delete row */}
+                        <button onClick={() => removeItem(i)} className="flex items-center gap-1 text-xs text-red-400 hover:text-red-600 transition-colors">
+                          <Trash2 className="h-3 w-3" /> Remove
+                        </button>
                       </div>
                     ))}
                   </div>
+                  {/* Add item */}
+                  <button onClick={addItem}
+                    className="mt-2 w-full py-2 rounded-xl border border-dashed border-border text-xs text-muted-foreground hover:text-foreground hover:border-primary flex items-center justify-center gap-1.5 transition-colors">
+                    <Plus className="h-3.5 w-3.5" /> Add Item
+                  </button>
                 </div>
+
                 {extracted?.customer_name && (
                   <p className="text-xs text-muted-foreground">Customer: <span className="font-semibold text-foreground">{extracted.customer_name}</span></p>
                 )}
+
                 {/* Total + actions */}
                 <div className="flex items-center justify-between pt-3 border-t border-border">
                   <div>
@@ -375,7 +436,7 @@ Rules:
               </div>
             )}
 
-            {/* ── CHOOSE DOC ── */}
+            {/* CHOOSE DOC */}
             {step === STEP.CHOOSE_DOC && (
               <div className="space-y-4">
                 <p className="text-sm text-muted-foreground text-center">Where would you like to send the extracted data?</p>
@@ -398,7 +459,7 @@ Rules:
               </div>
             )}
 
-            {/* ── IDLE (shouldn't show but just in case) ── */}
+            {/* IDLE fallback */}
             {step === STEP.IDLE && !error && (
               <div className="flex flex-col items-center justify-center py-10 gap-4">
                 <button onClick={startRecording}
