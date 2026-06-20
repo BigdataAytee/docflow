@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback, useEffect } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Mic, Square, Sparkles, Loader2, FileText, FileCheck, Receipt, Truck, ArrowRight, X, RotateCcw, MicOff, Trash2, Plus } from "lucide-react";
 import { base44 } from "@/api/base44Client";
@@ -25,18 +25,11 @@ function VoiceModal({ onClose, children }) {
   );
 }
 
-// Live text display — direct DOM mutation on every speech event for zero lag
-function LiveTextDisplay({ domRef }) {
-  return (
-    <div ref={domRef} className="text-indigo-900 text-base leading-relaxed font-medium whitespace-pre-wrap min-h-[1em]" />
-  );
-}
-
 export default function VoiceRecorder() {
   const navigate = useNavigate();
   const [modalOpen, setModalOpen] = useState(false);
   const [step, setStep] = useState(STEP.IDLE);
-  const [hasLiveText, setHasLiveText] = useState(false);
+  const [liveText, setLiveText] = useState(""); // React state — drives the live pad
   const [transcript, setTranscript] = useState("");
   const [extracted, setExtracted] = useState(null);
   const [error, setError] = useState("");
@@ -46,26 +39,23 @@ export default function VoiceRecorder() {
   const recognitionRef = useRef(null);
   const mediaRecorderRef = useRef(null);
   const chunksRef = useRef([]);
-  const finalLiveRef = useRef("");
-  const liveTextRef = useRef("");
-  const liveDomRef = useRef(null); // direct DOM node for zero-lag text updates
+  const finalTextRef = useRef(""); // accumulates final SR results across restarts
 
   const fmtSecs = (s) => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
-
   const totalAmount = (extracted?.items || []).reduce((s, i) => s + (parseFloat(i.amount) || 0), 0);
 
+  // Auto-start when modal opens
   useEffect(() => {
-    if (modalOpen && step === STEP.IDLE) startRecording();
+    if (modalOpen) startRecording();
   }, [modalOpen]);
 
-  const startRecording = useCallback(async () => {
+  const startRecording = async () => {
     setError("");
-    setHasLiveText(false);
+    setLiveText("");
     setTranscript("");
     setExtracted(null);
     setRecordingSeconds(0);
-    finalLiveRef.current = "";
-    liveTextRef.current = "";
+    finalTextRef.current = "";
 
     let stream;
     try {
@@ -75,7 +65,7 @@ export default function VoiceRecorder() {
       return;
     }
 
-    // MediaRecorder for Whisper
+    // MediaRecorder for Whisper final transcription
     chunksRef.current = [];
     const mimeType = MediaRecorder.isTypeSupported("audio/webm") ? "audio/webm" : "audio/mp4";
     const mr = new MediaRecorder(stream, { mimeType });
@@ -83,7 +73,7 @@ export default function VoiceRecorder() {
     mr.start(100);
     mediaRecorderRef.current = mr;
 
-    // SpeechRecognition — write directly to ref, bypass React state for zero-lag display
+    // SpeechRecognition for real-time live text display
     const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
     if (SR) {
       let stopped = false;
@@ -94,24 +84,19 @@ export default function VoiceRecorder() {
         r.continuous = true;
         r.interimResults = true;
         r.maxAlternatives = 1;
+        r.lang = "en-US";
 
         r.onresult = (e) => {
           let interim = "";
           for (let i = e.resultIndex; i < e.results.length; i++) {
             if (e.results[i].isFinal) {
-              finalLiveRef.current += e.results[i][0].transcript + " ";
+              finalTextRef.current += e.results[i][0].transcript + " ";
             } else {
               interim = e.results[i][0].transcript;
             }
           }
-          const combined = finalLiveRef.current + interim;
-          liveTextRef.current = combined;
-          // Write directly to DOM — no React re-render, instant display
-          if (liveDomRef.current) {
-            liveDomRef.current.textContent = combined;
-          }
-          // Hide placeholder once we have text
-          if (combined && !hasLiveText) setHasLiveText(true);
+          // Update React state — this IS fast enough for live display
+          setLiveText(finalTextRef.current + interim);
         };
 
         r.onend = () => { if (!stopped) startSR(); };
@@ -125,9 +110,9 @@ export default function VoiceRecorder() {
 
     setStep(STEP.RECORDING);
     timerRef.current = setInterval(() => setRecordingSeconds(s => s + 1), 1000);
-  }, []);
+  };
 
-  const stopRecording = useCallback(() => {
+  const stopRecording = () => {
     clearInterval(timerRef.current);
     if (recognitionRef.current) { recognitionRef.current.stop(); recognitionRef.current = null; }
     if (mediaRecorderRef.current) {
@@ -137,7 +122,7 @@ export default function VoiceRecorder() {
       mediaRecorderRef.current.stream?.getTracks().forEach(t => t.stop());
       mediaRecorderRef.current = null;
     }
-  }, []);
+  };
 
   const runWhisper = async () => {
     const blob = new Blob(chunksRef.current, { type: chunksRef.current[0]?.type || "audio/webm" });
@@ -183,13 +168,11 @@ Rules:
     }
   };
 
-  // ── Item editing helpers ──
   const updateItem = (i, field, value) => {
     setExtracted(prev => {
       const items = prev.items.map((item, idx) => {
         if (idx !== i) return item;
         const updated = { ...item, [field]: value };
-        // recalculate amount when qty or price changes
         if (field === "quantity" || field === "unit_price") {
           updated.amount = (parseFloat(updated.quantity) || 0) * (parseFloat(updated.unit_price) || 0);
         }
@@ -231,26 +214,21 @@ Rules:
     if (mediaRecorderRef.current) { try { mediaRecorderRef.current.stop(); } catch {} mediaRecorderRef.current.stream?.getTracks().forEach(t => t.stop()); mediaRecorderRef.current = null; }
     setModalOpen(false);
     setStep(STEP.IDLE);
-    setHasLiveText(false);
-    liveTextRef.current = "";
-    finalLiveRef.current = "";
-    if (liveDomRef.current) liveDomRef.current.textContent = "";
+    setLiveText("");
     setTranscript("");
     setExtracted(null);
     setError("");
     setRecordingSeconds(0);
+    finalTextRef.current = "";
   };
 
   const reRecord = () => {
-    setStep(STEP.IDLE);
-    setHasLiveText(false);
-    liveTextRef.current = "";
-    finalLiveRef.current = "";
-    if (liveDomRef.current) liveDomRef.current.textContent = "";
+    setLiveText("");
     setTranscript("");
     setExtracted(null);
     setError("");
     setRecordingSeconds(0);
+    finalTextRef.current = "";
     startRecording();
   };
 
@@ -307,8 +285,9 @@ Rules:
             {step === STEP.RECORDING && (
               <div className="space-y-4">
                 <div className="relative rounded-2xl border-2 border-indigo-200 bg-indigo-50/50 p-4 overflow-y-auto" style={{ minHeight: 160, maxHeight: 260 }}>
-                  <LiveTextDisplay domRef={liveDomRef} />
-                  {!hasLiveText && (
+                  {liveText ? (
+                    <p className="text-indigo-900 text-base leading-relaxed font-medium whitespace-pre-wrap">{liveText}</p>
+                  ) : (
                     <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 text-indigo-300 pointer-events-none">
                       <Mic className="h-10 w-10 opacity-30" />
                       <p className="text-sm font-medium">Start speaking…</p>
@@ -327,7 +306,7 @@ Rules:
             {step === STEP.PROCESSING && (
               <div className="space-y-4">
                 <div className="rounded-2xl border border-border bg-muted/30 p-4 text-sm text-foreground leading-relaxed max-h-40 overflow-y-auto">
-                  {liveTextRef.current || "Processing…"}
+                  {liveText || "Processing…"}
                 </div>
                 <div className="flex items-center justify-center gap-3 py-4">
                   <Loader2 className="h-6 w-6 text-indigo-500 animate-spin" />
@@ -342,7 +321,6 @@ Rules:
             {/* REVIEW — fully editable */}
             {step === STEP.REVIEW && (
               <div className="space-y-4">
-                {/* Transcript */}
                 <div>
                   <p className="text-xs font-bold text-muted-foreground uppercase tracking-wide mb-1.5">Transcript</p>
                   <div className="rounded-xl border border-border bg-muted/30 px-3 py-2 text-sm text-foreground leading-relaxed max-h-20 overflow-y-auto">
@@ -350,57 +328,43 @@ Rules:
                   </div>
                 </div>
 
-                {/* Editable items */}
                 <div>
                   <p className="text-xs font-bold text-muted-foreground uppercase tracking-wide mb-2">Extracted Items</p>
                   <div className="space-y-2">
                     {(extracted?.items || []).map((item, i) => (
                       <div key={i} className="rounded-xl border border-border bg-muted/30 p-3 space-y-2">
-                        {/* Description */}
                         <input
                           value={item.description}
                           onChange={e => updateItem(i, "description", e.target.value)}
                           placeholder="Item description"
                           className="w-full text-sm font-semibold bg-transparent border-b border-border pb-1 focus:outline-none focus:border-primary text-foreground"
                         />
-                        {/* Qty / Price / Amount */}
                         <div className="grid grid-cols-3 gap-2">
                           <div>
                             <p className="text-[10px] text-muted-foreground mb-0.5">Qty</p>
-                            <input
-                              type="number"
-                              value={item.quantity}
+                            <input type="number" value={item.quantity}
                               onChange={e => updateItem(i, "quantity", parseFloat(e.target.value) || 0)}
-                              className="w-full text-sm bg-background border border-border rounded-lg px-2 py-1 focus:outline-none focus:ring-1 focus:ring-ring text-foreground"
-                            />
+                              className="w-full text-sm bg-background border border-border rounded-lg px-2 py-1 focus:outline-none focus:ring-1 focus:ring-ring text-foreground" />
                           </div>
                           <div>
                             <p className="text-[10px] text-muted-foreground mb-0.5">Unit Price</p>
-                            <input
-                              type="number"
-                              value={item.unit_price}
+                            <input type="number" value={item.unit_price}
                               onChange={e => updateItem(i, "unit_price", parseFloat(e.target.value) || 0)}
-                              className="w-full text-sm bg-background border border-border rounded-lg px-2 py-1 focus:outline-none focus:ring-1 focus:ring-ring text-foreground"
-                            />
+                              className="w-full text-sm bg-background border border-border rounded-lg px-2 py-1 focus:outline-none focus:ring-1 focus:ring-ring text-foreground" />
                           </div>
                           <div>
                             <p className="text-[10px] text-muted-foreground mb-0.5">Amount</p>
-                            <input
-                              type="number"
-                              value={item.amount}
+                            <input type="number" value={item.amount}
                               onChange={e => updateItem(i, "amount", parseFloat(e.target.value) || 0)}
-                              className="w-full text-sm bg-background border border-border rounded-lg px-2 py-1 focus:outline-none focus:ring-1 focus:ring-ring text-foreground"
-                            />
+                              className="w-full text-sm bg-background border border-border rounded-lg px-2 py-1 focus:outline-none focus:ring-1 focus:ring-ring text-foreground" />
                           </div>
                         </div>
-                        {/* Delete row */}
                         <button onClick={() => removeItem(i)} className="flex items-center gap-1 text-xs text-red-400 hover:text-red-600 transition-colors">
                           <Trash2 className="h-3 w-3" /> Remove
                         </button>
                       </div>
                     ))}
                   </div>
-                  {/* Add item */}
                   <button onClick={addItem}
                     className="mt-2 w-full py-2 rounded-xl border border-dashed border-border text-xs text-muted-foreground hover:text-foreground hover:border-primary flex items-center justify-center gap-1.5 transition-colors">
                     <Plus className="h-3.5 w-3.5" /> Add Item
@@ -411,7 +375,6 @@ Rules:
                   <p className="text-xs text-muted-foreground">Customer: <span className="font-semibold text-foreground">{extracted.customer_name}</span></p>
                 )}
 
-                {/* Total + actions */}
                 <div className="flex items-center justify-between pt-3 border-t border-border">
                   <div>
                     <p className="text-xs text-muted-foreground">{extracted?.items?.length || 0} item(s)</p>
