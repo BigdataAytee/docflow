@@ -108,8 +108,8 @@ export default function Home() {
         accept="image/*"
         capture="environment"
         className="hidden"
-        onChange={(e) => e.target.files[0] && handleScanFile(e.target.files[0])}
-      />
+        onChange={(e) => e.target.files[0] && handleScanFile(e.target.files[0])} />
+      
 
       {/* Hero greeting */}
       <div
@@ -214,7 +214,7 @@ export default function Home() {
       {!searchQuery &&
       <>
           <div className="flex items-stretch gap-3">
-            <div className="flex-1 min-w-0">
+            <div className="flex-1 min-w-0 hidden">
               <VoiceRecorder />
             </div>
             <div className="shrink-0">
