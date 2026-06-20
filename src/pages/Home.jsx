@@ -213,7 +213,7 @@ export default function Home() {
       {/* Quick Access */}
       {!searchQuery &&
       <>
-          <div className="flex items-stretch gap-3">
+          <div className="flex items-stretch gap-3 hidden">
             <div className="flex-1 min-w-0 hidden">
               <VoiceRecorder />
             </div>
