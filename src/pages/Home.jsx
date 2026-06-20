@@ -192,8 +192,11 @@ export default function Home() {
       <>
           <div>
             <div className="flex items-center justify-between mb-4">
-              <h2 className="font-bold text-base text-foreground">Quick Access</h2>
-              <VoiceRecorder />
+              <div className="flex items-center gap-3">
+                <VoiceRecorder />
+                <h2 className="font-bold text-base text-foreground">Quick Access</h2>
+              </div>
+              <AIAssistant inlineTrigger />
             </div>
             <div className="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-4">
 
@@ -364,7 +367,6 @@ export default function Home() {
         </>
       }
 
-      <AIAssistant />
     </div>);
 
 }

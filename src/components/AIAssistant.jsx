@@ -271,7 +271,7 @@ function InlineCameraTab({ initialStream, onCapture, onUploading }) {
 }
 
 /* ─── Main Component ────────────────────────────────────────────────────── */
-export default function AIAssistant() {
+export default function AIAssistant({ inlineTrigger = false }) {
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
   const [activeTab, setActiveTab] = useState("type"); // "type" | "scan"
@@ -420,30 +420,28 @@ ${inputText}
   const stepIndex = { idle: -1, input: 0, extracting: 0, confirm: 1, doctype: 2 }[stage] ?? -1;
   const isInFlow = stage === "confirm" || stage === "doctype";
 
+  const triggerButton = (
+    <button
+      onClick={() => { setOpen(true); if (stage === "idle") setStage("input"); }}
+      className="flex items-center gap-2 px-3 py-2 rounded-2xl shadow-lg transition-all duration-200 hover:scale-105 active:scale-95"
+      style={{ background: "linear-gradient(135deg,#6366f1 0%,#8b5cf6 50%,#a855f7 100%)", boxShadow: "0 4px 16px rgba(99,102,241,0.4)" }}>
+      <div className="relative">
+        <Sparkles className="h-4 w-4 text-white" />
+        <span className="absolute -top-1 -right-1 w-2 h-2 bg-yellow-300 rounded-full animate-ping" />
+        <span className="absolute -top-1 -right-1 w-2 h-2 bg-yellow-300 rounded-full" />
+      </div>
+      <span className="text-white font-bold text-xs">AI Assistant</span>
+    </button>
+  );
+
   return (
     <>
-      {/* Floating launcher */}
-      <div className="fixed z-40 group" style={{ bottom: "calc(72px + env(safe-area-inset-bottom, 0px))", right: 16 }}>
-        <div className="hidden lg:block absolute bottom-full right-0 mb-3 w-56 pointer-events-none">
-          <div className="bg-gray-900 text-white text-xs rounded-xl px-3 py-2.5 shadow-xl opacity-0 group-hover:opacity-100 transition-opacity duration-200 leading-relaxed">
-            <p className="font-bold mb-1">✨ AI Document Assistant</p>
-            <p className="text-white/75">Type items or scan a document — AI pre-fills your invoice instantly.</p>
-            <div className="absolute bottom-0 right-5 translate-y-full w-0 h-0 border-l-4 border-r-4 border-t-4 border-l-transparent border-r-transparent border-t-gray-900" />
-          </div>
+      {/* Inline trigger — rendered in parent; floating trigger — rendered as fixed FAB */}
+      {inlineTrigger ? triggerButton : (
+        <div className="fixed z-40" style={{ bottom: "calc(72px + env(safe-area-inset-bottom, 0px))", right: 16 }}>
+          {triggerButton}
         </div>
-        <button
-          onClick={() => { setOpen(true); if (stage === "idle") setStage("input"); }}
-          className="flex items-center gap-2.5 px-4 py-3 rounded-2xl shadow-2xl transition-all duration-300 hover:scale-105 active:scale-95"
-          style={{ background: "linear-gradient(135deg,#6366f1 0%,#8b5cf6 50%,#a855f7 100%)", boxShadow: "0 8px 32px rgba(99,102,241,0.45),0 2px 8px rgba(0,0,0,0.2)" }}>
-          <div className="relative">
-            <Sparkles className="h-5 w-5 text-white" />
-            <span className="absolute -top-1 -right-1 w-2 h-2 bg-yellow-300 rounded-full animate-ping" />
-            <span className="absolute -top-1 -right-1 w-2 h-2 bg-yellow-300 rounded-full" />
-          </div>
-          <span className="text-white font-bold text-sm hidden sm:block">AI Assistant</span>
-        </button>
-        <p className="lg:hidden text-center text-[10px] text-indigo-400 font-medium mt-1 whitespace-nowrap">Tap to create docs with AI</p>
-      </div>
+      )}
 
       {/* Panel */}
       {open && (
