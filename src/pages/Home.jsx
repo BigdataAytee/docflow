@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { FileText, FileCheck, Receipt, Truck, Mail, Plus, Clock, Search, X, ArrowRight, Sparkles, BarChart2, Zap, ScanSearch, Loader2 } from "lucide-react";
 import AIAssistant from "../components/AIAssistant";
+import VoiceRecorder from "../components/VoiceRecorder";
 import SetupChecklist from "../components/onboarding/SetupChecklist";
 import { useQuery } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
@@ -211,6 +212,8 @@ export default function Home() {
       {/* Quick Access */}
       {!searchQuery &&
       <>
+          <VoiceRecorder />
+
           <div>
             <h2 className="font-bold text-base text-foreground mb-4">Quick Access</h2>
             <div className="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-4">

@@ -372,6 +372,18 @@ export default function CreateDocument() {
             }));
           }
         }
+        // Handle voice draft prefill
+        const fromVoice = new URLSearchParams(window.location.search).get("from") === "voice";
+        if (fromVoice) {
+          const voiceDraftRaw = sessionStorage.getItem("voice_draft");
+          if (voiceDraftRaw) {
+            sessionStorage.removeItem("voice_draft");
+            const draft = JSON.parse(voiceDraftRaw);
+            if (draft.items?.length > 0) setItems(draft.items.map((it) => ({ description: it.description || "", quantity: String(it.quantity ?? 1), unit_price: String(it.unit_price ?? 0), discount: "" })));
+            if (draft.notes) setForm((f) => ({ ...f, notes: draft.notes }));
+            if (draft.customer_name) setForm((f) => ({ ...f, customer_name: draft.customer_name }));
+          }
+        }
         // Filter by user to get accurate next sequence number
         const docs = await base44.entities.Document.filter({ type: docType, created_by: user.email }, "-created_date", 1);
         const num = docs.length > 0 ? parseInt((docs[0].number || "0").replace(/\D/g, "") || "0") + 1 : 1;
