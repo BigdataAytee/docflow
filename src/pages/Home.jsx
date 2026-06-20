@@ -1,9 +1,53 @@
 import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import { FileText, FileCheck, Receipt, Truck, Mail, Plus, Clock, Search, X, ArrowRight, Sparkles, BarChart2, Zap, ScanSearch, Loader2 } from "lucide-react";
+import { FileText, FileCheck, Receipt, Truck, Mail, Plus, Clock, Search, X, ArrowRight, Sparkles, BarChart2, Zap, Mic } from "lucide-react";
 import AIAssistant from "../components/AIAssistant";
-import VoiceRecorder from "../components/VoiceRecorder";
+import VoiceRecorder, { VoiceRecorderModal } from "../components/VoiceRecorder";
 import AIInputButtons from "../components/AIInputButtons";
+
+function VoiceEntryCard() {
+  const [open, setOpen] = useState(false);
+  return (
+    <>
+      <div
+        onClick={() => setOpen(true)}
+        className="relative rounded-2xl overflow-hidden cursor-pointer transition-all hover:-translate-y-0.5 active:scale-[0.99]"
+        style={{ background: "linear-gradient(135deg,#1e1b4b 0%,#312e81 50%,#1d1a40 100%)", boxShadow: "0 4px 24px rgba(99,102,241,0.35)" }}>
+        {/* Background glow */}
+        <div className="absolute -top-8 -right-8 w-48 h-48 rounded-full pointer-events-none" style={{ background: "radial-gradient(circle,rgba(139,92,246,0.4),transparent 65%)" }} />
+        <div className="absolute -bottom-6 left-1/4 w-36 h-36 rounded-full pointer-events-none" style={{ background: "radial-gradient(circle,rgba(99,102,241,0.25),transparent 65%)" }} />
+        <div className="relative z-10 flex items-center gap-5 px-5 py-4 md:px-6 md:py-5">
+          {/* Mic icon */}
+          <div className="shrink-0 w-14 h-14 rounded-2xl flex items-center justify-center shadow-lg" style={{ background: "linear-gradient(135deg,#6366f1,#8b5cf6)", boxShadow: "0 6px 20px rgba(99,102,241,0.6)" }}>
+            <Mic className="h-7 w-7 text-white" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2 mb-0.5">
+              <span className="text-xs font-black uppercase tracking-[0.18em] text-indigo-300">AI Voice Entry</span>
+              <span className="text-[9px] font-bold px-2 py-0.5 rounded-full" style={{ background: "rgba(16,185,129,0.2)", color: "#34d399", border: "1px solid rgba(16,185,129,0.3)" }}>Live</span>
+            </div>
+            <h3 className="text-lg font-black text-white leading-tight">Voice Document Assistant</h3>
+            <p className="text-white/50 text-xs mt-0.5 hidden sm:block">Describe your goods and we'll fill the document automatically.</p>
+          </div>
+          <div className="shrink-0 flex items-center gap-2 px-4 py-2 rounded-xl font-bold text-sm text-indigo-200 transition-all" style={{ background: "rgba(99,102,241,0.2)", border: "1px solid rgba(99,102,241,0.4)" }}>
+            <Mic className="h-4 w-4" />
+            <span className="hidden sm:inline">Start</span>
+            <ArrowRight className="h-3.5 w-3.5" />
+          </div>
+        </div>
+        {/* Pulse ring */}
+        <div className="absolute right-[72px] top-1/2 -translate-y-1/2 hidden sm:block">
+          <span className="relative flex h-3 w-3">
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-indigo-400 opacity-50" />
+            <span className="relative inline-flex rounded-full h-3 w-3 bg-indigo-500" />
+          </span>
+        </div>
+      </div>
+      {/* Render VoiceRecorder with external open control */}
+      {open && <VoiceRecorderModal onClose={() => setOpen(false)} />}
+    </>
+  );
+}
 import SetupChecklist from "../components/onboarding/SetupChecklist";
 import { useQuery } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
@@ -221,6 +265,9 @@ export default function Home() {
 
 
         
+
+          {/* Voice Entry Card */}
+          <VoiceEntryCard />
 
           <div>
             <h2 className="font-bold text-base text-foreground mb-4">Quick Access</h2>
