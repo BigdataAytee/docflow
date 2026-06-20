@@ -67,18 +67,8 @@ export default function SetupChecklist({ user, counts }) {
   };
 
   if (allDone) {
-    return (
-      <div className="relative rounded-2xl border border-emerald-200 bg-emerald-50 px-5 py-4 flex items-center gap-4">
-        <div className="w-10 h-10 rounded-xl bg-emerald-100 flex items-center justify-center shrink-0 text-xl">🎉</div>
-        <div className="flex-1 min-w-0">
-          <p className="font-bold text-sm text-emerald-900">Setup Complete!</p>
-          <p className="text-xs text-emerald-700 mt-0.5">Your account is fully set up. You're ready to create professional documents.</p>
-        </div>
-        <button onClick={handleDismiss} className="p-1.5 rounded-lg hover:bg-emerald-100 text-emerald-400 hover:text-emerald-700 transition-colors shrink-0">
-          <X className="h-4 w-4" />
-        </button>
-      </div>
-    );
+    handleDismiss();
+    return null;
   }
 
   return (
