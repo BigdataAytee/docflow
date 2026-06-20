@@ -28,6 +28,7 @@ export function VoiceRecorderModal({ onClose }) {
   const mediaRecorderRef = useRef(null);
   const chunksRef = useRef([]);
   const finalTextRef = useRef("");
+  const interimTextRef = useRef("");
   const livePadRef = useRef(null);
 
   const fmtSecs = (s) => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
@@ -45,7 +46,11 @@ export function VoiceRecorderModal({ onClose }) {
     setExtracted(null);
     setRecordingSeconds(0);
     finalTextRef.current = "";
-    if (livePadRef.current) livePadRef.current.value = "";
+    interimTextRef.current = "";
+    // Must manually clear the uncontrolled textarea DOM node
+    if (livePadRef.current) {
+      livePadRef.current.value = "";
+    }
 
     let stream;
     try {
@@ -81,16 +86,19 @@ export function VoiceRecorderModal({ onClose }) {
             for (let i = e.resultIndex; i < e.results.length; i++) {
               if (e.results[i].isFinal) {
                 finalTextRef.current += e.results[i][0].transcript + " ";
+                interimTextRef.current = "";
               } else {
                 interim = e.results[i][0].transcript;
+                interimTextRef.current = interim;
               }
             }
             const combined = finalTextRef.current + interim;
-            // Direct DOM write for zero-latency display
+            // Direct DOM write — bypasses React render cycle entirely for zero latency
             if (livePadRef.current) {
               livePadRef.current.value = combined;
               livePadRef.current.scrollTop = livePadRef.current.scrollHeight;
             }
+            // Only update React state for the AI preview panel (debounced via natural render)
             setLiveText(combined);
           };
 
@@ -124,12 +132,18 @@ export function VoiceRecorderModal({ onClose }) {
 
     setIsRecording(true);
     setStep(STEP.RECORDING);
-    timerRef.current = setInterval(() => setRecordingSeconds(s => s + 1), 1000);
+    timerRef.current = setInterval(() => {
+      setRecordingSeconds(s => s + 1);
+    }, 1000);
   };
 
   const stopRecording = () => {
     clearInterval(timerRef.current);
     setIsRecording(false);
+    // Capture the live textarea value as the final SR text before stopping recognition
+    if (livePadRef.current && livePadRef.current.value.trim()) {
+      finalTextRef.current = livePadRef.current.value.trim() + " ";
+    }
     if (recognitionRef.current) { recognitionRef.current.stop(); recognitionRef.current = null; }
     if (mediaRecorderRef.current) {
       setStep(STEP.PROCESSING);
@@ -343,7 +357,8 @@ Rules:
                   </div>
                   <textarea
                     ref={livePadRef}
-                    onChange={(e) => setLiveText(e.target.value)}
+                    defaultValue=""
+                    onInput={(e) => setLiveText(e.target.value)}
                     placeholder={"Start speaking…\n\nExample:\n\"10 boxes of apples at £12 each.\n25 cartons of milk at £18 each.\nDelivery next Friday for Smith & Co.\""}
                     className="w-full rounded-2xl border border-border bg-muted/20 p-4 text-sm text-foreground leading-relaxed resize-none focus:outline-none focus:ring-2 focus:ring-indigo-400/50 placeholder:text-muted-foreground/50"
                     style={{ minHeight: 200 }}
