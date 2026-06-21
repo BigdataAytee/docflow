@@ -3,7 +3,8 @@ import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
 import { base44 } from "@/api/base44Client";
 import { useNavigate } from "react-router-dom";
-import { Plus, Trash2, ArrowLeft, Settings2, FileDown, Upload, GripVertical, PenLine, Printer, CheckCircle2, ImagePlus, X, Palette } from "lucide-react";
+import { Plus, Trash2, ArrowLeft, Settings2, FileDown, Upload, GripVertical, PenLine, Printer, CheckCircle2, ImagePlus, X, Palette, Sparkles } from "lucide-react";
+import LogoGenerator from "../components/LogoGenerator";
 import { COLOR_SCHEMES, LAYOUTS, LayoutThumb } from "../components/TemplateSelector";
 import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -721,6 +722,7 @@ export default function CreateDocument() {
   // For the editor live preview scale (sidebar)
   const previewScale = Math.min(1, (Math.min(viewportWidth, 826) - 32) / 794);
   const [showMobileDesignPanel, setShowMobileDesignPanel] = useState(false);
+  const [showLogoStudio, setShowLogoStudio] = useState(false);
 
   const L = DOC_LABELS[docType] || DOC_LABELS.invoice;
 
@@ -1314,7 +1316,18 @@ export default function CreateDocument() {
               </div>
             </div>
             <LivePreviewScaled template={template} templateColor={templateColor} templateFont={templateFont} form={form} calcs={calcs} sym={sym} docType={docType} />
-
+            <div className="px-4 py-2.5 border-t border-border bg-muted/20 flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                {form.logo_url
+                  ? <img src={form.logo_url} alt="logo" className="h-7 w-7 object-contain rounded border border-border bg-white p-0.5" />
+                  : <div className="h-7 w-7 rounded border-2 border-dashed border-indigo-200 bg-indigo-50 flex items-center justify-center"><Sparkles className="h-3.5 w-3.5 text-indigo-300" /></div>
+                }
+                <span className="text-xs text-muted-foreground">{form.logo_url ? "Logo set" : "No logo"}</span>
+              </div>
+              <button onClick={() => setShowLogoStudio(true)} className="flex items-center gap-1 text-[11px] font-bold text-violet-700 border border-violet-200 rounded-lg px-2.5 py-1 hover:bg-violet-50 transition-colors">
+                <Sparkles className="h-3 w-3" /> Logo Studio
+              </button>
+            </div>
           </div>
 
           <div className="bg-card rounded-2xl border border-border p-5 sticky top-8 shadow-sm">
@@ -1381,6 +1394,16 @@ export default function CreateDocument() {
           </Button>
         </div>
       </div>
+
+      <LogoGenerator
+        open={showLogoStudio}
+        onClose={() => setShowLogoStudio(false)}
+        onApply={(url) => {
+          setForm(f => ({ ...f, logo_url: url }));
+          base44.auth.updateMe({ logo_url: url });
+          setShowLogoStudio(false);
+        }}
+      />
 
       {/* Leave confirmation modal */}
       {showLeaveModal &&
