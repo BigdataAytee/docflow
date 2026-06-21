@@ -284,8 +284,11 @@ export default function AIAssistant({ inlineTrigger = false }) {
   const [attachedImage, setAttachedImage] = useState(null);
   const [uploadingImage, setUploadingImage] = useState(false);
   const [scanHint, setScanHint] = useState(false);
+  const [addingFromScan, setAddingFromScan] = useState(false);
   const imageInputRef = useRef(null);
   const cameraInputRef = useRef(null);
+  const addGalleryRef = useRef(null);
+  const addCameraRef = useRef(null);
   const scanHintTimerRef = useRef(null);
 
   const handleImageUpload = async (file) => {
@@ -425,6 +428,42 @@ ${inputText}
     if (result?.notes)           metaParts.push(result.notes);
     setExtractedNotes(metaParts.join("\n").trim());
     setStage("confirm");
+  };
+
+  const handleAddFromImage = async (file) => {
+    if (!file) return;
+    setAddingFromScan(true);
+    const localUrl = URL.createObjectURL(file);
+    const { file_url } = await base44.integrations.Core.UploadFile({ file });
+    URL.revokeObjectURL(localUrl);
+    const result = await base44.integrations.Core.InvokeLLM({
+      prompt: `You are an expert OCR and product data extraction AI. Analyze the attached image and extract every item/product visible. For each item return: description (full product name), quantity (default 1), unit_price (0 if unknown). Always return at least one item.`,
+      file_urls: [file_url],
+      model: "gemini_3_flash",
+      response_json_schema: {
+        type: "object",
+        properties: {
+          items: {
+            type: "array",
+            items: {
+              type: "object",
+              properties: {
+                description: { type: "string" },
+                quantity: { type: "number" },
+                unit_price: { type: "number" },
+              },
+            },
+          },
+        },
+      },
+    });
+    const newItems = (result?.items || []).filter(it => it.description?.trim());
+    if (newItems.length > 0) {
+      setExtractedItems(prev => [...prev, ...newItems]);
+    } else {
+      setExtractedItems(prev => [...prev, { description: "", quantity: 1, unit_price: 0 }]);
+    }
+    setAddingFromScan(false);
   };
 
   const handleProceed = (docType) => {
@@ -675,11 +714,26 @@ ${inputText}
                     ))}
                   </div>
 
-                  <button
-                    onClick={() => setExtractedItems(prev => [...prev, { description: "", quantity: 1, unit_price: 0 }])}
-                    className="w-full border-2 border-dashed border-indigo-200 rounded-2xl py-2.5 text-xs text-indigo-500 hover:bg-indigo-50 transition-colors font-medium">
-                    + Add another item
-                  </button>
+                  {/* Add item options */}
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => setExtractedItems(prev => [...prev, { description: "", quantity: 1, unit_price: 0 }])}
+                      className="flex-1 flex items-center justify-center gap-1.5 border-2 border-dashed border-indigo-200 rounded-2xl py-2.5 text-xs text-indigo-500 hover:bg-indigo-50 transition-colors font-medium">
+                      + Manual
+                    </button>
+                    <label className={`flex-1 flex items-center justify-center gap-1.5 border-2 border-dashed border-purple-200 rounded-2xl py-2.5 text-xs text-purple-500 hover:bg-purple-50 transition-colors font-medium cursor-pointer ${addingFromScan ? "opacity-60 pointer-events-none" : ""}`}>
+                      {addingFromScan ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <ImagePlus className="h-3.5 w-3.5" />}
+                      Gallery
+                      <input ref={addGalleryRef} type="file" accept="image/*" className="hidden"
+                        onChange={(e) => { if (e.target.files[0]) { handleAddFromImage(e.target.files[0]); e.target.value = ""; } }} />
+                    </label>
+                    <label className={`flex-1 flex items-center justify-center gap-1.5 border-2 border-dashed border-indigo-300 rounded-2xl py-2.5 text-xs text-indigo-600 hover:bg-indigo-50 transition-colors font-medium cursor-pointer ${addingFromScan ? "opacity-60 pointer-events-none" : ""}`}>
+                      {addingFromScan ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Camera className="h-3.5 w-3.5" />}
+                      Camera
+                      <input ref={addCameraRef} type="file" accept="image/*" capture="environment" className="hidden"
+                        onChange={(e) => { if (e.target.files[0]) { handleAddFromImage(e.target.files[0]); e.target.value = ""; } }} />
+                    </label>
+                  </div>
 
                   {extractedNotes && (
                     <div>
