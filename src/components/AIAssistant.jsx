@@ -289,20 +289,23 @@ export default function AIAssistant({ inlineTrigger = false }) {
   const scanHintTimerRef = useRef(null);
 
   const handleImageUpload = async (file) => {
-    setUploadingImage(true);
+    const localUrl = URL.createObjectURL(file);
+    setAttachedImage({ url: localUrl, name: file.name || "image.jpg", uploading: true });
     const { file_url } = await base44.integrations.Core.UploadFile({ file });
+    URL.revokeObjectURL(localUrl);
     setAttachedImage({ url: file_url, name: file.name || "image.jpg" });
-    setUploadingImage(false);
   };
 
   const handleCameraScan = async (file) => {
     if (!file) return;
-    setUploadingImage(true);
+    // Show preview instantly using local object URL while uploading in background
+    const localUrl = URL.createObjectURL(file);
+    setAttachedImage({ url: localUrl, name: "scan.jpg", uploading: true });
     setActiveTab("type");
     if (stage === "idle") setStage("input");
     const { file_url } = await base44.integrations.Core.UploadFile({ file });
+    URL.revokeObjectURL(localUrl);
     setAttachedImage({ url: file_url, name: "scan.jpg" });
-    setUploadingImage(false);
   };
 
   const reset = () => {
@@ -387,7 +390,7 @@ ${inputText}
     const result = await base44.integrations.Core.InvokeLLM({
       prompt: basePrompt,
       ...(hasImage ? { file_urls: [attachedImage.url] } : {}),
-      model: "gemini_3_1_pro",
+      model: "gemini_3_flash",
       response_json_schema: {
         type: "object",
         properties: {
@@ -577,18 +580,25 @@ ${inputText}
                   {/* Image attachment preview */}
                   {attachedImage ? (
                     <div className="flex items-center gap-3 bg-indigo-50 border border-indigo-200 rounded-2xl px-4 py-3">
-                      <div className="w-12 h-12 rounded-xl overflow-hidden border border-indigo-200 shrink-0">
+                      <div className="w-12 h-12 rounded-xl overflow-hidden border border-indigo-200 shrink-0 relative">
                         <img src={attachedImage.url} alt="attached" className="w-full h-full object-cover" />
+                        {attachedImage.uploading && (
+                          <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
+                            <Loader2 className="h-4 w-4 text-white animate-spin" />
+                          </div>
+                        )}
                       </div>
                       <div className="flex-1 min-w-0">
                         <p className="text-xs font-semibold text-indigo-700 truncate">{attachedImage.name}</p>
                         <p className="text-xs text-indigo-500 mt-0.5">
-                          {attachedImage.name === "scan.jpg" ? "📷 Camera scan ready — AI will extract all text" : "AI will read text from this image"}
+                          {attachedImage.uploading ? "⏳ Uploading…" : attachedImage.name === "scan.jpg" ? "📷 Camera scan ready — AI will extract all text" : "AI will read text from this image"}
                         </p>
                       </div>
-                      <button onClick={() => setAttachedImage(null)} className="text-indigo-300 hover:text-red-400 transition-colors shrink-0">
-                        <X className="h-4 w-4" />
-                      </button>
+                      {!attachedImage.uploading && (
+                        <button onClick={() => setAttachedImage(null)} className="text-indigo-300 hover:text-red-400 transition-colors shrink-0">
+                          <X className="h-4 w-4" />
+                        </button>
+                      )}
                     </div>
                   ) : (
                     <label className={`flex items-center justify-center gap-2 border-2 border-dashed border-indigo-200 rounded-2xl py-3 text-indigo-500 hover:bg-indigo-50 transition-colors cursor-pointer text-xs font-medium ${uploadingImage ? "opacity-60 pointer-events-none" : ""}`}>
@@ -606,7 +616,7 @@ ${inputText}
                     className="w-full h-12 font-bold gap-2 rounded-xl text-white"
                     style={{ background: "linear-gradient(135deg,#6366f1,#8b5cf6)" }}
                     onClick={handleExtract}
-                    disabled={(!inputText.trim() && !attachedImage) || stage === "extracting"}>
+                    disabled={(!inputText.trim() && !attachedImage) || stage === "extracting" || attachedImage?.uploading}>
                     {stage === "extracting"
                       ? <><Loader2 className="h-4 w-4 animate-spin" /> Extracting items…</>
                       : <><Wand2 className="h-4 w-4" /> Extract Items with AI</>}
