@@ -1,8 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { base44 } from "@/api/base44Client";
 import { useParams, useNavigate } from "react-router-dom";
-import { ArrowLeft, Trash2, Printer, Send, Pencil, Share2, FileDown, MoreVertical, Upload, Copy, GitMerge, PenLine, CheckCircle2, Receipt, Truck, Sparkles } from "lucide-react";
-import LogoGenerator from "../components/LogoGenerator";
+import { ArrowLeft, Trash2, Printer, Send, Pencil, Share2, FileDown, MoreVertical, Upload, Copy, GitMerge, PenLine, CheckCircle2, Receipt, Truck } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -72,7 +71,6 @@ export default function ViewDocument() {
   const [showInlineSigPad, setShowInlineSigPad] = useState(false);
   const [convertTarget, setConvertTarget] = useState(null); // 'invoice' | 'receipt'
   const [previewScale, setPreviewScale] = useState(1);
-  const [showLogoStudio, setShowLogoStudio] = useState(false);
 
   useEffect(() => {
     const calcScale = () => {
@@ -308,13 +306,6 @@ export default function ViewDocument() {
     navigate("/documents?type=waybill");
   };
 
-  const handleLogoApply = async (logoUrl) => {
-    await base44.auth.updateMe({ logo_url: logoUrl });
-    setDoc(prev => ({ ...prev, logo_url: logoUrl }));
-    setShowLogoStudio(false);
-    toast.success("Logo updated!");
-  };
-
   const handleDelete = async () => {
     await base44.entities.Document.delete(docId);
     navigate("/documents");
@@ -402,9 +393,6 @@ export default function ViewDocument() {
           )}
           <Button variant="outline" size="sm" className="h-9 px-3" onClick={() => navigate(`/documents/new?edit=${docId}&type=${doc.type}`)}>
             <Pencil className="h-4 w-4" /><span className="hidden sm:inline ml-1.5">Edit</span>
-          </Button>
-          <Button variant="outline" size="sm" className="h-9 px-3 border-indigo-200 text-indigo-600 hover:bg-indigo-50" onClick={() => setShowLogoStudio(true)} title="Logo Studio">
-            <Sparkles className="h-4 w-4" /><span className="hidden sm:inline ml-1.5">Logo</span>
           </Button>
           <Button variant="outline" size="sm" className="hidden md:flex h-9" onClick={() => setShowPdfPreview(true)}>
             <FileDown className="h-4 w-4" /><span className="ml-1.5">PDF</span>
@@ -535,30 +523,6 @@ export default function ViewDocument() {
 
       {/* Document view — scaled to fit on mobile */}
       <div className="w-full overflow-x-hidden rounded-xl shadow-sm border border-border bg-white">
-
-      {/* Logo Studio access bar */}
-      <div className="flex items-center justify-between px-4 py-2.5 border-b border-border bg-muted/30 print:hidden">
-        <div className="flex items-center gap-3">
-          {doc.logo_url ? (
-            <img src={doc.logo_url} alt="Logo" className="h-9 w-9 object-contain rounded-lg border border-border bg-white p-0.5" />
-          ) : (
-            <div className="h-9 w-9 rounded-lg border-2 border-dashed border-indigo-200 bg-indigo-50 flex items-center justify-center">
-              <Sparkles className="h-4 w-4 text-indigo-300" />
-            </div>
-          )}
-          <div>
-            <p className="text-xs font-semibold text-foreground">{doc.logo_url ? "Company Logo" : "No logo yet"}</p>
-            <p className="text-[10px] text-muted-foreground">{doc.logo_url ? "Click to edit or replace" : "Add a logo with AI or upload"}</p>
-          </div>
-        </div>
-        <button
-          onClick={() => setShowLogoStudio(true)}
-          className="flex items-center gap-1.5 text-xs font-bold text-violet-700 border border-violet-200 rounded-lg px-3 py-1.5 hover:bg-violet-50 transition-colors"
-        >
-          <Sparkles className="h-3.5 w-3.5" /> Logo Studio ✨
-        </button>
-      </div>
-
       <ScaledDocument scale={previewScale}>
         <DocumentPreview
           form={doc}
@@ -641,12 +605,6 @@ export default function ViewDocument() {
           onSaved={handleDeliveryConfirmed}
         />
       )}
-
-      <LogoGenerator
-        open={showLogoStudio}
-        onClose={() => setShowLogoStudio(false)}
-        onApply={handleLogoApply}
-      />
 
       {convertTarget && (
         <ConvertDocumentModal
