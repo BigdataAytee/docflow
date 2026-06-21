@@ -22,6 +22,7 @@ import DocumentPreview from "../components/DocumentPreview";
 import LivePreviewScaled from "../components/LivePreviewScaled";
 import LayoutPickerStrip from "../components/LayoutPickerStrip";
 import PdfDocStage from "../components/PdfDocStage";
+import LogoGenerator from "../components/LogoGenerator";
 import { toast } from "sonner";
 
 const typeLabels = {
@@ -721,6 +722,7 @@ export default function CreateDocument() {
   // For the editor live preview scale (sidebar)
   const previewScale = Math.min(1, (Math.min(viewportWidth, 826) - 32) / 794);
   const [showMobileDesignPanel, setShowMobileDesignPanel] = useState(false);
+  const [showLogoStudio, setShowLogoStudio] = useState(false);
 
   const L = DOC_LABELS[docType] || DOC_LABELS.invoice;
 
@@ -1460,6 +1462,14 @@ export default function CreateDocument() {
               )}
               </div>
             </div>
+            <div className="px-3 pt-2 border-t border-white/10 shrink-0">
+              <button
+                onClick={() => setShowLogoStudio(true)}
+                className="w-full flex items-center gap-1.5 px-2.5 py-2 rounded-xl text-xs font-bold text-white/80 hover:text-white transition-all"
+                style={{ background: "linear-gradient(135deg,rgba(99,102,241,0.3),rgba(139,92,246,0.3))", border: "1px solid rgba(99,102,241,0.4)" }}>
+                <span>✦</span> Logo Studio
+              </button>
+            </div>
           </div>
 
           {/* ── Main area: full column with preview + mobile controls ── */}
@@ -1537,6 +1547,12 @@ export default function CreateDocument() {
               </div>
               {/* Layout + colour row */}
               <div className="flex items-center gap-2 px-3 py-2">
+                <button
+                  onClick={() => setShowLogoStudio(true)}
+                  className="shrink-0 flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-bold text-purple-300"
+                  style={{ background: "rgba(139,92,246,0.2)", border: "1px solid rgba(139,92,246,0.3)" }}>
+                  ✦ Logo
+                </button>
                 <button onClick={() => setShowMobileDesignPanel(!showMobileDesignPanel)}
               className="shrink-0 flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-bold text-white/80"
               style={{ background: showMobileDesignPanel ? "rgba(99,102,241,0.4)" : "rgba(99,102,241,0.2)", border: "1px solid rgba(99,102,241,0.3)" }}>
@@ -1575,6 +1591,13 @@ export default function CreateDocument() {
           }
 
           </div>
+
+          {/* Logo Studio */}
+          <LogoGenerator
+            open={showLogoStudio}
+            onClose={() => setShowLogoStudio(false)}
+            onApply={(url) => { setForm((f) => ({ ...f, logo_url: url })); setShowLogoStudio(false); }}
+          />
 
           {/* Inline Receiver Signature Overlay (waybill soft signage) */}
           {showInlineSigPad &&
