@@ -12,6 +12,24 @@ const SIG2_LABEL = { quotation: "Customer Acceptance", waybill: "Receiver's Sign
 
 const fmt = (n) => (n || 0).toLocaleString("en", { minimumFractionDigits: 2 });
 
+// Renders either an uploaded logo image or a text logo
+function LogoDisplay({ form, height = 80, maxWidth = 200, filter }) {
+  const size = form?.logo_size || 80;
+  if (form?.logo_type === "text" && form?.logo_text) {
+    return (
+      <div style={{ marginBottom: 8, display: "block" }}>
+        <span style={{ color: form.logo_text_color || "#4f46e5", fontSize: (form.logo_text_size || 24) * (size / 80), fontWeight: 900, lineHeight: 1.1, display: "inline-block" }}>
+          {form.logo_text}
+        </span>
+      </div>
+    );
+  }
+  if (form?.logo_url) {
+    return <img src={form.logo_url} alt="logo" style={{ height: size, maxWidth: size * 2.5, objectFit: "contain", display: "block", marginBottom: 8, filter }} />;
+  }
+  return null;
+}
+
 function ExtraFields({ form, docType, T }) {
   if (docType === "receipt") {
     const hasExtra = form.payment_method || form.transaction_id || form.reference_number;
@@ -247,7 +265,7 @@ function ClassicDoc({ form, items, calcs, sym, docType, managerSig, customerSig,
     <div style={{ background: "#fff", minHeight: 1123, display: "flex", flexDirection: "column" }}>
       <div style={{ background: T.headerBg, borderBottom: `2px solid ${T.accentColor}`, padding: "36px 48px", display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
         <div>
-          {form.logo_url ? <img src={form.logo_url} alt="logo" style={{ height: 110, maxWidth: 200, objectFit: "contain", display: "block", marginBottom: 8 }} /> : <div style={{ height: 8 }} />}
+          <LogoDisplay form={form} />
           <div style={{ fontWeight: 900, fontSize: 18, color: T.headerColor }}>{form.company_name || "Your Company"}</div>
           {form.company_description && <div style={{ fontSize: 10, marginTop: 4, fontWeight: 800, letterSpacing: 0.8, textAlign: "center", background: "linear-gradient(135deg, #f59e0b, #ef4444, #8b5cf6)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text", display: "inline-block", textTransform: "uppercase" }}>{form.company_description}</div>}
           {form.company_address && <div style={{ fontSize: 10, color: T.headerColor, opacity: 0.65, marginTop: 3, whiteSpace: "pre-line" }}>{form.company_address}</div>}

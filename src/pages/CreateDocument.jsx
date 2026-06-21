@@ -22,6 +22,7 @@ import DocumentPreview from "../components/DocumentPreview";
 import LivePreviewScaled from "../components/LivePreviewScaled";
 import LayoutPickerStrip from "../components/LayoutPickerStrip";
 import PdfDocStage from "../components/PdfDocStage";
+import LogoEditor from "../components/LogoEditor";
 import { toast } from "sonner";
 
 const typeLabels = {
@@ -575,6 +576,7 @@ export default function CreateDocument() {
   const [template, setTemplate] = useState("classic");
   const [templateColor, setTemplateColor] = useState("slate");
   const [templateFont, setTemplateFont] = useState("");
+  const [designTab, setDesignTab] = useState("colour"); // "colour" | "logo"
 
   // Auto-persist design changes so ViewDocument reflects them immediately
   const saveDesign = async (tmpl, color, font) => {
@@ -1440,26 +1442,44 @@ export default function CreateDocument() {
           </div>
 
           {/* ── Design controls panel — desktop only ── */}
-          <div className="hidden md:flex shrink-0 flex-col h-full overflow-hidden" style={{ width: 160, background: "linear-gradient(180deg,#0f172a 0%,#1e1b4b 100%)" }} onClick={(e) => e.stopPropagation()}>
+          <div className="hidden md:flex shrink-0 flex-col h-full overflow-hidden overflow-y-auto" style={{ width: 170, background: "linear-gradient(180deg,#0f172a 0%,#1e1b4b 100%)" }} onClick={(e) => e.stopPropagation()}>
             <div className="px-3 pt-4 pb-2.5 border-b border-white/10 shrink-0">
               <div className="flex items-center gap-1.5">
                 <Palette className="h-3.5 w-3.5 text-indigo-400" />
                 <span className="text-xs font-bold text-white tracking-wide">Design</span>
               </div>
             </div>
-            <div className="px-3 pt-2.5 pb-2 shrink-0">
-              <div className="flex items-center justify-between mb-2">
-                <p className="text-[9px] font-bold uppercase tracking-[0.15em] text-white/40">Colour</p>
-                <p className="text-[9px] text-indigo-300 font-semibold">{COLOR_SCHEMES[templateColor]?.name}</p>
-              </div>
-              <div className="flex flex-wrap gap-1.5">
-                {Object.values(COLOR_SCHEMES).map((c) =>
-              <button key={c.id} onClick={() => handleSetTemplateColor(c.id)} title={c.name}
-              className={`w-4 h-4 rounded-full border-2 transition-all hover:scale-110 ${templateColor === c.id ? "border-white scale-125 shadow-lg shadow-white/20" : "border-transparent"}`}
-              style={{ background: c.swatch }} />
-              )}
-              </div>
+            {/* Tab switcher */}
+            <div className="flex gap-0.5 px-2 pt-2 pb-1 shrink-0">
+              <button onClick={() => setDesignTab("colour")}
+                className={`flex-1 py-1 rounded-md text-[10px] font-bold transition-all ${designTab === "colour" ? "bg-indigo-500 text-white" : "text-white/40 hover:text-white/70"}`}>
+                Colour
+              </button>
+              <button onClick={() => setDesignTab("logo")}
+                className={`flex-1 py-1 rounded-md text-[10px] font-bold transition-all ${designTab === "logo" ? "bg-indigo-500 text-white" : "text-white/40 hover:text-white/70"}`}>
+                Logo
+              </button>
             </div>
+            {designTab === "colour" && (
+              <div className="px-3 pt-1.5 pb-2 shrink-0">
+                <div className="flex items-center justify-between mb-2">
+                  <p className="text-[9px] font-bold uppercase tracking-[0.15em] text-white/40">Colour</p>
+                  <p className="text-[9px] text-indigo-300 font-semibold">{COLOR_SCHEMES[templateColor]?.name}</p>
+                </div>
+                <div className="flex flex-wrap gap-1.5">
+                  {Object.values(COLOR_SCHEMES).map((c) =>
+                <button key={c.id} onClick={() => handleSetTemplateColor(c.id)} title={c.name}
+                className={`w-4 h-4 rounded-full border-2 transition-all hover:scale-110 ${templateColor === c.id ? "border-white scale-125 shadow-lg shadow-white/20" : "border-transparent"}`}
+                style={{ background: c.swatch }} />
+                )}
+                </div>
+              </div>
+            )}
+            {designTab === "logo" && (
+              <div className="px-2 pt-2 pb-3">
+                <LogoEditor form={form} setForm={setForm} />
+              </div>
+            )}
           </div>
 
           {/* ── Main area: full column with preview + mobile controls ── */}
@@ -1550,7 +1570,18 @@ export default function CreateDocument() {
                 style={{ background: c.swatch }} />
                 )}
                 </div>
+                <button onClick={() => setDesignTab(designTab === "logo" ? "colour" : "logo")}
+                  className="shrink-0 flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-bold text-white/80"
+                  style={{ background: designTab === "logo" ? "rgba(99,102,241,0.4)" : "rgba(99,102,241,0.2)", border: "1px solid rgba(99,102,241,0.3)" }}>
+                  🖼️ Logo
+                </button>
               </div>
+              {/* Mobile Logo editor tray */}
+              {designTab === "logo" && (
+                <div className="px-3 pb-3" style={{ background: "rgba(10,14,30,0.98)", borderTop: "1px solid rgba(255,255,255,0.08)" }} onClick={(e) => e.stopPropagation()}>
+                  <LogoEditor form={form} setForm={setForm} />
+                </div>
+              )}
             </div>
 
             {/* ── Mobile layout picker tray — always visible ── */}
