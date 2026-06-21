@@ -1,11 +1,11 @@
-import { useState, useRef, useEffect, useCallback } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
 import {
   Sparkles, X, ArrowRight, Check, ChevronLeft,
   FileText, FileCheck, Receipt, Truck, Loader2,
   Wand2, MessageSquare, ImagePlus, Camera,
-  ScanLine, ScanText, ZoomIn, Zap, CheckCircle2
+  ScanText, Plus
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -16,296 +16,34 @@ const DOC_TYPES = [
   { type: "waybill",   label: "Waybill",   icon: Truck,      gradient: "linear-gradient(135deg,#f59e0b,#d97706)", desc: "Track a delivery" },
 ];
 
-/* ─── Inline Camera Tab (kept for potential future use) ─────────────────── */
-function InlineCameraTab({ initialStream, onCapture, onUploading }) {
-  const videoRef = useRef(null);
-  const canvasRef = useRef(null);
-  const streamRef = useRef(null);
-
-  const [ready, setReady] = useState(false);
-  const [capturing, setCapturing] = useState(false);
-  const [flash, setFlash] = useState(false);
-  const [torch, setTorch] = useState(false);
-  const [torchOk, setTorchOk] = useState(false);
-  const [captured, setCaptured] = useState(null);
-  const [error, setError] = useState(null);
-
-  // Attach the stream passed in from the click handler
-  useEffect(() => {
-    let cancelled = false;
-
-    const attach = (stream) => {
-      if (cancelled) { stream.getTracks().forEach(t => t.stop()); return; }
-      streamRef.current = stream;
-      // Try to upgrade to max resolution
-      const track = stream.getVideoTracks()[0];
-      track.applyConstraints({
-        facingMode: { ideal: "environment" },
-        width: { ideal: 3840 }, height: { ideal: 2160 },
-      }).catch(() => {}).finally(() => {
-        if (videoRef.current && !cancelled) {
-          videoRef.current.srcObject = stream;
-          videoRef.current.onloadedmetadata = () => { if (!cancelled) setReady(true); };
-          videoRef.current.play().catch(() => {});
-        }
-        if (track.getCapabilities?.()?.torch) setTorchOk(true);
-      });
-    };
-
-    if (initialStream) {
-      attach(initialStream);
-    } else {
-      // Fallback: browser already granted permission (e.g. retake flow)
-      navigator.mediaDevices?.getUserMedia({
-        video: { facingMode: { ideal: "environment" }, width: { ideal: 1920 }, height: { ideal: 1080 } },
-        audio: false,
-      }).then(attach).catch(() => {
-        if (!cancelled) setError("Camera access denied. Please allow camera permission and try again.");
-      });
-    }
-
-    return () => {
-      cancelled = true;
-      // Do NOT stop the stream here — parent owns the stream lifecycle
-    };
-  }, []);
-
-  const toggleTorch = useCallback(async () => {
-    const track = streamRef.current?.getVideoTracks()[0];
-    if (!track) return;
-    const next = !torch;
-    await track.applyConstraints({ advanced: [{ torch: next }] });
-    setTorch(next);
-  }, [torch]);
-
-  const snap = useCallback(async () => {
-    if (!videoRef.current || !canvasRef.current || capturing) return;
-    setCapturing(true);
-    setFlash(true);
-    setTimeout(() => setFlash(false), 180);
-
-    const video = videoRef.current;
-    const canvas = canvasRef.current;
-    canvas.width = video.videoWidth;
-    canvas.height = video.videoHeight;
-    const ctx = canvas.getContext("2d");
-    ctx.drawImage(video, 0, 0);
-
-    // Auto-levels + sharpening
-    const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-    const d = imageData.data;
-    let min = 255, max = 0;
-    for (let i = 0; i < d.length; i += 4) {
-      const lum = 0.299 * d[i] + 0.587 * d[i + 1] + 0.114 * d[i + 2];
-      if (lum < min) min = lum;
-      if (lum > max) max = lum;
-    }
-    const range = max - min || 1;
-    for (let i = 0; i < d.length; i += 4) {
-      for (let c = 0; c < 3; c++) {
-        let v = (d[i + c] - min) / range;
-        v = v < 0.5 ? 2 * v * v : 1 - Math.pow(-2 * v + 2, 2) / 2;
-        d[i + c] = Math.min(255, Math.max(0, Math.round(v * 255)));
-      }
-    }
-    ctx.putImageData(imageData, 0, 0);
-
-    canvas.toBlob((blob) => {
-      const previewUrl = URL.createObjectURL(blob);
-      setCaptured({ blob, previewUrl });
-      setCapturing(false);
-      // Keep stream alive for retake — stopped only when tab unmounts
-    }, "image/jpeg", 0.97);
-  }, [capturing]);
-
-  const retake = () => {
-    if (captured?.previewUrl) URL.revokeObjectURL(captured.previewUrl);
-    setCaptured(null);
-    setReady(false);
-    setCapturing(false);
-    // Re-use existing stream if still alive, otherwise request again
-    if (streamRef.current?.active) {
-      if (videoRef.current) {
-        videoRef.current.srcObject = streamRef.current;
-        videoRef.current.onloadedmetadata = () => setReady(true);
-        videoRef.current.play().catch(() => {});
-      }
-    } else {
-      navigator.mediaDevices?.getUserMedia({
-        video: { facingMode: { ideal: "environment" }, width: { ideal: 1920 }, height: { ideal: 1080 } },
-        audio: false,
-      }).then((stream) => {
-        streamRef.current = stream;
-        if (videoRef.current) {
-          videoRef.current.srcObject = stream;
-          videoRef.current.onloadedmetadata = () => setReady(true);
-          videoRef.current.play().catch(() => {});
-        }
-      }).catch(() => setError("Camera unavailable."));
-    }
-  };
-
-  const useCapture = async () => {
-    if (!captured?.blob) return;
-    onUploading(true);
-    const file = new File([captured.blob], "scan.jpg", { type: "image/jpeg" });
-    const { file_url } = await base44.integrations.Core.UploadFile({ file });
-    onUploading(false);
-    onCapture({ url: file_url, name: "scan.jpg" });
-  };
-
-  if (error) return (
-    <div className="flex flex-col items-center justify-center gap-3 py-12 px-6 text-center">
-      <div className="w-14 h-14 rounded-2xl bg-red-50 flex items-center justify-center">
-        <Camera className="h-6 w-6 text-red-400" />
-      </div>
-      <p className="text-sm font-semibold text-foreground">Camera Unavailable</p>
-      <p className="text-xs text-muted-foreground">{error}</p>
-    </div>
-  );
-
-  // Preview after capture
-  if (captured) return (
-    <div className="flex flex-col gap-3 p-4">
-      <div className="relative rounded-2xl overflow-hidden border-2 border-indigo-200 shadow-lg">
-        <img src={captured.previewUrl} alt="captured" className="w-full object-contain max-h-64" />
-        <div className="absolute top-2 right-2 bg-emerald-500 text-white text-[10px] font-black px-2 py-0.5 rounded-full flex items-center gap-1">
-          <CheckCircle2 className="h-3 w-3" /> Captured
-        </div>
-      </div>
-      <p className="text-xs text-center text-muted-foreground">Looks good? Use this image or retake.</p>
-      <div className="flex gap-2">
-        <button onClick={retake}
-          className="flex-1 py-2.5 rounded-xl border border-border text-sm font-semibold text-muted-foreground hover:bg-muted/40 transition-colors">
-          ↩ Retake
-        </button>
-        <button onClick={useCapture}
-          className="flex-1 py-2.5 rounded-xl text-white text-sm font-bold transition-all active:scale-95"
-          style={{ background: "linear-gradient(135deg,#6366f1,#8b5cf6)" }}>
-          Use This Image ✓
-        </button>
-      </div>
-    </div>
-  );
-
-  return (
-    <div className="flex flex-col">
-      {/* Viewfinder */}
-      <div className="relative bg-black overflow-hidden" style={{ aspectRatio: "4/3" }}>
-        {/* Flash overlay */}
-        <div className="absolute inset-0 z-10 pointer-events-none transition-opacity duration-100"
-          style={{ background: "white", opacity: flash ? 0.85 : 0 }} />
-
-        {!ready && (
-          <div className="absolute inset-0 flex flex-col items-center justify-center gap-2">
-            <Loader2 className="h-8 w-8 text-white animate-spin" />
-            <p className="text-white/60 text-xs">Starting camera…</p>
-          </div>
-        )}
-
-        <video ref={videoRef} autoPlay playsInline muted
-          className="w-full h-full object-cover"
-          style={{ display: ready ? "block" : "none" }} />
-
-        <canvas ref={canvasRef} className="hidden" />
-
-        {/* Corner guides */}
-        {ready && (
-          <div className="absolute inset-0 pointer-events-none flex items-center justify-center">
-            <div className="relative w-4/5 h-4/5">
-              {[
-                { top: 0, left: 0, borderTop: "2px solid #6366f1", borderLeft: "2px solid #6366f1", borderRadius: "8px 0 0 0" },
-                { top: 0, right: 0, borderTop: "2px solid #6366f1", borderRight: "2px solid #6366f1", borderRadius: "0 8px 0 0" },
-                { bottom: 0, left: 0, borderBottom: "2px solid #6366f1", borderLeft: "2px solid #6366f1", borderRadius: "0 0 0 8px" },
-                { bottom: 0, right: 0, borderBottom: "2px solid #6366f1", borderRight: "2px solid #6366f1", borderRadius: "0 0 8px 0" },
-              ].map((s, i) => <div key={i} className="absolute w-7 h-7" style={s} />)}
-              {/* Scan line */}
-              <div className="absolute left-2 right-2 h-0.5 rounded-full"
-                style={{ background: "linear-gradient(90deg,transparent,#6366f1,#a5b4fc,#6366f1,transparent)", boxShadow: "0 0 8px rgba(99,102,241,0.9)", animation: "scanline 2.2s ease-in-out infinite" }} />
-            </div>
-          </div>
-        )}
-
-        {/* Torch button */}
-        {ready && torchOk && (
-          <button onClick={toggleTorch}
-            className={`absolute top-3 right-3 w-9 h-9 rounded-full flex items-center justify-center text-base transition-all z-20 ${torch ? "bg-yellow-400 text-black" : "bg-black/50 text-white"}`}>
-            <Zap className="h-4 w-4" />
-          </button>
-        )}
-
-        {/* Tip */}
-        {ready && (
-          <div className="absolute bottom-2 left-0 right-0 flex items-center justify-center gap-1 z-20">
-            <ScanLine className="h-3 w-3 text-indigo-300" />
-            <span className="text-[10px] text-white/60 font-medium">Good lighting • flat surface • fill the frame</span>
-          </div>
-        )}
-      </div>
-
-      {/* Capture button row */}
-      <div className="flex items-center justify-between px-6 py-4 bg-black/90">
-        <div className="flex items-center gap-1.5 text-white/30 text-[11px]">
-          <ZoomIn className="h-3.5 w-3.5" /><span>Pinch to zoom</span>
-        </div>
-        <button onClick={snap} disabled={!ready || capturing}
-          className="relative w-16 h-16 rounded-full flex items-center justify-center transition-all active:scale-90 disabled:opacity-40"
-          style={{ background: capturing ? "rgba(99,102,241,0.6)" : "white", boxShadow: "0 0 0 4px rgba(255,255,255,0.2)" }}>
-          {capturing
-            ? <Loader2 className="h-6 w-6 animate-spin text-indigo-500" />
-            : <Camera className="h-7 w-7 text-slate-800" />}
-        </button>
-        <div className="w-20" />
-      </div>
-
-      <style>{`
-        @keyframes scanline {
-          0%   { top: 6%;  opacity: 0; }
-          10%  { opacity: 1; }
-          90%  { opacity: 1; }
-          100% { top: 94%; opacity: 0; }
-        }
-      `}</style>
-    </div>
-  );
-}
-
-/* ─── Main Component ────────────────────────────────────────────────────── */
 export default function AIAssistant({ inlineTrigger = false }) {
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState("type"); // "type" | "scan"
   const [stage, setStage] = useState("idle"); // idle | input | extracting | confirm | doctype
   const [inputText, setInputText] = useState("");
   const [extractedItems, setExtractedItems] = useState([]);
   const [extractedNotes, setExtractedNotes] = useState("");
   const textareaRef = useRef(null);
 
-  const [attachedImage, setAttachedImage] = useState(null);
-  const [uploadingImage, setUploadingImage] = useState(false);
+  // Multiple images support
+  const [attachedImages, setAttachedImages] = useState([]); // [{ id, url, name, uploading }]
   const [scanHint, setScanHint] = useState(false);
   const imageInputRef = useRef(null);
   const cameraInputRef = useRef(null);
   const scanHintTimerRef = useRef(null);
 
-  const handleImageUpload = async (file) => {
+  const addImageFile = async (file, name = "image.jpg") => {
+    const id = Date.now() + Math.random();
     const localUrl = URL.createObjectURL(file);
-    setAttachedImage({ url: localUrl, name: file.name || "image.jpg", uploading: true });
-    const { file_url } = await base44.integrations.Core.UploadFile({ file });
-    URL.revokeObjectURL(localUrl);
-    setAttachedImage({ url: file_url, name: file.name || "image.jpg" });
-  };
-
-  const handleCameraScan = async (file) => {
-    if (!file) return;
-    // Show preview instantly using local object URL while uploading in background
-    const localUrl = URL.createObjectURL(file);
-    setAttachedImage({ url: localUrl, name: "scan.jpg", uploading: true });
-    setActiveTab("type");
+    setAttachedImages(prev => [...prev, { id, url: localUrl, name, uploading: true }]);
     if (stage === "idle") setStage("input");
     const { file_url } = await base44.integrations.Core.UploadFile({ file });
     URL.revokeObjectURL(localUrl);
-    setAttachedImage({ url: file_url, name: "scan.jpg" });
+    setAttachedImages(prev => prev.map(img => img.id === id ? { id, url: file_url, name, uploading: false } : img));
+  };
+
+  const removeImage = (id) => {
+    setAttachedImages(prev => prev.filter(img => img.id !== id));
   };
 
   const reset = () => {
@@ -313,8 +51,7 @@ export default function AIAssistant({ inlineTrigger = false }) {
     setInputText("");
     setExtractedItems([]);
     setExtractedNotes("");
-    setAttachedImage(null);
-    setActiveTab("type");
+    setAttachedImages([]);
     setScanHint(false);
   };
   const close = () => {
@@ -333,46 +70,47 @@ export default function AIAssistant({ inlineTrigger = false }) {
       if (stored) {
         const img = JSON.parse(stored);
         sessionStorage.removeItem("ai_scan_image");
-        setAttachedImage(img);
+        setAttachedImages([{ id: Date.now(), url: img.url, name: img.name || "scan.jpg", uploading: false }]);
         setOpen(true);
         setStage("input");
-        setActiveTab("type");
       }
     };
     window.addEventListener("open-ai-assistant-scan", handler);
     return () => window.removeEventListener("open-ai-assistant-scan", handler);
   }, []);
 
+  const anyUploading = attachedImages.some(img => img.uploading);
+  const readyImageUrls = attachedImages.filter(img => !img.uploading).map(img => img.url);
+
   const handleExtract = async () => {
-    if (!inputText.trim() && !attachedImage) return;
+    if (!inputText.trim() && attachedImages.length === 0) return;
     setStage("extracting");
-    const hasImage = !!attachedImage;
+    const hasImages = readyImageUrls.length > 0;
 
-    const basePrompt = hasImage
-      ? `You are an expert OCR and product/document data extraction AI. Analyze the attached image carefully.
+    const basePrompt = hasImages
+      ? `You are an expert OCR and product/document data extraction AI. Analyze the attached image(s) carefully.
 
-The image could be:
+Each image could be:
 A) A product or item (e.g. a packaged food, retail item, product label) — extract the product name and details as a line item.
 B) An invoice, receipt, or document with a table of items — extract every row from the table.
 C) A handwritten or printed list of goods/services.
 
 EXTRACTION RULES:
 1. If it is a PRODUCT IMAGE (no invoice table visible):
-   - description: the full product name (brand + variant, e.g. "Walkers Supreme Prawn Cocktail Crisps")
+   - description: the full product name (brand + variant)
    - quantity: 1
    - unit_price: 0 (price unknown from image)
-   - Add a note with any relevant details (size, flavour, brand).
 
 2. If it is a DOCUMENT/INVOICE with a table:
    - Extract EACH row: description, quantity (numeric), unit_price (plain number, strip currency symbols/commas).
    - unit_price = "Unit Price"/"Rate" column only — NOT "Amount"/"Total".
-   - Nigerian Naira: "N150,000" or "₦150,000" → 150000. Strip all letters, symbols, commas.
+   - Nigerian Naira: "N150,000" or "₦150,000" → 150000.
    - Skip subtotal, tax, and grand total rows.
    - Also extract: customer_name, document_number, document_date.
 
-3. If it is a LIST or MIXED content: extract every identifiable item with best-guess quantity and price.
+3. If multiple images are provided, combine ALL items from ALL images into one list.
 
-Always return at least ONE item — never return an empty items array. If unsure, describe what you see as the item description.
+Always return at least ONE item — never return an empty items array.
 ${inputText.trim() ? `\nAdditional context from user:\n"""\n${inputText}\n"""` : ""}`
       : `You are a precise invoice data extraction AI. Extract every line item from the text below.
 
@@ -389,7 +127,7 @@ ${inputText}
 
     const result = await base44.integrations.Core.InvokeLLM({
       prompt: basePrompt,
-      ...(hasImage ? { file_urls: [attachedImage.url] } : {}),
+      ...(hasImages ? { file_urls: readyImageUrls } : {}),
       model: "gemini_3_flash",
       response_json_schema: {
         type: "object",
@@ -450,14 +188,12 @@ ${inputText}
 
   return (
     <>
-      {/* Inline trigger — rendered in parent; floating trigger — rendered as fixed FAB */}
       {inlineTrigger ? triggerButton : (
         <div className="fixed z-40" style={{ bottom: "calc(72px + env(safe-area-inset-bottom, 0px))", right: 16 }}>
           {triggerButton}
         </div>
       )}
 
-      {/* Panel */}
       {open && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4"
           onClick={close}
@@ -480,7 +216,7 @@ ${inputText}
                   </div>
                   <div>
                     <h2 className="text-white font-bold text-base leading-tight">AI Document Assistant</h2>
-                    <p className="text-white/55 text-[11px]">Type, paste, or scan your document</p>
+                    <p className="text-white/55 text-[11px]">Type, paste, or snap multiple items</p>
                   </div>
                 </div>
                 <button onClick={close} className="p-2 rounded-xl bg-white/15 hover:bg-white/25 text-white transition-colors">
@@ -488,43 +224,10 @@ ${inputText}
                 </button>
               </div>
 
-              {/* Tabs — only visible in input stage */}
-              {!isInFlow && (
-                <div className="relative z-10 flex gap-1 bg-white/10 rounded-xl p-1">
-                  <button
-                    onClick={() => { setActiveTab("type"); if (stage === "idle") setStage("input"); }}
-                    className={`flex-1 py-2 rounded-lg text-xs font-bold transition-all duration-200 ${activeTab === "type" ? "bg-white text-indigo-700 shadow-sm" : "text-white/60 hover:text-white/90"}`}>
-                    ✏️ Type / Paste
-                  </button>
-                  <label
-                    className={`flex-1 py-2 rounded-lg text-xs font-bold transition-all duration-200 text-center cursor-pointer ${activeTab === "scan" ? "bg-white text-indigo-700 shadow-sm" : "text-white/60 hover:text-white/90"}`}
-                    onClick={() => {
-                      // Show hint only if camera doesn't open (no file selected after 3s)
-                      clearTimeout(scanHintTimerRef.current);
-                      scanHintTimerRef.current = setTimeout(() => setScanHint(true), 3000);
-                    }}
-                  >
-                    📷 Scan Document
-                    <input
-                      ref={cameraInputRef}
-                      type="file"
-                      accept="image/*"
-                      capture="environment"
-                      className="hidden"
-                      onChange={(e) => {
-                        clearTimeout(scanHintTimerRef.current);
-                        setScanHint(false);
-                        if (e.target.files[0]) handleCameraScan(e.target.files[0]);
-                      }}
-                    />
-                  </label>
-                </div>
-              )}
-
               {/* Step pills — only in flow steps */}
               {isInFlow && (
                 <div className="relative z-10 flex items-center gap-2">
-                  {["Paste", "Review", "Choose Type"].map((label, i) => (
+                  {["Input", "Review", "Choose Type"].map((label, i) => (
                     <div key={label} className="flex items-center gap-2">
                       <div className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold transition-all ${
                         i < stepIndex ? "bg-emerald-400 text-white"
@@ -544,16 +247,17 @@ ${inputText}
             {/* ── Scrollable Body ── */}
             <div className="overflow-y-auto flex-1">
 
-              {/* TYPE TAB — input stage */}
-              {!isInFlow && activeTab === "type" && (stage === "input" || stage === "extracting") && (
+              {/* INPUT STAGE */}
+              {!isInFlow && (stage === "input" || stage === "extracting") && (
                 <div className="p-5 space-y-4">
+
                   {scanHint && (
                     <div className="flex items-start gap-3 bg-amber-50 border border-amber-200 rounded-2xl px-4 py-3">
                       <span className="text-lg shrink-0">📷</span>
                       <div className="flex-1 min-w-0">
                         <p className="text-xs font-semibold text-amber-800">Camera didn't open?</p>
                         <p className="text-xs text-amber-700 mt-0.5 leading-relaxed">
-                          Your device may not support the scan shortcut. Instead, use <strong>"Attach image from gallery"</strong> below to pick a photo, or type / paste your document details here.
+                          Use <strong>"Add image from gallery"</strong> below instead, or type / paste your items here.
                         </p>
                       </div>
                       <button onClick={() => setScanHint(false)} className="text-amber-400 hover:text-amber-600 shrink-0">
@@ -571,56 +275,130 @@ ${inputText}
                     ref={textareaRef}
                     value={inputText}
                     onChange={(e) => setInputText(e.target.value)}
-                    rows={attachedImage ? 3 : 7}
+                    rows={attachedImages.length > 0 ? 3 : 6}
                     disabled={stage === "extracting"}
                     placeholder={"Examples:\n• 5 bags of cement @ ₦5,000 each\n• 2 hours plumbing service — bathroom\n\nOr paste any text — the AI will extract what matters!"}
                     className="w-full border border-border rounded-2xl px-4 py-3 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-indigo-400 bg-muted/20 placeholder:text-muted-foreground/50 disabled:opacity-60 leading-relaxed"
                   />
 
-                  {/* Image attachment preview */}
-                  {attachedImage ? (
-                    <div className="flex items-center gap-3 bg-indigo-50 border border-indigo-200 rounded-2xl px-4 py-3">
-                      <div className="w-12 h-12 rounded-xl overflow-hidden border border-indigo-200 shrink-0 relative">
-                        <img src={attachedImage.url} alt="attached" className="w-full h-full object-cover" />
-                        {attachedImage.uploading && (
-                          <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
-                            <Loader2 className="h-4 w-4 text-white animate-spin" />
+                  {/* Attached images grid */}
+                  {attachedImages.length > 0 && (
+                    <div className="space-y-2">
+                      <p className="text-xs font-semibold text-muted-foreground">
+                        {attachedImages.length} image{attachedImages.length !== 1 ? "s" : ""} attached — AI will scan all of them
+                      </p>
+                      <div className="flex flex-wrap gap-2">
+                        {attachedImages.map((img, i) => (
+                          <div key={img.id} className="relative w-20 h-20 rounded-xl overflow-hidden border-2 border-indigo-200 shrink-0 group">
+                            <img src={img.url} alt={`scan ${i + 1}`} className="w-full h-full object-cover" />
+                            {img.uploading ? (
+                              <div className="absolute inset-0 bg-black/50 flex flex-col items-center justify-center gap-1">
+                                <Loader2 className="h-4 w-4 text-white animate-spin" />
+                                <span className="text-[9px] text-white/80">Uploading…</span>
+                              </div>
+                            ) : (
+                              <>
+                                <div className="absolute top-1 left-1 bg-indigo-600 text-white text-[9px] font-bold w-4 h-4 rounded-full flex items-center justify-center">
+                                  {i + 1}
+                                </div>
+                                <button
+                                  onClick={() => removeImage(img.id)}
+                                  className="absolute top-1 right-1 w-5 h-5 rounded-full bg-black/60 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                                  <X className="h-3 w-3" />
+                                </button>
+                              </>
+                            )}
                           </div>
-                        )}
+                        ))}
+
+                        {/* Add more snap button */}
+                        <label
+                          className="w-20 h-20 rounded-xl border-2 border-dashed border-indigo-300 flex flex-col items-center justify-center gap-1 cursor-pointer hover:bg-indigo-50 transition-colors shrink-0"
+                          onClick={() => {
+                            clearTimeout(scanHintTimerRef.current);
+                            scanHintTimerRef.current = setTimeout(() => setScanHint(true), 3000);
+                          }}>
+                          <Plus className="h-5 w-5 text-indigo-400" />
+                          <span className="text-[10px] text-indigo-400 font-semibold text-center leading-tight">Snap<br/>more</span>
+                          <input
+                            type="file"
+                            accept="image/*"
+                            capture="environment"
+                            className="hidden"
+                            onChange={(e) => {
+                              clearTimeout(scanHintTimerRef.current);
+                              setScanHint(false);
+                              if (e.target.files[0]) addImageFile(e.target.files[0], "scan.jpg");
+                              e.target.value = "";
+                            }}
+                          />
+                        </label>
                       </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-xs font-semibold text-indigo-700 truncate">{attachedImage.name}</p>
-                        <p className="text-xs text-indigo-500 mt-0.5">
-                          {attachedImage.uploading ? "⏳ Uploading…" : attachedImage.name === "scan.jpg" ? "📷 Camera scan ready — AI will extract all text" : "AI will read text from this image"}
-                        </p>
-                      </div>
-                      {!attachedImage.uploading && (
-                        <button onClick={() => setAttachedImage(null)} className="text-indigo-300 hover:text-red-400 transition-colors shrink-0">
-                          <X className="h-4 w-4" />
-                        </button>
-                      )}
                     </div>
-                  ) : (
-                    <label className={`flex items-center justify-center gap-2 border-2 border-dashed border-indigo-200 rounded-2xl py-3 text-indigo-500 hover:bg-indigo-50 transition-colors cursor-pointer text-xs font-medium ${uploadingImage ? "opacity-60 pointer-events-none" : ""}`}>
-                      {uploadingImage ? <><Loader2 className="h-4 w-4 animate-spin" /> Uploading…</> : <><ImagePlus className="h-4 w-4" /> Attach image from gallery</>}
-                      <input ref={imageInputRef} type="file" accept="image/*" className="hidden"
-                        onChange={(e) => e.target.files[0] && handleImageUpload(e.target.files[0])} />
-                    </label>
                   )}
 
-                  <p className="text-xs text-muted-foreground">
-                    Type text, paste a list, or attach a photo — the AI will extract what matters.
-                  </p>
+                  {/* Action buttons when no images yet */}
+                  {attachedImages.length === 0 && (
+                    <div className="grid grid-cols-2 gap-2">
+                      {/* Camera snap */}
+                      <label
+                        className="flex flex-col items-center justify-center gap-1.5 border-2 border-dashed border-indigo-200 rounded-2xl py-4 text-indigo-500 hover:bg-indigo-50 transition-colors cursor-pointer"
+                        onClick={() => {
+                          clearTimeout(scanHintTimerRef.current);
+                          scanHintTimerRef.current = setTimeout(() => setScanHint(true), 3000);
+                        }}>
+                        <Camera className="h-5 w-5" />
+                        <span className="text-xs font-semibold">Snap a photo</span>
+                        <span className="text-[10px] text-indigo-400">Use camera</span>
+                        <input
+                          ref={cameraInputRef}
+                          type="file"
+                          accept="image/*"
+                          capture="environment"
+                          className="hidden"
+                          onChange={(e) => {
+                            clearTimeout(scanHintTimerRef.current);
+                            setScanHint(false);
+                            if (e.target.files[0]) addImageFile(e.target.files[0], "scan.jpg");
+                            e.target.value = "";
+                          }}
+                        />
+                      </label>
+
+                      {/* Gallery pick */}
+                      <label className="flex flex-col items-center justify-center gap-1.5 border-2 border-dashed border-indigo-200 rounded-2xl py-4 text-indigo-500 hover:bg-indigo-50 transition-colors cursor-pointer">
+                        <ImagePlus className="h-5 w-5" />
+                        <span className="text-xs font-semibold">From gallery</span>
+                        <span className="text-[10px] text-indigo-400">Pick an image</span>
+                        <input
+                          ref={imageInputRef}
+                          type="file"
+                          accept="image/*"
+                          className="hidden"
+                          onChange={(e) => {
+                            if (e.target.files[0]) addImageFile(e.target.files[0], e.target.files[0].name);
+                            e.target.value = "";
+                          }}
+                        />
+                      </label>
+                    </div>
+                  )}
 
                   <Button
                     className="w-full h-12 font-bold gap-2 rounded-xl text-white"
                     style={{ background: "linear-gradient(135deg,#6366f1,#8b5cf6)" }}
                     onClick={handleExtract}
-                    disabled={(!inputText.trim() && !attachedImage) || stage === "extracting" || attachedImage?.uploading}>
+                    disabled={(!inputText.trim() && attachedImages.length === 0) || stage === "extracting" || anyUploading}>
                     {stage === "extracting"
                       ? <><Loader2 className="h-4 w-4 animate-spin" /> Extracting items…</>
+                      : anyUploading
+                      ? <><Loader2 className="h-4 w-4 animate-spin" /> Uploading images…</>
                       : <><Wand2 className="h-4 w-4" /> Extract Items with AI</>}
                   </Button>
+
+                  <p className="text-xs text-muted-foreground text-center">
+                    Snap multiple items one by one — all images will be scanned together.
+                  </p>
                 </div>
               )}
 
@@ -631,9 +409,9 @@ ${inputText}
                     <p className="text-sm font-semibold">
                       Found {extractedItems.length} item{extractedItems.length !== 1 ? "s" : ""} — review & edit
                     </p>
-                    <button onClick={() => { setStage("input"); setActiveTab("type"); }}
+                    <button onClick={() => setStage("input")}
                       className="text-xs text-indigo-600 hover:underline flex items-center gap-1">
-                      <ChevronLeft className="h-3 w-3" /> Edit text
+                      <ChevronLeft className="h-3 w-3" /> Back
                     </button>
                   </div>
 
@@ -743,9 +521,9 @@ ${inputText}
               <p className="text-xs text-muted-foreground flex items-center gap-1.5">
                 <Sparkles className="h-3 w-3 text-indigo-400" /> Powered by AI
               </p>
-              {uploadingImage && (
+              {anyUploading && (
                 <p className="text-xs text-indigo-500 flex items-center gap-1.5 animate-pulse">
-                  <Loader2 className="h-3 w-3 animate-spin" /> Uploading image…
+                  <Loader2 className="h-3 w-3 animate-spin" /> Uploading…
                 </p>
               )}
             </div>
