@@ -346,19 +346,31 @@ export default function AIAssistant({ inlineTrigger = false }) {
     const hasImage = !!attachedImage;
 
     const basePrompt = hasImage
-      ? `You are an expert OCR and document data extraction AI. Carefully read the attached document image and extract every line item from any table or list present.
+      ? `You are an expert OCR and product/document data extraction AI. Analyze the attached image carefully.
 
-CRITICAL EXTRACTION RULES:
-1. Look for any table with columns like: S/N, QTY/Qty/Quantity, Description/Item, Unit Price/Rate, Amount/Total.
-2. For EACH row in the table extract:
-   - description: the full item name/description text
-   - quantity: the numeric quantity (e.g. 05 → 5)
-   - unit_price: the UNIT PRICE column value as a plain number (e.g. "N150,000" → 150000)
-3. unit_price is the "Unit Price" or "Rate" column — NOT the "Amount" or "Total" column.
-4. Nigerian Naira: "N150,000" or "₦150,000" → 150000. Strip all letters, symbols, commas.
-5. Do NOT skip any rows. Do NOT include subtotal, tax, or grand total rows.
-6. Also extract: customer_name, document_number, document_date, and notes.
-${inputText.trim() ? `\nAdditional context:\n"""\n${inputText}\n"""` : ""}`
+The image could be:
+A) A product or item (e.g. a packaged food, retail item, product label) — extract the product name and details as a line item.
+B) An invoice, receipt, or document with a table of items — extract every row from the table.
+C) A handwritten or printed list of goods/services.
+
+EXTRACTION RULES:
+1. If it is a PRODUCT IMAGE (no invoice table visible):
+   - description: the full product name (brand + variant, e.g. "Walkers Supreme Prawn Cocktail Crisps")
+   - quantity: 1
+   - unit_price: 0 (price unknown from image)
+   - Add a note with any relevant details (size, flavour, brand).
+
+2. If it is a DOCUMENT/INVOICE with a table:
+   - Extract EACH row: description, quantity (numeric), unit_price (plain number, strip currency symbols/commas).
+   - unit_price = "Unit Price"/"Rate" column only — NOT "Amount"/"Total".
+   - Nigerian Naira: "N150,000" or "₦150,000" → 150000. Strip all letters, symbols, commas.
+   - Skip subtotal, tax, and grand total rows.
+   - Also extract: customer_name, document_number, document_date.
+
+3. If it is a LIST or MIXED content: extract every identifiable item with best-guess quantity and price.
+
+Always return at least ONE item — never return an empty items array. If unsure, describe what you see as the item description.
+${inputText.trim() ? `\nAdditional context from user:\n"""\n${inputText}\n"""` : ""}`
       : `You are a precise invoice data extraction AI. Extract every line item from the text below.
 
 RULES:
