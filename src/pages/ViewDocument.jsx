@@ -1,7 +1,8 @@
 import { useState, useEffect, useRef } from "react";
 import { base44 } from "@/api/base44Client";
 import { useParams, useNavigate } from "react-router-dom";
-import { ArrowLeft, Trash2, Printer, Send, Pencil, Share2, FileDown, MoreVertical, Upload, Copy, GitMerge, PenLine, CheckCircle2, Receipt, Truck } from "lucide-react";
+import { ArrowLeft, Trash2, Printer, Send, Pencil, Share2, FileDown, MoreVertical, Upload, Copy, GitMerge, PenLine, CheckCircle2, Receipt, Truck, Sparkles } from "lucide-react";
+import LogoGenerator from "../components/LogoGenerator";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -71,6 +72,7 @@ export default function ViewDocument() {
   const [showInlineSigPad, setShowInlineSigPad] = useState(false);
   const [convertTarget, setConvertTarget] = useState(null); // 'invoice' | 'receipt'
   const [previewScale, setPreviewScale] = useState(1);
+  const [showLogoStudio, setShowLogoStudio] = useState(false);
 
   useEffect(() => {
     const calcScale = () => {
@@ -306,6 +308,13 @@ export default function ViewDocument() {
     navigate("/documents?type=waybill");
   };
 
+  const handleLogoApply = async (logoUrl) => {
+    await base44.auth.updateMe({ logo_url: logoUrl });
+    setDoc(prev => ({ ...prev, logo_url: logoUrl }));
+    setShowLogoStudio(false);
+    toast.success("Logo updated!");
+  };
+
   const handleDelete = async () => {
     await base44.entities.Document.delete(docId);
     navigate("/documents");
@@ -393,6 +402,9 @@ export default function ViewDocument() {
           )}
           <Button variant="outline" size="sm" className="h-9 px-3" onClick={() => navigate(`/documents/new?edit=${docId}&type=${doc.type}`)}>
             <Pencil className="h-4 w-4" /><span className="hidden sm:inline ml-1.5">Edit</span>
+          </Button>
+          <Button variant="outline" size="sm" className="h-9 px-3 border-indigo-200 text-indigo-600 hover:bg-indigo-50" onClick={() => setShowLogoStudio(true)} title="Logo Studio">
+            <Sparkles className="h-4 w-4" /><span className="hidden sm:inline ml-1.5">Logo</span>
           </Button>
           <Button variant="outline" size="sm" className="hidden md:flex h-9" onClick={() => setShowPdfPreview(true)}>
             <FileDown className="h-4 w-4" /><span className="ml-1.5">PDF</span>
@@ -605,6 +617,12 @@ export default function ViewDocument() {
           onSaved={handleDeliveryConfirmed}
         />
       )}
+
+      <LogoGenerator
+        open={showLogoStudio}
+        onClose={() => setShowLogoStudio(false)}
+        onApply={handleLogoApply}
+      />
 
       {convertTarget && (
         <ConvertDocumentModal
