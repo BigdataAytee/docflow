@@ -499,12 +499,10 @@ ${inputText}
       {/* Panel */}
       {open && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4"
-          onClick={close}
           style={{ background: "rgba(0,0,0,0.55)", backdropFilter: "blur(4px)" }}>
           <div
             className="w-full max-w-lg bg-white rounded-3xl shadow-2xl overflow-hidden"
-            style={{ maxHeight: "92dvh", display: "flex", flexDirection: "column" }}
-            onClick={(e) => e.stopPropagation()}>
+            style={{ maxHeight: "92dvh", display: "flex", flexDirection: "column" }}>
 
             {/* ── Header ── */}
             <div className="relative px-6 pt-5 pb-4 shrink-0 overflow-hidden"
