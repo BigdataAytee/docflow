@@ -713,24 +713,28 @@ ${inputText}
                   </div>
 
                   {/* Add item options */}
-                  <div className="flex gap-2">
-                    <button
-                      onClick={() => setExtractedItems(prev => [...prev, { description: "", quantity: 1, unit_price: 0 }])}
-                      className="flex-1 flex items-center justify-center gap-1.5 border-2 border-dashed border-indigo-200 rounded-2xl py-2.5 text-xs text-indigo-500 hover:bg-indigo-50 transition-colors font-medium">
-                      + Manual
-                    </button>
-                    <label className={`flex-1 flex items-center justify-center gap-1.5 border-2 border-dashed border-purple-200 rounded-2xl py-2.5 text-xs text-purple-500 hover:bg-purple-50 transition-colors font-medium cursor-pointer ${addingFromScan ? "opacity-60 pointer-events-none" : ""}`}>
-                      {addingFromScan ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <ImagePlus className="h-3.5 w-3.5" />}
-                      Gallery
-                      <input ref={addGalleryRef} type="file" accept="image/*" className="hidden"
-                        onChange={(e) => { if (e.target.files[0]) { handleAddFromImage(e.target.files[0]); e.target.value = ""; } }} />
-                    </label>
-                    <label className={`flex-1 flex items-center justify-center gap-1.5 border-2 border-dashed border-indigo-300 rounded-2xl py-2.5 text-xs text-indigo-600 hover:bg-indigo-50 transition-colors font-medium cursor-pointer ${addingFromScan ? "opacity-60 pointer-events-none" : ""}`}>
-                      {addingFromScan ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Camera className="h-3.5 w-3.5" />}
-                      Camera
-                      <input ref={addCameraRef} type="file" accept="image/*" capture="environment" className="hidden"
-                        onChange={(e) => { if (e.target.files[0]) { handleAddFromImage(e.target.files[0]); e.target.value = ""; } }} />
-                    </label>
+                  <div className="rounded-2xl border border-indigo-100 bg-indigo-50/60 p-3 space-y-2">
+                    <p className="text-xs font-semibold text-indigo-500 text-center">➕ Add another item</p>
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => setExtractedItems(prev => [...prev, { description: "", quantity: 1, unit_price: 0 }])}
+                        className="flex-1 flex flex-col items-center gap-1 bg-white border border-indigo-200 rounded-xl py-2.5 px-2 text-indigo-600 hover:bg-indigo-50 transition-colors shadow-sm">
+                        <span className="text-base">✏️</span>
+                        <span className="text-[11px] font-semibold">Type it in</span>
+                      </button>
+                      <label className={`flex-1 flex flex-col items-center gap-1 bg-white border border-purple-200 rounded-xl py-2.5 px-2 text-purple-600 hover:bg-purple-50 transition-colors shadow-sm cursor-pointer ${addingFromScan ? "opacity-60 pointer-events-none" : ""}`}>
+                        {addingFromScan ? <Loader2 className="h-4 w-4 animate-spin" /> : <span className="text-base">🖼️</span>}
+                        <span className="text-[11px] font-semibold">Scan from photo</span>
+                        <input ref={addGalleryRef} type="file" accept="image/*" className="hidden"
+                          onChange={(e) => { if (e.target.files[0]) { handleAddFromImage(e.target.files[0]); e.target.value = ""; } }} />
+                      </label>
+                      <label className={`flex-1 flex flex-col items-center gap-1 bg-white border border-indigo-300 rounded-xl py-2.5 px-2 text-indigo-700 hover:bg-indigo-50 transition-colors shadow-sm cursor-pointer ${addingFromScan ? "opacity-60 pointer-events-none" : ""}`}>
+                        {addingFromScan ? <Loader2 className="h-4 w-4 animate-spin" /> : <span className="text-base">📷</span>}
+                        <span className="text-[11px] font-semibold">Take a photo</span>
+                        <input ref={addCameraRef} type="file" accept="image/*" capture="environment" className="hidden"
+                          onChange={(e) => { if (e.target.files[0]) { handleAddFromImage(e.target.files[0]); e.target.value = ""; } }} />
+                      </label>
+                    </div>
                   </div>
 
                   {extractedNotes && (
