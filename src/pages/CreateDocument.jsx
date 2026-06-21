@@ -776,6 +776,23 @@ export default function CreateDocument() {
         {/* ── Left column: form sections ── */}
         <div className="lg:col-span-2 space-y-5">
 
+          {/* Logo Studio */}
+          <div className="bg-card rounded-2xl border border-border p-4 shadow-sm flex items-center justify-between gap-3" style={{ borderLeft: `3px solid #7c3aed` }}>
+            <div className="flex items-center gap-3">
+              {form.logo_url
+                ? <img src={form.logo_url} alt="logo" className="h-10 w-10 object-contain rounded-lg border border-border bg-white p-0.5 shrink-0" />
+                : <div className="h-10 w-10 rounded-lg border-2 border-dashed border-violet-200 bg-violet-50 flex items-center justify-center shrink-0"><Sparkles className="h-4 w-4 text-violet-300" /></div>
+              }
+              <div>
+                <p className="text-sm font-semibold">{form.logo_url ? "Company Logo" : "No logo set"}</p>
+                <p className="text-xs text-muted-foreground">{form.logo_url ? "Appears on your document" : "Add a logo to your document"}</p>
+              </div>
+            </div>
+            <button onClick={() => setShowLogoStudio(true)} className="flex items-center gap-1.5 text-xs font-bold text-violet-700 border border-violet-200 rounded-xl px-3 py-2 hover:bg-violet-50 transition-colors shrink-0">
+              <Sparkles className="h-3.5 w-3.5" /> Logo Studio ✨
+            </button>
+          </div>
+
           {/* Document Info */}
           <div className="bg-card rounded-2xl border border-border p-6 space-y-4 shadow-sm" style={{ borderLeft: `3px solid ${theme.accent}` }}>
             <div className="flex items-center gap-2">
