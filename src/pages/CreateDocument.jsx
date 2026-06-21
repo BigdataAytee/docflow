@@ -1048,6 +1048,23 @@ export default function CreateDocument() {
                                   <Trash2 className="h-4 w-4 text-muted-foreground" />
                                 </Button>
                               </div>
+                              {docType === "quotation" && (
+                                <div className="mt-1">
+                                  {item.image_url ? (
+                                    <div className="relative inline-block">
+                                      <img src={item.image_url} alt="item" className="h-20 w-20 object-cover rounded-lg border border-border shadow-sm" />
+                                      <button type="button" onClick={() => updateItem(i, "image_url", "")} className="absolute -top-1 -right-1 bg-destructive text-white rounded-full w-4 h-4 flex items-center justify-center">
+                                        <X className="h-2.5 w-2.5" />
+                                      </button>
+                                    </div>
+                                  ) : (
+                                    <label className="cursor-pointer flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors">
+                                      {uploadingItemImg[i] ? <span className="text-xs animate-pulse">Uploading…</span> : <><ImagePlus className="h-3.5 w-3.5" /> Add image</>}
+                                      <input type="file" accept="image/*" className="hidden" onChange={(e) => e.target.files[0] && handleItemImageUpload(i, e.target.files[0])} />
+                                    </label>
+                                  )}
+                                </div>
+                              )}
                               {L.showPrices ?
                         <div className="grid grid-cols-3 gap-2">
                                   <div><Label className="text-xs text-muted-foreground">{L.itemQty}</Label><Input value={item.quantity} onChange={(e) => updateItem(i, "quantity", sanitizeNumeric(e.target.value))} onKeyDown={numericOnly} onFocus={(e) => e.target.select()} placeholder="0" className="mt-1" /></div>
