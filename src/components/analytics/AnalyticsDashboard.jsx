@@ -148,9 +148,11 @@ export default function AnalyticsDashboard({ user }) {
     const map = {};
     filtered.filter(d => d.type === "invoice").forEach(d => {
       const name = d.customer_name || "Unknown";
-      if (!map[name]) map[name] = { name, revenue: 0, count: 0 };
-      map[name].revenue += d.total || 0;
-      map[name].count++;
+      const address = (d.customer_address || "").trim();
+      const key = `${name}|||${address}`;
+      if (!map[key]) map[key] = { name, address, revenue: 0, count: 0 };
+      map[key].revenue += d.total || 0;
+      map[key].count++;
     });
     return Object.values(map).sort((a, b) => b.revenue - a.revenue).slice(0, 8);
   }, [filtered]);
@@ -220,7 +222,7 @@ export default function AnalyticsDashboard({ user }) {
         totalDocs: filtered.length,
         invoiceRevenue: kpis.totalRevenue,
         topProduct: topProducts[0]?.name,
-        topCustomer: topCustomers[0]?.name,
+        topCustomer: topCustomers[0] ? `${topCustomers[0].name}${topCustomers[0].address ? ` (${topCustomers[0].address})` : ""}` : undefined,
         conversionRate: kpis.conversionRate.toFixed(1),
         outstanding: kpis.outstanding,
         monthGrowth: kpis.monthGrowth.toFixed(1),
@@ -383,19 +385,22 @@ export default function AnalyticsDashboard({ user }) {
                       {i + 1}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <div className="flex justify-between items-center mb-1">
-                        <p className="text-sm font-semibold truncate">{c.name}</p>
-                        <span className="text-xs font-bold ml-2 shrink-0" style={{ color: COLORS[i % COLORS.length] }}>
-                          {customerMode === "revenue" ? fmt(c.revenue, "₦") : `${c.count} doc${c.count !== 1 ? "s" : ""}`}
-                        </span>
-                      </div>
-                      <div className="h-1.5 rounded-full bg-muted overflow-hidden">
-                        <div className="h-full rounded-full transition-all duration-700"
-                          style={{ width: `${pct}%`, background: COLORS[i % COLORS.length] }} />
-                      </div>
-                      <p className="text-[10px] text-muted-foreground mt-0.5">
-                        {customerMode === "revenue" ? `${c.count} doc${c.count !== 1 ? "s" : ""}` : fmt(c.revenue, "₦")}
-                      </p>
+                     <div className="flex justify-between items-center mb-1">
+                       <p className="text-sm font-semibold truncate">{c.name}</p>
+                       <span className="text-xs font-bold ml-2 shrink-0" style={{ color: COLORS[i % COLORS.length] }}>
+                         {customerMode === "revenue" ? fmt(c.revenue, "₦") : `${c.count} doc${c.count !== 1 ? "s" : ""}`}
+                       </span>
+                     </div>
+                     {c.address ? (
+                       <p className="text-[10px] text-muted-foreground truncate mb-0.5">{c.address}</p>
+                     ) : null}
+                     <div className="h-1.5 rounded-full bg-muted overflow-hidden">
+                       <div className="h-full rounded-full transition-all duration-700"
+                         style={{ width: `${pct}%`, background: COLORS[i % COLORS.length] }} />
+                     </div>
+                     <p className="text-[10px] text-muted-foreground mt-0.5">
+                       {customerMode === "revenue" ? `${c.count} doc${c.count !== 1 ? "s" : ""}` : fmt(c.revenue, "₦")}
+                     </p>
                     </div>
                     <ChevronRight className="h-3.5 w-3.5 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity shrink-0" />
                   </div>

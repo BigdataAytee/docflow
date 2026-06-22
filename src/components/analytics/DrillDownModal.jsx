@@ -21,7 +21,7 @@ export default function DrillDownModal({ type, data, allDocs, onClose }) {
   const navigate = useNavigate();
 
   const relatedDocs = type === "customer"
-    ? allDocs.filter(d => d.customer_name === data.name)
+    ? allDocs.filter(d => d.customer_name === data.name && (d.customer_address || "").trim() === (data.address || "").trim())
     : allDocs.filter(d => (d.items || []).some(item => item.description === data.name));
 
   // Compute stats
@@ -62,6 +62,9 @@ export default function DrillDownModal({ type, data, allDocs, onClose }) {
           <div className="flex items-center justify-between mb-3">
             <div>
               <h3 className="font-bold text-white text-base truncate max-w-[280px]">{data.name}</h3>
+              {type === "customer" && data.address ? (
+                <p className="text-xs text-white/50 mt-0.5 truncate max-w-[280px]">{data.address}</p>
+              ) : null}
               <p className="text-xs text-white/50 mt-0.5 capitalize">
                 {type === "customer" ? "Customer breakdown" : "Product breakdown"}
               </p>
