@@ -84,7 +84,7 @@ describe('Draft saving is always allowed (§G)', () => {
   })
 
   it('never discards what was typed when validation fails', () => {
-    const typed = draftFor('invoice', { customerId: undefined })
+    const { customerId: _omitted, ...typed } = draftFor('invoice')
     const problems = validateForIssue(typed, ctx())
     expect(problems.some((p) => p.field === 'party')).toBe(true)
     expect(typed.lineItems).toHaveLength(1)

@@ -49,11 +49,20 @@ export default tseslint.config(
     rules: { 'docflow/no-hardcoded-type-name': 'error' },
   },
 
-  // The locale layer is where the words legitimately live. src/ui/tokens.ts
-  // holds identifiers only — hex colours and Tabler icon names, one of which
-  // is literally "receipt" — and by construction no user-visible text.
+  // Three exemptions, each because the file holds no user-visible text:
+  //  · the locale layer, which is where the words legitimately live;
+  //  · src/ui/tokens.ts — hex colours and Tabler icon names, one of which is
+  //    literally "receipt";
+  //  · test files, whose strings are test names, not shipped labels. The
+  //    rule's own coverage test in src/domain/locale/resolve.test.ts lints
+  //    fixtures through the ESLint API, so this does not weaken it.
   {
-    files: ['src/domain/locale/**/*.ts', 'src/ui/tokens.ts'],
+    files: [
+      'src/domain/locale/**/*.ts',
+      'src/ui/tokens.ts',
+      '**/*.test.ts',
+      '**/*.test.tsx',
+    ],
     rules: { 'docflow/no-hardcoded-type-name': 'off' },
   },
 
