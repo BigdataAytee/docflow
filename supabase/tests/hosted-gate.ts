@@ -67,10 +67,38 @@ async function applyMigrationsToHost(): Promise<boolean> {
   const db = new Client({ connectionString: dbUrl, ssl: { rejectUnauthorized: true } })
   await db.connect()
   try {
-    for (const file of migrationFiles()) {
-      await db.query(readFileSync(join(MIGRATIONS, file), 'utf8'))
+    const { rows: existing } = await db.query<{ present: boolean }>(
+      `select exists (
+         select 1 from information_schema.tables
+          where table_schema = 'public' and table_name = 'companies'
+       ) as present`,
+    )
+    const alreadyApplied = existing[0]?.present === true
+
+    // Never destructive by default: an already-migrated project is verified,
+    // not rebuilt. GATE_RESET=1 opts into a drop-and-recreate, which is for a
+    // scratch project only and will delete every row in public.
+    if (alreadyApplied && process.env.GATE_RESET === '1') {
+      await db.query('drop schema public cascade')
+      await db.query('create schema public')
     }
-    record('1. migrations applied to the hosted instance', 'pass', `${migrationFiles().length} files`)
+
+    if (!alreadyApplied || process.env.GATE_RESET === '1') {
+      for (const file of migrationFiles()) {
+        await db.query(readFileSync(join(MIGRATIONS, file), 'utf8'))
+      }
+      record(
+        '1. migrations applied to the hosted instance',
+        'pass',
+        `${migrationFiles().length} files`,
+      )
+    } else {
+      record(
+        '1. migrations applied to the hosted instance',
+        'pass',
+        'already applied — verifying in place (GATE_RESET=1 to rebuild)',
+      )
+    }
 
     // FORCE must survive the hosted apply — a hosted Postgres is still a
     // Postgres, but this is the clause the whole isolation boundary rests on.
