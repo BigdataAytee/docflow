@@ -94,6 +94,14 @@ export interface UiStrings {
     readonly noneBody: string
     readonly savedToCatalogue: string
   }
+  readonly design: {
+    readonly logoOn: string
+    readonly logoOff: string
+    readonly logoOnHint: string
+    readonly logoOffHint: string
+    readonly newTag: string
+    readonly chooseDesign: string
+  }
   readonly totals: {
     readonly subtotal: string
     readonly discount: string
@@ -186,6 +194,14 @@ const EN: UiStrings = {
     none: 'Nothing added yet',
     noneBody: 'Type what you are selling and it is saved for next time.',
     savedToCatalogue: 'Saved to your items',
+  },
+  design: {
+    logoOn: 'Logo on',
+    logoOff: 'Logo off',
+    logoOnHint: 'Your logo prints at the top of every design',
+    logoOffHint: 'Logo hidden — only your business name prints',
+    newTag: 'NEW',
+    chooseDesign: 'Choose a design',
   },
   totals: {
     subtotal: 'Subtotal',

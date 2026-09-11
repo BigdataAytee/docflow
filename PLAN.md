@@ -226,8 +226,20 @@ improvements 1-3 and 8-10.
       rows never split, and the totals-and-signature block lands on exactly one
       page with rows for company. A property test caught the first version
       overflowing the footer page with carried rows.
-- [ ] The page renderer (A4 proportions) and step 4's template strip
-- [ ] Native PDF output and share (§I, Phase 4 for the native bridge)
+- [x] **The page renderer** (`src/pdf/DocumentPage.tsx`) at A4 proportions. It
+      contains no branch about document type — every per-type decision was made
+      in `composeDocument` — so a delivery document renders money-free here
+      without this file knowing what a delivery document is. Tested across all
+      sixteen designs at once.
+- [x] **The logo holder** (`src/pdf/logo.ts`) as arithmetic, not a CSS
+      property, so §V's "logos never crop" is proved by a property test over
+      any aspect ratio, and holds in the native writer too.
+- [x] **Step 4 Design** — the one continuous strip of sixteen with no
+      original/new headings, NEW on exactly six, and the logo switch whose
+      `aria-pressed` and hint line can never contradict each other.
+- [ ] Step 5 Review (the A4 page plus the amber band — both parts now exist)
+- [ ] Native PDF output and share — needs the Capacitor bridge, **Phase 4**
+- [ ] Payments, receipts, per-type lists, Home, Settings essentials, onboarding
 - [ ] Payments + allocations, receipts
 - [ ] On-device PDFs, all sixteen templates
 - [ ] Per-type lists, Home, Settings essentials, onboarding
