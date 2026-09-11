@@ -34,9 +34,11 @@ jobs:
       - name: Lint
         run: npm run lint
 
-      # Blocking before merge: money property tests (fast-check) and
-      # lifecycle transition tests (CLAUDE.md).
-      - name: Money and lifecycle tests
+      # Blocking before merge: money property tests (fast-check), lifecycle
+      # transition tests, and — since Phase 3 — the sync chaos suite
+      # (CLAUDE.md: "Sync work additionally requires the chaos suite
+      # scenarios it touches").
+      - name: Money, lifecycle and sync chaos tests
         run: npm test
 
       - name: Build
