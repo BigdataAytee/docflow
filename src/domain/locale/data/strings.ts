@@ -94,6 +94,32 @@ export interface UiStrings {
     readonly noneBody: string
     readonly savedToCatalogue: string
   }
+  readonly lists: {
+    readonly eyebrow: string
+    readonly countLine: string
+    readonly newDocument: string
+    readonly searchIn: string
+    readonly none: string
+    readonly noneBody: string
+    readonly noMatch: string
+  }
+  readonly home: {
+    readonly outstanding: string
+    readonly receivedThisMonth: string
+    readonly nothingOutstanding: string
+    readonly nothingReceived: string
+    readonly needsAttention: string
+    readonly overdueBy: string
+    readonly inTransit: string
+    readonly chase: string
+    readonly sign: string
+    readonly greetingMorning: string
+    readonly greetingAfternoon: string
+    readonly greetingEvening: string
+    readonly searchEverything: string
+    readonly addLogo: string
+    readonly logOut: string
+  }
   readonly payments: {
     readonly paidOfTotal: string
     readonly amountLeft: string
@@ -209,6 +235,32 @@ const EN: UiStrings = {
     none: 'Nothing added yet',
     noneBody: 'Type what you are selling and it is saved for next time.',
     savedToCatalogue: 'Saved to your items',
+  },
+  lists: {
+    eyebrow: 'DOCUMENTS',
+    countLine: '{count} {label}',
+    newDocument: '+ New {label}',
+    searchIn: 'Search {label}…',
+    none: 'Nothing here yet',
+    noneBody: 'Make your first one — it takes a minute.',
+    noMatch: 'Nothing matched that search.',
+  },
+  home: {
+    outstanding: 'Outstanding',
+    receivedThisMonth: 'Received this month',
+    nothingOutstanding: 'Nothing owed',
+    nothingReceived: 'Nothing yet',
+    needsAttention: 'Needs attention',
+    overdueBy: 'Overdue · {amount}',
+    inTransit: 'On its way',
+    chase: 'Chase',
+    sign: 'Sign',
+    greetingMorning: 'Good morning',
+    greetingAfternoon: 'Good afternoon',
+    greetingEvening: 'Good evening',
+    searchEverything: 'Search everything',
+    addLogo: 'Tap to add your logo',
+    logOut: 'Log out',
   },
   payments: {
     paidOfTotal: '{paid} paid of {total}',

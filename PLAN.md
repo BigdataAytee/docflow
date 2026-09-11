@@ -256,11 +256,29 @@ improvements 1-3 and 8-10.
       recording a payment, which is §G's "never writes a bare flag" made
       structural. `receiptDraftFor` derives a receipt from a payment that
       already exists, and there is no path that creates one without.
-- [ ] Per-type lists, Home, Settings essentials, onboarding
+- [x] **Home and the per-type lists** — exactly two stat cards with one line
+      per currency, four tiles in the active terminology, the truthful
+      connectivity pill, and "needs attention" capped at three. One page per
+      type with the localised hero, type-named search, and no amount column on
+      a delivery row. Sixteen tests on the stats alone, one per clause of §G's
+      paragraph, because each clause is a way the number could be wrong.
+- [ ] Settings essentials (region & language, company, tax, payment methods,
+      saved items, signature) and onboarding (§R)
+- [ ] Voice and Scan controls on Home — **Phase 6**, deliberately absent
+      rather than rendered dead (§N)
 - [ ] Improvements 1-3 and 8-10
 - [ ] Payments + allocations, receipts
 - [ ] On-device PDFs, all sixteen templates
-- [ ] Per-type lists, Home, Settings essentials, onboarding
+- [x] **Home and the per-type lists** — exactly two stat cards with one line
+      per currency, four tiles in the active terminology, the truthful
+      connectivity pill, and "needs attention" capped at three. One page per
+      type with the localised hero, type-named search, and no amount column on
+      a delivery row. Sixteen tests on the stats alone, one per clause of §G's
+      paragraph, because each clause is a way the number could be wrong.
+- [ ] Settings essentials (region & language, company, tax, payment methods,
+      saved items, signature) and onboarding (§R)
+- [ ] Voice and Scan controls on Home — **Phase 6**, deliberately absent
+      rather than rendered dead (§N)
 - [ ] Improvements 1-3 and 8-10
 
 ### Needs a human
