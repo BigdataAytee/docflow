@@ -127,6 +127,16 @@ export interface UiStrings {
     readonly defaultSignature: string
     readonly signatureHint: string
   }
+  readonly conflict: {
+    readonly title: string
+    readonly body: string
+    readonly seeBoth: string
+    readonly useMine: string
+    readonly useTheirs: string
+    readonly bothSaved: string
+    readonly mine: string
+    readonly theirs: string
+  }
   readonly firstRun: {
     readonly title: string
     readonly body: string
@@ -309,6 +319,17 @@ const EN: UiStrings = {
     usedTimes: 'used {count}×',
     defaultSignature: 'Default signature',
     signatureHint: 'Signs new documents unless you draw a different one.',
+  },
+  conflict: {
+    // §L7: plain language, in the active language. No "merge", no "revision".
+    title: '{person} changed this too',
+    body: 'You both edited the same thing while apart.',
+    seeBoth: 'See both',
+    useMine: 'Use mine',
+    useTheirs: 'Use theirs',
+    bothSaved: 'Both versions are saved until you choose.',
+    mine: 'Yours',
+    theirs: 'Theirs',
   },
   firstRun: {
     title: 'Make your first document',

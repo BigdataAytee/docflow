@@ -14,7 +14,8 @@ claims nothing the gates have not proven (§X).
 | --- | --- | --- | --- |
 | **0** | Spikes and reconciliation | tier table + logo rung published; PLAN reconciled; terminology drafts in review; money tests green | **in progress** — spikes need devices |
 | **1** | Foundation | cross-company denial; money/transition/label property tests; encrypted SQLite; auth ≤ legacy taps | **code complete, gate NOT passed** — 2 of 4 clauses unverifiable here (see below) |
-| **2** | Core offline app | the airplane-mode walk-through on a physical device | **in progress** |
+| **2** | Core offline app | the airplane-mode walk-through on a physical device | **code complete** — gate needs a device |
+| **3** | Sync | five offline documents arrive once; two-device edits retain both; no chaos scenario double-counts, resurrects or alters a frozen label | **code complete** — gate verified at logic level |
 | 2 | Core offline app | the airplane-mode walk-through, fresh install, physical device | not started |
 | 2.5 | Remaining improvements | each §L behaviour verified offline | not started |
 | 3 | Sync | five offline documents arrive once, unique references, through a mid-sync kill | not started |
@@ -409,6 +410,56 @@ Needing a device or a later phase, and therefore NOT claimed:
 
 ---
 
+## Phase 3 — detail
+
+### Done
+
+- [x] **The durable outbox** — a record write and its pending upload commit
+      together or not at all; a failed write queues nothing, so nothing can
+      show "Saved" that did not save. An operation is uploaded when the SERVER
+      says so, never when the network merely looked available.
+- [x] **Operations carry all four of** idempotency key, entity version, actor
+      and device id, because each prevents a specific failure and none is
+      optional.
+- [x] **Revision-based conflicts** — disjoint edits to a draft merge silently;
+      same-field edits retain both versions behind the §L7 chooser; recorded
+      money, issued documents and frozen fields are refused outright rather
+      than offered as a choice.
+- [x] **Transactional pull** with a cursor that advances only after the batch
+      is applied, so a crash between the two cannot lose changes silently.
+- [x] **Assets** verify their hash after transfer and resume from an offset; a
+      corrupt arrival restarts rather than rebuilding the same bad file.
+- [x] **Numbering reservations** — a device spends a held block offline and
+      falls back to a device-qualified reference when it runs out, never to
+      waiting for the network.
+- [x] **Account isolation on the device** — logout locks the store rather than
+      deleting it, and opening it for another account is an error.
+- [x] **The chaos suite**, all six §Q scenarios, blocking in CI.
+
+### The Phase 3 gate — assessed honestly
+
+All four §Q clauses are verified, at the logic level:
+
+| §Q clause | Result |
+| --- | --- |
+| Five offline documents arrive once with unique references despite a mid-sync kill and retry | ✅ |
+| Two-device same-field edits retain both versions | ✅ |
+| No chaos scenario double-counts money, resurrects a deletion, or alters a frozen label | ✅ |
+| Cross-account isolation still holds | ✅ |
+
+What that does NOT yet mean, and is therefore not claimed:
+
+- [ ] **The scenarios run against an injected sender, not the real Supabase
+      endpoint.** Wiring the transport and re-running them against the hosted
+      project is Phase 5 work.
+- [ ] **Persistence is in memory.** The outbox surviving a real force-kill
+      depends on the encrypted SQLite build, which is **Phase 4** on a device.
+
+So the sync RULES are proven and the sync PLUMBING is not. That distinction is
+the whole difference between a passing gate and a green test run.
+
+---
+
 ## Decisions taken
 
 | # | Decision | Why | Where |
@@ -435,6 +486,7 @@ Needing a device or a later phase, and therefore NOT claimed:
 | 21 | A stale session keeps the app usable and only pauses sync | Rule #3 — offline is the product. Signing a user out because a refresh failed would make a network blip look like data loss. No auth state, `signed_out` included, authorises deleting local work (§M). | `src/data/supabase/auth.ts` |
 | 22 | The Rule-5 lint rule treats `-` and `_` as part of a word | `file-invoice` (a Tabler icon), `invoice_title` (an i18n key) and `invoice-list` (a test id) are identifiers, not display text. Flagging them trains people to add exemptions, which is how a rule stops being believed. "New Invoice" and "Delivery note" still fail, verified by probe. | `tools/eslint` |
 | 23 | The offline reference is `INV-0042-K3` — a two-character device tag, added only when the number did **not** come from a server-reserved block | §M left the format open and asked for "short, prefix-consistent, customer-presentable". A suffix keeps the prefix and number shape a customer already recognises, and appears only on the offline exception rather than on every document, so it reads as part of the number rather than as machinery. Asking the server for a number before issuing would have been the alternative, and that breaks Rule #3. The alphabet excludes I, L, O and U so nothing reads as a digit, and the tag is derived deterministically from the device id because a reference must never change after issue. | `reference.ts` |
+| 24 | The hand-rolled outbox is built; PowerSync is a Phase 4 evaluation | §C prefers PowerSync but §W requires it "validated against the chosen encrypted SQLite configuration" first, and that configuration does not exist until Phase 4 puts it on a device. Building the documented fallback now keeps Phase 3 moving without pre-judging the evaluation. §M forbids two replay engines, so if PowerSync passes its evaluation this outbox is REMOVED, not run alongside — the interfaces are deliberately narrow to make that a deletion rather than a disentangling. | `src/sync/outbox.ts` |
 | 18 | The lint rule is asserted *inside* the property test, not only in CI | §Q words the gate as "no hardcoded type-name string survives a lint rule written for it". Running ESLint in-process makes that a test that fails on a planted string, with a second case proving the rule still matches so the first cannot pass vacuously. | `resolve.test.ts` |
 
 ## Deviations from the spec
