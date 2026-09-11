@@ -1,60 +1,57 @@
-import globals from "globals";
-import pluginJs from "@eslint/js";
-import pluginReact from "eslint-plugin-react";
-import pluginReactHooks from "eslint-plugin-react-hooks";
-import pluginUnusedImports from "eslint-plugin-unused-imports";
+import js from '@eslint/js'
+import globals from 'globals'
+import tseslint from 'typescript-eslint'
+import docflow from './tools/eslint/no-hardcoded-type-name.js'
 
-export default [
+export default tseslint.config(
+  // /legacy is read-only reference (CLAUDE.md). Never linted, never built.
+  { ignores: ['dist', 'legacy', 'node_modules', 'coverage'] },
+
+  js.configs.recommended,
+  ...tseslint.configs.recommended,
+
   {
-    files: [
-      "src/components/**/*.{js,mjs,cjs,jsx}",
-      "src/pages/**/*.{js,mjs,cjs,jsx}",
-      "src/Layout.jsx",
-    ],
-    ignores: ["src/lib/**/*", "src/components/ui/**/*"],
-    ...pluginJs.configs.recommended,
-    ...pluginReact.configs.flat.recommended,
+    files: ['**/*.{ts,tsx}'],
     languageOptions: {
+      ecmaVersion: 2022,
       globals: globals.browser,
-      parserOptions: {
-        ecmaVersion: 2022,
-        sourceType: "module",
-        ecmaFeatures: {
-          jsx: true,
-        },
-      },
     },
-    settings: {
-      react: {
-        version: "detect",
-      },
-    },
-    plugins: {
-      react: pluginReact,
-      "react-hooks": pluginReactHooks,
-      "unused-imports": pluginUnusedImports,
-    },
+    plugins: { docflow },
     rules: {
-      "no-unused-vars": "off",
-      "react/jsx-uses-vars": "error",
-      "react/jsx-uses-react": "error",
-      "unused-imports/no-unused-imports": "error",
-      "unused-imports/no-unused-vars": [
-        "warn",
+      '@typescript-eslint/no-unused-vars': [
+        'error',
+        { argsIgnorePattern: '^_', varsIgnorePattern: '^_' },
+      ],
+      // Rule #3 — UI never imports a DB client (§C architecture rules).
+      'no-restricted-imports': [
+        'error',
         {
-          vars: "all",
-          varsIgnorePattern: "^_",
-          args: "after-used",
-          argsIgnorePattern: "^_",
+          patterns: [
+            {
+              group: ['**/data/sqlite/*', '**/data/supabase/*', '@supabase/*', '@powersync/*'],
+              message:
+                'UI and domain code must go through src/data/repositories — never a DB client directly (v6 §C).',
+            },
+          ],
         },
       ],
-      "react/prop-types": "off",
-      "react/react-in-jsx-scope": "off",
-      "react/no-unknown-property": [
-        "error",
-        { ignore: ["cmdk-input-wrapper", "toast-close"] },
-      ],
-      "react-hooks/rules-of-hooks": "error",
     },
   },
-];
+
+  // Rule #5 — one word everywhere. Presentation code may not carry type names.
+  {
+    files: ['src/features/**/*.{ts,tsx}', 'src/pdf/**/*.{ts,tsx}', 'src/app/**/*.{ts,tsx}'],
+    rules: { 'docflow/no-hardcoded-type-name': 'error' },
+  },
+
+  // The locale layer is where the words legitimately live.
+  {
+    files: ['src/domain/locale/**/*.ts'],
+    rules: { 'docflow/no-hardcoded-type-name': 'off' },
+  },
+
+  {
+    files: ['tools/**/*.js', '*.config.js', '*.config.ts'],
+    languageOptions: { globals: globals.node },
+  },
+)
