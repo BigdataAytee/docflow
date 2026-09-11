@@ -192,7 +192,21 @@ improvements 1-3 and 8-10.
       the §G guarantee that draft saving is never blocked. Problems are
       returned as tokens carrying their step index, so the review screen's
       amber band resolves the words and can link back.
-- [ ] Customer and builder screens (React), against the memory repositories
+- [x] **UI string catalogue** (`src/domain/locale/data/strings.ts`) — the
+      words around the terminology, looked up by LANGUAGE while terminology is
+      looked up by REGION, so §S's French-speaking business in Lagos gets FR
+      strings with EN-NG document names. A language with no catalogue throws
+      rather than serving English under another flag.
+- [x] **The customers screen** — skeleton, two distinct empty states (none yet
+      vs nothing matched), search across name/phone/email/address, and one
+      balance chip per currency. Nine tests, including that a part payment
+      shows ₦95,000 owed and that NGN and USD appear as separate chips.
+- [x] **The builder shell and review band** — coloured per-type header, the
+      five-segment step bar, Back/Next becoming "Save {label}", and the amber
+      band resolving problem tokens into the active language with a link back
+      to each step. Fifteen tests, including that the same document titles
+      itself "Waybill" in EN-NG and "Delivery note" in EN-GB.
+- [ ] The five step bodies (Details, Items, Totals, Design, Review)
 - [ ] Payments + allocations, receipts
 - [ ] On-device PDFs, all sixteen templates
 - [ ] Per-type lists, Home, Settings essentials, onboarding
