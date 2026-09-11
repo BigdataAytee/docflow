@@ -212,9 +212,22 @@ improvements 1-3 and 8-10.
       payment card, a delivery document has a delivery address and no price
       field anywhere. Nineteen tests, most of them holding §V's "delivery
       documents never show prices, tax, totals or payment instructions".
-- [ ] Step 4 Design (the §H sixteen-template strip) and step 5 Review, which
-      both need the PDF layer
-- [ ] The PDF layer itself (§H, §I) — sixteen templates, on-device
+- [x] **The PDF composition model** (`src/pdf/compose.ts`) — §I expressed as
+      data rather than markup, so §V's guarantees are testable: a delivery
+      document has `totals: null` and `paymentBox: null` **by construction**,
+      and no template can render money onto one however it is styled. An issued
+      document composes from its frozen labels and language, so a later region
+      change never reaches a shared PDF.
+- [x] **The sixteen designs** (`src/pdf/templates.ts`) — ten original, six new,
+      Bloom and Aria present and Noir absent per §H. A template is style only;
+      it never decides what appears on the page. An unknown design throws
+      rather than falling back, which would change how an issued PDF looks.
+- [x] **Pagination** (`src/pdf/paginate.ts`) — headings repeat on every page,
+      rows never split, and the totals-and-signature block lands on exactly one
+      page with rows for company. A property test caught the first version
+      overflowing the footer page with carried rows.
+- [ ] The page renderer (A4 proportions) and step 4's template strip
+- [ ] Native PDF output and share (§I, Phase 4 for the native bridge)
 - [ ] Payments + allocations, receipts
 - [ ] On-device PDFs, all sixteen templates
 - [ ] Per-type lists, Home, Settings essentials, onboarding
