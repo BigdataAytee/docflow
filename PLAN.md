@@ -13,7 +13,8 @@ claims nothing the gates have not proven (§X).
 | Phase | Scope | Gate | State |
 | --- | --- | --- | --- |
 | **0** | Spikes and reconciliation | tier table + logo rung published; PLAN reconciled; terminology drafts in review; money tests green | **in progress** — spikes need devices |
-| **1** | Foundation | cross-company denial; money/transition/label property tests; encrypted SQLite; auth ≤ legacy taps | **in progress** — code complete; hosted verification blocked by egress policy, encrypted SQLite deferred to Phase 4 |
+| **1** | Foundation | cross-company denial; money/transition/label property tests; encrypted SQLite; auth ≤ legacy taps | **code complete, gate NOT passed** — 2 of 4 clauses unverifiable here (see below) |
+| **2** | Core offline app | the airplane-mode walk-through on a physical device | **in progress** |
 | 2 | Core offline app | the airplane-mode walk-through, fresh install, physical device | not started |
 | 2.5 | Remaining improvements | each §L behaviour verified offline | not started |
 | 3 | Sync | five offline documents arrive once, unique references, through a mid-sync kill | not started |
@@ -124,28 +125,39 @@ not start until they are.
 
 ### Open
 
-- [ ] **Run the hosted gate.** BLOCKED — not by credentials, by this
-      environment's egress policy. Every Supabase host is denied at the proxy:
-      `request blocked: no rule or allowlist entry allows host
-      "<project>.supabase.co"` (HTTP 403 to CONNECT). `supabase.com` and
-      `api.supabase.com` are denied identically; `api.github.com` and the npm
-      registry are allowed, so this is a host allowlist, not a network fault.
-      Raw TCP to 5432/6543 is unavailable too. The proxy README is explicit
-      that a 403 must be reported rather than routed around.
-- [ ] **A DDL credential.** Independent of the egress block, and it would bite
-      anyway: PostgREST cannot run DDL, so the anon and service-role keys
-      cannot apply migrations. That needs `SUPABASE_DB_URL` (the database
-      password, from Settings → Database → Connection string) or a Management
-      API token. `gate:hosted` reports step 1 as **skipped** when it is unset,
-      rather than quietly assuming the schema is there.
+- [ ] **Run the hosted gate.** Attempted twice, both paths closed.
+
+      *From the agent container:* every Supabase host is denied at the egress
+      proxy — `request blocked: no rule or allowlist entry allows host
+      "<project>.supabase.co"`, HTTP 403 to CONNECT. `api.github.com` and the
+      npm registry are allowed, so this is a host allowlist, not a network
+      fault. Raw TCP to 5432/6543 is unavailable too.
+
+      *From GitHub Actions* (run 34611070598, where egress is unrestricted):
+      `Missing repository secrets: VITE_SUPABASE_URL VITE_SUPABASE_ANON_KEY
+      SUPABASE_SERVICE_ROLE_KEY SUPABASE_DB_URL` — all four are unset.
+
+      The one action that unblocks it: add those four as repository secrets
+      under Settings → Secrets and variables → Actions, then dispatch
+      **Phase 1 gate (hosted)**. Everything else is built and waiting.
 - [ ] **Encrypted SQLite opens on device** — DEFERRED TO PHASE 4, where the
       native shell and a physical device exist. It is a §Q Phase 1 gate clause,
       so Phase 1 stays formally unpassed until Phase 4 closes it.
 
-**The Phase 1 gate is not passed.** Green: cross-company denial (against a
-local Postgres), the money and transition property tests, label resolution,
-repository contracts, §J field sets. Not green: the hosted run of the same
-denial suite, the live auth clauses, and encrypted SQLite.
+### Phase 1 gate — recorded honestly
+
+| §Q clause | Result |
+| --- | --- |
+| Two seeded companies cannot read or write each other | ✅ verified, local Postgres — 15 tests, blocking in CI |
+| Money and transition property tests pass | ✅ verified — 113 tests, blocking in CI |
+| Label resolution passes its own property test; no hardcoded type name survives the lint rule | ✅ verified, both halves |
+| Encrypted SQLite opens on device | ⏸ **deferred to Phase 4** — needs the native shell and a physical device |
+| Login / register / Google / reset in ≤ legacy tap counts | ⛔ **unverified** — code complete, no reachable instance |
+| *(self-imposed)* the same denial suite against the hosted instance | ⛔ **unverified** — same reason |
+
+**The Phase 1 gate is NOT passed.** Three clauses verified, one deferred to
+Phase 4, two unverifiable until the project is reachable. Nothing here is
+recorded as passing on local evidence when the clause asks about the host.
 
 ## Decisions taken
 
@@ -174,6 +186,15 @@ denial suite, the live auth clauses, and encrypted SQLite.
 | 18 | The lint rule is asserted *inside* the property test, not only in CI | §Q words the gate as "no hardcoded type-name string survives a lint rule written for it". Running ESLint in-process makes that a test that fails on a planted string, with a second case proving the rule still matches so the first cannot pass vacuously. | `resolve.test.ts` |
 
 ## Deviations from the spec
+
+**Phase 2 began before the Phase 1 gate passed.** Directed by the owner, and
+recorded rather than left silent. It is survivable because Phase 2's scope —
+customers, the four builders, payments, receipts, on-device PDFs, share,
+signatures, lists, Home, Settings essentials, onboarding — is offline-first by
+definition (Rule #3) and runs against the in-memory and SQLite repositories.
+None of it reads Supabase Auth. The two unverified Phase 1 clauses are carried
+forward and must close before Phase 5 (web + public links), which is the first
+phase that genuinely needs the hosted instance.
 
 **Phase 1 began before the Phase 0 gate passed.** §Q and CLAUDE.md both say a
 phase does not start until the prior gate does, and Phase 0's tier table and
