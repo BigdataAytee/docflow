@@ -237,7 +237,16 @@ improvements 1-3 and 8-10.
 - [x] **Step 4 Design** — the one continuous strip of sixteen with no
       original/new headings, NEW on exactly six, and the logo switch whose
       `aria-pressed` and hint line can never contradict each other.
-- [ ] Step 5 Review (the A4 page plus the amber band — both parts now exist)
+- [x] **Step 5 Review** — the amber band above a still-readable A4 page, each
+      missing item linking back to its step, and the preview being the real
+      composition rather than a mock-up (a delivery document previews
+      money-free; an issued one previews in its frozen wording).
+- [x] **The issue command** (`issue.ts`) — reference, frozen labels and totals
+      freeze together as one immutable value, so a half-issued document cannot
+      be persisted. Issuing twice is refused by the lifecycle rather than
+      minting a second reference.
+- [x] **The §M device-qualified reference design task, now closed.** See
+      decision 23.
 - [ ] Native PDF output and share — needs the Capacitor bridge, **Phase 4**
 - [ ] Payments, receipts, per-type lists, Home, Settings essentials, onboarding
 - [ ] Payments + allocations, receipts
@@ -278,6 +287,7 @@ improvements 1-3 and 8-10.
 | 20 | The DB-client import ban is lifted for `src/data/supabase` and `src/data/sqlite` only | Those directories are what `src/data/repositories` exists to hide; everywhere else, `src/app`, `src/features`, `src/pdf` and the whole domain layer included, still cannot import one. Verified by probe. | `eslint.config.js` |
 | 21 | A stale session keeps the app usable and only pauses sync | Rule #3 — offline is the product. Signing a user out because a refresh failed would make a network blip look like data loss. No auth state, `signed_out` included, authorises deleting local work (§M). | `src/data/supabase/auth.ts` |
 | 22 | The Rule-5 lint rule treats `-` and `_` as part of a word | `file-invoice` (a Tabler icon), `invoice_title` (an i18n key) and `invoice-list` (a test id) are identifiers, not display text. Flagging them trains people to add exemptions, which is how a rule stops being believed. "New Invoice" and "Delivery note" still fail, verified by probe. | `tools/eslint` |
+| 23 | The offline reference is `INV-0042-K3` — a two-character device tag, added only when the number did **not** come from a server-reserved block | §M left the format open and asked for "short, prefix-consistent, customer-presentable". A suffix keeps the prefix and number shape a customer already recognises, and appears only on the offline exception rather than on every document, so it reads as part of the number rather than as machinery. Asking the server for a number before issuing would have been the alternative, and that breaks Rule #3. The alphabet excludes I, L, O and U so nothing reads as a digit, and the tag is derived deterministically from the device id because a reference must never change after issue. | `reference.ts` |
 | 18 | The lint rule is asserted *inside* the property test, not only in CI | §Q words the gate as "no hardcoded type-name string survives a lint rule written for it". Running ESLint in-process makes that a test that fails on a planted string, with a second case proving the rule still matches so the first cannot pass vacuously. | `resolve.test.ts` |
 
 ## Deviations from the spec
@@ -314,9 +324,9 @@ Added by Phase 0:
 - **Bank-field definitions (§J) are not yet in code.** They are Phase 1 data,
   and §W holds them open for per-market validation. Nothing has been invented
   ahead of that review.
-- **The device-qualified reference format (§M "Design task")** — short,
-  prefix-consistent, customer-presentable, explained in one line in Settings —
-  is still to be designed. It blocks Phase 3, not Phase 1.
+- ~~The device-qualified reference format (§M "Design task")~~ — **closed**,
+  see decision 23. `INV-0042` from a reserved block, `INV-0042-K3` when issued
+  offline.
 
 Added by Phase 1:
 
