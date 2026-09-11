@@ -37,6 +37,17 @@ const pattern = new RegExp(
   'iu',
 )
 
+/**
+ * The four INTERNAL type tokens. §D: "a delivery document is always
+ * `type: \"waybill\"` in the database everywhere on Earth". Code has to switch
+ * on these, so a string literal whose whole value is one of them exactly, in
+ * lowercase, is the discriminant and not display text.
+ *
+ * Deliberately narrow: only `Literal` nodes qualify. JSX text and template
+ * literals are display by construction, so `<div>invoice</div>` still fails.
+ */
+const INTERNAL_TYPE_TOKENS = new Set(['invoice', 'quotation', 'receipt', 'waybill'])
+
 /** @type {import('eslint').Rule.RuleModule} */
 export const noHardcodedTypeName = {
   meta: {
@@ -60,7 +71,9 @@ export const noHardcodedTypeName = {
     }
     return {
       Literal(node) {
-        if (typeof node.value === 'string') check(node, node.value)
+        if (typeof node.value !== 'string') return
+        if (INTERNAL_TYPE_TOKENS.has(node.value)) return
+        check(node, node.value)
       },
       TemplateElement(node) {
         check(node, node.value.raw)

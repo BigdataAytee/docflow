@@ -181,8 +181,18 @@ improvements 1-3 and 8-10.
 
 ### Next
 
-- [ ] Customers (list, contact page, balances, history, notes)
-- [ ] The four builders, five steps each, names per type
+- [x] **Customer balances** (`src/features/customers/balance.ts`) — billed,
+      paid, credited, owing and progress, one balance per currency because §G
+      forbids adding them; plus "pays on average N days late", which stays
+      silent below a two-invoice sample rather than dressing up one data point
+      as a pattern. A property test holds paid + owing + credited == billed for
+      any ledger, so the three figures on screen cannot disagree.
+- [x] **The builder rules** (`src/features/documents/builder.ts`) — five steps
+      named per type through the locale layer, per-type issue validation, and
+      the §G guarantee that draft saving is never blocked. Problems are
+      returned as tokens carrying their step index, so the review screen's
+      amber band resolves the words and can link back.
+- [ ] Customer and builder screens (React), against the memory repositories
 - [ ] Payments + allocations, receipts
 - [ ] On-device PDFs, all sixteen templates
 - [ ] Per-type lists, Home, Settings essentials, onboarding
