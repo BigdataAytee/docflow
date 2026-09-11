@@ -200,6 +200,30 @@ describe('No hardcoded type name survives the lint rule (§Q Phase 1 gate)', () 
     expect(violations).toEqual([])
   }, 60_000)
 
+  it('tells display text from internal tokens and identifiers', async () => {
+    // The rule has been refined twice against real code; these pin what it
+    // must and must not flag, so a third refinement cannot quietly widen the
+    // hole. Internal discriminants (§D: type is always "waybill" in the
+    // database) and identifiers are code; anything a user could read is not.
+    const eslint = new ESLint({ cwd: process.cwd() })
+    const lint = async (source: string): Promise<boolean> => {
+      const [result] = await eslint.lintText(source, { filePath: 'src/features/__probe.tsx' })
+      return (result?.messages ?? []).some((m) => m.ruleId === 'docflow/no-hardcoded-type-name')
+    }
+
+    // Display text — must be reported.
+    expect(await lint('export const a = <div>New Invoice</div>')).toBe(true)
+    expect(await lint('export const a = <span>invoice</span>')).toBe(true)
+    expect(await lint('export const a = `Create a Waybill`')).toBe(true)
+    expect(await lint("export const a = 'Delivery note'")).toBe(true)
+
+    // Code — must not be.
+    expect(await lint("export const a: string = 'invoice'")).toBe(false)
+    expect(await lint("export const a = 'invoice-list'")).toBe(false)
+    expect(await lint("export const a = 'invoice_title'")).toBe(false)
+    expect(await lint("export const a = 'file-invoice'")).toBe(false)
+  }, 60_000)
+
   it('still bites — a literal type name is reported', async () => {
     // Guards the guard: if the rule silently stopped matching, the assertion
     // above would pass vacuously and the gate would mean nothing.

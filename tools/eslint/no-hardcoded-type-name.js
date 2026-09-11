@@ -28,10 +28,25 @@ const FORBIDDEN = [
   'HOW TO PAY', 'RECEIVED BY',
 ]
 
+// Hyphens and underscores count as part of a word, so identifiers like
+// `file-invoice` (a Tabler icon), `invoice_title` (an i18n key) or
+// `invoice-list` (a test id) are not display text and do not match. A real
+// hardcoded label — "Invoice", "New Invoice", "Delivery note" — still does.
 const pattern = new RegExp(
-  `(^|[^\\p{L}])(${FORBIDDEN.map((w) => w.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|')})([^\\p{L}]|$)`,
+  `(^|[^\\p{L}\\-_])(${FORBIDDEN.map((w) => w.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|')})([^\\p{L}\\-_]|$)`,
   'iu',
 )
+
+/**
+ * The four INTERNAL type tokens. §D: "a delivery document is always
+ * `type: \"waybill\"` in the database everywhere on Earth". Code has to switch
+ * on these, so a string literal whose whole value is one of them exactly, in
+ * lowercase, is the discriminant and not display text.
+ *
+ * Deliberately narrow: only `Literal` nodes qualify. JSX text and template
+ * literals are display by construction, so `<div>invoice</div>` still fails.
+ */
+const INTERNAL_TYPE_TOKENS = new Set(['invoice', 'quotation', 'receipt', 'waybill'])
 
 /** @type {import('eslint').Rule.RuleModule} */
 export const noHardcodedTypeName = {
@@ -56,7 +71,9 @@ export const noHardcodedTypeName = {
     }
     return {
       Literal(node) {
-        if (typeof node.value === 'string') check(node, node.value)
+        if (typeof node.value !== 'string') return
+        if (INTERNAL_TYPE_TOKENS.has(node.value)) return
+        check(node, node.value)
       },
       TemplateElement(node) {
         check(node, node.value.raw)

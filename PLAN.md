@@ -13,7 +13,8 @@ claims nothing the gates have not proven (§X).
 | Phase | Scope | Gate | State |
 | --- | --- | --- | --- |
 | **0** | Spikes and reconciliation | tier table + logo rung published; PLAN reconciled; terminology drafts in review; money tests green | **in progress** — spikes need devices |
-| **1** | Foundation | cross-company denial; money/transition/label property tests; encrypted SQLite; auth ≤ legacy taps | **in progress** — code complete; hosted verification blocked by egress policy, encrypted SQLite deferred to Phase 4 |
+| **1** | Foundation | cross-company denial; money/transition/label property tests; encrypted SQLite; auth ≤ legacy taps | **code complete, gate NOT passed** — 2 of 4 clauses unverifiable here (see below) |
+| **2** | Core offline app | the airplane-mode walk-through on a physical device | **in progress** |
 | 2 | Core offline app | the airplane-mode walk-through, fresh install, physical device | not started |
 | 2.5 | Remaining improvements | each §L behaviour verified offline | not started |
 | 3 | Sync | five offline documents arrive once, unique references, through a mid-sync kill | not started |
@@ -124,28 +125,289 @@ not start until they are.
 
 ### Open
 
-- [ ] **Run the hosted gate.** BLOCKED — not by credentials, by this
-      environment's egress policy. Every Supabase host is denied at the proxy:
-      `request blocked: no rule or allowlist entry allows host
-      "<project>.supabase.co"` (HTTP 403 to CONNECT). `supabase.com` and
-      `api.supabase.com` are denied identically; `api.github.com` and the npm
-      registry are allowed, so this is a host allowlist, not a network fault.
-      Raw TCP to 5432/6543 is unavailable too. The proxy README is explicit
-      that a 403 must be reported rather than routed around.
-- [ ] **A DDL credential.** Independent of the egress block, and it would bite
-      anyway: PostgREST cannot run DDL, so the anon and service-role keys
-      cannot apply migrations. That needs `SUPABASE_DB_URL` (the database
-      password, from Settings → Database → Connection string) or a Management
-      API token. `gate:hosted` reports step 1 as **skipped** when it is unset,
-      rather than quietly assuming the schema is there.
+- [ ] **Run the hosted gate.** Attempted twice, both paths closed.
+
+      *From the agent container:* every Supabase host is denied at the egress
+      proxy — `request blocked: no rule or allowlist entry allows host
+      "<project>.supabase.co"`, HTTP 403 to CONNECT. `api.github.com` and the
+      npm registry are allowed, so this is a host allowlist, not a network
+      fault. Raw TCP to 5432/6543 is unavailable too.
+
+      *From GitHub Actions* (run 34611070598, where egress is unrestricted):
+      `Missing repository secrets: VITE_SUPABASE_URL VITE_SUPABASE_ANON_KEY
+      SUPABASE_SERVICE_ROLE_KEY SUPABASE_DB_URL` — all four are unset.
+
+      The one action that unblocks it: add those four as repository secrets
+      under Settings → Secrets and variables → Actions, then dispatch
+      **Phase 1 gate (hosted)**. Everything else is built and waiting.
 - [ ] **Encrypted SQLite opens on device** — DEFERRED TO PHASE 4, where the
       native shell and a physical device exist. It is a §Q Phase 1 gate clause,
       so Phase 1 stays formally unpassed until Phase 4 closes it.
 
-**The Phase 1 gate is not passed.** Green: cross-company denial (against a
-local Postgres), the money and transition property tests, label resolution,
-repository contracts, §J field sets. Not green: the hosted run of the same
-denial suite, the live auth clauses, and encrypted SQLite.
+### Phase 1 gate — recorded honestly
+
+| §Q clause | Result |
+| --- | --- |
+| Two seeded companies cannot read or write each other | ✅ verified, local Postgres — 15 tests, blocking in CI |
+| Money and transition property tests pass | ✅ verified — 113 tests, blocking in CI |
+| Label resolution passes its own property test; no hardcoded type name survives the lint rule | ✅ verified, both halves |
+| Encrypted SQLite opens on device | ⏸ **deferred to Phase 4** — needs the native shell and a physical device |
+| Login / register / Google / reset in ≤ legacy tap counts | ⛔ **unverified** — code complete, no reachable instance |
+| *(self-imposed)* the same denial suite against the hosted instance | ⛔ **unverified** — same reason |
+
+**The Phase 1 gate is NOT passed.** Three clauses verified, one deferred to
+Phase 4, two unverifiable until the project is reachable. Nothing here is
+recorded as passing on local evidence when the clause asks about the host.
+
+## Phase 2 — detail
+
+Scope per §Q: customers · the four builders · payments + allocations ·
+receipts · on-device PDFs (all sixteen templates) · native share · signatures ·
+the per-type lists · Home · Settings essentials · onboarding (§R) ·
+improvements 1-3 and 8-10.
+
+### Done
+
+- [x] **The shared component library** (§Q: "the shared component library
+      first"): `src/ui` - PageHeader, StatusBadge with the single colour map,
+      EmptyState, Skeleton/SkeletonList, LineItemRow, ConnectivityPill.
+      Tested on the two invariants that carry real risk: every stored and
+      derived status maps to an explicit tone with no silent fallthrough, and
+      the connectivity pill never calls pending work uploaded merely because
+      the device is online (§M - server acknowledgement completes an upload).
+- [x] **§F design tokens as one map each** - type palette keyed by the internal
+      type, so a delivery document is amber under every regional name; status
+      tones from one map so no surface invents a colour.
+
+### Next
+
+- [x] **Customer balances** (`src/features/customers/balance.ts`) — billed,
+      paid, credited, owing and progress, one balance per currency because §G
+      forbids adding them; plus "pays on average N days late", which stays
+      silent below a two-invoice sample rather than dressing up one data point
+      as a pattern. A property test holds paid + owing + credited == billed for
+      any ledger, so the three figures on screen cannot disagree.
+- [x] **The builder rules** (`src/features/documents/builder.ts`) — five steps
+      named per type through the locale layer, per-type issue validation, and
+      the §G guarantee that draft saving is never blocked. Problems are
+      returned as tokens carrying their step index, so the review screen's
+      amber band resolves the words and can link back.
+- [x] **UI string catalogue** (`src/domain/locale/data/strings.ts`) — the
+      words around the terminology, looked up by LANGUAGE while terminology is
+      looked up by REGION, so §S's French-speaking business in Lagos gets FR
+      strings with EN-NG document names. A language with no catalogue throws
+      rather than serving English under another flag.
+- [x] **The customers screen** — skeleton, two distinct empty states (none yet
+      vs nothing matched), search across name/phone/email/address, and one
+      balance chip per currency. Nine tests, including that a part payment
+      shows ₦95,000 owed and that NGN and USD appear as separate chips.
+- [x] **The builder shell and review band** — coloured per-type header, the
+      five-segment step bar, Back/Next becoming "Save {label}", and the amber
+      band resolving problem tokens into the active language with a link back
+      to each step. Fifteen tests, including that the same document titles
+      itself "Waybill" in EN-NG and "Delivery note" in EN-GB.
+- [x] **Step 1 Details, step 2 Items, step 3 Totals** — with the per-type
+      differences §G spells out enforced by structure rather than by a flag: a
+      receipt has date-paid and no due date, a quotation has valid-until and no
+      payment card, a delivery document has a delivery address and no price
+      field anywhere. Nineteen tests, most of them holding §V's "delivery
+      documents never show prices, tax, totals or payment instructions".
+- [x] **The PDF composition model** (`src/pdf/compose.ts`) — §I expressed as
+      data rather than markup, so §V's guarantees are testable: a delivery
+      document has `totals: null` and `paymentBox: null` **by construction**,
+      and no template can render money onto one however it is styled. An issued
+      document composes from its frozen labels and language, so a later region
+      change never reaches a shared PDF.
+- [x] **The sixteen designs** (`src/pdf/templates.ts`) — ten original, six new,
+      Bloom and Aria present and Noir absent per §H. A template is style only;
+      it never decides what appears on the page. An unknown design throws
+      rather than falling back, which would change how an issued PDF looks.
+- [x] **Pagination** (`src/pdf/paginate.ts`) — headings repeat on every page,
+      rows never split, and the totals-and-signature block lands on exactly one
+      page with rows for company. A property test caught the first version
+      overflowing the footer page with carried rows.
+- [x] **The page renderer** (`src/pdf/DocumentPage.tsx`) at A4 proportions. It
+      contains no branch about document type — every per-type decision was made
+      in `composeDocument` — so a delivery document renders money-free here
+      without this file knowing what a delivery document is. Tested across all
+      sixteen designs at once.
+- [x] **The logo holder** (`src/pdf/logo.ts`) as arithmetic, not a CSS
+      property, so §V's "logos never crop" is proved by a property test over
+      any aspect ratio, and holds in the native writer too.
+- [x] **Step 4 Design** — the one continuous strip of sixteen with no
+      original/new headings, NEW on exactly six, and the logo switch whose
+      `aria-pressed` and hint line can never contradict each other.
+- [x] **Step 5 Review** — the amber band above a still-readable A4 page, each
+      missing item linking back to its step, and the preview being the real
+      composition rather than a mock-up (a delivery document previews
+      money-free; an issued one previews in its frozen wording).
+- [x] **The issue command** (`issue.ts`) — reference, frozen labels and totals
+      freeze together as one immutable value, so a half-issued document cannot
+      be persisted. Issuing twice is refused by the lifecycle rather than
+      minting a second reference.
+- [x] **The §M device-qualified reference design task, now closed.** See
+      decision 23.
+- [ ] Native PDF output and share — needs the Capacitor bridge, **Phase 4**
+- [x] **Payments and receipts** — `recordPayment` with the §K rules (over-payment
+      becomes customer credit, a payment may stand alone with no invoice), the
+      paid-so-far bar's three figures, the payments list with a per-payment
+      Receipt button, and the sheet prefilled to the balance. There is
+      deliberately no `markPaid(invoiceId)` anywhere: settling an invoice IS
+      recording a payment, which is §G's "never writes a bare flag" made
+      structural. `receiptDraftFor` derives a receipt from a payment that
+      already exists, and there is no path that creates one without.
+- [x] **Home and the per-type lists** — exactly two stat cards with one line
+      per currency, four tiles in the active terminology, the truthful
+      connectivity pill, and "needs attention" capped at three. One page per
+      type with the localised hero, type-named search, and no amount column on
+      a delivery row. Sixteen tests on the stats alone, one per clause of §G's
+      paragraph, because each clause is a way the number could be wrong.
+- [x] **Settings → Region & language** — one country choice settling currency,
+      bank fields, tax wording, terminology and date format, with those
+      consequences shown beside the picker rather than discovered later. The
+      §V clause is tested end to end: moving NG → GB renames the delivery
+      document on the Home tile, the list hero and the builder header together.
+- [x] **Onboarding (§R)** — business setup asking for exactly two things with
+      the country pre-filled, "Do this later" as a first-class outcome, resume
+      after restart, a checklist derived from state with no separate done flag,
+      and sample records that cannot reach a balance or be issued.
+- [x] **The remaining Settings essentials** — How you get paid (§J) rendering
+      from the same currency definition the PDF prints from, so the form and
+      the printed box cannot drift; Tax with a worked example computed by
+      `computeTotals` rather than written twice; Company & logo with live name
+      preview and prefixes where the regional suggestion is a placeholder and
+      never an imposed value; Saved items as a read-only view of what the
+      builder remembered.
+- [x] **Improvement 1 — WhatsApp payment reminders.** Quotes the outstanding
+      balance from the ledger and the actual saved §J bank fields, in Softer
+      and Firmer variants. Composing returns text; sending is a separate act,
+      so "nothing sends unseen" is structural. Chasing a settled document
+      throws. A share records a sharing event and has no `delivered` field to
+      set, because the app cannot know (§M).
+- [x] **Improvements 2 and 3** landed with the saved catalogue and the payments
+      work — autocomplete, prices updating next time, the paid-so-far bar,
+      per-payment receipts, balances moving once.
+- [x] **Improvement 9 — accessibility.** The longest shipped label is found
+      from the tables rather than hardcoded, and asserted to wrap in the list
+      hero, the builder header and the new-document button. Step bar, close
+      control and current step all carry accessible names.
+- [x] **Improvement 10 — the local search index.** Built once rather than
+      re-resolved per keystroke, covering references (with or without prefix),
+      customers, phone numbers however punctuated, amounts typed either way,
+      item names — and both the current and frozen labels, so a company that
+      moved to the UK finds its Lagos waybills by either word.
+- [x] **Improvement 8 — first run and the labelled sample.** "Create my first
+      {label}" names the document in the local terminology on the very first
+      screen a user sees. The sample carries a loud badge announced to
+      assistive tech, uses the reference `SAMPLE` — no prefix, no sequence, so
+      it cannot collide with or be mistaken for the user's numbering — and a
+      brand-new account with only a sample in it shows no balance at all.
+
+**Phase 2's buildable scope is complete.** What remains needs hardware or a
+later phase — see the gate below.
+
+### The Phase 2 gate — what can and cannot be checked here
+
+§Q words it as "airplane mode, fresh install, physical device". Verified in CI
+today: create a customer, build a document, region switch changing every label
+while issued PDFs keep their frozen ones, delivery documents showing no money
+anywhere, a part payment moving invoice/customer/Home exactly once, and the
+auto-created receipt never incrementing income.
+
+Needing a device or a later phase, and therefore NOT claimed:
+
+- [ ] **Native PDF output and the share sheet** — Capacitor bridge, **Phase 4**.
+      The composition and pagination are done and tested; writing the file and
+      handing it to the OS is not.
+- [ ] **Preview in all sixteen designs on a real screen** — the models are
+      tested across all sixteen; how they look at A4 on a phone is not.
+- [ ] **Signature capture** — needs touch input.
+- [ ] **Force-kill mid-draft and recover** — needs a real app lifecycle.
+- [ ] **The airplane-mode walk-through itself** — needs the installed build.
+- [ ] Voice and Scan controls on Home — **Phase 6**, deliberately absent
+      rather than rendered dead (§N)
+- [ ] Improvements 1-3 and 8-10
+- [ ] Payments + allocations, receipts
+- [ ] On-device PDFs, all sixteen templates
+- [x] **Home and the per-type lists** — exactly two stat cards with one line
+      per currency, four tiles in the active terminology, the truthful
+      connectivity pill, and "needs attention" capped at three. One page per
+      type with the localised hero, type-named search, and no amount column on
+      a delivery row. Sixteen tests on the stats alone, one per clause of §G's
+      paragraph, because each clause is a way the number could be wrong.
+- [x] **Settings → Region & language** — one country choice settling currency,
+      bank fields, tax wording, terminology and date format, with those
+      consequences shown beside the picker rather than discovered later. The
+      §V clause is tested end to end: moving NG → GB renames the delivery
+      document on the Home tile, the list hero and the builder header together.
+- [x] **Onboarding (§R)** — business setup asking for exactly two things with
+      the country pre-filled, "Do this later" as a first-class outcome, resume
+      after restart, a checklist derived from state with no separate done flag,
+      and sample records that cannot reach a balance or be issued.
+- [x] **The remaining Settings essentials** — How you get paid (§J) rendering
+      from the same currency definition the PDF prints from, so the form and
+      the printed box cannot drift; Tax with a worked example computed by
+      `computeTotals` rather than written twice; Company & logo with live name
+      preview and prefixes where the regional suggestion is a placeholder and
+      never an imposed value; Saved items as a read-only view of what the
+      builder remembered.
+- [x] **Improvement 1 — WhatsApp payment reminders.** Quotes the outstanding
+      balance from the ledger and the actual saved §J bank fields, in Softer
+      and Firmer variants. Composing returns text; sending is a separate act,
+      so "nothing sends unseen" is structural. Chasing a settled document
+      throws. A share records a sharing event and has no `delivered` field to
+      set, because the app cannot know (§M).
+- [x] **Improvements 2 and 3** landed with the saved catalogue and the payments
+      work — autocomplete, prices updating next time, the paid-so-far bar,
+      per-payment receipts, balances moving once.
+- [x] **Improvement 9 — accessibility.** The longest shipped label is found
+      from the tables rather than hardcoded, and asserted to wrap in the list
+      hero, the builder header and the new-document button. Step bar, close
+      control and current step all carry accessible names.
+- [x] **Improvement 10 — the local search index.** Built once rather than
+      re-resolved per keystroke, covering references (with or without prefix),
+      customers, phone numbers however punctuated, amounts typed either way,
+      item names — and both the current and frozen labels, so a company that
+      moved to the UK finds its Lagos waybills by either word.
+- [x] **Improvement 8 — first run and the labelled sample.** "Create my first
+      {label}" names the document in the local terminology on the very first
+      screen a user sees. The sample carries a loud badge announced to
+      assistive tech, uses the reference `SAMPLE` — no prefix, no sequence, so
+      it cannot collide with or be mistaken for the user's numbering — and a
+      brand-new account with only a sample in it shows no balance at all.
+
+**Phase 2's buildable scope is complete.** What remains needs hardware or a
+later phase — see the gate below.
+
+### The Phase 2 gate — what can and cannot be checked here
+
+§Q words it as "airplane mode, fresh install, physical device". Verified in CI
+today: create a customer, build a document, region switch changing every label
+while issued PDFs keep their frozen ones, delivery documents showing no money
+anywhere, a part payment moving invoice/customer/Home exactly once, and the
+auto-created receipt never incrementing income.
+
+Needing a device or a later phase, and therefore NOT claimed:
+
+- [ ] **Native PDF output and the share sheet** — Capacitor bridge, **Phase 4**.
+      The composition and pagination are done and tested; writing the file and
+      handing it to the OS is not.
+- [ ] **Preview in all sixteen designs on a real screen** — the models are
+      tested across all sixteen; how they look at A4 on a phone is not.
+- [ ] **Signature capture** — needs touch input.
+- [ ] **Force-kill mid-draft and recover** — needs a real app lifecycle.
+- [ ] **The airplane-mode walk-through itself** — needs the installed build.
+- [ ] Voice and Scan controls on Home — **Phase 6**, deliberately absent
+      rather than rendered dead (§N)
+- [ ] Improvements 1-3 and 8-10
+
+### Needs a human
+
+- [ ] **A physical device** for the §Q Phase 2 gate, which is explicitly
+      "airplane mode, fresh install, physical device". Everything up to that
+      point is buildable and testable here.
+
+---
 
 ## Decisions taken
 
@@ -171,9 +433,20 @@ denial suite, the live auth clauses, and encrypted SQLite.
 | 19 | `createBrowserClient` refuses a service-role key | It holds BYPASSRLS. A mis-paste into `VITE_SUPABASE_ANON_KEY` would ship cross-company read and write to every browser, and RLS would never notice — the one failure mode FORCE explicitly does not cover. Cheaper to make impossible than to audit for. | `src/data/supabase/client.ts` |
 | 20 | The DB-client import ban is lifted for `src/data/supabase` and `src/data/sqlite` only | Those directories are what `src/data/repositories` exists to hide; everywhere else, `src/app`, `src/features`, `src/pdf` and the whole domain layer included, still cannot import one. Verified by probe. | `eslint.config.js` |
 | 21 | A stale session keeps the app usable and only pauses sync | Rule #3 — offline is the product. Signing a user out because a refresh failed would make a network blip look like data loss. No auth state, `signed_out` included, authorises deleting local work (§M). | `src/data/supabase/auth.ts` |
+| 22 | The Rule-5 lint rule treats `-` and `_` as part of a word | `file-invoice` (a Tabler icon), `invoice_title` (an i18n key) and `invoice-list` (a test id) are identifiers, not display text. Flagging them trains people to add exemptions, which is how a rule stops being believed. "New Invoice" and "Delivery note" still fail, verified by probe. | `tools/eslint` |
+| 23 | The offline reference is `INV-0042-K3` — a two-character device tag, added only when the number did **not** come from a server-reserved block | §M left the format open and asked for "short, prefix-consistent, customer-presentable". A suffix keeps the prefix and number shape a customer already recognises, and appears only on the offline exception rather than on every document, so it reads as part of the number rather than as machinery. Asking the server for a number before issuing would have been the alternative, and that breaks Rule #3. The alphabet excludes I, L, O and U so nothing reads as a digit, and the tag is derived deterministically from the device id because a reference must never change after issue. | `reference.ts` |
 | 18 | The lint rule is asserted *inside* the property test, not only in CI | §Q words the gate as "no hardcoded type-name string survives a lint rule written for it". Running ESLint in-process makes that a test that fails on a planted string, with a second case proving the rule still matches so the first cannot pass vacuously. | `resolve.test.ts` |
 
 ## Deviations from the spec
+
+**Phase 2 began before the Phase 1 gate passed.** Directed by the owner, and
+recorded rather than left silent. It is survivable because Phase 2's scope —
+customers, the four builders, payments, receipts, on-device PDFs, share,
+signatures, lists, Home, Settings essentials, onboarding — is offline-first by
+definition (Rule #3) and runs against the in-memory and SQLite repositories.
+None of it reads Supabase Auth. The two unverified Phase 1 clauses are carried
+forward and must close before Phase 5 (web + public links), which is the first
+phase that genuinely needs the hosted instance.
 
 **Phase 1 began before the Phase 0 gate passed.** §Q and CLAUDE.md both say a
 phase does not start until the prior gate does, and Phase 0's tier table and
@@ -198,9 +471,9 @@ Added by Phase 0:
 - **Bank-field definitions (§J) are not yet in code.** They are Phase 1 data,
   and §W holds them open for per-market validation. Nothing has been invented
   ahead of that review.
-- **The device-qualified reference format (§M "Design task")** — short,
-  prefix-consistent, customer-presentable, explained in one line in Settings —
-  is still to be designed. It blocks Phase 3, not Phase 1.
+- ~~The device-qualified reference format (§M "Design task")~~ — **closed**,
+  see decision 23. `INV-0042` from a reserved block, `INV-0042-K3` when issued
+  offline.
 
 Added by Phase 1:
 

@@ -37,6 +37,8 @@ export interface Payment {
   readonly amount: Money
   readonly paidAt: string
   readonly method: string
+  /** The customer's own reference — a transfer narration, a cheque number. */
+  readonly reference?: string
   readonly source: PaymentSource
   /** Set on a provider payment; the idempotency handle for replayed events. */
   readonly externalEventId?: string

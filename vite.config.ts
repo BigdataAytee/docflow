@@ -11,7 +11,9 @@ export default defineConfig({
   },
   test: {
     globals: true,
-    environment: 'node',
+    // jsdom for the screens; the domain suites do not care either way.
+    environment: 'jsdom',
+    setupFiles: ['./vitest.setup.ts'],
     include: ['src/**/*.test.ts', 'src/**/*.test.tsx'],
   },
 })

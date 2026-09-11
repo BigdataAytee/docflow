@@ -40,13 +40,29 @@ export default tseslint.config(
 
   // Rule #5 — one word everywhere. Presentation code may not carry type names.
   {
-    files: ['src/features/**/*.{ts,tsx}', 'src/pdf/**/*.{ts,tsx}', 'src/app/**/*.{ts,tsx}'],
+    files: [
+      'src/features/**/*.{ts,tsx}',
+      'src/pdf/**/*.{ts,tsx}',
+      'src/app/**/*.{ts,tsx}',
+      'src/ui/**/*.{ts,tsx}',
+    ],
     rules: { 'docflow/no-hardcoded-type-name': 'error' },
   },
 
-  // The locale layer is where the words legitimately live.
+  // Three exemptions, each because the file holds no user-visible text:
+  //  · the locale layer, which is where the words legitimately live;
+  //  · src/ui/tokens.ts — hex colours and Tabler icon names, one of which is
+  //    literally "receipt";
+  //  · test files, whose strings are test names, not shipped labels. The
+  //    rule's own coverage test in src/domain/locale/resolve.test.ts lints
+  //    fixtures through the ESLint API, so this does not weaken it.
   {
-    files: ['src/domain/locale/**/*.ts'],
+    files: [
+      'src/domain/locale/**/*.ts',
+      'src/ui/tokens.ts',
+      '**/*.test.ts',
+      '**/*.test.tsx',
+    ],
     rules: { 'docflow/no-hardcoded-type-name': 'off' },
   },
 

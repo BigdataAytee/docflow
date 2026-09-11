@@ -1,0 +1,180 @@
+/**
+ * Step 1 — Details (§G).
+ *
+ * "One screen, four compact cards with tinted header strips."
+ *
+ * The per-type differences §G spells out are the point of this file:
+ *  · quotations show no payment method;
+ *  · receipts show date paid, linked invoice, method and reference, and NO
+ *    due date;
+ *  · delivery documents show a delivery address and no money anywhere.
+ */
+
+import type { ReactNode } from 'react'
+
+import { useCompany } from '../../app/context'
+import { partyLabel } from '../../domain/locale/profile'
+import { format } from '../../domain/locale/data/strings'
+import { TYPE_PALETTE } from '../../ui'
+import { carriesMoney, type DocumentType } from '../../domain/documents/types'
+import type { DocumentDraft } from './builder'
+
+export interface DetailsStepProps {
+  readonly draft: DocumentDraft
+  readonly reference: string
+  readonly enabledPaymentMethodCount: number
+  readonly onChange: (patch: Partial<DocumentDraft>) => void
+  readonly onSetUpPayment: () => void
+  readonly onSign: () => void
+}
+
+function Card({ title, accent, children }: { title: string; accent: string; children: ReactNode }) {
+  return (
+    <section className="overflow-hidden rounded-2xl bg-white/85">
+      <h3
+        className="px-4 py-2 text-[10.5px] font-bold uppercase tracking-[0.12em]"
+        style={{ backgroundColor: `${accent}1a`, color: accent }}
+      >
+        {title}
+      </h3>
+      <div className="space-y-3 p-4">{children}</div>
+    </section>
+  )
+}
+
+function DateField({
+  label,
+  value,
+  onChange,
+}: {
+  label: string
+  value: string | undefined
+  onChange: (value: string) => void
+}) {
+  return (
+    <label className="block flex-1">
+      <span className="mb-1 block text-xs font-medium opacity-70">{label}</span>
+      <input
+        type="date"
+        value={value ?? ''}
+        onChange={(event) => onChange(event.target.value)}
+        aria-label={label}
+        className="min-h-tap w-full rounded-lg bg-page px-3 text-sm shadow-inner"
+      />
+    </label>
+  )
+}
+
+/** The second date field, which differs per type — and is absent on a receipt. */
+function secondDateFor(
+  type: DocumentType,
+  strings: ReturnType<typeof useCompany>['strings'],
+): { key: 'dueDate' | 'validUntil' | 'dispatchDate'; label: string } | null {
+  switch (type) {
+    case 'invoice':
+      return { key: 'dueDate', label: strings.details.dueDate }
+    case 'quotation':
+      return { key: 'validUntil', label: strings.details.validUntil }
+    case 'waybill':
+      return { key: 'dispatchDate', label: strings.details.dispatchDate }
+    case 'receipt':
+      // §G: "receipts show date paid … no due date".
+      return null
+  }
+}
+
+export function DetailsStep({
+  draft,
+  reference,
+  enabledPaymentMethodCount,
+  onChange,
+  onSetUpPayment,
+  onSign,
+}: DetailsStepProps) {
+  const { profile, strings } = useCompany()
+  const accent = TYPE_PALETTE[draft.type].accent
+  const second = secondDateFor(draft.type, strings)
+  const showsMoney = carriesMoney(draft.type)
+
+  return (
+    <div className="space-y-3">
+      <Card title={strings.details.numberAndDates} accent={accent}>
+        <div className="flex items-center gap-2">
+          <span className="flex-1 text-sm font-semibold tabular-nums">{reference}</span>
+          <button
+            type="button"
+            aria-label={strings.details.editReference}
+            className="min-h-tap min-w-tap rounded-full text-navy/60"
+          >
+            ✎
+          </button>
+        </div>
+        <div className="flex gap-3">
+          <DateField
+            label={draft.type === 'receipt' ? strings.details.datePaid : strings.details.issueDate}
+            value={draft.issueDate}
+            onChange={(value) => onChange({ issueDate: value })}
+          />
+          {second !== null && (
+            <DateField
+              label={second.label}
+              value={draft[second.key]}
+              onChange={(value) => onChange({ [second.key]: value })}
+            />
+          )}
+        </div>
+      </Card>
+
+      <Card title={partyLabel(profile, draft.type)} accent={accent}>
+        <p className="text-sm opacity-70">{draft.customerId ?? '—'}</p>
+        {draft.type === 'waybill' && (
+          <label className="block">
+            <span className="mb-1 block text-xs font-medium opacity-70">
+              {strings.details.deliveryAddress}
+            </span>
+            <input
+              value={draft.deliveryAddress ?? ''}
+              onChange={(event) => onChange({ deliveryAddress: event.target.value })}
+              aria-label={strings.details.deliveryAddress}
+              className="min-h-tap w-full rounded-lg bg-page px-3 text-sm shadow-inner"
+            />
+          </label>
+        )}
+      </Card>
+
+      {/* §J: payment setup is never shown on a quotation, and a delivery
+          document carries no money at all — so neither gets this card. */}
+      {showsMoney && draft.type !== 'quotation' && (
+        <Card title={strings.details.currencyAndPayment} accent={accent}>
+          <div className="flex items-center gap-3">
+            <span className="text-sm font-semibold">{draft.currency}</span>
+            {enabledPaymentMethodCount > 0 ? (
+              <span className="rounded-full bg-status-good-tint px-3 py-1 text-xs font-semibold text-status-good">
+                {format(strings.details.paymentReady, { count: enabledPaymentMethodCount })}
+              </span>
+            ) : (
+              <button
+                type="button"
+                onClick={onSetUpPayment}
+                className="min-h-tap rounded-full bg-status-warn-tint px-3 text-xs font-semibold text-status-warn"
+              >
+                {strings.details.setUpPayment}
+              </button>
+            )}
+          </div>
+        </Card>
+      )}
+
+      <Card title={strings.details.signature} accent={accent}>
+        <button
+          type="button"
+          onClick={onSign}
+          aria-label={strings.details.tapToSign}
+          className="min-h-[72px] w-full rounded-lg border-2 border-dashed border-navy/25 text-sm opacity-70"
+        >
+          {draft.signatureAssetId === undefined ? strings.details.tapToSign : '✓'}
+        </button>
+      </Card>
+    </div>
+  )
+}
