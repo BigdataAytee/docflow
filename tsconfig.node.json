@@ -10,6 +10,6 @@
     "composite": true,
     "skipLibCheck": true
   },
-  "include": ["vite.config.ts", "vitest.config.ts", "eslint.config.js", "tools"],
+  "include": ["vite.config.ts", "vitest.rls.config.ts", "eslint.config.js", "tools", "supabase/tests"],
   "exclude": ["legacy"]
 }

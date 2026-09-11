@@ -1,5 +1,6 @@
 # v6 §Q Phase 0: the money property tests go into CI on day one and
 # "run on every commit for the life of the project".
+# v6 §Q Phase 1: the two-account RLS denial suite joins them as a blocking check.
 name: CI
 
 on:
@@ -40,3 +41,40 @@ jobs:
 
       - name: Build
         run: npm run build
+
+  rls:
+    name: RLS — two-company isolation (§P, §Q gate)
+    runs-on: ubuntu-latest
+
+    # A bare Postgres, not a hosted Supabase project: the suite needs no
+    # secrets, no network and has nothing to go stale. The migrations are
+    # applied unmodified — only the roles a hosted project already provides
+    # are created first, by supabase/tests/bootstrap.sql.
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: docflow_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - run: npm ci
+
+      - name: Two-company denial suite
+        run: npm run test:rls
+        env:
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/docflow_test
