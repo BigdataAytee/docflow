@@ -1,0 +1,15 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "lib": ["ES2023"],
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "types": ["node"],
+    "strict": true,
+    "noEmit": true,
+    "composite": true,
+    "skipLibCheck": true
+  },
+  "include": ["vite.config.ts", "vitest.rls.config.ts", "eslint.config.js", "tools", "supabase/tests"],
+  "exclude": ["legacy"]
+}

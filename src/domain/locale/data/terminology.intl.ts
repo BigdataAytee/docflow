@@ -1,0 +1,190 @@
+/**
+ * French, Spanish and Arabic terminology tables.
+ *
+ * ⚠ DRAFT — every table here is `reviewStatus: 'draft'`. §D: "validated with
+ * native-speaker review per launch market — machine translation is a draft,
+ * never a release." The Phase 1 resolver refuses to serve a draft in a release
+ * build, so nothing here can reach a user before sign-off.
+ *
+ * Type labels are taken verbatim from the §D table. Party labels, signature
+ * captions and step names are the drafts awaiting review — see
+ * docs/locale/native-speaker-review.md for the sign-off sheet.
+ *
+ * Arabic additionally ships only with complete RTL acceptance (§S): forms,
+ * sheets, builder, swipe directions, charts and PDFs all mirrored and verified.
+ */
+
+import type { TerminologyTable } from '../types'
+
+/** FR — France, Côte d'Ivoire and the other francophone launch markets. */
+export const FR: TerminologyTable = {
+  locale: 'FR',
+  language: 'fr',
+  direction: 'ltr',
+  reviewStatus: 'draft',
+  types: {
+    invoice: {
+      label: 'Facture',
+      pluralLabel: 'Factures',
+      printedTitle: 'FACTURE',
+      partyLabel: 'Facturé à',
+      signatureCaption: 'SIGNATURE AUTORISÉE',
+      steps: ['Détails', 'Articles', 'Totaux', 'Modèle', 'Vérification'],
+      numberingPrefix: 'FAC',
+    },
+    quotation: {
+      label: 'Devis',
+      pluralLabel: 'Devis',
+      printedTitle: 'DEVIS',
+      partyLabel: 'Établi pour',
+      signatureCaption: 'ÉTABLI PAR',
+      steps: ['Détails', 'Articles', 'Totaux', 'Modèle', 'Vérification'],
+      numberingPrefix: 'DEV',
+    },
+    receipt: {
+      label: 'Reçu',
+      pluralLabel: 'Reçus',
+      printedTitle: 'REÇU',
+      partyLabel: 'Reçu de',
+      signatureCaption: 'ÉMIS PAR',
+      steps: ['Détails', 'Articles', 'Totaux', 'Modèle', 'Vérification'],
+      numberingPrefix: 'REC',
+    },
+    waybill: {
+      label: 'Bon de livraison',
+      pluralLabel: 'Bons de livraison',
+      printedTitle: 'BON DE LIVRAISON',
+      partyLabel: 'Livrer à',
+      signatureCaption: 'EXPÉDIÉ PAR',
+      steps: ['Livrer à', 'Marchandises', 'Expédition', 'Modèle', 'Vérification'],
+      numberingPrefix: 'BL',
+    },
+  },
+  shared: {
+    howToPay: 'COMMENT PAYER',
+    receivedBy: 'REÇU PAR',
+    estimatedTotal: 'Total estimé',
+  },
+  synonyms: {
+    invoice: ['facture', 'note'],
+    quotation: ['devis', 'proforma', 'estimation'],
+    receipt: ['reçu', 'recu', 'quittance'],
+    waybill: ['bon de livraison', 'bordereau de livraison', 'BL'],
+  },
+}
+
+/** ES — Spain and the Latin American launch markets. */
+export const ES: TerminologyTable = {
+  locale: 'ES',
+  language: 'es',
+  direction: 'ltr',
+  reviewStatus: 'draft',
+  types: {
+    invoice: {
+      label: 'Factura',
+      pluralLabel: 'Facturas',
+      printedTitle: 'FACTURA',
+      partyLabel: 'Facturar a',
+      signatureCaption: 'FIRMA AUTORIZADA',
+      steps: ['Detalles', 'Artículos', 'Totales', 'Diseño', 'Revisión'],
+      numberingPrefix: 'FAC',
+    },
+    quotation: {
+      label: 'Cotización',
+      pluralLabel: 'Cotizaciones',
+      printedTitle: 'COTIZACIÓN',
+      partyLabel: 'Preparado para',
+      signatureCaption: 'PREPARADO POR',
+      steps: ['Detalles', 'Artículos', 'Totales', 'Diseño', 'Revisión'],
+      numberingPrefix: 'COT',
+    },
+    receipt: {
+      label: 'Recibo',
+      pluralLabel: 'Recibos',
+      printedTitle: 'RECIBO',
+      partyLabel: 'Recibido de',
+      signatureCaption: 'EMITIDO POR',
+      steps: ['Detalles', 'Artículos', 'Totales', 'Diseño', 'Revisión'],
+      numberingPrefix: 'REC',
+    },
+    waybill: {
+      // §D offers "Guía de remisión / Nota de entrega" — the split is a
+      // per-market call for review, not a machine choice. MX/PE lean guía.
+      label: 'Nota de entrega',
+      pluralLabel: 'Notas de entrega',
+      printedTitle: 'NOTA DE ENTREGA',
+      partyLabel: 'Entregar a',
+      signatureCaption: 'DESPACHADO POR',
+      steps: ['Entregar a', 'Mercancía', 'Despacho', 'Diseño', 'Revisión'],
+      numberingPrefix: 'NE',
+    },
+  },
+  shared: {
+    howToPay: 'CÓMO PAGAR',
+    receivedBy: 'RECIBIDO POR',
+    estimatedTotal: 'Total estimado',
+  },
+  synonyms: {
+    invoice: ['factura'],
+    quotation: ['cotización', 'cotizacion', 'presupuesto', 'proforma'],
+    receipt: ['recibo', 'comprobante'],
+    waybill: ['nota de entrega', 'guía de remisión', 'guia de remision', 'albarán', 'albaran'],
+  },
+}
+
+/** AR — RTL. Ships only with complete RTL acceptance including PDFs (§S). */
+export const AR: TerminologyTable = {
+  locale: 'AR',
+  language: 'ar',
+  direction: 'rtl',
+  reviewStatus: 'draft',
+  types: {
+    invoice: {
+      label: 'فاتورة',
+      pluralLabel: 'فواتير',
+      printedTitle: 'فاتورة',
+      partyLabel: 'فاتورة إلى',
+      signatureCaption: 'التوقيع المعتمد',
+      steps: ['التفاصيل', 'البنود', 'الإجماليات', 'التصميم', 'المراجعة'],
+      numberingPrefix: 'INV',
+    },
+    quotation: {
+      label: 'عرض سعر',
+      pluralLabel: 'عروض أسعار',
+      printedTitle: 'عرض سعر',
+      partyLabel: 'مُعد لصالح',
+      signatureCaption: 'أعده',
+      steps: ['التفاصيل', 'البنود', 'الإجماليات', 'التصميم', 'المراجعة'],
+      numberingPrefix: 'QUO',
+    },
+    receipt: {
+      label: 'إيصال',
+      pluralLabel: 'إيصالات',
+      printedTitle: 'إيصال',
+      partyLabel: 'مستلم من',
+      signatureCaption: 'صادر عن',
+      steps: ['التفاصيل', 'البنود', 'الإجماليات', 'التصميم', 'المراجعة'],
+      numberingPrefix: 'REC',
+    },
+    waybill: {
+      label: 'بوليصة شحن',
+      pluralLabel: 'بوالص شحن',
+      printedTitle: 'بوليصة شحن',
+      partyLabel: 'التسليم إلى',
+      signatureCaption: 'أرسله',
+      steps: ['التسليم إلى', 'البضائع', 'الإرسال', 'التصميم', 'المراجعة'],
+      numberingPrefix: 'WAY',
+    },
+  },
+  shared: {
+    howToPay: 'طريقة الدفع',
+    receivedBy: 'استلمه',
+    estimatedTotal: 'الإجمالي التقديري',
+  },
+  synonyms: {
+    invoice: ['فاتورة'],
+    quotation: ['عرض سعر', 'عرض أسعار'],
+    receipt: ['إيصال', 'وصل'],
+    waybill: ['بوليصة شحن', 'إذن تسليم', 'مذكرة تسليم'],
+  },
+}
