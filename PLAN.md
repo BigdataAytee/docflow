@@ -13,7 +13,7 @@ claims nothing the gates have not proven (§X).
 | Phase | Scope | Gate | State |
 | --- | --- | --- | --- |
 | **0** | Spikes and reconciliation | tier table + logo rung published; PLAN reconciled; terminology drafts in review; money tests green | **in progress** — spikes need devices |
-| **1** | Foundation | cross-company denial; money/transition/label property tests; encrypted SQLite; auth ≤ legacy taps | **in progress** — auth is the one open item |
+| **1** | Foundation | cross-company denial; money/transition/label property tests; encrypted SQLite; auth ≤ legacy taps | **in progress** — code complete; hosted verification blocked by egress policy, encrypted SQLite deferred to Phase 4 |
 | 2 | Core offline app | the airplane-mode walk-through, fresh install, physical device | not started |
 | 2.5 | Remaining improvements | each §L behaviour verified offline | not started |
 | 3 | Sync | five offline documents arrive once, unique references, through a mid-sync kill | not started |
@@ -111,18 +111,41 @@ not start until they are.
       in-market review (§W), and an unknown currency throws rather than
       guessing a field set (CLAUDE.md).
 
+- [x] **Auth wiring** (`src/data/supabase`): the client, with a guard that
+      refuses to build a browser client from a service-role key; and the auth
+      service — email/password, Google OAuth, password reset, and the §M
+      session rules (a stale session keeps the app usable and pauses sync; no
+      auth state ever authorises deleting local work). Unit-tested without a
+      network.
+- [x] **A runnable hosted gate** — `npm run gate:hosted` applies the migrations
+      to the project, re-checks FORCE on the host, creates two REAL users with
+      `company_id` claims, and runs the isolation clauses through PostgREST
+      with real JWTs rather than a `set_config` shim.
+
 ### Open
 
-- [ ] **Supabase Auth** — the one open Phase 1 item. Email/password + Google,
-      legacy-styled screens, ≥30-day sessions tolerant of long offline gaps,
-      offline use never requiring token refresh, expired credentials pausing
-      sync without deleting local work. Blocked on the hosted project; the
-      Supabase MCP connector is not yet connected.
-- [ ] **Encrypted SQLite opens on device** — a gate clause needing a phone.
+- [ ] **Run the hosted gate.** BLOCKED — not by credentials, by this
+      environment's egress policy. Every Supabase host is denied at the proxy:
+      `request blocked: no rule or allowlist entry allows host
+      "<project>.supabase.co"` (HTTP 403 to CONNECT). `supabase.com` and
+      `api.supabase.com` are denied identically; `api.github.com` and the npm
+      registry are allowed, so this is a host allowlist, not a network fault.
+      Raw TCP to 5432/6543 is unavailable too. The proxy README is explicit
+      that a 403 must be reported rather than routed around.
+- [ ] **A DDL credential.** Independent of the egress block, and it would bite
+      anyway: PostgREST cannot run DDL, so the anon and service-role keys
+      cannot apply migrations. That needs `SUPABASE_DB_URL` (the database
+      password, from Settings → Database → Connection string) or a Management
+      API token. `gate:hosted` reports step 1 as **skipped** when it is unset,
+      rather than quietly assuming the schema is there.
+- [ ] **Encrypted SQLite opens on device** — DEFERRED TO PHASE 4, where the
+      native shell and a physical device exist. It is a §Q Phase 1 gate clause,
+      so Phase 1 stays formally unpassed until Phase 4 closes it.
 
-**The Phase 1 gate is not passed.** Cross-company denial, the money and
-transition property tests and label resolution are all green; auth and the
-encrypted-SQLite check are not done.
+**The Phase 1 gate is not passed.** Green: cross-company denial (against a
+local Postgres), the money and transition property tests, label resolution,
+repository contracts, §J field sets. Not green: the hosted run of the same
+denial suite, the live auth clauses, and encrypted SQLite.
 
 ## Decisions taken
 
@@ -145,6 +168,9 @@ encrypted-SQLite check are not done.
 | 15 | Two invariants are check constraints, not just UI rules | A waybill's money columns must all be zero and WHT is invoice-only. No client, sync payload or future migration can put a price on a delivery document. | `0002_customers_documents.sql` |
 | 16 | A per-type label override renames **every** surface, printed title included | A override that changed the tile but not the PDF would break Rule #5 the moment it was used. | `resolve()` |
 | 17 | An unknown locale or currency throws | A silent fallback would ship an English label or an invented field set into a market nobody validated. CLAUDE.md forbids inventing banking rules; this makes it structural. | `tableFor`, `currencyDefinition` |
+| 19 | `createBrowserClient` refuses a service-role key | It holds BYPASSRLS. A mis-paste into `VITE_SUPABASE_ANON_KEY` would ship cross-company read and write to every browser, and RLS would never notice — the one failure mode FORCE explicitly does not cover. Cheaper to make impossible than to audit for. | `src/data/supabase/client.ts` |
+| 20 | The DB-client import ban is lifted for `src/data/supabase` and `src/data/sqlite` only | Those directories are what `src/data/repositories` exists to hide; everywhere else, `src/app`, `src/features`, `src/pdf` and the whole domain layer included, still cannot import one. Verified by probe. | `eslint.config.js` |
+| 21 | A stale session keeps the app usable and only pauses sync | Rule #3 — offline is the product. Signing a user out because a refresh failed would make a network blip look like data loss. No auth state, `signed_out` included, authorises deleting local work (§M). | `src/data/supabase/auth.ts` |
 | 18 | The lint rule is asserted *inside* the property test, not only in CI | §Q words the gate as "no hardcoded type-name string survives a lint rule written for it". Running ESLint in-process makes that a test that fails on a planted string, with a second case proving the rule still matches so the first cannot pass vacuously. | `resolve.test.ts` |
 
 ## Deviations from the spec

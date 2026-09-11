@@ -50,6 +50,15 @@ export default tseslint.config(
     rules: { 'docflow/no-hardcoded-type-name': 'off' },
   },
 
+  // The repository IMPLEMENTATIONS are the one place a DB client belongs —
+  // that is what `src/data/repositories` exists to hide. Everything else,
+  // including src/app, src/features, src/pdf and the whole domain layer, is
+  // still forbidden from importing one.
+  {
+    files: ['src/data/supabase/**/*.ts', 'src/data/sqlite/**/*.ts', 'supabase/tests/**/*.ts'],
+    rules: { 'no-restricted-imports': 'off' },
+  },
+
   {
     files: ['tools/**/*.js', '*.config.js', '*.config.ts'],
     languageOptions: { globals: globals.node },

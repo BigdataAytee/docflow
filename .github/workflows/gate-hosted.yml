@@ -1,0 +1,59 @@
+# The §Q Phase 1 gate, run against the hosted Supabase project.
+#
+# It lives in CI rather than in the agent's container for a practical reason:
+# GitHub runners have unrestricted egress, and the project credentials belong
+# in repository secrets rather than on a developer machine.
+#
+# Manual dispatch only — it writes to a real project.
+name: Phase 1 gate (hosted)
+
+on:
+  workflow_dispatch:
+    inputs:
+      reset:
+        description: 'Drop and recreate the public schema first (SCRATCH PROJECTS ONLY — deletes every row)'
+        type: boolean
+        default: false
+
+jobs:
+  gate:
+    name: Phase 1 gate against the hosted project
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          # Type stripping (--experimental-strip-types) needs 22+.
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      # Names which secrets are missing, without ever printing a value. One
+      # run then tells us exactly what to add rather than failing opaquely.
+      - name: Check required secrets are present
+        env:
+          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+        run: |
+          missing=()
+          for name in VITE_SUPABASE_URL VITE_SUPABASE_ANON_KEY SUPABASE_SERVICE_ROLE_KEY SUPABASE_DB_URL; do
+            if [ -z "${!name}" ]; then missing+=("$name"); else echo "present: $name"; fi
+          done
+          if [ ${#missing[@]} -ne 0 ]; then
+            echo "::error::Missing repository secrets: ${missing[*]}"
+            echo "Add them under Settings → Secrets and variables → Actions."
+            exit 1
+          fi
+
+      - name: Run the gate
+        env:
+          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+          GATE_RESET: ${{ inputs.reset && '1' || '0' }}
+        run: npm run gate:hosted

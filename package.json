@@ -4,7 +4,7 @@
   "version": "0.0.0",
   "type": "module",
   "engines": {
-    "node": ">=20"
+    "node": ">=22"
   },
   "scripts": {
     "dev": "vite",
@@ -16,9 +16,12 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "verify": "npm run typecheck && npm run lint && npm run test && npm run build",
-    "test:rls": "vitest run --config vitest.rls.config.ts"
+    "test:rls": "vitest run --config vitest.rls.config.ts",
+    "gate:hosted": "node --experimental-strip-types supabase/tests/hosted-gate.ts",
+    "gate:hosted:local": "node --env-file=.env --experimental-strip-types supabase/tests/hosted-gate.ts"
   },
   "dependencies": {
+    "@supabase/supabase-js": "^2.116.0",
     "clsx": "^2.1.1",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
