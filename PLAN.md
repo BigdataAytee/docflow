@@ -278,8 +278,27 @@ improvements 1-3 and 8-10.
       preview and prefixes where the regional suggestion is a placeholder and
       never an imposed value; Saved items as a read-only view of what the
       builder remembered.
-- [ ] Improvements 1-3 and 8-10 (WhatsApp reminders, saved catalogue polish,
-      partial payments UI wiring, empty states, accessibility, performance)
+- [x] **Improvement 1 — WhatsApp payment reminders.** Quotes the outstanding
+      balance from the ledger and the actual saved §J bank fields, in Softer
+      and Firmer variants. Composing returns text; sending is a separate act,
+      so "nothing sends unseen" is structural. Chasing a settled document
+      throws. A share records a sharing event and has no `delivered` field to
+      set, because the app cannot know (§M).
+- [x] **Improvements 2 and 3** landed with the saved catalogue and the payments
+      work — autocomplete, prices updating next time, the paid-so-far bar,
+      per-payment receipts, balances moving once.
+- [x] **Improvement 9 — accessibility.** The longest shipped label is found
+      from the tables rather than hardcoded, and asserted to wrap in the list
+      hero, the builder header and the new-document button. Step bar, close
+      control and current step all carry accessible names.
+- [x] **Improvement 10 — the local search index.** Built once rather than
+      re-resolved per keystroke, covering references (with or without prefix),
+      customers, phone numbers however punctuated, amounts typed either way,
+      item names — and both the current and frozen labels, so a company that
+      moved to the UK finds its Lagos waybills by either word.
+- [ ] **Improvement 8 — the first-run sample document.** The exclusion rules
+      and empty states exist; seeding a labelled sample record is the
+      remaining piece.
 - [ ] Voice and Scan controls on Home — **Phase 6**, deliberately absent
       rather than rendered dead (§N)
 - [ ] Improvements 1-3 and 8-10
@@ -307,8 +326,27 @@ improvements 1-3 and 8-10.
       preview and prefixes where the regional suggestion is a placeholder and
       never an imposed value; Saved items as a read-only view of what the
       builder remembered.
-- [ ] Improvements 1-3 and 8-10 (WhatsApp reminders, saved catalogue polish,
-      partial payments UI wiring, empty states, accessibility, performance)
+- [x] **Improvement 1 — WhatsApp payment reminders.** Quotes the outstanding
+      balance from the ledger and the actual saved §J bank fields, in Softer
+      and Firmer variants. Composing returns text; sending is a separate act,
+      so "nothing sends unseen" is structural. Chasing a settled document
+      throws. A share records a sharing event and has no `delivered` field to
+      set, because the app cannot know (§M).
+- [x] **Improvements 2 and 3** landed with the saved catalogue and the payments
+      work — autocomplete, prices updating next time, the paid-so-far bar,
+      per-payment receipts, balances moving once.
+- [x] **Improvement 9 — accessibility.** The longest shipped label is found
+      from the tables rather than hardcoded, and asserted to wrap in the list
+      hero, the builder header and the new-document button. Step bar, close
+      control and current step all carry accessible names.
+- [x] **Improvement 10 — the local search index.** Built once rather than
+      re-resolved per keystroke, covering references (with or without prefix),
+      customers, phone numbers however punctuated, amounts typed either way,
+      item names — and both the current and frozen labels, so a company that
+      moved to the UK finds its Lagos waybills by either word.
+- [ ] **Improvement 8 — the first-run sample document.** The exclusion rules
+      and empty states exist; seeding a labelled sample record is the
+      remaining piece.
 - [ ] Voice and Scan controls on Home — **Phase 6**, deliberately absent
       rather than rendered dead (§N)
 - [ ] Improvements 1-3 and 8-10
