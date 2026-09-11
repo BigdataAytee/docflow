@@ -28,8 +28,12 @@ const FORBIDDEN = [
   'HOW TO PAY', 'RECEIVED BY',
 ]
 
+// Hyphens and underscores count as part of a word, so identifiers like
+// `file-invoice` (a Tabler icon), `invoice_title` (an i18n key) or
+// `invoice-list` (a test id) are not display text and do not match. A real
+// hardcoded label — "Invoice", "New Invoice", "Delivery note" — still does.
 const pattern = new RegExp(
-  `(^|[^\\p{L}])(${FORBIDDEN.map((w) => w.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|')})([^\\p{L}]|$)`,
+  `(^|[^\\p{L}\\-_])(${FORBIDDEN.map((w) => w.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|')})([^\\p{L}\\-_]|$)`,
   'iu',
 )
 

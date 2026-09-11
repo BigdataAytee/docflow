@@ -159,6 +159,43 @@ not start until they are.
 Phase 4, two unverifiable until the project is reachable. Nothing here is
 recorded as passing on local evidence when the clause asks about the host.
 
+## Phase 2 — detail
+
+Scope per §Q: customers · the four builders · payments + allocations ·
+receipts · on-device PDFs (all sixteen templates) · native share · signatures ·
+the per-type lists · Home · Settings essentials · onboarding (§R) ·
+improvements 1-3 and 8-10.
+
+### Done
+
+- [x] **The shared component library** (§Q: "the shared component library
+      first"): `src/ui` - PageHeader, StatusBadge with the single colour map,
+      EmptyState, Skeleton/SkeletonList, LineItemRow, ConnectivityPill.
+      Tested on the two invariants that carry real risk: every stored and
+      derived status maps to an explicit tone with no silent fallthrough, and
+      the connectivity pill never calls pending work uploaded merely because
+      the device is online (§M - server acknowledgement completes an upload).
+- [x] **§F design tokens as one map each** - type palette keyed by the internal
+      type, so a delivery document is amber under every regional name; status
+      tones from one map so no surface invents a colour.
+
+### Next
+
+- [ ] Customers (list, contact page, balances, history, notes)
+- [ ] The four builders, five steps each, names per type
+- [ ] Payments + allocations, receipts
+- [ ] On-device PDFs, all sixteen templates
+- [ ] Per-type lists, Home, Settings essentials, onboarding
+- [ ] Improvements 1-3 and 8-10
+
+### Needs a human
+
+- [ ] **A physical device** for the §Q Phase 2 gate, which is explicitly
+      "airplane mode, fresh install, physical device". Everything up to that
+      point is buildable and testable here.
+
+---
+
 ## Decisions taken
 
 | # | Decision | Why | Where |
@@ -183,6 +220,7 @@ recorded as passing on local evidence when the clause asks about the host.
 | 19 | `createBrowserClient` refuses a service-role key | It holds BYPASSRLS. A mis-paste into `VITE_SUPABASE_ANON_KEY` would ship cross-company read and write to every browser, and RLS would never notice — the one failure mode FORCE explicitly does not cover. Cheaper to make impossible than to audit for. | `src/data/supabase/client.ts` |
 | 20 | The DB-client import ban is lifted for `src/data/supabase` and `src/data/sqlite` only | Those directories are what `src/data/repositories` exists to hide; everywhere else, `src/app`, `src/features`, `src/pdf` and the whole domain layer included, still cannot import one. Verified by probe. | `eslint.config.js` |
 | 21 | A stale session keeps the app usable and only pauses sync | Rule #3 — offline is the product. Signing a user out because a refresh failed would make a network blip look like data loss. No auth state, `signed_out` included, authorises deleting local work (§M). | `src/data/supabase/auth.ts` |
+| 22 | The Rule-5 lint rule treats `-` and `_` as part of a word | `file-invoice` (a Tabler icon), `invoice_title` (an i18n key) and `invoice-list` (a test id) are identifiers, not display text. Flagging them trains people to add exemptions, which is how a rule stops being believed. "New Invoice" and "Delivery note" still fail, verified by probe. | `tools/eslint` |
 | 18 | The lint rule is asserted *inside* the property test, not only in CI | §Q words the gate as "no hardcoded type-name string survives a lint rule written for it". Running ESLint in-process makes that a test that fails on a planted string, with a second case proving the rule still matches so the first cannot pass vacuously. | `resolve.test.ts` |
 
 ## Deviations from the spec
