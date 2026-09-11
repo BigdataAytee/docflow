@@ -94,6 +94,18 @@ export interface UiStrings {
     readonly noneBody: string
     readonly savedToCatalogue: string
   }
+  readonly settings: {
+    readonly regionAndLanguage: string
+    readonly businessCountry: string
+    readonly countryHint: string
+    readonly appLanguage: string
+    readonly callThisDocument: string
+    readonly useRegionalName: string
+    readonly currencyIs: string
+    readonly taxIsCalled: string
+    readonly bankFieldsAre: string
+    readonly effectiveImmediately: string
+  }
   readonly lists: {
     readonly eyebrow: string
     readonly countLine: string
@@ -235,6 +247,18 @@ const EN: UiStrings = {
     none: 'Nothing added yet',
     noneBody: 'Type what you are selling and it is saved for next time.',
     savedToCatalogue: 'Saved to your items',
+  },
+  settings: {
+    regionAndLanguage: 'Region & language',
+    businessCountry: 'Business country',
+    countryHint: 'Sets what your documents are called, your currency, your bank fields and your tax wording.',
+    appLanguage: 'App language',
+    callThisDocument: 'Call this document',
+    useRegionalName: 'Use the usual name',
+    currencyIs: 'Currency',
+    taxIsCalled: 'Tax is called',
+    bankFieldsAre: 'Bank details',
+    effectiveImmediately: 'Changes apply everywhere straight away, with or without internet.',
   },
   lists: {
     eyebrow: 'DOCUMENTS',

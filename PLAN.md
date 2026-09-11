@@ -262,8 +262,17 @@ improvements 1-3 and 8-10.
       type with the localised hero, type-named search, and no amount column on
       a delivery row. Sixteen tests on the stats alone, one per clause of §G's
       paragraph, because each clause is a way the number could be wrong.
-- [ ] Settings essentials (region & language, company, tax, payment methods,
-      saved items, signature) and onboarding (§R)
+- [x] **Settings → Region & language** — one country choice settling currency,
+      bank fields, tax wording, terminology and date format, with those
+      consequences shown beside the picker rather than discovered later. The
+      §V clause is tested end to end: moving NG → GB renames the delivery
+      document on the Home tile, the list hero and the builder header together.
+- [x] **Onboarding (§R)** — business setup asking for exactly two things with
+      the country pre-filled, "Do this later" as a first-class outcome, resume
+      after restart, a checklist derived from state with no separate done flag,
+      and sample records that cannot reach a balance or be issued.
+- [ ] Remaining Settings essentials: company & logo, tax rates, payment
+      methods, saved items, default signature (screens over existing logic)
 - [ ] Voice and Scan controls on Home — **Phase 6**, deliberately absent
       rather than rendered dead (§N)
 - [ ] Improvements 1-3 and 8-10
@@ -275,8 +284,17 @@ improvements 1-3 and 8-10.
       type with the localised hero, type-named search, and no amount column on
       a delivery row. Sixteen tests on the stats alone, one per clause of §G's
       paragraph, because each clause is a way the number could be wrong.
-- [ ] Settings essentials (region & language, company, tax, payment methods,
-      saved items, signature) and onboarding (§R)
+- [x] **Settings → Region & language** — one country choice settling currency,
+      bank fields, tax wording, terminology and date format, with those
+      consequences shown beside the picker rather than discovered later. The
+      §V clause is tested end to end: moving NG → GB renames the delivery
+      document on the Home tile, the list hero and the builder header together.
+- [x] **Onboarding (§R)** — business setup asking for exactly two things with
+      the country pre-filled, "Do this later" as a first-class outcome, resume
+      after restart, a checklist derived from state with no separate done flag,
+      and sample records that cannot reach a balance or be issued.
+- [ ] Remaining Settings essentials: company & logo, tax rates, payment
+      methods, saved items, default signature (screens over existing logic)
 - [ ] Voice and Scan controls on Home — **Phase 6**, deliberately absent
       rather than rendered dead (§N)
 - [ ] Improvements 1-3 and 8-10
