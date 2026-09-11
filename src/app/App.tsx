@@ -9,12 +9,17 @@
 import { DOCUMENT_TYPES } from '../domain/documents/types'
 import { LAUNCH_LOCALES, TERMINOLOGY_TABLES } from '../domain/locale/data/terminology'
 
+/**
+ * Mirrors PLAN.md's status board. "Code complete" is not "gate passed": every
+ * gate below that needs a physical device is still open, and this page says so
+ * rather than colouring a row green (§X).
+ */
 const PHASES = [
-  { id: 0, name: 'Spikes and reconciliation', state: 'in progress' },
-  { id: 1, name: 'Foundation', state: 'not started' },
-  { id: 2, name: 'Core offline app', state: 'not started' },
-  { id: 2.5, name: 'The remaining improvements', state: 'not started' },
-  { id: 3, name: 'Sync', state: 'not started' },
+  { id: 0, name: 'Spikes and reconciliation', state: 'in progress — spikes need devices' },
+  { id: 1, name: 'Foundation', state: 'code complete — gate not passed' },
+  { id: 2, name: 'Core offline app', state: 'code complete — gate needs a device' },
+  { id: 2.5, name: 'The remaining improvements', state: 'code complete' },
+  { id: 3, name: 'Sync', state: 'code complete — gate verified at logic level' },
   { id: 4, name: 'Native polish', state: 'not started' },
   { id: 5, name: 'Web and public links', state: 'not started' },
   { id: 6, name: 'Local AI and logo', state: 'not started' },
@@ -27,8 +32,8 @@ export function App() {
       <header className="mb-8">
         <h1 className="text-2xl font-bold">DocFlow</h1>
         <p className="mt-1 text-sm opacity-70">
-          Build v6 · phase 0. The product is finished when the gates pass — not when the
-          screens resemble the prototype (§X).
+          Build v6. The product is finished when the gates pass — not when the screens
+          resemble the prototype (§X).
         </p>
       </header>
 
