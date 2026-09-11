@@ -94,6 +94,21 @@ export interface UiStrings {
     readonly noneBody: string
     readonly savedToCatalogue: string
   }
+  readonly payments: {
+    readonly paidOfTotal: string
+    readonly amountLeft: string
+    readonly settled: string
+    readonly recordPayment: string
+    readonly amount: string
+    readonly method: string
+    readonly reference: string
+    readonly datePaid: string
+    readonly receipt: string
+    readonly none: string
+    readonly noneBody: string
+    readonly partPaymentNote: string
+    readonly save: string
+  }
   readonly design: {
     readonly logoOn: string
     readonly logoOff: string
@@ -194,6 +209,21 @@ const EN: UiStrings = {
     none: 'Nothing added yet',
     noneBody: 'Type what you are selling and it is saved for next time.',
     savedToCatalogue: 'Saved to your items',
+  },
+  payments: {
+    paidOfTotal: '{paid} paid of {total}',
+    amountLeft: '{amount} left',
+    settled: 'Settled in full',
+    recordPayment: 'Record a payment',
+    amount: 'Amount',
+    method: 'Method',
+    reference: 'Reference',
+    datePaid: 'Date paid',
+    receipt: 'Receipt',
+    none: 'No payments yet',
+    noneBody: 'Record one when the money arrives.',
+    partPaymentNote: 'Less than the balance is recorded as a part payment.',
+    save: 'Record it',
   },
   design: {
     logoOn: 'Logo on',

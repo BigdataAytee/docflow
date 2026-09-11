@@ -248,7 +248,16 @@ improvements 1-3 and 8-10.
 - [x] **The §M device-qualified reference design task, now closed.** See
       decision 23.
 - [ ] Native PDF output and share — needs the Capacitor bridge, **Phase 4**
-- [ ] Payments, receipts, per-type lists, Home, Settings essentials, onboarding
+- [x] **Payments and receipts** — `recordPayment` with the §K rules (over-payment
+      becomes customer credit, a payment may stand alone with no invoice), the
+      paid-so-far bar's three figures, the payments list with a per-payment
+      Receipt button, and the sheet prefilled to the balance. There is
+      deliberately no `markPaid(invoiceId)` anywhere: settling an invoice IS
+      recording a payment, which is §G's "never writes a bare flag" made
+      structural. `receiptDraftFor` derives a receipt from a payment that
+      already exists, and there is no path that creates one without.
+- [ ] Per-type lists, Home, Settings essentials, onboarding
+- [ ] Improvements 1-3 and 8-10
 - [ ] Payments + allocations, receipts
 - [ ] On-device PDFs, all sixteen templates
 - [ ] Per-type lists, Home, Settings essentials, onboarding
