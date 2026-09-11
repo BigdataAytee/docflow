@@ -15,6 +15,13 @@ export const migrationFiles = (): string[] =>
   readdirSync(MIGRATIONS).filter((f) => f.endsWith('.sql')).sort()
 
 export async function applyMigrations(client: Client): Promise<void> {
+  // Start from nothing every run. CI gets a fresh container anyway, but a
+  // developer re-running against a local Postgres would otherwise collide with
+  // the previous run's seed — and a suite you have to hand-reset is a suite
+  // people stop running.
+  await client.query('drop schema if exists public cascade')
+  await client.query('create schema public')
+
   await client.query(readFileSync(BOOTSTRAP, 'utf8'))
   for (const file of migrationFiles()) {
     await client.query(readFileSync(join(MIGRATIONS, file), 'utf8'))

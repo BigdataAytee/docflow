@@ -80,3 +80,13 @@ grant execute on function public.current_company_id() to authenticated;
 -- the only way billing rows, signing tokens and numbering reservations get
 -- written. It is never handed to a client (CLAUDE.md).
 grant all on all tables in schema public to service_role;
+
+-- TODO(Phase 7) — service-role penetration checks, tested separately.
+-- FORCE closes the table-owner exemption; it does nothing about BYPASSRLS.
+-- service_role sees and writes every company by design, so the whole isolation
+-- boundary above rests on the service key never reaching a client. A leaked
+-- key is a total cross-company compromise and no policy here would stop it.
+-- §Q Phase 7 owns the scripted checks (wrong user, wrong role, revoked device)
+-- and must also assert no client bundle, log, sync payload or edge-function
+-- response ever carries the key. See supabase/tests/rls.test.ts, which asserts
+-- the bypass is real so the limitation cannot be skimmed past.

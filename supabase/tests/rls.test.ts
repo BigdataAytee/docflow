@@ -109,13 +109,67 @@ describe('Two seeded companies cannot read each other (§Q gate)', () => {
     })
   })
 
-  it('denies an unauthenticated caller everything', async () => {
-    await asCompany(db, null, async () => {
-      for (const table of ['companies', 'customers', 'documents', 'entitlements']) {
-        const { rows } = await db.query(`select * from public.${table}`)
-        expect(rows, `${table} leaked to an unauthenticated caller`).toEqual([])
+  /**
+   * PERMANENT REGRESSION TEST — do not delete.
+   *
+   * current_company_id() once cast the claims GUC straight to json, and
+   * ''::json raises rather than returning null, so an unauthenticated caller
+   * got a database error instead of an empty result. Every claims shape a
+   * caller can actually arrive with is pinned here.
+   */
+  it('denies an unauthenticated caller everything, for every empty-claims shape', async () => {
+    const shapes: [string, string | null][] = [
+      ['empty string', ''],
+      ['empty json object', '{}'],
+      ['null company_id', '{"company_id":null}'],
+      ['blank company_id', '{"company_id":""}'],
+      ['claims never set', null],
+    ]
+
+    for (const [name, claims] of shapes) {
+      await db.query('begin')
+      try {
+        await db.query('set local role authenticated')
+        if (claims !== null) {
+          await db.query(`select set_config('request.jwt.claims', $1, true)`, [claims])
+        }
+        for (const table of ['companies', 'customers', 'documents', 'entitlements']) {
+          const { rows } = await db.query(`select * from public.${table}`)
+          expect(rows, `${table} leaked with ${name}`).toEqual([])
+        }
+      } finally {
+        await db.query('rollback')
       }
-    })
+    }
+  })
+})
+
+describe('What FORCE does NOT protect against', () => {
+  /**
+   * TODO(Phase 7) — service-role penetration checks, tested separately.
+   *
+   * FORCE closes the table-owner exemption. It does nothing about BYPASSRLS:
+   * service_role sees and writes everything by design, because the edge
+   * functions need to. So the whole two-company boundary proven above rests on
+   * the service key never reaching a client.
+   *
+   * That means a leaked service key is a total cross-company compromise, and
+   * no test in this file would notice. §Q Phase 7 owns it: "scripted
+   * permission/RLS penetration checks run as wrong user, wrong role and
+   * revoked device". Those must additionally assert that no client bundle,
+   * log line, sync payload or edge-function response ever carries the service
+   * key — which is a build-and-deploy check, not a SQL one.
+   *
+   * This test exists so the limitation is executable rather than a comment
+   * someone can skim past: it asserts the bypass is real and expected.
+   */
+  it('service_role bypasses every policy — by design, and the reason Phase 7 exists', async () => {
+    await db.query('set role service_role')
+    const { rows } = await db.query('select company_id from public.customers')
+    await db.query('reset role')
+
+    // Both companies, from one connection, with no claims set at all.
+    expect(new Set(rows.map((r) => r.company_id)).size).toBe(2)
   })
 })
 

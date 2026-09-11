@@ -12,8 +12,8 @@ claims nothing the gates have not proven (§X).
 
 | Phase | Scope | Gate | State |
 | --- | --- | --- | --- |
-| **0** | Spikes and reconciliation | tier table + logo rung published; PLAN reconciled; terminology drafts in review; money tests green | **in progress** — see below |
-| 1 | Foundation | cross-company denial; money/transition/label property tests; encrypted SQLite; auth ≤ legacy taps | not started |
+| **0** | Spikes and reconciliation | tier table + logo rung published; PLAN reconciled; terminology drafts in review; money tests green | **in progress** — spikes need devices |
+| **1** | Foundation | cross-company denial; money/transition/label property tests; encrypted SQLite; auth ≤ legacy taps | **in progress** — auth is the one open item |
 | 2 | Core offline app | the airplane-mode walk-through, fresh install, physical device | not started |
 | 2.5 | Remaining improvements | each §L behaviour verified offline | not started |
 | 3 | Sync | five offline documents arrive once, unique references, through a mid-sync kill | not started |
@@ -78,6 +78,52 @@ not start until they are.
 
 ---
 
+## Phase 1 — detail
+
+### Done
+
+- [x] **Two-company RLS denial suite, blocking in CI.** The gate's headline
+      clause, run against a Postgres service container — no hosted project, so
+      no secrets, no network, nothing to go stale. RLS is ENABLE **and** FORCE
+      on every table, applied by a loop over `public` so a table added by a
+      future migration cannot miss out. Two mutations confirm the guard bites:
+      a new table without RLS fails as `forgotten_table (enabled=false,
+      forced=false)`, and dropping FORCE while leaving ENABLE fails as
+      `documents (enabled=true, forced=false)`.
+- [x] **The full §E schema** as Postgres migrations — 18 tables, RLS forced on
+      all of them, billing read-only to the client, the audit log append-only.
+- [x] **The locale layer** (`src/domain/locale/profile.ts`): profiles,
+      terminology resolution, frozen-label snapshots, search terms.
+- [x] **The label-resolution property test**, both halves of the gate clause:
+      every surface resolves through one lookup, and *no hardcoded type-name
+      string survives the lint rule* — asserted by running ESLint in-process
+      over `src/features`, `src/pdf` and `src/app`, so the rule is a test and
+      not only a CI step. Demonstrated failing on a planted
+      `"Create a new Invoice"` in `src/app/App.tsx`, then passing once removed.
+- [x] **Repository contracts** (`src/data/repositories`) with in-memory
+      implementations, and a contract suite every future implementation must
+      also pass: mutations are idempotent, issued documents reject edits, reads
+      are company-scoped, search matches the frozen label.
+- [x] **§J currency and bank-field definitions**, transcribed from the spec
+      table and nothing more. NGN's "three fields, no sort code" is a named
+      test, including that no sort code, routing number, IBAN, SWIFT or branch
+      field exists on it. Every definition is `validated: false` until
+      in-market review (§W), and an unknown currency throws rather than
+      guessing a field set (CLAUDE.md).
+
+### Open
+
+- [ ] **Supabase Auth** — the one open Phase 1 item. Email/password + Google,
+      legacy-styled screens, ≥30-day sessions tolerant of long offline gaps,
+      offline use never requiring token refresh, expired credentials pausing
+      sync without deleting local work. Blocked on the hosted project; the
+      Supabase MCP connector is not yet connected.
+- [ ] **Encrypted SQLite opens on device** — a gate clause needing a phone.
+
+**The Phase 1 gate is not passed.** Cross-company denial, the money and
+transition property tests and label resolution are all green; auth and the
+encrypted-SQLite check are not done.
+
 ## Decisions taken
 
 | # | Decision | Why | Where |
@@ -93,10 +139,24 @@ not start until they are.
 | 9 | Overpayment leaves an invoice at **zero, not negative** | It is customer credit, not a negative balance on a document (§K). | `invoiceOutstanding` |
 | 10 | Terminology tables carry a `reviewStatus`; nothing unreviewed can ship | §D: "machine translation is a draft, never a release." Making that a field rather than a promise means the Phase-1 resolver can refuse to serve a draft. | `src/domain/locale/types.ts` |
 | 11 | The Rule-4 lint rule ships in Phase 0, ahead of its §Q gate | It costs nothing now and prevents the debt it exists to catch. | `tools/eslint` |
+| 12 | RLS is ENABLE **and** FORCE, applied by a loop over `public` | ENABLE alone exempts the table owner, so migrations and any owner-privileged path would read across companies while a denial test still passed. The loop means a future table cannot opt out by omission. | `0006_rls.sql` |
+| 13 | The RLS suite runs against a bare Postgres, not the hosted project | No secrets in CI, no network, and it cannot fail because a project went to sleep. Only the roles a hosted project already provides are created first, by a CI-only bootstrap. | `supabase/tests` |
+| 14 | The public-link token hash lives in its own table, not a column | §P wants it "separate from general document reads". A table with no client policy is stronger than a column any careless `select *` could surface. | `document_signing_tokens` |
+| 15 | Two invariants are check constraints, not just UI rules | A waybill's money columns must all be zero and WHT is invoice-only. No client, sync payload or future migration can put a price on a delivery document. | `0002_customers_documents.sql` |
+| 16 | A per-type label override renames **every** surface, printed title included | A override that changed the tile but not the PDF would break Rule #5 the moment it was used. | `resolve()` |
+| 17 | An unknown locale or currency throws | A silent fallback would ship an English label or an invented field set into a market nobody validated. CLAUDE.md forbids inventing banking rules; this makes it structural. | `tableFor`, `currencyDefinition` |
+| 18 | The lint rule is asserted *inside* the property test, not only in CI | §Q words the gate as "no hardcoded type-name string survives a lint rule written for it". Running ESLint in-process makes that a test that fails on a planted string, with a second case proving the rule still matches so the first cannot pass vacuously. | `resolve.test.ts` |
 
 ## Deviations from the spec
 
-None so far. Where a simple user flow and the spec conflict, §A Rule #1 says
+**Phase 1 began before the Phase 0 gate passed.** §Q and CLAUDE.md both say a
+phase does not start until the prior gate does, and Phase 0's tier table and
+logo rung are still unmeasured. Those measurements feed §Q Phase 6 — the AI
+ladder and the logo engine — and nothing in Phase 1's scope reads either, so
+the risk the rule guards against does not arise here. Recorded rather than
+left silent, and the Phase 0 items remain open above.
+
+Otherwise none. Where a simple user flow and the spec conflict, §A Rule #1 says
 simplify and note it here.
 
 ## Open — carried from §W
@@ -115,3 +175,22 @@ Added by Phase 0:
 - **The device-qualified reference format (§M "Design task")** — short,
   prefix-consistent, customer-presentable, explained in one line in Settings —
   is still to be designed. It blocks Phase 3, not Phase 1.
+
+Added by Phase 1:
+
+- **Service-role penetration checks are Phase 7 work, and FORCE does not cover
+  them.** FORCE closes the table-owner exemption; it does nothing about
+  BYPASSRLS. `service_role` sees and writes every company by design, because
+  the edge functions need to — so the whole two-company boundary rests on the
+  service key never reaching a client. A leaked key is a total cross-company
+  compromise and no policy or test in `supabase/tests` would notice. §Q Phase 7
+  owns the scripted checks (wrong user, wrong role, revoked device); they must
+  additionally assert that no client bundle, log line, sync payload or
+  edge-function response ever carries the key, which is a build-and-deploy
+  check rather than a SQL one. Marked `TODO(Phase 7)` in `0006_rls.sql`, and
+  asserted as a live behaviour in `rls.test.ts` so the limitation is executable
+  rather than a comment someone can skim past.
+- **§J field sets remain unvalidated.** Every currency definition carries
+  `validated: false`. §W holds them open for per-market review, and the ES
+  terminology split (presupuesto vs cotización) likely forces a currency and
+  locale split together.
