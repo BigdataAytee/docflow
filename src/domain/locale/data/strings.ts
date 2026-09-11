@@ -105,6 +105,27 @@ export interface UiStrings {
     readonly taxIsCalled: string
     readonly bankFieldsAre: string
     readonly effectiveImmediately: string
+    readonly howYouGetPaid: string
+    readonly methodsOn: string
+    readonly noMethodsYet: string
+    readonly bankTransfer: string
+    readonly currencyChanged: string
+    readonly company: string
+    readonly businessName: string
+    readonly nameStyle: string
+    readonly logoSize: string
+    readonly numberingPrefixes: string
+    readonly prefixHint: string
+    readonly tax: string
+    readonly taxRate: string
+    readonly withholdingRate: string
+    readonly workedExample: string
+    readonly savedItems: string
+    readonly noSavedItems: string
+    readonly noSavedItemsBody: string
+    readonly usedTimes: string
+    readonly defaultSignature: string
+    readonly signatureHint: string
   }
   readonly lists: {
     readonly eyebrow: string
@@ -259,6 +280,27 @@ const EN: UiStrings = {
     taxIsCalled: 'Tax is called',
     bankFieldsAre: 'Bank details',
     effectiveImmediately: 'Changes apply everywhere straight away, with or without internet.',
+    howYouGetPaid: 'How you get paid',
+    methodsOn: '{count} switched on',
+    noMethodsYet: 'None switched on yet',
+    bankTransfer: 'Bank transfer',
+    currencyChanged: 'Your currency changed, so these fields changed too.',
+    company: 'Company & logo',
+    businessName: 'Business name',
+    nameStyle: 'Name style',
+    logoSize: 'Logo size',
+    numberingPrefixes: 'Numbering prefixes',
+    prefixHint: 'Your prefix is always used, whatever the region suggests.',
+    tax: 'Tax',
+    taxRate: '{label} rate',
+    withholdingRate: 'Withholding tax rate',
+    workedExample: 'On {subtotal} you would charge {tax} and withhold {wht}, leaving {payable}.',
+    savedItems: 'Saved items',
+    noSavedItems: 'Nothing saved yet',
+    noSavedItemsBody: 'Items you type into a document are kept here for next time.',
+    usedTimes: 'used {count}×',
+    defaultSignature: 'Default signature',
+    signatureHint: 'Signs new documents unless you draw a different one.',
   },
   lists: {
     eyebrow: 'DOCUMENTS',

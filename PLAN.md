@@ -271,8 +271,15 @@ improvements 1-3 and 8-10.
       the country pre-filled, "Do this later" as a first-class outcome, resume
       after restart, a checklist derived from state with no separate done flag,
       and sample records that cannot reach a balance or be issued.
-- [ ] Remaining Settings essentials: company & logo, tax rates, payment
-      methods, saved items, default signature (screens over existing logic)
+- [x] **The remaining Settings essentials** — How you get paid (§J) rendering
+      from the same currency definition the PDF prints from, so the form and
+      the printed box cannot drift; Tax with a worked example computed by
+      `computeTotals` rather than written twice; Company & logo with live name
+      preview and prefixes where the regional suggestion is a placeholder and
+      never an imposed value; Saved items as a read-only view of what the
+      builder remembered.
+- [ ] Improvements 1-3 and 8-10 (WhatsApp reminders, saved catalogue polish,
+      partial payments UI wiring, empty states, accessibility, performance)
 - [ ] Voice and Scan controls on Home — **Phase 6**, deliberately absent
       rather than rendered dead (§N)
 - [ ] Improvements 1-3 and 8-10
@@ -293,8 +300,15 @@ improvements 1-3 and 8-10.
       the country pre-filled, "Do this later" as a first-class outcome, resume
       after restart, a checklist derived from state with no separate done flag,
       and sample records that cannot reach a balance or be issued.
-- [ ] Remaining Settings essentials: company & logo, tax rates, payment
-      methods, saved items, default signature (screens over existing logic)
+- [x] **The remaining Settings essentials** — How you get paid (§J) rendering
+      from the same currency definition the PDF prints from, so the form and
+      the printed box cannot drift; Tax with a worked example computed by
+      `computeTotals` rather than written twice; Company & logo with live name
+      preview and prefixes where the regional suggestion is a placeholder and
+      never an imposed value; Saved items as a read-only view of what the
+      builder remembered.
+- [ ] Improvements 1-3 and 8-10 (WhatsApp reminders, saved catalogue polish,
+      partial payments UI wiring, empty states, accessibility, performance)
 - [ ] Voice and Scan controls on Home — **Phase 6**, deliberately absent
       rather than rendered dead (§N)
 - [ ] Improvements 1-3 and 8-10
