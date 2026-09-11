@@ -55,6 +55,9 @@ describe('A service-role key must never reach the browser', () => {
   })
 
   it('builds a client with an anon key', () => {
+    // Constructing for real, not mocking: supabase-js initialises Realtime
+    // eagerly and needs a native WebSocket, which is why the toolchain is
+    // pinned to Node 22+ (CI caught this on 20).
     expect(() =>
       createBrowserClient({ url: 'https://example.supabase.co', anonKey: ANON }),
     ).not.toThrow()
