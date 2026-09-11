@@ -57,6 +57,53 @@ export interface UiStrings {
     readonly missingTitle: string
     readonly fixThis: string
   }
+  readonly details: {
+    readonly numberAndDates: string
+    readonly reference: string
+    readonly editReference: string
+    readonly issueDate: string
+    readonly dueDate: string
+    readonly validUntil: string
+    readonly datePaid: string
+    readonly dispatchDate: string
+    readonly expectedDelivery: string
+    readonly today: string
+    readonly tomorrow: string
+    readonly yesterday: string
+    readonly inDays: string
+    readonly currencyAndPayment: string
+    readonly currency: string
+    readonly paymentReady: string
+    readonly paymentNotSet: string
+    readonly setUpPayment: string
+    readonly signature: string
+    readonly tapToSign: string
+    readonly deliveryAddress: string
+    readonly linkedInvoice: string
+    readonly method: string
+    readonly paymentReference: string
+  }
+  readonly items: {
+    readonly addItem: string
+    readonly description: string
+    readonly quantity: string
+    readonly unitPrice: string
+    readonly unit: string
+    readonly add: string
+    readonly none: string
+    readonly noneBody: string
+    readonly savedToCatalogue: string
+  }
+  readonly totals: {
+    readonly subtotal: string
+    readonly discount: string
+    readonly tax: string
+    readonly withholding: string
+    readonly payable: string
+    readonly driver: string
+    readonly vehicle: string
+    readonly noMoneyOnDelivery: string
+  }
   /** One message per `IssueProblem.field` token the builder can return. */
   readonly problems: Readonly<Record<string, string>>
 }
@@ -102,6 +149,53 @@ const EN: UiStrings = {
     saveDocument: 'Save {label}',
     missingTitle: 'Before you can issue this',
     fixThis: 'Fix this',
+  },
+  details: {
+    numberAndDates: 'Number & dates',
+    reference: 'Reference',
+    editReference: 'Edit reference',
+    issueDate: 'Date',
+    dueDate: 'Due',
+    validUntil: 'Valid until',
+    datePaid: 'Date paid',
+    dispatchDate: 'Dispatch date',
+    expectedDelivery: 'Expected delivery',
+    today: 'Today',
+    tomorrow: 'Tomorrow',
+    yesterday: 'Yesterday',
+    inDays: '{days} days',
+    currencyAndPayment: 'Currency & payment',
+    currency: 'Currency',
+    paymentReady: '{count} payment method ready',
+    paymentNotSet: 'No payment method yet',
+    setUpPayment: 'Set up payment',
+    signature: 'Signature',
+    tapToSign: 'Tap to sign',
+    deliveryAddress: 'Delivery address',
+    linkedInvoice: 'Linked invoice',
+    method: 'Method',
+    paymentReference: 'Payment reference',
+  },
+  items: {
+    addItem: 'Add an item',
+    description: 'Description',
+    quantity: 'Qty',
+    unitPrice: 'Unit price',
+    unit: 'Unit',
+    add: 'Add',
+    none: 'Nothing added yet',
+    noneBody: 'Type what you are selling and it is saved for next time.',
+    savedToCatalogue: 'Saved to your items',
+  },
+  totals: {
+    subtotal: 'Subtotal',
+    discount: 'Discount',
+    tax: 'Tax',
+    withholding: 'Less withholding tax',
+    payable: 'Payable',
+    driver: 'Driver',
+    vehicle: 'Vehicle',
+    noMoneyOnDelivery: 'Delivery documents carry no prices.',
   },
   problems: {
     party: 'Choose who this is for.',

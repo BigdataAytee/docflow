@@ -206,7 +206,15 @@ improvements 1-3 and 8-10.
       band resolving problem tokens into the active language with a link back
       to each step. Fifteen tests, including that the same document titles
       itself "Waybill" in EN-NG and "Delivery note" in EN-GB.
-- [ ] The five step bodies (Details, Items, Totals, Design, Review)
+- [x] **Step 1 Details, step 2 Items, step 3 Totals** — with the per-type
+      differences §G spells out enforced by structure rather than by a flag: a
+      receipt has date-paid and no due date, a quotation has valid-until and no
+      payment card, a delivery document has a delivery address and no price
+      field anywhere. Nineteen tests, most of them holding §V's "delivery
+      documents never show prices, tax, totals or payment instructions".
+- [ ] Step 4 Design (the §H sixteen-template strip) and step 5 Review, which
+      both need the PDF layer
+- [ ] The PDF layer itself (§H, §I) — sixteen templates, on-device
 - [ ] Payments + allocations, receipts
 - [ ] On-device PDFs, all sixteen templates
 - [ ] Per-type lists, Home, Settings essentials, onboarding
