@@ -15,10 +15,8 @@ claims nothing the gates have not proven (§X).
 | **0** | Spikes and reconciliation | tier table + logo rung published; PLAN reconciled; terminology drafts in review; money tests green | **in progress** — spikes need devices |
 | **1** | Foundation | cross-company denial; money/transition/label property tests; encrypted SQLite; auth ≤ legacy taps | **code complete, gate NOT passed** — 2 of 4 clauses unverifiable here (see below) |
 | **2** | Core offline app | the airplane-mode walk-through on a physical device | **code complete** — gate needs a device |
+| **2.5** | Remaining improvements | each §L behaviour verified offline; "Kept" moves the moment an expense is added; a reissued receipt never increments income | **gate passed** |
 | **3** | Sync | five offline documents arrive once; two-device edits retain both; no chaos scenario double-counts, resurrects or alters a frozen label | **code complete** — gate verified at logic level |
-| 2 | Core offline app | the airplane-mode walk-through, fresh install, physical device | not started |
-| 2.5 | Remaining improvements | each §L behaviour verified offline | not started |
-| 3 | Sync | five offline documents arrive once, unique references, through a mid-sync kill | not started |
 | 4 | Native polish | installable builds pass all flows on physical Android and iOS | not started |
 | 5 | Web + public links | cross-device visibility; token behaviour per §P; one payment per event | not started |
 | 6 | Local AI + logo | the §N six-step gate per tier; the §O definition of done | not started |
@@ -410,6 +408,78 @@ Needing a device or a later phase, and therefore NOT claimed:
 
 ---
 
+## Phase 2.5 — detail
+
+Scope per §Q: expenses · statements · recurring invoices · customer labels ·
+credit notes · the conflict-notice UI shell · In/Out/Kept analytics with
+ageing and top items. §L numbers these 4-7 plus expenses and statements.
+
+### Done
+
+- [x] **In / Out / Kept** (`src/features/analytics/inOutKept.ts`) — per
+      currency, never merged, with "In" taken from PAYMENTS only. There is no
+      parameter anywhere on this path that accepts a document, which is how
+      §V's "issuing or resharing a receipt never increments income" is held
+      shut by the type system rather than by a test remembering to check. A
+      property test holds `kept == moneyIn - moneyOut` for any ledger.
+- [x] **The six-month in-vs-out bars** — every month in the window is present
+      even when empty, because a gap in a bar chart reads as "nothing was
+      recorded", which is a different claim from "nothing came in".
+- [x] **Ageing buckets** (`ageing.ts`) — not due / 1-30 / 31-60 / 60+, disjoint
+      by construction, over what is still OWED rather than what was billed.
+      §G's last label reads "60+" while the one before it ends at 60, so the
+      boundary is read as strictly-more-than-sixty and a 60-day-late invoice is
+      counted exactly once. A property test holds the buckets summing to the
+      total. The worst bucket is named, and "not due" is never named as worst.
+- [x] **Top items by value** (`topItems.ts`) — issued, non-void invoices only.
+      Different spellings of one product collapse to the commonest spelling.
+      Quotations, delivery documents and receipts are excluded, each for its
+      own reason.
+- [x] **Expenses** (`src/features/expenses/record.ts`) and the §G `+` sheet.
+      Three fields — amount, date, and one of description-or-photo — with the
+      photo standing in for the DESCRIPTION, never for the amount (Rule #3).
+      Category is offered and never required (Rule #1).
+- [x] **The analytics page** (`Analytics.tsx`) — one page, no tabs, no filter
+      panels, with skeletons, an empty state, and the ask box: four chips that
+      are real local queries on any phone, and a text box that says plainly
+      that free-form understanding needs the §N offline tools rather than
+      reaching for a network (CLAUDE.md).
+- [x] **Customer statements** (`src/features/statements`) — a period view of
+      invoices against payments with an opening and closing balance, one
+      currency per statement because a closing balance is exactly where §G's
+      no-mixing rule would break invisibly. A statement writes nothing, so
+      printing it twice cannot move a balance.
+- [x] **Recurring invoices** (`src/features/recurring/schedule.ts`) — monthly
+      DRAFTS, never issued, with `rec:<document>:<YYYY-MM>` as a derived (not
+      generated) idempotency key. A property test runs catch-up three times
+      over gaps up to 30 months and asserts no period is ever created twice.
+      The 31st in a short month falls on that month's last day.
+- [x] **Credit notes** (`src/features/credits/issue.ts`) — Rule #5's middle
+      correction. Frozen reference, reason required, capped at the invoice
+      total, and no path into any income function.
+- [x] **Customer labels** (`src/features/customers/labels.ts`) — case- and
+      space-insensitive, no starter set, and no label control appears at all
+      for a business that has never used one.
+- [x] **Settings → Data & sync** (`DataAndSync.tsx`) — upload state in §M's
+      words, the export line stating Rule #6, and the §L7 chooser as a fixed
+      worked example that is labelled an example while it is open and writes
+      nothing when chosen.
+
+### Phase 2.5 gate — recorded honestly
+
+| §Q clause | Result |
+| --- | --- |
+| Each feature's §L behaviour verified offline | ✅ verified — every module and screen here runs on in-memory data with no network call on any path |
+| "Kept" moves the moment an expense is added | ✅ verified twice — in the arithmetic, and through the screen (`Analytics.test.tsx`) |
+| A reissued receipt never increments income | ✅ verified — and structurally: no income function accepts a document |
+
+**The Phase 2.5 gate passes**, with one thing it does not claim: "offline" here
+means no code path reaches the network, proven by construction and by tests,
+not by an airplane-mode walk-through on a handset. That walk-through is the
+Phase 2 gate and stays open until there is a device.
+
+---
+
 ## Phase 3 — detail
 
 ### Done
@@ -488,6 +558,11 @@ the whole difference between a passing gate and a green test run.
 | 23 | The offline reference is `INV-0042-K3` — a two-character device tag, added only when the number did **not** come from a server-reserved block | §M left the format open and asked for "short, prefix-consistent, customer-presentable". A suffix keeps the prefix and number shape a customer already recognises, and appears only on the offline exception rather than on every document, so it reads as part of the number rather than as machinery. Asking the server for a number before issuing would have been the alternative, and that breaks Rule #3. The alphabet excludes I, L, O and U so nothing reads as a digit, and the tag is derived deterministically from the device id because a reference must never change after issue. | `reference.ts` |
 | 24 | The hand-rolled outbox is built; PowerSync is a Phase 4 evaluation | §C prefers PowerSync but §W requires it "validated against the chosen encrypted SQLite configuration" first, and that configuration does not exist until Phase 4 puts it on a device. Building the documented fallback now keeps Phase 3 moving without pre-judging the evaluation. §M forbids two replay engines, so if PowerSync passes its evaluation this outbox is REMOVED, not run alongside — the interfaces are deliberately narrow to make that a deletion rather than a disentangling. | `src/sync/outbox.ts` |
 | 18 | The lint rule is asserted *inside* the property test, not only in CI | §Q words the gate as "no hardcoded type-name string survives a lint rule written for it". Running ESLint in-process makes that a test that fails on a planted string, with a second case proving the rule still matches so the first cannot pass vacuously. | `resolve.test.ts` |
+| 25 | Kept, ageing and top items are computed per currency, and a statement covers ONE currency | §G forbids adding NGN to USD. A chart axis and a closing balance are the two places that rule breaks silently, because both want a single number. Making the currency part of the row — and of the statement — means there is no shape in the code that could hold a merged figure. | `src/features/analytics/*`, `src/features/statements/compose.ts` |
+| 26 | A receipt photo on an expense never supplies the amount | Rule #3: money is never inferred. Reading a figure off a photograph is §N Tier B work (Phase 6), and even then lands in a review step. Until then the photo stands in for the description and the sheet says so in a line. | `src/features/expenses/record.ts` |
+| 27 | Recurrence keys are derived from (document, month), not generated | An idempotency key that is generated has to be stored and looked up to be idempotent; one that is derived is idempotent by arithmetic. Two devices, a retried upload and a crash halfway through catch-up all produce the same key without coordinating. | `src/features/recurring/schedule.ts` |
+| 28 | Catch-up creates at most 12 missed months and REPORTS the rest | §L4 says missed periods are created on next launch. A phone opened after five years would dump sixty drafts into the list, which is its own kind of broken. Dropping them silently is worse, so `catchUp` returns the months it skipped and the UI can say so. Recorded as a deviation below. | `src/features/recurring/schedule.ts` |
+| 29 | A credit note is capped at the invoice total, not at the outstanding balance | Crediting more than the document would make the invoice worth less than nothing. Money going back to a customer who has already paid is a refund — money OUT — and is recorded as one, not as a negative invoice. | `src/features/credits/issue.ts` |
 
 ## Deviations from the spec
 
@@ -506,6 +581,21 @@ logo rung are still unmeasured. Those measurements feed §Q Phase 6 — the AI
 ladder and the logo engine — and nothing in Phase 1's scope reads either, so
 the risk the rule guards against does not arise here. Recorded rather than
 left silent, and the Phase 0 items remain open above.
+
+**Phase 2.5 ran after Phase 3, not before it.** §Q orders it 2 → 2.5 → 3, and
+§L7 itself says the conflict notice ships "2.5, alongside Phase 3". The owner
+directed Phase 3 first. Nothing in Phase 2.5's scope is depended on by Phase 3
+— sync replays operations over records and never reads an expense, a statement
+or a label — and running it second meant the §L7 chooser was already built and
+tested when the demo shell needed it. Recorded rather than left silent.
+
+**Catch-up on recurring invoices is bounded at twelve months.** §L4 says
+missed periods are created on next launch without duplicates, and says nothing
+about a limit. A phone opened after a long gap would otherwise create a draft
+for every month since the repeat was switched on. `catchUp` creates the twelve
+most recent missed months and returns the older ones in `skipped`, so the UI
+can state what it did not create — a simplification per Rule #1, reported
+rather than silent.
 
 Otherwise none. Where a simple user flow and the spec conflict, §A Rule #1 says
 simplify and note it here.

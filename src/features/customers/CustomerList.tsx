@@ -15,6 +15,7 @@ import type { Customer } from '../../data/repositories'
 import { EmptyState, SkeletonList, StatusBadge } from '../../ui'
 import { format } from '../../domain/locale/data/strings'
 import { type BilledInvoice, customerBalances, hasOutstanding } from './balance'
+import { filterByLabels, labelsInUse } from './labels'
 import { formatMoney } from './formatMoney'
 import type { Payment } from '../../domain/payments/ledger'
 
@@ -29,6 +30,7 @@ export function CustomerList({ invoices, payments, onOpen, onAdd }: CustomerList
   const { companyId, repositories, strings } = useCompany()
   const [customers, setCustomers] = useState<Customer[] | null>(null)
   const [query, setQuery] = useState('')
+  const [selectedLabels, setSelectedLabels] = useState<readonly string[]>([])
 
   useEffect(() => {
     let live = true
@@ -40,16 +42,24 @@ export function CustomerList({ invoices, payments, onOpen, onAdd }: CustomerList
     }
   }, [companyId, repositories])
 
+  // The filter row exists only once labels do (Rule #1: nothing is required,
+  // so nothing about labels appears for a business that never uses them).
+  const availableLabels = useMemo(
+    () => (customers === null ? [] : labelsInUse(customers)),
+    [customers],
+  )
+
   const visible = useMemo(() => {
     if (customers === null) return null
+    const labelled = filterByLabels(customers, selectedLabels)
     const q = query.trim().toLocaleLowerCase()
-    if (q === '') return customers
-    return customers.filter((c) =>
-      [c.name, c.phone, c.email, c.address]
+    if (q === '') return labelled
+    return labelled.filter((c) =>
+      [c.name, c.phone, c.email, c.address, ...c.labels]
         .filter((v): v is string => typeof v === 'string')
         .some((v) => v.toLocaleLowerCase().includes(q)),
     )
-  }, [customers, query])
+  }, [customers, query, selectedLabels])
 
   return (
     <section className="px-4 py-4">
@@ -64,6 +74,46 @@ export function CustomerList({ invoices, payments, onOpen, onAdd }: CustomerList
           className="min-h-tap w-full rounded-lg bg-white/80 px-4 text-sm shadow-inner"
         />
       </label>
+
+      {availableLabels.length > 0 && (
+        <div
+          className="mt-3 flex flex-wrap gap-2"
+          role="group"
+          aria-label={strings.customers.filterByLabel}
+        >
+          {availableLabels.map((label) => {
+            const on = selectedLabels.includes(label)
+            return (
+              <button
+                key={label}
+                type="button"
+                aria-pressed={on}
+                className={`rounded-full px-3 py-1.5 text-xs font-medium ${
+                  on ? 'bg-brand text-white' : 'border border-black/10 bg-white'
+                }`}
+                onClick={() =>
+                  setSelectedLabels((current) =>
+                    current.includes(label)
+                      ? current.filter((existing) => existing !== label)
+                      : [...current, label],
+                  )
+                }
+              >
+                {label}
+              </button>
+            )
+          })}
+          {selectedLabels.length > 0 && (
+            <button
+              type="button"
+              className="px-2 py-1.5 text-xs font-medium opacity-70"
+              onClick={() => setSelectedLabels([])}
+            >
+              {strings.customers.clearLabelFilter}
+            </button>
+          )}
+        </div>
+      )}
 
       <div className="mt-4">
         {/* Skeleton, never a spinner (§C). */}
@@ -88,7 +138,14 @@ export function CustomerList({ invoices, payments, onOpen, onAdd }: CustomerList
         )}
 
         {visible !== null && visible.length === 0 && (customers?.length ?? 0) > 0 && (
-          <EmptyState title={strings.customers.noMatchTitle} body={strings.customers.noMatchBody} />
+          <EmptyState
+            title={strings.customers.noMatchTitle}
+            body={
+              selectedLabels.length > 0 && query.trim() === ''
+                ? strings.customers.noneWithLabel
+                : strings.customers.noMatchBody
+            }
+          />
         )}
 
         {visible !== null && visible.length > 0 && (
@@ -141,6 +198,18 @@ function CustomerCard({
         <span className="block truncate text-sm font-semibold">{customer.name}</span>
         {customer.address !== undefined && (
           <span className="block truncate text-xs opacity-70">{customer.address}</span>
+        )}
+        {customer.labels.length > 0 && (
+          <span className="mt-1 flex flex-wrap gap-1">
+            {customer.labels.map((label) => (
+              <span
+                key={label}
+                className="rounded-full bg-brand-tint px-2 py-0.5 text-[10px] font-medium text-brand"
+              >
+                {label}
+              </span>
+            ))}
+          </span>
         )}
       </span>
       <span className="shrink-0">

@@ -50,6 +50,11 @@ export interface UiStrings {
     readonly paysEarly: string
     readonly paysOnTime: string
     readonly considerPartPayment: string
+    readonly labels: string
+    readonly addLabel: string
+    readonly filterByLabel: string
+    readonly clearLabelFilter: string
+    readonly noneWithLabel: string
   }
   readonly builder: {
     readonly stepOf: string
@@ -204,6 +209,99 @@ export interface UiStrings {
     readonly vehicle: string
     readonly noMoneyOnDelivery: string
   }
+  readonly analytics: {
+    readonly title: string
+    readonly eyebrow: string
+    readonly moneyIn: string
+    readonly moneyOut: string
+    readonly kept: string
+    readonly keptHelp: string
+    readonly inVsOut: string
+    readonly howLate: string
+    readonly bucketNotDue: string
+    readonly bucket1to30: string
+    readonly bucket31to60: string
+    readonly bucket60plus: string
+    readonly worstBucket: string
+    readonly nothingLate: string
+    readonly whatSellsBest: string
+    readonly soldAcross: string
+    readonly noSales: string
+    readonly nothingYet: string
+    readonly nothingYetBody: string
+    readonly askAnything: string
+    readonly askPlaceholder: string
+    readonly askOffline: string
+    readonly askUnavailable: string
+    /** One per `AskChip`. */
+    readonly askChips: Readonly<Record<string, string>>
+  }
+  readonly expenses: {
+    readonly title: string
+    readonly add: string
+    readonly amount: string
+    readonly date: string
+    readonly whatFor: string
+    readonly category: string
+    readonly attachPhoto: string
+    readonly photoAttached: string
+    readonly fromPhoto: string
+    readonly save: string
+    readonly none: string
+    readonly noneBody: string
+    readonly photoNeverSetsAmount: string
+  }
+  readonly statements: {
+    readonly title: string
+    readonly period: string
+    readonly from: string
+    readonly to: string
+    readonly openingBalance: string
+    readonly charged: string
+    readonly paid: string
+    readonly credited: string
+    readonly closingBalance: string
+    readonly balance: string
+    readonly date: string
+    readonly nothingInPeriod: string
+    readonly nothingInPeriodBody: string
+    readonly currencyNote: string
+    readonly share: string
+  }
+  readonly recurring: {
+    readonly repeat: string
+    readonly repeatOn: string
+    readonly repeatOff: string
+    readonly repeatHint: string
+    readonly repeatOffHint: string
+    readonly everyMonth: string
+    readonly nextOn: string
+    readonly draftsWaiting: string
+    readonly reviewBeforeSending: string
+    readonly stopRepeating: string
+  }
+  readonly credits: {
+    readonly title: string
+    readonly create: string
+    readonly reason: string
+    readonly amount: string
+    readonly against: string
+    readonly none: string
+    readonly noneBody: string
+    readonly neverMovesIncome: string
+    readonly reducesWhatIsOwed: string
+  }
+  readonly dataSync: {
+    readonly title: string
+    readonly uploadState: string
+    readonly exportAll: string
+    readonly exportAlwaysFree: string
+    readonly conflictDemo: string
+    readonly conflictDemoHint: string
+    readonly showExample: string
+    readonly hideExample: string
+    readonly demoNotice: string
+  }
   /** One message per `IssueProblem.field` token the builder can return. */
   readonly problems: Readonly<Record<string, string>>
 }
@@ -242,6 +340,11 @@ const EN: UiStrings = {
     paysLate: 'Pays on average {days} days late.',
     paysEarly: 'Pays on average {days} days early.',
     paysOnTime: 'Pays on time.',
+labels: 'Labels',
+    addLabel: 'Add a label',
+    filterByLabel: 'Filter by label',
+    clearLabelFilter: 'Show everyone',
+    noneWithLabel: 'Nobody has that label yet.',
     considerPartPayment: 'Consider part payment up front.',
   },
   builder: {
@@ -397,6 +500,103 @@ const EN: UiStrings = {
     driver: 'Driver',
     vehicle: 'Vehicle',
     noMoneyOnDelivery: 'Delivery documents carry no prices.',
+  },
+  analytics: {
+    title: 'Your business',
+    eyebrow: 'This month',
+    moneyIn: 'In',
+    moneyOut: 'Out',
+    kept: 'Kept',
+    keptHelp: 'Kept is the money you recorded coming in, less the expenses you recorded.',
+    inVsOut: 'In and out, last six months',
+    howLate: 'How late the money is',
+    bucketNotDue: 'Not due yet',
+    bucket1to30: '1-30 days late',
+    bucket31to60: '31-60 days late',
+    bucket60plus: 'Over 60 days late',
+    worstBucket: 'Most of what is late sits in {bucket}.',
+    nothingLate: 'Nothing is late.',
+    whatSellsBest: 'What sells best',
+    soldAcross: 'across {count}',
+    noSales: 'Nothing has sold yet.',
+    nothingYet: 'Nothing to show yet',
+    nothingYetBody: 'Record a payment or an expense and this page fills itself in.',
+    askAnything: 'Ask anything about your business',
+    askPlaceholder: 'Who owes me the most?',
+    askOffline: 'Answered on this phone, offline.',
+    askUnavailable: 'Free-form questions need the offline tools installed. The chips above work on any phone.',
+    askChips: {
+      who_owes_most: 'Who owes me the most?',
+      best_seller: 'What sells best?',
+      kept_this_month: 'What did I keep this month?',
+      how_late: 'How late is my money?',
+    },
+  },
+  expenses: {
+    title: 'Expenses',
+    add: 'Add an expense',
+    amount: 'Amount',
+    date: 'Date',
+    whatFor: 'What was it for?',
+    category: 'Category',
+    attachPhoto: 'Attach the receipt',
+    photoAttached: 'Receipt attached',
+    fromPhoto: 'From the receipt photo',
+    save: 'Add it',
+    none: 'No expenses yet',
+    noneBody: 'Add what you spend and "Kept" starts telling you the truth.',
+    photoNeverSetsAmount: 'Type the amount yourself — a photo is kept as proof, never read for figures.',
+  },
+  statements: {
+    title: 'Statement',
+    period: 'Period',
+    from: 'From',
+    to: 'To',
+    openingBalance: 'Balance brought forward',
+    charged: 'Charged',
+    paid: 'Paid',
+    credited: 'Credited',
+    closingBalance: 'Balance carried forward',
+    balance: 'Balance',
+    date: 'Date',
+    nothingInPeriod: 'Nothing in this period',
+    nothingInPeriodBody: 'Pick a wider period, or start from this customer first document.',
+    currencyNote: 'All amounts in {currency}.',
+    share: 'Share the statement',
+  },
+  recurring: {
+    repeat: 'Repeat',
+    repeatOn: 'Repeating',
+    repeatOff: 'Not repeating',
+    repeatHint: 'A fresh draft appears each month for you to check and send.',
+    repeatOffHint: 'This one is a one-off.',
+    everyMonth: 'Every month on day {day}',
+    nextOn: 'Next draft on {date}',
+    draftsWaiting: '{count} waiting for you to check',
+    reviewBeforeSending: 'Nothing is sent until you look at it.',
+    stopRepeating: 'Stop repeating',
+  },
+  credits: {
+    title: 'Credits',
+    create: 'Credit some of this back',
+    reason: 'Why?',
+    amount: 'How much?',
+    against: 'Against {reference}',
+    none: 'No credits',
+    noneBody: 'Credit money back when you have overcharged, without touching what you already sent.',
+    neverMovesIncome: 'A credit lowers what is owed. It never changes money you have already received.',
+    reducesWhatIsOwed: 'Reduces what is owed by {amount}.',
+  },
+  dataSync: {
+    title: 'Data & sync',
+    uploadState: 'Upload state',
+    exportAll: 'Export all my data',
+    exportAlwaysFree: 'Your documents and export are never locked, on any plan.',
+    conflictDemo: 'See what happens when two phones edit at once',
+    conflictDemoHint: 'A worked example. Nothing on this phone changes.',
+    showExample: 'Show me',
+    hideExample: 'Close',
+    demoNotice: 'This is an example, not your data.',
   },
   problems: {
     party: 'Choose who this is for.',
