@@ -296,9 +296,34 @@ improvements 1-3 and 8-10.
       customers, phone numbers however punctuated, amounts typed either way,
       item names — and both the current and frozen labels, so a company that
       moved to the UK finds its Lagos waybills by either word.
-- [ ] **Improvement 8 — the first-run sample document.** The exclusion rules
-      and empty states exist; seeding a labelled sample record is the
-      remaining piece.
+- [x] **Improvement 8 — first run and the labelled sample.** "Create my first
+      {label}" names the document in the local terminology on the very first
+      screen a user sees. The sample carries a loud badge announced to
+      assistive tech, uses the reference `SAMPLE` — no prefix, no sequence, so
+      it cannot collide with or be mistaken for the user's numbering — and a
+      brand-new account with only a sample in it shows no balance at all.
+
+**Phase 2's buildable scope is complete.** What remains needs hardware or a
+later phase — see the gate below.
+
+### The Phase 2 gate — what can and cannot be checked here
+
+§Q words it as "airplane mode, fresh install, physical device". Verified in CI
+today: create a customer, build a document, region switch changing every label
+while issued PDFs keep their frozen ones, delivery documents showing no money
+anywhere, a part payment moving invoice/customer/Home exactly once, and the
+auto-created receipt never incrementing income.
+
+Needing a device or a later phase, and therefore NOT claimed:
+
+- [ ] **Native PDF output and the share sheet** — Capacitor bridge, **Phase 4**.
+      The composition and pagination are done and tested; writing the file and
+      handing it to the OS is not.
+- [ ] **Preview in all sixteen designs on a real screen** — the models are
+      tested across all sixteen; how they look at A4 on a phone is not.
+- [ ] **Signature capture** — needs touch input.
+- [ ] **Force-kill mid-draft and recover** — needs a real app lifecycle.
+- [ ] **The airplane-mode walk-through itself** — needs the installed build.
 - [ ] Voice and Scan controls on Home — **Phase 6**, deliberately absent
       rather than rendered dead (§N)
 - [ ] Improvements 1-3 and 8-10
@@ -344,9 +369,34 @@ improvements 1-3 and 8-10.
       customers, phone numbers however punctuated, amounts typed either way,
       item names — and both the current and frozen labels, so a company that
       moved to the UK finds its Lagos waybills by either word.
-- [ ] **Improvement 8 — the first-run sample document.** The exclusion rules
-      and empty states exist; seeding a labelled sample record is the
-      remaining piece.
+- [x] **Improvement 8 — first run and the labelled sample.** "Create my first
+      {label}" names the document in the local terminology on the very first
+      screen a user sees. The sample carries a loud badge announced to
+      assistive tech, uses the reference `SAMPLE` — no prefix, no sequence, so
+      it cannot collide with or be mistaken for the user's numbering — and a
+      brand-new account with only a sample in it shows no balance at all.
+
+**Phase 2's buildable scope is complete.** What remains needs hardware or a
+later phase — see the gate below.
+
+### The Phase 2 gate — what can and cannot be checked here
+
+§Q words it as "airplane mode, fresh install, physical device". Verified in CI
+today: create a customer, build a document, region switch changing every label
+while issued PDFs keep their frozen ones, delivery documents showing no money
+anywhere, a part payment moving invoice/customer/Home exactly once, and the
+auto-created receipt never incrementing income.
+
+Needing a device or a later phase, and therefore NOT claimed:
+
+- [ ] **Native PDF output and the share sheet** — Capacitor bridge, **Phase 4**.
+      The composition and pagination are done and tested; writing the file and
+      handing it to the OS is not.
+- [ ] **Preview in all sixteen designs on a real screen** — the models are
+      tested across all sixteen; how they look at A4 on a phone is not.
+- [ ] **Signature capture** — needs touch input.
+- [ ] **Force-kill mid-draft and recover** — needs a real app lifecycle.
+- [ ] **The airplane-mode walk-through itself** — needs the installed build.
 - [ ] Voice and Scan controls on Home — **Phase 6**, deliberately absent
       rather than rendered dead (§N)
 - [ ] Improvements 1-3 and 8-10

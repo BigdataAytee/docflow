@@ -127,6 +127,14 @@ export interface UiStrings {
     readonly defaultSignature: string
     readonly signatureHint: string
   }
+  readonly firstRun: {
+    readonly title: string
+    readonly body: string
+    readonly createFirst: string
+    readonly viewSample: string
+    readonly sampleBadge: string
+    readonly sampleNotice: string
+  }
   readonly lists: {
     readonly eyebrow: string
     readonly countLine: string
@@ -301,6 +309,14 @@ const EN: UiStrings = {
     usedTimes: 'used {count}×',
     defaultSignature: 'Default signature',
     signatureHint: 'Signs new documents unless you draw a different one.',
+  },
+  firstRun: {
+    title: 'Make your first document',
+    body: 'Or look at a sample first, to see how one turns out.',
+    createFirst: 'Create my first {label}',
+    viewSample: 'View a sample',
+    sampleBadge: 'SAMPLE',
+    sampleNotice: 'This is a sample. Its figures are not counted anywhere, and you can delete it whenever you like.',
   },
   lists: {
     eyebrow: 'DOCUMENTS',

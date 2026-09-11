@@ -1,6 +1,7 @@
 export { StatusBadge, type StatusBadgeProps } from './StatusBadge'
 export { Skeleton, SkeletonList } from './Skeleton'
 export { EmptyState, type EmptyStateProps } from './EmptyState'
+export { SampleBadge } from './SampleBadge'
 export { ConnectivityPill, syncStateOf, type SyncState } from './ConnectivityPill'
 export { PageHeader, type PageHeaderProps } from './PageHeader'
 export { LineItemRow, type LineItemRowProps } from './LineItemRow'
