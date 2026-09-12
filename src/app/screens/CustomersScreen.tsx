@@ -24,7 +24,7 @@ import { numberingPrefix } from '../../domain/locale/profile'
 import { billedInvoices, displayStatus, statementDocuments, totalOf } from '../derive'
 
 export function CustomersScreen() {
-  const { documents, payments, actions } = useAppData()
+  const { documents, payments, creditNotes, actions } = useAppData()
   const navigate = useNavigate()
   const [adding, setAdding] = useState(false)
 
@@ -35,6 +35,7 @@ export function CustomersScreen() {
       <CustomerList
         invoices={invoices}
         payments={payments}
+        creditNotes={creditNotes}
         onOpen={(customer) => navigate(customerPath(customer.id))}
         onAdd={() => setAdding(true)}
       />
@@ -59,7 +60,8 @@ export function CustomersScreen() {
 export function ContactScreen({ today = new Date().toISOString().slice(0, 10) }: { today?: string }) {
   const { customerId } = useParams<{ customerId: string }>()
   const { profile, strings } = useCompany()
-  const { company, customers, documents, payments, loading, actions } = useAppData()
+  const { company, customers, documents, payments, creditNotes, loading, actions } =
+    useAppData()
   const navigate = useNavigate()
 
   const customer = customers.find((row) => row.id === customerId)
@@ -73,7 +75,7 @@ export function ContactScreen({ today = new Date().toISOString().slice(0, 10) }:
       // Newest first: §G calls it history, and the recent end is the live one.
       .sort((a, b) => (b.issueDate ?? '').localeCompare(a.issueDate ?? '') || b.id.localeCompare(a.id))
       .map((document) => {
-        const status = displayStatus(document, payments, today)
+        const status = displayStatus(document, payments, today, creditNotes)
         return {
           id: document.id,
           reference:
@@ -86,7 +88,7 @@ export function ContactScreen({ today = new Date().toISOString().slice(0, 10) }:
           ...(document.type === 'waybill' ? {} : { amount: totalOf(document) }),
         }
       })
-  }, [customerId, documents, payments, today, company, profile, strings])
+  }, [customerId, documents, payments, today, company, profile, strings, creditNotes])
 
   if (loading) return <SkeletonList rows={4} label={strings.common.loading} />
   if (customer === undefined) return <Navigate to={CUSTOMERS} replace />
@@ -96,6 +98,7 @@ export function ContactScreen({ today = new Date().toISOString().slice(0, 10) }:
       customer={customer}
       invoices={invoices}
       payments={payments}
+      creditNotes={creditNotes}
       history={history}
       onLabels={(labels) => void actions.updateCustomer(customer.id, { labels })}
       onNote={(note) =>
@@ -120,7 +123,7 @@ export function ContactScreen({ today = new Date().toISOString().slice(0, 10) }:
 export function StatementScreen({ today = new Date().toISOString().slice(0, 10) }: { today?: string }) {
   const { customerId, currency } = useParams<{ customerId: string; currency: string }>()
   const { strings } = useCompany()
-  const { company, customers, documents, payments, loading } = useAppData()
+  const { company, customers, documents, payments, creditNotes, loading } = useAppData()
   const navigate = useNavigate()
 
   // §G: "for any period". Twelve months is the opening offer, not a hidden
@@ -138,8 +141,18 @@ export function StatementScreen({ today = new Date().toISOString().slice(0, 10) 
       to: period.to,
       documents: statementDocuments(documents),
       payments,
+      // §G's statement lists credits as their own line; now it has some.
+      creditNotes,
+      creditNoteDates: new Map(creditNotes.map((note) => [note.id, note.issuedAt.slice(0, 10)])),
+      creditNoteCustomers: new Map(
+        creditNotes.flatMap((note) => {
+          const invoice = documents.find((row) => row.id === note.invoiceId)
+          return invoice?.customerId === undefined ? [] : [[note.id, invoice.customerId] as const]
+        }),
+      ),
+      creditNoteReferences: new Map(creditNotes.map((note) => [note.id, note.reference])),
     })
-  }, [customerId, currency, documents, payments, period])
+  }, [customerId, currency, documents, payments, period, creditNotes])
 
   if (loading) return <SkeletonList rows={4} label={strings.common.loading} />
   if (statement === null || customer === undefined) return <Navigate to={CUSTOMERS} replace />

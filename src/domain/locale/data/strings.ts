@@ -244,6 +244,7 @@ export interface UiStrings {
     readonly receipt: string
     readonly none: string
     readonly noneBody: string
+    readonly creditedLine: string
     readonly partPaymentNote: string
     readonly save: string
   }
@@ -296,6 +297,22 @@ export interface UiStrings {
     readonly openIt: string
     readonly madeFrom: string
     readonly originalUntouched: string
+    readonly failed: string
+  }
+  /** Rule #5's corrections: void, credit, reissue. */
+  readonly voidIt: {
+    readonly title: string
+    readonly explain: string
+    readonly why: string
+    readonly confirm: string
+    readonly done: string
+    readonly alreadyVoid: string
+    readonly notAllowed: string
+    readonly moneyReceived: string
+    readonly creditTheBalance: string
+    readonly reverseThePayment: string
+    readonly paymentsStay: string
+    readonly receiptPaymentStays: string
     readonly failed: string
   }
   readonly savedDocument: {
@@ -411,6 +428,13 @@ export interface UiStrings {
     readonly against: string
     readonly none: string
     readonly noneBody: string
+    readonly sheetTitle: string
+    readonly howMuchLeft: string
+    readonly creditAll: string
+    readonly issue: string
+    readonly issued: string
+    readonly nothingLeft: string
+    readonly failed: string
     readonly neverMovesIncome: string
     readonly reducesWhatIsOwed: string
   }
@@ -661,6 +685,7 @@ const EN: UiStrings = {
     receipt: 'Receipt',
     none: 'No payments yet',
     noneBody: 'Record one when the money arrives.',
+    creditedLine: '{amount} credited back',
     partPaymentNote: 'Less than the balance is recorded as a part payment.',
     save: 'Record it',
   },
@@ -713,6 +738,21 @@ const EN: UiStrings = {
     madeFrom: 'Made from {reference}',
     originalUntouched: 'This document stays exactly as it is.',
     failed: 'That could not be made: {reason}',
+  },
+  voidIt: {
+    title: 'Cancel this document',
+    explain: 'It stays on your records, marked cancelled. Nothing is deleted.',
+    why: 'Why?',
+    confirm: 'Cancel it',
+    done: 'Cancelled.',
+    alreadyVoid: 'Already cancelled.',
+    notAllowed: 'This one cannot be cancelled from where it is.',
+    moneyReceived: 'Money has already come in against this, so cancelling it would leave that payment attached to nothing.',
+    creditTheBalance: 'Credit the balance back instead',
+    reverseThePayment: 'Reverse the payment first, if it was recorded by mistake',
+    paymentsStay: 'Payments already recorded stay exactly as they are.',
+    receiptPaymentStays: 'The payment stays on your records — only this receipt is cancelled.',
+    failed: 'That could not be cancelled: {reason}',
   },
   savedDocument: {
     title: 'Saved',
@@ -831,6 +871,13 @@ const EN: UiStrings = {
     against: 'Against {reference}',
     none: 'No credits',
     noneBody: 'Credit money back when you have overcharged, without touching what you already sent.',
+    sheetTitle: 'Credit some of this back',
+    howMuchLeft: '{amount} of this can still be credited.',
+    creditAll: 'All of it',
+    issue: 'Credit it back',
+    issued: 'Credited {amount}.',
+    nothingLeft: 'This one is fully credited already.',
+    failed: 'That could not be credited: {reason}',
     neverMovesIncome: 'A credit lowers what is owed. It never changes money you have already received.',
     reducesWhatIsOwed: 'Reduces what is owed by {amount}.',
   },

@@ -1207,3 +1207,176 @@ describe('Converting a document (§G, §M)', () => {
     expect(await screen.findByText('QUO-0009')).toBeInTheDocument()
   })
 })
+
+describe('Cancelling and crediting (Rule #5, §G)', () => {
+  const invoiced = (state: MemoryState, totalMinor = 145_000_00) => {
+    state.customers.push(customer())
+    state.documents.push({
+      id: 'doc_inv',
+      companyId: DEV_COMPANY_ID,
+      type: 'invoice',
+      status: 'issued',
+      customerId: 'cus_1',
+      currency: 'NGN',
+      lineItems: [],
+      issueDate: '2026-09-01',
+      dueDate: '2026-09-30',
+      issuedReference: 'INV-0042',
+      frozenLabels: {
+        printedTitle: 'INVOICE',
+        partyLabel: 'Bill to',
+        signatureCaption: 'Authorised signature',
+        language: 'en',
+      },
+      totalMinor,
+    })
+  }
+
+  const paid = (state: MemoryState, minor: number) => {
+    state.payments.push({
+      id: 'pay_1',
+      customerId: 'cus_1',
+      amount: NGN(minor),
+      paidAt: '2026-09-10T09:00:00Z',
+      method: 'bank_transfer',
+      source: 'manual',
+      allocations: [
+        { id: 'pay_1:a', paymentId: 'pay_1', invoiceId: 'doc_inv', amount: NGN(minor) },
+      ],
+    })
+  }
+
+  it('cancels an invoice with nothing against it, keeping its reference and totals', async () => {
+    const user = userEvent.setup()
+    const state = renderAt('/doc/doc_inv', (seed) => invoiced(seed))
+
+    await user.click(await screen.findByRole('button', { name: 'Cancel this document' }))
+    await user.type(screen.getByLabelText('Why?'), 'Raised twice by mistake')
+    await user.click(screen.getByRole('button', { name: 'Cancel it' }))
+
+    await waitFor(() => expect(state.documents[0]?.status).toBe('void'))
+    // A void is not an edit (§M): everything frozen at issue is still there.
+    expect(state.documents[0]?.issuedReference).toBe('INV-0042')
+    expect(state.documents[0]?.frozenLabels?.printedTitle).toBe('INVOICE')
+    expect(state.documents[0]?.totalMinor).toBe(145_000_00)
+  })
+
+  it('refuses to cancel once money has come in, and offers to credit instead', async () => {
+    const user = userEvent.setup()
+    const state = renderAt('/doc/doc_inv', (seed) => {
+      invoiced(seed)
+      paid(seed, 50_000_00)
+    })
+
+    await user.click(await screen.findByRole('button', { name: 'Cancel this document' }))
+    expect(screen.getByText(/Money has already come in against this/)).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Cancel it' })).not.toBeInTheDocument()
+
+    await user.click(screen.getByRole('button', { name: 'Credit the balance back instead' }))
+    expect(await screen.findByLabelText('Credit some of this back')).toBeInTheDocument()
+
+    // And the invoice is untouched by the refusal.
+    expect(state.documents[0]?.status).toBe('issued')
+  })
+
+  it('issues a credit note that lowers what is owed and leaves income alone', async () => {
+    const user = userEvent.setup()
+    const state = renderAt('/doc/doc_inv', (seed) => {
+      invoiced(seed)
+      paid(seed, 50_000_00)
+    })
+
+    // ₦95,000 outstanding before crediting.
+    expect(
+      await screen.findByLabelText('₦50,000.00 paid of ₦145,000.00'),
+    ).toBeInTheDocument()
+
+    await user.click(screen.getByRole('button', { name: 'Credit some of this back' }))
+    await user.type(screen.getByLabelText('How much?'), '95000')
+    await user.type(screen.getByLabelText('Why?'), 'Short delivery')
+    await user.click(screen.getByRole('button', { name: 'Credit it back' }))
+
+    await waitFor(() => expect(state.credits).toHaveLength(1))
+    expect(state.credits[0]?.amount).toEqual(NGN(95_000_00))
+    expect(state.credits[0]?.invoiceId).toBe('doc_inv')
+    expect(state.credits[0]?.reason).toBe('Short delivery')
+    // The invoice itself is untouched — Rule #5.
+    expect(state.documents[0]?.status).toBe('issued')
+    expect(state.documents[0]?.totalMinor).toBe(145_000_00)
+    // The payment is untouched too: a credit never moves income (§V).
+    expect(state.payments).toHaveLength(1)
+    expect(state.payments[0]?.amount).toEqual(NGN(50_000_00))
+  })
+
+  it('shows the credit in the balance, and the invoice as settled', async () => {
+    const user = userEvent.setup()
+    renderAt('/doc/doc_inv', (seed) => {
+      invoiced(seed)
+      paid(seed, 50_000_00)
+      seed.credits.push({
+        id: 'crn_1',
+        companyId: DEV_COMPANY_ID,
+        invoiceId: 'doc_inv',
+        amount: NGN(95_000_00),
+        reference: 'CRN-0001',
+        reason: 'Short delivery',
+        issuedAt: '2026-09-12T10:00:00Z',
+        invoiceReference: 'INV-0042',
+        invoiceTotal: NGN(145_000_00),
+      })
+    })
+
+    // ₦50,000 paid, ₦95,000 credited: nothing left owing, so the bar says so.
+    expect(await screen.findByText('Settled in full')).toBeInTheDocument()
+    // And the cancel route no longer offers to credit, because there is
+    // nothing left to credit.
+    await user.click(screen.getByRole('button', { name: 'Cancel this document' }))
+    expect(
+      screen.queryByRole('button', { name: 'Credit the balance back instead' }),
+    ).not.toBeInTheDocument()
+  })
+
+  it('takes the credit off Outstanding on Home (§G)', async () => {
+    renderAt('/', (seed) => {
+      invoiced(seed)
+      seed.credits.push({
+        id: 'crn_1',
+        companyId: DEV_COMPANY_ID,
+        invoiceId: 'doc_inv',
+        amount: NGN(45_000_00),
+        reference: 'CRN-0001',
+        reason: 'Short delivery',
+        issuedAt: '2026-09-12T10:00:00Z',
+        invoiceReference: 'INV-0042',
+        invoiceTotal: NGN(145_000_00),
+      })
+    })
+    expect(await screen.findByLabelText('Outstanding')).toHaveTextContent('₦100,000.00')
+  })
+
+  it('offers no cancel on a delivered delivery — the evidence is sealed', async () => {
+    renderAt('/doc/doc_way', (seed) => {
+      seed.documents.push({
+        id: 'doc_way',
+        companyId: DEV_COMPANY_ID,
+        type: 'waybill',
+        status: 'delivered',
+        currency: 'NGN',
+        lineItems: [],
+        issueDate: '2026-09-01',
+        issuedReference: 'WB-0007',
+        frozenLabels: {
+          printedTitle: 'WAYBILL',
+          partyLabel: 'Deliver to',
+          signatureCaption: 'Received by',
+          language: 'en',
+        },
+        totalMinor: 0,
+      })
+    })
+    expect(await screen.findByText('WB-0007')).toBeInTheDocument()
+    expect(
+      screen.queryByRole('button', { name: 'Cancel this document' }),
+    ).not.toBeInTheDocument()
+  })
+})

@@ -50,7 +50,7 @@ function customerNameOf(
 
 export function HomeScreen({ now = new Date() }: { now?: Date }) {
   const { profile, strings } = useCompany()
-  const { company, customers, documents, payments, items, loading } = useAppData()
+  const { company, customers, documents, payments, items, creditNotes, loading } = useAppData()
   const navigate = useNavigate()
 
   const [query, setQuery] = useState('')
@@ -107,7 +107,7 @@ export function HomeScreen({ now = new Date() }: { now?: Date }) {
     const document = documents.find((row) => row.id === entry.id)
     if (document === undefined) return undefined
 
-    const status = displayStatus(document, payments, today)
+    const status = displayStatus(document, payments, today, creditNotes)
     const name = document.customerId === undefined ? undefined : names.get(document.customerId)
     const amount = document.type === 'waybill' ? undefined : formatMoney(totalOf(document))
 
@@ -132,7 +132,7 @@ export function HomeScreen({ now = new Date() }: { now?: Date }) {
       online={false}
       pendingCount={0}
       failedCount={0}
-      outstanding={outstandingByCurrency(stats, payments)}
+      outstanding={outstandingByCurrency(stats, payments, creditNotes)}
       received={receivedThisMonth(payments, now.toISOString())}
       counts={counts}
       attention={needsAttention(stats, payments, due, today)}

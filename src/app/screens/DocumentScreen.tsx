@@ -27,6 +27,10 @@ import { PaidSoFarBar } from '../../features/payments/PaidSoFarBar'
 import { PaymentList } from '../../features/payments/PaymentList'
 import { RepeatToggle } from '../../features/recurring/RepeatToggle'
 import { ConvertSheet } from '../../features/documents/ConvertSheet'
+import { VoidSheet } from '../../features/documents/VoidSheet'
+import { VoidError, type VoidableDocument, canVoid, voidDocument } from '../../features/documents/void'
+import { CreditNoteSheet } from '../../features/credits/CreditNoteSheet'
+import { CreditNoteError, issueCreditNote } from '../../features/credits/issue'
 import {
   ConvertError,
   type ConvertibleDocument,
@@ -55,7 +59,8 @@ import { displayStatus, totalOf } from '../derive'
 export function DocumentScreen({ today = new Date().toISOString().slice(0, 10) }: { today?: string }) {
   const { id } = useParams<{ id: string }>()
   const { profile, strings } = useCompany()
-  const { company, customers, documents, payments, shares, loading, actions } = useAppData()
+  const { company, customers, documents, payments, shares, creditNotes, loading, actions } =
+    useAppData()
   const navigate = useNavigate()
 
   const [recurrence, setRecurrence] = useState<Recurrence | null>(null)
@@ -63,6 +68,10 @@ export function DocumentScreen({ today = new Date().toISOString().slice(0, 10) }
   const [sharing, setSharing] = useState(false)
   const [converting, setConverting] = useState(false)
   const [convertProblem, setConvertProblem] = useState<string | null>(null)
+  const [voiding, setVoiding] = useState(false)
+  const [voidProblem, setVoidProblem] = useState<string | null>(null)
+  const [crediting, setCrediting] = useState(false)
+  const [creditProblem, setCreditProblem] = useState<string | null>(null)
 
   // One port per mount. Phase 4 swaps the Capacitor plugin in behind it and no
   // line of this screen changes.
@@ -86,9 +95,12 @@ export function DocumentScreen({ today = new Date().toISOString().slice(0, 10) }
 
   const labels = displayLabels(profile, record.type, record.frozenLabels)
   const total = totalOf(record)
-  const status = displayStatus(record, payments, today)
   const isInvoice = record.type === 'invoice'
-  const outstanding = invoiceOutstanding(record.id, total, payments)
+  // Real credit notes, not an empty list: a credited invoice owes less, and
+  // every figure on this screen has always been ready to be told (§E).
+  const mineCredits = creditNotes.filter((note) => note.invoiceId === record.id)
+  const status = displayStatus(record, payments, today, mineCredits)
+  const outstanding = invoiceOutstanding(record.id, total, payments, mineCredits)
 
   const chase = (() => {
     if (!isInvoice || outstanding.minor <= 0 || tone === null) return null
@@ -147,6 +159,19 @@ export function DocumentScreen({ today = new Date().toISOString().slice(0, 10) }
   const madeFromThis: Partial<Record<typeof record.type, string>> = {}
   for (const made of conversionsOf(documents, record.id)) madeFromThis[made.type] = made.id
   const source = convertedFrom(documents, record)
+
+  const voidable: VoidableDocument = {
+    id: record.id,
+    type: record.type,
+    status: record.status,
+    currency: record.currency,
+    total,
+  }
+
+  // Cancelling is offered wherever the lifecycle allows it; whether it will
+  // actually go through is the sheet's business, because the refusal needs
+  // room to explain itself.
+  const canVoidOrCredit = record.status !== 'void' && (canVoid(voidable, payments) || isInvoice)
 
   const timesShared = shareCount(shares, record.id)
   const latestShare = lastShared(shares, record.id)
@@ -255,6 +280,124 @@ export function DocumentScreen({ today = new Date().toISOString().slice(0, 10) }
           />
         )}
 
+        {/* §G's fourth invoice action, and the third correction Rule #5 allows. */}
+        {canVoidOrCredit && !voiding && !crediting && (
+          <div className="flex gap-2">
+            <button
+              type="button"
+              className="min-h-tap flex-1 rounded-full border border-status-bad/30 bg-white px-4 text-sm font-semibold text-status-bad"
+              onClick={() => {
+                setVoidProblem(null)
+                setVoiding(true)
+              }}
+            >
+              {strings.voidIt.title}
+            </button>
+            {isInvoice && record.status !== 'void' && (
+              <button
+                type="button"
+                className="min-h-tap flex-1 rounded-full border border-brand/30 bg-white px-4 text-sm font-semibold text-brand"
+                onClick={() => {
+                  setCreditProblem(null)
+                  setCrediting(true)
+                }}
+              >
+                {strings.credits.sheetTitle}
+              </button>
+            )}
+          </div>
+        )}
+
+        {voiding && (
+          <VoidSheet
+            document={voidable}
+            payments={payments}
+            creditNotes={mineCredits}
+            {...(voidProblem === null ? {} : { error: voidProblem })}
+            onClose={() => setVoiding(false)}
+            onCreditInstead={() => {
+              setVoiding(false)
+              setCreditProblem(null)
+              setCrediting(true)
+            }}
+            onVoid={(reason) => {
+              let decision
+              try {
+                decision = voidDocument({
+                  document: voidable,
+                  payments,
+                  reason,
+                  at: new Date().toISOString(),
+                })
+              } catch (cause) {
+                setVoidProblem(
+                  format(strings.voidIt.failed, {
+                    reason: cause instanceof VoidError ? cause.message : String(cause),
+                  }),
+                )
+                return
+              }
+
+              // Only the status moves. The reference, the frozen labels and the
+              // totals stay exactly as they were issued (§M).
+              void actions
+                .transition(decision.documentId, decision.to)
+                .then(() => setVoiding(false))
+                .catch((cause: unknown) =>
+                  setVoidProblem(format(strings.voidIt.failed, { reason: String(cause) })),
+                )
+            }}
+          />
+        )}
+
+        {crediting && isInvoice && (
+          <CreditNoteSheet
+            invoiceId={record.id}
+            invoiceReference={record.issuedReference ?? record.id}
+            invoiceTotal={total}
+            existing={mineCredits}
+            {...(creditProblem === null ? {} : { error: creditProblem })}
+            onClose={() => setCrediting(false)}
+            onIssue={({ amount, reason }) => {
+              let note
+              try {
+                note = issueCreditNote({
+                  // The repository mints the real id; this only keys the write.
+                  id: `pending:${record.id}`,
+                  companyId: record.companyId,
+                  invoiceId: record.id,
+                  invoiceStatus: record.status,
+                  invoiceReference: record.issuedReference,
+                  invoiceTotal: total,
+                  amount,
+                  reason,
+                  issuedAt: new Date().toISOString(),
+                  existing: mineCredits,
+                  prefix: company?.numberingPrefixes?.invoice ?? 'CRN',
+                  sequence: creditNotes.length + 1,
+                  fromReservedBlock: false,
+                  deviceId: deviceId(),
+                })
+              } catch (cause) {
+                setCreditProblem(
+                  format(strings.credits.failed, {
+                    reason: cause instanceof CreditNoteError ? cause.message : String(cause),
+                  }),
+                )
+                return
+              }
+
+              const { id: _id, companyId: _companyId, ...rest } = note
+              void actions
+                .issueCreditNote(rest, `credit:${record.id}:${note.reference}`)
+                .then(() => setCrediting(false))
+                .catch((cause: unknown) =>
+                  setCreditProblem(format(strings.credits.failed, { reason: String(cause) })),
+                )
+            }}
+          />
+        )}
+
         {source !== null && (
           <button
             type="button"
@@ -296,11 +439,11 @@ export function DocumentScreen({ today = new Date().toISOString().slice(0, 10) }
 
         {isInvoice && record.status !== 'draft' && (
           <>
-            <PaidSoFarBar bar={paidSoFar(record.id, total, payments)} />
+            <PaidSoFarBar bar={paidSoFar(record.id, total, payments, mineCredits)} />
 
             <PaymentList
               payments={mine}
-              prefill={prefillAmount(record.id, total, payments)}
+              prefill={prefillAmount(record.id, total, payments, mineCredits)}
               onRecord={(input) => {
                 if (customer === undefined) return
                 void actions.recordPayment(
@@ -315,6 +458,7 @@ export function DocumentScreen({ today = new Date().toISOString().slice(0, 10) }
                     invoiceId: record.id,
                     invoiceTotal: total,
                     existingPayments: payments,
+                    creditNotes: mineCredits,
                     ...(input.reference === undefined ? {} : { reference: input.reference }),
                   }),
                 )

@@ -25,6 +25,8 @@ import {
   type Payment,
   type PaymentRepository,
   type Repositories,
+  type CreditNoteRecord,
+  type CreditNoteRepository,
   type SavedItem,
   type ShareEvent,
   type ShareEventRepository,
@@ -57,6 +59,7 @@ export interface MemoryState {
   items: SavedItem[]
   expenses: Expense[]
   shares: ShareEvent[]
+  credits: CreditNoteRecord[]
 }
 
 export const emptyState = (): MemoryState => ({
@@ -67,6 +70,7 @@ export const emptyState = (): MemoryState => ({
   items: [],
   expenses: [],
   shares: [],
+  credits: [],
 })
 
 export function createMemoryRepositories(state: MemoryState = emptyState()): Repositories {
@@ -302,5 +306,23 @@ export function createMemoryRepositories(state: MemoryState = emptyState()): Rep
     },
   }
 
-  return { companies, customers, documents, payments, items, expenses, shares }
+  const credits: CreditNoteRepository = {
+    async list(companyId) {
+      return scoped(state.credits, companyId)
+    },
+    async listForInvoice(companyId, invoiceId) {
+      return scoped(state.credits, companyId).filter((note) => note.invoiceId === invoiceId)
+    },
+    async issue(note, ctx) {
+      // Append-only: an issued credit note is immutable, and correcting one
+      // means issuing another (Rule #5).
+      return log.once(ctx, () => {
+        const created: CreditNoteRecord = { ...note, id: nextId('crn') }
+        state.credits.push(created)
+        return created
+      })
+    },
+  }
+
+  return { companies, customers, documents, payments, items, expenses, shares, credits }
 }

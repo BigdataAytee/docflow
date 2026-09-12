@@ -18,9 +18,11 @@ import type { DocumentType, FrozenLabels, LineItem } from '../../domain/document
 import type { Money } from '../../domain/money/money'
 import type { Payment } from '../../domain/payments/ledger'
 import type { ShareEvent } from '../../share/events'
+import type { CreditNoteRecord } from '../../features/credits/issue'
 
 export type { Payment, PaymentAllocation } from '../../domain/payments/ledger'
 export type { ShareEvent, ShareAction } from '../../share/events'
+export type { CreditNoteRecord } from '../../features/credits/issue'
 export type { Money } from '../../domain/money/money'
 export type { DocumentType, FrozenLabels, LineItem } from '../../domain/documents/types'
 
@@ -166,6 +168,20 @@ export interface ItemRepository {
 }
 
 /**
+ * Credit notes (§E `credit_notes`, Rule #5).
+ *
+ * Append-only for the same reason a payment is: a credit note is the record of
+ * a correction that was made, and an issued one is immutable. Correcting a
+ * credit note means issuing another, never editing this one.
+ */
+export interface CreditNoteRepository {
+  list(companyId: string): Promise<CreditNoteRecord[]>
+  listForInvoice(companyId: string, invoiceId: string): Promise<CreditNoteRecord[]>
+  /** Records once. A replayed key returns the existing note unchanged (§M). */
+  issue(note: Omit<CreditNoteRecord, 'id'>, ctx: MutationContext): Promise<CreditNoteRecord>
+}
+
+/**
  * Sharing events (§M, §E `audit_log`).
  *
  * Append-only, like the table it maps onto: a handoff happened, and nothing
@@ -191,6 +207,7 @@ export interface Repositories {
   readonly items: ItemRepository
   readonly expenses: ExpenseRepository
   readonly shares: ShareEventRepository
+  readonly credits: CreditNoteRepository
 }
 
 export class RepositoryError extends Error {}

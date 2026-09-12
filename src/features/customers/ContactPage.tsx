@@ -36,7 +36,7 @@ import {
 } from './balance'
 import { formatMoney } from './formatMoney'
 import { MAX_LABEL_LENGTH, addLabel, removeLabel } from './labels'
-import type { Payment } from '../../domain/payments/ledger'
+import type { CreditNote, Payment } from '../../domain/payments/ledger'
 
 /** One row of §G's "History of every document". */
 export interface HistoryRow {
@@ -53,6 +53,8 @@ export interface ContactPageProps {
   readonly customer: Customer
   readonly invoices: readonly BilledInvoice[]
   readonly payments: readonly Payment[]
+  /** Credits lower what is owed without moving income (§E, Rule #5). */
+  readonly creditNotes?: readonly CreditNote[]
   readonly history: readonly HistoryRow[]
   readonly onLabels: (labels: readonly string[]) => void
   readonly onNote: (note: string) => void
@@ -65,6 +67,7 @@ export function ContactPage({
   customer,
   invoices,
   payments,
+  creditNotes = [],
   history,
   onLabels,
   onNote,
@@ -77,7 +80,7 @@ export function ContactPage({
   const [newLabel, setNewLabel] = useState('')
   const [note, setNote] = useState(customer.privateNote ?? '')
 
-  const balances = customerBalances(customer.id, invoices, payments)
+  const balances = customerBalances(customer.id, invoices, payments, creditNotes)
   const behaviour = paymentBehaviour(customer.id, invoices, payments)
 
   const digits = customer.phone?.replace(/\D/g, '') ?? ''
