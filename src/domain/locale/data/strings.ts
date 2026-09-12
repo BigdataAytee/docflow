@@ -344,6 +344,15 @@ export interface UiStrings {
     readonly sealed: string
     readonly failed: string
   }
+  readonly answer: {
+    readonly title: string
+    readonly explain: string
+    readonly accepted: string
+    readonly rejected: string
+    readonly recorded: string
+    readonly linkLater: string
+    readonly failed: string
+  }
   readonly revision: {
     readonly action: string
     readonly explain: string
@@ -848,6 +857,15 @@ const EN: UiStrings = {
     signedBy: 'Signed by {name}',
     sealed: 'This cannot be changed once signed.',
     failed: 'That could not be saved: {reason}',
+  },
+  answer: {
+    title: 'What did they say?',
+    explain: 'Record their answer so the rest of the app knows where this stands.',
+    accepted: 'They accepted',
+    rejected: 'They turned it down',
+    recorded: 'Answered {answer} — this cannot be changed. Withdraw it or send a new version instead.',
+    linkLater: 'A link they can answer on themselves arrives with the web app.',
+    failed: 'That could not be recorded: {reason}',
   },
   revision: {
     // §G calls it "duplicate as Rev 2", and Rev is what a quotation says in
