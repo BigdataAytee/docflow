@@ -27,6 +27,17 @@ export interface UiStrings {
     readonly savingAutomatically: string
     readonly remove: string
   }
+  readonly nav: {
+    readonly home: string
+    readonly customers: string
+    readonly business: string
+    readonly settings: string
+    readonly openSettings: string
+    readonly notFound: string
+    readonly notFoundBody: string
+    readonly goHome: string
+    readonly somethingWrong: string
+  }
   readonly sync: {
     readonly savedLocal: string
     readonly waiting: string
@@ -191,6 +202,33 @@ export interface UiStrings {
     readonly partPaymentNote: string
     readonly save: string
   }
+  /** The §L1 reminder templates. `{customer}` `{business}` `{reference}` `{amount}` `{due}`. */
+  readonly chase: {
+    readonly softerOpening: string
+    readonly firmerOpening: string
+    readonly amountLine: string
+    readonly dueLine: string
+    readonly overdueLine: string
+    readonly howToPay: string
+    readonly closing: string
+    readonly softer: string
+    readonly firmer: string
+    readonly title: string
+    readonly nothingToChase: string
+    readonly sendOnWhatsApp: string
+    readonly nothingSendsUnseen: string
+  }
+  readonly savedDocument: {
+    readonly title: string
+    readonly actions: string
+    readonly sharePdf: string
+    readonly voidIt: string
+    readonly creditNote: string
+    readonly openStatement: string
+    readonly notIssuedYet: string
+    readonly continueEditing: string
+    readonly needsDevice: string
+  }
   readonly design: {
     readonly logoOn: string
     readonly logoOff: string
@@ -302,6 +340,8 @@ export interface UiStrings {
     readonly hideExample: string
     readonly demoNotice: string
   }
+  /** One word per status token the §F tone map knows — stored and derived. */
+  readonly statuses: Readonly<Record<string, string>>
   /** One message per `IssueProblem.field` token the builder can return. */
   readonly problems: Readonly<Record<string, string>>
 }
@@ -317,6 +357,17 @@ const EN: UiStrings = {
     saved: 'Saved',
     savingAutomatically: 'Draft saved automatically',
     remove: 'Remove',
+  },
+  nav: {
+    home: 'Home',
+    customers: 'Customers',
+    business: 'Business',
+    settings: 'Settings',
+    openSettings: 'Open settings',
+    notFound: 'That page is not here',
+    notFoundBody: 'The link may be old, or the record may have been removed.',
+    goHome: 'Go to Home',
+    somethingWrong: 'Something went wrong loading your work',
   },
   sync: {
     savedLocal: 'Saved on this phone',
@@ -483,6 +534,32 @@ labels: 'Labels',
     partPaymentNote: 'Less than the balance is recorded as a part payment.',
     save: 'Record it',
   },
+  chase: {
+    softerOpening: 'Hello {customer}, hope business is good.',
+    firmerOpening: 'Hello {customer}, this is a reminder about {reference}.',
+    amountLine: '{amount} is still outstanding on {reference}.',
+    dueLine: 'It falls due on {due}.',
+    overdueLine: 'It was due on {due}.',
+    howToPay: 'You can pay into:',
+    closing: 'Thank you. — {business}',
+    softer: 'Softer',
+    firmer: 'Firmer',
+    title: 'Chase this money',
+    nothingToChase: 'Nothing is outstanding on this one.',
+    sendOnWhatsApp: 'Open in WhatsApp',
+    nothingSendsUnseen: 'Nothing is sent until you send it.',
+  },
+  savedDocument: {
+    title: 'Saved',
+    actions: 'Actions',
+    sharePdf: 'Share the PDF',
+    voidIt: 'Cancel it',
+    creditNote: 'Credit some of this back',
+    openStatement: 'Statement',
+    notIssuedYet: 'This is still a draft.',
+    continueEditing: 'Carry on editing',
+    needsDevice: 'Needs the installed app — coming with the phone build.',
+  },
   design: {
     logoOn: 'Logo on',
     logoOff: 'Logo off',
@@ -597,6 +674,24 @@ labels: 'Labels',
     showExample: 'Show me',
     hideExample: 'Close',
     demoNotice: 'This is an example, not your data.',
+  },
+  statuses: {
+    draft: 'Draft',
+    issued: 'Issued',
+    void: 'Cancelled',
+    sent: 'Sent',
+    accepted: 'Accepted',
+    rejected: 'Turned down',
+    dispatched: 'Sent out',
+    in_transit: 'On the way',
+    delivered: 'Delivered',
+    unpaid: 'Not paid',
+    partially_paid: 'Part paid',
+    paid: 'Paid',
+    overdue: 'Late',
+    expired: 'Out of date',
+    money_out: 'Money out',
+    settled: 'Settled',
   },
   problems: {
     party: 'Choose who this is for.',
