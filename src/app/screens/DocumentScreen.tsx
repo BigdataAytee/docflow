@@ -37,6 +37,11 @@ import {
   revisionNumberOf,
   supersededBy,
 } from '../../features/documents/revision'
+import {
+  canReissue,
+  reasonsReissueIsBlocked,
+  voidAndReissue,
+} from '../../features/payments/reissue'
 import { SignDeliverySheet } from '../../features/delivery/SignDeliverySheet'
 import {
   DeliverySignError,
@@ -92,6 +97,7 @@ export function DocumentScreen({ today = new Date().toISOString().slice(0, 10) }
   const [signing, setSigning] = useState(false)
   const [signProblem, setSignProblem] = useState<string | null>(null)
   const [revisionProblem, setRevisionProblem] = useState<string | null>(null)
+  const [reissueProblem, setReissueProblem] = useState<string | null>(null)
   const [crediting, setCrediting] = useState(false)
   const [creditProblem, setCreditProblem] = useState<string | null>(null)
 
@@ -131,6 +137,9 @@ export function DocumentScreen({ today = new Date().toISOString().slice(0, 10) }
   const nextRevisionNumber = chainOf(documents, record).length + 1
   const newerRevision = supersededBy(documents, record.id)
   const revisedFrom = documents.find((row) => row.id === record.supersedesId) ?? null
+
+  /** §E `related_invoice_id`: what a receipt's payment settled, if anything. */
+  const linkedInvoice = documents.find((row) => row.id === record.linkedInvoiceId) ?? null
   const outstanding = invoiceOutstanding(record.id, total, payments, mineCredits)
 
   const chase = (() => {
@@ -352,10 +361,14 @@ export function DocumentScreen({ today = new Date().toISOString().slice(0, 10) }
         )}
 
         {/*
-          Where this offer sits in its chain, at both ends: the one that was
+          Where this document sits in its chain, at both ends: the one that was
           replaced says so, and the replacement says what it replaces. Both are
           READ from the documents — nothing was written back onto an original
           that Rule #5 froze (§G).
+
+          A quotation's chain is numbered, because §G calls those Rev 2 and
+          Rev 3. A reissued receipt replaces exactly one cancelled receipt,
+          so numbering it would say more than is true.
         */}
         {newerRevision !== null && (
           <button
@@ -364,9 +377,11 @@ export function DocumentScreen({ today = new Date().toISOString().slice(0, 10) }
             onClick={() => navigate(documentPath(newerRevision.id))}
           >
             <span className="font-semibold">
-              {format(strings.revision.supersededBy, {
-                number: String(revisionNumberOf(documents, newerRevision)),
-              })}
+              {record.type === 'quotation'
+                ? format(strings.revision.supersededBy, {
+                    number: String(revisionNumberOf(documents, newerRevision)),
+                  })
+                : strings.reissue.replacedBy}
             </span>
             <span className="mt-0.5 block text-xs opacity-80">{strings.revision.openIt}</span>
           </button>
@@ -378,15 +393,101 @@ export function DocumentScreen({ today = new Date().toISOString().slice(0, 10) }
             className="w-full rounded-2xl bg-white/70 p-4 text-left text-sm"
             onClick={() => navigate(documentPath(revisedFrom.id))}
           >
-            <span className="font-semibold">
-              {format(strings.revision.badge, { number: String(revisionNumber) })}
-            </span>
+            {record.type === 'quotation' && (
+              <span className="font-semibold">
+                {format(strings.revision.badge, { number: String(revisionNumber) })}
+              </span>
+            )}
             <span className="mt-0.5 block text-xs opacity-70">
               {format(strings.revision.supersedes, {
                 reference: revisedFrom.issuedReference ?? '',
               })}
             </span>
           </button>
+        )}
+
+        {/*
+          §G's two receipt actions. "Open what it paid for" is the link the
+          receipt already carries (§E `related_invoice_id`) — without it the
+          link is stored and unreachable.
+        */}
+        {linkedInvoice !== null && (
+          <button
+            type="button"
+            className="min-h-tap w-full rounded-full border border-brand/30 bg-white px-4 text-sm font-semibold text-brand"
+            onClick={() => navigate(documentPath(linkedInvoice.id))}
+          >
+            {strings.reissue.openInvoice}
+          </button>
+        )}
+
+        {/*
+          §G's "void and reissue". A receipt cannot be corrected any other
+          way: it is immutable once issued (Rule #5), and a credit note is an
+          INVOICE correction — crediting a receipt would mean money going back
+          to the customer, which is a refund rather than a typo.
+        */}
+        {canReissue(record, payments) && newerRevision === null && (
+          <button
+            type="button"
+            className="min-h-tap w-full rounded-full border border-brand/30 bg-white px-4 text-sm font-semibold text-brand"
+            onClick={() => {
+              setReissueProblem(null)
+              let plan
+              try {
+                plan = voidAndReissue(record, {
+                  payments,
+                  description: format(strings.newReceipt.lineAgainst, {
+                    reference: linkedInvoice?.issuedReference ?? '',
+                  }),
+                })
+              } catch (cause) {
+                setReissueProblem(
+                  format(strings.reissue.failed, {
+                    reason: cause instanceof Error ? cause.message : String(cause),
+                  }),
+                )
+                return
+              }
+              // Cancel first, then draw. If the second write does not land the
+              // owner is not stuck: a cancelled receipt does not count as the
+              // payment's receipt, so the payment's own Receipt button offers
+              // to draw one. The recovery path is the ordinary path.
+              void actions
+                .transition(plan.voidId, 'void')
+                .then(() => actions.createDraftWithKey(plan.replacement, plan.idempotencyKey))
+                .then((created) => navigate(editDocumentPath(created.id)))
+                .catch((cause: unknown) => {
+                  setReissueProblem(
+                    format(strings.reissue.failed, {
+                      reason: cause instanceof Error ? cause.message : String(cause),
+                    }),
+                  )
+                })
+            }}
+          >
+            {strings.reissue.action}
+          </button>
+        )}
+
+        {/*
+          §G's other route for a receipt whose payment came back: there is
+          nothing left to acknowledge, so a plain cancel is the honest action.
+        */}
+        {record.type === 'receipt' &&
+          reasonsReissueIsBlocked(record, payments) === 'payment_reversed' && (
+            <p className="rounded-xl bg-white/70 px-3 py-2.5 text-xs opacity-70">
+              {strings.reissue.paymentReversed}
+            </p>
+          )}
+
+        {reissueProblem !== null && (
+          <p
+            className="rounded-xl bg-status-warn-tint px-3 py-2.5 text-sm font-medium text-status-warn"
+            role="alert"
+          >
+            {reissueProblem}
+          </p>
         )}
 
         {/*

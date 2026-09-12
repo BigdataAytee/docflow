@@ -54,12 +54,18 @@ export interface ComposableDocument {
   readonly issueDate: string
   readonly dueDate?: string
   /**
-   * §G's Rev 2, already worked out by `revision.ts`. The page prints it
-   * because a customer holding this one has to be able to tell that it
-   * replaces the offer they were sent last week — the reference alone cannot
-   * say so, since every document earns its own (§M).
+   * What this document replaces, already worked out by the feature that made
+   * it: §G's Rev 2 on a quotation, or a reissued receipt.
+   *
+   * The page prints it because the reference alone cannot say so — every
+   * document earns its own (§M) — and because the person holding the older
+   * one has no other way to tell. On a receipt that is not cosmetic: two
+   * receipts for one payment, neither mentioning the other, is how a payment
+   * gets read as two (§V).
+   *
+   * `revisionNumber` is present only where the chain is numbered.
    */
-  readonly revision?: { readonly number: number; readonly supersedes: string }
+  readonly replaces?: { readonly reference: string; readonly revisionNumber?: number }
   readonly lineItems: readonly LineItem[]
   readonly party: PartySnapshot
   /** Set at issue and never rewritten (§M). Null on a draft. */
@@ -118,8 +124,8 @@ export interface PageModel {
   readonly branding: CompanyBranding
   readonly title: string
   readonly reference: string
-  /** Already in words, in the document's own language. Null when it is the first offer. */
-  readonly revisionLine: string | null
+  /** Already in words, in the document's own language. Null when it replaces nothing. */
+  readonly replacesLine: string | null
   readonly partyLabel: string
   readonly party: PartySnapshot
   readonly issueDate: string
@@ -164,11 +170,14 @@ export interface ComposeOptions {
   /** Asset id → data URL, so the page can print the signature it names. */
   readonly assetUrls?: Readonly<Record<string, string>>
   /**
-   * Renders "Rev 2 · replaces QUO-0009" in the active language. Passed in
-   * rather than built here, because the words live in the catalogue (§S) and
-   * this module holds none.
+   * Renders "Rev 2 · Replaces QUO-0009", or just "Replaces REC-0003". Passed
+   * in rather than built here, because the words live in the catalogue (§S)
+   * and this module holds none.
    */
-  readonly revisionLabel?: (revision: { number: number; supersedes: string }) => string
+  readonly replacesLabel?: (replaces: {
+    reference: string
+    revisionNumber?: number
+  }) => string
 }
 
 export function composeDocument(
@@ -219,10 +228,10 @@ export function composeDocument(
     // Frozen at issue, so a shared PDF never changes language later (§D.2).
     title: document.frozenLabels?.printedTitle ?? printedTitle(profile, document.type),
     reference: document.reference,
-    revisionLine:
-      document.revision === undefined || options.revisionLabel === undefined
+    replacesLine:
+      document.replaces === undefined || options.replacesLabel === undefined
         ? null
-        : options.revisionLabel(document.revision),
+        : options.replacesLabel(document.replaces),
     partyLabel: labels.partyLabel,
     party: document.party,
     issueDate: document.issueDate,

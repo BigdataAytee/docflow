@@ -2148,3 +2148,259 @@ describe('Duplicate as Rev 2 (§G, Rule #5, §M)', () => {
     expect(await screen.findByText('Rev 2 · Replaces QUO-0009')).toBeInTheDocument()
   })
 })
+
+describe('Void and reissue a receipt (§G, Rule #5, §V)', () => {
+  const paid = (state: MemoryState) => {
+    state.customers.push(customer())
+    state.payments.push({
+      id: 'pay_1',
+      customerId: 'cus_1',
+      amount: NGN(50_000_00),
+      paidAt: '2026-09-10T09:00:00Z',
+      method: 'bank_transfer',
+      source: 'manual',
+      allocations: [
+        { id: 'pay_1:a', paymentId: 'pay_1', invoiceId: 'doc_inv', amount: NGN(50_000_00) },
+      ],
+    })
+    state.documents.push({
+      id: 'doc_inv',
+      companyId: DEV_COMPANY_ID,
+      type: 'invoice',
+      status: 'issued',
+      customerId: 'cus_1',
+      currency: 'NGN',
+      lineItems: [],
+      issueDate: '2026-09-01',
+      issuedReference: 'INV-0042',
+      frozenLabels: {
+        printedTitle: 'INVOICE',
+        partyLabel: 'Bill to',
+        signatureCaption: 'Authorised signature',
+        language: 'en',
+      },
+      totalMinor: 145_000_00,
+    })
+  }
+
+  const withReceipt = (over: Partial<MemoryState['documents'][number]> = {}) =>
+    (state: MemoryState) => {
+      paid(state)
+      state.documents.push({
+        id: 'doc_rct',
+        companyId: DEV_COMPANY_ID,
+        type: 'receipt',
+        status: 'issued',
+        customerId: 'cus_1',
+        currency: 'NGN',
+        lineItems: [],
+        issueDate: '2026-09-10',
+        issuedReference: 'REC-0003',
+        frozenLabels: {
+          printedTitle: 'RECEIPT',
+          partyLabel: 'Received from',
+          signatureCaption: 'Issued by',
+          language: 'en',
+        },
+        totalMinor: 50_000_00,
+        paymentId: 'pay_1',
+        linkedInvoiceId: 'doc_inv',
+        ...over,
+      })
+    }
+
+  it('offers both of §G’s receipt actions', async () => {
+    renderAt('/doc/doc_rct', withReceipt())
+    expect(
+      await screen.findByRole('button', { name: 'Cancel and draw a new one' }),
+    ).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Open what it paid for' })).toBeInTheDocument()
+  })
+
+  it('opens what the payment settled — the link was stored and unreachable', async () => {
+    const user = userEvent.setup()
+    renderAt('/doc/doc_rct', withReceipt())
+    await user.click(await screen.findByRole('button', { name: 'Open what it paid for' }))
+    expect(await screen.findByText('INV-0042')).toBeInTheDocument()
+  })
+
+  it('offers neither on an invoice, whose corrections are void or credit', async () => {
+    renderAt('/doc/doc_inv', paid)
+    expect(await screen.findByText('INV-0042')).toBeInTheDocument()
+    expect(
+      screen.queryByRole('button', { name: 'Cancel and draw a new one' }),
+    ).not.toBeInTheDocument()
+  })
+
+  it('cancels the old one and opens a fresh draft for the same payment', async () => {
+    const user = userEvent.setup()
+    const state = renderAt('/doc/doc_rct', withReceipt())
+
+    await user.click(await screen.findByRole('button', { name: 'Cancel and draw a new one' }))
+    await waitFor(() => expect(state.documents).toHaveLength(3))
+
+    const cancelled = state.documents.find((d) => d.id === 'doc_rct')
+    const fresh = state.documents.find((d) => d.type === 'receipt' && d.id !== 'doc_rct')
+
+    // Cancelled, not edited: reference, labels and totals all untouched (§M).
+    expect(cancelled?.status).toBe('void')
+    expect(cancelled?.issuedReference).toBe('REC-0003')
+    expect(cancelled?.totalMinor).toBe(50_000_00)
+
+    expect(fresh?.status).toBe('draft')
+    expect(fresh?.paymentId).toBe('pay_1')
+    expect(fresh?.linkedInvoiceId).toBe('doc_inv')
+    expect(fresh?.totalMinor).toBe(50_000_00)
+    expect(fresh?.supersedesId).toBe('doc_rct')
+    expect(await screen.findByRole('button', { name: /Next/ })).toBeInTheDocument()
+  })
+
+  it('never moves the money, in either direction (§V)', async () => {
+    const user = userEvent.setup()
+    const state = renderAt('/doc/doc_rct', withReceipt())
+    await user.click(await screen.findByRole('button', { name: 'Cancel and draw a new one' }))
+    await waitFor(() => expect(state.documents).toHaveLength(3))
+
+    // One payment, unchanged, still allocated to the same invoice. Cancelling
+    // the paper cannot un-receive cash, and drawing it again cannot receive
+    // it twice.
+    expect(state.payments).toHaveLength(1)
+    expect(state.payments[0]?.amount).toEqual(NGN(50_000_00))
+    expect(state.payments[0]?.allocations[0]?.invoiceId).toBe('doc_inv')
+  })
+
+  it('offers nothing to reissue once the payment was reversed, and says why', async () => {
+    renderAt('/doc/doc_rct', (seed) => {
+      withReceipt()(seed)
+      seed.payments.push({
+        id: 'pay_1r',
+        customerId: 'cus_1',
+        amount: NGN(50_000_00),
+        paidAt: '2026-09-11T00:00:00Z',
+        method: 'bank_transfer',
+        source: 'manual',
+        reversalOfId: 'pay_1',
+        allocations: [],
+      })
+    })
+
+    expect(await screen.findByText(/that payment was reversed/i)).toBeInTheDocument()
+    expect(
+      screen.queryByRole('button', { name: 'Cancel and draw a new one' }),
+    ).not.toBeInTheDocument()
+    // The plain cancel is still there, which is the honest action.
+    expect(screen.getByRole('button', { name: 'Cancel this document' })).toBeInTheDocument()
+  })
+
+  it('offers nothing on one already cancelled', async () => {
+    renderAt('/doc/doc_rct', withReceipt({ status: 'void' }))
+    expect(await screen.findByText('REC-0003')).toBeInTheDocument()
+    expect(
+      screen.queryByRole('button', { name: 'Cancel and draw a new one' }),
+    ).not.toBeInTheDocument()
+  })
+
+  it('says at both ends which receipt replaced which, without numbering them', async () => {
+    const user = userEvent.setup()
+    renderAt('/doc/doc_rct', (seed) => {
+      withReceipt({ status: 'void' })(seed)
+      seed.documents.push({
+        id: 'doc_rct2',
+        companyId: DEV_COMPANY_ID,
+        type: 'receipt',
+        status: 'issued',
+        customerId: 'cus_1',
+        currency: 'NGN',
+        lineItems: [],
+        issueDate: '2026-09-10',
+        issuedReference: 'REC-0004',
+        frozenLabels: {
+          printedTitle: 'RECEIPT',
+          partyLabel: 'Received from',
+          signatureCaption: 'Issued by',
+          language: 'en',
+        },
+        totalMinor: 50_000_00,
+        paymentId: 'pay_1',
+        supersedesId: 'doc_rct',
+      })
+    })
+
+    // A receipt chain is not numbered — §G's Rev 2 is a quotation idea, and
+    // numbering a reissue would say more than is true.
+    expect(await screen.findByText('Cancelled — a newer one replaces this')).toBeInTheDocument()
+    expect(screen.queryByText(/Rev \d/)).not.toBeInTheDocument()
+
+    await user.click(screen.getByText('Cancelled — a newer one replaces this'))
+    expect(await screen.findByText('Replaces REC-0003')).toBeInTheDocument()
+  })
+
+  it('marks the cancelled one in the LIST, without calling it a revision', async () => {
+    // A quotation's chain is numbered; a receipt's is not. Calling a replaced
+    // receipt "Rev 2" in the list would say more than is true.
+    renderAt('/list/receipt', (seed) => {
+      withReceipt({ status: 'void' })(seed)
+      seed.documents.push({
+        id: 'doc_rct2',
+        companyId: DEV_COMPANY_ID,
+        type: 'receipt',
+        status: 'issued',
+        customerId: 'cus_1',
+        currency: 'NGN',
+        lineItems: [],
+        issueDate: '2026-09-10',
+        issuedReference: 'REC-0004',
+        frozenLabels: {
+          printedTitle: 'RECEIPT',
+          partyLabel: 'Received from',
+          signatureCaption: 'Issued by',
+          language: 'en',
+        },
+        totalMinor: 50_000_00,
+        paymentId: 'pay_1',
+        supersedesId: 'doc_rct',
+      })
+    })
+
+    expect(await screen.findByText('REC-0003')).toBeInTheDocument()
+    expect(screen.getByText('REC-0004')).toBeInTheDocument()
+    expect(screen.getAllByText('Cancelled — a newer one replaces this')).toHaveLength(1)
+    expect(screen.queryByText(/Replaced by Rev/)).not.toBeInTheDocument()
+  })
+
+  it('prints what it replaces, so one payment is never read as two (§V)', async () => {
+    const user = userEvent.setup()
+    renderAt('/edit/doc_rct2', (seed) => {
+      withReceipt({ status: 'void' })(seed)
+      seed.documents.push({
+        id: 'doc_rct2',
+        companyId: DEV_COMPANY_ID,
+        type: 'receipt',
+        status: 'draft',
+        customerId: 'cus_1',
+        currency: 'NGN',
+        lineItems: [
+          {
+            id: 'li_1',
+            description: 'Payment received',
+            quantityMilli: quantity(1),
+            unitPriceMinor: 50_000_00,
+            taxable: false,
+          },
+        ],
+        issueDate: '2026-09-10',
+        issuedReference: null,
+        frozenLabels: null,
+        totalMinor: 50_000_00,
+        paymentId: 'pay_1',
+        supersedesId: 'doc_rct',
+      })
+    })
+
+    for (let step = 0; step < 4; step += 1) {
+      await user.click(await screen.findByRole('button', { name: 'Next' }))
+    }
+    // The real page: no "Rev" on a receipt, just what it replaces.
+    expect(await screen.findByText('Replaces REC-0003')).toBeInTheDocument()
+  })
+})

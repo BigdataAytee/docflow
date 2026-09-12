@@ -149,27 +149,40 @@ describe('Titles and labels come from the terminology layer (Rule #5, §D)', () 
     // The reference alone cannot say so: every document earns its own (§M),
     // so QUO-0014 looks unrelated to the QUO-0009 the customer holds.
     const model = composeDocument(
-      { ...doc('quotation'), revision: { number: 2, supersedes: 'QUO-0009' } },
+      { ...doc('quotation'), replaces: { reference: 'QUO-0009', revisionNumber: 2 } },
       {
         ...options(),
-        revisionLabel: (r) => `Rev ${r.number} · replaces ${r.supersedes}`,
+        replacesLabel: (r) =>
+          r.revisionNumber === undefined
+            ? `Replaces ${r.reference}`
+            : `Rev ${r.revisionNumber} · replaces ${r.reference}`,
       },
     )
-    expect(model.revisionLine).toBe('Rev 2 · replaces QUO-0009')
+    expect(model.replacesLine).toBe('Rev 2 · replaces QUO-0009')
   })
 
   it('prints no revision line on a first offer', () => {
-    expect(composeDocument(doc('quotation'), options()).revisionLine).toBeNull()
+    expect(composeDocument(doc('quotation'), options()).replacesLine).toBeNull()
+  })
+
+  it('prints what a reissued receipt replaces, with no revision number (§V)', () => {
+    // Two receipts for one payment, neither mentioning the other, is how a
+    // payment gets read as two.
+    const model = composeDocument(
+      { ...doc('receipt'), replaces: { reference: 'REC-0003' } },
+      { ...options(), replacesLabel: (r) => `Replaces ${r.reference}` },
+    )
+    expect(model.replacesLine).toBe('Replaces REC-0003')
   })
 
   it('prints no revision line when nothing was given words for it', () => {
     // The words live in the catalogue (§S); this module holds none, so
     // without a labeller there is nothing true to print.
     const model = composeDocument(
-      { ...doc('quotation'), revision: { number: 2, supersedes: 'QUO-0009' } },
+      { ...doc('quotation'), replaces: { reference: 'QUO-0009', revisionNumber: 2 } },
       options(),
     )
-    expect(model.revisionLine).toBeNull()
+    expect(model.replacesLine).toBeNull()
   })
 
   it('prints the actual signature when the asset is to hand (§I)', () => {

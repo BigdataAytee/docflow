@@ -582,10 +582,12 @@ force-kill and recover. Routes being reachable in a browser is a precondition
 for walking it, not the walk.
 
 What §G describes and is still deliberately absent rather than stubbed:
-void-and-reissue; "add photo" on a delivery, which needs the camera
-(Phase 4); and the per-type link actions (copy accept link, copy signing
-link), which are Phase 5's tokenized pages. Each is a missing screen, not a
-broken one.
+"add photo" on a delivery, which needs the camera (Phase 4); and the per-type
+link actions (copy accept link, copy signing link), which are Phase 5's
+tokenized pages. Each is a missing screen, not a broken one.
+
+With void-and-reissue and "open what it paid for", **every §G action that does
+not need a camera or a server is now built.**
 
 ### Void and credit note (Rule #5, §G, §E)
 
@@ -1033,6 +1035,55 @@ action on a replaced offer while the notice above it already said "Replaced by
 Rev 2 · Open it" — two identical controls, one above the other. The notice is
 the link; the action now appears only while this is still the latest offer.
 
+### Void and reissue, and open invoice (§G, Rule #5, §V)
+
+§G gives a receipt two actions and neither existed. The first is the only way
+a receipt can be corrected at all: it is immutable once issued (Rule #5), and
+a credit note is an INVOICE correction — crediting a receipt would mean money
+going back to the customer, which is a refund, not a typo. So the wrong paper
+is cancelled and a fresh one drawn for the same payment.
+
+- [x] **The money never moves, in either direction.** Nothing in `reissue.ts`
+      touches the ledger, and `leavesPaymentAlone: true` says so in the value
+      rather than in a comment. §V: "issuing or resharing its receipt never
+      increments income" — and cancelling one must not decrement it either.
+      Held by a test that draws the replacement five times and compares
+      `receivedByCurrency` before and after.
+- [x] **Nothing is reissued for money that is not there.** A reversed payment
+      has nothing to acknowledge and a receipt naming no payment has nothing
+      to reissue from. Both are refused with a reason, and the screen says
+      which — the honest action there is a plain cancel, which is still
+      offered.
+- [x] **The replacement cannot collide with the original's key.** The first
+      receipt was created under `rct:<payment>`; reusing that key would hand
+      back the CANCELLED document instead of making a replacement. The
+      reissue key is derived from the receipt being replaced —
+      `reissue:<receipt>` — so it is unique by construction and still
+      idempotent (§M). Walked in a browser against a receipt actually created
+      through the repository under its own key, because a unit test with a
+      seeded document cannot prove this.
+- [x] **Cancel first, then draw, and the failure mode is the ordinary path.**
+      If the second write does not land, the owner is not stuck: a cancelled
+      receipt does not count as the payment's receipt, so the payment's own
+      Receipt button offers to draw one.
+- [x] **"Open what it paid for"** — §E's `related_invoice_id` was stored by
+      the receipt flow and reachable from nowhere.
+
+**The replacement says what it replaces.** The customer is holding the
+cancelled one, and two receipts for one payment with neither mentioning the
+other is exactly how a payment gets read as two (§V). The printed line built
+for Rev 2 was generalised from `revision` to `replaces`, because the receipt
+case is the same fact with different words: a quotation's chain is NUMBERED
+(§G's Rev 2, Rev 3), a reissued receipt replaces exactly one cancelled
+receipt and numbering it would say more than is true.
+
+**One defect, found by probing the list rather than trusting the screen.** The
+document screen was made type-aware and the LIST was not, so a cancelled
+receipt sitting beside its replacement read "Replaced by Rev 2". Two places
+deriving the same fact and only one of them told about the second case — the
+kind of thing that passes every test written for the feature it was built
+for.
+
 ## Decisions taken
 
 | # | Decision | Why | Where |
@@ -1099,6 +1150,9 @@ the link; the action now appears only while this is still the latest offer.
 | 60 | The revision number counts the chain, not the document duplicated | Revising Rev 2 while Rev 3 exists gives Rev 4. Numbering from the source would mint a second Rev 3, and the question a customer asks is "which is the latest offer", not "what was this copied from". The chain walk is cycle-guarded, because malformed data arriving from sync must not hang the screen rendering it (§M). | `chainOf`, `revisionNumberOf` |
 | 61 | `validUntil` is the one field a revision does not carry | An expired quotation is the commonest reason to make one. Copying the date would hand the owner back an offer that is already expired — the exact problem they opened the action to fix. The builder asks, in one tap, against §G's date chips. | `reviseDocument` |
 | 62 | A superseded offer is marked in the LIST, not only on its own page | Two sent quotations look identical in a list and only one is live. The mark is derived per row from the chain, so nothing is stored on the original and the list cannot disagree with the document. | `derive.ts` (`listRows`) |
+| 63 | A reissue key is derived from the RECEIPT being replaced, not from its payment | The cancelled receipt was created under `rct:<payment>`. Reusing that key would return the cancelled document from the idempotency log instead of creating a replacement — a retry that silently does nothing, which is the worst kind. `reissue:<receipt>` cannot collide, and a second reissue of the replacement gets its own key again. | `src/features/payments/reissue.ts` |
+| 64 | A receipt is corrected by void-and-reissue, never by a credit note | A credit note reduces what is OWED on an invoice. A receipt records money already received; crediting one would mean money going back to the customer, which is a refund and a different event entirely. Rule #5 lists three corrections and this is which one a receipt gets. | `reissue.ts`, `void.ts` |
+| 65 | The printed "what this replaces" line is one field for two cases | A quotation's chain is numbered and a reissued receipt's is not, but both answer the same question for the person holding the older document. One `replaces: { reference, revisionNumber? }` on the page model, with the words chosen per type by the layer that has the catalogue. Two fields would have let the two drift, which is what happened to the list line before it was fixed. | `src/pdf/compose.ts` |
 
 ## Deviations from the spec
 

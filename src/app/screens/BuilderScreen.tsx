@@ -349,16 +349,22 @@ export function BuilderScreen({ now = () => new Date().toISOString() }: { now?: 
   }, [company, strings])
 
   /**
-   * Where this draft sits in its chain, if it is a revision at all. Derived
-   * from the documents; nothing was written back onto the offer it replaces.
+   * What this draft replaces, if anything. Derived from the documents;
+   * nothing was written back onto the document it replaces (§G, Rule #5).
+   *
+   * Only a quotation carries a revision NUMBER — its chain is numbered, and
+   * §G calls those Rev 2, Rev 3. A reissued receipt replaces exactly one
+   * cancelled receipt and says only that.
    */
-  const revision = useMemo(() => {
+  const replaces = useMemo(() => {
     if (record?.supersedesId === undefined) return null
     const replaced = documents.find((row) => row.id === record.supersedesId)
     if (replaced === undefined) return null
     return {
-      number: revisionNumberOf(documents, record),
-      supersedes: replaced.issuedReference ?? '',
+      reference: replaced.issuedReference ?? '',
+      ...(record.type === 'quotation'
+        ? { revisionNumber: revisionNumberOf(documents, record) }
+        : {}),
     }
   }, [record, documents])
 
@@ -388,14 +394,14 @@ export function BuilderScreen({ now = () => new Date().toISOString() }: { now?: 
       ...(draft.signatureAssetId === undefined
         ? {}
         : { signatureAssetId: draft.signatureAssetId }),
-      // §G's Rev 2, read from the chain by the same function the saved
-      // document uses — one source, so the preview and the page agree.
-      ...(revision === null ? {} : { revision }),
+      // Read by the same function the saved document uses — one source, so
+      // the preview and the printed page agree.
+      ...(replaces === null ? {} : { replaces }),
     }
     function provisional(type: DocumentType): string {
       return `${company?.numberingPrefixes?.[type] ?? numberingPrefix(profile, type)}-…`
     }
-  }, [state, record, customer, company, discountPercent, profile, now, revision])
+  }, [state, record, customer, company, discountPercent, profile, now, replaces])
 
   const composeOptions = useMemo<Omit<ComposeOptions, 'profile'>>(
     () => ({
@@ -417,13 +423,17 @@ export function BuilderScreen({ now = () => new Date().toISOString() }: { now?: 
       // id. Every signature the company owns, not just this draft's: the
       // preview follows the pad without a reload (§I).
       assetUrls: Object.fromEntries(assets.map((asset) => [asset.id, asset.dataUrl])),
-      // The words for "Rev 2 · replaces QUO-0009" live in the catalogue (§S),
-      // so the page is handed the sentence rather than the pieces.
-      revisionLabel: (revision: { number: number; supersedes: string }) =>
-        `${format(strings.revision.badge, { number: String(revision.number) })} · ${format(
-          strings.revision.supersedes,
-          { reference: revision.supersedes },
-        )}`,
+      // The words live in the catalogue (§S), so the page is handed the
+      // sentence rather than the pieces. A numbered chain says which revision
+      // it is; a reissued receipt only says what it replaces.
+      replacesLabel: (replaces: { reference: string; revisionNumber?: number }) => {
+        const replacesWhat = format(strings.revision.supersedes, {
+          reference: replaces.reference,
+        })
+        return replaces.revisionNumber === undefined
+          ? replacesWhat
+          : `${format(strings.revision.badge, { number: String(replaces.revisionNumber) })} · ${replacesWhat}`
+      },
     }),
     [company, showLogo, strings, assets],
   )

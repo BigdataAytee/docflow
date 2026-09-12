@@ -131,11 +131,12 @@ export function DocumentPage({
             </h2>
             <p className="text-xs tabular-nums opacity-70">{model.reference}</p>
             {/*
-              §G's Rev 2. Beside the reference, because that is where a
-              customer looks to tell one offer from another.
+              What this replaces — §G's Rev 2, or a reissued receipt. Beside
+              the reference, because that is where a customer looks to tell
+              one document from another.
             */}
-            {model.revisionLine !== null && (
-              <p className="text-xs font-semibold opacity-80">{model.revisionLine}</p>
+            {model.replacesLine !== null && (
+              <p className="text-xs font-semibold opacity-80">{model.replacesLine}</p>
             )}
           </div>
         </header>

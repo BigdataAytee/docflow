@@ -357,6 +357,16 @@ export interface UiStrings {
     readonly checkTheDate: string
     readonly failed: string
   }
+  readonly reissue: {
+    readonly action: string
+    readonly explain: string
+    readonly openInvoice: string
+    readonly replacedBy: string
+    readonly replaces: string
+    readonly moneyStays: string
+    readonly paymentReversed: string
+    readonly failed: string
+  }
   readonly voidIt: {
     readonly title: string
     readonly explain: string
@@ -853,6 +863,16 @@ const EN: UiStrings = {
     openIt: 'Open it',
     checkTheDate: 'Set how long this one is good for.',
     failed: 'That could not be copied: {reason}',
+  },
+  reissue: {
+    action: 'Cancel and draw a new one',
+    explain: 'This one is cancelled and a fresh copy is drawn for the same money.',
+    openInvoice: 'Open what it paid for',
+    replacedBy: 'Cancelled — a newer one replaces this',
+    replaces: 'Replaces {reference}',
+    moneyStays: 'The money stays exactly as recorded. Nothing is received twice.',
+    paymentReversed: 'That payment was reversed, so there is nothing left to acknowledge. Cancel this one on its own.',
+    failed: 'That could not be done: {reason}',
   },
   voidIt: {
     title: 'Cancel this document',
