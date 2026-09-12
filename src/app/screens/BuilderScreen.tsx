@@ -23,6 +23,7 @@ import { HOME, documentPath, editDocumentPath, settingsPath } from '../paths'
 import { deviceId } from '../device'
 import { DOCUMENT_TYPES, type DocumentType } from '../../domain/documents/types'
 import { label as typeLabel, numberingPrefix } from '../../domain/locale/profile'
+import { format } from '../../domain/locale/data/strings'
 import { percentToPpm } from '../../domain/money/money'
 import { regionProfile } from '../../features/settings/region'
 import {
@@ -31,11 +32,12 @@ import {
   clampStep,
   committed,
   edit,
+  firstProblemStep,
   goToStep,
   validateForIssue,
 } from '../../features/documents/builder'
 import { BuilderShell } from '../../features/documents/BuilderShell'
-import { issueDocument } from '../../features/documents/issue'
+import { IssueError, issueDocument } from '../../features/documents/issue'
 import { DEFAULT_TEMPLATE, type TemplateId } from '../../pdf/templates'
 import type { ComposableDocument, ComposeOptions } from '../../pdf/compose'
 import { SkeletonList } from '../../ui'
@@ -86,6 +88,7 @@ export function BuilderScreen({ now = () => new Date().toISOString() }: { now?: 
   const [showLogo, setShowLogo] = useState(true)
   const [brandColour, setBrandColour] = useState<string>(BRAND_COLOURS[0])
   const [discountPercent, setDiscountPercent] = useState(0)
+  const [issueProblem, setIssueProblem] = useState<string | null>(null)
 
   // Seeded once from the stored record; after that the screen owns the draft
   // and the record follows it, not the other way round.
@@ -209,28 +212,53 @@ export function BuilderScreen({ now = () => new Date().toISOString() }: { now?: 
   }
 
   const save = () => {
-    const issued = issueDocument({
-      draft: state.draft,
-      currentStatus: record.status,
-      context: {
-        enabledPaymentMethodCount: company?.enabledPaymentMethods.length ?? 0,
-        paymentIsRecorded:
-          state.draft.paymentId !== undefined &&
-          payments.some((payment) => payment.id === state.draft.paymentId),
-        signatureRequired: company?.signatureRequired === true,
-      },
-      profile,
-      prefix: company?.numberingPrefixes?.[state.draft.type] ?? numberingPrefix(profile, state.draft.type),
-      // §M: a server-reserved block where available; offline, a device tag.
-      sequence: documentsOf(documents, state.draft.type).length,
-      fromReservedBlock: false,
-      deviceId: deviceId(),
-      issuedAt: now(),
-      ...(discountPercent === 0 ? {} : { discountRate: percentToPpm(discountPercent) }),
-      ...(company?.taxRatePpm === undefined ? {} : { taxRate: company.taxRatePpm }),
-      ...(company?.whtRatePpm === undefined ? {} : { whtRate: company.whtRatePpm }),
-    })
+    // §G: "draft saving is always allowed", and final issue validates. The
+    // amber band already lists what is missing, so pressing Save takes the
+    // owner TO the first missing thing rather than throwing at them.
+    if (problems.length > 0) {
+      const target = firstProblemStep(problems)
+      setIssueProblem(strings.builder.notReadyYet)
+      if (target !== null) setState(goToStep(state, target))
+      return
+    }
 
+    let issued
+    try {
+      issued = issueDocument({
+        draft: state.draft,
+        currentStatus: record.status,
+        context: {
+          enabledPaymentMethodCount: company?.enabledPaymentMethods.length ?? 0,
+          paymentIsRecorded:
+            state.draft.paymentId !== undefined &&
+            payments.some((payment) => payment.id === state.draft.paymentId),
+          signatureRequired: company?.signatureRequired === true,
+        },
+        profile,
+        prefix:
+          company?.numberingPrefixes?.[state.draft.type] ??
+          numberingPrefix(profile, state.draft.type),
+        // §M: a server-reserved block where available; offline, a device tag.
+        sequence: documentsOf(documents, state.draft.type).length,
+        fromReservedBlock: false,
+        deviceId: deviceId(),
+        issuedAt: now(),
+        ...(discountPercent === 0 ? {} : { discountRate: percentToPpm(discountPercent) }),
+        ...(company?.taxRatePpm === undefined ? {} : { taxRate: company.taxRatePpm }),
+        ...(company?.whtRatePpm === undefined ? {} : { whtRate: company.whtRatePpm }),
+      })
+    } catch (cause) {
+      // §M: a failed operation carries an actionable per-record error. The
+      // draft is untouched, so nothing the owner typed is lost.
+      setIssueProblem(
+        cause instanceof IssueError
+          ? format(strings.builder.couldNotIssue, { reason: cause.message })
+          : format(strings.builder.couldNotIssue, { reason: String(cause) }),
+      )
+      return
+    }
+
+    setIssueProblem(null)
     void commit(state)
       .then(() =>
         actions.issue(id, {
@@ -240,6 +268,9 @@ export function BuilderScreen({ now = () => new Date().toISOString() }: { now?: 
         }),
       )
       .then(() => navigate(documentPath(id)))
+      .catch((cause: unknown) =>
+        setIssueProblem(format(strings.builder.couldNotIssue, { reason: String(cause) })),
+      )
   }
 
   return (
@@ -303,6 +334,14 @@ export function BuilderScreen({ now = () => new Date().toISOString() }: { now?: 
         }}
         preview={null}
       />
+      {issueProblem !== null && (
+        <p
+          className="mt-3 rounded-xl bg-status-warn-tint px-3 py-2.5 text-sm font-medium text-status-warn"
+          role="alert"
+        >
+          {issueProblem}
+        </p>
+      )}
       <span className="sr-only">{typeLabel(profile, state.draft.type)}</span>
     </BuilderShell>
   )

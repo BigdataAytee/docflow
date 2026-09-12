@@ -26,6 +26,8 @@ import {
   type PaymentRepository,
   type Repositories,
   type SavedItem,
+  type ShareEvent,
+  type ShareEventRepository,
   RepositoryError,
 } from '../types'
 import { assertTransition, isDraft } from '../../../domain/documents/lifecycle'
@@ -54,6 +56,7 @@ export interface MemoryState {
   payments: Payment[]
   items: SavedItem[]
   expenses: Expense[]
+  shares: ShareEvent[]
 }
 
 export const emptyState = (): MemoryState => ({
@@ -63,6 +66,7 @@ export const emptyState = (): MemoryState => ({
   payments: [],
   items: [],
   expenses: [],
+  shares: [],
 })
 
 export function createMemoryRepositories(state: MemoryState = emptyState()): Repositories {
@@ -280,5 +284,23 @@ export function createMemoryRepositories(state: MemoryState = emptyState()): Rep
     },
   }
 
-  return { companies, customers, documents, payments, items, expenses }
+  const shares: ShareEventRepository = {
+    async list(companyId) {
+      return scoped(state.shares, companyId)
+    },
+    async listForDocument(companyId, documentId) {
+      return scoped(state.shares, companyId).filter((event) => event.recordId === documentId)
+    },
+    async record(event, ctx) {
+      // Append-only (§E audit_log): no update, no delete, and a replayed key
+      // returns the event already written rather than a second one.
+      return log.once(ctx, () => {
+        const created: ShareEvent = { ...event, id: nextId('shr') }
+        state.shares.push(created)
+        return created
+      })
+    },
+  }
+
+  return { companies, customers, documents, payments, items, expenses, shares }
 }
