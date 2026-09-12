@@ -26,6 +26,12 @@ export interface ListRow {
   readonly customerName?: string
   /** Absent on a delivery document — the column does not exist there (§G). */
   readonly amount?: Money
+  /**
+   * "Replaced by Rev 2", when a newer offer exists (§G). Without it a list of
+   * two sent quotations cannot say which one is live — which is the exact
+   * question making a Rev 2 creates.
+   */
+  readonly note?: string
 }
 
 export interface DocumentListProps {
@@ -119,6 +125,11 @@ export function DocumentList({ type, rows, onOpen, onNew }: DocumentListProps) {
                     {row.customerName !== undefined && (
                       <span className="mt-0.5 block truncate text-xs opacity-70">
                         {row.customerName}
+                      </span>
+                    )}
+                    {row.note !== undefined && (
+                      <span className="mt-0.5 block truncate text-xs font-medium text-status-warn">
+                        {row.note}
                       </span>
                     )}
                   </span>

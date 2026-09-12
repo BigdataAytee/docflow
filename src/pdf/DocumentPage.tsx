@@ -130,6 +130,13 @@ export function DocumentPage({
               {model.title}
             </h2>
             <p className="text-xs tabular-nums opacity-70">{model.reference}</p>
+            {/*
+              §G's Rev 2. Beside the reference, because that is where a
+              customer looks to tell one offer from another.
+            */}
+            {model.revisionLine !== null && (
+              <p className="text-xs font-semibold opacity-80">{model.revisionLine}</p>
+            )}
           </div>
         </header>
 

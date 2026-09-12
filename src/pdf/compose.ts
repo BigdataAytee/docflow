@@ -53,6 +53,13 @@ export interface ComposableDocument {
   readonly reference: string
   readonly issueDate: string
   readonly dueDate?: string
+  /**
+   * §G's Rev 2, already worked out by `revision.ts`. The page prints it
+   * because a customer holding this one has to be able to tell that it
+   * replaces the offer they were sent last week — the reference alone cannot
+   * say so, since every document earns its own (§M).
+   */
+  readonly revision?: { readonly number: number; readonly supersedes: string }
   readonly lineItems: readonly LineItem[]
   readonly party: PartySnapshot
   /** Set at issue and never rewritten (§M). Null on a draft. */
@@ -111,6 +118,8 @@ export interface PageModel {
   readonly branding: CompanyBranding
   readonly title: string
   readonly reference: string
+  /** Already in words, in the document's own language. Null when it is the first offer. */
+  readonly revisionLine: string | null
   readonly partyLabel: string
   readonly party: PartySnapshot
   readonly issueDate: string
@@ -154,6 +163,12 @@ export interface ComposeOptions {
   readonly otherPaymentMethods?: readonly string[]
   /** Asset id → data URL, so the page can print the signature it names. */
   readonly assetUrls?: Readonly<Record<string, string>>
+  /**
+   * Renders "Rev 2 · replaces QUO-0009" in the active language. Passed in
+   * rather than built here, because the words live in the catalogue (§S) and
+   * this module holds none.
+   */
+  readonly revisionLabel?: (revision: { number: number; supersedes: string }) => string
 }
 
 export function composeDocument(
@@ -204,6 +219,10 @@ export function composeDocument(
     // Frozen at issue, so a shared PDF never changes language later (§D.2).
     title: document.frozenLabels?.printedTitle ?? printedTitle(profile, document.type),
     reference: document.reference,
+    revisionLine:
+      document.revision === undefined || options.revisionLabel === undefined
+        ? null
+        : options.revisionLabel(document.revision),
     partyLabel: labels.partyLabel,
     party: document.party,
     issueDate: document.issueDate,

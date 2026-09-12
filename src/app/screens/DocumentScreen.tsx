@@ -30,6 +30,13 @@ import { ConvertSheet } from '../../features/documents/ConvertSheet'
 import { VoidSheet } from '../../features/documents/VoidSheet'
 import { VoidError, type VoidableDocument, canVoid, voidDocument } from '../../features/documents/void'
 import { CreditNoteSheet } from '../../features/credits/CreditNoteSheet'
+import {
+  canRevise,
+  chainOf,
+  reviseDocument,
+  revisionNumberOf,
+  supersededBy,
+} from '../../features/documents/revision'
 import { SignDeliverySheet } from '../../features/delivery/SignDeliverySheet'
 import {
   DeliverySignError,
@@ -84,6 +91,7 @@ export function DocumentScreen({ today = new Date().toISOString().slice(0, 10) }
   const [voidProblem, setVoidProblem] = useState<string | null>(null)
   const [signing, setSigning] = useState(false)
   const [signProblem, setSignProblem] = useState<string | null>(null)
+  const [revisionProblem, setRevisionProblem] = useState<string | null>(null)
   const [crediting, setCrediting] = useState(false)
   const [creditProblem, setCreditProblem] = useState<string | null>(null)
 
@@ -117,6 +125,12 @@ export function DocumentScreen({ today = new Date().toISOString().slice(0, 10) }
 
   /** The mark on this document, resolved from the id it holds (§E). */
   const signatureUrl = assets.find((asset) => asset.id === record.signatureAssetId)?.dataUrl
+
+  // Where this offer sits in its chain — all derived, nothing stored (§G).
+  const revisionNumber = revisionNumberOf(documents, record)
+  const nextRevisionNumber = chainOf(documents, record).length + 1
+  const newerRevision = supersededBy(documents, record.id)
+  const revisedFrom = documents.find((row) => row.id === record.supersedesId) ?? null
   const outstanding = invoiceOutstanding(record.id, total, payments, mineCredits)
 
   const chase = (() => {
@@ -335,6 +349,111 @@ export function DocumentScreen({ today = new Date().toISOString().slice(0, 10) }
               />
             )}
           </section>
+        )}
+
+        {/*
+          Where this offer sits in its chain, at both ends: the one that was
+          replaced says so, and the replacement says what it replaces. Both are
+          READ from the documents — nothing was written back onto an original
+          that Rule #5 froze (§G).
+        */}
+        {newerRevision !== null && (
+          <button
+            type="button"
+            className="w-full rounded-2xl bg-status-warn-tint p-4 text-left text-sm text-status-warn"
+            onClick={() => navigate(documentPath(newerRevision.id))}
+          >
+            <span className="font-semibold">
+              {format(strings.revision.supersededBy, {
+                number: String(revisionNumberOf(documents, newerRevision)),
+              })}
+            </span>
+            <span className="mt-0.5 block text-xs opacity-80">{strings.revision.openIt}</span>
+          </button>
+        )}
+
+        {revisedFrom !== null && (
+          <button
+            type="button"
+            className="w-full rounded-2xl bg-white/70 p-4 text-left text-sm"
+            onClick={() => navigate(documentPath(revisedFrom.id))}
+          >
+            <span className="font-semibold">
+              {format(strings.revision.badge, { number: String(revisionNumber) })}
+            </span>
+            <span className="mt-0.5 block text-xs opacity-70">
+              {format(strings.revision.supersedes, {
+                reference: revisedFrom.issuedReference ?? '',
+              })}
+            </span>
+          </button>
+        )}
+
+        {/*
+          §G's "duplicate as Rev 2", offered only while this is still the
+          latest offer. Once a newer one exists the notice above IS the link
+          to it, and a second button saying the same thing in the same place
+          is noise rather than a choice (Rule #1).
+        */}
+        {canRevise(record) && newerRevision === null && (
+          <button
+            type="button"
+            className="min-h-tap w-full rounded-full border border-brand/30 bg-white px-4 text-sm font-semibold text-brand"
+            onClick={() => {
+              setRevisionProblem(null)
+              let revised
+              try {
+                revised = reviseDocument(record, { documents, on: today })
+              } catch (cause) {
+                setRevisionProblem(
+                  format(strings.revision.failed, {
+                    reason: cause instanceof Error ? cause.message : String(cause),
+                  }),
+                )
+                return
+              }
+              void actions
+                .createDraftWithKey(
+                  {
+                    type: revised.draft.type,
+                    status: 'draft',
+                    currency: revised.draft.currency,
+                    lineItems: revised.draft.lineItems,
+                    totalMinor: 0,
+                    supersedesId: revised.supersedesId,
+                    ...(revised.draft.customerId === undefined
+                      ? {}
+                      : { customerId: revised.draft.customerId }),
+                    ...(revised.draft.issueDate === undefined
+                      ? {}
+                      : { issueDate: revised.draft.issueDate }),
+                    ...(revised.draft.signatureAssetId === undefined
+                      ? {}
+                      : { signatureAssetId: revised.draft.signatureAssetId }),
+                  },
+                  revised.idempotencyKey,
+                )
+                .then((created) => navigate(editDocumentPath(created.id)))
+                .catch((cause: unknown) => {
+                  setRevisionProblem(
+                    format(strings.revision.failed, {
+                      reason: cause instanceof Error ? cause.message : String(cause),
+                    }),
+                  )
+                })
+            }}
+          >
+            {format(strings.revision.make, { number: String(nextRevisionNumber) })}
+          </button>
+        )}
+
+        {revisionProblem !== null && (
+          <p
+            className="rounded-xl bg-status-warn-tint px-3 py-2.5 text-sm font-medium text-status-warn"
+            role="alert"
+          >
+            {revisionProblem}
+          </p>
         )}
 
         {/* §G's second action on every type that has somewhere to go. */}

@@ -582,10 +582,10 @@ force-kill and recover. Routes being reachable in a browser is a precondition
 for walking it, not the walk.
 
 What §G describes and is still deliberately absent rather than stubbed:
-duplicate-as-Rev-2 and void-and-reissue; "add photo" on a delivery, which
-needs the camera (Phase 4); and the per-type link actions (copy accept link,
-copy signing link), which are Phase 5's tokenized pages. Each is a missing
-screen, not a broken one.
+void-and-reissue; "add photo" on a delivery, which needs the camera
+(Phase 4); and the per-type link actions (copy accept link, copy signing
+link), which are Phase 5's tokenized pages. Each is a missing screen, not a
+broken one.
 
 ### Void and credit note (Rule #5, §G, §E)
 
@@ -985,6 +985,54 @@ there was never a native dependency here, only an assumed one.
    Somebody would have signed, and watched it vanish. The pad now appears only
    once there is a name, with a line saying why.
 
+### Duplicate as Rev 2 (§G, Rule #5, §M)
+
+§G lists it among a quotation's four actions. It answers the most ordinary
+thing that happens to a quotation: the customer says it is too expensive, or
+it expired, or they want two more of something. The offer changes, and the
+offer they already hold must not.
+
+- [x] **The original is never altered.** Nothing is written back — no
+      "superseded" flag, no status change. The link lives on the NEW document
+      as `supersedesId`, and "this one was replaced" is DERIVED by looking for
+      a document carrying its id (Rule #3). The same shape as
+      `convertedFromId`, for the same reason.
+- [x] **Quotations only.** An invoice is a demand for money — a second one is
+      a second debt, and Rule #5 says corrections are void, credit note or
+      reissue. A receipt is evidence of a payment. A delivery note's evidence
+      seals. A quotation is the one document whose purpose is to be negotiated.
+      Not a draft either: a draft is still editable, so the answer is to change
+      it rather than to make a second one.
+- [x] **The number counts the CHAIN, not the document duplicated.** Revising
+      Rev 2 while Rev 3 exists produces Rev 4, because what a customer needs to
+      tell is which offer is the latest. Held by a property test over chains of
+      any length.
+- [x] **A retried duplicate never duplicates** (§M). The key is derived from
+      (root, number), so two taps of one gesture are one document — and a
+      DELIBERATE later revision, being a different number, is still possible.
+      Once a newer revision exists, the action is replaced by a link to it.
+- [x] **The validity date does NOT come across.** An expired quotation is the
+      commonest reason to make a Rev 2; copying the old date would hand back an
+      offer that is already expired. The signature does come across — the same
+      business making the same offer again, and asking for the mark a second
+      time would be a new required field on a duplicate (Rule #1).
+
+**Two things the reference alone cannot say.** Every document earns its own
+reference (§M), so QUO-0014 looks unrelated to the QUO-0009 the customer is
+holding. Both ends of the chain therefore say it out loud:
+
+- The printed page carries "Rev 2 · Replaces QUO-0009" beside the reference,
+  in the document's own language.
+- The saved document says it at both ends — the replaced offer links forward,
+  the replacement links back — and the LIST marks the superseded row. Without
+  that last one a list of two sent quotations cannot say which is live, which
+  is the exact question making a Rev 2 creates.
+
+**One defect, found by the browser.** The first version put an "Open it"
+action on a replaced offer while the notice above it already said "Replaced by
+Rev 2 · Open it" — two identical controls, one above the other. The notice is
+the link; the action now appears only while this is still the latest offer.
+
 ## Decisions taken
 
 | # | Decision | Why | Where |
@@ -1047,6 +1095,10 @@ there was never a native dependency here, only an assumed one.
 | 56 | Assets are append-only — no update, no delete | A signature behind an issued document is evidence. If the bytes could be replaced, every PDF already shared under it would change meaning retroactively, and Rule #5 would protect a document's words but not the mark at the bottom of it. Drawing again makes a new asset; removing the DEFAULT keeps the asset that documents already point at. | `AssetRepository` |
 | 57 | Signing a delivery is one repository write, not a patch plus a transition | §P asks for "atomic delivered + timestamp". Two writes can half-succeed, and both halves are uncorrectable: `delivered` is terminal and its evidence seals, so a delivery marked delivered with no signature, or signed but still in transit, would be stuck that way. `signDelivery` also refuses a document whose evidence is sealed, so a second device or a later link use cannot alter it. | `DocumentRepository.signDelivery` |
 | 58 | `defaultSignatureAssetId` is `string \| null`, not `string \| undefined` | A patch carrying `undefined` cannot express "the owner removed this" — the key simply goes missing, which a sync patch reads as "unchanged". `null` clears it explicitly, so removing a default survives the round trip instead of coming back (§M). | `Company` |
+| 59 | A revision gets its own ordinary reference, and says what it replaces in words | `QUO-0009-R2` would break the reference format, the offline device tag (`-K3`) and the server's uniqueness rule all at once, and `parseReference` with it. A new number plus a printed "Rev 2 · Replaces QUO-0009" keeps references uniform while telling the customer exactly what they need to know — which the reference alone never could. | `revision.ts`, `compose.ts` |
+| 60 | The revision number counts the chain, not the document duplicated | Revising Rev 2 while Rev 3 exists gives Rev 4. Numbering from the source would mint a second Rev 3, and the question a customer asks is "which is the latest offer", not "what was this copied from". The chain walk is cycle-guarded, because malformed data arriving from sync must not hang the screen rendering it (§M). | `chainOf`, `revisionNumberOf` |
+| 61 | `validUntil` is the one field a revision does not carry | An expired quotation is the commonest reason to make one. Copying the date would hand the owner back an offer that is already expired — the exact problem they opened the action to fix. The builder asks, in one tap, against §G's date chips. | `reviseDocument` |
+| 62 | A superseded offer is marked in the LIST, not only on its own page | Two sent quotations look identical in a list and only one is live. The mark is derived per row from the chain, so nothing is stored on the original and the list cannot disagree with the document. | `derive.ts` (`listRows`) |
 
 ## Deviations from the spec
 

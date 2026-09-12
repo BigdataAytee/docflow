@@ -39,6 +39,7 @@ import {
 } from '../../features/documents/builder'
 import { BuilderShell } from '../../features/documents/BuilderShell'
 import { IssueError, issueDocument } from '../../features/documents/issue'
+import { revisionNumberOf } from '../../features/documents/revision'
 import { NewReceiptSheet } from '../../features/payments/NewReceiptSheet'
 import { SignaturePad } from '../../features/signature/SignaturePad'
 import { availableMethods } from '../../features/payments/methods'
@@ -347,6 +348,20 @@ export function BuilderScreen({ now = () => new Date().toISOString() }: { now?: 
     }
   }, [company, strings])
 
+  /**
+   * Where this draft sits in its chain, if it is a revision at all. Derived
+   * from the documents; nothing was written back onto the offer it replaces.
+   */
+  const revision = useMemo(() => {
+    if (record?.supersedesId === undefined) return null
+    const replaced = documents.find((row) => row.id === record.supersedesId)
+    if (replaced === undefined) return null
+    return {
+      number: revisionNumberOf(documents, record),
+      supersedes: replaced.issuedReference ?? '',
+    }
+  }, [record, documents])
+
   const composable = useMemo<ComposableDocument>(() => {
     const draft: DocumentDraft = state?.draft ?? { type: 'invoice', currency: 'NGN', lineItems: [] }
     return {
@@ -373,11 +388,14 @@ export function BuilderScreen({ now = () => new Date().toISOString() }: { now?: 
       ...(draft.signatureAssetId === undefined
         ? {}
         : { signatureAssetId: draft.signatureAssetId }),
+      // §G's Rev 2, read from the chain by the same function the saved
+      // document uses — one source, so the preview and the page agree.
+      ...(revision === null ? {} : { revision }),
     }
     function provisional(type: DocumentType): string {
       return `${company?.numberingPrefixes?.[type] ?? numberingPrefix(profile, type)}-…`
     }
-  }, [state, record, customer, company, discountPercent, profile, now])
+  }, [state, record, customer, company, discountPercent, profile, now, revision])
 
   const composeOptions = useMemo<Omit<ComposeOptions, 'profile'>>(
     () => ({
@@ -399,6 +417,13 @@ export function BuilderScreen({ now = () => new Date().toISOString() }: { now?: 
       // id. Every signature the company owns, not just this draft's: the
       // preview follows the pad without a reload (§I).
       assetUrls: Object.fromEntries(assets.map((asset) => [asset.id, asset.dataUrl])),
+      // The words for "Rev 2 · replaces QUO-0009" live in the catalogue (§S),
+      // so the page is handed the sentence rather than the pieces.
+      revisionLabel: (revision: { number: number; supersedes: string }) =>
+        `${format(strings.revision.badge, { number: String(revision.number) })} · ${format(
+          strings.revision.supersedes,
+          { reference: revision.supersedes },
+        )}`,
     }),
     [company, showLogo, strings, assets],
   )

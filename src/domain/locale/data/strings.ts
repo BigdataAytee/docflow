@@ -344,6 +344,19 @@ export interface UiStrings {
     readonly sealed: string
     readonly failed: string
   }
+  readonly revision: {
+    readonly action: string
+    readonly explain: string
+    readonly make: string
+    readonly openExisting: string
+    readonly alreadyExists: string
+    readonly badge: string
+    readonly supersededBy: string
+    readonly supersedes: string
+    readonly openIt: string
+    readonly checkTheDate: string
+    readonly failed: string
+  }
   readonly voidIt: {
     readonly title: string
     readonly explain: string
@@ -825,6 +838,21 @@ const EN: UiStrings = {
     signedBy: 'Signed by {name}',
     sealed: 'This cannot be changed once signed.',
     failed: 'That could not be saved: {reason}',
+  },
+  revision: {
+    // §G calls it "duplicate as Rev 2", and Rev is what a quotation says in
+    // the trades this is built for. The sentence around it is the plain part.
+    action: 'Make Rev {number}',
+    explain: 'A fresh copy to change and send. The one they already have stays exactly as it is.',
+    make: 'Make Rev {number}',
+    openExisting: 'Rev {number} already exists.',
+    alreadyExists: 'There is already a newer version of this.',
+    badge: 'Rev {number}',
+    supersededBy: 'Replaced by Rev {number}',
+    supersedes: 'Replaces {reference}',
+    openIt: 'Open it',
+    checkTheDate: 'Set how long this one is good for.',
+    failed: 'That could not be copied: {reason}',
   },
   voidIt: {
     title: 'Cancel this document',
