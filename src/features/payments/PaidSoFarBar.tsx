@@ -21,8 +21,11 @@ export function PaidSoFarBar({ bar }: { bar: PaidSoFar }) {
     total: formatMoney(bar.total),
   })
 
+  // No aria-label on the section: the line below is its visible text, and the
+  // progress bar needs that name as a widget — two elements sharing one
+  // accessible name is one too many for anyone navigating by label.
   return (
-    <section className="rounded-2xl bg-invoice-tint p-4" aria-label={spoken}>
+    <section className="rounded-2xl bg-invoice-tint p-4">
       <p className="text-sm font-semibold text-invoice-deep">
         {spoken}
         {!bar.isSettled && (
@@ -42,6 +45,13 @@ export function PaidSoFarBar({ bar }: { bar: PaidSoFar }) {
       >
         <div className="h-full rounded-full bg-status-good" style={{ width: `${percent}%` }} />
       </div>
+      {bar.credited.minor !== 0 && (
+        // Its own line, never folded into "paid": a credit is money written
+        // off, not money received (Rule #3, §V).
+        <p className="mt-1.5 text-xs text-invoice-deep/80">
+          {format(strings.payments.creditedLine, { amount: formatMoney(bar.credited) })}
+        </p>
+      )}
       {bar.isSettled && (
         <p className="mt-1.5 text-xs font-medium text-status-good">{strings.payments.settled}</p>
       )}

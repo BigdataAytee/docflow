@@ -27,6 +27,7 @@ import {
   type PaymentAllocation,
   LedgerError,
   invoiceOutstanding,
+  paidAgainstInvoice,
   validatePayment,
 } from '../../domain/payments/ledger'
 
@@ -121,14 +122,24 @@ export function recordPayment(input: RecordPaymentInput): Payment {
 
 export interface PaidSoFar {
   readonly total: Money
+  /** Money the customer actually handed over — effective allocations only. */
   readonly paid: Money
+  /** Money written off, which is NOT money received (Rule #3, §V). */
+  readonly credited: Money
   readonly left: Money
   /** 0…1, for the green progress beneath the blue bar (§G). */
   readonly progress: number
   readonly isSettled: boolean
 }
 
-/** The figures behind "₦50,000 paid of ₦145,000 · ₦95,000 left" (§G). */
+/**
+ * The figures behind "₦50,000 paid of ₦145,000 · ₦95,000 left" (§G).
+ *
+ * `paid` comes from the LEDGER, not from `total - left`. Those two differ the
+ * moment a credit note exists, and the difference matters: a credit is money
+ * written off, not money received, and a bar that called it "paid" would tell
+ * the owner a customer had settled when they had been let off (Rule #3, §V).
+ */
 export function paidSoFar(
   invoiceId: string,
   invoiceTotal: Money,
@@ -136,10 +147,15 @@ export function paidSoFar(
   creditNotes: readonly CreditNote[] = [],
 ): PaidSoFar {
   const left = invoiceOutstanding(invoiceId, invoiceTotal, payments, creditNotes)
-  const paid = subtract(invoiceTotal, left)
+  const paid = paidAgainstInvoice(invoiceId, invoiceTotal.currency, payments)
+  const credited = sum(
+    creditNotes.filter((note) => note.invoiceId === invoiceId).map((note) => note.amount),
+    invoiceTotal.currency,
+  )
   return {
     total: invoiceTotal,
     paid,
+    credited,
     left,
     progress: invoiceTotal.minor === 0 ? 1 : paid.minor / invoiceTotal.minor,
     isSettled: left.minor === 0,

@@ -24,7 +24,7 @@ const isDocumentType = (value: string | undefined): value is DocumentType =>
 export function ListScreen({ today = new Date().toISOString().slice(0, 10) }: { today?: string }) {
   const { type } = useParams<{ type: string }>()
   const { profile, strings } = useCompany()
-  const { company, customers, documents, payments, loading } = useAppData()
+  const { company, customers, documents, payments, creditNotes, loading } = useAppData()
   const navigate = useNavigate()
 
   const rows = useMemo(() => {
@@ -33,13 +33,15 @@ export function ListScreen({ today = new Date().toISOString().slice(0, 10) }: { 
       payments,
       customers,
       today,
+      // A credited invoice owes less, so its row says so too (§E).
+      creditNotes,
       statusWords: strings.statuses,
       // §M: "drafts show provisional references". The company prefix wins,
       // falling back to the locale's own (§D).
       provisionalReference: (document) =>
         `${company?.numberingPrefixes?.[document.type] ?? numberingPrefix(profile, document.type)}-…`,
     })
-  }, [type, documents, payments, customers, today, strings, company, profile])
+  }, [type, documents, payments, customers, today, strings, company, profile, creditNotes])
 
   if (!isDocumentType(type)) return <Navigate to={HOME} replace />
 

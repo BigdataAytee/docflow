@@ -582,8 +582,58 @@ force-kill and recover. Routes being reachable in a browser is a precondition
 for walking it, not the walk.
 
 What §G describes and is still deliberately absent rather than stubbed: the
-sign action and signature capture, which need the native bridge (Phase 4); and
-the receipt-from-payment flow. Each is a missing screen, not a broken one.
+sign action and signature capture, which need the native bridge (Phase 4); the
+receipt-from-payment flow; and the per-type link actions (copy accept link,
+copy signing link), which are Phase 5's tokenized pages. Each is a missing
+screen, not a broken one.
+
+### Void and credit note (Rule #5, §G, §E)
+
+Rule #5: "Issued documents are immutable. Corrections are void/credit/reissue."
+The credit-note domain was built in Phase 2.5 with no screen and no repository;
+void had a lifecycle transition and no rules about money.
+
+- [x] **An invoice with money against it is never voided** (`void.ts`). The
+      money came in; voiding the invoice would leave a payment allocated to a
+      document that officially never existed, and the customer's balance would
+      be wrong with nothing on screen to explain it. The refusal names the two
+      real routes — credit the balance, or reverse the payment if it was
+      recorded in error — and stops offering the credit once there is no
+      balance left to credit.
+- [x] **Voiding a receipt never un-receives the money.** A receipt is a view of
+      a payment, so cancelling the paper cannot take cash back; §V says
+      reissuing a receipt never increments income, and this is the same rule in
+      the other direction. The sheet says so in its own words for a receipt.
+- [x] **A delivered delivery cannot be voided at all** — `isEvidenceSealed`
+      and the lifecycle already said so, and now a test says why: somebody
+      signed for those goods, and §M puts delivery evidence alongside payment
+      events as never overwritten.
+- [x] **A void is not an edit.** Only the status moves; the reference, the
+      frozen labels and the totals stay exactly as issued (§M). Asserted on the
+      stored record, not just on the decision.
+- [x] **The credit-note screen** (`CreditNoteSheet.tsx`) over the Phase 2.5
+      domain, plus the `credit_notes` repository §E always described. The cap
+      at the invoice total is the domain's, not the screen's.
+- [x] **Credit notes now flow through every money read.** `invoiceOutstanding`,
+      `customerBalances`, `paidSoFar`, `prefillAmount`, `outstandingByCurrency`,
+      `ageingByCurrency`, `displayStatus`, `listRows` and `composeStatement`
+      have all accepted a `creditNotes` argument since they were written, and
+      every caller was passing `[]`. They are wired now, so a credited invoice
+      reads as credited on the document, the list, the contact page, the
+      statement, the ageing chart and Home's Outstanding.
+- [x] **52 unit and component tests, 6 route tests**, plus a 13-check browser
+      run against the production build: issue → part payment → the void refused
+      with both alternatives → credit the balance → settled in full, with the
+      paid figure unchanged.
+
+**A defect the wiring exposed, fixed here.** `paidSoFar` computed
+`paid = total − left`, and `left` already subtracts credits — so a credit was
+displayed as money the customer had paid. With `[]` passed everywhere it never
+surfaced; the moment real credits arrived it did. `paid` now comes from the
+LEDGER (`paidAgainstInvoice`), `credited` is its own figure with its own line on
+the bar, and a property test holds that paid can never exceed what was
+allocated. A bar that called a write-off a payment would have told an owner a
+customer had settled when they had been let off.
 
 ### The convert action (§G, §E, §M)
 
@@ -840,6 +890,9 @@ needed the bar's accessible name.
 | 44 | The conversion link lives on the new document only; the forward direction is derived | §E lists `converted_to_id`, but §G says originals are never altered and Rule #5 froze the document being converted. Writing the forward link would break both. Reading it — "the document carrying this one's id" — keeps §G's "links persist" true with no write to the original at all. | `src/features/documents/convert.ts` |
 | 45 | A conversion key is derived from (source, target), and a second conversion becomes "open it" | §M: retried conversions never duplicate. A derived key makes that arithmetic rather than luck. It also means a DELIBERATE second conversion cannot happen by accident — which is right, because whether one quotation becomes two invoices is a question the owner should be asked, not answered for them by a double tap. | `convert.ts`, `ConvertSheet.tsx` |
 | 46 | No article before a localised label, anywhere | "Make a {label}" reads as "Make a Invoice", and choosing "a" or "an" for a word that comes from the region's own terminology table means guessing at its first sound in every language. "Turn into {label}" is grammatical for every shipped label and translates without the trap. | `strings.ts` (`convert`) |
+| 47 | An invoice with money allocated against it cannot be voided | Voiding it would leave a payment attached to a document that officially never existed — the customer's balance would be wrong and nothing on screen would say why. The two honest corrections are a credit note for what is no longer owed, or reversing the payment if it was recorded in error, and the refusal names both rather than dead-ending. | `src/features/documents/void.ts` |
+| 48 | Voiding a receipt leaves the payment alone, always | A receipt is a view of a payment (§G), and §V says reissuing one never increments income. The same rule in reverse: cancelling the paper cannot un-receive the cash. `voidDocument` takes payments only to READ them, and returns `leavesPaymentsAlone: true` so the promise is in the value rather than in a comment. | `void.ts` |
+| 49 | `paidSoFar.paid` comes from the ledger, not from `total − left` | Those two differ the moment a credit note exists, and the difference is the whole point: a credit is money written off, not money received. Folding it into "paid" would tell the owner a customer had settled when they had been let off. `credited` is now its own figure with its own line. | `src/features/payments/record.ts` |
 
 ## Deviations from the spec
 

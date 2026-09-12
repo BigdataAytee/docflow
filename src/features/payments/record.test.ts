@@ -201,3 +201,51 @@ describe('A payment moves the balance exactly once (§V)', () => {
     expect(paidSoFar(INVOICE, TOTAL, effective).left).toEqual(TOTAL)
   })
 })
+
+/** One payment, fully allocated to one invoice. */
+const allocatedTo = (id: string, invoiceId: string, minor: number): Payment => ({
+  id,
+  customerId: 'cus_1',
+  amount: NGN(minor),
+  paidAt: '2026-09-11T10:00:00Z',
+  method: 'bank_transfer',
+  source: 'manual',
+  allocations: [{ id: `${id}:a`, paymentId: id, invoiceId, amount: NGN(minor) }],
+})
+
+describe('A credit is never shown as money paid (Rule #3, §V)', () => {
+  it('keeps paid, credited and left as three separate figures', () => {
+    // ₦2,000 handed over, ₦3,000 written off, on a ₦5,000 invoice.
+    const payment = allocatedTo('pay_1', 'doc_1', 2_000_00)
+    const bar = paidSoFar('doc_1', NGN(5_000_00), [payment], [
+      { id: 'crn_1', invoiceId: 'doc_1', amount: NGN(3_000_00) },
+    ])
+
+    expect(bar.paid).toEqual(NGN(2_000_00))
+    expect(bar.credited).toEqual(NGN(3_000_00))
+    expect(bar.left).toEqual(NGN(0))
+    expect(bar.isSettled).toBe(true)
+  })
+
+  it('never counts a credit toward paid, for any split', () => {
+    fc.assert(
+      fc.property(
+        fc.integer({ min: 0, max: 100_000 }),
+        fc.integer({ min: 0, max: 100_000 }),
+        (paidMinor, creditMinor) => {
+          const total = NGN(100_000)
+          const allocations = paidMinor === 0 ? [] : [allocatedTo('p', 'doc_1', paidMinor)]
+          const notes =
+            creditMinor === 0 ? [] : [{ id: 'c', invoiceId: 'doc_1', amount: NGN(creditMinor) }]
+          const bar = paidSoFar('doc_1', total, allocations, notes)
+          // Paid is exactly what the ledger allocated — never more.
+          return bar.paid.minor === Math.min(paidMinor, total.minor)
+        },
+      ),
+    )
+  })
+
+  it('reports no credit when there is none', () => {
+    expect(paidSoFar('doc_1', NGN(5_000_00), []).credited).toEqual(NGN(0))
+  })
+})

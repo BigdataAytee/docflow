@@ -17,16 +17,24 @@ import { format } from '../../domain/locale/data/strings'
 import { type BilledInvoice, customerBalances, hasOutstanding } from './balance'
 import { filterByLabels, labelsInUse } from './labels'
 import { formatMoney } from './formatMoney'
-import type { Payment } from '../../domain/payments/ledger'
+import type { CreditNote, Payment } from '../../domain/payments/ledger'
 
 export interface CustomerListProps {
   readonly invoices: readonly BilledInvoice[]
   readonly payments: readonly Payment[]
+  /** A credited invoice owes less, so the card's badge says less (§E). */
+  readonly creditNotes?: readonly CreditNote[]
   readonly onOpen?: (customer: Customer) => void
   readonly onAdd?: () => void
 }
 
-export function CustomerList({ invoices, payments, onOpen, onAdd }: CustomerListProps) {
+export function CustomerList({
+  invoices,
+  payments,
+  creditNotes = [],
+  onOpen,
+  onAdd,
+}: CustomerListProps) {
   const { companyId, repositories, strings } = useCompany()
   const [customers, setCustomers] = useState<Customer[] | null>(null)
   const [query, setQuery] = useState('')
@@ -169,6 +177,7 @@ export function CustomerList({ invoices, payments, onOpen, onAdd }: CustomerList
                   customer={customer}
                   invoices={invoices}
                   payments={payments}
+                  creditNotes={creditNotes}
                   onOpen={onOpen}
                 />
               </li>
@@ -184,15 +193,17 @@ function CustomerCard({
   customer,
   invoices,
   payments,
+  creditNotes,
   onOpen,
 }: {
   customer: Customer
   invoices: readonly BilledInvoice[]
   payments: readonly Payment[]
+  creditNotes: readonly CreditNote[]
   onOpen?: ((customer: Customer) => void) | undefined
 }) {
   const { strings } = useCompany()
-  const balances = customerBalances(customer.id, invoices, payments)
+  const balances = customerBalances(customer.id, invoices, payments, creditNotes)
   const owing = hasOutstanding(balances)
 
   return (

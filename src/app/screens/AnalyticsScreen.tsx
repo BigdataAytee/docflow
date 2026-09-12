@@ -15,7 +15,8 @@ import { knownCategories } from '../../features/expenses/record'
 import { analyticsRecords, customerNames, customerOf } from '../derive'
 
 export function AnalyticsScreen({ today = new Date().toISOString().slice(0, 10) }: { today?: string }) {
-  const { company, customers, documents, payments, expenses, loading, actions } = useAppData()
+  const { company, customers, documents, payments, expenses, creditNotes, loading, actions } =
+    useAppData()
 
   const records = useMemo(() => analyticsRecords(documents), [documents])
 
@@ -61,6 +62,7 @@ export function AnalyticsScreen({ today = new Date().toISOString().slice(0, 10) 
       expenseLines={expenseLines}
       customerNames={customerNames(customers)}
       customerOf={customerOf(documents)}
+      creditNotes={creditNotes}
       today={today}
       defaultCurrency={company?.currency ?? 'NGN'}
       knownCategories={categories}
