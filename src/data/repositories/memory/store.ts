@@ -226,7 +226,20 @@ export function createMemoryRepositories(state: MemoryState = emptyState()): Rep
     },
     async record(payment, ctx) {
       return log.once(ctx, () => {
-        const created: Payment = { ...payment, id: nextId('pay') }
+        const id = nextId('pay')
+        // The allocations arrive built against the caller's local handle — the
+        // real id is minted here, so they are re-stamped here too. Left alone,
+        // every allocation would name a payment that does not exist: harmless
+        // in memory, a broken foreign key the moment this is SQLite (§E).
+        const created: Payment = {
+          ...payment,
+          id,
+          allocations: payment.allocations.map((allocation) => ({
+            ...allocation,
+            id: `${id}:${allocation.invoiceId}`,
+            paymentId: id,
+          })),
+        }
         state.payments.push(created)
         return created
       })

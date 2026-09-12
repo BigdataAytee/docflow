@@ -41,6 +41,11 @@ import {
 } from '../../features/documents/convert'
 import { type Recurrence, startRepeating, stopRepeating } from '../../features/recurring/schedule'
 import { paidSoFar, prefillAmount, recordPayment } from '../../features/payments/record'
+import {
+  receiptForPayment,
+  receiptKeyFor,
+  receiptRecordFor,
+} from '../../features/payments/receiptFlow'
 import { draftChase } from '../../features/payments/chase'
 import { invoiceOutstanding } from '../../domain/payments/ledger'
 import { TYPE_PALETTE } from '../../ui/tokens'
@@ -247,7 +252,7 @@ export function DocumentScreen({ today = new Date().toISOString().slice(0, 10) }
               }
 
               void actions
-                .createConverted(
+                .createDraftWithKey(
                   {
                     type: converted.draft.type,
                     status: 'draft',
@@ -463,10 +468,28 @@ export function DocumentScreen({ today = new Date().toISOString().slice(0, 10) }
                   }),
                 )
               }}
-              onReceipt={() => {
-                // §G: a receipt is a document derived from this payment. The
-                // builder opens on a receipt draft carrying `paymentId` —
-                // wired once the convert flow lands.
+              onReceipt={(payment) => {
+                // §G: "originals are never altered; links persist". The link
+                // lives on the receipt (`paymentId`), so a second tap finds
+                // the one that exists instead of minting more evidence for
+                // one event.
+                const existing = receiptForPayment(documents, payment.id)
+                if (existing !== null) {
+                  navigate(documentPath(existing.id))
+                  return
+                }
+                void actions
+                  .createDraftWithKey(
+                    receiptRecordFor({
+                      payment,
+                      description: format(strings.newReceipt.lineAgainst, {
+                        reference: record.issuedReference ?? '',
+                      }),
+                      linkedInvoiceId: record.id,
+                    }),
+                    receiptKeyFor(payment.id),
+                  )
+                  .then((created) => navigate(editDocumentPath(created.id)))
               }}
             />
 

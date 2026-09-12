@@ -241,7 +241,6 @@ export interface UiStrings {
     readonly method: string
     readonly reference: string
     readonly datePaid: string
-    readonly receipt: string
     readonly none: string
     readonly noneBody: string
     readonly creditedLine: string
@@ -300,6 +299,27 @@ export interface UiStrings {
     readonly failed: string
   }
   /** Rule #5's corrections: void, credit, reissue. */
+  /** §G: a receipt is evidence of a payment, and the payment comes first. */
+  readonly newReceipt: {
+    readonly title: string
+    readonly explain: string
+    readonly amount: string
+    readonly method: string
+    readonly reference: string
+    readonly datePaid: string
+    readonly whoPaid: string
+    readonly against: string
+    readonly standalone: string
+    readonly standaloneNote: string
+    readonly pickWhoFirst: string
+    readonly lineStandalone: string
+    readonly lineAgainst: string
+    readonly record: string
+    readonly alreadyHasOne: string
+    readonly openReceipt: string
+    readonly noPayment: string
+    readonly failed: string
+  }
   readonly voidIt: {
     readonly title: string
     readonly explain: string
@@ -682,7 +702,6 @@ const EN: UiStrings = {
     method: 'Method',
     reference: 'Reference',
     datePaid: 'Date paid',
-    receipt: 'Receipt',
     none: 'No payments yet',
     noneBody: 'Record one when the money arrives.',
     creditedLine: '{amount} credited back',
@@ -738,6 +757,26 @@ const EN: UiStrings = {
     madeFrom: 'Made from {reference}',
     originalUntouched: 'This document stays exactly as it is.',
     failed: 'That could not be made: {reason}',
+  },
+  newReceipt: {
+    title: 'Acknowledge a payment',
+    explain: 'Record what came in first. The document is evidence of it.',
+    amount: 'How much came in?',
+    method: 'How?',
+    reference: 'Their reference',
+    datePaid: 'When?',
+    whoPaid: 'Who paid?',
+    against: 'Against',
+    standalone: 'Nothing — it stands on its own',
+    standaloneNote: 'Nothing is billed for it. The money sits as customer credit.',
+    pickWhoFirst: 'Say who paid, and anything they still owe appears here.',
+    lineStandalone: 'Payment received',
+    lineAgainst: 'Payment received against {reference}',
+    record: 'Record it',
+    alreadyHasOne: 'This payment already has one.',
+    openReceipt: 'Open it',
+    noPayment: 'Record the payment first.',
+    failed: 'That could not be recorded: {reason}',
   },
   voidIt: {
     title: 'Cancel this document',

@@ -88,6 +88,38 @@ describe('Every mutation is idempotent (§M)', () => {
     for (const _ of [1, 2, 3]) await repos.payments.record(payment, ctx('pay-key'))
     expect(state.payments).toHaveLength(1)
   })
+
+  it('stamps the allocations with the id it minted, not the caller handle', async () => {
+    // A caller builds allocations against a local handle, because the real id
+    // does not exist until this write. An allocation left naming that handle
+    // points at a payment that is not there — invisible in memory, a broken
+    // foreign key the moment this is SQLite (§E).
+    const recorded = await repos.payments.record(
+      {
+        customerId: 'cus_1',
+        amount: money('NGN', 50_000_00),
+        paidAt: '2026-09-11T10:00:00Z',
+        method: 'bank_transfer',
+        source: 'manual' as const,
+        allocations: [
+          {
+            id: 'local:doc_inv',
+            paymentId: 'local',
+            invoiceId: 'doc_inv',
+            amount: money('NGN', 50_000_00),
+          },
+        ],
+      },
+      ctx('pay-stamp'),
+    )
+
+    expect(recorded.id).not.toBe('local')
+    expect(recorded.allocations[0]?.paymentId).toBe(recorded.id)
+    expect(recorded.allocations[0]?.id).toBe(`${recorded.id}:doc_inv`)
+    // And the money is untouched by the re-stamping.
+    expect(recorded.allocations[0]?.amount).toEqual(money('NGN', 50_000_00))
+    expect(recorded.allocations[0]?.invoiceId).toBe('doc_inv')
+  })
 })
 
 describe('Issued documents are immutable (Rule #5, §C)', () => {

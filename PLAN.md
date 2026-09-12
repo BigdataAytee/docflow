@@ -582,10 +582,10 @@ force-kill and recover. Routes being reachable in a browser is a precondition
 for walking it, not the walk.
 
 What §G describes and is still deliberately absent rather than stubbed: the
-sign action and signature capture, which need the native bridge (Phase 4); the
-receipt-from-payment flow; and the per-type link actions (copy accept link,
-copy signing link), which are Phase 5's tokenized pages. Each is a missing
-screen, not a broken one.
+sign action and signature capture, which need the native bridge (Phase 4);
+duplicate-as-Rev-2 and void-and-reissue; and the per-type link actions (copy
+accept link, copy signing link), which are Phase 5's tokenized pages. Each is
+a missing screen, not a broken one.
 
 ### Void and credit note (Rule #5, §G, §E)
 
@@ -840,6 +840,82 @@ needed the bar's accessible name.
 
 ---
 
+### The receipt-from-payment flow (§G, §K, §V)
+
+§G: "A receipt is evidence of a payment: starting one from Home records a
+payment first, optionally linked to an invoice or standing alone, never
+inventing a duplicate invoice. Originals are never altered; links persist."
+Both doors in were stubs — `/new/receipt` created a bare draft like any other
+type, and the per-payment button on a saved document was a no-op comment.
+
+- [x] **The payment comes first, structurally** (`receiptFlow.ts`). No function
+      in the module turns an amount into a draft: `startReceipt` records the
+      payment through the ledger and derives the draft from what came back,
+      and `receiptFor` refuses a payment that does not exist. That is what
+      makes §V's "issuing or resharing its receipt never increments income"
+      true by construction rather than by care.
+- [x] **Standing alone means no allocation.** A payment with an empty
+      `allocations` list is customer credit (§K). The sheet offers it as the
+      DEFAULT choice with a line saying what happens — "Nothing is billed for
+      it. The money sits as customer credit." — because an owner picking it
+      should know, and because §G forbids inventing an invoice to hang it on.
+- [x] **The picker offers only what this money could settle.** The payer's own
+      unsettled balances, in the currency handed over, biggest first. Money
+      from one customer allocated to another's invoice would settle a debt
+      nobody paid and leave the real one standing, so an unnamed payer offers
+      nothing at all, and changing the payer drops a balance already chosen.
+- [x] **One receipt per payment.** `receiptForPayment` reads the link off the
+      receipt (`paymentId`), the same shape as `convertedFromId`, so nothing
+      is written back to the payment and the original is untouched. A second
+      tap opens the receipt that exists. A VOIDED one does not count, so §G's
+      void-and-reissue has somewhere to go.
+- [x] **A retried gesture moves money once.** The keys are derived, not
+      generated: `pay:<submission>` for the payment and `rct:<payment>` for
+      its receipt. Two taps landing before the first write returns collapse
+      onto one payment and one receipt — held by a test that fires the real
+      race, because `userEvent` yields between events and cannot reproduce it.
+      Verified by mutation: with the derived key made fresh per tap, the test
+      fails with two of each.
+
+**Three defects the browser found that the unit tests did not.** All three
+were in code the tests covered; none was visible without walking the flow on
+the production build.
+
+1. **A receipt could never be issued.** §K's "reject a receipt without an
+   effective payment" was implemented in `validateForIssue` and wired into
+   the builder's context — but the builder seeded its draft from the stored
+   record without carrying `paymentId`, so the check saw `undefined` every
+   time and rejected every receipt. The draft now carries `paymentId` and
+   `linkedInvoiceId`. Held by a route test that walks to Review and issues;
+   verified by mutation.
+2. **The owner had to retype a date the app already knew.** The receipt draft
+   carried no `issueDate`, so Review said "Add the date" on a document whose
+   date is the day the money arrived. `receiptRecordFor` now dates it from
+   the payment's `paidAt` — Rule #1, and a receipt dated anything else would
+   be evidence of a different event.
+3. **`bank_transfer` was printed to the screen.** The payments list rendered
+   the stored token. §E stores a token so it means the same thing in every
+   language; the owner must never see it. `src/features/payments/methods.ts`
+   is now the one place a token becomes words, used by the list, the new
+   sheet and the Settings toggles alike. An unknown token is shown as itself
+   rather than hidden — a payment recorded by a provider this build has no
+   word for is still money (§V).
+
+Two things fixed on the way that were not part of the ask:
+
+- **The receipt button said "Receipt" in every region.** It read
+  `strings.payments.receipt` — a type name in the LANGUAGE catalogue, which
+  Rule #4 reserves for the terminology table. It now resolves through
+  `label(profile, 'receipt')`, and the word is gone from `strings.ts` so it
+  cannot be reused. Held by a test rendering the list under a Spanish-language
+  table, where the button reads "Recibo".
+- **Allocations named a payment that did not exist.** A caller builds
+  allocations against a local handle because the real id is minted by the
+  write. The repository now re-stamps them with the id it minted; left alone,
+  every allocation row pointed at nothing — invisible in memory, a broken
+  foreign key the moment this is SQLite (§E). Asserted in the repository
+  contract suite, so SQLite and Supabase must pass it too.
+
 ## Decisions taken
 
 | # | Decision | Why | Where |
@@ -893,6 +969,10 @@ needed the bar's accessible name.
 | 47 | An invoice with money allocated against it cannot be voided | Voiding it would leave a payment attached to a document that officially never existed — the customer's balance would be wrong and nothing on screen would say why. The two honest corrections are a credit note for what is no longer owed, or reversing the payment if it was recorded in error, and the refusal names both rather than dead-ending. | `src/features/documents/void.ts` |
 | 48 | Voiding a receipt leaves the payment alone, always | A receipt is a view of a payment (§G), and §V says reissuing one never increments income. The same rule in reverse: cancelling the paper cannot un-receive the cash. `voidDocument` takes payments only to READ them, and returns `leavesPaymentsAlone: true` so the promise is in the value rather than in a comment. | `void.ts` |
 | 49 | `paidSoFar.paid` comes from the ledger, not from `total − left` | Those two differ the moment a credit note exists, and the difference is the whole point: a credit is money written off, not money received. Folding it into "paid" would tell the owner a customer had settled when they had been let off. `credited` is now its own figure with its own line. | `src/features/payments/record.ts` |
+| 50 | A receipt's idempotency key is derived from its payment; the payment's from the submission | §M requires a retried create never to duplicate, and money is the one place where a retry that adds is unrecoverable. `rct:<payment>` is arithmetic. The payment itself has no prior identity, so the sheet mints ONE handle per submission and reuses it — two taps of one gesture collapse, two separate payments of the same amount on the same day do not, which a content-derived key would have merged. | `src/features/payments/receiptFlow.ts` |
+| 51 | A receipt's total, date and line all come from the payment, and its line is not taxable | §V: the printed total IS the payment. A total the owner types could disagree with the money, and tax added on top of money already received would print a figure nobody paid. Taking the date from `paidAt` also means no field is asked for twice (Rule #1). | `receiptRecordFor` |
+| 52 | A payment method is stored as a token and turned into words in exactly one place | §E stores `bank_transfer` so it means the same thing in every language and outlives any wording change; the owner must never see it. One resolver means the payments list, the new-receipt sheet and the Settings toggles cannot disagree. An unknown token is shown as itself rather than dropped — a method this build has no word for is still evidence (§V). | `src/features/payments/methods.ts` |
+| 53 | The repository re-stamps allocations with the id it minted | A caller cannot know the real payment id before the write, so it builds allocations against a local handle. Leaving them would leave every allocation naming a payment that does not exist: invisible against the in-memory store, a foreign-key violation against SQLite. Fixing it in the repository fixes both call sites at once, and the contract suite holds it for every implementation. | `src/data/repositories/memory/store.ts` |
 
 ## Deviations from the spec
 

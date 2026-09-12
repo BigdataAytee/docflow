@@ -87,6 +87,14 @@ export interface DocumentRecord {
    * rather than a write back. See `src/features/documents/convert.ts`.
    */
   readonly convertedFromId?: string
+  /**
+   * Receipts only: the payment this receipt is evidence of (§G, §K). A receipt
+   * without one cannot be issued — `issueRequirements` says so — which is what
+   * stops a receipt ever being the thing that records money.
+   */
+  readonly paymentId?: string
+  /** §E `related_invoice_id`: the invoice a receipt's payment settled, if any. */
+  readonly linkedInvoiceId?: string
   /** Both null until issue, then frozen forever (§M). */
   readonly issuedReference: string | null
   readonly frozenLabels: FrozenLabels | null

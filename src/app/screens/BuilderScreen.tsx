@@ -25,6 +25,7 @@ import { DOCUMENT_TYPES, type DocumentType } from '../../domain/documents/types'
 import { label as typeLabel, numberingPrefix } from '../../domain/locale/profile'
 import { format } from '../../domain/locale/data/strings'
 import { percentToPpm } from '../../domain/money/money'
+import { invoiceOutstanding } from '../../domain/payments/ledger'
 import { regionProfile } from '../../features/settings/region'
 import {
   type BuilderState,
@@ -38,11 +39,19 @@ import {
 } from '../../features/documents/builder'
 import { BuilderShell } from '../../features/documents/BuilderShell'
 import { IssueError, issueDocument } from '../../features/documents/issue'
+import { NewReceiptSheet } from '../../features/payments/NewReceiptSheet'
+import { availableMethods } from '../../features/payments/methods'
+import {
+  type SettleableInvoice,
+  receiptKeyFor,
+  receiptRecordFor,
+  startReceipt,
+} from '../../features/payments/receiptFlow'
 import { DEFAULT_TEMPLATE, type TemplateId } from '../../pdf/templates'
 import type { ComposableDocument, ComposeOptions } from '../../pdf/compose'
 import { SkeletonList } from '../../ui'
 import { BRAND_COLOURS, StepBody } from './builderSteps'
-import { billedInvoices, documentsOf } from '../derive'
+import { billedInvoices, documentsOf, totalOf } from '../derive'
 
 const isDocumentType = (value: string | undefined): value is DocumentType =>
   value !== undefined && (DOCUMENT_TYPES as readonly string[]).includes(value)
@@ -54,17 +63,158 @@ export function NewDocumentScreen() {
   const navigate = useNavigate()
   const started = useRef(false)
 
+  // §G: a receipt is evidence of a payment, so starting one records the
+  // payment first. Every other type starts as an empty draft.
+  const needsPaymentFirst = type === 'receipt'
+
   useEffect(() => {
-    if (started.current || !isDocumentType(type) || company === null) return
+    if (started.current || needsPaymentFirst || !isDocumentType(type) || company === null) return
     started.current = true
     void actions.createDraft(type, company.currency).then((created) => {
       navigate(editDocumentPath(created.id), { replace: true })
     })
-  }, [type, company, actions, navigate])
+  }, [type, needsPaymentFirst, company, actions, navigate])
 
   if (!isDocumentType(type)) return <Navigate to={HOME} replace />
+  if (needsPaymentFirst) return <NewReceiptFlow />
   return <NewDocumentSkeleton />
 }
+
+/**
+ * `/new/receipt` — §G's "starting one from Home records a payment first,
+ * optionally linked to an invoice or standing alone, never inventing a
+ * duplicate invoice".
+ *
+ * The order is structural, not a convention: the payment is written, and the
+ * draft is derived from what came back. There is no path through this
+ * component that produces a document without a payment behind it, which is
+ * what makes §V's "issuing or resharing its receipt never increments income"
+ * true by construction.
+ */
+function NewReceiptFlow({ today = new Date().toISOString().slice(0, 10) }: { today?: string }) {
+  const { profile, strings } = useCompany()
+  const { company, customers, documents, payments, creditNotes, loading, actions } = useAppData()
+  const navigate = useNavigate()
+
+  const [problem, setProblem] = useState<string | null>(null)
+  // One id per submission, so a double tap collapses onto one payment and one
+  // receipt rather than two of each (§M). Cleared only on a failure.
+  const submission = useRef<string | null>(null)
+  const busy = useRef(false)
+
+  const invoices = useMemo<SettleableInvoice[]>(
+    () =>
+      documents
+        .filter(
+          (document) =>
+            document.type === 'invoice' &&
+            document.customerId !== undefined &&
+            document.status !== 'draft' &&
+            document.status !== 'void',
+        )
+        .map((document) => ({
+          id: document.id,
+          customerId: document.customerId ?? '',
+          reference:
+            document.issuedReference ??
+            `${company?.numberingPrefixes?.[document.type] ?? numberingPrefix(profile, document.type)}-…`,
+          outstanding: invoiceOutstanding(
+            document.id,
+            totalOf(document),
+            payments,
+            creditNotes.filter((note) => note.invoiceId === document.id),
+          ),
+        })),
+    [documents, payments, creditNotes, company, profile],
+  )
+
+  if (loading || company === null) return <NewDocumentSkeleton />
+
+  return (
+    <div className="px-4 py-4">
+      <NewReceiptSheet
+        currency={company.currency}
+        today={today}
+        customers={customers}
+        invoices={invoices}
+        methods={availableMethods(company.enabledPaymentMethods, strings)}
+        onClose={() => navigate(HOME)}
+        {...(problem === null ? {} : { error: problem })}
+        onRecord={(input) => {
+          if (busy.current) return
+          busy.current = true
+          setProblem(null)
+          submission.current ??= `sub:${deviceId()}:${Date.now()}`
+
+          const chosen = invoices.find((invoice) => invoice.id === input.invoiceId)
+          let started
+          try {
+            started = startReceipt({
+              paymentId: submission.current,
+              customerId: input.customerId,
+              amount: input.amount,
+              paidAt: input.paidAt,
+              method: input.method,
+              ...(input.reference === undefined ? {} : { reference: input.reference }),
+              ...(chosen === undefined
+                ? {}
+                : {
+                    invoiceId: chosen.id,
+                    // The total the allocation is capped against is the
+                    // BALANCE, not the face value: an earlier part payment
+                    // already took its share (§K).
+                    invoiceTotal: chosen.outstanding,
+                    existingPayments: [],
+                  }),
+            })
+          } catch (cause) {
+            busy.current = false
+            submission.current = null
+            setProblem(
+              format(strings.newReceipt.failed, {
+                reason: cause instanceof Error ? cause.message : String(cause),
+              }),
+            )
+            return
+          }
+
+          // The repository mints the real id; the one `startReceipt` built the
+          // allocations against was only ever a local handle.
+          const { id: _localId, ...withoutId } = started.payment
+          const { paymentKey } = started
+          void actions
+            // The payment, first and on its own. Nothing below runs until the
+            // repository has acknowledged it (§M).
+            .recordPayment(withoutId, paymentKey)
+            .then((recorded) =>
+              actions.createDraftWithKey(
+                receiptRecordFor({
+                  payment: recorded,
+                  description:
+                    chosen === undefined
+                      ? strings.newReceipt.lineStandalone
+                      : format(strings.newReceipt.lineAgainst, { reference: chosen.reference }),
+                  ...(chosen === undefined ? {} : { linkedInvoiceId: chosen.id }),
+                }),
+                receiptKeyFor(recorded.id),
+              ),
+            )
+            .then((created) => navigate(editDocumentPath(created.id), { replace: true }))
+            .catch((cause: unknown) => {
+              busy.current = false
+              submission.current = null
+              setProblem(
+                format(strings.newReceipt.failed, {
+                  reason: cause instanceof Error ? cause.message : String(cause),
+                }),
+              )
+            })
+        }}
+      />
+    </div>
+  )
+}
+
 
 function NewDocumentSkeleton() {
   const { strings } = useCompany()
@@ -104,6 +254,13 @@ export function BuilderScreen({ now = () => new Date().toISOString() }: { now?: 
         ...(record.issueDate === undefined ? {} : { issueDate: record.issueDate }),
         ...(record.dueDate === undefined ? {} : { dueDate: record.dueDate }),
         ...(record.validUntil === undefined ? {} : { validUntil: record.validUntil }),
+        // A receipt's link to its payment has to reach the draft, or §K's
+        // "reject a receipt without an effective payment" rejects every
+        // receipt — the record carries it and the validator reads it here.
+        ...(record.paymentId === undefined ? {} : { paymentId: record.paymentId }),
+        ...(record.linkedInvoiceId === undefined
+          ? {}
+          : { linkedInvoiceId: record.linkedInvoiceId }),
       },
       dirty: false,
     })

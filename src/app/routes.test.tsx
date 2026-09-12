@@ -12,7 +12,7 @@
 
 import { StrictMode } from 'react'
 import { describe, expect, it } from 'vitest'
-import { render, screen, waitFor, within } from '@testing-library/react'
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 
 import { App } from './App'
@@ -1378,5 +1378,260 @@ describe('Cancelling and crediting (Rule #5, §G)', () => {
     expect(
       screen.queryByRole('button', { name: 'Cancel this document' }),
     ).not.toBeInTheDocument()
+  })
+})
+
+describe('A receipt is evidence of a payment (§G, §K, §V)', () => {
+  const billed = (state: MemoryState) => {
+    state.customers.push(customer())
+    state.documents.push({
+      id: 'doc_inv',
+      companyId: DEV_COMPANY_ID,
+      type: 'invoice',
+      status: 'issued',
+      customerId: 'cus_1',
+      currency: 'NGN',
+      lineItems: [],
+      issueDate: '2026-09-01',
+      issuedReference: 'INV-0042',
+      frozenLabels: {
+        printedTitle: 'INVOICE',
+        partyLabel: 'Bill to',
+        signatureCaption: 'Authorised signature',
+        language: 'en',
+      },
+      totalMinor: 145_000_00,
+    })
+  }
+
+  const paid = (minor: number) => (state: MemoryState) => {
+    billed(state)
+    state.payments.push({
+      id: 'pay_1',
+      customerId: 'cus_1',
+      amount: NGN(minor),
+      paidAt: '2026-09-10T09:00:00Z',
+      method: 'bank_transfer',
+      source: 'manual',
+      allocations: [
+        { id: 'pay_1:a', paymentId: 'pay_1', invoiceId: 'doc_inv', amount: NGN(minor) },
+      ],
+    })
+  }
+
+  describe('From Home, the payment is recorded first (§G)', () => {
+    it('opens a payment form rather than an empty document', async () => {
+      const state = renderAt('/new/receipt', billed)
+      expect(await screen.findByLabelText('Acknowledge a payment')).toBeInTheDocument()
+      // Nothing was created by arriving: no payment, and no draft.
+      expect(state.documents).toHaveLength(1)
+      expect(state.payments).toHaveLength(0)
+    })
+
+    it('still creates a bare draft for every other type', async () => {
+      const state = renderAt('/new/invoice')
+      await waitFor(() => expect(state.documents).toHaveLength(1))
+      expect(screen.queryByLabelText('Acknowledge a payment')).not.toBeInTheDocument()
+    })
+
+    it('writes the payment, then the draft derived from it, and opens the builder', async () => {
+      const user = userEvent.setup()
+      const state = renderAt('/new/receipt', billed)
+
+      await user.selectOptions(await screen.findByLabelText('Who paid?'), 'cus_1')
+      await user.type(screen.getByLabelText('How much came in?'), '45000')
+      await user.selectOptions(screen.getByLabelText('Against'), 'doc_inv')
+      await user.click(screen.getByRole('button', { name: 'Record it' }))
+
+      await waitFor(() => expect(state.payments).toHaveLength(1))
+      const payment = state.payments[0]
+      expect(payment?.amount).toEqual(NGN(45_000_00))
+      expect(payment?.allocations[0]?.invoiceId).toBe('doc_inv')
+      // The allocation names the payment that actually exists (§E).
+      expect(payment?.allocations[0]?.paymentId).toBe(payment?.id)
+
+      await waitFor(() => expect(state.documents).toHaveLength(2))
+      const receipt = state.documents.find((document) => document.type === 'receipt')
+      expect(receipt?.status).toBe('draft')
+      expect(receipt?.paymentId).toBe(payment?.id)
+      expect(receipt?.linkedInvoiceId).toBe('doc_inv')
+      expect(receipt?.totalMinor).toBe(45_000_00)
+      expect(receipt?.customerId).toBe('cus_1')
+
+      // And the builder took over on the draft's own URL.
+      expect(await screen.findByRole('button', { name: /Next/ })).toBeInTheDocument()
+    })
+
+    it('records money standing alone without billing anybody for it (§G, §K)', async () => {
+      const user = userEvent.setup()
+      const state = renderAt('/new/receipt', billed)
+
+      await user.selectOptions(await screen.findByLabelText('Who paid?'), 'cus_1')
+      await user.type(screen.getByLabelText('How much came in?'), '10000')
+      await user.click(screen.getByRole('button', { name: 'Record it' }))
+
+      await waitFor(() => expect(state.payments).toHaveLength(1))
+      expect(state.payments[0]?.allocations).toEqual([])
+      // No second invoice appeared from nowhere: still the one that was seeded.
+      expect(state.documents.filter((document) => document.type === 'invoice')).toHaveLength(1)
+      const receipt = state.documents.find((document) => document.type === 'receipt')
+      expect(receipt?.linkedInvoiceId).toBeUndefined()
+    })
+
+    it('moves the balance once for a double tap, not twice (§M, §V)', async () => {
+      const user = userEvent.setup()
+      const state = renderAt('/new/receipt', billed)
+
+      await user.selectOptions(await screen.findByLabelText('Who paid?'), 'cus_1')
+      await user.type(screen.getByLabelText('How much came in?'), '45000')
+      // An impatient owner on a slow phone. Two taps land BEFORE the first
+      // write comes back, which `userEvent` cannot reproduce — it yields
+      // between events, so the screen has already moved on by the second.
+      // Money is the one place a retry must never add (Rule #3, §M).
+      const button = screen.getByRole('button', { name: 'Record it' })
+      fireEvent.click(button)
+      fireEvent.click(button)
+
+      // Let the whole gesture settle — both taps — before counting. A
+      // `waitFor(length === 1)` would pass on the first write and never see
+      // the second, which is the bug being guarded against.
+      expect(await screen.findByRole('button', { name: /Next/ })).toBeInTheDocument()
+      await waitFor(() =>
+        expect(state.documents.filter((document) => document.type === 'receipt')).toHaveLength(1),
+      )
+      expect(state.payments).toHaveLength(1)
+    })
+
+    it('moves the balance exactly once for one tap, under StrictMode (§M, §V)', async () => {
+      const user = userEvent.setup()
+      const { state, repositories } = seeded(billed)
+      render(
+        <StrictMode>
+          <App
+            repositories={repositories}
+            companyId={DEV_COMPANY_ID}
+            router="memory"
+            initialPath="/new/receipt"
+          />
+        </StrictMode>,
+      )
+
+      await user.selectOptions(await screen.findByLabelText('Who paid?'), 'cus_1')
+      await user.type(screen.getByLabelText('How much came in?'), '45000')
+      await user.click(screen.getByRole('button', { name: 'Record it' }))
+
+      await waitFor(() => expect(state.payments).toHaveLength(1))
+      expect(state.documents.filter((document) => document.type === 'receipt')).toHaveLength(1)
+    })
+
+    it('never offers a balance belonging to somebody else (§G, §K)', async () => {
+      const user = userEvent.setup()
+      renderAt('/new/receipt', (state) => {
+        billed(state)
+        state.customers.push(customer('cus_2', 'Bisi'))
+      })
+
+      await user.selectOptions(await screen.findByLabelText('Who paid?'), 'cus_2')
+      expect(screen.queryByRole('option', { name: /INV-0042/ })).not.toBeInTheDocument()
+    })
+  })
+
+  describe('From a payment on the saved document (§G)', () => {
+    it('derives the draft from that payment and opens the builder', async () => {
+      const user = userEvent.setup()
+      const state = renderAt('/doc/doc_inv', paid(50_000_00))
+
+      // EN-NG calls it a receipt; the word is resolved, never hardcoded.
+      await user.click(await screen.findByRole('button', { name: /Receipt/i }))
+
+      await waitFor(() => expect(state.documents).toHaveLength(2))
+      const receipt = state.documents.find((document) => document.type === 'receipt')
+      expect(receipt?.paymentId).toBe('pay_1')
+      expect(receipt?.linkedInvoiceId).toBe('doc_inv')
+      expect(receipt?.totalMinor).toBe(50_000_00)
+      // No second payment: the money was already recorded (§V).
+      expect(state.payments).toHaveLength(1)
+      expect(await screen.findByRole('button', { name: /Next/ })).toBeInTheDocument()
+    })
+
+    it('carries the payment onto the draft, so it can actually be issued (§K)', async () => {
+      const user = userEvent.setup()
+      const state = renderAt('/doc/doc_inv', paid(50_000_00))
+      await user.click(await screen.findByRole('button', { name: /Receipt/i }))
+      await waitFor(() => expect(state.documents).toHaveLength(2))
+
+      // The payment supplied the party, the date, the line and the total, so
+      // nothing is missing and nothing had to be retyped (Rule #1).
+      for (let step = 0; step < 4; step += 1) {
+        await user.click(await screen.findByRole('button', { name: 'Next' }))
+      }
+      expect(screen.queryByRole('alert')).not.toBeInTheDocument()
+      await user.click(screen.getByRole('button', { name: /^Save/ }))
+
+      const receipt = () => state.documents.find((document) => document.type === 'receipt')
+      await waitFor(() => expect(receipt()?.status).toBe('issued'))
+      expect(receipt()?.issuedReference).toMatch(/^REC-\d{4}(-[A-Z0-9]{2})?$/)
+      // §V: the printed total IS the payment, never a sum with tax on top.
+      expect(receipt()?.totalMinor).toBe(50_000_00)
+      // And drawing it moved no money.
+      expect(state.payments).toHaveLength(1)
+    })
+
+    it('dates the draft from the payment, not from today (§E, Rule #1)', async () => {
+      const user = userEvent.setup()
+      const state = renderAt('/doc/doc_inv', paid(50_000_00))
+      await user.click(await screen.findByRole('button', { name: /Receipt/i }))
+      await waitFor(() => expect(state.documents).toHaveLength(2))
+      const receipt = state.documents.find((document) => document.type === 'receipt')
+      // The seeded payment arrived on the 10th.
+      expect(receipt?.issueDate).toBe('2026-09-10')
+    })
+
+    it('describes the line as the payment, priced at what came in (§V)', async () => {
+      const user = userEvent.setup()
+      const state = renderAt('/doc/doc_inv', paid(50_000_00))
+      await user.click(await screen.findByRole('button', { name: /Receipt/i }))
+      await waitFor(() => expect(state.documents).toHaveLength(2))
+
+      const line = state.documents.find((document) => document.type === 'receipt')?.lineItems[0]
+      expect(line?.description).toBe('Payment received against INV-0042')
+      expect(line?.unitPriceMinor).toBe(50_000_00)
+      // Not taxable: tax on money already received would print a total that
+      // is not the payment (Rule #3, §V).
+      expect(line?.taxable).toBe(false)
+    })
+
+    it('opens the one that exists instead of minting a second (§G, §M)', async () => {
+      const user = userEvent.setup()
+      const state = renderAt('/doc/doc_inv', (seed) => {
+        paid(50_000_00)(seed)
+        seed.documents.push({
+          id: 'doc_rct',
+          companyId: DEV_COMPANY_ID,
+          type: 'receipt',
+          status: 'issued',
+          customerId: 'cus_1',
+          currency: 'NGN',
+          lineItems: [],
+          issueDate: '2026-09-10',
+          issuedReference: 'REC-0003',
+          frozenLabels: {
+            printedTitle: 'RECEIPT',
+            partyLabel: 'Received from',
+            signatureCaption: 'Received by',
+            language: 'en',
+          },
+          totalMinor: 50_000_00,
+          paymentId: 'pay_1',
+        })
+      })
+
+      await user.click(await screen.findByRole('button', { name: /Receipt/i }))
+
+      // The issued one, on its own page — and nothing new written: the two
+      // seeded documents are still the only two.
+      expect(await screen.findByText('REC-0003')).toBeInTheDocument()
+      expect(state.documents).toHaveLength(2)
+    })
   })
 })
