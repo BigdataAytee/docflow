@@ -581,12 +581,38 @@ device in airplane mode walking create → build → preview in all sixteen desi
 force-kill and recover. Routes being reachable in a browser is a precondition
 for walking it, not the walk.
 
-Three things §G describes are deliberately still absent rather than stubbed:
-Home's search results body, the §G contact page (the statement is the part of
-it that exists, so that is where a customer tap goes), and the convert/share/
-sign actions, which need the native bridge (Phase 4). Signature capture and the
-receipt-from-payment flow are in the same bucket. Each is a missing screen, not
-a broken one.
+Two things §G describes are deliberately still absent rather than stubbed: the
+§G contact page (the statement is the part of it that exists, so that is where a
+customer tap goes) and the convert/share/sign actions, which need the native
+bridge (Phase 4). Signature capture and the receipt-from-payment flow are in
+the same bucket. Each is a missing screen, not a broken one.
+
+### Home search (§G, §D.3)
+
+- [x] **One field across customers, numbers, amounts and item names**
+      (`src/features/search/SearchResults.tsx`). The matching was already built
+      and tested in Phase 2 — `buildIndex` and `search` — and had no body to
+      render into. This is that body.
+- [x] **Typing replaces the body.** The tiles and the attention list step aside
+      for the results; the header, the two stat cards and the field itself stay,
+      so there is always a way back. A mutation test confirms the swap is real:
+      making `Home` ignore its `results` prop fails the route test.
+- [x] **Both names find the same document.** A waybill issued in Lagos is found
+      by "waybill" and by "delivery note" after the company moves to the UK —
+      the §D.3 clause, now asserted through the screen rather than only through
+      the index.
+- [x] **Amounts, either way.** "95000" and "95,000" both find a ₦95,000
+      invoice, and a delivery document is never offered by an amount, because
+      it carries none (§I, §V).
+- [x] **No match gives an empty state with suggestions that work.** Each chip
+      is this region's own word for one of the four types, which §D.3
+      guarantees finds that type's documents — no chip can come back empty.
+- [x] **Every result is a way in.** Documents open, customers go to their
+      statement, and items go to the saved list they live in, labelled as such
+      — a result that cannot be opened is a tease.
+- [x] Smoke-tested in a real browser against the production build: a line item
+      typed into the builder is findable from Home by its description, the
+      tiles come and go with the query, and the suggestion chips run.
 
 ---
 
@@ -627,6 +653,8 @@ a broken one.
 | 31 | `Company` gained the rest of §E's row — branding, tax defaults, saved signature | The repository contract had dropped them while the Settings screens took their values as props. A Settings screen with nowhere to save is not a setting. Rates are stored in PARTS PER MILLION, so 7.5% is an integer and never a float — the same rule that governs amounts. | `src/data/repositories/types.ts` |
 | 32 | The saved-document screen was built as a HOST, not a new design | §G describes it and §Q Phase 2 scoped it, but it was skipped, which left the paid-so-far bar, the payments list, the chase row and the Repeat toggle with nowhere to live. Every piece on it already existed and is tested on its own; this screen adds arrangement, not behaviour. | `src/app/screens/DocumentScreen.tsx` |
 | 33 | The dev server seeds one empty company, and nothing else | `npm run dev` runs on memory repositories, which start with no company — so no currency, no region, no prefixes, and every screen correctly showing an empty state. One company is the minimum to hang the app off. It is NOT §R's sample: no customers, no documents, no money, so a seeded figure cannot reach a balance. | `src/app/seed.ts` |
+| 34 | Home's search field is controlled by the screen, and results arrive as a `results` node | §G says typing REPLACES the body, which means the query has to be state somewhere. Keeping it in the screen and passing the rendered results down keeps `Home` a pure view — it decides where results go, never what they are — and keeps the matching in `src/features/search`, where it is already property-tested. | `src/features/home/Home.tsx`, `src/app/screens/HomeScreen.tsx` |
+| 35 | The no-match suggestions are the four type names, resolved for this region | A suggestion that returns nothing is worse than no suggestion. §D.3 guarantees a type's own regional word finds that type's documents, so these are the only chips that cannot disappoint — and they change with the region for free. | `src/features/search/SearchResults.tsx` |
 
 ## Deviations from the spec
 

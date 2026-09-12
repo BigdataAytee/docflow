@@ -11,6 +11,8 @@
  * unavailable capability is stated plainly rather than dressed up.
  */
 
+import type { ReactNode } from 'react'
+
 import { useCompany } from '../../app/context'
 import { label as typeLabel } from '../../domain/locale/profile'
 import { format } from '../../domain/locale/data/strings'
@@ -34,6 +36,13 @@ export interface HomeProps {
   readonly onOpenType: (type: DocumentType) => void
   readonly onOpenDocument: (id: string) => void
   readonly onSearch: (query: string) => void
+  /**
+   * §G: "typing replaces the body with results". When this is present the
+   * tiles and the attention list step aside for it — the header, the stat
+   * cards and the field itself stay, so the way back is always on screen.
+   */
+  readonly searchQuery?: string
+  readonly results?: ReactNode
 }
 
 function greeting(now: Date, strings: ReturnType<typeof useCompany>['strings']): string {
@@ -88,6 +97,8 @@ export function Home({
   onOpenType,
   onOpenDocument,
   onSearch,
+  searchQuery,
+  results,
 }: HomeProps) {
   const { profile, strings } = useCompany()
 
@@ -138,6 +149,7 @@ export function Home({
           <span className="sr-only">{strings.home.searchEverything}</span>
           <input
             type="search"
+            value={searchQuery ?? ''}
             onChange={(event) => onSearch(event.target.value)}
             placeholder={strings.home.searchEverything}
             aria-label={strings.home.searchEverything}
@@ -146,60 +158,66 @@ export function Home({
         </label>
       </div>
 
-      <ul className="grid grid-cols-2 gap-3 px-4 pt-4">
-        {DOCUMENT_TYPES.map((type) => {
-          const palette = TYPE_PALETTE[type]
-          return (
-            <li key={type}>
-              <button
-                type="button"
-                onClick={() => onOpenType(type)}
-                className="flex w-full flex-col items-start gap-1 rounded-2xl p-4 text-left text-white"
-                style={{ backgroundColor: palette.accent, boxShadow: `0 8px 20px -8px ${palette.accent}` }}
-              >
-                <span className="break-words text-sm font-bold leading-tight">
-                  {typeLabel(profile, type)}
-                </span>
-                <span className="text-xs font-semibold opacity-80 tabular-nums">
-                  {counts[type]}
-                </span>
-              </button>
-            </li>
-          )
-        })}
-      </ul>
-
-      {attention.length > 0 && (
-        <section className="px-4 pt-6" aria-label={strings.home.needsAttention}>
-          <h2 className="text-sm font-bold">{strings.home.needsAttention}</h2>
-          <ul className="mt-2 space-y-2">
-            {attention.map((item) => (
-              <li key={item.documentId}>
-                <button
-                  type="button"
-                  onClick={() => onOpenDocument(item.documentId)}
-                  className="flex min-h-tap w-full items-center gap-3 rounded-2xl bg-white/85 p-3 text-left"
-                >
-                  <span className="flex-1">
-                    <StatusBadge
-                      status={item.kind === 'overdue' ? 'overdue' : 'in_transit'}
-                      label={
-                        item.kind === 'overdue'
-                          ? format(strings.home.overdueBy, {
-                              amount: item.amount === undefined ? '' : formatMoney(item.amount),
-                            })
-                          : strings.home.inTransit
-                      }
-                    />
-                  </span>
-                  <span className="shrink-0 rounded-full bg-page px-3 py-1 text-xs font-semibold">
-                    {item.kind === 'overdue' ? strings.home.chase : strings.home.sign}
-                  </span>
-                </button>
-              </li>
-            ))}
+      {/* §G: typing replaces the body. The header, the stat cards and the
+          field above stay put, so there is always a way back. */}
+      {results ?? (
+        <>
+          <ul className="grid grid-cols-2 gap-3 px-4 pt-4">
+            {DOCUMENT_TYPES.map((type) => {
+              const palette = TYPE_PALETTE[type]
+              return (
+                <li key={type}>
+                  <button
+                    type="button"
+                    onClick={() => onOpenType(type)}
+                    className="flex w-full flex-col items-start gap-1 rounded-2xl p-4 text-left text-white"
+                    style={{ backgroundColor: palette.accent, boxShadow: `0 8px 20px -8px ${palette.accent}` }}
+                  >
+                    <span className="break-words text-sm font-bold leading-tight">
+                      {typeLabel(profile, type)}
+                    </span>
+                    <span className="text-xs font-semibold opacity-80 tabular-nums">
+                      {counts[type]}
+                    </span>
+                  </button>
+                </li>
+              )
+            })}
           </ul>
-        </section>
+
+          {attention.length > 0 && (
+            <section className="px-4 pt-6" aria-label={strings.home.needsAttention}>
+              <h2 className="text-sm font-bold">{strings.home.needsAttention}</h2>
+              <ul className="mt-2 space-y-2">
+                {attention.map((item) => (
+                  <li key={item.documentId}>
+                    <button
+                      type="button"
+                      onClick={() => onOpenDocument(item.documentId)}
+                      className="flex min-h-tap w-full items-center gap-3 rounded-2xl bg-white/85 p-3 text-left"
+                    >
+                      <span className="flex-1">
+                        <StatusBadge
+                          status={item.kind === 'overdue' ? 'overdue' : 'in_transit'}
+                          label={
+                            item.kind === 'overdue'
+                              ? format(strings.home.overdueBy, {
+                                  amount: item.amount === undefined ? '' : formatMoney(item.amount),
+                                })
+                              : strings.home.inTransit
+                          }
+                        />
+                      </span>
+                      <span className="shrink-0 rounded-full bg-page px-3 py-1 text-xs font-semibold">
+                        {item.kind === 'overdue' ? strings.home.chase : strings.home.sign}
+                      </span>
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            </section>
+          )}
+        </>
       )}
     </div>
   )
