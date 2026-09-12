@@ -2404,3 +2404,126 @@ describe('Void and reissue a receipt (§G, Rule #5, §V)', () => {
     expect(await screen.findByText('Replaces REC-0003')).toBeInTheDocument()
   })
 })
+
+describe('Recording the customer’s answer (§G, §P)', () => {
+  const offered = (status = 'sent') => (state: MemoryState) => {
+    state.customers.push(customer())
+    state.documents.push({
+      id: 'doc_quote',
+      companyId: DEV_COMPANY_ID,
+      type: 'quotation',
+      status,
+      customerId: 'cus_1',
+      currency: 'NGN',
+      lineItems: [
+        {
+          id: 'li_1',
+          description: 'Bag of cement',
+          quantityMilli: quantity(20),
+          unitPriceMinor: 5_000_00,
+          taxable: true,
+        },
+      ],
+      issueDate: '2026-09-01',
+      validUntil: '2026-09-30',
+      issuedReference: 'QUO-0009',
+      frozenLabels: {
+        printedTitle: 'QUOTATION',
+        partyLabel: 'Client',
+        signatureCaption: 'Prepared by',
+        language: 'en',
+      },
+      totalMinor: 100_000_00,
+    })
+  }
+
+  it('offers both answers on an offer that has been made', async () => {
+    renderAt('/doc/doc_quote', offered())
+    expect(await screen.findByRole('button', { name: 'They accepted' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'They turned it down' })).toBeInTheDocument()
+  })
+
+  it('records acceptance as a status change and nothing else (Rule #5)', async () => {
+    const user = userEvent.setup()
+    const state = renderAt('/doc/doc_quote', offered())
+
+    await user.click(await screen.findByRole('button', { name: 'They accepted' }))
+    await waitFor(() => expect(state.documents[0]?.status).toBe('accepted'))
+
+    // Reference, labels and totals untouched: an answer is not an edit.
+    expect(state.documents[0]?.issuedReference).toBe('QUO-0009')
+    expect(state.documents[0]?.frozenLabels?.printedTitle).toBe('QUOTATION')
+    expect(state.documents[0]?.totalMinor).toBe(100_000_00)
+  })
+
+  it('records a refusal, which is what Rev 2 exists for', async () => {
+    const user = userEvent.setup()
+    const state = renderAt('/doc/doc_quote', offered())
+    await user.click(await screen.findByRole('button', { name: 'They turned it down' }))
+    await waitFor(() => expect(state.documents[0]?.status).toBe('rejected'))
+    // And the answer opens the door Rev 2 was built for.
+    expect(await screen.findByRole('button', { name: 'Make Rev 2' })).toBeInTheDocument()
+  })
+
+  it('shows the answer afterwards and offers no way to change it (§P)', async () => {
+    renderAt('/doc/doc_quote', offered('accepted'))
+    expect(await screen.findByText(/Answered Accepted/)).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'They accepted' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'They turned it down' })).not.toBeInTheDocument()
+  })
+
+  it('offers nothing on a draft, which nobody has been offered', async () => {
+    renderAt('/doc/doc_quote', (seed) => {
+      offered('draft')(seed)
+      const row = seed.documents[0]
+      if (row !== undefined) seed.documents[0] = { ...row, issuedReference: null, frozenLabels: null }
+    })
+    expect(await screen.findByRole('button', { name: 'Carry on editing' })).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'They accepted' })).not.toBeInTheDocument()
+  })
+
+  it('offers nothing on any other type', async () => {
+    renderAt('/doc/doc_inv', (state) => {
+      state.documents.push({
+        id: 'doc_inv',
+        companyId: DEV_COMPANY_ID,
+        type: 'invoice',
+        status: 'issued',
+        currency: 'NGN',
+        lineItems: [],
+        issueDate: '2026-09-01',
+        issuedReference: 'INV-0042',
+        frozenLabels: {
+          printedTitle: 'INVOICE',
+          partyLabel: 'Bill to',
+          signatureCaption: 'Authorised signature',
+          language: 'en',
+        },
+        totalMinor: 145_000_00,
+      })
+    })
+    expect(await screen.findByText('INV-0042')).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'They accepted' })).not.toBeInTheDocument()
+  })
+
+  it('says plainly that the customer-facing link is not here yet (§N)', async () => {
+    // No greyed "copy link" button that cannot work: an unavailable
+    // capability is stated, never dressed up.
+    renderAt('/doc/doc_quote', offered())
+    expect(await screen.findByText(/link they can answer on themselves/i)).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /copy.*link/i })).not.toBeInTheDocument()
+  })
+
+  it('an accepted offer can then be converted, which nothing could reach before', async () => {
+    const user = userEvent.setup()
+    const state = renderAt('/doc/doc_quote', offered())
+
+    await user.click(await screen.findByRole('button', { name: 'They accepted' }))
+    await waitFor(() => expect(state.documents[0]?.status).toBe('accepted'))
+
+    await user.click(
+      await screen.findByRole('button', { name: 'Turn this into something else' }),
+    )
+    expect(await screen.findByLabelText('Turn this into something else')).toBeInTheDocument()
+  })
+})

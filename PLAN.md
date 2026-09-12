@@ -582,12 +582,13 @@ force-kill and recover. Routes being reachable in a browser is a precondition
 for walking it, not the walk.
 
 What §G describes and is still deliberately absent rather than stubbed:
-"add photo" on a delivery, which needs the camera (Phase 4); and the per-type
-link actions (copy accept link, copy signing link), which are Phase 5's
-tokenized pages. Each is a missing screen, not a broken one.
+"add photo" on a delivery, which needs the camera (Phase 4); and the PUBLIC
+PAGES behind the copy-link actions, which need a deployed edge function
+(Phase 5). Each is a missing screen, not a broken one.
 
-With void-and-reissue and "open what it paid for", **every §G action that does
-not need a camera or a server is now built.**
+**Every §G action that does not need a camera or a server is built**, and the
+two that do now have their offline halves: a delivery is signed for on the
+device, and a quotation's answer is recorded on the device.
 
 ### Void and credit note (Rule #5, §G, §E)
 
@@ -1084,6 +1085,67 @@ deriving the same fact and only one of them told about the second case — the
 kind of thing that passes every test written for the feature it was built
 for.
 
+### The accept link, and the answer behind it (§G, §P, Rule #3)
+
+§G gives a quotation a "copy accept link". The page it opens is Phase 5 and
+genuinely blocked: a customer is not signed in, RLS scopes every read to a
+company (§P), and there is no Supabase repository implementation and no edge
+function in this repo. Checked before building rather than assumed.
+
+So this splits into the half that can be built honestly and the half that
+cannot.
+
+**What was actually missing.** `accepted` and `rejected` were in the lifecycle
+table, in `DOCUMENT_STATUSES`, in `deriveQuotationState`, and in the list of
+statuses `convert.ts` will convert a quotation FROM — and nothing in the app
+could reach either. The convert action's "accepted" case was unreachable, and
+Rev 2's best case, a rejected offer, could not be arrived at. The same
+"plumbed but unused" trap as credit notes and the sign action.
+
+That is the substance, and it is not a Phase 5 idea: most customers say yes on
+the phone, in the shop, or on WhatsApp, and Rule #3 says offline is the
+product. So the answer is recorded on the device and the link becomes a second
+way in rather than the only one.
+
+- [x] **An answer is a status change, never an edit** (Rule #5). Through the
+      same `transition` every other status move uses, so the lifecycle table
+      stays the single authority — §P has the server revalidate against it.
+- [x] **An answer is final.** The lifecycle lets an answered quotation reach
+      `void` and nowhere else. I assumed the opposite while writing this and
+      the test caught it; reading the table again, it is right rather than
+      restrictive — an accepted offer may already have become an invoice, and
+      flipping it back to "turned down" would erase that while the invoice it
+      produced still stood. The correction is the one §G already gives a
+      quotation: withdraw it, or send Rev 2.
+- [x] **An expired offer is answered as it stands.** `expired` is derived from
+      a date (Rule #3), so an offer past its validity is still `sent`
+      underneath. Whether to honour an old price is the owner's call.
+
+**The token layer, built now because getting it wrong is a leak.** §P
+specifies it exactly and the `document_signing_tokens` table has been waiting
+since Phase 1. `src/features/links/token.ts` holds the half that needs no
+server:
+
+- Per-document tokens from the platform CSPRNG, 32 bytes. **No fallback** —
+  a silent downgrade to `Math.random` is precisely the thing nobody catches in
+  review, and a guessable token hands a stranger a customer's document.
+- Only the SHA-256 hash is ever stored, pinned against known vectors so the
+  Phase 5 edge function — which will not be written in TypeScript — cannot
+  quietly disagree about what a hash is.
+- Invalidated on use or after 14 days, whichever comes first.
+- A wrong token and a token for a document nobody shared get the **same**
+  answer, because a message that says which confirms a document exists behind
+  a guessed id.
+- The link carries its KIND as well as its token, so an accept link cannot be
+  replayed against the signing endpoint.
+
+**No dead button.** §N: an unavailable capability is stated plainly, never
+dressed up. §Q Phase 5 describes copy-link actions as "disabled with a 'needs
+internet' note", but that wording would be a lie today — the reason is not
+connectivity, it is that the page does not exist. So there is no greyed
+control; there is one line, beside the answer buttons that do work, saying the
+customer-facing link arrives with the web app.
+
 ## Decisions taken
 
 | # | Decision | Why | Where |
@@ -1153,6 +1215,11 @@ for.
 | 63 | A reissue key is derived from the RECEIPT being replaced, not from its payment | The cancelled receipt was created under `rct:<payment>`. Reusing that key would return the cancelled document from the idempotency log instead of creating a replacement — a retry that silently does nothing, which is the worst kind. `reissue:<receipt>` cannot collide, and a second reissue of the replacement gets its own key again. | `src/features/payments/reissue.ts` |
 | 64 | A receipt is corrected by void-and-reissue, never by a credit note | A credit note reduces what is OWED on an invoice. A receipt records money already received; crediting one would mean money going back to the customer, which is a refund and a different event entirely. Rule #5 lists three corrections and this is which one a receipt gets. | `reissue.ts`, `void.ts` |
 | 65 | The printed "what this replaces" line is one field for two cases | A quotation's chain is numbered and a reissued receipt's is not, but both answer the same question for the person holding the older document. One `replaces: { reference, revisionNumber? }` on the page model, with the words chosen per type by the layer that has the catalogue. Two fields would have let the two drift, which is what happened to the list line before it was fixed. | `src/pdf/compose.ts` |
+| 66 | The customer's answer is recorded on the device, and the public link is a second way in | §G names only the link, but a link is a Phase 5 page and most customers answer on the phone or in the shop. Rule #3 makes the offline path the primary one. Without it `accepted` and `rejected` were unreachable, taking the convert action's accepted case and Rev 2's best case with them. | `src/features/documents/answer.ts` |
+| 67 | An answered quotation cannot be re-answered | The lifecycle already said so and I assumed otherwise while writing the module; the test caught it. It is right: an accepted offer may already have become an invoice, and flipping it back would erase that while the invoice stood. §P revalidates against the same table, so a looser rule invented in the client would be rejected on sync anyway. | `lifecycle.ts`, `answer.ts` |
+| 68 | Link tokens come from the platform CSPRNG with NO fallback | A predictable token is a leaked customer document, and a silent downgrade to `Math.random` when `crypto` is absent is the kind of thing that survives review. Throwing is correct: a missing feature beats a guessable one. The stored value is a SHA-256 hash pinned against known vectors, so the Phase 5 edge function cannot disagree about what a hash is. | `src/features/links/token.ts` |
+| 69 | A wrong token and an unknown document get the identical refusal | Telling them apart confirms that a document exists behind a guessed id, which is exactly what an attacker is probing for. Both are `wrong`; only expiry and consumption get their own words, and only after the hash has already matched. | `checkToken` |
+| 70 | No greyed "copy link" button until the page exists | §Q Phase 5 words it as "disabled with a 'needs internet' note", but that would be untrue today: the reason is not connectivity, it is that the page is not built. §N says an unavailable capability is stated plainly, never dressed up — so one line beside the controls that do work, and no control that cannot. | `DocumentScreen.tsx` |
 
 ## Deviations from the spec
 

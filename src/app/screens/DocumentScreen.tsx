@@ -37,6 +37,7 @@ import {
   revisionNumberOf,
   supersededBy,
 } from '../../features/documents/revision'
+import { answerOn, answerQuotation, answersFor } from '../../features/documents/answer'
 import {
   canReissue,
   reasonsReissueIsBlocked,
@@ -98,6 +99,7 @@ export function DocumentScreen({ today = new Date().toISOString().slice(0, 10) }
   const [signProblem, setSignProblem] = useState<string | null>(null)
   const [revisionProblem, setRevisionProblem] = useState<string | null>(null)
   const [reissueProblem, setReissueProblem] = useState<string | null>(null)
+  const [answerProblem, setAnswerProblem] = useState<string | null>(null)
   const [crediting, setCrediting] = useState(false)
   const [creditProblem, setCreditProblem] = useState<string | null>(null)
 
@@ -140,6 +142,10 @@ export function DocumentScreen({ today = new Date().toISOString().slice(0, 10) }
 
   /** §E `related_invoice_id`: what a receipt's payment settled, if anything. */
   const linkedInvoice = documents.find((row) => row.id === record.linkedInvoiceId) ?? null
+
+  /** What the customer could still say, and what they already said (§G). */
+  const answers = answersFor(record)
+  const recordedAnswer = answerOn(record)
   const outstanding = invoiceOutstanding(record.id, total, payments, mineCredits)
 
   const chase = (() => {
@@ -487,6 +493,86 @@ export function DocumentScreen({ today = new Date().toISOString().slice(0, 10) }
             role="alert"
           >
             {reissueProblem}
+          </p>
+        )}
+
+        {/*
+          §G's "copy accept link" is how a CUSTOMER answers, and that page is
+          Phase 5 — it needs a deployed edge function, because a customer is
+          not signed in and RLS scopes every read to a company (§P). The
+          answer itself is not a Phase 5 idea: most customers say yes on the
+          phone or in the shop, and Rule #3 says offline is the product. So
+          the answer is recorded here, and the link becomes a second way in
+          rather than the only one.
+
+          Until this, `accepted` and `rejected` were in the lifecycle, in the
+          type table, in `deriveQuotationState` and in the list of statuses a
+          quotation may be converted from — and nothing could reach either.
+        */}
+        {answers.length > 0 && (
+          <section className="rounded-2xl bg-white/70 p-4" aria-label={strings.answer.title}>
+            <h2 className="text-sm font-semibold">{strings.answer.title}</h2>
+            <p className="mt-0.5 text-xs opacity-70">{strings.answer.explain}</p>
+            <div className="mt-3 flex gap-2">
+              {answers.map((answer) => (
+                <button
+                  key={answer}
+                  type="button"
+                  className="min-h-tap flex-1 rounded-xl border border-black/10 bg-white px-3 text-sm font-medium"
+                  onClick={() => {
+                    setAnswerProblem(null)
+                    let decision
+                    try {
+                      decision = answerQuotation(record, answer)
+                    } catch (cause) {
+                      setAnswerProblem(
+                        format(strings.answer.failed, {
+                          reason: cause instanceof Error ? cause.message : String(cause),
+                        }),
+                      )
+                      return
+                    }
+                    // The same transition every other status move goes
+                    // through, so the lifecycle table stays the one authority
+                    // on what may follow what (§P revalidates against it).
+                    void actions
+                      .transition(decision.documentId, decision.to)
+                      .catch((cause: unknown) => {
+                        setAnswerProblem(
+                          format(strings.answer.failed, {
+                            reason: cause instanceof Error ? cause.message : String(cause),
+                          }),
+                        )
+                      })
+                  }}
+                >
+                  {answer === 'accepted' ? strings.answer.accepted : strings.answer.rejected}
+                </button>
+              ))}
+            </div>
+            {/*
+              §N: an unavailable capability is stated plainly, never dressed
+              up. No greyed "copy link" button that cannot work — a line
+              saying when it will, beside the thing that works now.
+            */}
+            <p className="mt-2 text-[11px] opacity-60">{strings.answer.linkLater}</p>
+          </section>
+        )}
+
+        {recordedAnswer !== null && (
+          <p className="rounded-2xl bg-white/70 px-4 py-3 text-xs opacity-70">
+            {format(strings.answer.recorded, {
+              answer: strings.statuses[recordedAnswer] ?? recordedAnswer,
+            })}
+          </p>
+        )}
+
+        {answerProblem !== null && (
+          <p
+            className="rounded-xl bg-status-warn-tint px-3 py-2.5 text-sm font-medium text-status-warn"
+            role="alert"
+          >
+            {answerProblem}
           </p>
         )}
 
