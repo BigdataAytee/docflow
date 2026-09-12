@@ -157,10 +157,13 @@ export interface ListRowOptions {
   readonly provisionalReference: (document: DocumentRecord) => string
   readonly creditNotes?: readonly CreditNote[]
   /**
-   * Renders "Replaced by Rev 2" for a superseded offer. Passed in because the
-   * words live in the catalogue (§S) and this module holds none.
+   * Renders the "this one was replaced" line. Passed the document's TYPE as
+   * well as the number, because a quotation's chain is numbered (§G's Rev 2)
+   * and a reissued receipt's is not — calling a replaced receipt "Rev 2"
+   * would say more than is true. The words live in the catalogue (§S); this
+   * module holds none.
    */
-  readonly supersededLabel?: (revisionNumber: number) => string
+  readonly supersededLabel?: (input: { type: DocumentType; revisionNumber: number }) => string
 }
 
 /** One row per document, in the shape §G's list page draws. */
@@ -184,7 +187,10 @@ export function listRows(
     const note =
       newer === null || options.supersededLabel === undefined
         ? undefined
-        : options.supersededLabel(revisionNumberOf(documents, newer))
+        : options.supersededLabel({
+            type: document.type,
+            revisionNumber: revisionNumberOf(documents, newer),
+          })
 
     return {
       id: document.id,

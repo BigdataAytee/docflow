@@ -105,9 +105,12 @@ describe('An invoice prints its payment box (§I, §J)', () => {
   })
 
   it('prints the revision beside the reference (§G)', () => {
-    draw({ ...invoice, type: 'quotation', revision: { number: 2, supersedes: 'QUO-0009' } }, 'classic', 20, {
-      revisionLabel: (r) => `Rev ${r.number} · replaces ${r.supersedes}`,
-    }).render()
+    draw(
+      { ...invoice, type: 'quotation', replaces: { reference: 'QUO-0009', revisionNumber: 2 } },
+      'classic',
+      20,
+      { replacesLabel: (r) => `Rev ${String(r.revisionNumber)} · replaces ${r.reference}` },
+    ).render()
     expect(screen.getByText('Rev 2 · replaces QUO-0009')).toBeInTheDocument()
   })
 
