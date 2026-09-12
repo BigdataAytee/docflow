@@ -1802,6 +1802,30 @@ describe('Signing (§G, §I, §P)', () => {
       expect(await screen.findByRole('button', { name: 'Confirm delivery' })).toBeInTheDocument()
     })
 
+    it('offers the on-the-way step once it has left, and only once', async () => {
+      const user = userEvent.setup()
+      const state = renderAt('/doc/doc_way', delivery('dispatched'))
+
+      await user.click(await screen.findByRole('button', { name: 'Mark it on the way' }))
+      await waitFor(() => expect(state.documents[0]?.status).toBe('in_transit'))
+
+      // Not a step anything waits for: signing was offered before it, and
+      // still is after.
+      expect(await screen.findByRole('button', { name: 'Confirm delivery' })).toBeInTheDocument()
+      expect(screen.queryByRole('button', { name: 'Mark it on the way' })).not.toBeInTheDocument()
+    })
+
+    it('can be signed for straight from dispatched, without the extra step', async () => {
+      renderAt('/doc/doc_way', delivery('dispatched'))
+      expect(await screen.findByRole('button', { name: 'Confirm delivery' })).toBeInTheDocument()
+    })
+
+    it('says plainly that the customer-facing link is not here yet (§N)', async () => {
+      renderAt('/doc/doc_way', delivery('dispatched'))
+      expect(await screen.findByText(/link they can sign on their own phone/i)).toBeInTheDocument()
+      expect(screen.queryByRole('button', { name: /copy.*link/i })).not.toBeInTheDocument()
+    })
+
     it('captures the signer and the mark in one write, and delivers it (§P)', async () => {
       const user = userEvent.setup()
       const state = renderAt('/doc/doc_way', delivery('dispatched'))

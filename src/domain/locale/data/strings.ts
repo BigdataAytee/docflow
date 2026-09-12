@@ -338,6 +338,8 @@ export interface UiStrings {
     readonly nameFirst: string
     readonly sendOnItsWay: string
     readonly onItsWay: string
+    readonly markOnTheWay: string
+    readonly linkLater: string
     readonly confirmDelivery: string
     readonly deliveredOn: string
     readonly signedBy: string
@@ -852,6 +854,8 @@ const EN: UiStrings = {
     nameFirst: 'Add who received it, then hand over the phone to sign.',
     sendOnItsWay: 'Send it on its way',
     onItsWay: 'On its way. Sign for it when it arrives.',
+    markOnTheWay: 'Mark it on the way',
+    linkLater: 'A link they can sign on their own phone arrives with the web app.',
     confirmDelivery: 'Confirm delivery',
     deliveredOn: 'Delivered {date}',
     signedBy: 'Signed by {name}',

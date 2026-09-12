@@ -584,7 +584,9 @@ for walking it, not the walk.
 What §G describes and is still deliberately absent rather than stubbed:
 "add photo" on a delivery, which needs the camera (Phase 4); and the PUBLIC
 PAGES behind the copy-link actions, which need a deployed edge function
-(Phase 5). Each is a missing screen, not a broken one.
+(Phase 5). Each is a missing screen, not a broken one — and the RULES both
+pages will run are built and tested, so Phase 5 is a page and a deployment
+rather than a design problem.
 
 **Every §G action that does not need a camera or a server is built**, and the
 two that do now have their offline halves: a delivery is signed for on the
@@ -1146,6 +1148,51 @@ connectivity, it is that the page does not exist. So there is no greyed
 control; there is one line, beside the answer buttons that do work, saying the
 customer-facing link arrives with the web app.
 
+### The signing link, and the journey behind it (§G, §P, §Q Phase 5)
+
+§G gives a delivery a "copy signing link": the customer who takes the goods
+signs on their own phone, without an account. §Q describes the act in one line
+— "view + sign → atomic delivered + timestamp, token invalidated" — and §P
+adds the rule that makes it safe: the token is "checked on read **and on
+sign**".
+
+Both halves this could have needed already existed: the token layer covers
+`sign` as well as `accept`, and signing on the device shipped with the
+signature work. What was left was the rule the link itself turns on, and one
+dead branch.
+
+- [x] **Checked twice, not once** (`remoteSigning.ts`). A token valid when the
+      page loaded can be expired or already used by the time somebody presses
+      sign — the customer left the tab open, or the driver signed on their own
+      phone first. Trusting the first check is a race that ends with two
+      signatures on one delivery and the second silently winning. Verified by
+      mutation: with the second check removed, four tests fail.
+- [x] **Signing and invalidating are ONE outcome.** §P: "delivered/signed
+      links cannot be reused to alter evidence". A link that outlived its own
+      signature would still open, and the page it opens can alter delivery
+      evidence. The dead token carries the same instant the evidence is dated.
+- [x] **The remote path and the phone in the owner's hand agree by
+      construction.** The evidence comes from `signDelivery` — the same
+      function, so the sealed-evidence rule, the lifecycle and "a mark with
+      nobody behind it is not evidence" all hold through the link without
+      being restated. Two implementations of what signing means would drift,
+      and the one nobody watches would drift first.
+
+**The dead branch.** `linkKindFor` offers a signing link for a delivery that
+is `dispatched` OR `in_transit` — and nothing in the app could produce
+`in_transit`. It has a status colour in §F, a word in §D, a row in the
+lifecycle table, and a rule in Home's attention list; it was simply
+unreachable, like `accepted` and `rejected` before it.
+
+It is now an **optional** step rather than a required one, and that distinction
+is the whole design: a delivery is signed for from `dispatched` just as well,
+so making it compulsory would be a second tap for no gain (Rule #1). It earns
+its place on the journey that takes days, where "sent out" on Monday and still
+"sent out" on Thursday tells the owner nothing.
+
+**No dead button, again.** The same honest line the quotation got: no greyed
+"copy signing link" that cannot work, one sentence beside the thing that does.
+
 ## Decisions taken
 
 | # | Decision | Why | Where |
@@ -1220,6 +1267,9 @@ customer-facing link arrives with the web app.
 | 68 | Link tokens come from the platform CSPRNG with NO fallback | A predictable token is a leaked customer document, and a silent downgrade to `Math.random` when `crypto` is absent is the kind of thing that survives review. Throwing is correct: a missing feature beats a guessable one. The stored value is a SHA-256 hash pinned against known vectors, so the Phase 5 edge function cannot disagree about what a hash is. | `src/features/links/token.ts` |
 | 69 | A wrong token and an unknown document get the identical refusal | Telling them apart confirms that a document exists behind a guessed id, which is exactly what an attacker is probing for. Both are `wrong`; only expiry and consumption get their own words, and only after the hash has already matched. | `checkToken` |
 | 70 | No greyed "copy link" button until the page exists | §Q Phase 5 words it as "disabled with a 'needs internet' note", but that would be untrue today: the reason is not connectivity, it is that the page is not built. §N says an unavailable capability is stated plainly, never dressed up — so one line beside the controls that do work, and no control that cannot. | `DocumentScreen.tsx` |
+| 71 | A public-link token is checked on read AND again at the moment of signing | §P says so, and the reason is a real race rather than caution: a page can sit open for a day, and the driver may have signed on their own phone in between. Trusting the first check puts two signatures on one delivery, with the second silently winning. | `src/features/links/remoteSigning.ts` |
+| 72 | Remote signing produces its evidence through `signDelivery`, not its own copy | The sealed-evidence rule, the lifecycle and "a mark with nobody behind it is not evidence" then hold through the link without being restated. Two implementations of what signing means would drift, and the one nobody watches — the public page — would drift first. | `remoteSigning.ts` |
+| 73 | "On the way" is an optional step, not a required one | §F gives it a colour, §D a word and `linkKindFor` a signing link, but nothing could reach it. Making it compulsory would be a second tap for no gain, since a delivery is signed for from "sent out" just as well (Rule #1). It exists for the multi-day journey, where an unchanging "sent out" tells the owner nothing. | `optionalDeliveryStep` |
 
 ## Deviations from the spec
 
