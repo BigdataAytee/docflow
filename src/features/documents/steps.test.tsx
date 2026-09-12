@@ -49,7 +49,11 @@ const details = (type: DocumentType, methods = 1, over: Partial<DocumentDraft> =
       draft={draftFor(type, over)}
       reference="INV-0001"
       enabledPaymentMethodCount={methods}
+      customers={[]}
+      invoices={[]}
+      payments={[]}
       onChange={() => {}}
+      onAddCustomer={() => {}}
       onSetUpPayment={() => {}}
       onSign={() => {}}
     />,
@@ -98,7 +102,11 @@ describe('Details: the per-type differences §G spells out', () => {
         draft={draftFor('waybill')}
         reference="WAY-0001"
         enabledPaymentMethodCount={1}
+        customers={[]}
+        invoices={[]}
+        payments={[]}
         onChange={() => {}}
+        onAddCustomer={() => {}}
         onSetUpPayment={() => {}}
         onSign={() => {}}
       />,

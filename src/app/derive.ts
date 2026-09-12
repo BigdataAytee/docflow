@@ -19,6 +19,7 @@ import type { StatDocument } from '../features/home/stats'
 import type { AgeingDocument } from '../features/analytics/ageing'
 import type { SoldDocument } from '../features/analytics/topItems'
 import type { StatementDocument } from '../features/statements/compose'
+import type { BilledInvoice } from '../features/customers/balance'
 import type { ListRow } from '../features/documents/DocumentList'
 
 export const totalOf = (document: DocumentRecord): Money =>
@@ -63,6 +64,31 @@ export const statementDocuments = (documents: readonly DocumentRecord[]): Statem
       issuedReference: document.issuedReference,
       ...(document.issueDate === undefined ? {} : { issueDate: document.issueDate }),
     }))
+
+/**
+ * What `customerBalances` and `paymentBehaviour` need of an invoice.
+ *
+ * Nothing was billed until it was dated and issued (§M), so a draft without an
+ * issue date is not here — it would inflate "billed all time" with work the
+ * customer has never seen.
+ */
+export function billedInvoices(documents: readonly DocumentRecord[]): BilledInvoice[] {
+  return documents
+    .filter(
+      (document) =>
+        document.type === 'invoice' &&
+        document.customerId !== undefined &&
+        document.issueDate !== undefined,
+    )
+    .map((document) => ({
+      id: document.id,
+      customerId: document.customerId ?? '',
+      status: document.status,
+      total: totalOf(document),
+      issueDate: document.issueDate ?? '',
+      ...(document.dueDate === undefined ? {} : { dueDate: document.dueDate }),
+    }))
+}
 
 /** Which customer each document belongs to — the ask box needs the mapping. */
 export function customerOf(documents: readonly DocumentRecord[]): Map<string, string> {

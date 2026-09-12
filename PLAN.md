@@ -583,10 +583,41 @@ for walking it, not the walk.
 
 What §G describes and is still deliberately absent rather than stubbed: the
 convert / share / sign actions, which need the native bridge (Phase 4);
-signature capture; the receipt-from-payment flow; and the builder's customer
-card, which still shows a raw id where §G wants a searchable dropdown with
-Chat and Call chips and a balance chip. Each is a missing screen, not a broken
-one.
+signature capture; and the receipt-from-payment flow. Each is a missing screen,
+not a broken one.
+
+### The builder's customer card (§G, step 1)
+
+- [x] **Avatar, name and address row** (`CustomerPicker.tsx`) — where the card
+      used to print a raw `customerId`. With nobody chosen it says so and
+      offers the search, rather than showing an em dash (§L8).
+- [x] **A searchable dropdown** over name, phone, email and address.
+- [x] **"+ Add…" carries whatever was typed.** This is the clause the feature
+      lives or dies on: somebody halfway through a document types a name that
+      is not in the list, and retyping it into a blank form is the moment they
+      put the phone down. The typed text becomes the new customer's name, and
+      the created customer lands on the draft without being chosen again.
+- [x] **A small `+` in the card header** goes straight to a blank form, for
+      when the owner already knows this is somebody new.
+- [x] **Chat and Call chips**, the same real `wa.me` and `tel:` handoffs the
+      contact page uses, absent rather than dead without a phone number.
+- [x] **A balance chip** — "Owes ₦95,000" / "Settled" — from
+      `customerBalances`, the same figures the contact page shows, one chip per
+      currency. A number here disagreeing with the one two taps away would
+      make both untrustworthy. A delivery document gets no chip at all, because
+      it carries no money (§G, §I, §V).
+- [x] **19 component tests and 6 route tests**, plus a browser smoke run
+      against the production build: type an unknown name → add it → it is on
+      the card with its chips → add a second from the header `+` → search back
+      to the first → the choice survives a step change and the autosave.
+
+One write path throughout: the picker never calls a repository. It hands a new
+customer up to the store's `addCustomer`, which creates it, reloads, and
+patches the draft — so a retried create is still one customer (§M).
+
+**Also:** `billedInvoices` moved into `src/app/derive.ts`. The customer screens
+and the builder both need it, and two copies of "what counts as billed" is two
+places for the answer to drift.
 
 ### The contact page (§G — Customers)
 
@@ -703,6 +734,8 @@ needed the bar's accessible name.
 | 36 | "Everything" on a statement is an open start, not a guessed year | A statement's balance brought forward is meaningless if the window's start is invented. `OPEN_START` is a sentinel the composer treats as "before everything", and the printed page shows the WORD rather than the sentinel — a shared PDF must never carry a date nobody chose. | `src/features/statements/PeriodPicker.tsx` |
 | 37 | Chat and Call are absent without a phone number, never disabled | §N's rule — an unavailable capability is stated plainly, never dressed up — applies to a chip as much as to a model. A greyed control invites a tap that cannot work; a line saying "add a phone number" tells the owner what to do about it. | `src/features/customers/ContactPage.tsx` |
 | 38 | Adding a customer asks for a name and nothing else | Rule #1 — no new required fields, ever. A customer typed in mid-document should cost one field, not six, so kind, phone, email and address are all offered and all skippable, and an untyped one is ABSENT on the record rather than an empty string that would print as a blank line (§I). | `src/features/customers/CustomerSheet.tsx` |
+| 39 | The picker hands a new customer UP to the store, never writing one itself | Every mutation in the app goes through one seam so a retried create collapses on its idempotency key (§M) and the screens re-read from one place. A component that wrote its own record would be a second path, and the new customer would not appear in the list the picker itself searches. | `src/features/customers/CustomerPicker.tsx` |
+| 40 | The balance chip and the contact page read the same function | Two figures for one customer's debt, two taps apart, would make both untrustworthy — and the owner would have no way to tell which was right. Both call `customerBalances`, which is property-tested; neither adds up currencies. | `CustomerPicker.tsx`, `ContactPage.tsx` |
 
 ## Deviations from the spec
 

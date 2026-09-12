@@ -122,6 +122,12 @@ export interface UiStrings {
     readonly tapToSign: string
     readonly deliveryAddress: string
     readonly linkedInvoice: string
+    readonly chooseCustomer: string
+    readonly searchCustomers: string
+    readonly nobodyChosen: string
+    readonly addNamed: string
+    readonly noCustomerMatch: string
+    readonly change: string
     readonly method: string
     readonly paymentReference: string
   }
@@ -495,6 +501,12 @@ const EN: UiStrings = {
     tapToSign: 'Tap to sign',
     deliveryAddress: 'Delivery address',
     linkedInvoice: 'Linked invoice',
+    chooseCustomer: 'Choose who this is for',
+    searchCustomers: 'Search or type a new name',
+    nobodyChosen: 'Nobody chosen yet',
+    addNamed: 'Add "{name}"',
+    noCustomerMatch: 'No match. Type a name and add it.',
+    change: 'Change',
     method: 'Method',
     paymentReference: 'Payment reference',
   },

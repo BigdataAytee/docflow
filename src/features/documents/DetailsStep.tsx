@@ -17,13 +17,23 @@ import { partyLabel } from '../../domain/locale/profile'
 import { format } from '../../domain/locale/data/strings'
 import { TYPE_PALETTE } from '../../ui'
 import { carriesMoney, type DocumentType } from '../../domain/documents/types'
+import type { Customer } from '../../data/repositories'
+import type { Payment } from '../../domain/payments/ledger'
+import { CustomerPicker } from '../customers/CustomerPicker'
+import type { NewCustomer } from '../customers/CustomerSheet'
+import type { BilledInvoice } from '../customers/balance'
 import type { DocumentDraft } from './builder'
 
 export interface DetailsStepProps {
   readonly draft: DocumentDraft
   readonly reference: string
   readonly enabledPaymentMethodCount: number
+  /** §G's customer card: the list to search, and what the balance chip needs. */
+  readonly customers: readonly Customer[]
+  readonly invoices: readonly BilledInvoice[]
+  readonly payments: readonly Payment[]
   readonly onChange: (patch: Partial<DocumentDraft>) => void
+  readonly onAddCustomer: (customer: NewCustomer) => void
   readonly onSetUpPayment: () => void
   readonly onSign: () => void
 }
@@ -87,7 +97,11 @@ export function DetailsStep({
   draft,
   reference,
   enabledPaymentMethodCount,
+  customers,
+  invoices,
+  payments,
   onChange,
+  onAddCustomer,
   onSetUpPayment,
   onSign,
 }: DetailsStepProps) {
@@ -125,8 +139,18 @@ export function DetailsStep({
         </div>
       </Card>
 
+      {/* The title is the localised party word — Bill to / Deliver to / Client /
+          Received from — resolved through the locale layer (§D, Rule #4). */}
       <Card title={partyLabel(profile, draft.type)} accent={accent}>
-        <p className="text-sm opacity-70">{draft.customerId ?? '—'}</p>
+        <CustomerPicker
+          customers={customers}
+          {...(draft.customerId === undefined ? {} : { selectedId: draft.customerId })}
+          invoices={invoices}
+          payments={payments}
+          onSelect={(id) => onChange({ customerId: id })}
+          onAdd={onAddCustomer}
+          showBalance={showsMoney}
+        />
         {draft.type === 'waybill' && (
           <label className="block">
             <span className="mb-1 block text-xs font-medium opacity-70">

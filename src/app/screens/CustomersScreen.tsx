@@ -19,31 +19,9 @@ import {
   periodFor,
 } from '../../features/statements/PeriodPicker'
 import { composeStatement, statementCurrencies } from '../../features/statements/compose'
-import type { BilledInvoice } from '../../features/customers/balance'
 import { PageHeader, SkeletonList } from '../../ui'
 import { numberingPrefix } from '../../domain/locale/profile'
-import type { DocumentRecord } from '../../data/repositories'
-import { displayStatus, statementDocuments, totalOf } from '../derive'
-
-/** What `customerBalances` needs of an invoice — issued, non-void, with a total. */
-function billedInvoices(documents: readonly DocumentRecord[]): BilledInvoice[] {
-  return documents
-    .filter(
-      (document) =>
-        document.type === 'invoice' &&
-        document.customerId !== undefined &&
-        // Nothing was billed until it was dated and issued (§M).
-        document.issueDate !== undefined,
-    )
-    .map((document) => ({
-      id: document.id,
-      customerId: document.customerId ?? '',
-      status: document.status,
-      total: totalOf(document),
-      issueDate: document.issueDate ?? '',
-      ...(document.dueDate === undefined ? {} : { dueDate: document.dueDate }),
-    }))
-}
+import { billedInvoices, displayStatus, statementDocuments, totalOf } from '../derive'
 
 export function CustomersScreen() {
   const { documents, payments, actions } = useAppData()
