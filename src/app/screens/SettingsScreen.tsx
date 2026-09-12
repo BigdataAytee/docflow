@@ -11,6 +11,7 @@
  * nothing here touches them.
  */
 
+import { useState } from 'react'
 import { Navigate, NavLink, useParams } from 'react-router-dom'
 
 import { useCompany } from '../context'
@@ -21,11 +22,12 @@ import { CompanySettings } from '../../features/settings/CompanySettings'
 import { PaymentSettings } from '../../features/settings/PaymentSettings'
 import { RegionSettings } from '../../features/settings/RegionSettings'
 import { SavedItems } from '../../features/settings/SavedItems'
+import { SignatureSettings } from '../../features/settings/SignatureSettings'
 import { TaxSettings } from '../../features/settings/TaxSettings'
 import { DataAndSync } from '../../features/settings/DataAndSync'
 import { applyLabelOverride, applyRegion, regionProfile } from '../../features/settings/region'
 import { PPM, percentToPpm } from '../../domain/money/money'
-import type { UiStrings } from '../../domain/locale/data/strings'
+import { type UiStrings, format } from '../../domain/locale/data/strings'
 import { ALWAYS_AVAILABLE, methodName } from '../../features/payments/methods'
 
 const isPanel = (value: string | undefined): value is SettingsPanel =>
@@ -40,6 +42,7 @@ export function SettingsIndexScreen() {
     { panel: 'tax', label: strings.settings.tax },
     { panel: 'payment', label: strings.settings.howYouGetPaid },
     { panel: 'items', label: strings.settings.savedItems },
+    { panel: 'signature', label: strings.settings.defaultSignature },
     { panel: 'data', label: strings.dataSync.title },
   ]
 
@@ -62,7 +65,22 @@ export function SettingsIndexScreen() {
   )
 }
 
+/**
+ * The tab bar is fixed to the bottom of every page, so a panel that runs to
+ * the foot of the screen puts its last control underneath it — visible, and
+ * untappable. The index already cleared it; the panels did not, which nobody
+ * noticed until one of them ended in a primary action. Cleared here, once,
+ * so a panel cannot forget.
+ */
 export function SettingsPanelScreen() {
+  return (
+    <div className="pb-28">
+      <SettingsPanelBody />
+    </div>
+  )
+}
+
+function SettingsPanelBody() {
   const { panel } = useParams<{ panel: string }>()
   const { strings } = useCompany()
   const { company, loading, actions } = useAppData()
@@ -157,6 +175,9 @@ export function SettingsPanelScreen() {
     case 'items':
       return <SavedItems />
 
+    case 'signature':
+      return <DefaultSignature />
+
     case 'data':
       return <DataAndSync pendingCount={0} failedCount={0} />
   }
@@ -188,4 +209,42 @@ function paymentMethods(
     name: methodName(strings, id),
     enabled: company.enabledPaymentMethods.includes(id),
   }))
+}
+
+/**
+ * §G: "Default signature — signs new documents unless you draw a different
+ * one." Removing it clears the DEFAULT only: the asset stays, because
+ * documents already signed with it hold its id and an issued page's mark
+ * cannot change under it (Rule #5).
+ */
+function DefaultSignature() {
+  const { strings } = useCompany()
+  const { company, assets, actions } = useAppData()
+  const [problem, setProblem] = useState<string | null>(null)
+
+  const saved = assets.find((asset) => asset.id === company?.defaultSignatureAssetId)
+
+  return (
+    <SignatureSettings
+      {...(saved === undefined ? {} : { signatureUrl: saved.dataUrl })}
+      {...(problem === null ? {} : { error: problem })}
+      onDraw={(drawn) => {
+        setProblem(null)
+        void actions
+          .storeSignature(drawn.dataUrl)
+          .then((asset) => actions.updateCompany({ defaultSignatureAssetId: asset.id }))
+          .catch((cause: unknown) => {
+            setProblem(
+              format(strings.signature.failed, {
+                reason: cause instanceof Error ? cause.message : String(cause),
+              }),
+            )
+          })
+      }}
+      onRemove={() => {
+        setProblem(null)
+        void actions.updateCompany({ defaultSignatureAssetId: null })
+      }}
+    />
+  )
 }

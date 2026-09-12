@@ -51,7 +51,12 @@ export interface Company {
   readonly logoAssetId?: string
   readonly taxRatePpm?: number
   readonly whtRatePpm?: number
-  readonly defaultSignatureAssetId?: string
+  /**
+   * `null` clears it, and an absent key means unchanged. A patch carrying
+   * `undefined` cannot express "the owner removed this" — the key just goes
+   * missing — and sync would then restore a default nobody wanted (§M).
+   */
+  readonly defaultSignatureAssetId?: string | null
   /** §G validates "the signature requirement" at issue. */
   readonly signatureRequired?: boolean
 }
@@ -95,6 +100,25 @@ export interface DocumentRecord {
   readonly paymentId?: string
   /** §E `related_invoice_id`: the invoice a receipt's payment settled, if any. */
   readonly linkedInvoiceId?: string
+  /**
+   * The signature printed at the foot of this document (§I). An asset id, not
+   * the bytes: the same drawn signature signs many documents, and an asset is
+   * immutable, so an issued document's mark cannot change under it (Rule #5).
+   */
+  readonly signatureAssetId?: string
+  /** §E's waybill columns. Deliveries only; a delivery carries no money (§V). */
+  readonly deliveryAddress?: string
+  readonly driverName?: string
+  readonly vehicleNumber?: string
+  readonly dispatchDate?: string
+  /**
+   * Who took delivery, and when (§E `signer_name`, `signer_role`, `signed_at`).
+   * Written once, with the transition to delivered, and sealed after —
+   * `isEvidenceSealed` refuses any later edit (§P).
+   */
+  readonly signerName?: string
+  readonly signerRole?: string
+  readonly signedAt?: string
   /** Both null until issue, then frozen forever (§M). */
   readonly issuedReference: string | null
   readonly frozenLabels: FrozenLabels | null
@@ -157,6 +181,29 @@ export interface DocumentRepository {
     ctx: MutationContext,
   ): Promise<DocumentRecord>
   transition(id: string, to: string, ctx: MutationContext): Promise<DocumentRecord>
+  /**
+   * Delivery evidence and the transition to delivered, in ONE write (§P:
+   * "atomic delivered + timestamp").
+   *
+   * Not `updateDraft` + `transition`: an issued document refuses the first,
+   * and two writes can half-succeed — leaving a delivery marked delivered
+   * with nobody's signature on it, or a signature on a document that still
+   * says it is in transit. Neither is a state anyone could correct, because
+   * delivered is terminal and its evidence is sealed.
+   *
+   * Refuses a document whose evidence is already sealed: a signed delivery
+   * cannot be re-signed, by this device or by a later link use (§P).
+   */
+  signDelivery(
+    id: string,
+    evidence: {
+      signerName: string
+      signerRole?: string
+      signedAt: string
+      signatureAssetId: string
+    },
+    ctx: MutationContext,
+  ): Promise<DocumentRecord>
 }
 
 export interface PaymentRepository {
@@ -202,6 +249,36 @@ export interface ShareEventRepository {
   record(event: Omit<ShareEvent, 'id'>, ctx: MutationContext): Promise<ShareEvent>
 }
 
+/**
+ * A stored image — today a drawn signature, later a logo or a delivery photo
+ * (§E's "asset id" columns).
+ *
+ * **Immutable once written.** There is no update and no delete, and that is
+ * not tidiness: a signature is evidence (§P). If the asset behind an issued
+ * document could be replaced, every PDF already shared under it would change
+ * meaning retroactively, and Rule #5 would hold for the words on a document
+ * but not for the mark at the bottom of it. Drawing again makes a NEW asset.
+ *
+ * The bytes are held as a data URL rather than a blob so that one shape works
+ * against SQLite, Supabase storage and the in-memory store alike, and so a
+ * document stays openable offline with nothing to fetch (§M).
+ */
+export interface AssetRecord {
+  readonly id: string
+  readonly companyId: string
+  readonly kind: 'signature'
+  /** A `data:` URL. Never a remote one — §M: nothing needed to open a saved document touches a CDN. */
+  readonly dataUrl: string
+  readonly createdAt: string
+}
+
+export interface AssetRepository {
+  list(companyId: string): Promise<AssetRecord[]>
+  get(id: string): Promise<AssetRecord | null>
+  /** Stores once. A replayed key returns the existing asset unchanged (§M). */
+  store(asset: Omit<AssetRecord, 'id'>, ctx: MutationContext): Promise<AssetRecord>
+}
+
 export interface ExpenseRepository {
   list(companyId: string): Promise<Expense[]>
   create(expense: Omit<Expense, 'id'>, ctx: MutationContext): Promise<Expense>
@@ -216,6 +293,7 @@ export interface Repositories {
   readonly expenses: ExpenseRepository
   readonly shares: ShareEventRepository
   readonly credits: CreditNoteRepository
+  readonly assets: AssetRepository
 }
 
 export class RepositoryError extends Error {}

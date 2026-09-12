@@ -129,6 +129,13 @@ export interface PageModel {
   readonly receiptEvidence: ReceiptEvidence | null
   readonly signature: {
     readonly assetId?: string
+    /**
+     * §I: "the actual captured signature (placeholders only in clearly-labelled
+     * samples)". Absent when the document carries no signature OR when its
+     * asset is not to hand — a page prints the rule and the caption with
+     * nothing above them rather than a stand-in mark nobody made.
+     */
+    readonly imageUrl?: string
     readonly caption: string
     readonly signerName?: string
   }
@@ -145,6 +152,8 @@ export interface ComposeOptions {
   readonly bankValues?: Readonly<Record<string, string>>
   /** Other enabled methods, by display name (§I dashed divider). */
   readonly otherPaymentMethods?: readonly string[]
+  /** Asset id → data URL, so the page can print the signature it names. */
+  readonly assetUrls?: Readonly<Record<string, string>>
 }
 
 export function composeDocument(
@@ -209,6 +218,10 @@ export function composeDocument(
     receiptEvidence: buildReceiptEvidence(document),
     signature: {
       ...(document.signatureAssetId === undefined ? {} : { assetId: document.signatureAssetId }),
+      ...(document.signatureAssetId === undefined ||
+      options.assetUrls?.[document.signatureAssetId] === undefined
+        ? {}
+        : { imageUrl: options.assetUrls[document.signatureAssetId] }),
       caption: labels.signatureCaption,
       ...(document.signerName === undefined ? {} : { signerName: document.signerName }),
     },

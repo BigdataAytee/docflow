@@ -38,6 +38,7 @@ import type {
   SavedItem,
   ShareEvent,
   CreditNoteRecord,
+  AssetRecord,
 } from '../data/repositories'
 import { DOCUMENT_TYPES, type DocumentType } from '../domain/documents/types'
 import type { FrozenLabels } from '../domain/documents/types'
@@ -51,6 +52,7 @@ export interface AppData {
   readonly expenses: readonly Expense[]
   readonly shares: readonly ShareEvent[]
   readonly creditNotes: readonly CreditNoteRecord[]
+  readonly assets: readonly AssetRecord[]
   /** True until the first load settles. Screens show skeletons, never spinners. */
   readonly loading: boolean
   readonly error: string | null
@@ -61,7 +63,17 @@ export interface AppActions {
   updateCompany(patch: Partial<Company>): Promise<void>
   addCustomer(customer: Omit<Customer, 'id' | 'companyId'>): Promise<Customer>
   updateCustomer(id: string, patch: Partial<Customer>): Promise<void>
-  createDraft(type: DocumentType, currency: string): Promise<DocumentRecord>
+  /**
+   * `signatureAssetId` is §G's default signature: it "signs new documents
+   * unless you draw a different one", so it is applied once at creation
+   * rather than re-applied on every open — otherwise clearing it on one draft
+   * would silently come back.
+   */
+  createDraft(
+    type: DocumentType,
+    currency: string,
+    signatureAssetId?: string,
+  ): Promise<DocumentRecord>
   /**
    * A draft created under a key the CALLER derives — a conversion's
    * `conv:<source>:<type>`, a receipt's `rct:<payment>`. §M requires retried
@@ -79,6 +91,19 @@ export interface AppActions {
   ): Promise<void>
   transition(id: string, to: string): Promise<void>
   /**
+   * §P: "atomic delivered + timestamp". One repository write, so a delivery
+   * can never be marked delivered with nobody's signature on it.
+   */
+  signDelivery(
+    id: string,
+    evidence: {
+      signerName: string
+      signerRole?: string
+      signedAt: string
+      signatureAssetId: string
+    },
+  ): Promise<void>
+  /**
    * `idempotencyKey` is optional and means "this submission": pass a key
    * derived from the gesture and a double tap records one payment, not two
    * (§M). Money is the one place where a retry must never add (Rule #3).
@@ -89,6 +114,11 @@ export interface AppActions {
   addExpense(expense: Omit<Expense, 'id' | 'companyId'>): Promise<void>
   /** §M: a handoff is recorded; delivery never is. */
   recordShare(event: Omit<ShareEvent, 'id' | 'companyId'>): Promise<void>
+  /**
+   * Stores a drawn signature (§G, §I). Immutable once written — drawing again
+   * makes a new one, so an issued document's mark cannot change under it.
+   */
+  storeSignature(dataUrl: string): Promise<AssetRecord>
   /** Rule #5's middle correction. Append-only; the invoice is untouched. */
   issueCreditNote(
     note: Omit<CreditNoteRecord, 'id' | 'companyId'>,
@@ -109,6 +139,7 @@ const EMPTY: AppData = {
   expenses: [],
   shares: [],
   creditNotes: [],
+  assets: [],
   loading: true,
   error: null,
 }
@@ -124,7 +155,7 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
   const load = useCallback(async () => {
     const mine = (generation.current += 1)
     try {
-      const [company, customers, payments, items, expenses, shares, creditNotes, ...byType] =
+      const [company, customers, payments, items, expenses, shares, creditNotes, assets, ...byType] =
         await Promise.all([
           repositories.companies.get(companyId),
           repositories.customers.list(companyId),
@@ -133,6 +164,7 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
           repositories.expenses.list(companyId),
           repositories.shares.list(companyId),
           repositories.credits.list(companyId),
+          repositories.assets.list(companyId),
           ...DOCUMENT_TYPES.map((type) => repositories.documents.listByType(companyId, type)),
         ])
       if (generation.current !== mine) return
@@ -145,6 +177,7 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
         expenses,
         shares,
         creditNotes,
+        assets,
         loading: false,
         error: null,
       })
@@ -192,7 +225,7 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
         await repositories.customers.update(id, patch, key('customer.update'))
         await load()
       },
-      async createDraft(type, currency) {
+      async createDraft(type, currency, signatureAssetId) {
         return after(
           await repositories.documents.createDraft(
             {
@@ -202,6 +235,7 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
               currency,
               lineItems: [],
               totalMinor: 0,
+              ...(signatureAssetId === undefined ? {} : { signatureAssetId }),
             },
             key('document.create'),
           ),
@@ -230,6 +264,10 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
         await repositories.documents.transition(id, to, key('document.transition'))
         await load()
       },
+      async signDelivery(id, evidence) {
+        await repositories.documents.signDelivery(id, evidence, key('document.sign'))
+        await load()
+      },
       async recordPayment(payment, idempotencyKey) {
         return after(
           await repositories.payments.record(
@@ -255,6 +293,14 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
       async recordShare(event) {
         await repositories.shares.record({ ...event, companyId }, key('share.record'))
         await load()
+      },
+      async storeSignature(dataUrl) {
+        return after(
+          await repositories.assets.store(
+            { companyId, kind: 'signature', dataUrl, createdAt: new Date().toISOString() },
+            key('asset.store'),
+          ),
+        )
       },
       async issueCreditNote(note, idempotencyKey) {
         return after(
