@@ -145,6 +145,33 @@ describe('Titles and labels come from the terminology layer (Rule #5, §D)', () 
     ).toBe('Total estimé')
   })
 
+  it('prints which offer this one replaces (§G)', () => {
+    // The reference alone cannot say so: every document earns its own (§M),
+    // so QUO-0014 looks unrelated to the QUO-0009 the customer holds.
+    const model = composeDocument(
+      { ...doc('quotation'), revision: { number: 2, supersedes: 'QUO-0009' } },
+      {
+        ...options(),
+        revisionLabel: (r) => `Rev ${r.number} · replaces ${r.supersedes}`,
+      },
+    )
+    expect(model.revisionLine).toBe('Rev 2 · replaces QUO-0009')
+  })
+
+  it('prints no revision line on a first offer', () => {
+    expect(composeDocument(doc('quotation'), options()).revisionLine).toBeNull()
+  })
+
+  it('prints no revision line when nothing was given words for it', () => {
+    // The words live in the catalogue (§S); this module holds none, so
+    // without a labeller there is nothing true to print.
+    const model = composeDocument(
+      { ...doc('quotation'), revision: { number: 2, supersedes: 'QUO-0009' } },
+      options(),
+    )
+    expect(model.revisionLine).toBeNull()
+  })
+
   it('prints the actual signature when the asset is to hand (§I)', () => {
     const model = composeDocument(
       { ...doc('invoice'), signatureAssetId: 'ast_1' },

@@ -101,6 +101,14 @@ export interface DocumentRecord {
   /** §E `related_invoice_id`: the invoice a receipt's payment settled, if any. */
   readonly linkedInvoiceId?: string
   /**
+   * §G's "duplicate as Rev 2": the quotation this one revises.
+   *
+   * The link lives on the NEW document, like `convertedFromId`, because the
+   * original is never altered (§G) and Rule #5 froze it. "This one was
+   * replaced" is derived by looking for a document carrying its id.
+   */
+  readonly supersedesId?: string
+  /**
    * The signature printed at the foot of this document (§I). An asset id, not
    * the bytes: the same drawn signature signs many documents, and an asset is
    * immutable, so an issued document's mark cannot change under it (Rule #5).

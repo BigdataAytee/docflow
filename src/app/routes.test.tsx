@@ -1872,3 +1872,279 @@ describe('Signing (§G, §I, §P)', () => {
     })
   })
 })
+
+describe('Duplicate as Rev 2 (§G, Rule #5, §M)', () => {
+  const offer = (over: Partial<MemoryState['documents'][number]> = {}) => (state: MemoryState) => {
+    state.customers.push(customer())
+    state.documents.push({
+      id: 'doc_quote',
+      companyId: DEV_COMPANY_ID,
+      type: 'quotation',
+      status: 'sent',
+      customerId: 'cus_1',
+      currency: 'NGN',
+      lineItems: [
+        {
+          id: 'li_1',
+          description: 'Bag of cement',
+          quantityMilli: quantity(20),
+          unitPriceMinor: 5_000_00,
+          taxable: true,
+        },
+      ],
+      issueDate: '2026-09-01',
+      validUntil: '2026-09-08',
+      issuedReference: 'QUO-0009',
+      frozenLabels: {
+        printedTitle: 'QUOTATION',
+        partyLabel: 'Client',
+        signatureCaption: 'Prepared by',
+        language: 'en',
+      },
+      totalMinor: 100_000_00,
+      ...over,
+    })
+  }
+
+  it('offers it on a quotation that has been sent', async () => {
+    renderAt('/doc/doc_quote', offer())
+    expect(await screen.findByRole('button', { name: 'Make Rev 2' })).toBeInTheDocument()
+  })
+
+  it('offers it on one the customer rejected, which is the whole point', async () => {
+    renderAt('/doc/doc_quote', offer({ status: 'rejected' }))
+    expect(await screen.findByRole('button', { name: 'Make Rev 2' })).toBeInTheDocument()
+  })
+
+  it('offers nothing on a draft, which can simply be edited', async () => {
+    renderAt('/doc/doc_quote', offer({ status: 'draft', issuedReference: null, frozenLabels: null }))
+    expect(await screen.findByRole('button', { name: 'Carry on editing' })).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /Make Rev/ })).not.toBeInTheDocument()
+  })
+
+  it('offers nothing on an invoice, whose corrections are void or credit (Rule #5)', async () => {
+    renderAt('/doc/doc_inv', (state) => {
+      state.documents.push({
+        id: 'doc_inv',
+        companyId: DEV_COMPANY_ID,
+        type: 'invoice',
+        status: 'issued',
+        currency: 'NGN',
+        lineItems: [],
+        issueDate: '2026-09-01',
+        issuedReference: 'INV-0042',
+        frozenLabels: {
+          printedTitle: 'INVOICE',
+          partyLabel: 'Bill to',
+          signatureCaption: 'Authorised signature',
+          language: 'en',
+        },
+        totalMinor: 145_000_00,
+      })
+    })
+    expect(await screen.findByText('INV-0042')).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /Make Rev/ })).not.toBeInTheDocument()
+  })
+
+  it('copies the work into a new draft and leaves the original untouched', async () => {
+    const user = userEvent.setup()
+    const state = renderAt('/doc/doc_quote', offer())
+
+    await user.click(await screen.findByRole('button', { name: 'Make Rev 2' }))
+    await waitFor(() => expect(state.documents).toHaveLength(2))
+
+    const original = state.documents.find((d) => d.id === 'doc_quote')
+    const rev2 = state.documents.find((d) => d.id !== 'doc_quote')
+
+    // §G: originals are never altered. Not the status, not the reference, and
+    // emphatically no "superseded" flag written back onto it (Rule #5).
+    expect(original?.status).toBe('sent')
+    expect(original?.issuedReference).toBe('QUO-0009')
+    expect(original).not.toHaveProperty('supersedesId')
+
+    expect(rev2?.type).toBe('quotation')
+    expect(rev2?.status).toBe('draft')
+    expect(rev2?.issuedReference).toBeNull()
+    expect(rev2?.supersedesId).toBe('doc_quote')
+    expect(rev2?.customerId).toBe('cus_1')
+    expect(rev2?.lineItems[0]?.description).toBe('Bag of cement')
+    // The builder opened on it.
+    expect(await screen.findByRole('button', { name: /Next/ })).toBeInTheDocument()
+  })
+
+  it('does not carry the validity date, which would arrive already expired', async () => {
+    const user = userEvent.setup()
+    const state = renderAt('/doc/doc_quote', offer())
+    await user.click(await screen.findByRole('button', { name: 'Make Rev 2' }))
+    await waitFor(() => expect(state.documents).toHaveLength(2))
+
+    const rev2 = state.documents.find((d) => d.id !== 'doc_quote')
+    expect(rev2?.validUntil).toBeUndefined()
+  })
+
+  it('opens the one that exists instead of making a second (§M)', async () => {
+    const user = userEvent.setup()
+    const state = renderAt('/doc/doc_quote', (seed) => {
+      offer()(seed)
+      seed.documents.push({
+        id: 'doc_rev2',
+        companyId: DEV_COMPANY_ID,
+        type: 'quotation',
+        status: 'sent',
+        customerId: 'cus_1',
+        currency: 'NGN',
+        lineItems: [],
+        issueDate: '2026-09-10',
+        issuedReference: 'QUO-0014',
+        frozenLabels: {
+          printedTitle: 'QUOTATION',
+          partyLabel: 'Client',
+          signatureCaption: 'Prepared by',
+          language: 'en',
+        },
+        totalMinor: 90_000_00,
+        supersedesId: 'doc_quote',
+      })
+    })
+
+    // No second Rev 2, and no second control either: the notice IS the link.
+    expect(screen.queryByRole('button', { name: /Make Rev/ })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Open it' })).not.toBeInTheDocument()
+
+    await user.click(await screen.findByRole('button', { name: /Replaced by Rev 2/ }))
+
+    expect(await screen.findByText('QUO-0014')).toBeInTheDocument()
+    expect(state.documents).toHaveLength(2)
+  })
+
+  it('says at both ends of the chain which offer replaced which (§G)', async () => {
+    const user = userEvent.setup()
+    renderAt('/doc/doc_quote', (seed) => {
+      offer()(seed)
+      seed.documents.push({
+        id: 'doc_rev2',
+        companyId: DEV_COMPANY_ID,
+        type: 'quotation',
+        status: 'sent',
+        customerId: 'cus_1',
+        currency: 'NGN',
+        lineItems: [],
+        issueDate: '2026-09-10',
+        issuedReference: 'QUO-0014',
+        frozenLabels: {
+          printedTitle: 'QUOTATION',
+          partyLabel: 'Client',
+          signatureCaption: 'Prepared by',
+          language: 'en',
+        },
+        totalMinor: 90_000_00,
+        supersedesId: 'doc_quote',
+      })
+    })
+
+    // The replaced offer says so, and the link goes forward.
+    expect(await screen.findByText('Replaced by Rev 2')).toBeInTheDocument()
+    await user.click(screen.getByText('Replaced by Rev 2'))
+
+    // The replacement says what it replaces, and the link goes back.
+    expect(await screen.findByText('Rev 2')).toBeInTheDocument()
+    expect(screen.getByText('Replaces QUO-0009')).toBeInTheDocument()
+  })
+
+  it('says in the LIST which offer was replaced (§G)', async () => {
+    // Two sent quotations look identical in a list, and only one of them is
+    // the live offer — which is the question making a Rev 2 creates.
+    renderAt('/list/quotation', (seed) => {
+      offer()(seed)
+      seed.documents.push({
+        id: 'doc_rev2',
+        companyId: DEV_COMPANY_ID,
+        type: 'quotation',
+        status: 'sent',
+        customerId: 'cus_1',
+        currency: 'NGN',
+        lineItems: [],
+        issueDate: '2026-09-10',
+        issuedReference: 'QUO-0014',
+        frozenLabels: {
+          printedTitle: 'QUOTATION',
+          partyLabel: 'Client',
+          signatureCaption: 'Prepared by',
+          language: 'en',
+        },
+        totalMinor: 90_000_00,
+        supersedesId: 'doc_quote',
+      })
+    })
+
+    expect(await screen.findByText('QUO-0009')).toBeInTheDocument()
+    expect(screen.getByText('QUO-0014')).toBeInTheDocument()
+    // Exactly one row is marked: the one that was replaced.
+    expect(screen.getAllByText('Replaced by Rev 2')).toHaveLength(1)
+  })
+
+  it('makes Rev 3 from Rev 2, counting the chain', async () => {
+    const user = userEvent.setup()
+    const state = renderAt('/doc/doc_rev2', (seed) => {
+      offer()(seed)
+      seed.documents.push({
+        id: 'doc_rev2',
+        companyId: DEV_COMPANY_ID,
+        type: 'quotation',
+        status: 'rejected',
+        customerId: 'cus_1',
+        currency: 'NGN',
+        lineItems: [],
+        issueDate: '2026-09-10',
+        issuedReference: 'QUO-0014',
+        frozenLabels: {
+          printedTitle: 'QUOTATION',
+          partyLabel: 'Client',
+          signatureCaption: 'Prepared by',
+          language: 'en',
+        },
+        totalMinor: 90_000_00,
+        supersedesId: 'doc_quote',
+      })
+    })
+
+    await user.click(await screen.findByRole('button', { name: 'Make Rev 3' }))
+    await waitFor(() => expect(state.documents).toHaveLength(3))
+    expect(state.documents.find((d) => d.supersedesId === 'doc_rev2')).toBeTruthy()
+  })
+
+  it('prints which offer it replaces, so the customer can tell (§G)', async () => {
+    const user = userEvent.setup()
+    renderAt('/edit/doc_rev2', (seed) => {
+      offer()(seed)
+      seed.documents.push({
+        id: 'doc_rev2',
+        companyId: DEV_COMPANY_ID,
+        type: 'quotation',
+        status: 'draft',
+        customerId: 'cus_1',
+        currency: 'NGN',
+        lineItems: [
+          {
+            id: 'li_1',
+            description: 'Bag of cement',
+            quantityMilli: quantity(20),
+            unitPriceMinor: 4_500_00,
+            taxable: true,
+          },
+        ],
+        issueDate: '2026-09-10',
+        issuedReference: null,
+        frozenLabels: null,
+        totalMinor: 90_000_00,
+        supersedesId: 'doc_quote',
+      })
+    })
+
+    for (let step = 0; step < 4; step += 1) {
+      await user.click(await screen.findByRole('button', { name: 'Next' }))
+    }
+    // The real page, as it will print: the reference alone cannot say this.
+    expect(await screen.findByText('Rev 2 · Replaces QUO-0009')).toBeInTheDocument()
+  })
+})

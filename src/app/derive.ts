@@ -21,6 +21,7 @@ import type { SoldDocument } from '../features/analytics/topItems'
 import type { StatementDocument } from '../features/statements/compose'
 import type { BilledInvoice } from '../features/customers/balance'
 import type { ListRow } from '../features/documents/DocumentList'
+import { revisionNumberOf, supersededBy } from '../features/documents/revision'
 
 export const totalOf = (document: DocumentRecord): Money =>
   money(document.currency, document.totalMinor)
@@ -155,6 +156,11 @@ export interface ListRowOptions {
   /** For a draft, which has no issued reference yet (§M). */
   readonly provisionalReference: (document: DocumentRecord) => string
   readonly creditNotes?: readonly CreditNote[]
+  /**
+   * Renders "Replaced by Rev 2" for a superseded offer. Passed in because the
+   * words live in the catalogue (§S) and this module holds none.
+   */
+  readonly supersededLabel?: (revisionNumber: number) => string
 }
 
 /** One row per document, in the shape §G's list page draws. */
@@ -173,6 +179,13 @@ export function listRows(
     )
     const name = document.customerId === undefined ? undefined : names.get(document.customerId)
 
+    // §G's Rev 2, read from the chain rather than stored on the original.
+    const newer = supersededBy(documents, document.id)
+    const note =
+      newer === null || options.supersededLabel === undefined
+        ? undefined
+        : options.supersededLabel(revisionNumberOf(documents, newer))
+
     return {
       id: document.id,
       reference: document.issuedReference ?? options.provisionalReference(document),
@@ -181,6 +194,7 @@ export function listRows(
       ...(name === undefined ? {} : { customerName: name }),
       // A delivery document has no money column at all (§G, §I, §V).
       ...(document.type === 'waybill' ? {} : { amount: totalOf(document) }),
+      ...(note === undefined ? {} : { note }),
     }
   })
 }

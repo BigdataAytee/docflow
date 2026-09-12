@@ -16,6 +16,7 @@ import { HOME, documentPath, newDocumentPath } from '../paths'
 import { DocumentList } from '../../features/documents/DocumentList'
 import { DOCUMENT_TYPES, type DocumentType } from '../../domain/documents/types'
 import { numberingPrefix } from '../../domain/locale/profile'
+import { format } from '../../domain/locale/data/strings'
 import { documentsOf, listRows } from '../derive'
 
 const isDocumentType = (value: string | undefined): value is DocumentType =>
@@ -40,6 +41,10 @@ export function ListScreen({ today = new Date().toISOString().slice(0, 10) }: { 
       // falling back to the locale's own (§D).
       provisionalReference: (document) =>
         `${company?.numberingPrefixes?.[document.type] ?? numberingPrefix(profile, document.type)}-…`,
+      // §G's Rev 2: two sent quotations look identical in a list, and only
+      // one of them is the live offer.
+      supersededLabel: (number) =>
+        format(strings.revision.supersededBy, { number: String(number) }),
     })
   }, [type, documents, payments, customers, today, strings, company, profile, creditNotes])
 

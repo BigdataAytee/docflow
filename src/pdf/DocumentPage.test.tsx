@@ -104,6 +104,13 @@ describe('An invoice prints its payment box (§I, §J)', () => {
     expect(screen.getByText('0123456789')).toBeInTheDocument()
   })
 
+  it('prints the revision beside the reference (§G)', () => {
+    draw({ ...invoice, type: 'quotation', revision: { number: 2, supersedes: 'QUO-0009' } }, 'classic', 20, {
+      revisionLabel: (r) => `Rev ${r.number} · replaces ${r.supersedes}`,
+    }).render()
+    expect(screen.getByText('Rev 2 · replaces QUO-0009')).toBeInTheDocument()
+  })
+
   it('prints the captured signature above the rule (§I)', () => {
     const MARK = 'data:image/svg+xml,%3Csvg%2F%3E'
     draw({ ...invoice, signatureAssetId: 'ast_1' }, 'classic', 20, {
