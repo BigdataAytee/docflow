@@ -286,6 +286,18 @@ export interface UiStrings {
     readonly lastSharedOn: string
     readonly preview: string
   }
+  /** §G's convert action. `{label}` is the target type's own name (§D). */
+  readonly convert: {
+    readonly title: string
+    readonly turnInto: string
+    readonly nothingToConvert: string
+    readonly needsPrices: string
+    readonly alreadyMade: string
+    readonly openIt: string
+    readonly madeFrom: string
+    readonly originalUntouched: string
+    readonly failed: string
+  }
   readonly savedDocument: {
     readonly title: string
     readonly actions: string
@@ -688,6 +700,19 @@ const EN: UiStrings = {
     sharedTimes: 'Sent {count} times',
     lastSharedOn: 'Last sent {date}',
     preview: 'What goes out',
+  },
+  convert: {
+    title: 'Turn this into something else',
+    // No article before {label}: the word comes from the region's own table,
+    // and "a"/"an" cannot be chosen for it here without guessing (§D, §S).
+    turnInto: 'Turn into {label}',
+    nothingToConvert: 'Nothing to make from this one.',
+    needsPrices: 'Prices needed — the delivery carried none.',
+    alreadyMade: 'Already made: {label}',
+    openIt: 'Open it',
+    madeFrom: 'Made from {reference}',
+    originalUntouched: 'This document stays exactly as it is.',
+    failed: 'That could not be made: {reason}',
   },
   savedDocument: {
     title: 'Saved',

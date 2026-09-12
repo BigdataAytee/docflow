@@ -78,6 +78,13 @@ export interface DocumentRecord {
   readonly issueDate?: string
   readonly dueDate?: string
   readonly validUntil?: string
+  /**
+   * §E `converted_from_id`. The link lives on the NEW document only: §G says
+   * originals are never altered, and Rule #5 froze the one it came from — so
+   * the forward direction (`converted_to_id`) is a READ over the documents
+   * rather than a write back. See `src/features/documents/convert.ts`.
+   */
+  readonly convertedFromId?: string
   /** Both null until issue, then frozen forever (§M). */
   readonly issuedReference: string | null
   readonly frozenLabels: FrozenLabels | null

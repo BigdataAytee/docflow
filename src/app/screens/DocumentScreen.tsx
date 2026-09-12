@@ -21,11 +21,20 @@ import { Navigate, useNavigate, useParams } from 'react-router-dom'
 
 import { useCompany } from '../context'
 import { useAppData } from '../store'
-import { HOME, editDocumentPath, statementPath } from '../paths'
+import { HOME, documentPath, editDocumentPath, statementPath } from '../paths'
 import { PageHeader, SkeletonList, StatusBadge } from '../../ui'
 import { PaidSoFarBar } from '../../features/payments/PaidSoFarBar'
 import { PaymentList } from '../../features/payments/PaymentList'
 import { RepeatToggle } from '../../features/recurring/RepeatToggle'
+import { ConvertSheet } from '../../features/documents/ConvertSheet'
+import {
+  ConvertError,
+  type ConvertibleDocument,
+  conversionsFor,
+  convertDocument,
+  convertedFrom,
+  conversionsOf,
+} from '../../features/documents/convert'
 import { type Recurrence, startRepeating, stopRepeating } from '../../features/recurring/schedule'
 import { paidSoFar, prefillAmount, recordPayment } from '../../features/payments/record'
 import { draftChase } from '../../features/payments/chase'
@@ -52,6 +61,8 @@ export function DocumentScreen({ today = new Date().toISOString().slice(0, 10) }
   const [recurrence, setRecurrence] = useState<Recurrence | null>(null)
   const [tone, setTone] = useState<'softer' | 'firmer' | null>(null)
   const [sharing, setSharing] = useState(false)
+  const [converting, setConverting] = useState(false)
+  const [convertProblem, setConvertProblem] = useState<string | null>(null)
 
   // One port per mount. Phase 4 swaps the Capacitor plugin in behind it and no
   // line of this screen changes.
@@ -121,6 +132,22 @@ export function DocumentScreen({ today = new Date().toISOString().slice(0, 10) }
     fill: format,
   })
 
+  const convertible: ConvertibleDocument = {
+    id: record.id,
+    type: record.type,
+    status: record.status,
+    currency: record.currency,
+    lineItems: record.lineItems,
+    ...(record.customerId === undefined ? {} : { customerId: record.customerId }),
+    ...(record.issueDate === undefined ? {} : { issueDate: record.issueDate }),
+  }
+
+  // §G's "links persist", read rather than written: the original is immutable,
+  // so what came from it is found by the link on the new document.
+  const madeFromThis: Partial<Record<typeof record.type, string>> = {}
+  for (const made of conversionsOf(documents, record.id)) madeFromThis[made.type] = made.id
+  const source = convertedFrom(documents, record)
+
   const timesShared = shareCount(shares, record.id)
   const latestShare = lastShared(shares, record.id)
 
@@ -154,6 +181,89 @@ export function DocumentScreen({ today = new Date().toISOString().slice(0, 10) }
             onClick={() => setSharing(true)}
           >
             {strings.savedDocument.sharePdf}
+          </button>
+        )}
+
+        {/* §G's second action on every type that has somewhere to go. */}
+        {conversionsFor(convertible).length > 0 && !converting && (
+          <button
+            type="button"
+            className="min-h-tap w-full rounded-full border border-brand/30 bg-white px-4 text-sm font-semibold text-brand"
+            onClick={() => {
+              setConvertProblem(null)
+              setConverting(true)
+            }}
+          >
+            {strings.convert.title}
+          </button>
+        )}
+
+        {converting && (
+          <ConvertSheet
+            document={convertible}
+            existing={madeFromThis}
+            onClose={() => setConverting(false)}
+            onOpen={(documentId) => {
+              setConverting(false)
+              navigate(documentPath(documentId))
+            }}
+            {...(convertProblem === null ? {} : { error: convertProblem })}
+            onConvert={(to) => {
+              let converted
+              try {
+                converted = convertDocument(convertible, { to, on: today })
+              } catch (cause) {
+                setConvertProblem(
+                  format(strings.convert.failed, {
+                    reason: cause instanceof ConvertError ? cause.message : String(cause),
+                  }),
+                )
+                return
+              }
+
+              void actions
+                .createConverted(
+                  {
+                    type: converted.draft.type,
+                    status: 'draft',
+                    currency: converted.draft.currency,
+                    lineItems: converted.draft.lineItems,
+                    totalMinor: 0,
+                    convertedFromId: converted.convertedFromId,
+                    ...(converted.draft.customerId === undefined
+                      ? {}
+                      : { customerId: converted.draft.customerId }),
+                    ...(converted.draft.issueDate === undefined
+                      ? {}
+                      : { issueDate: converted.draft.issueDate }),
+                  },
+                  // Derived, so a retry is the same document (§M).
+                  converted.idempotencyKey,
+                )
+                .then((created) => {
+                  setConverting(false)
+                  // Straight into the builder: it is a draft, and §G says
+                  // nothing is issued without being looked at.
+                  navigate(editDocumentPath(created.id))
+                })
+                .catch((cause: unknown) =>
+                  setConvertProblem(
+                    format(strings.convert.failed, { reason: String(cause) }),
+                  ),
+                )
+            }}
+          />
+        )}
+
+        {source !== null && (
+          <button
+            type="button"
+            className="min-h-tap w-full rounded-2xl bg-white/70 px-4 text-sm font-medium"
+            onClick={() => navigate(documentPath(source.id))}
+          >
+            {format(strings.convert.madeFrom, {
+              reference: source.issuedReference ?? source.id,
+            })}
           </button>
         )}
 

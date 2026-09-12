@@ -60,6 +60,14 @@ export interface AppActions {
   addCustomer(customer: Omit<Customer, 'id' | 'companyId'>): Promise<Customer>
   updateCustomer(id: string, patch: Partial<Customer>): Promise<void>
   createDraft(type: DocumentType, currency: string): Promise<DocumentRecord>
+  /**
+   * §M: a retried conversion never duplicates, so the caller supplies the
+   * DERIVED key rather than one minted here.
+   */
+  createConverted(
+    draft: Omit<DocumentRecord, 'id' | 'companyId' | 'issuedReference' | 'frozenLabels'>,
+    idempotencyKey: string,
+  ): Promise<DocumentRecord>
   updateDraft(id: string, patch: Partial<DocumentRecord>): Promise<void>
   issue(
     id: string,
@@ -178,6 +186,16 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
               totalMinor: 0,
             },
             key('document.create'),
+          ),
+        )
+      },
+      async createConverted(draft, idempotencyKey) {
+        return after(
+          await repositories.documents.createDraft(
+            { ...draft, companyId },
+            // The key is the conversion's own identity (§M), not a fresh one:
+            // the same conversion twice is one document.
+            { idempotencyKey },
           ),
         )
       },
