@@ -582,9 +582,50 @@ force-kill and recover. Routes being reachable in a browser is a precondition
 for walking it, not the walk.
 
 What §G describes and is still deliberately absent rather than stubbed: the
-convert and sign actions, which need the native bridge (Phase 4); signature
-capture; and the receipt-from-payment flow. Each is a missing screen, not a
-broken one.
+sign action and signature capture, which need the native bridge (Phase 4); and
+the receipt-from-payment flow. Each is a missing screen, not a broken one.
+
+### The convert action (§G, §E, §M)
+
+§G: "Convert offers only what makes sense — quote → invoice or delivery;
+invoice → delivery; delivery → invoice (asks for prices, since deliveries carry
+no money) … Originals are never altered; links persist."
+
+- [x] **`CONVERSIONS` is the whole table** (`convert.ts`), and it is
+      deliberately not symmetric: nothing becomes a quotation, because a
+      quotation is an offer made BEFORE the work and you cannot go back and
+      offer it. A draft offers nothing either — the answer to a draft is to
+      edit it — and neither does a voided document.
+- [x] **A receipt is never a source or a target.** It is evidence of a payment
+      (§K), so it comes from the ledger and nowhere else; converting INTO one
+      would create money nothing was paid for. Asserted over every type, in
+      both directions.
+- [x] **The original is never altered**, and that is why the link lives on the
+      NEW document as `convertedFromId`. §E names `converted_to_id` as well,
+      but writing it would mean writing to a record Rule #5 froze — so the
+      forward direction is a READ over the documents (`convertedInto`,
+      `conversionsOf`). §G's "links persist" holds without a single write to
+      the thing being converted.
+- [x] **A delivery becoming an invoice asks for prices**, because the delivery
+      carried none. The converted draft arrives with unpriced lines and the
+      builder's existing amber band demands them; the sheet warns BEFORE the
+      tap rather than leaving it to be discovered.
+- [x] **A retried conversion never duplicates** (§M). `conversionKeyFor` is
+      derived from (source, target type) rather than generated, so a double
+      tap, a retried upload and two devices all produce one document — and
+      once a conversion exists the sheet offers to OPEN it rather than quietly
+      making a second.
+- [x] **Nothing carries a total, a reference or frozen labels.** Totals
+      recompute at the new type's rules (Rule #3); the new document freezes
+      its own labels at its own issue (§D.2). Named tests for each.
+- [x] **The converted document is a DRAFT**, and the builder opens on it —
+      §G's "nothing is issued without being looked at", applied to a
+      conversion.
+- [x] **37 unit and component tests, 6 route tests**, plus a 13-check browser
+      run against the production build: issue a quotation → convert → the line
+      comes across → the new one is a draft linking back → the quotation is
+      untouched → the sheet now offers to open the invoice → the delivery route
+      drops the price.
 
 ### The share sheet (§B, §G, §M)
 
@@ -796,6 +837,9 @@ needed the bar's accessible name.
 | 41 | `ShareOutcome` has no value meaning "delivered" | §M says a handoff never claims recipient delivery. Enforcing that in the UI would be a promise; enforcing it in the type is a fact. The OS sheet does not report which app was picked or whether anything was sent, so there is nothing true to put in such a field — and a field that cannot be true will eventually be believed. | `src/share/port.ts` |
 | 42 | A sharing event is an `audit_log` row, not a new table | §E lists no `share_events`, and a share IS an action taken on a document — action, entity, record_id, at, device is exactly the shape. Append-only is right too: a handoff happened, and nothing later can un-happen it. | `src/share/events.ts` |
 | 43 | The share text sentence-cases the frozen printed title | §D.2 protects the WORD an issued document was issued under; casing is presentation, and §I's capitals exist for the printed page. The lowering uses the document's own frozen language, so it follows that language's rules rather than the device's, and case-less scripts are untouched. | `src/share/text.ts` |
+| 44 | The conversion link lives on the new document only; the forward direction is derived | §E lists `converted_to_id`, but §G says originals are never altered and Rule #5 froze the document being converted. Writing the forward link would break both. Reading it — "the document carrying this one's id" — keeps §G's "links persist" true with no write to the original at all. | `src/features/documents/convert.ts` |
+| 45 | A conversion key is derived from (source, target), and a second conversion becomes "open it" | §M: retried conversions never duplicate. A derived key makes that arithmetic rather than luck. It also means a DELIBERATE second conversion cannot happen by accident — which is right, because whether one quotation becomes two invoices is a question the owner should be asked, not answered for them by a double tap. | `convert.ts`, `ConvertSheet.tsx` |
+| 46 | No article before a localised label, anywhere | "Make a {label}" reads as "Make a Invoice", and choosing "a" or "an" for a word that comes from the region's own terminology table means guessing at its first sound in every language. "Turn into {label}" is grammatical for every shipped label and translates without the trap. | `strings.ts` (`convert`) |
 
 ## Deviations from the spec
 

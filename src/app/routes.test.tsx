@@ -1046,3 +1046,164 @@ describe('Pressing Save when a document is not ready (§G, §M)', () => {
     await waitFor(() => expect(state.documents[0]?.status).toBe('issued'))
   })
 })
+
+describe('Converting a document (§G, §M)', () => {
+  const quote = (state: MemoryState, status = 'accepted') => {
+    state.customers.push(customer())
+    state.documents.push({
+      id: 'doc_quote',
+      companyId: DEV_COMPANY_ID,
+      type: 'quotation',
+      status,
+      customerId: 'cus_1',
+      currency: 'NGN',
+      lineItems: [
+        {
+          id: 'li_1',
+          description: 'Bag of cement',
+          quantityMilli: quantity(20),
+          unitPriceMinor: 5_000_00,
+          taxable: true,
+        },
+      ],
+      issueDate: '2026-09-01',
+      issuedReference: 'QUO-0009',
+      frozenLabels: {
+        printedTitle: 'QUOTATION',
+        partyLabel: 'Client',
+        signatureCaption: 'Prepared by',
+        language: 'en',
+      },
+      totalMinor: 100_000_00,
+    })
+  }
+
+  it('offers the action on an accepted quotation and not on a draft', async () => {
+    renderAt('/doc/doc_quote', (state) => quote(state))
+    expect(
+      await screen.findByRole('button', { name: 'Turn this into something else' }),
+    ).toBeInTheDocument()
+  })
+
+  it('offers nothing on a receipt, which is evidence of a payment', async () => {
+    renderAt('/doc/doc_rct', (state) => {
+      state.documents.push({
+        id: 'doc_rct',
+        companyId: DEV_COMPANY_ID,
+        type: 'receipt',
+        status: 'issued',
+        currency: 'NGN',
+        lineItems: [],
+        issueDate: '2026-09-01',
+        issuedReference: 'REC-0003',
+        frozenLabels: {
+          printedTitle: 'RECEIPT',
+          partyLabel: 'Received from',
+          signatureCaption: 'Issued by',
+          language: 'en',
+        },
+        totalMinor: 50_000_00,
+      })
+    })
+    expect(await screen.findByText('REC-0003')).toBeInTheDocument()
+    expect(
+      screen.queryByRole('button', { name: 'Turn this into something else' }),
+    ).not.toBeInTheDocument()
+  })
+
+  it('makes a draft invoice from a quotation, leaving the quotation untouched', async () => {
+    const user = userEvent.setup()
+    const state = renderAt('/doc/doc_quote', (state) => quote(state))
+
+    await user.click(await screen.findByRole('button', { name: 'Turn this into something else' }))
+    await user.click(screen.getByRole('button', { name: 'Turn into Invoice' }))
+
+    await waitFor(() => expect(state.documents).toHaveLength(2))
+    const made = state.documents.find((row) => row.type === 'invoice')
+    expect(made?.status).toBe('draft')
+    expect(made?.issuedReference).toBeNull()
+    expect(made?.frozenLabels).toBeNull()
+    expect(made?.customerId).toBe('cus_1')
+    expect(made?.convertedFromId).toBe('doc_quote')
+
+    // The original is exactly as it was (§G).
+    const original = state.documents.find((row) => row.id === 'doc_quote')
+    expect(original?.status).toBe('accepted')
+    expect(original?.issuedReference).toBe('QUO-0009')
+    expect(original).not.toHaveProperty('convertedToId')
+
+    // And the builder opened on the new draft, because nothing is issued unseen.
+    await waitFor(() => expect(screen.getByRole('button', { name: /Next/ })).toBeInTheDocument())
+  })
+
+  it('drops the prices on the way to a delivery (§G, §I)', async () => {
+    const user = userEvent.setup()
+    const state = renderAt('/doc/doc_quote', (state) => quote(state))
+
+    await user.click(await screen.findByRole('button', { name: 'Turn this into something else' }))
+    await user.click(screen.getByRole('button', { name: 'Turn into Waybill' }))
+
+    await waitFor(() => expect(state.documents).toHaveLength(2))
+    const made = state.documents.find((row) => row.type === 'waybill')
+    expect(made?.lineItems[0]?.description).toBe('Bag of cement')
+    expect(made?.lineItems[0]?.unitPriceMinor).toBeUndefined()
+  })
+
+  it('offers to open the conversion that already exists, not a second one', async () => {
+    const user = userEvent.setup()
+    const state = renderAt('/doc/doc_quote', (state) => {
+      quote(state)
+      state.documents.push({
+        id: 'doc_made',
+        companyId: DEV_COMPANY_ID,
+        type: 'invoice',
+        status: 'draft',
+        customerId: 'cus_1',
+        currency: 'NGN',
+        lineItems: [],
+        issuedReference: null,
+        frozenLabels: null,
+        totalMinor: 0,
+        convertedFromId: 'doc_quote',
+      })
+    })
+
+    await user.click(await screen.findByRole('button', { name: 'Turn this into something else' }))
+    expect(screen.getByText('Already made: Invoice')).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Turn into Invoice' })).not.toBeInTheDocument()
+
+    await user.click(screen.getByRole('button', { name: 'Open it' }))
+    await waitFor(() => expect(state.documents).toHaveLength(2))
+    expect(await screen.findByRole('button', { name: 'Carry on editing' })).toBeInTheDocument()
+  })
+
+  it('shows the link back to what it was made from', async () => {
+    const user = userEvent.setup()
+    renderAt('/doc/doc_made', (state) => {
+      quote(state)
+      state.documents.push({
+        id: 'doc_made',
+        companyId: DEV_COMPANY_ID,
+        type: 'invoice',
+        status: 'issued',
+        customerId: 'cus_1',
+        currency: 'NGN',
+        lineItems: [],
+        issueDate: '2026-09-12',
+        issuedReference: 'INV-0050',
+        frozenLabels: {
+          printedTitle: 'INVOICE',
+          partyLabel: 'Bill to',
+          signatureCaption: 'Authorised signature',
+          language: 'en',
+        },
+        totalMinor: 100_000_00,
+        convertedFromId: 'doc_quote',
+      })
+    })
+
+    const back = await screen.findByRole('button', { name: 'Made from QUO-0009' })
+    await user.click(back)
+    expect(await screen.findByText('QUO-0009')).toBeInTheDocument()
+  })
+})
