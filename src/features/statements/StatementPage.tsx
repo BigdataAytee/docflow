@@ -22,6 +22,12 @@ export interface StatementPageProps {
   readonly businessName: string
   readonly customerName: string
   readonly accent?: string
+  /**
+   * Replaces the printed start date. An open-ended statement ("everything")
+   * has no real start, and printing a sentinel year on a document a customer
+   * keeps would be a fiction.
+   */
+  readonly fromLabel?: string
 }
 
 export function StatementPage({
@@ -29,6 +35,7 @@ export function StatementPage({
   businessName,
   customerName,
   accent = '#2b3fd6',
+  fromLabel,
 }: StatementPageProps) {
   const { strings } = useCompany()
   const s = strings.statements
@@ -48,7 +55,7 @@ export function StatementPage({
           <div className="shrink-0 text-end text-xs">
             <p className="font-semibold">{customerName}</p>
             <p className="mt-1 opacity-70">
-              {s.from} {statement.from}
+              {s.from} {fromLabel ?? statement.from}
             </p>
             <p className="opacity-70">
               {s.to} {statement.to}

@@ -66,6 +66,32 @@ export interface UiStrings {
     readonly filterByLabel: string
     readonly clearLabelFilter: string
     readonly noneWithLabel: string
+    readonly add: string
+    readonly newCustomer: string
+    readonly name: string
+    readonly phone: string
+    readonly email: string
+    readonly address: string
+    readonly isCompany: string
+    readonly isPerson: string
+    readonly save: string
+  }
+  readonly contact: {
+    readonly chat: string
+    readonly call: string
+    readonly statement: string
+    readonly noPhone: string
+    readonly balance: string
+    readonly history: string
+    readonly noHistory: string
+    readonly noHistoryBody: string
+    readonly notes: string
+    readonly notesHint: string
+    readonly notesPlaceholder: string
+    readonly newLabel: string
+    readonly saveLabel: string
+    readonly removeLabel: string
+    readonly back: string
   }
   readonly builder: {
     readonly stepOf: string
@@ -315,6 +341,11 @@ export interface UiStrings {
     readonly nothingInPeriod: string
     readonly nothingInPeriodBody: string
     readonly currencyNote: string
+    readonly pickPeriod: string
+    readonly thisMonth: string
+    readonly last3Months: string
+    readonly last12Months: string
+    readonly everything: string
     readonly share: string
   }
   readonly recurring: {
@@ -402,12 +433,38 @@ const EN: UiStrings = {
     paysLate: 'Pays on average {days} days late.',
     paysEarly: 'Pays on average {days} days early.',
     paysOnTime: 'Pays on time.',
-labels: 'Labels',
+    labels: 'Labels',
     addLabel: 'Add a label',
     filterByLabel: 'Filter by label',
     clearLabelFilter: 'Show everyone',
     noneWithLabel: 'Nobody has that label yet.',
     considerPartPayment: 'Consider part payment up front.',
+    add: 'Add a customer',
+    newCustomer: 'New customer',
+    name: 'Name',
+    phone: 'Phone',
+    email: 'Email',
+    address: 'Address',
+    isCompany: 'A business',
+    isPerson: 'A person',
+    save: 'Save',
+  },
+  contact: {
+    chat: 'Chat',
+    call: 'Call',
+    statement: 'Statement',
+    noPhone: 'Add a phone number to chat or call.',
+    balance: 'Balance',
+    history: 'History',
+    noHistory: 'Nothing yet',
+    noHistoryBody: 'Everything you make for this customer shows up here.',
+    notes: 'Notes',
+    notesHint: 'Only you see this. It never prints on a document.',
+    notesPlaceholder: 'Anything worth remembering',
+    newLabel: 'New label',
+    saveLabel: 'Add',
+    removeLabel: 'Remove {label}',
+    back: 'All customers',
   },
   builder: {
     stepOf: 'Step {current} of {total}',
@@ -661,6 +718,11 @@ labels: 'Labels',
     nothingInPeriod: 'Nothing in this period',
     nothingInPeriodBody: 'Pick a wider period, or start from this customer first document.',
     currencyNote: 'All amounts in {currency}.',
+    pickPeriod: 'Period',
+    thisMonth: 'This month',
+    last3Months: 'Last 3 months',
+    last12Months: 'Last 12 months',
+    everything: 'Everything',
     share: 'Share the statement',
   },
   recurring: {

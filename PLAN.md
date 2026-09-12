@@ -581,11 +581,56 @@ device in airplane mode walking create → build → preview in all sixteen desi
 force-kill and recover. Routes being reachable in a browser is a precondition
 for walking it, not the walk.
 
-Two things §G describes are deliberately still absent rather than stubbed: the
-§G contact page (the statement is the part of it that exists, so that is where a
-customer tap goes) and the convert/share/sign actions, which need the native
-bridge (Phase 4). Signature capture and the receipt-from-payment flow are in
-the same bucket. Each is a missing screen, not a broken one.
+What §G describes and is still deliberately absent rather than stubbed: the
+convert / share / sign actions, which need the native bridge (Phase 4);
+signature capture; the receipt-from-payment flow; and the builder's customer
+card, which still shows a raw id where §G wants a searchable dropdown with
+Chat and Call chips and a balance chip. Each is a missing screen, not a broken
+one.
+
+### The contact page (§G — Customers)
+
+- [x] **Header with labels and `+ label`** (`ContactPage.tsx`). Adding reuses
+      `addLabel`, so a label differing only in case or spacing does not become
+      a second one, and an empty label is refused without losing what was typed.
+- [x] **Chat / Call / Statement.** Chat and Call are real links — `wa.me` and
+      `tel:` both work in a browser today and hand off to the installed apps on
+      a phone. Without a phone number they are ABSENT and a line says why,
+      rather than present and dead (§N's rule, applied to a chip).
+- [x] **Balance** — billed all time, paid, owing now and the progress bar, one
+      block per currency because §G forbids one merged figure. The figures come
+      from `customerBalances`, which is property-tested.
+- [x] **The pays-late line** stays silent below `paymentBehaviour`'s two-invoice
+      floor. One data point dressed as a pattern would have the owner asking a
+      good customer for money up front.
+- [x] **History** of every document, newest first, opening each one. A delivery
+      document's row shows no amount, because it carries none (§G, §I, §V).
+- [x] **Notes**, private, with the line saying so. The field is not on the
+      document model at all, so there is no path from here onto a page a
+      customer sees.
+- [x] **The statement covers any period** (`PeriodPicker.tsx`) — four presets
+      plus two date fields, per §G's "for any period". "Everything" leaves the
+      start OPEN rather than guessing a year, and the printed statement says
+      "Everything" instead of a sentinel date, because a fiction on a document
+      a customer keeps is worse than a wide window.
+- [x] **21 component tests and 11 route tests**, plus a browser smoke run
+      against the production build covering the whole path: add a customer →
+      contact page → label → note → statement → widen the period → back.
+
+**Two things this turned up, both fixed here.**
+
+*There was no way to add a customer at all.* `CustomerList` had an `onAdd` prop
+and an empty-state button; nothing passed it, and no add form existed anywhere —
+so the contact page would have been unreachable in the real app. A minimal sheet
+now exists (`CustomerSheet.tsx`): the name is the only thing asked for (Rule #1),
+and everything else is offered and skippable. The `+` persists once the list is
+no longer empty, matching the document lists' FAB.
+
+*`PaidSoFarBar` announced its raw template.* Its `aria-label` was
+`strings.payments.paidOfTotal` unresolved — a screen reader would read
+"{paid} paid of {total}", braces included. Now resolved, and the progress bar
+carries the same spoken text. A defect from Phase 2, found by a test that
+needed the bar's accessible name.
 
 ### Home search (§G, §D.3)
 
@@ -655,6 +700,9 @@ the same bucket. Each is a missing screen, not a broken one.
 | 33 | The dev server seeds one empty company, and nothing else | `npm run dev` runs on memory repositories, which start with no company — so no currency, no region, no prefixes, and every screen correctly showing an empty state. One company is the minimum to hang the app off. It is NOT §R's sample: no customers, no documents, no money, so a seeded figure cannot reach a balance. | `src/app/seed.ts` |
 | 34 | Home's search field is controlled by the screen, and results arrive as a `results` node | §G says typing REPLACES the body, which means the query has to be state somewhere. Keeping it in the screen and passing the rendered results down keeps `Home` a pure view — it decides where results go, never what they are — and keeps the matching in `src/features/search`, where it is already property-tested. | `src/features/home/Home.tsx`, `src/app/screens/HomeScreen.tsx` |
 | 35 | The no-match suggestions are the four type names, resolved for this region | A suggestion that returns nothing is worse than no suggestion. §D.3 guarantees a type's own regional word finds that type's documents, so these are the only chips that cannot disappoint — and they change with the region for free. | `src/features/search/SearchResults.tsx` |
+| 36 | "Everything" on a statement is an open start, not a guessed year | A statement's balance brought forward is meaningless if the window's start is invented. `OPEN_START` is a sentinel the composer treats as "before everything", and the printed page shows the WORD rather than the sentinel — a shared PDF must never carry a date nobody chose. | `src/features/statements/PeriodPicker.tsx` |
+| 37 | Chat and Call are absent without a phone number, never disabled | §N's rule — an unavailable capability is stated plainly, never dressed up — applies to a chip as much as to a model. A greyed control invites a tap that cannot work; a line saying "add a phone number" tells the owner what to do about it. | `src/features/customers/ContactPage.tsx` |
+| 38 | Adding a customer asks for a name and nothing else | Rule #1 — no new required fields, ever. A customer typed in mid-document should cost one field, not six, so kind, phone, email and address are all offered and all skippable, and an untyped one is ABSENT on the record rather than an empty string that would print as a blank line (§I). | `src/features/customers/CustomerSheet.tsx` |
 
 ## Deviations from the spec
 
