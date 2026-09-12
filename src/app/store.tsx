@@ -63,10 +63,12 @@ export interface AppActions {
   updateCustomer(id: string, patch: Partial<Customer>): Promise<void>
   createDraft(type: DocumentType, currency: string): Promise<DocumentRecord>
   /**
-   * §M: a retried conversion never duplicates, so the caller supplies the
-   * DERIVED key rather than one minted here.
+   * A draft created under a key the CALLER derives — a conversion's
+   * `conv:<source>:<type>`, a receipt's `rct:<payment>`. §M requires retried
+   * creates, conversions and recurrence jobs never to duplicate, and a derived
+   * key makes that arithmetic rather than luck.
    */
-  createConverted(
+  createDraftWithKey(
     draft: Omit<DocumentRecord, 'id' | 'companyId' | 'issuedReference' | 'frozenLabels'>,
     idempotencyKey: string,
   ): Promise<DocumentRecord>
@@ -76,7 +78,12 @@ export interface AppActions {
     issued: { reference: string; frozenLabels: FrozenLabels; totalMinor: number },
   ): Promise<void>
   transition(id: string, to: string): Promise<void>
-  recordPayment(payment: Omit<Payment, 'id'>): Promise<Payment>
+  /**
+   * `idempotencyKey` is optional and means "this submission": pass a key
+   * derived from the gesture and a double tap records one payment, not two
+   * (§M). Money is the one place where a retry must never add (Rule #3).
+   */
+  recordPayment(payment: Omit<Payment, 'id'>, idempotencyKey?: string): Promise<Payment>
   reversePayment(paymentId: string): Promise<void>
   rememberItem(item: Omit<SavedItem, 'id' | 'companyId' | 'timesUsed'>): Promise<void>
   addExpense(expense: Omit<Expense, 'id' | 'companyId'>): Promise<void>
@@ -200,12 +207,13 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
           ),
         )
       },
-      async createConverted(draft, idempotencyKey) {
+      async createDraftWithKey(draft, idempotencyKey) {
         return after(
           await repositories.documents.createDraft(
             { ...draft, companyId },
-            // The key is the conversion's own identity (§M), not a fresh one:
-            // the same conversion twice is one document.
+            // The key is the operation's own identity (§M), not a fresh one:
+            // the same conversion, or the same payment's receipt, is one
+            // document however many times it is asked for.
             { idempotencyKey },
           ),
         )
@@ -222,8 +230,15 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
         await repositories.documents.transition(id, to, key('document.transition'))
         await load()
       },
-      async recordPayment(payment) {
-        return after(await repositories.payments.record(payment, key('payment.record')))
+      async recordPayment(payment, idempotencyKey) {
+        return after(
+          await repositories.payments.record(
+            payment,
+            idempotencyKey === undefined
+              ? key('payment.record')
+              : { idempotencyKey },
+          ),
+        )
       },
       async reversePayment(paymentId) {
         await repositories.payments.reverse(paymentId, key('payment.reverse'))

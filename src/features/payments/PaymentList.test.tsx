@@ -74,7 +74,7 @@ describe('Each payment carries its own Receipt button (§G)', () => {
       <PaymentList payments={[part]} prefill={NGN(95_000_00)} onRecord={() => {}} onReceipt={() => {}} />,
     )
     expect(screen.getByText('₦50,000.00')).toBeInTheDocument()
-    expect(screen.getByText(/2026-09-11 · bank_transfer · GTB\/8842/)).toBeInTheDocument()
+    expect(screen.getByText(/2026-09-11 · Bank transfer · GTB\/8842/)).toBeInTheDocument()
   })
 
   it('hands the right payment to the receipt action', async () => {
@@ -85,6 +85,29 @@ describe('Each payment carries its own Receipt button (§G)', () => {
     )
     await user.click(screen.getByRole('button', { name: 'Receipt' }))
     expect(onReceipt).toHaveBeenCalledWith(part)
+  })
+
+  it('names the button with the region word, not a catalogue string (Rule #4)', () => {
+    // A Spanish-speaking market calls it a recibo. The word on the button has
+    // to follow the terminology table, or one document has two names in one
+    // app (§D).
+    const repositories = createMemoryRepositories(emptyState())
+    render(
+      <CompanyProvider
+        companyId="co_1"
+        repositories={repositories}
+        profile={{ locale: 'ES' }}
+        language="en"
+      >
+        <PaymentList
+          payments={[part]}
+          prefill={NGN(95_000_00)}
+          onRecord={() => {}}
+          onReceipt={() => {}}
+        />
+      </CompanyProvider>,
+    )
+    expect(screen.getByRole('button', { name: 'Recibo' })).toBeInTheDocument()
   })
 
   it('hides a reversed payment from the list (§E)', () => {

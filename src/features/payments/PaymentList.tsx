@@ -10,10 +10,12 @@ import { useState } from 'react'
 
 import { useCompany } from '../../app/context'
 import { EmptyState } from '../../ui'
+import { label as typeLabel } from '../../domain/locale/profile'
 import type { Money } from '../../domain/money/money'
 import { money } from '../../domain/money/money'
 import { effectivePayments, type Payment } from '../../domain/payments/ledger'
 import { formatMoney } from '../customers/formatMoney'
+import { methodName } from './methods'
 
 export interface PaymentListProps {
   readonly payments: readonly Payment[]
@@ -23,7 +25,12 @@ export interface PaymentListProps {
 }
 
 export function PaymentList({ payments, prefill, onRecord, onReceipt }: PaymentListProps) {
-  const { strings } = useCompany()
+  const { profile, strings } = useCompany()
+  // Rule #4: the word on this button is the type's own label, resolved through
+  // the terminology table — not a UI string. A Nigerian owner reading English
+  // and a Mexican owner reading English do not see the same word here, and
+  // that is the whole point of §D.
+  const receiptLabel = typeLabel(profile, 'receipt')
   const [open, setOpen] = useState(false)
   // Prefilled to the balance (§G). Changing it downward is a part payment,
   // which needs no separate control — it is the same field with a smaller sum.
@@ -49,7 +56,7 @@ export function PaymentList({ payments, prefill, onRecord, onReceipt }: PaymentL
                   {formatMoney(payment.amount)}
                 </span>
                 <span className="block truncate text-xs opacity-70">
-                  {payment.paidAt.slice(0, 10)} · {payment.method}
+                  {payment.paidAt.slice(0, 10)} · {methodName(strings, payment.method)}
                   {payment.reference !== undefined && ` · ${payment.reference}`}
                 </span>
               </span>
@@ -58,7 +65,7 @@ export function PaymentList({ payments, prefill, onRecord, onReceipt }: PaymentL
                 onClick={() => onReceipt(payment)}
                 className="min-h-tap shrink-0 rounded-full bg-receipt-tint px-3 text-xs font-semibold text-receipt-accent"
               >
-                {strings.payments.receipt}
+                {receiptLabel}
               </button>
             </li>
           ))}

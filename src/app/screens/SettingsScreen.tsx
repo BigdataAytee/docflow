@@ -25,6 +25,8 @@ import { TaxSettings } from '../../features/settings/TaxSettings'
 import { DataAndSync } from '../../features/settings/DataAndSync'
 import { applyLabelOverride, applyRegion, regionProfile } from '../../features/settings/region'
 import { PPM, percentToPpm } from '../../domain/money/money'
+import type { UiStrings } from '../../domain/locale/data/strings'
+import { ALWAYS_AVAILABLE, methodName } from '../../features/payments/methods'
 
 const isPanel = (value: string | undefined): value is SettingsPanel =>
   value !== undefined && (SETTINGS_PANELS as readonly string[]).includes(value)
@@ -138,7 +140,7 @@ export function SettingsPanelScreen() {
         <PaymentSettings
           currency={company.currency}
           bankValues={company.bankFields}
-          methods={paymentMethods(company, strings.settings.bankTransfer)}
+          methods={paymentMethods(company, strings)}
           onBankValue={(kind, value) =>
             void actions.updateCompany({ bankFields: { ...company.bankFields, [kind]: value } })
           }
@@ -177,13 +179,13 @@ function safeTaxLabel(region: string, fallback: string): string {
  */
 function paymentMethods(
   company: NonNullable<ReturnType<typeof useAppData>['company']>,
-  bankTransferLabel: string,
+  strings: UiStrings,
 ) {
-  return [
-    {
-      id: 'bank_transfer',
-      name: bankTransferLabel,
-      enabled: company.enabledPaymentMethods.includes('bank_transfer'),
-    },
-  ]
+  return ALWAYS_AVAILABLE.map((id) => ({
+    id,
+    // One source for the wording, so the toggle here and the picker on a
+    // payment can never disagree about what a method is called.
+    name: methodName(strings, id),
+    enabled: company.enabledPaymentMethods.includes(id),
+  }))
 }
