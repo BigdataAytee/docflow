@@ -477,3 +477,197 @@ describe('Home search replaces the body with results (§G, §D.3)', () => {
     expect(within(await screen.findByLabelText('Documents')).getByText('WB-0007')).toBeInTheDocument()
   })
 })
+
+describe('The contact page (§G — Customers)', () => {
+  const seedContact = (state: MemoryState) => {
+    state.customers.push({ ...customer(), phone: '+234 803 111 2222', labels: ['Wholesale'] })
+    state.documents.push({
+      id: 'doc_inv',
+      companyId: DEV_COMPANY_ID,
+      type: 'invoice',
+      status: 'issued',
+      customerId: 'cus_1',
+      currency: 'NGN',
+      lineItems: [],
+      issueDate: '2026-09-01',
+      dueDate: '2026-09-04',
+      issuedReference: 'INV-0042',
+      frozenLabels: {
+        printedTitle: 'INVOICE',
+        partyLabel: 'Bill to',
+        signatureCaption: 'Authorised signature',
+        language: 'en',
+      },
+      totalMinor: 145_000_00,
+    })
+    state.payments.push({
+      id: 'pay_1',
+      customerId: 'cus_1',
+      amount: NGN(50_000_00),
+      paidAt: '2026-09-10T09:00:00Z',
+      method: 'bank_transfer',
+      source: 'manual',
+      allocations: [
+        { id: 'pay_1:a', paymentId: 'pay_1', invoiceId: 'doc_inv', amount: NGN(50_000_00) },
+      ],
+    })
+  }
+
+  it('opens from the customer list', async () => {
+    const user = userEvent.setup()
+    renderAt('/customers', seedContact)
+    await user.click(await screen.findByText('Ade Stores'))
+    expect(await screen.findByRole('heading', { name: 'Ade Stores' })).toBeInTheDocument()
+    expect(screen.getByLabelText('Balance')).toHaveTextContent('₦95,000.00')
+  })
+
+  it('opens from a Home search result', async () => {
+    const user = userEvent.setup()
+    renderAt('/', seedContact)
+    await user.type(await screen.findByRole('searchbox', { name: /Search/i }), 'Ade')
+    await user.click(within(await screen.findByLabelText('Customers')).getByText('Ade Stores'))
+    expect(await screen.findByLabelText('Balance')).toBeInTheDocument()
+  })
+
+  it('lists this customer history and opens a document from it', async () => {
+    const user = userEvent.setup()
+    renderAt('/customers/cus_1', seedContact)
+    const history = await screen.findByLabelText('History')
+    expect(within(history).getByText('INV-0042')).toBeInTheDocument()
+    await user.click(within(history).getByText('INV-0042'))
+    expect(await screen.findByRole('progressbar', { name: /paid of/ })).toBeInTheDocument()
+  })
+
+  it('saves a new label to the record', async () => {
+    const user = userEvent.setup()
+    const state = renderAt('/customers/cus_1', seedContact)
+    await user.type(await screen.findByLabelText('New label'), 'VIP')
+    await user.click(screen.getByRole('button', { name: 'Add' }))
+    await waitFor(() => expect(state.customers[0]?.labels).toEqual(['Wholesale', 'VIP']))
+  })
+
+  it('saves a private note to the record', async () => {
+    const user = userEvent.setup()
+    const state = renderAt('/customers/cus_1', seedContact)
+    await user.type(await screen.findByLabelText('Notes'), 'Pays after harvest')
+    await user.tab()
+    await waitFor(() => expect(state.customers[0]?.privateNote).toBe('Pays after harvest'))
+  })
+
+  it('sends an unknown customer back to the list', async () => {
+    renderAt('/customers/nobody', seedContact)
+    expect(await screen.findByText('Ade Stores')).toBeInTheDocument()
+    expect(screen.queryByLabelText('Balance')).not.toBeInTheDocument()
+  })
+
+  it('reaches the statement, and back again', async () => {
+    const user = userEvent.setup()
+    renderAt('/customers/cus_1', seedContact)
+    await user.click(await screen.findByRole('button', { name: 'Statement' }))
+    expect(await screen.findByLabelText('Statement')).toBeInTheDocument()
+
+    await user.click(screen.getByRole('button', { name: 'Ade Stores' }))
+    expect(await screen.findByLabelText('History')).toBeInTheDocument()
+  })
+})
+
+describe('The statement covers any period (§G)', () => {
+  const seedTwoMonths = (state: MemoryState) => {
+    state.customers.push(customer())
+    for (const [id, day, minor] of [
+      ['doc_old', '2026-03-02', 10_000_00],
+      ['doc_new', '2026-09-02', 20_000_00],
+    ] as const) {
+      state.documents.push({
+        id,
+        companyId: DEV_COMPANY_ID,
+        type: 'invoice',
+        status: 'issued',
+        customerId: 'cus_1',
+        currency: 'NGN',
+        lineItems: [],
+        issueDate: day,
+        issuedReference: `INV-${id}`,
+        frozenLabels: {
+          printedTitle: 'INVOICE',
+          partyLabel: 'Bill to',
+          signatureCaption: 'Authorised signature',
+          language: 'en',
+        },
+        totalMinor: minor,
+      })
+    }
+  }
+
+  it('narrows to this month and widens to everything', async () => {
+    const user = userEvent.setup()
+    renderAt('/customers/cus_1/statement/NGN', seedTwoMonths)
+
+    // Twelve months is the opening offer, and both invoices fall inside it.
+    const statement = await screen.findByLabelText('Statement')
+    expect(statement).toHaveTextContent('INV-doc_old')
+    expect(statement).toHaveTextContent('INV-doc_new')
+
+    await user.click(screen.getByRole('button', { name: 'This month' }))
+    await waitFor(() =>
+      expect(screen.getByLabelText('Statement')).not.toHaveTextContent('INV-doc_old'),
+    )
+    expect(screen.getByLabelText('Statement')).toHaveTextContent('INV-doc_new')
+    // What fell outside the window is brought forward, not dropped.
+    expect(screen.getByLabelText('Statement')).toHaveTextContent('Balance brought forward')
+
+    await user.click(screen.getByRole('button', { name: 'Everything' }))
+    await waitFor(() =>
+      expect(screen.getByLabelText('Statement')).toHaveTextContent('INV-doc_old'),
+    )
+  })
+
+  it('prints "Everything" rather than a sentinel year on an open-ended statement', async () => {
+    const user = userEvent.setup()
+    renderAt('/customers/cus_1/statement/NGN', seedTwoMonths)
+    await user.click(await screen.findByRole('button', { name: 'Everything' }))
+    const statement = screen.getByLabelText('Statement')
+    expect(statement).toHaveTextContent('From Everything')
+    expect(statement).not.toHaveTextContent('0001-01-01')
+  })
+})
+
+describe('Adding a customer (§G)', () => {
+  it('offers the first one from the empty state, saves, and lands on the contact page', async () => {
+    const user = userEvent.setup()
+    const state = renderAt('/customers')
+
+    await user.click(await screen.findByRole('button', { name: 'Add your first customer' }))
+    await user.type(screen.getByLabelText('Name'), 'Ade Stores')
+    await user.type(screen.getByLabelText('Phone'), '+234 803 111 2222')
+    await user.click(screen.getByRole('button', { name: 'Save' }))
+
+    await waitFor(() => expect(state.customers).toHaveLength(1))
+    expect(state.customers[0]?.name).toBe('Ade Stores')
+    expect(state.customers[0]?.labels).toEqual([])
+    expect(await screen.findByLabelText('Balance')).toBeInTheDocument()
+  })
+
+  it('asks for a name and nothing else (Rule #1)', async () => {
+    const user = userEvent.setup()
+    const state = renderAt('/customers')
+    await user.click(await screen.findByRole('button', { name: 'Add your first customer' }))
+
+    expect(screen.getByRole('button', { name: 'Save' })).toBeDisabled()
+    await user.type(screen.getByLabelText('Name'), 'Bisi')
+    await user.click(screen.getByRole('button', { name: 'Save' }))
+
+    await waitFor(() => expect(state.customers).toHaveLength(1))
+    expect(state.customers[0]?.phone).toBeUndefined()
+    expect(state.customers[0]?.address).toBeUndefined()
+  })
+
+  it('keeps a `+` once there is somebody in the list', async () => {
+    const user = userEvent.setup()
+    renderAt('/customers', (state) => {
+      state.customers.push(customer())
+    })
+    await user.click(await screen.findByRole('button', { name: 'Add a customer' }))
+    expect(screen.getByLabelText('Add a customer')).toBeInTheDocument()
+  })
+})

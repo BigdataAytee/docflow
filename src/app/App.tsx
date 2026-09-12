@@ -36,7 +36,7 @@ import { HomeScreen } from './screens/HomeScreen'
 import { ListScreen } from './screens/ListScreen'
 import { BuilderScreen, NewDocumentScreen } from './screens/BuilderScreen'
 import { DocumentScreen } from './screens/DocumentScreen'
-import { CustomersScreen, StatementScreen } from './screens/CustomersScreen'
+import { ContactScreen, CustomersScreen, StatementScreen } from './screens/CustomersScreen'
 import { AnalyticsScreen } from './screens/AnalyticsScreen'
 import { SettingsIndexScreen, SettingsPanelScreen } from './screens/SettingsScreen'
 import { WelcomeScreen } from './screens/WelcomeScreen'
@@ -176,6 +176,7 @@ export function AppRoutes() {
         <Route path="/list/:type" element={<ListScreen />} />
         <Route path="/doc/:id" element={<DocumentScreen />} />
         <Route path="/customers" element={<CustomersScreen />} />
+        <Route path="/customers/:customerId" element={<ContactScreen />} />
         <Route path="/customers/:customerId/statement/:currency" element={<StatementScreen />} />
         <Route path="/analytics" element={<AnalyticsScreen />} />
         <Route path="/settings" element={<SettingsIndexScreen />} />

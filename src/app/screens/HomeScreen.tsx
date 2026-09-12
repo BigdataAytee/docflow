@@ -17,12 +17,11 @@ import { useNavigate } from 'react-router-dom'
 
 import { useCompany } from '../context'
 import { useAppData } from '../store'
-import { documentPath, listPath, settingsPath, statementPath } from '../paths'
+import { customerPath, documentPath, listPath, settingsPath } from '../paths'
 import { Home } from '../../features/home/Home'
 import { needsAttention, outstandingByCurrency, receivedThisMonth } from '../../features/home/stats'
 import { SearchResults } from '../../features/search/SearchResults'
 import { buildIndex, search, type IndexEntry } from '../../features/search'
-import { statementCurrencies } from '../../features/statements/compose'
 import { formatMoney } from '../../features/customers/formatMoney'
 import { SkeletonList } from '../../ui'
 import { numberingPrefix } from '../../domain/locale/profile'
@@ -32,7 +31,6 @@ import {
   displayStatus,
   dueDates,
   statDocuments,
-  statementDocuments,
   totalOf,
 } from '../derive'
 
@@ -150,20 +148,7 @@ export function HomeScreen({ now = new Date() }: { now?: Date }) {
                 results={results}
                 detailOf={detailOf}
                 onOpenDocument={(id) => navigate(documentPath(id))}
-                onOpenCustomer={(id) => {
-                  // §G's contact page is not built; the statement is the part
-                  // of it that exists, so that is where a customer goes.
-                  const currency = statementCurrencies(
-                    id,
-                    statementDocuments(documents),
-                    payments,
-                  )[0]
-                  navigate(
-                    currency === undefined
-                      ? statementPath(id, company?.currency ?? 'NGN')
-                      : statementPath(id, currency),
-                  )
-                }}
+                onOpenCustomer={(id) => navigate(customerPath(id))}
                 onOpenItem={() => navigate(settingsPath('items'))}
                 onSuggest={setQuery}
                 onClear={() => setQuery('')}

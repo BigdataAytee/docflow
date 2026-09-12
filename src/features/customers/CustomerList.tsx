@@ -148,6 +148,19 @@ export function CustomerList({ invoices, payments, onOpen, onAdd }: CustomerList
           />
         )}
 
+        {/* The empty state offers the first one; after that the `+` is how
+            another is added, matching the document lists' FAB (§G). */}
+        {onAdd !== undefined && visible !== null && visible.length > 0 && (
+          <button
+            type="button"
+            onClick={onAdd}
+            aria-label={strings.customers.add}
+            className="mb-2 grid h-11 w-11 place-items-center rounded-full bg-brand text-xl font-bold text-white"
+          >
+            +
+          </button>
+        )}
+
         {visible !== null && visible.length > 0 && (
           <ul className="space-y-2">
             {visible.map((customer) => (
