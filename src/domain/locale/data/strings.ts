@@ -170,6 +170,17 @@ export interface UiStrings {
     readonly noneBody: string
     readonly noMatch: string
   }
+  readonly search: {
+    readonly documents: string
+    readonly customers: string
+    readonly items: string
+    readonly matches: string
+    readonly noMatch: string
+    readonly noMatchBody: string
+    readonly tryOneOfThese: string
+    readonly clear: string
+    readonly openInSettings: string
+  }
   readonly home: {
     readonly outstanding: string
     readonly receivedThisMonth: string
@@ -501,6 +512,17 @@ labels: 'Labels',
     none: 'Nothing here yet',
     noneBody: 'Make your first one — it takes a minute.',
     noMatch: 'Nothing matched that search.',
+  },
+  search: {
+    documents: 'Documents',
+    customers: 'Customers',
+    items: 'Things you sell',
+    matches: '{count} found',
+    noMatch: 'Nothing matched "{query}"',
+    noMatchBody: 'Search by a name, a number, an amount, or what you sold.',
+    tryOneOfThese: 'Try one of these',
+    clear: 'Clear the search',
+    openInSettings: 'In your saved list',
   },
   home: {
     outstanding: 'Outstanding',
