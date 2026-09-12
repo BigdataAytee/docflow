@@ -1,0 +1,54 @@
+/**
+ * One list page per type (§G — "never combined tabs").
+ *
+ * The type comes from the URL as the INTERNAL name, so this reads it, checks
+ * it is really one of the four, and hands it to `DocumentList`, which resolves
+ * the word through the locale layer. An unknown type is a 404 rather than an
+ * empty list under a made-up heading.
+ */
+
+import { useMemo } from 'react'
+import { Navigate, useNavigate, useParams } from 'react-router-dom'
+
+import { useCompany } from '../context'
+import { useAppData } from '../store'
+import { HOME, documentPath, newDocumentPath } from '../paths'
+import { DocumentList } from '../../features/documents/DocumentList'
+import { DOCUMENT_TYPES, type DocumentType } from '../../domain/documents/types'
+import { numberingPrefix } from '../../domain/locale/profile'
+import { documentsOf, listRows } from '../derive'
+
+const isDocumentType = (value: string | undefined): value is DocumentType =>
+  value !== undefined && (DOCUMENT_TYPES as readonly string[]).includes(value)
+
+export function ListScreen({ today = new Date().toISOString().slice(0, 10) }: { today?: string }) {
+  const { type } = useParams<{ type: string }>()
+  const { profile, strings } = useCompany()
+  const { company, customers, documents, payments, loading } = useAppData()
+  const navigate = useNavigate()
+
+  const rows = useMemo(() => {
+    if (!isDocumentType(type)) return []
+    return listRows(documentsOf(documents, type), {
+      payments,
+      customers,
+      today,
+      statusWords: strings.statuses,
+      // §M: "drafts show provisional references". The company prefix wins,
+      // falling back to the locale's own (§D).
+      provisionalReference: (document) =>
+        `${company?.numberingPrefixes?.[document.type] ?? numberingPrefix(profile, document.type)}-…`,
+    })
+  }, [type, documents, payments, customers, today, strings, company, profile])
+
+  if (!isDocumentType(type)) return <Navigate to={HOME} replace />
+
+  return (
+    <DocumentList
+      type={type}
+      rows={loading ? null : rows}
+      onOpen={(id) => navigate(documentPath(id))}
+      onNew={() => navigate(newDocumentPath(type))}
+    />
+  )
+}

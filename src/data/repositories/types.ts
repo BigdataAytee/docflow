@@ -32,6 +32,24 @@ export interface Company {
   readonly numberingPrefixes: Partial<Record<DocumentType, string>>
   readonly bankFields: Record<string, string>
   readonly enabledPaymentMethods: readonly string[]
+  /**
+   * The rest of §E's `companies` row: branding, the tax defaults and the
+   * saved signature. These were missing while the screens that own them
+   * took their values as props; a Settings screen with nowhere to save is
+   * not a setting, so they live here now.
+   *
+   * Rates are PARTS PER MILLION (§K) — 7.5% is 75_000 — so a rate is an
+   * integer and never a float, the same rule that governs amounts (Rule #3).
+   */
+  readonly brandColour?: string
+  readonly nameStyle?: 'classic' | 'serif' | 'stacked' | 'ruled' | 'monogram'
+  readonly logoSize?: 'S' | 'M' | 'L'
+  readonly logoAssetId?: string
+  readonly taxRatePpm?: number
+  readonly whtRatePpm?: number
+  readonly defaultSignatureAssetId?: string
+  /** §G validates "the signature requirement" at issue. */
+  readonly signatureRequired?: boolean
 }
 
 export interface Customer {

@@ -14,7 +14,7 @@ claims nothing the gates have not proven (§X).
 | --- | --- | --- | --- |
 | **0** | Spikes and reconciliation | tier table + logo rung published; PLAN reconciled; terminology drafts in review; money tests green | **in progress** — spikes need devices |
 | **1** | Foundation | cross-company denial; money/transition/label property tests; encrypted SQLite; auth ≤ legacy taps | **code complete, gate NOT passed** — 2 of 4 clauses unverifiable here (see below) |
-| **2** | Core offline app | the airplane-mode walk-through on a physical device | **code complete** — gate needs a device |
+| **2** | Core offline app | the airplane-mode walk-through on a physical device | **code complete and routed** — gate needs a device |
 | **2.5** | Remaining improvements | each §L behaviour verified offline; "Kept" moves the moment an expense is added; a reissued receipt never increments income | **gate passed** |
 | **3** | Sync | five offline documents arrive once; two-device edits retain both; no chaos scenario double-counts, resurrects or alters a frozen label | **code complete** — gate verified at logic level |
 | 4 | Native polish | installable builds pass all flows on physical Android and iOS | not started |
@@ -530,6 +530,66 @@ the whole difference between a passing gate and a green test run.
 
 ---
 
+## The router — the screens are reachable
+
+Phases 1-3 and 2.5 built every screen as a tested component, and `src/app/App.tsx`
+stayed the Phase 0 status page, so nothing navigated to any of them. §Q puts the
+screens in Phase 2; this closes that gap rather than opening new scope.
+
+### Done
+
+- [x] **One route per §G page** (`src/app/paths.ts`, `src/app/App.tsx`) — Home,
+      a list page per type, the builder, the saved document, customers, the
+      statement, the business page, the settings index and its six panels,
+      first run, and a plain "that page is not here" for anything else.
+      Paths carry the INTERNAL type (`/list/waybill`, never
+      `/list/delivery-note`): a localised word in a URL would be a fifth place
+      a document name lives, and it would break every saved link the moment a
+      business changed region.
+- [x] **One data seam** (`src/app/store.tsx`) — screens read records through
+      `src/data/repositories` and nothing else, so the same routes run on
+      memory today, SQLite in Phase 4 and Supabase in Phase 5 without a line
+      changing above that file. Every mutation carries an idempotency key (§M).
+- [x] **Read-time derivation** (`src/app/derive.ts`) — paid, part paid, late
+      and out-of-date are computed where they are displayed, from the ledger
+      (Rule #3). A draft or a cancelled document keeps its stored word, because
+      there is nothing to derive about money for one.
+- [x] **The saved document** (`src/app/screens/DocumentScreen.tsx`) — §G's
+      screen that Phase 2 skipped, which is why the paid-so-far bar, the
+      payments list, the chase row and the Repeat toggle had nowhere to live.
+      It is their host and nothing more. An issued document has no edit control
+      on it (Rule #5).
+- [x] **The locale profile hangs off the company record**, so a region change
+      in Settings re-renders the whole tree under the new profile and §D's
+      "effective immediately, offline, everywhere at once" needs no broadcast.
+      A route test asserts the type renames while an issued document's frozen
+      labels do not move.
+- [x] **19 route tests** — every page reachable, the tab bar marking the page
+      you are on, `/new/:type` creating exactly one draft (including under
+      StrictMode, which is how it ships), the five-step walk issuing with a
+      frozen reference and labels, and adding an expense moving "Kept" on the
+      real screen through the real repository.
+- [x] **Smoke-tested in a real browser** against the production build: all nine
+      routes render, the create-a-draft journey works, and the only console
+      error is the missing favicon — §Q Phase 4's splash-and-icon work.
+
+### What this is not
+
+**It is not the Phase 2 gate.** That gate is a fresh install on a physical
+device in airplane mode walking create → build → preview in all sixteen designs
+→ issue → PDF → share → part payment → linked receipt → sign a delivery →
+force-kill and recover. Routes being reachable in a browser is a precondition
+for walking it, not the walk.
+
+Three things §G describes are deliberately still absent rather than stubbed:
+Home's search results body, the §G contact page (the statement is the part of
+it that exists, so that is where a customer tap goes), and the convert/share/
+sign actions, which need the native bridge (Phase 4). Signature capture and the
+receipt-from-payment flow are in the same bucket. Each is a missing screen, not
+a broken one.
+
+---
+
 ## Decisions taken
 
 | # | Decision | Why | Where |
@@ -563,6 +623,10 @@ the whole difference between a passing gate and a green test run.
 | 27 | Recurrence keys are derived from (document, month), not generated | An idempotency key that is generated has to be stored and looked up to be idempotent; one that is derived is idempotent by arithmetic. Two devices, a retried upload and a crash halfway through catch-up all produce the same key without coordinating. | `src/features/recurring/schedule.ts` |
 | 28 | Catch-up creates at most 12 missed months and REPORTS the rest | §L4 says missed periods are created on next launch. A phone opened after five years would dump sixty drafts into the list, which is its own kind of broken. Dropping them silently is worse, so `catchUp` returns the months it skipped and the UI can say so. Recorded as a deviation below. | `src/features/recurring/schedule.ts` |
 | 29 | A credit note is capped at the invoice total, not at the outstanding balance | Crediting more than the document would make the invoice worth less than nothing. Money going back to a customer who has already paid is a refund — money OUT — and is recorded as one, not as a negative invoice. | `src/features/credits/issue.ts` |
+| 30 | Route paths carry the internal type, never the label | `/list/waybill` survives a region change; `/list/delivery-note` would break every saved link the moment §D's terminology moved, and would be a fifth place a document name lives when Rule #4 allows one. Paths are built by functions so the lint rule still sees no type-name literal in UI code. | `src/app/paths.ts` |
+| 31 | `Company` gained the rest of §E's row — branding, tax defaults, saved signature | The repository contract had dropped them while the Settings screens took their values as props. A Settings screen with nowhere to save is not a setting. Rates are stored in PARTS PER MILLION, so 7.5% is an integer and never a float — the same rule that governs amounts. | `src/data/repositories/types.ts` |
+| 32 | The saved-document screen was built as a HOST, not a new design | §G describes it and §Q Phase 2 scoped it, but it was skipped, which left the paid-so-far bar, the payments list, the chase row and the Repeat toggle with nowhere to live. Every piece on it already existed and is tested on its own; this screen adds arrangement, not behaviour. | `src/app/screens/DocumentScreen.tsx` |
+| 33 | The dev server seeds one empty company, and nothing else | `npm run dev` runs on memory repositories, which start with no company — so no currency, no region, no prefixes, and every screen correctly showing an empty state. One company is the minimum to hang the app off. It is NOT §R's sample: no customers, no documents, no money, so a seeded figure cannot reach a balance. | `src/app/seed.ts` |
 
 ## Deviations from the spec
 
@@ -581,6 +645,13 @@ logo rung are still unmeasured. Those measurements feed §Q Phase 6 — the AI
 ladder and the logo engine — and nothing in Phase 1's scope reads either, so
 the risk the rule guards against does not arise here. Recorded rather than
 left silent, and the Phase 0 items remain open above.
+
+**A bottom tab bar was added to reach the pages.** §G gives Home four type
+tiles that reach the lists, but Customers, the business page and Settings had no
+entry point, and §V's command palette and sidebar are a Phase 7 sweep. Four
+tabs with 44px targets and safe-area padding is the smallest thing that makes
+every route reachable on a phone; it is not a claim about the Phase 7 navigation
+design and does not pre-empt it.
 
 **Phase 2.5 ran after Phase 3, not before it.** §Q orders it 2 → 2.5 → 3, and
 §L7 itself says the conflict notice ships "2.5, alongside Phase 3". The owner
