@@ -40,7 +40,7 @@ import { DEFAULT_TEMPLATE, type TemplateId } from '../../pdf/templates'
 import type { ComposableDocument, ComposeOptions } from '../../pdf/compose'
 import { SkeletonList } from '../../ui'
 import { BRAND_COLOURS, StepBody } from './builderSteps'
-import { documentsOf } from '../derive'
+import { billedInvoices, documentsOf } from '../derive'
 
 const isDocumentType = (value: string | undefined): value is DocumentType =>
   value !== undefined && (DOCUMENT_TYPES as readonly string[]).includes(value)
@@ -136,6 +136,10 @@ export function BuilderScreen({ now = () => new Date().toISOString() }: { now?: 
   }, [state, company, payments])
 
   const customer = customers.find((row) => row.id === state?.draft.customerId)
+
+  // The balance chip on the customer card reads the same figures the contact
+  // page does, so the two can never disagree.
+  const invoices = useMemo(() => billedInvoices(documents), [documents])
 
   // VAT / GST / Sales tax / TVA — the label comes from the region, the rate
   // from the company. §D: the word moves with the country, never the number.
@@ -257,6 +261,9 @@ export function BuilderScreen({ now = () => new Date().toISOString() }: { now?: 
         step={state.step}
         draft={state.draft}
         company={company}
+        customers={customers}
+        invoices={invoices}
+        payments={payments}
         reference={composable.reference}
         templateId={templateId}
         showLogo={showLogo}
@@ -267,6 +274,16 @@ export function BuilderScreen({ now = () => new Date().toISOString() }: { now?: 
         composable={composable}
         composeOptions={composeOptions}
         onChange={(patch) => setState((latest) => (latest === null ? latest : edit(latest, patch)))}
+        onAddCustomer={(fresh) => {
+          // One write path: the store creates it and reloads, and the draft
+          // points at the new id — so the name typed into the search becomes
+          // the customer on the document without anything being retyped (§G).
+          void actions.addCustomer(fresh).then((created) => {
+            setState((latest) =>
+              latest === null ? latest : edit(latest, { customerId: created.id }),
+            )
+          })
+        }}
         onDiscount={setDiscountPercent}
         onTemplate={setTemplateId}
         onToggleLogo={setShowLogo}

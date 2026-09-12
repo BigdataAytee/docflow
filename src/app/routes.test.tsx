@@ -671,3 +671,141 @@ describe('Adding a customer (§G)', () => {
     expect(screen.getByLabelText('Add a customer')).toBeInTheDocument()
   })
 })
+
+describe('The builder picks a customer (§G, step 1)', () => {
+  const seedDraft = (state: MemoryState) => {
+    state.documents.push({
+      id: 'doc_draft',
+      companyId: DEV_COMPANY_ID,
+      type: 'invoice',
+      status: 'draft',
+      currency: 'NGN',
+      lineItems: [],
+      issuedReference: null,
+      frozenLabels: null,
+      totalMinor: 0,
+    })
+  }
+
+  it('chooses an existing customer onto the draft', async () => {
+    const user = userEvent.setup()
+    const state = renderAt('/edit/doc_draft', (seed) => {
+      seedDraft(seed)
+      seed.customers.push(customer())
+    })
+
+    await user.click(await screen.findByRole('button', { name: 'Choose who this is for' }))
+    await user.click(screen.getByRole('button', { name: /Ade Stores/ }))
+
+    // Committed on the next step change, per §G's autosave.
+    await user.click(screen.getByRole('button', { name: 'Next' }))
+    await waitFor(() => expect(state.documents[0]?.customerId).toBe('cus_1'))
+  })
+
+  it('adds a customer from the typed name and puts them on the draft', async () => {
+    const user = userEvent.setup()
+    const state = renderAt('/edit/doc_draft', seedDraft)
+
+    await user.click(await screen.findByRole('button', { name: 'Choose who this is for' }))
+    await user.type(screen.getByRole('searchbox'), 'Chinedu Motors')
+    await user.click(screen.getByRole('button', { name: 'Add "Chinedu Motors"' }))
+
+    // The name carried across: no retyping (§G).
+    expect(screen.getByLabelText('Name')).toHaveValue('Chinedu Motors')
+    await user.type(screen.getByLabelText('Phone'), '08099988877')
+    await user.click(screen.getByRole('button', { name: 'Save' }))
+
+    await waitFor(() => expect(state.customers).toHaveLength(1))
+    expect(state.customers[0]?.name).toBe('Chinedu Motors')
+
+    // And the new customer is the one on the card, without being chosen again.
+    expect(
+      await screen.findByRole('button', { name: 'Choose who this is for' }),
+    ).toHaveTextContent('Chinedu Motors')
+
+    await user.click(screen.getByRole('button', { name: 'Next' }))
+    await waitFor(() => expect(state.documents[0]?.customerId).toBe(state.customers[0]?.id))
+  })
+
+  it('shows the balance the contact page shows, from the ledger', async () => {
+    const user = userEvent.setup()
+    renderAt('/edit/doc_draft', (seed) => {
+      seedDraft(seed)
+      seed.customers.push(customer())
+      seed.documents.push({
+        id: 'doc_billed',
+        companyId: DEV_COMPANY_ID,
+        type: 'invoice',
+        status: 'issued',
+        customerId: 'cus_1',
+        currency: 'NGN',
+        lineItems: [],
+        issueDate: '2026-09-01',
+        issuedReference: 'INV-0042',
+        frozenLabels: {
+          printedTitle: 'INVOICE',
+          partyLabel: 'Bill to',
+          signatureCaption: 'Authorised signature',
+          language: 'en',
+        },
+        totalMinor: 145_000_00,
+      })
+      seed.payments.push({
+        id: 'pay_1',
+        customerId: 'cus_1',
+        amount: NGN(50_000_00),
+        paidAt: '2026-09-10T09:00:00Z',
+        method: 'bank_transfer',
+        source: 'manual',
+        allocations: [
+          { id: 'pay_1:a', paymentId: 'pay_1', invoiceId: 'doc_billed', amount: NGN(50_000_00) },
+        ],
+      })
+    })
+
+    await user.click(await screen.findByRole('button', { name: 'Choose who this is for' }))
+    await user.click(screen.getByRole('button', { name: /Ade Stores/ }))
+    expect(await screen.findByText('Owes ₦95,000.00')).toBeInTheDocument()
+  })
+
+  it('shows no balance chip on a delivery document, which carries no money', async () => {
+    const user = userEvent.setup()
+    renderAt('/edit/doc_way', (seed) => {
+      seed.customers.push(customer())
+      seed.documents.push({
+        id: 'doc_way',
+        companyId: DEV_COMPANY_ID,
+        type: 'waybill',
+        status: 'draft',
+        currency: 'NGN',
+        lineItems: [],
+        issuedReference: null,
+        frozenLabels: null,
+        totalMinor: 0,
+      })
+    })
+
+    await user.click(await screen.findByRole('button', { name: 'Choose who this is for' }))
+    await user.click(screen.getByRole('button', { name: /Ade Stores/ }))
+    expect(screen.queryByText('Settled')).not.toBeInTheDocument()
+    expect(screen.queryByText(/Owes/)).not.toBeInTheDocument()
+  })
+
+  it('titles the card with the region word for the party, not a hardcoded one', async () => {
+    renderAt('/edit/doc_way', (seed) => {
+      seed.documents.push({
+        id: 'doc_way',
+        companyId: DEV_COMPANY_ID,
+        type: 'waybill',
+        status: 'draft',
+        currency: 'NGN',
+        lineItems: [],
+        issuedReference: null,
+        frozenLabels: null,
+        totalMinor: 0,
+      })
+    })
+    // EN-NG: a delivery document is delivered to somebody, not billed to them.
+    expect(await screen.findByRole('heading', { name: /Deliver to/i })).toBeInTheDocument()
+  })
+})

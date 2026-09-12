@@ -8,7 +8,10 @@
 
 import type { ReactNode } from 'react'
 
-import type { Company } from '../../data/repositories'
+import type { Company, Customer } from '../../data/repositories'
+import type { Payment } from '../../domain/payments/ledger'
+import type { BilledInvoice } from '../../features/customers/balance'
+import type { NewCustomer } from '../../features/customers/CustomerSheet'
 import type { IssueProblem, DocumentDraft, StepIndex } from '../../features/documents/builder'
 import { DetailsStep } from '../../features/documents/DetailsStep'
 import { ItemsStep } from '../../features/documents/ItemsStep'
@@ -38,7 +41,11 @@ export interface StepBodyProps {
   readonly problems: readonly IssueProblem[]
   readonly composable: ComposableDocument
   readonly composeOptions: Omit<ComposeOptions, 'profile'>
+  readonly customers: readonly Customer[]
+  readonly invoices: readonly BilledInvoice[]
+  readonly payments: readonly Payment[]
   readonly onChange: (patch: Partial<DocumentDraft>) => void
+  readonly onAddCustomer: (customer: NewCustomer) => void
   readonly onDiscount: (percent: number) => void
   readonly onTemplate: (id: TemplateId) => void
   readonly onToggleLogo: (next: boolean) => void
@@ -58,7 +65,11 @@ export function StepBody(props: StepBodyProps) {
           draft={props.draft}
           reference={props.reference}
           enabledPaymentMethodCount={props.company?.enabledPaymentMethods.length ?? 0}
+          customers={props.customers}
+          invoices={props.invoices}
+          payments={props.payments}
           onChange={props.onChange}
+          onAddCustomer={props.onAddCustomer}
           onSetUpPayment={props.onSetUpPayment}
           onSign={props.onSign}
         />
