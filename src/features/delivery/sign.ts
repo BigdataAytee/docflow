@@ -60,6 +60,9 @@ export function reasonsSigningIsBlocked(document: SignableDocument): SigningBloc
 export const canSign = (document: SignableDocument): boolean =>
   reasonsSigningIsBlocked(document) === null
 
+/** Where a delivery can be moved to, short of being signed for. */
+export type DeliveryStep = 'dispatched' | 'in_transit'
+
 /**
  * The step that has to happen before this delivery can be signed for, or null.
  *
@@ -75,6 +78,25 @@ export function nextDeliveryStep(document: SignableDocument): 'dispatched' | nul
   if (document.type !== 'waybill') return null
   if (canTransition(document.type, document.status, 'delivered')) return null
   return canTransition(document.type, document.status, 'dispatched') ? 'dispatched' : null
+}
+
+/**
+ * An optional step for a delivery that is out but not yet arrived.
+ *
+ * §F gives "in transit" its own status colour and §D its own word, and a
+ * signing link is valid for it — `linkKindFor` names it alongside
+ * `dispatched`. Nothing in the app could produce it, so half that condition
+ * was dead.
+ *
+ * Separate from `nextDeliveryStep` because it is not a step anything waits
+ * for: a delivery is signed for from `dispatched` just as well. It is there
+ * for the journey that takes days, where "sent out" on Monday and still "sent
+ * out" on Thursday tells the owner nothing. Offering it as a REQUIRED step
+ * would be a second tap for no gain (Rule #1).
+ */
+export function optionalDeliveryStep(document: SignableDocument): DeliveryStep | null {
+  if (document.type !== 'waybill') return null
+  return canTransition(document.type, document.status, 'in_transit') ? 'in_transit' : null
 }
 
 export interface SignDeliveryInput {

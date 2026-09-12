@@ -9,6 +9,7 @@ import {
   type SignableDocument,
   canSign,
   nextDeliveryStep,
+  optionalDeliveryStep,
   reasonsSigningIsBlocked,
   signDelivery,
 } from './sign'
@@ -74,6 +75,35 @@ describe('The sign action is reachable, not just correct', () => {
 
   it('offers nothing on a document that is not a delivery', () => {
     expect(nextDeliveryStep({ id: 'd', type: 'invoice', status: 'issued' })).toBeNull()
+  })
+})
+
+describe('A delivery that is out can be marked on the way (§F, §D)', () => {
+  it('is offered once it has been sent out', () => {
+    // §F gives "in transit" its own colour and §D its own word, and a signing
+    // link is valid for it — `linkKindFor` names it alongside `dispatched`.
+    // Nothing could produce it, so half that condition was dead.
+    expect(optionalDeliveryStep(waybill('dispatched'))).toBe('in_transit')
+  })
+
+  it('is not offered twice', () => {
+    expect(optionalDeliveryStep(waybill('in_transit'))).toBeNull()
+  })
+
+  it('is not a step anything waits for', () => {
+    // A delivery is signed for from `dispatched` just as well. Requiring it
+    // would be a second tap for no gain (Rule #1).
+    expect(canSign(waybill('dispatched'))).toBe(true)
+  })
+
+  it('is not offered before it has left, or once it has arrived', () => {
+    for (const status of ['draft', 'issued', 'delivered', 'void']) {
+      expect(optionalDeliveryStep(waybill(status))).toBeNull()
+    }
+  })
+
+  it('is not offered on a document that is not a delivery', () => {
+    expect(optionalDeliveryStep({ id: 'd', type: 'invoice', status: 'issued' })).toBeNull()
   })
 })
 

@@ -48,6 +48,7 @@ import {
   DeliverySignError,
   canSign,
   nextDeliveryStep,
+  optionalDeliveryStep,
   signDelivery,
 } from '../../features/delivery/sign'
 import { CreditNoteError, issueCreditNote } from '../../features/credits/issue'
@@ -277,7 +278,30 @@ export function DocumentScreen({ today = new Date().toISOString().slice(0, 10) }
         )}
 
         {canSign(record) && !signing && (
-          <p className="text-center text-xs opacity-60">{strings.signature.onItsWay}</p>
+          <>
+            <p className="text-center text-xs opacity-60">{strings.signature.onItsWay}</p>
+            {/*
+              §F gives "on the way" its own colour and §D its own word, and a
+              signing link is valid for it — but nothing could produce it.
+              Optional rather than a required step: a delivery is signed for
+              from "sent out" just as well, and a second compulsory tap would
+              buy nothing (Rule #1). It earns its place on the journey that
+              takes days, where "sent out" on Monday and still "sent out" on
+              Thursday tells the owner nothing.
+            */}
+            {optionalDeliveryStep(record) !== null && (
+              <button
+                type="button"
+                className="min-h-tap w-full rounded-full border border-black/10 bg-white px-4 text-sm font-medium"
+                onClick={() => {
+                  const step = optionalDeliveryStep(record)
+                  if (step !== null) void actions.transition(record.id, step)
+                }}
+              >
+                {strings.signature.markOnTheWay}
+              </button>
+            )}
+          </>
         )}
 
         {canSign(record) && !signing && (
@@ -291,6 +315,16 @@ export function DocumentScreen({ today = new Date().toISOString().slice(0, 10) }
           >
             {strings.signature.confirmDelivery}
           </button>
+        )}
+
+        {/*
+          §N: an unavailable capability is stated plainly, never dressed up.
+          The same line the quotation gets, for the same reason — no greyed
+          "copy signing link" that cannot work, one sentence beside the thing
+          that does.
+        */}
+        {canSign(record) && !signing && (
+          <p className="text-center text-[11px] opacity-60">{strings.signature.linkLater}</p>
         )}
 
         {signing && (
