@@ -30,6 +30,13 @@ import { ConvertSheet } from '../../features/documents/ConvertSheet'
 import { VoidSheet } from '../../features/documents/VoidSheet'
 import { VoidError, type VoidableDocument, canVoid, voidDocument } from '../../features/documents/void'
 import { CreditNoteSheet } from '../../features/credits/CreditNoteSheet'
+import { SignDeliverySheet } from '../../features/delivery/SignDeliverySheet'
+import {
+  DeliverySignError,
+  canSign,
+  nextDeliveryStep,
+  signDelivery,
+} from '../../features/delivery/sign'
 import { CreditNoteError, issueCreditNote } from '../../features/credits/issue'
 import {
   ConvertError,
@@ -64,7 +71,7 @@ import { displayStatus, totalOf } from '../derive'
 export function DocumentScreen({ today = new Date().toISOString().slice(0, 10) }: { today?: string }) {
   const { id } = useParams<{ id: string }>()
   const { profile, strings } = useCompany()
-  const { company, customers, documents, payments, shares, creditNotes, loading, actions } =
+  const { company, customers, documents, payments, shares, creditNotes, assets, loading, actions } =
     useAppData()
   const navigate = useNavigate()
 
@@ -75,6 +82,8 @@ export function DocumentScreen({ today = new Date().toISOString().slice(0, 10) }
   const [convertProblem, setConvertProblem] = useState<string | null>(null)
   const [voiding, setVoiding] = useState(false)
   const [voidProblem, setVoidProblem] = useState<string | null>(null)
+  const [signing, setSigning] = useState(false)
+  const [signProblem, setSignProblem] = useState<string | null>(null)
   const [crediting, setCrediting] = useState(false)
   const [creditProblem, setCreditProblem] = useState<string | null>(null)
 
@@ -105,6 +114,9 @@ export function DocumentScreen({ today = new Date().toISOString().slice(0, 10) }
   // every figure on this screen has always been ready to be told (§E).
   const mineCredits = creditNotes.filter((note) => note.invoiceId === record.id)
   const status = displayStatus(record, payments, today, mineCredits)
+
+  /** The mark on this document, resolved from the id it holds (§E). */
+  const signatureUrl = assets.find((asset) => asset.id === record.signatureAssetId)?.dataUrl
   const outstanding = invoiceOutstanding(record.id, total, payments, mineCredits)
 
   const chase = (() => {
@@ -212,6 +224,117 @@ export function DocumentScreen({ today = new Date().toISOString().slice(0, 10) }
           >
             {strings.savedDocument.sharePdf}
           </button>
+        )}
+
+        {/*
+          §G's sign action, and §Q's Phase 2 gate: "create and sign a delivery
+          document". One tap here, one sheet, and the delivery is signed for
+          (Rule #1).
+        */}
+        {nextDeliveryStep(record) !== null && (
+          <button
+            type="button"
+            className="min-h-tap w-full rounded-full border border-brand/30 bg-white px-4 text-sm font-semibold text-brand"
+            onClick={() => {
+              // An issued delivery cannot jump to delivered — it has to go
+              // out first. Without this the sign action below would be
+              // correct by the lifecycle and unreachable in the app.
+              const step = nextDeliveryStep(record)
+              if (step !== null) void actions.transition(record.id, step)
+            }}
+          >
+            {strings.signature.sendOnItsWay}
+          </button>
+        )}
+
+        {canSign(record) && !signing && (
+          <p className="text-center text-xs opacity-60">{strings.signature.onItsWay}</p>
+        )}
+
+        {canSign(record) && !signing && (
+          <button
+            type="button"
+            className="min-h-tap w-full rounded-full border border-brand/30 bg-white px-4 text-sm font-semibold text-brand"
+            onClick={() => {
+              setSignProblem(null)
+              setSigning(true)
+            }}
+          >
+            {strings.signature.confirmDelivery}
+          </button>
+        )}
+
+        {signing && (
+          <SignDeliverySheet
+            onClose={() => setSigning(false)}
+            {...(signProblem === null ? {} : { error: signProblem })}
+            onSign={(input) => {
+              // Stored first: a document may only ever name an asset the
+              // repository accepted, or the page would print a blank mark
+              // and claim to be signed for (§P).
+              void actions
+                .storeSignature(input.signature.dataUrl)
+                .then((asset) => {
+                  const decision = signDelivery({
+                    document: record,
+                    signerName: input.signerName,
+                    ...(input.signerRole === undefined ? {} : { signerRole: input.signerRole }),
+                    signatureAssetId: asset.id,
+                    at: new Date().toISOString(),
+                  })
+                  // ONE write. The mark, the signer, the moment and the
+                  // status land together or not at all (§P).
+                  return actions.signDelivery(decision.documentId, {
+                    signerName: decision.signerName,
+                    ...(decision.signerRole === undefined
+                      ? {}
+                      : { signerRole: decision.signerRole }),
+                    signedAt: decision.signedAt,
+                    signatureAssetId: decision.signatureAssetId,
+                  })
+                })
+                .then(() => setSigning(false))
+                .catch((cause: unknown) => {
+                  setSignProblem(
+                    format(strings.signature.failed, {
+                      reason:
+                        cause instanceof DeliverySignError
+                          ? strings.signature.sealed
+                          : cause instanceof Error
+                            ? cause.message
+                            : String(cause),
+                    }),
+                  )
+                })
+            }}
+          />
+        )}
+
+        {/* Once signed, the evidence is the document (§P). */}
+        {record.signedAt !== undefined && (
+          <section
+            className="rounded-2xl bg-status-good-tint p-4 text-sm text-status-good"
+            aria-label={strings.signature.confirmDelivery}
+          >
+            <p className="font-semibold">
+              {format(strings.signature.deliveredOn, { date: record.signedAt.slice(0, 10) })}
+            </p>
+            <p className="mt-0.5 opacity-80">
+              {format(strings.signature.signedBy, {
+                name:
+                  record.signerRole === undefined
+                    ? (record.signerName ?? '')
+                    : `${record.signerName ?? ''} · ${record.signerRole}`,
+              })}
+            </p>
+            {signatureUrl !== undefined && (
+              <img
+                src={signatureUrl}
+                alt={strings.signature.drawn}
+                className="mt-2 max-h-16 w-auto"
+              />
+            )}
+          </section>
         )}
 
         {/* §G's second action on every type that has somewhere to go. */}

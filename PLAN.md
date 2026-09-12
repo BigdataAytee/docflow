@@ -581,11 +581,11 @@ device in airplane mode walking create → build → preview in all sixteen desi
 force-kill and recover. Routes being reachable in a browser is a precondition
 for walking it, not the walk.
 
-What §G describes and is still deliberately absent rather than stubbed: the
-sign action and signature capture, which need the native bridge (Phase 4);
-duplicate-as-Rev-2 and void-and-reissue; and the per-type link actions (copy
-accept link, copy signing link), which are Phase 5's tokenized pages. Each is
-a missing screen, not a broken one.
+What §G describes and is still deliberately absent rather than stubbed:
+duplicate-as-Rev-2 and void-and-reissue; "add photo" on a delivery, which
+needs the camera (Phase 4); and the per-type link actions (copy accept link,
+copy signing link), which are Phase 5's tokenized pages. Each is a missing
+screen, not a broken one.
 
 ### Void and credit note (Rule #5, §G, §E)
 
@@ -916,6 +916,75 @@ Two things fixed on the way that were not part of the ask:
   foreign key the moment this is SQLite (§E). Asserted in the repository
   contract suite, so SQLite and Supabase must pass it too.
 
+### Signing and signature capture (§G, §I, §P)
+
+§G puts a "dashed tap-to-sign box, or the drawn signature" in step 1, §I puts
+the captured mark above the 76px rule, §Q's Phase 2 gate walks "create and
+sign a delivery document", and Rule #1 caps that at "one tap plus at most one
+small sheet". None of it existed: `onSign` was an empty function with a
+comment saying the canvas and the asset store were Phase 4 work.
+
+**Signatures are vectors, not pictures.** The pad captures pointer positions
+and stores an SVG path. It prints exactly at A4 where a phone-density PNG is
+soft; it is a few hundred bytes rather than tens of kilobytes, which matters
+because every signature syncs on the connection the owner actually has; and
+it needs no canvas, so it works in a WebView, under jsdom and in Node alike.
+That last one is why this shipped in Phase 3 rather than waiting for a device:
+there was never a native dependency here, only an assumed one.
+
+- [x] **An asset store** (`AssetRepository`). Immutable: no update, no delete.
+      A signature behind an issued document is evidence (§P) — if the bytes
+      could be replaced, every PDF already shared under it would change
+      meaning, and Rule #5 would hold for a document's words but not for the
+      mark at the bottom of it. Drawing again makes a NEW asset.
+- [x] **A tap is not a signature.** `isBlank` measures ink LENGTH, not extent,
+      so a dot, a stray tap and a slipped finger are all refused while a short
+      initial passes. Without it a document could be marked signed with
+      nothing on it.
+- [x] **The mark is cropped to the ink**, identically wherever on the pad it
+      was drawn — held by a property test over every offset, because §I gives
+      the signature a slot beside the payment box, not a full-width band.
+- [x] **Drawn once, in Settings.** §G's "Default signature — signs new
+      documents unless you draw a different one", applied at creation rather
+      than re-applied on open, so clearing it on one draft does not silently
+      come back. Removing the default keeps the asset: documents signed with
+      it hold its id.
+- [x] **Signed and delivered are one fact** (§P: "atomic delivered +
+      timestamp"). `documents.signDelivery` applies the mark, the signer, the
+      moment and the status in ONE write. Not `updateDraft` + `transition`:
+      an issued document refuses the first, and two writes can half-succeed —
+      leaving a delivery marked delivered with nobody's signature on it, or a
+      signature on a document that still says it is in transit. Neither is
+      correctable, because delivered is terminal and its evidence is sealed.
+- [x] **Evidence is captured once.** The repository refuses to re-sign a
+      delivered document, so a second device, a retried tap under a fresh key
+      and a later link use (§P) all fail the same way. Verified by mutation.
+
+**Four defects found on the way, three of them older than this work.**
+
+1. **The builder threw away everything it collected beyond six fields.** A
+   signature drawn in step 1 could never have survived a save, because
+   `commit` sent a chosen subset — and so could the delivery address, the
+   driver and the dispatch date, none of which existed on `DocumentRecord` at
+   all. A delivery issued before this stored no address. The commit now sends
+   what the draft holds; held by a route test, verified by mutation.
+2. **The sign action would have been unreachable.** The lifecycle does not let
+   an issued delivery jump to `delivered` — something that never left cannot
+   have arrived — and nothing in the app could move one to `dispatched`. The
+   button would have been correct by the table and invisible in the app, the
+   same "plumbed but unused" trap credit notes were in. There is now one
+   button to send it on its way, derived from the transition table rather
+   than hardcoded, so a lifecycle change moves the button with it.
+3. **Every Settings panel's last control sat under the tab bar.** Fixed to the
+   bottom of every page, so a panel running to the foot of the screen puts its
+   final button underneath — visible and untappable. The index had cleared it;
+   the panels never had, and nobody noticed until a panel ended in a primary
+   action. Cleared once, in the screen, so a panel cannot forget.
+4. **The signature sheet would have discarded a drawn mark.** The first
+   version took the signature and then refused it if no name had been typed.
+   Somebody would have signed, and watched it vanish. The pad now appears only
+   once there is a name, with a line saying why.
+
 ## Decisions taken
 
 | # | Decision | Why | Where |
@@ -973,6 +1042,11 @@ Two things fixed on the way that were not part of the ask:
 | 51 | A receipt's total, date and line all come from the payment, and its line is not taxable | §V: the printed total IS the payment. A total the owner types could disagree with the money, and tax added on top of money already received would print a figure nobody paid. Taking the date from `paidAt` also means no field is asked for twice (Rule #1). | `receiptRecordFor` |
 | 52 | A payment method is stored as a token and turned into words in exactly one place | §E stores `bank_transfer` so it means the same thing in every language and outlives any wording change; the owner must never see it. One resolver means the payments list, the new-receipt sheet and the Settings toggles cannot disagree. An unknown token is shown as itself rather than dropped — a method this build has no word for is still evidence (§V). | `src/features/payments/methods.ts` |
 | 53 | The repository re-stamps allocations with the id it minted | A caller cannot know the real payment id before the write, so it builds allocations against a local handle. Leaving them would leave every allocation naming a payment that does not exist: invisible against the in-memory store, a foreign-key violation against SQLite. Fixing it in the repository fixes both call sites at once, and the contract suite holds it for every implementation. | `src/data/repositories/memory/store.ts` |
+| 54 | A signature is stored as SVG strokes, not a raster image | It prints exactly at A4 where a phone-density PNG is soft; it is a few hundred bytes rather than tens of kilobytes, and every signature syncs; and it needs no canvas, so the same code runs on a phone, in a WebView, under jsdom and in Node. The assumption that signature capture needed a native bridge is what had parked it in Phase 4 — there was no bridge in it. | `src/features/signature/strokes.ts` |
+| 55 | A blank pad is refused by ink LENGTH, not by whether anything was touched | A dot, a slipped finger and a tap all leave marks with no journey; a short initial is a real signature. Measuring the distance travelled tells them apart, and it is the rule that stops a document being marked signed with nothing on it (§P). | `isBlank`, `MINIMUM_INK` |
+| 56 | Assets are append-only — no update, no delete | A signature behind an issued document is evidence. If the bytes could be replaced, every PDF already shared under it would change meaning retroactively, and Rule #5 would protect a document's words but not the mark at the bottom of it. Drawing again makes a new asset; removing the DEFAULT keeps the asset that documents already point at. | `AssetRepository` |
+| 57 | Signing a delivery is one repository write, not a patch plus a transition | §P asks for "atomic delivered + timestamp". Two writes can half-succeed, and both halves are uncorrectable: `delivered` is terminal and its evidence seals, so a delivery marked delivered with no signature, or signed but still in transit, would be stuck that way. `signDelivery` also refuses a document whose evidence is sealed, so a second device or a later link use cannot alter it. | `DocumentRepository.signDelivery` |
+| 58 | `defaultSignatureAssetId` is `string \| null`, not `string \| undefined` | A patch carrying `undefined` cannot express "the owner removed this" — the key simply goes missing, which a sync patch reads as "unchanged". `null` clears it explicitly, so removing a default survives the round trip instead of coming back (§M). | `Company` |
 
 ## Deviations from the spec
 

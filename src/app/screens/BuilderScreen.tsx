@@ -40,6 +40,7 @@ import {
 import { BuilderShell } from '../../features/documents/BuilderShell'
 import { IssueError, issueDocument } from '../../features/documents/issue'
 import { NewReceiptSheet } from '../../features/payments/NewReceiptSheet'
+import { SignaturePad } from '../../features/signature/SignaturePad'
 import { availableMethods } from '../../features/payments/methods'
 import {
   type SettleableInvoice,
@@ -70,9 +71,11 @@ export function NewDocumentScreen() {
   useEffect(() => {
     if (started.current || needsPaymentFirst || !isDocumentType(type) || company === null) return
     started.current = true
-    void actions.createDraft(type, company.currency).then((created) => {
-      navigate(editDocumentPath(created.id), { replace: true })
-    })
+    void actions
+      .createDraft(type, company.currency, company.defaultSignatureAssetId ?? undefined)
+      .then((created) => {
+        navigate(editDocumentPath(created.id), { replace: true })
+      })
   }, [type, needsPaymentFirst, company, actions, navigate])
 
   if (!isDocumentType(type)) return <Navigate to={HOME} replace />
@@ -228,7 +231,7 @@ function NewDocumentSkeleton() {
 export function BuilderScreen({ now = () => new Date().toISOString() }: { now?: () => string }) {
   const { id } = useParams<{ id: string }>()
   const { profile, strings } = useCompany()
-  const { company, customers, documents, payments, loading, actions } = useAppData()
+  const { company, customers, documents, payments, assets, loading, actions } = useAppData()
   const navigate = useNavigate()
 
   const record = documents.find((document) => document.id === id)
@@ -239,6 +242,8 @@ export function BuilderScreen({ now = () => new Date().toISOString() }: { now?: 
   const [brandColour, setBrandColour] = useState<string>(BRAND_COLOURS[0])
   const [discountPercent, setDiscountPercent] = useState(0)
   const [issueProblem, setIssueProblem] = useState<string | null>(null)
+  const [signing, setSigning] = useState(false)
+  const [signProblem, setSignProblem] = useState<string | null>(null)
 
   // Seeded once from the stored record; after that the screen owns the draft
   // and the record follows it, not the other way round.
@@ -261,6 +266,14 @@ export function BuilderScreen({ now = () => new Date().toISOString() }: { now?: 
         ...(record.linkedInvoiceId === undefined
           ? {}
           : { linkedInvoiceId: record.linkedInvoiceId }),
+        ...(record.signatureAssetId === undefined
+          ? {}
+          : { signatureAssetId: record.signatureAssetId }),
+        ...(record.deliveryAddress === undefined
+          ? {}
+          : { deliveryAddress: record.deliveryAddress }),
+        ...(record.driverName === undefined ? {} : { driverName: record.driverName }),
+        ...(record.dispatchDate === undefined ? {} : { dispatchDate: record.dispatchDate }),
       },
       dirty: false,
     })
@@ -270,13 +283,24 @@ export function BuilderScreen({ now = () => new Date().toISOString() }: { now?: 
   const commit = useCallback(
     async (current: BuilderState) => {
       if (id === undefined || !current.dirty) return
+      const { draft } = current
+      // Everything the draft holds, not a chosen subset. A field the builder
+      // collects and the commit drops is typed, believed and then lost —
+      // which is what happened to the delivery address, the driver, the
+      // dispatch date and the signature until this line was widened.
       await actions.updateDraft(id, {
-        currency: current.draft.currency,
-        lineItems: current.draft.lineItems,
-        ...(current.draft.customerId === undefined ? {} : { customerId: current.draft.customerId }),
-        ...(current.draft.issueDate === undefined ? {} : { issueDate: current.draft.issueDate }),
-        ...(current.draft.dueDate === undefined ? {} : { dueDate: current.draft.dueDate }),
-        ...(current.draft.validUntil === undefined ? {} : { validUntil: current.draft.validUntil }),
+        currency: draft.currency,
+        lineItems: draft.lineItems,
+        ...(draft.customerId === undefined ? {} : { customerId: draft.customerId }),
+        ...(draft.issueDate === undefined ? {} : { issueDate: draft.issueDate }),
+        ...(draft.dueDate === undefined ? {} : { dueDate: draft.dueDate }),
+        ...(draft.validUntil === undefined ? {} : { validUntil: draft.validUntil }),
+        ...(draft.signatureAssetId === undefined
+          ? {}
+          : { signatureAssetId: draft.signatureAssetId }),
+        ...(draft.deliveryAddress === undefined ? {} : { deliveryAddress: draft.deliveryAddress }),
+        ...(draft.driverName === undefined ? {} : { driverName: draft.driverName }),
+        ...(draft.dispatchDate === undefined ? {} : { dispatchDate: draft.dispatchDate }),
       })
       // Only now — a commit that threw must not print "Saved" (§C).
       setState((latest) => (latest === null ? latest : committed(latest, now())))
@@ -296,6 +320,18 @@ export function BuilderScreen({ now = () => new Date().toISOString() }: { now?: 
   }, [state, company, payments])
 
   const customer = customers.find((row) => row.id === state?.draft.customerId)
+
+  /** The draft's own mark, and the one Settings saved — both resolved by id. */
+  const assetUrl = (id: string | undefined): string | undefined =>
+    id === undefined ? undefined : assets.find((asset) => asset.id === id)?.dataUrl
+  const signatureUrl = assetUrl(state?.draft.signatureAssetId)
+  const defaultSignatureId = company?.defaultSignatureAssetId ?? undefined
+
+  /** One place the mark reaches the draft, whether drawn now or saved before. */
+  const signWith = (assetId: string) => {
+    setSigning(false)
+    setState((current) => (current === null ? current : edit(current, { signatureAssetId: assetId })))
+  }
 
   // The balance chip on the customer card reads the same figures the contact
   // page does, so the two can never disagree.
@@ -333,6 +369,10 @@ export function BuilderScreen({ now = () => new Date().toISOString() }: { now?: 
         ? {}
         : { whtRate: company.whtRatePpm }),
       ...(draft.driverName === undefined ? {} : { driverName: draft.driverName }),
+      // So the Review step shows the page as it will print, signature and all.
+      ...(draft.signatureAssetId === undefined
+        ? {}
+        : { signatureAssetId: draft.signatureAssetId }),
     }
     function provisional(type: DocumentType): string {
       return `${company?.numberingPrefixes?.[type] ?? numberingPrefix(profile, type)}-…`
@@ -355,8 +395,12 @@ export function BuilderScreen({ now = () => new Date().toISOString() }: { now?: 
         unit: strings.items.unit,
       },
       ...(company?.bankFields === undefined ? {} : { bankValues: company.bankFields }),
+      // The page prints the mark it names, so it needs the bytes behind the
+      // id. Every signature the company owns, not just this draft's: the
+      // preview follows the pad without a reload (§I).
+      assetUrls: Object.fromEntries(assets.map((asset) => [asset.id, asset.dataUrl])),
     }),
-    [company, showLogo, strings],
+    [company, showLogo, strings, assets],
   )
 
   if (loading) return <SkeletonList rows={4} label={strings.common.loading} />
@@ -479,8 +523,10 @@ export function BuilderScreen({ now = () => new Date().toISOString() }: { now?: 
         onGoToStep={(target) => setState(goToStep(state, clampStep(target)))}
         onSetUpPayment={() => navigate(settingsPath('payment'))}
         onSign={() => {
-          // Signature capture needs the canvas and the asset store — Phase 4.
+          setSignProblem(null)
+          setSigning(true)
         }}
+        {...(signatureUrl === undefined ? {} : { signatureUrl })}
         onRememberItem={(item) => {
           void actions.rememberItem({
             name: item.name,
@@ -491,6 +537,32 @@ export function BuilderScreen({ now = () => new Date().toISOString() }: { now?: 
         }}
         preview={null}
       />
+      {signing && (
+        <div className="mt-3">
+          <SignaturePad
+            onClose={() => setSigning(false)}
+            {...(signProblem === null ? {} : { error: signProblem })}
+            {...(defaultSignatureId === undefined
+              ? {}
+              : { onUseDefault: () => signWith(defaultSignatureId) })}
+            onUse={(drawn) => {
+              // Stored first, then referenced. A draft pointing at an asset
+              // the repository never accepted would print a blank signature
+              // and claim to be signed (§P).
+              void actions
+                .storeSignature(drawn.dataUrl)
+                .then((asset) => signWith(asset.id))
+                .catch((cause: unknown) => {
+                  setSignProblem(
+                    format(strings.signature.failed, {
+                      reason: cause instanceof Error ? cause.message : String(cause),
+                    }),
+                  )
+                })
+            }}
+          />
+        </div>
+      )}
       {issueProblem !== null && (
         <p
           className="mt-3 rounded-xl bg-status-warn-tint px-3 py-2.5 text-sm font-medium text-status-warn"

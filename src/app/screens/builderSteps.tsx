@@ -53,6 +53,7 @@ export interface StepBodyProps {
   readonly onGoToStep: (step: number) => void
   readonly onSetUpPayment: () => void
   readonly onSign: () => void
+  readonly signatureUrl?: string
   readonly onRememberItem: (item: { name: string; unitPriceMinor?: number }) => void
   readonly preview: ReactNode
 }
@@ -72,6 +73,7 @@ export function StepBody(props: StepBodyProps) {
           onAddCustomer={props.onAddCustomer}
           onSetUpPayment={props.onSetUpPayment}
           onSign={props.onSign}
+          {...(props.signatureUrl === undefined ? {} : { signatureUrl: props.signatureUrl })}
         />
       )
     case 1:

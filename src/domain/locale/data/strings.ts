@@ -320,6 +320,30 @@ export interface UiStrings {
     readonly noPayment: string
     readonly failed: string
   }
+  readonly signature: {
+    readonly title: string
+    readonly explain: string
+    readonly pad: string
+    readonly hint: string
+    readonly undo: string
+    readonly clear: string
+    readonly use: string
+    readonly nothingDrawn: string
+    readonly drawn: string
+    readonly useDefault: string
+    readonly signHere: string
+    readonly whoSigned: string
+    readonly theirRole: string
+    readonly rolePlaceholder: string
+    readonly nameFirst: string
+    readonly sendOnItsWay: string
+    readonly onItsWay: string
+    readonly confirmDelivery: string
+    readonly deliveredOn: string
+    readonly signedBy: string
+    readonly sealed: string
+    readonly failed: string
+  }
   readonly voidIt: {
     readonly title: string
     readonly explain: string
@@ -777,6 +801,30 @@ const EN: UiStrings = {
     openReceipt: 'Open it',
     noPayment: 'Record the payment first.',
     failed: 'That could not be recorded: {reason}',
+  },
+  signature: {
+    title: 'Sign',
+    explain: 'Draw with a finger or a stylus.',
+    pad: 'Signing area',
+    hint: 'Sign above the line',
+    undo: 'Undo',
+    clear: 'Start again',
+    use: 'Use this',
+    nothingDrawn: 'Nothing drawn yet.',
+    drawn: 'Signed',
+    useDefault: 'Use my saved signature',
+    signHere: 'Tap to sign',
+    whoSigned: 'Who received it?',
+    theirRole: 'Their role',
+    rolePlaceholder: 'Storekeeper, driver, owner…',
+    nameFirst: 'Add who received it, then hand over the phone to sign.',
+    sendOnItsWay: 'Send it on its way',
+    onItsWay: 'On its way. Sign for it when it arrives.',
+    confirmDelivery: 'Confirm delivery',
+    deliveredOn: 'Delivered {date}',
+    signedBy: 'Signed by {name}',
+    sealed: 'This cannot be changed once signed.',
+    failed: 'That could not be saved: {reason}',
   },
   voidIt: {
     title: 'Cancel this document',

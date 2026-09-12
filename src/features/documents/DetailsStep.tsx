@@ -36,6 +36,8 @@ export interface DetailsStepProps {
   readonly onAddCustomer: (customer: NewCustomer) => void
   readonly onSetUpPayment: () => void
   readonly onSign: () => void
+  /** The drawn signature itself, resolved from the draft's asset id (§G). */
+  readonly signatureUrl?: string
 }
 
 function Card({ title, accent, children }: { title: string; accent: string; children: ReactNode }) {
@@ -104,6 +106,7 @@ export function DetailsStep({
   onAddCustomer,
   onSetUpPayment,
   onSign,
+  signatureUrl,
 }: DetailsStepProps) {
   const { profile, strings } = useCompany()
   const accent = TYPE_PALETTE[draft.type].accent
@@ -190,13 +193,23 @@ export function DetailsStep({
       )}
 
       <Card title={strings.details.signature} accent={accent}>
+        {/*
+          §G: "a dashed tap-to-sign box, OR the drawn signature". A tick is
+          neither — it says a signature exists without showing which one, and
+          the owner cannot tell a good mark from a slipped finger without
+          reopening the pad.
+        */}
         <button
           type="button"
           onClick={onSign}
-          aria-label={strings.details.tapToSign}
-          className="min-h-[72px] w-full rounded-lg border-2 border-dashed border-navy/25 text-sm opacity-70"
+          aria-label={signatureUrl === undefined ? strings.details.tapToSign : strings.signature.title}
+          className="flex min-h-[72px] w-full items-center justify-center rounded-lg border-2 border-dashed border-navy/25 p-2 text-sm opacity-70"
         >
-          {draft.signatureAssetId === undefined ? strings.details.tapToSign : '✓'}
+          {signatureUrl === undefined ? (
+            strings.details.tapToSign
+          ) : (
+            <img src={signatureUrl} alt={strings.signature.drawn} className="max-h-14 w-auto" />
+          )}
         </button>
       </Card>
     </div>

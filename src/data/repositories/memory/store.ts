@@ -27,12 +27,14 @@ import {
   type Repositories,
   type CreditNoteRecord,
   type CreditNoteRepository,
+  type AssetRecord,
+  type AssetRepository,
   type SavedItem,
   type ShareEvent,
   type ShareEventRepository,
   RepositoryError,
 } from '../types'
-import { assertTransition, isDraft } from '../../../domain/documents/lifecycle'
+import { assertTransition, isDraft, isEvidenceSealed } from '../../../domain/documents/lifecycle'
 import { reversalOf } from '../../../domain/payments/ledger'
 
 let counter = 0
@@ -60,6 +62,7 @@ export interface MemoryState {
   expenses: Expense[]
   shares: ShareEvent[]
   credits: CreditNoteRecord[]
+  assets: AssetRecord[]
 }
 
 export const emptyState = (): MemoryState => ({
@@ -71,6 +74,7 @@ export const emptyState = (): MemoryState => ({
   expenses: [],
   shares: [],
   credits: [],
+  assets: [],
 })
 
 export function createMemoryRepositories(state: MemoryState = emptyState()): Repositories {
@@ -178,6 +182,28 @@ export function createMemoryRepositories(state: MemoryState = emptyState()): Rep
           id: row.id,
           issuedReference: row.issuedReference,
           frozenLabels: row.frozenLabels,
+        }
+        state.documents[index] = updated
+        return updated
+      })
+    },
+    async signDelivery(id, evidence, ctx) {
+      return log.once(ctx, () => {
+        const { index, row } = findDocument(id)
+        if (isEvidenceSealed(row.type, row.status)) {
+          throw new RepositoryError(
+            `${row.type} ${id} is already signed for. Delivery evidence cannot be altered once captured (v6 §P).`,
+          )
+        }
+        // The lifecycle has the final say on whether this document can reach
+        // delivered at all — a draft cannot, and neither can a void one.
+        assertTransition(row.type, row.status, 'delivered')
+        const updated: DocumentRecord = {
+          ...row,
+          ...evidence,
+          // One write: the mark, the signer, the moment and the status land
+          // together or not at all (§P).
+          status: 'delivered',
         }
         state.documents[index] = updated
         return updated
@@ -337,5 +363,33 @@ export function createMemoryRepositories(state: MemoryState = emptyState()): Rep
     },
   }
 
-  return { companies, customers, documents, payments, items, expenses, shares, credits }
+  const assets: AssetRepository = {
+    async list(companyId) {
+      return scoped(state.assets, companyId)
+    },
+    async get(id) {
+      return state.assets.find((asset) => asset.id === id) ?? null
+    },
+    async store(asset, ctx) {
+      // No update, no delete. An asset behind an issued document is evidence
+      // (§P) — drawing again makes a new one rather than editing this one.
+      return log.once(ctx, () => {
+        const created: AssetRecord = { ...asset, id: nextId('ast') }
+        state.assets.push(created)
+        return created
+      })
+    },
+  }
+
+  return {
+    companies,
+    customers,
+    documents,
+    payments,
+    items,
+    expenses,
+    shares,
+    credits,
+    assets,
+  }
 }

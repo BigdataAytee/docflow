@@ -177,6 +177,102 @@ describe('Issued documents are immutable (Rule #5, §C)', () => {
   })
 })
 
+describe('Delivery evidence is one write, and captured once (§P)', () => {
+  const dispatched = async () => {
+    const created = await repos.documents.createDraft(
+      { ...draft(), type: 'waybill', totalMinor: 0, lineItems: [] },
+      ctx('w1'),
+    )
+    await repos.documents.issue(
+      created.id,
+      { reference: 'WB-0001', frozenLabels: freezeLabels({ locale: 'EN-NG' }, 'waybill'), totalMinor: 0 },
+      ctx('w2'),
+    )
+    await repos.documents.transition(created.id, 'dispatched', ctx('w3'))
+    return created.id
+  }
+
+  const evidence = {
+    signerName: 'Bisi Adeyemi',
+    signerRole: 'Storekeeper',
+    signedAt: '2026-09-12T14:30:00Z',
+    signatureAssetId: 'ast_1',
+  }
+
+  it('applies the mark, the signer, the moment and the status together', async () => {
+    const id = await dispatched()
+    const signed = await repos.documents.signDelivery(id, evidence, ctx('sign-1'))
+
+    expect(signed.status).toBe('delivered')
+    expect(signed.signerName).toBe('Bisi Adeyemi')
+    expect(signed.signerRole).toBe('Storekeeper')
+    expect(signed.signedAt).toBe('2026-09-12T14:30:00Z')
+    expect(signed.signatureAssetId).toBe('ast_1')
+  })
+
+  it('refuses to re-sign a delivery already signed for', async () => {
+    const id = await dispatched()
+    await repos.documents.signDelivery(id, evidence, ctx('sign-1'))
+
+    // A later link use, a second device, a retried tap under a fresh key:
+    // the evidence is sealed and none of them may alter it (§P).
+    await expect(
+      repos.documents.signDelivery(
+        id,
+        { ...evidence, signerName: 'Somebody Else', signatureAssetId: 'ast_2' },
+        ctx('sign-2'),
+      ),
+    ).rejects.toThrow(RepositoryError)
+
+    const after = await repos.documents.get(ACME, id)
+    expect(after?.signerName).toBe('Bisi Adeyemi')
+    expect(after?.signatureAssetId).toBe('ast_1')
+  })
+
+  it('refuses a delivery that never went out', async () => {
+    const created = await repos.documents.createDraft(
+      { ...draft(), type: 'waybill', totalMinor: 0, lineItems: [] },
+      ctx('w1'),
+    )
+    await expect(
+      repos.documents.signDelivery(created.id, evidence, ctx('sign-1')),
+    ).rejects.toThrow()
+  })
+
+  it('writes once however often the same tap is replayed (§M)', async () => {
+    const id = await dispatched()
+    for (const _ of [1, 2, 3]) await repos.documents.signDelivery(id, evidence, ctx('sign-1'))
+    const after = await repos.documents.get(ACME, id)
+    expect(after?.signedAt).toBe('2026-09-12T14:30:00Z')
+  })
+})
+
+describe('An asset is evidence: written once, never changed (§P)', () => {
+  const mark = {
+    companyId: ACME,
+    kind: 'signature' as const,
+    dataUrl: 'data:image/svg+xml,%3Csvg%2F%3E',
+    createdAt: '2026-09-12T14:30:00Z',
+  }
+
+  it('stores once however often the same draw is replayed (§M)', async () => {
+    for (const _ of [1, 2, 3]) await repos.assets.store(mark, ctx('ast-1'))
+    expect(state.assets).toHaveLength(1)
+  })
+
+  it('offers no way to change or remove one', () => {
+    // Drawing again makes a NEW asset, so an issued document's mark cannot
+    // change under it (Rule #5). There is no update and no delete here.
+    expect(Object.keys(repos.assets).sort()).toEqual(['get', 'list', 'store'])
+  })
+
+  it('never returns another company assets', async () => {
+    await repos.assets.store(mark, ctx('ast-1'))
+    await repos.assets.store({ ...mark, companyId: RIVAL }, ctx('ast-2'))
+    expect(await repos.assets.list(ACME)).toHaveLength(1)
+  })
+})
+
 describe('Every read is company-scoped', () => {
   it('never returns another company rows', async () => {
     await repos.customers.create({ companyId: RIVAL, kind: 'person', name: 'Theirs', labels: [] }, ctx('r1'))

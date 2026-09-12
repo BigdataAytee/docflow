@@ -24,6 +24,14 @@ export const customerPath = (id: string): string => `/customers/${id}`
 export const statementPath = (customerId: string, currency: string): string =>
   `/customers/${customerId}/statement/${currency}`
 
-export const SETTINGS_PANELS = ['region', 'company', 'tax', 'payment', 'items', 'data'] as const
+export const SETTINGS_PANELS = [
+  'region',
+  'company',
+  'tax',
+  'payment',
+  'items',
+  'signature',
+  'data',
+] as const
 export type SettingsPanel = (typeof SETTINGS_PANELS)[number]
 export const settingsPath = (panel: SettingsPanel): string => `/settings/${panel}`

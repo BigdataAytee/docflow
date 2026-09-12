@@ -145,6 +145,26 @@ describe('Titles and labels come from the terminology layer (Rule #5, §D)', () 
     ).toBe('Total estimé')
   })
 
+  it('prints the actual signature when the asset is to hand (§I)', () => {
+    const model = composeDocument(
+      { ...doc('invoice'), signatureAssetId: 'ast_1' },
+      { ...options(), assetUrls: { ast_1: 'data:image/svg+xml,%3Csvg%2F%3E' } },
+    )
+    expect(model.signature.imageUrl).toBe('data:image/svg+xml,%3Csvg%2F%3E')
+  })
+
+  it('prints no stand-in mark when the asset is not to hand (§I)', () => {
+    // §I allows placeholders only in clearly-labelled samples. A real page
+    // prints the rule and the caption with nothing above them.
+    const model = composeDocument({ ...doc('invoice'), signatureAssetId: 'ast_gone' }, options())
+    expect(model.signature.assetId).toBe('ast_gone')
+    expect(model.signature.imageUrl).toBeUndefined()
+  })
+
+  it('prints nothing above the rule on a document nobody signed', () => {
+    expect(composeDocument(doc('invoice'), options()).signature.imageUrl).toBeUndefined()
+  })
+
   it('uses the per-type signature caption', () => {
     expect(composeDocument(doc('invoice'), options()).signature.caption).toBe('AUTHORISED SIGNATURE')
     expect(composeDocument(doc('waybill'), options()).signature.caption).toBe('DISPATCHED BY')

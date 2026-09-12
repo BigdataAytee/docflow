@@ -234,6 +234,22 @@ export function DocumentPage({
               )}
 
               <div className="shrink-0 text-right">
+                {/*
+                  §I: the actual captured signature, then a short ~76px rule,
+                  then the localised caption and the signer's name. The mark
+                  sits ON the rule, which is why it is bottom-aligned in a
+                  fixed-height box — a tall signature and a flat one both have
+                  to meet the same line.
+                */}
+                {model.signature.imageUrl !== undefined && (
+                  <div className="flex h-10 items-end justify-end">
+                    <img
+                      src={model.signature.imageUrl}
+                      alt={model.signature.caption}
+                      className="ml-auto max-h-10 w-auto max-w-[140px] object-contain object-bottom"
+                    />
+                  </div>
+                )}
                 <div className="ml-auto w-[76px] border-t" style={{ borderColor: ink }} />
                 <p className="mt-1 font-bold uppercase tracking-wide">{model.signature.caption}</p>
                 {model.signature.signerName !== undefined && (

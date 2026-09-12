@@ -36,8 +36,13 @@ const opts = {
 
 const fmt = (minor: number) => `₦${(minor / 100).toLocaleString('en-NG', { minimumFractionDigits: 2 })}`
 
-function draw(document: ComposableDocument, templateId = 'classic', rowsPerPage = 20) {
-  const model = composeDocument(document, opts)
+function draw(
+  document: ComposableDocument,
+  templateId = 'classic',
+  rowsPerPage = 20,
+  extraOptions: Partial<Parameters<typeof composeDocument>[1]> = {},
+) {
+  const model = composeDocument(document, { ...opts, ...extraOptions })
   const pages = paginate(model, { rowsPerPage, footerRowCost: 3 })
   const template = templateById(templateId)
   return {
@@ -97,6 +102,20 @@ describe('An invoice prints its payment box (§I, §J)', () => {
     expect(screen.getByText('HOW TO PAY')).toBeInTheDocument()
     expect(screen.getByText('Guaranty Trust Bank')).toBeInTheDocument()
     expect(screen.getByText('0123456789')).toBeInTheDocument()
+  })
+
+  it('prints the captured signature above the rule (§I)', () => {
+    const MARK = 'data:image/svg+xml,%3Csvg%2F%3E'
+    draw({ ...invoice, signatureAssetId: 'ast_1' }, 'classic', 20, {
+      assetUrls: { ast_1: MARK },
+    }).render()
+    expect(screen.getByRole('img', { name: 'AUTHORISED SIGNATURE' })).toHaveAttribute('src', MARK)
+  })
+
+  it('prints no mark at all when nobody signed', () => {
+    draw(invoice).render()
+    expect(screen.getByText('AUTHORISED SIGNATURE')).toBeInTheDocument()
+    expect(screen.queryByRole('img', { name: 'AUTHORISED SIGNATURE' })).not.toBeInTheDocument()
   })
 
   it('carries the authorised-signature caption', () => {

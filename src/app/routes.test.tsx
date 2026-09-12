@@ -1635,3 +1635,240 @@ describe('A receipt is evidence of a payment (§G, §K, §V)', () => {
     })
   })
 })
+
+describe('Signing (§G, §I, §P)', () => {
+  /** jsdom lays nothing out, so the pad falls back to raw client coordinates. */
+  const drawOn = (pad: HTMLElement) => {
+    fireEvent.pointerDown(pad, { pointerId: 1, clientX: 20, clientY: 40 })
+    for (const [x, y] of [
+      [40, 20],
+      [60, 45],
+      [80, 25],
+      [100, 40],
+    ]) {
+      fireEvent.pointerMove(pad, { pointerId: 1, clientX: x, clientY: y })
+    }
+    fireEvent.pointerUp(pad, { pointerId: 1 })
+  }
+
+  const sign = async (user: ReturnType<typeof userEvent.setup>) => {
+    drawOn(await screen.findByRole('application', { name: 'Signing area' }))
+    await user.click(screen.getByRole('button', { name: 'Use this' }))
+  }
+
+  describe('Drawing one in the builder (§G step 1)', () => {
+    const seedDraft = (state: MemoryState) => {
+      state.customers.push(customer())
+      state.documents.push({
+        id: 'doc_draft',
+        companyId: DEV_COMPANY_ID,
+        type: 'invoice',
+        status: 'draft',
+        customerId: 'cus_1',
+        currency: 'NGN',
+        lineItems: [],
+        issuedReference: null,
+        frozenLabels: null,
+        totalMinor: 0,
+      })
+    }
+
+    it('stores the mark and puts it on the draft', async () => {
+      const user = userEvent.setup()
+      const state = renderAt('/edit/doc_draft', seedDraft)
+
+      await user.click(await screen.findByRole('button', { name: 'Tap to sign' }))
+      await sign(user)
+
+      await waitFor(() => expect(state.assets).toHaveLength(1))
+      expect(state.assets[0]?.kind).toBe('signature')
+      expect(state.assets[0]?.dataUrl.startsWith('data:image/svg+xml,')).toBe(true)
+
+      // §G: "the dashed tap-to-sign box, OR the drawn signature".
+      expect(await screen.findByRole('img', { name: 'Signed' })).toHaveAttribute(
+        'src',
+        state.assets[0]?.dataUrl ?? '',
+      )
+    })
+
+    it('survives the save, which is what a drawn signature has to do', async () => {
+      const user = userEvent.setup()
+      const state = renderAt('/edit/doc_draft', seedDraft)
+
+      await user.click(await screen.findByRole('button', { name: 'Tap to sign' }))
+      await sign(user)
+      await waitFor(() => expect(state.assets).toHaveLength(1))
+
+      // Autosave happens on step change (§G).
+      await user.click(screen.getByRole('button', { name: 'Next' }))
+      await waitFor(() =>
+        expect(state.documents[0]?.signatureAssetId).toBe(state.assets[0]?.id),
+      )
+    })
+
+    it('reaches the page it will print on (§I)', async () => {
+      const user = userEvent.setup()
+      const state = renderAt('/edit/doc_draft', seedDraft)
+      await user.click(await screen.findByRole('button', { name: 'Tap to sign' }))
+      await sign(user)
+      await waitFor(() => expect(state.assets).toHaveLength(1))
+
+      // Step 5 is Review, which renders the real page.
+      for (let step = 0; step < 4; step += 1) {
+        await user.click(await screen.findByRole('button', { name: 'Next' }))
+      }
+      expect(
+        await screen.findByRole('img', { name: 'AUTHORISED SIGNATURE' }),
+      ).toBeInTheDocument()
+    })
+  })
+
+  describe('Drawing one once, in Settings (§G — Your business)', () => {
+    it('saves it as the default and shows it back', async () => {
+      const user = userEvent.setup()
+      const state = renderAt('/settings/signature')
+
+      expect(await screen.findByText('Nothing drawn yet.')).toBeInTheDocument()
+      await user.click(screen.getByRole('button', { name: 'Tap to sign' }))
+      await sign(user)
+
+      await waitFor(() => expect(state.companies[0]?.defaultSignatureAssetId).toBe(state.assets[0]?.id))
+      expect(await screen.findByRole('img', { name: 'Default signature' })).toBeInTheDocument()
+    })
+
+    it('signs the next new document without being drawn again', async () => {
+      const user = userEvent.setup()
+      const state = renderAt('/settings/signature')
+      await user.click(await screen.findByRole('button', { name: 'Tap to sign' }))
+      await sign(user)
+      await waitFor(() => expect(state.assets).toHaveLength(1))
+
+      await user.click(screen.getByRole('link', { name: 'Home' }))
+      await user.click(await screen.findByRole('button', { name: /^Invoice\s*\d+$/ }))
+      await user.click((await screen.findAllByRole('button', { name: /New Invoice/ }))[0]!)
+
+      await waitFor(() => expect(state.documents).toHaveLength(1))
+      expect(state.documents[0]?.signatureAssetId).toBe(state.assets[0]?.id)
+    })
+
+    it('stops signing new documents when it is removed, keeping the mark itself', async () => {
+      const user = userEvent.setup()
+      const state = renderAt('/settings/signature')
+      await user.click(await screen.findByRole('button', { name: 'Tap to sign' }))
+      await sign(user)
+      await waitFor(() => expect(state.assets).toHaveLength(1))
+
+      await user.click(await screen.findByRole('button', { name: 'Remove' }))
+      await waitFor(() => expect(state.companies[0]?.defaultSignatureAssetId).toBeNull())
+      // The asset stays: documents already signed with it hold its id, and an
+      // issued page's mark cannot change under it (Rule #5).
+      expect(state.assets).toHaveLength(1)
+    })
+  })
+
+  describe('Signing for a delivery (§P, §Q Phase 2 gate)', () => {
+    const delivery = (status: string) => (state: MemoryState) => {
+      state.customers.push(customer())
+      state.documents.push({
+        id: 'doc_way',
+        companyId: DEV_COMPANY_ID,
+        type: 'waybill',
+        status,
+        customerId: 'cus_1',
+        currency: 'NGN',
+        lineItems: [],
+        issueDate: '2026-09-01',
+        issuedReference: 'WB-0007',
+        frozenLabels: {
+          printedTitle: 'WAYBILL',
+          partyLabel: 'Deliver to',
+          signatureCaption: 'Received by',
+          language: 'en',
+        },
+        totalMinor: 0,
+      })
+    }
+
+    it('offers to send an issued one on its way, then to sign for it', async () => {
+      const user = userEvent.setup()
+      const state = renderAt('/doc/doc_way', delivery('issued'))
+
+      // A delivery that never left cannot have arrived, so signing is not
+      // offered yet — this is the button that makes it reachable.
+      expect(screen.queryByRole('button', { name: 'Confirm delivery' })).not.toBeInTheDocument()
+      await user.click(await screen.findByRole('button', { name: 'Send it on its way' }))
+
+      await waitFor(() => expect(state.documents[0]?.status).toBe('dispatched'))
+      expect(await screen.findByRole('button', { name: 'Confirm delivery' })).toBeInTheDocument()
+    })
+
+    it('captures the signer and the mark in one write, and delivers it (§P)', async () => {
+      const user = userEvent.setup()
+      const state = renderAt('/doc/doc_way', delivery('dispatched'))
+
+      await user.click(await screen.findByRole('button', { name: 'Confirm delivery' }))
+      await user.type(screen.getByLabelText('Who received it?'), 'Bisi Adeyemi')
+      await user.type(screen.getByLabelText('Their role'), 'Storekeeper')
+      await sign(user)
+
+      await waitFor(() => expect(state.documents[0]?.status).toBe('delivered'))
+      const signed = state.documents[0]
+      expect(signed?.signerName).toBe('Bisi Adeyemi')
+      expect(signed?.signerRole).toBe('Storekeeper')
+      expect(signed?.signedAt).toBeTruthy()
+      expect(signed?.signatureAssetId).toBe(state.assets[0]?.id)
+    })
+
+    it('asks who received it before taking a mark, rather than discarding one', async () => {
+      const user = userEvent.setup()
+      renderAt('/doc/doc_way', delivery('dispatched'))
+      await user.click(await screen.findByRole('button', { name: 'Confirm delivery' }))
+
+      // No pad at all until there is a name — a signature already drawn must
+      // never be thrown away for a rule nobody was told about.
+      expect(screen.queryByRole('application', { name: 'Signing area' })).not.toBeInTheDocument()
+      expect(screen.getByText(/Add who received it/)).toBeInTheDocument()
+
+      await user.type(screen.getByLabelText('Who received it?'), 'Bisi')
+      expect(screen.getByRole('application', { name: 'Signing area' })).toBeInTheDocument()
+    })
+
+    it('shows the evidence afterwards and offers no way to sign again (§P)', async () => {
+      const user = userEvent.setup()
+      const state = renderAt('/doc/doc_way', delivery('dispatched'))
+
+      await user.click(await screen.findByRole('button', { name: 'Confirm delivery' }))
+      await user.type(screen.getByLabelText('Who received it?'), 'Bisi Adeyemi')
+      await sign(user)
+      await waitFor(() => expect(state.documents[0]?.status).toBe('delivered'))
+
+      expect(await screen.findByText(/Signed by Bisi Adeyemi/)).toBeInTheDocument()
+      expect(screen.queryByRole('button', { name: 'Confirm delivery' })).not.toBeInTheDocument()
+      expect(screen.queryByRole('button', { name: 'Send it on its way' })).not.toBeInTheDocument()
+    })
+
+    it('is offered on no other type', async () => {
+      renderAt('/doc/doc_inv', (state) => {
+        state.documents.push({
+          id: 'doc_inv',
+          companyId: DEV_COMPANY_ID,
+          type: 'invoice',
+          status: 'issued',
+          currency: 'NGN',
+          lineItems: [],
+          issueDate: '2026-09-01',
+          issuedReference: 'INV-0042',
+          frozenLabels: {
+            printedTitle: 'INVOICE',
+            partyLabel: 'Bill to',
+            signatureCaption: 'Authorised signature',
+            language: 'en',
+          },
+          totalMinor: 145_000_00,
+        })
+      })
+      expect(await screen.findByText('INV-0042')).toBeInTheDocument()
+      expect(screen.queryByRole('button', { name: 'Confirm delivery' })).not.toBeInTheDocument()
+    })
+  })
+})
