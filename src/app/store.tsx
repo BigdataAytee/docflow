@@ -36,6 +36,7 @@ import type {
   MutationContext,
   Payment,
   SavedItem,
+  ShareEvent,
 } from '../data/repositories'
 import { DOCUMENT_TYPES, type DocumentType } from '../domain/documents/types'
 import type { FrozenLabels } from '../domain/documents/types'
@@ -47,6 +48,7 @@ export interface AppData {
   readonly payments: readonly Payment[]
   readonly items: readonly SavedItem[]
   readonly expenses: readonly Expense[]
+  readonly shares: readonly ShareEvent[]
   /** True until the first load settles. Screens show skeletons, never spinners. */
   readonly loading: boolean
   readonly error: string | null
@@ -68,6 +70,8 @@ export interface AppActions {
   reversePayment(paymentId: string): Promise<void>
   rememberItem(item: Omit<SavedItem, 'id' | 'companyId' | 'timesUsed'>): Promise<void>
   addExpense(expense: Omit<Expense, 'id' | 'companyId'>): Promise<void>
+  /** §M: a handoff is recorded; delivery never is. */
+  recordShare(event: Omit<ShareEvent, 'id' | 'companyId'>): Promise<void>
 }
 
 export type AppStore = AppData & { readonly actions: AppActions }
@@ -81,6 +85,7 @@ const EMPTY: AppData = {
   payments: [],
   items: [],
   expenses: [],
+  shares: [],
   loading: true,
   error: null,
 }
@@ -96,12 +101,13 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
   const load = useCallback(async () => {
     const mine = (generation.current += 1)
     try {
-      const [company, customers, payments, items, expenses, ...byType] = await Promise.all([
+      const [company, customers, payments, items, expenses, shares, ...byType] = await Promise.all([
         repositories.companies.get(companyId),
         repositories.customers.list(companyId),
         repositories.payments.listForCompany(companyId),
         repositories.items.list(companyId),
         repositories.expenses.list(companyId),
+        repositories.shares.list(companyId),
         ...DOCUMENT_TYPES.map((type) => repositories.documents.listByType(companyId, type)),
       ])
       if (generation.current !== mine) return
@@ -112,6 +118,7 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
         payments,
         items,
         expenses,
+        shares,
         loading: false,
         error: null,
       })
@@ -199,6 +206,10 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
       },
       async addExpense(expense) {
         await repositories.expenses.create({ ...expense, companyId }, key('expense.create'))
+        await load()
+      },
+      async recordShare(event) {
+        await repositories.shares.record({ ...event, companyId }, key('share.record'))
         await load()
       },
     }

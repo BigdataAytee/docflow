@@ -33,16 +33,29 @@ import { invoiceOutstanding } from '../../domain/payments/ledger'
 import { TYPE_PALETTE } from '../../ui/tokens'
 import { displayLabels } from '../../domain/locale/profile'
 import { formatMoney } from '../../features/customers/formatMoney'
+import { format } from '../../domain/locale/data/strings'
+import { ShareSheet } from '../../share/ShareSheet'
+import { createWebSharePort } from '../../share/web'
+import { lastShared, shareCount, shareEventFor } from '../../share/events'
+// `shareFileName` is deliberately not imported: there is no rendered file to
+// attach until §Q Phase 4's native PDF writer, and the sheet says so.
+import { shareTextFor } from '../../share/text'
+import { deviceId } from '../device'
 import { displayStatus, totalOf } from '../derive'
 
 export function DocumentScreen({ today = new Date().toISOString().slice(0, 10) }: { today?: string }) {
   const { id } = useParams<{ id: string }>()
   const { profile, strings } = useCompany()
-  const { company, customers, documents, payments, loading, actions } = useAppData()
+  const { company, customers, documents, payments, shares, loading, actions } = useAppData()
   const navigate = useNavigate()
 
   const [recurrence, setRecurrence] = useState<Recurrence | null>(null)
   const [tone, setTone] = useState<'softer' | 'firmer' | null>(null)
+  const [sharing, setSharing] = useState(false)
+
+  // One port per mount. Phase 4 swaps the Capacitor plugin in behind it and no
+  // line of this screen changes.
+  const port = useMemo(() => createWebSharePort(), [])
 
   const record = documents.find((document) => document.id === id)
   const customer = customers.find((row) => row.id === record?.customerId)
@@ -89,6 +102,28 @@ export function DocumentScreen({ today = new Date().toISOString().slice(0, 10) }
     }
   })()
 
+  const shareText = shareTextFor({
+    document: {
+      type: record.type,
+      reference: record.issuedReference,
+      frozenLabels: record.frozenLabels,
+      ...(customer === undefined ? {} : { customerName: customer.name }),
+      // A delivery document carries no money anywhere, so none goes out in
+      // its message either (§G, §I, §V).
+      ...(isInvoice ? { total } : {}),
+      ...(isInvoice && outstanding.minor > 0 ? { outstanding } : {}),
+      ...(record.dueDate === undefined ? {} : { dueDate: record.dueDate }),
+    },
+    businessName: company?.name ?? '',
+    profile,
+    strings: strings.share,
+    formatAmount: (amount) => formatMoney(amount),
+    fill: format,
+  })
+
+  const timesShared = shareCount(shares, record.id)
+  const latestShare = lastShared(shares, record.id)
+
   return (
     <div className="pb-28">
       <PageHeader
@@ -108,6 +143,45 @@ export function DocumentScreen({ today = new Date().toISOString().slice(0, 10) }
           >
             {strings.savedDocument.continueEditing}
           </button>
+        )}
+
+        {/* §G's first action on every type. A draft has no frozen reference and
+            no issued page, so there is nothing to send yet. */}
+        {record.status !== 'draft' && !sharing && (
+          <button
+            type="button"
+            className="min-h-tap w-full rounded-full bg-brand px-4 text-sm font-semibold text-white"
+            onClick={() => setSharing(true)}
+          >
+            {strings.savedDocument.sharePdf}
+          </button>
+        )}
+
+        {sharing && (
+          <ShareSheet
+            port={port}
+            text={shareText}
+            sharedCount={timesShared}
+            {...(latestShare === null ? {} : { lastSharedAt: latestShare.at.slice(0, 10) })}
+            onClose={() => setSharing(false)}
+            onResult={(result) => {
+              const event = shareEventFor({
+                // The repository mints the real id; this one only keys the write.
+                id: `pending:${record.id}`,
+                companyId: record.companyId,
+                documentId: record.id,
+                at: new Date().toISOString(),
+                result,
+                deviceId: deviceId(),
+              })
+              // `unavailable` produces no event: nothing was attempted, so
+              // there is nothing that happened to record (§M).
+              if (event !== null) {
+                const { id: _id, companyId: _companyId, ...rest } = event
+                void actions.recordShare(rest)
+              }
+            }}
+          />
         )}
 
         {isInvoice && record.status !== 'draft' && (

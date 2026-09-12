@@ -809,3 +809,240 @@ describe('The builder picks a customer (§G, step 1)', () => {
     expect(await screen.findByRole('heading', { name: /Deliver to/i })).toBeInTheDocument()
   })
 })
+
+describe('Sharing a document (§B, §G, §M)', () => {
+  const issued = (state: MemoryState) => {
+    state.customers.push(customer())
+    state.documents.push({
+      id: 'doc_issued',
+      companyId: DEV_COMPANY_ID,
+      type: 'invoice',
+      status: 'issued',
+      customerId: 'cus_1',
+      currency: 'NGN',
+      lineItems: [],
+      issueDate: '2026-09-01',
+      dueDate: '2026-09-30',
+      issuedReference: 'INV-0042',
+      frozenLabels: {
+        printedTitle: 'INVOICE',
+        partyLabel: 'Bill to',
+        signatureCaption: 'Authorised signature',
+        language: 'en',
+      },
+      totalMinor: 145_000_00,
+    })
+    const company = state.companies[0]
+    if (company !== undefined) state.companies[0] = { ...company, name: 'Sola Ventures' }
+  }
+
+  it('offers sharing on an issued document', async () => {
+    renderAt('/doc/doc_issued', issued)
+    expect(await screen.findByRole('button', { name: 'Share the PDF' })).toBeInTheDocument()
+  })
+
+  it('offers nothing to share on a draft, which has no frozen reference yet', async () => {
+    renderAt('/doc/doc_draft', (state) => {
+      state.documents.push({
+        id: 'doc_draft',
+        companyId: DEV_COMPANY_ID,
+        type: 'invoice',
+        status: 'draft',
+        currency: 'NGN',
+        lineItems: [],
+        issuedReference: null,
+        frozenLabels: null,
+        totalMinor: 0,
+      })
+    })
+    // The draft's own action is there, so the screen has rendered.
+    expect(await screen.findByRole('button', { name: 'Carry on editing' })).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Share the PDF' })).not.toBeInTheDocument()
+  })
+
+  it('composes the message from the document, the customer and the ledger', async () => {
+    const user = userEvent.setup()
+    renderAt('/doc/doc_issued', issued)
+    await user.click(await screen.findByRole('button', { name: 'Share the PDF' }))
+
+    const sheet = screen.getByLabelText('Send this document')
+    expect(sheet).toHaveTextContent('Invoice INV-0042')
+    expect(sheet).toHaveTextContent('For Ade Stores')
+    expect(sheet).toHaveTextContent('₦145,000.00 still outstanding')
+    expect(sheet).toHaveTextContent('Due 2026-09-30')
+    expect(sheet).toHaveTextContent('— Sola Ventures')
+  })
+
+  it('carries no money in a delivery document message (§G, §I, §V)', async () => {
+    const user = userEvent.setup()
+    renderAt('/doc/doc_way', (state) => {
+      state.customers.push(customer())
+      state.documents.push({
+        id: 'doc_way',
+        companyId: DEV_COMPANY_ID,
+        type: 'waybill',
+        status: 'delivered',
+        customerId: 'cus_1',
+        currency: 'NGN',
+        lineItems: [],
+        issueDate: '2026-09-01',
+        issuedReference: 'WB-0007',
+        frozenLabels: {
+          printedTitle: 'WAYBILL',
+          partyLabel: 'Deliver to',
+          signatureCaption: 'Received by',
+          language: 'en',
+        },
+        totalMinor: 0,
+      })
+    })
+
+    await user.click(await screen.findByRole('button', { name: 'Share the PDF' }))
+    const sheet = screen.getByLabelText('Send this document')
+    expect(sheet).toHaveTextContent('Waybill WB-0007')
+    expect(sheet).not.toHaveTextContent('₦')
+    expect(sheet).not.toHaveTextContent('outstanding')
+  })
+
+  it('keeps the word the document was issued under after a region change (§D.2)', async () => {
+    const user = userEvent.setup()
+    renderAt('/doc/doc_way', (state) => {
+      state.customers.push(customer())
+      state.documents.push({
+        id: 'doc_way',
+        companyId: DEV_COMPANY_ID,
+        type: 'waybill',
+        status: 'delivered',
+        customerId: 'cus_1',
+        currency: 'NGN',
+        lineItems: [],
+        issueDate: '2026-09-01',
+        issuedReference: 'WB-0007',
+        frozenLabels: {
+          printedTitle: 'WAYBILL',
+          partyLabel: 'Deliver to',
+          signatureCaption: 'Received by',
+          language: 'en',
+        },
+        totalMinor: 0,
+      })
+      // The business has since moved to the UK, where it is a delivery note.
+      const company = state.companies[0]
+      if (company !== undefined) state.companies[0] = { ...company, localeRegion: 'GB' }
+    })
+
+    await user.click(await screen.findByRole('button', { name: 'Share the PDF' }))
+    const sheet = screen.getByLabelText('Send this document')
+    expect(sheet).toHaveTextContent('Waybill WB-0007')
+    expect(sheet).not.toHaveTextContent('Delivery note')
+  })
+
+  it('records the handoff against the document, and never a delivery', async () => {
+    const user = userEvent.setup()
+    const state = renderAt('/doc/doc_issued', issued)
+    await user.click(await screen.findByRole('button', { name: 'Share the PDF' }))
+
+    // jsdom has no navigator.share, so the port reports no sheet and the
+    // screen offers the clipboard instead — the honest capability path (§N).
+    expect(screen.queryByRole('button', { name: 'Send it' })).not.toBeInTheDocument()
+    await user.click(screen.getByRole('button', { name: 'Copy the text' }))
+
+    await waitFor(() => expect(state.shares).toHaveLength(1))
+    const event = state.shares[0]
+    expect(event?.action).toBe('shared')
+    expect(event?.entity).toBe('document')
+    expect(event?.recordId).toBe('doc_issued')
+    expect(event?.channel).toBe('clipboard')
+    expect(event).not.toHaveProperty('deliveredAt')
+    expect(event).not.toHaveProperty('recipient')
+  })
+
+  it('shows the handoff count on the next visit', async () => {
+    const user = userEvent.setup()
+    renderAt('/doc/doc_issued', (state) => {
+      issued(state)
+      state.shares.push({
+        id: 'shr_1',
+        companyId: DEV_COMPANY_ID,
+        action: 'shared',
+        entity: 'document',
+        recordId: 'doc_issued',
+        at: '2026-09-11T10:00:00Z',
+        channel: 'sheet',
+      })
+    })
+
+    await user.click(await screen.findByRole('button', { name: 'Share the PDF' }))
+    expect(screen.getByText(/Sent once/)).toBeInTheDocument()
+    expect(screen.getByText(/Last sent 2026-09-11/)).toBeInTheDocument()
+  })
+})
+
+describe('Pressing Save when a document is not ready (§G, §M)', () => {
+  it('takes the owner to the first missing thing instead of throwing', async () => {
+    const user = userEvent.setup()
+    const state = renderAt('/edit/doc_bare', (seed) => {
+      seed.documents.push({
+        id: 'doc_bare',
+        companyId: DEV_COMPANY_ID,
+        type: 'invoice',
+        status: 'draft',
+        currency: 'NGN',
+        lineItems: [],
+        issuedReference: null,
+        frozenLabels: null,
+        totalMinor: 0,
+      })
+    })
+
+    for (let step = 0; step < 4; step += 1) {
+      await user.click(await screen.findByRole('button', { name: 'Next' }))
+    }
+    await user.click(screen.getByRole('button', { name: /^Save/ }))
+
+    // Said so, rather than throwing; and still a draft, so nothing was lost.
+    expect(await screen.findByRole('alert')).toHaveTextContent(/Not quite ready/)
+    expect(state.documents[0]?.status).toBe('draft')
+    expect(state.documents[0]?.issuedReference).toBeNull()
+  })
+
+  it('issues once the missing things are there', async () => {
+    const user = userEvent.setup()
+    const state = renderAt('/edit/doc_ready', (seed) => {
+      seed.customers.push(customer())
+      seed.documents.push({
+        id: 'doc_ready',
+        companyId: DEV_COMPANY_ID,
+        type: 'invoice',
+        status: 'draft',
+        customerId: 'cus_1',
+        currency: 'NGN',
+        lineItems: [
+          {
+            id: 'li_1',
+            description: 'Bag of cement',
+            quantityMilli: quantity(20),
+            unitPriceMinor: 5_000_00,
+            taxable: true,
+          },
+        ],
+        issueDate: '2026-09-11',
+        issuedReference: null,
+        frozenLabels: null,
+        totalMinor: 100_000_00,
+      })
+      const company = seed.companies[0]
+      if (company !== undefined) {
+        seed.companies[0] = { ...company, enabledPaymentMethods: ['bank_transfer'] }
+      }
+    })
+
+    for (let step = 0; step < 4; step += 1) {
+      await user.click(await screen.findByRole('button', { name: 'Next' }))
+    }
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument()
+    await user.click(screen.getByRole('button', { name: /^Save/ }))
+
+    await waitFor(() => expect(state.documents[0]?.status).toBe('issued'))
+  })
+})

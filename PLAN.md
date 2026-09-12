@@ -582,9 +582,66 @@ force-kill and recover. Routes being reachable in a browser is a precondition
 for walking it, not the walk.
 
 What §G describes and is still deliberately absent rather than stubbed: the
-convert / share / sign actions, which need the native bridge (Phase 4);
-signature capture; and the receipt-from-payment flow. Each is a missing screen,
-not a broken one.
+convert and sign actions, which need the native bridge (Phase 4); signature
+capture; and the receipt-from-payment flow. Each is a missing screen, not a
+broken one.
+
+### The share sheet (§B, §G, §M)
+
+§M in one sentence: "A share handoff records a sharing event; it never claims
+recipient delivery." That sentence is the shape of the whole feature.
+
+- [x] **A share port** (`src/share/port.ts`) — the platform behind it changes
+      and the screens above it must not. `ShareOutcome` has no `delivered`, no
+      `sent` and no `received`: not because the UI declines to show them, but
+      because there is no value that could carry them. A field that cannot
+      exist cannot be believed.
+- [x] **The Web Share API adapter** (`web.ts`) — sheet with a file, sheet with
+      text, clipboard, in that order, each DECLARED as a capability before it
+      is offered. A dismissed sheet is a decision, not a failure, and is not
+      quietly retried through the clipboard; a REFUSED sheet
+      (`NotAllowedError`) is a failure the owner is told about, because
+      collapsing the two would hide a real problem behind "you cancelled".
+      Phase 4 swaps Capacitor's plugin in behind the same port.
+- [x] **The share text** (`text.ts`) — composed through the locale layer from
+      the FROZEN labels, so a document shared after the business moves country
+      still reads in the terminology it was issued under (§D.2). §C forbids a
+      hardcoded type name in share-text code and the lint rule enforces it. A
+      delivery document's message carries no money, and a settled invoice goes
+      out with no demand attached.
+- [x] **Presentation vs the frozen word.** The printed title is upper case
+      because that is how it PRINTS (§I); "DELIVERY NOTE WB-0007" shouts in a
+      message. `sentenceCase` softens the case and changes nothing else, using
+      the document's own frozen language to do the lowering. Scripts without
+      case pass through untouched.
+- [x] **The sharing event** (`events.ts`) maps onto §E's `audit_log` row
+      rather than a table invented for it — a share IS an action taken on a
+      document, and append-only is exactly right. `SHARE_ACTIONS` is
+      `shared | share_dismissed | share_failed`; an unavailable platform
+      records nothing, because nothing was attempted.
+- [x] **The sheet** (`ShareSheet.tsx`) shows the exact text before anything
+      goes out (§L1's "nothing sent unseen", applied here), then says the
+      document was handed to the app you picked AND that DocFlow cannot tell
+      whether it arrived. Every other app in this category says "Sent!"; that
+      is the lie this one does not tell.
+- [x] **45 unit and component tests, 8 route tests**, plus a 16-check browser
+      run against the production build with a stubbed OS sheet: issue → share
+      → exactly one payload handed over, carrying title and text and no file →
+      the honest sentences → the handoff count on reopening.
+
+**What it does not do.** There is no PDF *file* to attach: §Q Phase 4 owns the
+native PDF writer, and `src/pdf` renders a layout model rather than bytes. The
+sheet says the text goes out on its own rather than implying a PDF rides along,
+and `shareFileName` sits ready and tested for when the writer lands.
+
+**A defect this turned up, fixed here.** Pressing **Save** on the review step
+with unmet requirements threw an uncaught `IssueError` and told the owner
+nothing — the amber band listed what was missing, but the tap appeared to do
+nothing at all. §G says draft saving is always allowed and final issue
+validates; now Save takes the owner TO the first missing thing and says so, and
+any remaining domain refusal surfaces as §M's "actionable per-record error"
+with the draft untouched. A defect from the router wiring, found by a browser
+smoke run rather than by a test — which is the argument for running one.
 
 ### The builder's customer card (§G, step 1)
 
@@ -736,6 +793,9 @@ needed the bar's accessible name.
 | 38 | Adding a customer asks for a name and nothing else | Rule #1 — no new required fields, ever. A customer typed in mid-document should cost one field, not six, so kind, phone, email and address are all offered and all skippable, and an untyped one is ABSENT on the record rather than an empty string that would print as a blank line (§I). | `src/features/customers/CustomerSheet.tsx` |
 | 39 | The picker hands a new customer UP to the store, never writing one itself | Every mutation in the app goes through one seam so a retried create collapses on its idempotency key (§M) and the screens re-read from one place. A component that wrote its own record would be a second path, and the new customer would not appear in the list the picker itself searches. | `src/features/customers/CustomerPicker.tsx` |
 | 40 | The balance chip and the contact page read the same function | Two figures for one customer's debt, two taps apart, would make both untrustworthy — and the owner would have no way to tell which was right. Both call `customerBalances`, which is property-tested; neither adds up currencies. | `CustomerPicker.tsx`, `ContactPage.tsx` |
+| 41 | `ShareOutcome` has no value meaning "delivered" | §M says a handoff never claims recipient delivery. Enforcing that in the UI would be a promise; enforcing it in the type is a fact. The OS sheet does not report which app was picked or whether anything was sent, so there is nothing true to put in such a field — and a field that cannot be true will eventually be believed. | `src/share/port.ts` |
+| 42 | A sharing event is an `audit_log` row, not a new table | §E lists no `share_events`, and a share IS an action taken on a document — action, entity, record_id, at, device is exactly the shape. Append-only is right too: a handoff happened, and nothing later can un-happen it. | `src/share/events.ts` |
+| 43 | The share text sentence-cases the frozen printed title | §D.2 protects the WORD an issued document was issued under; casing is presentation, and §I's capitals exist for the printed page. The lowering uses the document's own frozen language, so it follows that language's rules rather than the device's, and case-less scripts are untouched. | `src/share/text.ts` |
 
 ## Deviations from the spec
 

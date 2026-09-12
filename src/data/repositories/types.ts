@@ -17,8 +17,10 @@
 import type { DocumentType, FrozenLabels, LineItem } from '../../domain/documents/types'
 import type { Money } from '../../domain/money/money'
 import type { Payment } from '../../domain/payments/ledger'
+import type { ShareEvent } from '../../share/events'
 
 export type { Payment, PaymentAllocation } from '../../domain/payments/ledger'
+export type { ShareEvent, ShareAction } from '../../share/events'
 export type { Money } from '../../domain/money/money'
 export type { DocumentType, FrozenLabels, LineItem } from '../../domain/documents/types'
 
@@ -156,6 +158,19 @@ export interface ItemRepository {
   remember(item: Omit<SavedItem, 'id' | 'timesUsed'>, ctx: MutationContext): Promise<SavedItem>
 }
 
+/**
+ * Sharing events (§M, §E `audit_log`).
+ *
+ * Append-only, like the table it maps onto: a handoff happened, and nothing
+ * later can un-happen it. There is no update and no delete.
+ */
+export interface ShareEventRepository {
+  list(companyId: string): Promise<ShareEvent[]>
+  listForDocument(companyId: string, documentId: string): Promise<ShareEvent[]>
+  /** Records once. A replayed key returns the existing event unchanged (§M). */
+  record(event: Omit<ShareEvent, 'id'>, ctx: MutationContext): Promise<ShareEvent>
+}
+
 export interface ExpenseRepository {
   list(companyId: string): Promise<Expense[]>
   create(expense: Omit<Expense, 'id'>, ctx: MutationContext): Promise<Expense>
@@ -168,6 +183,7 @@ export interface Repositories {
   readonly payments: PaymentRepository
   readonly items: ItemRepository
   readonly expenses: ExpenseRepository
+  readonly shares: ShareEventRepository
 }
 
 export class RepositoryError extends Error {}

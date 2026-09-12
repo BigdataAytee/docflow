@@ -98,6 +98,8 @@ export interface UiStrings {
     readonly saveDocument: string
     readonly missingTitle: string
     readonly fixThis: string
+    readonly notReadyYet: string
+    readonly couldNotIssue: string
   }
   readonly details: {
     readonly numberAndDates: string
@@ -260,6 +262,29 @@ export interface UiStrings {
     readonly nothingToChase: string
     readonly sendOnWhatsApp: string
     readonly nothingSendsUnseen: string
+  }
+  /** §M: a handoff, never a claim of delivery. `{label}` `{reference}` etc. */
+  readonly share: {
+    readonly title: string
+    readonly line: string
+    readonly forCustomer: string
+    readonly totalLine: string
+    readonly outstandingLine: string
+    readonly dueLine: string
+    readonly fromBusiness: string
+    readonly openSheet: string
+    readonly copyInstead: string
+    readonly handedOff: string
+    readonly copied: string
+    readonly dismissed: string
+    readonly failed: string
+    readonly unavailable: string
+    readonly neverClaimsDelivery: string
+    readonly fileComingWithApp: string
+    readonly sharedOnce: string
+    readonly sharedTimes: string
+    readonly lastSharedOn: string
+    readonly preview: string
   }
   readonly savedDocument: {
     readonly title: string
@@ -476,6 +501,8 @@ const EN: UiStrings = {
     stepOf: 'Step {current} of {total}',
     saveDocument: 'Save {label}',
     missingTitle: 'Before you can issue this',
+    notReadyYet: 'Not quite ready — the amber band above says what is missing.',
+    couldNotIssue: 'That could not be issued: {reason}',
     fixThis: 'Fix this',
   },
   details: {
@@ -639,6 +666,28 @@ const EN: UiStrings = {
     nothingToChase: 'Nothing is outstanding on this one.',
     sendOnWhatsApp: 'Open in WhatsApp',
     nothingSendsUnseen: 'Nothing is sent until you send it.',
+  },
+  share: {
+    title: 'Send this document',
+    line: '{label} {reference}',
+    forCustomer: 'For {customer}',
+    totalLine: 'Total {amount}',
+    outstandingLine: '{amount} still outstanding',
+    dueLine: 'Due {due}',
+    fromBusiness: '— {business}',
+    openSheet: 'Send it',
+    copyInstead: 'Copy the text',
+    handedOff: 'Handed to the app you picked.',
+    copied: 'Copied. Paste it wherever you like.',
+    dismissed: 'Nothing was sent.',
+    failed: 'That did not go through. Try again, or copy the text.',
+    unavailable: 'This phone cannot open a share sheet. Copy the text instead.',
+    neverClaimsDelivery: 'DocFlow cannot tell whether it arrived — only that you sent it.',
+    fileComingWithApp: 'The PDF attaches itself in the installed app. For now the text goes out on its own.',
+    sharedOnce: 'Sent once',
+    sharedTimes: 'Sent {count} times',
+    lastSharedOn: 'Last sent {date}',
+    preview: 'What goes out',
   },
   savedDocument: {
     title: 'Saved',
