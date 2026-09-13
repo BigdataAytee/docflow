@@ -115,10 +115,13 @@ export interface AppActions {
   /** §M: a handoff is recorded; delivery never is. */
   recordShare(event: Omit<ShareEvent, 'id' | 'companyId'>): Promise<void>
   /**
-   * Stores a drawn signature (§G, §I). Immutable once written — drawing again
-   * makes a new one, so an issued document's mark cannot change under it.
+   * Stores an image — a drawn signature, a delivery photo, a receipt photo.
+   * Immutable once written, so an issued document's evidence cannot change
+   * under it (§P); attaching another makes a NEW asset.
    */
-  storeSignature(dataUrl: string): Promise<AssetRecord>
+  storeAsset(kind: AssetRecord['kind'], dataUrl: string): Promise<AssetRecord>
+  /** §E's "delivery photo asset", captured on an issued delivery (§G, §P). */
+  attachDeliveryPhoto(id: string, assetId: string): Promise<void>
   /** Rule #5's middle correction. Append-only; the invoice is untouched. */
   issueCreditNote(
     note: Omit<CreditNoteRecord, 'id' | 'companyId'>,
@@ -294,13 +297,17 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
         await repositories.shares.record({ ...event, companyId }, key('share.record'))
         await load()
       },
-      async storeSignature(dataUrl) {
+      async storeAsset(kind, dataUrl) {
         return after(
           await repositories.assets.store(
-            { companyId, kind: 'signature', dataUrl, createdAt: new Date().toISOString() },
+            { companyId, kind, dataUrl, createdAt: new Date().toISOString() },
             key('asset.store'),
           ),
         )
+      },
+      async attachDeliveryPhoto(id, assetId) {
+        await repositories.documents.attachDeliveryPhoto(id, assetId, key('document.photo'))
+        await load()
       },
       async issueCreditNote(note, idempotencyKey) {
         return after(

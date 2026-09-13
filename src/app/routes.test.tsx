@@ -11,7 +11,7 @@
  */
 
 import { StrictMode } from 'react'
-import { describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 
@@ -2549,5 +2549,188 @@ describe('Recording the customer’s answer (§G, §P)', () => {
       await screen.findByRole('button', { name: 'Turn this into something else' }),
     )
     expect(await screen.findByLabelText('Turn this into something else')).toBeInTheDocument()
+  })
+})
+
+describe('The photo on a delivery (§G, §E, §P)', () => {
+  /**
+   * jsdom has no canvas and no `createImageBitmap`, so `shrinkImage` cannot
+   * run here — the same split the signature pad uses: the arithmetic is
+   * property-tested on its own, and these drive the wiring around it.
+   */
+  const stubShrink = () => {
+    const bitmap = {
+      width: 4032,
+      height: 3024,
+      close: () => undefined,
+    } as unknown as ImageBitmap
+    vi.stubGlobal('createImageBitmap', async () => bitmap)
+    const toDataURL = vi.fn(() => 'data:image/jpeg;base64,SHRUNK')
+    vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockReturnValue({
+      drawImage: () => undefined,
+    } as unknown as CanvasRenderingContext2D)
+    vi.spyOn(HTMLCanvasElement.prototype, 'toDataURL').mockImplementation(toDataURL)
+    return toDataURL
+  }
+
+  afterEach(() => {
+    vi.unstubAllGlobals()
+    vi.restoreAllMocks()
+  })
+
+  const photo = () => new File(['pretend-jpeg-bytes'], 'gate.jpg', { type: 'image/jpeg' })
+
+  const delivery = (status: string) => (state: MemoryState) => {
+    state.customers.push(customer())
+    state.documents.push({
+      id: 'doc_way',
+      companyId: DEV_COMPANY_ID,
+      type: 'waybill',
+      status,
+      customerId: 'cus_1',
+      currency: 'NGN',
+      lineItems: [],
+      issueDate: '2026-09-01',
+      issuedReference: 'WAY-0007',
+      frozenLabels: {
+        printedTitle: 'WAYBILL',
+        partyLabel: 'Deliver to',
+        signatureCaption: 'Received by',
+        language: 'en',
+      },
+      totalMinor: 0,
+    })
+  }
+
+  it('offers it on a delivery that exists as a document', async () => {
+    renderAt('/doc/doc_way', delivery('dispatched'))
+    expect(await screen.findByLabelText('Proof of delivery')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Add a photo' })).toBeInTheDocument()
+  })
+
+  it('stores the shrunk photo and attaches it to the delivery', async () => {
+    const user = userEvent.setup()
+    const toDataURL = stubShrink()
+    const state = renderAt('/doc/doc_way', delivery('dispatched'))
+
+    await screen.findByRole('button', { name: 'Add a photo' })
+    await user.upload(document.querySelector('input[type="file"]')!, photo())
+
+    await waitFor(() => expect(state.assets).toHaveLength(1))
+    expect(state.assets[0]?.kind).toBe('delivery_photo')
+    expect(state.assets[0]?.dataUrl).toBe('data:image/jpeg;base64,SHRUNK')
+    // Shrunk, not passed through: every photo uploads on the connection §M
+    // assumes the owner actually has.
+    expect(toDataURL).toHaveBeenCalledWith('image/jpeg', 0.8)
+
+    await waitFor(() =>
+      expect(state.documents[0]?.deliveryPhotoAssetId).toBe(state.assets[0]?.id),
+    )
+    expect(await screen.findByRole('img', { name: 'Photo attached' })).toBeInTheDocument()
+  })
+
+  it('never touches the document beyond the photo (§P)', async () => {
+    const user = userEvent.setup()
+    stubShrink()
+    const state = renderAt('/doc/doc_way', delivery('dispatched'))
+
+    await screen.findByRole('button', { name: 'Add a photo' })
+    await user.upload(document.querySelector('input[type="file"]')!, photo())
+    await waitFor(() => expect(state.documents[0]?.deliveryPhotoAssetId).toBeTruthy())
+
+    expect(state.documents[0]?.status).toBe('dispatched')
+    expect(state.documents[0]?.issuedReference).toBe('WAY-0007')
+    // Emphatically not a signature: a stack of bags does not say who took them.
+    expect(state.documents[0]?.signerName).toBeUndefined()
+    expect(state.documents[0]?.signedAt).toBeUndefined()
+  })
+
+  it('shows the photo but offers no way to change it once signed for (§P)', async () => {
+    renderAt('/doc/doc_way', (seed) => {
+      delivery('delivered')(seed)
+      seed.assets.push({
+        id: 'ast_photo',
+        companyId: DEV_COMPANY_ID,
+        kind: 'delivery_photo',
+        dataUrl: 'data:image/jpeg;base64,GATE',
+        createdAt: '2026-09-12T10:00:00Z',
+      })
+      const row = seed.documents[0]
+      if (row !== undefined) {
+        seed.documents[0] = { ...row, deliveryPhotoAssetId: 'ast_photo' }
+      }
+    })
+
+    expect(await screen.findByRole('img', { name: 'Photo attached' })).toBeInTheDocument()
+    expect(screen.getByText(/cannot be changed/)).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /photo/i })).not.toBeInTheDocument()
+  })
+
+  it('offers nothing on a delivery nobody has issued', async () => {
+    renderAt('/doc/doc_way', (seed) => {
+      delivery('draft')(seed)
+      const row = seed.documents[0]
+      if (row !== undefined) seed.documents[0] = { ...row, issuedReference: null, frozenLabels: null }
+    })
+    expect(await screen.findByRole('button', { name: 'Carry on editing' })).toBeInTheDocument()
+    expect(screen.queryByLabelText('Proof of delivery')).not.toBeInTheDocument()
+  })
+
+  it('offers nothing on any other type', async () => {
+    renderAt('/doc/doc_inv', (state) => {
+      state.documents.push({
+        id: 'doc_inv',
+        companyId: DEV_COMPANY_ID,
+        type: 'invoice',
+        status: 'issued',
+        currency: 'NGN',
+        lineItems: [],
+        issueDate: '2026-09-01',
+        issuedReference: 'INV-0042',
+        frozenLabels: {
+          printedTitle: 'INVOICE',
+          partyLabel: 'Bill to',
+          signatureCaption: 'Authorised signature',
+          language: 'en',
+        },
+        totalMinor: 145_000_00,
+      })
+    })
+    expect(await screen.findByText('INV-0042')).toBeInTheDocument()
+    expect(screen.queryByLabelText('Proof of delivery')).not.toBeInTheDocument()
+  })
+
+  it('says so when the chosen file is not a photo', async () => {
+    renderAt('/doc/doc_way', delivery('dispatched'))
+    await screen.findByRole('button', { name: 'Add a photo' })
+
+    // `user.upload` filters by the input's `accept`, so it would drop this
+    // silently. `accept` is a hint the platform may ignore, which is exactly
+    // why the guard exists — so the file is delivered directly.
+    const input = document.querySelector('input[type="file"]')!
+    fireEvent.change(input, {
+      target: { files: [new File(['%PDF-'], 'invoice.pdf', { type: 'application/pdf' })] },
+    })
+    expect(await screen.findByRole('alert')).toHaveTextContent('That file is not a photo.')
+  })
+
+  it('attaches a receipt photo to an expense, which nothing could do before', async () => {
+    const user = userEvent.setup()
+    stubShrink()
+    const state = renderAt('/analytics', (seed) => {
+      seed.customers.push(customer())
+    })
+
+    await user.click(await screen.findByLabelText('Add an expense'))
+    await user.type(screen.getByLabelText('Amount'), '9500')
+    // §G: "a three-field sheet OR receipt photo" — the photo stands in for
+    // the description, so this expense is saved without one.
+    await user.upload(document.querySelector('input[type="file"]')!, photo())
+    await waitFor(() => expect(state.assets).toHaveLength(1))
+    expect(state.assets[0]?.kind).toBe('expense_photo')
+
+    await user.click(screen.getByRole('button', { name: 'Add it' }))
+    await waitFor(() => expect(state.expenses).toHaveLength(1))
+    expect(state.expenses[0]?.photoAssetId).toBe(state.assets[0]?.id)
   })
 })

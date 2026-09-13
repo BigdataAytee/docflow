@@ -187,6 +187,24 @@ export function createMemoryRepositories(state: MemoryState = emptyState()): Rep
         return updated
       })
     },
+    async attachDeliveryPhoto(id, assetId, ctx) {
+      return log.once(ctx, () => {
+        const { index, row } = findDocument(id)
+        if (isEvidenceSealed(row.type, row.status)) {
+          throw new RepositoryError(
+            `${row.type} ${id} is already signed for. Delivery evidence cannot be altered once captured (v6 §P).`,
+          )
+        }
+        if (isDraft(row.status)) {
+          throw new RepositoryError(
+            `${row.type} ${id} has not been issued; there is nothing to be evidence of yet.`,
+          )
+        }
+        const updated: DocumentRecord = { ...row, deliveryPhotoAssetId: assetId }
+        state.documents[index] = updated
+        return updated
+      })
+    },
     async signDelivery(id, evidence, ctx) {
       return log.once(ctx, () => {
         const { index, row } = findDocument(id)

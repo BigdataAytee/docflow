@@ -56,6 +56,9 @@ export function AnalyticsScreen({ today = new Date().toISOString().slice(0, 10) 
 
   return (
     <Analytics
+      // §G: "a three-field sheet OR receipt photo". The photo half has been
+      // absent since Phase 2.5 because nothing passed this prop.
+      onStorePhoto={async (dataUrl) => (await actions.storeAsset('expense_photo', dataUrl)).id}
       documents={records}
       payments={payments}
       expenses={expenseEntries}
@@ -73,6 +76,9 @@ export function AnalyticsScreen({ today = new Date().toISOString().slice(0, 10) 
           spentOn: input.spentOn,
           description: input.description,
           ...(input.category === undefined ? {} : { category: input.category }),
+          // §G lets the photo stand in for the description. Dropped here, an
+          // expense saved as a photo alone stored neither.
+          ...(input.photoAssetId === undefined ? {} : { photoAssetId: input.photoAssetId }),
         })
       }}
     />

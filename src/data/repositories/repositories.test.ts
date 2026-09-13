@@ -247,6 +247,77 @@ describe('Delivery evidence is one write, and captured once (§P)', () => {
   })
 })
 
+describe('A delivery photo is evidence being captured, not a document edited (§P)', () => {
+  const dispatched = async () => {
+    const created = await repos.documents.createDraft(
+      { ...draft(), type: 'waybill', totalMinor: 0, lineItems: [] },
+      ctx('p1'),
+    )
+    await repos.documents.issue(
+      created.id,
+      { reference: 'WAY-0001', frozenLabels: freezeLabels({ locale: 'EN-NG' }, 'waybill'), totalMinor: 0 },
+      ctx('p2'),
+    )
+    await repos.documents.transition(created.id, 'dispatched', ctx('p3'))
+    return created.id
+  }
+
+  it('attaches to an ISSUED delivery, which updateDraft would refuse', async () => {
+    const id = await dispatched()
+    const updated = await repos.documents.attachDeliveryPhoto(id, 'ast_1', ctx('photo-1'))
+    expect(updated.deliveryPhotoAssetId).toBe('ast_1')
+    expect(updated.status).toBe('dispatched')
+    // Evidence captured, not a document edited: nothing else moved.
+    expect(updated.issuedReference).toBe('WAY-0001')
+  })
+
+  it('refuses a delivery already signed for', async () => {
+    const id = await dispatched()
+    await repos.documents.signDelivery(
+      id,
+      {
+        signerName: 'Bisi Adeyemi',
+        signedAt: '2026-09-12T14:30:00Z',
+        signatureAssetId: 'ast_sig',
+      },
+      ctx('sign-1'),
+    )
+
+    await expect(
+      repos.documents.attachDeliveryPhoto(id, 'ast_late', ctx('photo-1')),
+    ).rejects.toThrow(RepositoryError)
+
+    const after = await repos.documents.get(ACME, id)
+    expect(after?.deliveryPhotoAssetId).toBeUndefined()
+  })
+
+  it('refuses a draft, which is nothing to be evidence of yet', async () => {
+    const created = await repos.documents.createDraft(
+      { ...draft(), type: 'waybill', totalMinor: 0, lineItems: [] },
+      ctx('p1'),
+    )
+    await expect(
+      repos.documents.attachDeliveryPhoto(created.id, 'ast_1', ctx('photo-1')),
+    ).rejects.toThrow(RepositoryError)
+  })
+
+  it('replaces the reference, leaving the old asset alone (§P)', async () => {
+    const id = await dispatched()
+    await repos.documents.attachDeliveryPhoto(id, 'ast_1', ctx('photo-1'))
+    const updated = await repos.documents.attachDeliveryPhoto(id, 'ast_2', ctx('photo-2'))
+    expect(updated.deliveryPhotoAssetId).toBe('ast_2')
+  })
+
+  it('attaches once however often the same tap is replayed (§M)', async () => {
+    const id = await dispatched()
+    for (const _ of [1, 2, 3]) {
+      await repos.documents.attachDeliveryPhoto(id, 'ast_1', ctx('photo-1'))
+    }
+    const after = await repos.documents.get(ACME, id)
+    expect(after?.deliveryPhotoAssetId).toBe('ast_1')
+  })
+})
+
 describe('An asset is evidence: written once, never changed (§P)', () => {
   const mark = {
     companyId: ACME,

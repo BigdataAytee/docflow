@@ -49,7 +49,7 @@ export interface AnalyticsProps {
     category?: string
     photoAssetId?: string
   }) => void
-  readonly onAttachPhoto?: () => Promise<string | null>
+  readonly onStorePhoto?: (dataUrl: string) => Promise<string>
 }
 
 export function Analytics(props: AnalyticsProps) {
@@ -192,7 +192,7 @@ export function Analytics(props: AnalyticsProps) {
                     currency={props.defaultCurrency}
                     today={props.today}
                     knownCategories={props.knownCategories}
-                    {...(props.onAttachPhoto === undefined ? {} : { onAttachPhoto: props.onAttachPhoto })}
+                    {...(props.onStorePhoto === undefined ? {} : { onStorePhoto: props.onStorePhoto })}
                     onCancel={() => setSheetOpen(false)}
                     onSave={(input) => {
                       props.onAddExpense(input)
