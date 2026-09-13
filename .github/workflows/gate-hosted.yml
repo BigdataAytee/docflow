@@ -15,6 +15,9 @@ on:
         type: boolean
         default: false
 
+env:
+  PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: '1'
+
 jobs:
   gate:
     name: Phase 1 gate against the hosted project

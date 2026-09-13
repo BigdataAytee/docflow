@@ -21,7 +21,9 @@
     "gate:hosted:local": "node --env-file=.env --experimental-strip-types supabase/tests/hosted-gate.ts",
     "pentest": "node --experimental-strip-types tools/pentest/run.ts",
     "discoverability": "UPDATE_DISCOVERABILITY=1 vitest run src/marketing/sheet.test.ts",
-    "site": "EMIT_SITE=1 vitest run src/marketing/emit.test.ts"
+    "site": "EMIT_SITE=1 vitest run src/marketing/emit.test.ts",
+    "shots:build": "vite build --config vite.shots.config.ts",
+    "shots": "npm run shots:build && SHOOT=1 vitest run tools/screenshots/capture.test.ts"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.116.0",
@@ -48,6 +50,7 @@
     "globals": "^16.0.0",
     "jsdom": "^30.0.1",
     "pg": "^8.23.0",
+    "playwright": "^1.56.0",
     "postcss": "^8.5.3",
     "tailwindcss": "^3.4.17",
     "typescript": "^5.8.2",

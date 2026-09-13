@@ -27,6 +27,12 @@
     "tools",
     "supabase/tests",
     "src/data/repositories",
+    // The screenshot PLAN — not its entry point, which is a .tsx needing the
+    // DOM lib this project does not have and belongs to the app project.
+    "src/marketing/shots/spec.ts",
+    "src/marketing/shots/plan.ts",
+    "src/marketing/shots/fixtures.ts",
+    "src/features/settings/region.ts",
     "src/data/supabase/rows.ts",
     "src/domain",
     "src/share/events.ts",
