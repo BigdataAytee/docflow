@@ -313,6 +313,29 @@ export interface AssetRepository {
   store(asset: Omit<AssetRecord, 'id'>, ctx: MutationContext): Promise<AssetRecord>
 }
 
+/**
+ * The public-link tokens (§P, §E `document_signing_tokens`).
+ *
+ * Only the HASH is stored — never the token — so a leaked row cannot open a
+ * link, and the table has no client policy at all (§P: "separate from general
+ * document reads"). One live token per document: minting another replaces it,
+ * which is also how an owner revokes a link they sent by mistake.
+ */
+export interface LinkTokenRecord {
+  readonly documentId: string
+  readonly companyId: string
+  readonly tokenHash: string
+  readonly expiresAt: string
+  readonly consumedAt?: string
+}
+
+export interface LinkTokenRepository {
+  /** The live token for a document, if there is one. Never the secret itself. */
+  get(companyId: string, documentId: string): Promise<LinkTokenRecord | null>
+  /** Replaces any existing token for this document — the old link dies (§P). */
+  mint(token: Omit<LinkTokenRecord, 'consumedAt'>, ctx: MutationContext): Promise<LinkTokenRecord>
+}
+
 export interface ExpenseRepository {
   list(companyId: string): Promise<Expense[]>
   create(expense: Omit<Expense, 'id'>, ctx: MutationContext): Promise<Expense>
@@ -328,6 +351,7 @@ export interface Repositories {
   readonly shares: ShareEventRepository
   readonly credits: CreditNoteRepository
   readonly assets: AssetRepository
+  readonly linkTokens: LinkTokenRepository
 }
 
 export class RepositoryError extends Error {}

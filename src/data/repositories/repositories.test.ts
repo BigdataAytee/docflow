@@ -318,6 +318,53 @@ describe('A delivery photo is evidence being captured, not a document edited (§
   })
 })
 
+describe('Public-link tokens: only the hash, and one per document (§P)', () => {
+  const minted = (over: Record<string, unknown> = {}) => ({
+    documentId: 'doc_1',
+    companyId: ACME,
+    tokenHash: 'a'.repeat(64),
+    expiresAt: '2026-09-27T00:00:00Z',
+    ...over,
+  })
+
+  it('stores a token and reads it back', async () => {
+    await repos.linkTokens.mint(minted(), ctx('link-1'))
+    const row = await repos.linkTokens.get(ACME, 'doc_1')
+    expect(row?.tokenHash).toBe('a'.repeat(64))
+    expect(row?.consumedAt).toBeUndefined()
+  })
+
+  it('replaces the live token, so one link per document (§P)', async () => {
+    await repos.linkTokens.mint(minted(), ctx('link-1'))
+    await repos.linkTokens.mint(minted({ tokenHash: 'b'.repeat(64) }), ctx('link-2'))
+
+    // Two live links would mean two ways in and only one of them revocable.
+    expect(state.linkTokens).toHaveLength(1)
+    expect((await repos.linkTokens.get(ACME, 'doc_1'))?.tokenHash).toBe('b'.repeat(64))
+  })
+
+  it('mints once however often the same tap is replayed (§M)', async () => {
+    for (const _ of [1, 2, 3]) await repos.linkTokens.mint(minted(), ctx('link-1'))
+    expect(state.linkTokens).toHaveLength(1)
+  })
+
+  it('never returns another company token', async () => {
+    await repos.linkTokens.mint(minted(), ctx('link-1'))
+    expect(await repos.linkTokens.get(RIVAL, 'doc_1')).toBeNull()
+  })
+
+  it('holds nothing that could be turned back into a link', async () => {
+    await repos.linkTokens.mint(minted(), ctx('link-1'))
+    // Only the hash: a leaked row cannot open a link.
+    expect(Object.keys(state.linkTokens[0] ?? {}).sort()).toEqual([
+      'companyId',
+      'documentId',
+      'expiresAt',
+      'tokenHash',
+    ])
+  })
+})
+
 describe('An asset is evidence: written once, never changed (§P)', () => {
   const mark = {
     companyId: ACME,

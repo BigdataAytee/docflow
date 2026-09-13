@@ -29,6 +29,8 @@ import {
   type CreditNoteRepository,
   type AssetRecord,
   type AssetRepository,
+  type LinkTokenRecord,
+  type LinkTokenRepository,
   type SavedItem,
   type ShareEvent,
   type ShareEventRepository,
@@ -63,6 +65,7 @@ export interface MemoryState {
   shares: ShareEvent[]
   credits: CreditNoteRecord[]
   assets: AssetRecord[]
+  linkTokens: LinkTokenRecord[]
 }
 
 export const emptyState = (): MemoryState => ({
@@ -75,6 +78,7 @@ export const emptyState = (): MemoryState => ({
   shares: [],
   credits: [],
   assets: [],
+  linkTokens: [],
 })
 
 export function createMemoryRepositories(state: MemoryState = emptyState()): Repositories {
@@ -381,6 +385,27 @@ export function createMemoryRepositories(state: MemoryState = emptyState()): Rep
     },
   }
 
+  const linkTokens: LinkTokenRepository = {
+    async get(companyId, documentId) {
+      return (
+        scoped(state.linkTokens, companyId).find((row) => row.documentId === documentId) ?? null
+      )
+    },
+    async mint(token, ctx) {
+      return log.once(ctx, () => {
+        // One live token per document: a second link would mean two ways in
+        // and only one of them revocable (§P).
+        const existing = state.linkTokens.findIndex(
+          (row) => row.documentId === token.documentId,
+        )
+        const created: LinkTokenRecord = { ...token }
+        if (existing >= 0) state.linkTokens[existing] = created
+        else state.linkTokens.push(created)
+        return created
+      })
+    },
+  }
+
   const assets: AssetRepository = {
     async list(companyId) {
       return scoped(state.assets, companyId)
@@ -409,5 +434,6 @@ export function createMemoryRepositories(state: MemoryState = emptyState()): Rep
     shares,
     credits,
     assets,
+    linkTokens,
   }
 }

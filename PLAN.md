@@ -405,6 +405,24 @@ Needing a device or a later phase, and therefore NOT claimed:
 - [ ] **A physical device** for the §Q Phase 2 gate, which is explicitly
       "airplane mode, fresh install, physical device". Everything up to that
       point is buildable and testable here.
+- [ ] **Deploy the public-link function**, which is the last thing standing
+      between the accept and sign pages and a working link:
+
+      supabase db push                       # migration 0007
+      supabase functions deploy public-link --no-verify-jwt
+
+      `--no-verify-jwt` is deliberate: the caller is a customer with no
+      account, and the token is the authorisation. The function needs
+      `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` in its own environment
+      (Supabase sets both automatically), and the web app needs
+      `VITE_SUPABASE_URL` at build time so it knows where to call.
+
+      Until then the pages refuse every link — which is correct behaviour and
+      leaks nothing, but it is a refusal rather than a feature.
+- [ ] **The four repository secrets** (`VITE_SUPABASE_URL`,
+      `VITE_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, `SUPABASE_DB_URL`)
+      so the hosted Phase 1 gate can be dispatched.
+- [ ] **Rotate both Supabase keys**, which were pasted into a chat message.
 
 ---
 
@@ -581,12 +599,9 @@ device in airplane mode walking create → build → preview in all sixteen desi
 force-kill and recover. Routes being reachable in a browser is a precondition
 for walking it, not the walk.
 
-What §G describes and is still deliberately absent: the PUBLIC PAGES behind
-the copy-link actions, which need a deployed edge function (Phase 5). The
-RULES both pages will run are built and tested, so that is a page and a
-deployment rather than a design problem.
-
-**Every other §G action is built.**
+**Every §G action is built.** The public pages and their edge function are
+written and tested; what remains is a DEPLOYMENT, recorded under "Needs a
+human" below.
 
 **Every §G action that does not need a camera or a server is built**, and the
 two that do now have their offline halves: a delivery is signed for on the
@@ -1244,6 +1259,72 @@ Phase 2.5. §G promises "a three-field sheet **or** receipt photo":
 All four are fixed, and an expense can now be saved as a photo with no
 description typed, which is what §G describes.
 
+### The public accept and sign pages (§G, §P, §Q Phase 5, §T)
+
+The pages a customer opens with no account: accept or turn down a quotation,
+or sign for a delivery. §Q: "Tokenized public pages … rate-limited, rendered
+in the document's frozen language."
+
+**Why an edge function and not a query.** A customer is not signed in, and RLS
+scopes every read to a company (§P). There is no anon-key query that serves
+this without opening every other company's documents at the same time. So
+service-role runs in one function and nowhere else, and that function is the
+only reader.
+
+- [x] **The function** (`supabase/functions/public-link/`). GET returns a
+      minimal view; POST applies the answer or the signature and kills the
+      token. Deployed with `--no-verify-jwt`, which is the point: the token
+      IS the authorisation, which is why it is 32 random bytes and why only
+      its hash is stored.
+- [x] **The two rule sets are pinned against each other.** The function's
+      decisions live in `rules.ts`, and the app's own suite imports it
+      alongside `src/features/links/token.ts` and asserts they agree — on
+      hashing, on every refusal, and on which documents a link is for. Two
+      implementations in two runtimes drift, and the server is the one nobody
+      watches.
+- [x] **One transaction, in the database.** `apply_public_link` is
+      SECURITY DEFINER with a pinned `search_path`. It locks the document,
+      re-checks the lifecycle server-side (§P: "the server revalidates against
+      this same table"), consumes the token only if it was still alive, and
+      writes the evidence — all or nothing. Two statements from the function
+      could leave a signed document with a live link, which is the one thing
+      §P forbids.
+- [x] **The pages sit ABOVE the providers.** Inside them they would load the
+      OWNER's company, records and locale for a stranger holding a link. They
+      import no repository, no store and no company context.
+- [x] **Rendered in the document's frozen language** (§P, §D.2), which also
+      forced a real fix: `SignaturePad` read its words from the company
+      context, so reusing it on a public page crashed — and would have shown
+      the owner's language rather than the document's. It now takes its
+      strings, and the public page hands it the frozen ones.
+- [x] **A refusal shows a message and never data.** No reference, no customer,
+      no amount. Every refusal is a 200: a 404 for "wrong" and a 410 for
+      "expired" would leak through the status code what §P spent a table on
+      hiding.
+- [x] **`noindex, nofollow`** (§T), on the page and on the function's
+      responses.
+- [x] **Copy-link actions, at last honestly.** §Q words them as "disabled with
+      a 'needs internet' note", which was untrue while no page existed. It is
+      true now, so the note is real and the buttons work.
+
+**The schema had drifted behind the app**, which only surfaced because the
+edge function is the first thing in this build to read the database rather
+than the repository contracts. Migration `0007` adds `documents.supersedes_id`
+(Rev 2 and reissued receipts), and `assets.kind` / `assets.data_url` — the
+table was designed for uploaded files before signatures turned out to be
+vectors of a few hundred bytes.
+
+**Two bugs found by probing rather than by a test.**
+
+1. **A failed copy killed a working link.** The token was stored before the
+   URL was built, and minting replaces the document's live token — so an
+   owner whose link failed to build lost the one they had already sent and
+   got an error instead of a replacement. The URL is now built first.
+2. **The https guard fired on localhost**, so the action could never be tried
+   in development. Loopback is now allowed, exactly as browsers treat it as a
+   secure context; `http://localhost.evil.example` still is not. An action
+   nobody can try is an action nobody has checked.
+
 ## Decisions taken
 
 | # | Decision | Why | Where |
@@ -1325,6 +1406,12 @@ description typed, which is what §G describes.
 | 75 | A photo is shrunk to 1600px / JPEG 0.8 before it is ever stored | A phone photo is 3–8 MB and every one of them uploads on the connection §M assumes is bad. A delivery photo has to be legible, not archival: the bags, the gate, the plate. Re-encoding also drops EXIF, so the photo carries the goods rather than the owner's GPS track. | `src/features/photos/resize.ts` |
 | 76 | The shape property asserts the rounding guarantee, not a ratio tolerance | The first version compared aspect ratios with an absolute tolerance and failed on an 11:1 panorama — the same half-pixel of rounding moves a long thin photo's ratio far more than a 4:3 photo's. Picking a bigger constant would have buried that; asserting "each dimension is the exact scaled one, rounded" says what the function actually promises. | `resize.test.ts` |
 | 77 | A delivery photo seals with the signature, and is never a substitute for it | §E lists it beside `signer_name` and `signed_at`, and §P forbids altering delivery evidence once captured — a photo added after the customer signed would change what the record says happened. And a photo proves goods arrived somewhere, never who took them, so `signDelivery` still requires a name and a mark. | `src/features/delivery/photo.ts` |
+| 78 | The public pages read through ONE service-role edge function, never the anon key | A customer is not signed in and RLS scopes every read to a company (§P); no anon-key query serves this without opening every other company's documents. One function holds the key, and it is the only reader — which is what keeps CLAUDE.md's "service-role edge functions only" true rather than aspirational. | `supabase/functions/public-link/` |
+| 79 | The edge rules and the client rules are pinned against each other by test | They are separate implementations in separate runtimes because one has service-role access and one has none. Two implementations drift, and the server is the one nobody watches. The app's suite imports both and asserts they agree on hashing and on every refusal. | `src/features/links/edgeRules.test.ts` |
+| 80 | Every refusal is a 200 with a reason | A 404 for "wrong" and a 410 for "expired" would tell whoever is guessing which of the two they hit — the status code leaking exactly what §P put the token hash in its own table to hide. | `public-link/index.ts` |
+| 81 | The write and the token's death are one database transaction | `apply_public_link` locks the document, re-checks the lifecycle server-side, consumes the token only if still live, and writes the evidence. Two statements from the function could leave a signed document with a live link — the single thing §P forbids — and the function cannot roll back a half-applied pair. | `0007_public_links.sql` |
+| 82 | The public pages sit above every provider | Inside them they would load the OWNER's company, records and locale for a stranger holding a link. The isolation is structural rather than careful: they import no repository, no store and no company context, and the one component they reused had to be changed to take its words rather than reach for them. | `src/app/App.tsx`, `src/public/` |
+| 83 | The link URL is built before the token is stored | Minting replaces the document's live token. Storing first meant a failure after the write killed a link the owner had already sent and handed them an error instead of a replacement — found by probing the real screen, not by a test. | `store.tsx` (`mintPublicLink`) |
 
 ## Deviations from the spec
 

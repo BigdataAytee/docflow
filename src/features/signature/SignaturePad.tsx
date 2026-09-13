@@ -18,6 +18,7 @@
 import { useRef, useState } from 'react'
 
 import { useCompany } from '../../app/context'
+import type { UiStrings } from '../../domain/locale/data/strings'
 import {
   type Point,
   type Strokes,
@@ -29,6 +30,16 @@ import {
 } from './strokes'
 
 export interface SignaturePadProps {
+  /**
+   * The words, when there is no company context to read them from.
+   *
+   * The public signing page (§Q Phase 5) runs outside every provider — a
+   * customer has no account and no company — AND has to render in the
+   * DOCUMENT's frozen language rather than the owner's (§P). Both are the
+   * same requirement: the pad is handed its words instead of reaching for
+   * them.
+   */
+  readonly strings?: UiStrings
   /** Called with the rendered SVG and its data URL. Never with a blank one. */
   readonly onUse: (signature: { svg: string; dataUrl: string }) => void
   readonly onClose: () => void
@@ -41,8 +52,28 @@ export interface SignaturePadProps {
 const WIDTH = 320
 const HEIGHT = 150
 
-export function SignaturePad({ onUse, onClose, onUseDefault, error }: SignaturePadProps) {
+export function SignaturePad(props: SignaturePadProps) {
+  // Reading the context is a hook, so it cannot be conditional — the two
+  // entry points are separated instead.
+  return props.strings === undefined ? (
+    <SignaturePadFromContext {...props} />
+  ) : (
+    <SignaturePadView {...props} strings={props.strings} />
+  )
+}
+
+function SignaturePadFromContext(props: SignaturePadProps) {
   const { strings } = useCompany()
+  return <SignaturePadView {...props} strings={strings} />
+}
+
+function SignaturePadView({
+  onUse,
+  onClose,
+  onUseDefault,
+  error,
+  strings,
+}: SignaturePadProps & { strings: UiStrings }) {
   const s = strings.signature
 
   const [strokes, setStrokes] = useState<Strokes>([])

@@ -27,6 +27,10 @@
     "baseUrl": ".",
     "paths": { "@/*": ["./src/*"] }
   },
-  "include": ["src"],
+  // The edge function's RULES are typechecked with the app, because the app's
+  // own tests import them to prove the two runtimes agree (§P). Its Deno entry
+  // point is not: it imports from a URL and uses Deno globals, and nothing in
+  // `src` reaches it.
+  "include": ["src", "supabase/functions/public-link/rules.ts"],
   "exclude": ["legacy"]
 }

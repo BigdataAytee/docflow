@@ -149,6 +149,18 @@ describe('The link itself (§P)', () => {
 
   it('refuses plain http — a customer document never travels in the clear', () => {
     expect(() => linkFor('http://app.docflow.ng', 'accept', 'TOKEN1')).toThrow(LinkError)
+    expect(() => linkFor('http://localhost.evil.example', 'accept', 'TOKEN1')).toThrow(LinkError)
+  })
+
+  it('allows the loopback address, which browsers treat as secure', () => {
+    // Without it the action cannot be tried in development, and an action
+    // nobody can try is an action nobody has checked.
+    expect(linkFor('http://localhost:4173', 'accept', 'TOKEN1')).toBe(
+      'http://localhost:4173/accept/TOKEN1',
+    )
+    expect(linkFor('http://127.0.0.1:5173', 'sign', 'TOKEN1')).toBe(
+      'http://127.0.0.1:5173/sign/TOKEN1',
+    )
   })
 
   it('refuses anything this app did not mint', () => {
