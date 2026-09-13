@@ -15,10 +15,38 @@ keyword sheet for that locale changes with it in the same commit.
 
 ## Files
 
-| File | What |
-| --- | --- |
-| `keywords/<locale>.md` | Per-locale keyword sheet — the build artefact §T asks for |
-| `store-listings.md` | Title, subtitle and description patterns per locale |
+| File | What | Owner |
+| --- | --- | --- |
+| `generated.md` | **The build artefact §T asks for** — every locale's title, subtitle, Apple keyword field and Play vocabulary, rendered from the §D terminology tables | the generator |
+| `keywords/<locale>.md` | The QUESTIONS for the native speaker — "is 'way bill' typed as two words here?" — which no generator can produce | a person |
+| `store-listings.md` | The pattern and the rules every listing obeys | a person |
+
+### Why one of them is generated
+
+§T: the keyword sheets are "updated in the same cycle as terminology-table
+changes". That is a promise about somebody remembering. `generated.md` makes it
+a promise the build keeps: it is rendered from `src/domain/locale` through
+`src/marketing`, and `npm test` fails with a diff when the committed copy is
+stale. Regenerate with:
+
+```bash
+npm run discoverability
+```
+
+CLAUDE.md Rule 4 says a type name resolves ONLY through `src/domain/locale`. A
+store listing is the outermost surface of the product — the one place a person
+reads before installing — so it obeys the same rule as a PDF heading. The
+hand-written files above contain no document type names at all, and a test
+proves it.
+
+### Nothing here is submittable
+
+Every locale in `generated.md` is marked **BLOCKED**, and each says why. The
+common reason is the one CLAUDE.md names: a terminology table stays `draft`
+until a native speaker of that market signs it off. Apple's 30-character caps
+are reported, never applied — a title that does not fit is trimmed by a
+reviewer, and what survives the trim is the local type name, never the generic
+half.
 
 ## The four types are four doorways
 
