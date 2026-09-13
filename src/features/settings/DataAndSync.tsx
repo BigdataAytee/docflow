@@ -19,6 +19,8 @@
 import { useState } from 'react'
 
 import { useCompany } from '../../app/context'
+import type { UiStrings } from '../../domain/locale/data/strings'
+import type { ExportOutcome } from '../export/action'
 import { ConflictChooser } from '../../sync/ConflictChooser'
 import type { ConflictChoice, Resolution } from '../../sync/conflicts'
 
@@ -33,8 +35,33 @@ const DEMO: Extract<Resolution, { kind: 'conflict' }> = {
 export interface DataAndSyncProps {
   readonly pendingCount: number
   readonly failedCount: number
-  readonly onExport?: () => void
+  /**
+   * Runs the export. Optional only so the component can be rendered in a test
+   * without one — every real caller passes it, and a test asserts that the
+   * screen does.
+   *
+   * It was optional and UNPASSED for four phases: the button rendered under
+   * the sentence promising Rule #6 and did nothing at all.
+   */
+  readonly onExport?: () => Promise<ExportOutcome> | void
   readonly demoPersonName?: string
+}
+
+/** What the last export did, said plainly (§N: never dressed up). */
+function exportMessage(outcome: ExportOutcome, strings: UiStrings): string {
+  switch (outcome.kind) {
+    case 'shared':
+    case 'copied':
+      return `${strings.dataSync.exportDone} ${outcome.filename}`
+    case 'incomplete':
+      return `${strings.dataSync.exportIncomplete} ${outcome.result.failed
+        .map((entry) => entry.part)
+        .join(', ')}`
+    case 'unavailable':
+      return strings.dataSync.exportUnavailable
+    case 'failed':
+      return strings.dataSync.exportFailed
+  }
 }
 
 export function DataAndSync({
@@ -46,6 +73,22 @@ export function DataAndSync({
   const { strings } = useCompany()
   const [demoOpen, setDemoOpen] = useState(false)
   const [demoChoice, setDemoChoice] = useState<ConflictChoice | null>(null)
+  const [exporting, setExporting] = useState(false)
+  const [exportNote, setExportNote] = useState<string | null>(null)
+
+  const handleExport = async (): Promise<void> => {
+    if (onExport === undefined || exporting) return
+    setExporting(true)
+    setExportNote(null)
+    try {
+      const outcome = await onExport()
+      // A caller that returns nothing said nothing; inventing "Exported" here
+      // would be a claim about a file this component never saw.
+      if (outcome !== undefined) setExportNote(exportMessage(outcome, strings))
+    } finally {
+      setExporting(false)
+    }
+  }
 
   const uploadState =
     failedCount > 0
@@ -67,11 +110,19 @@ export function DataAndSync({
         <button
           type="button"
           className="min-h-tap w-full rounded-xl bg-brand px-4 text-sm font-semibold text-white"
-          onClick={onExport}
+          onClick={() => {
+            void handleExport()
+          }}
+          disabled={onExport === undefined || exporting}
         >
-          {strings.dataSync.exportAll}
+          {exporting ? strings.common.loading : strings.dataSync.exportAll}
         </button>
         <p className="mt-2 text-xs opacity-70">{strings.dataSync.exportAlwaysFree}</p>
+        {exportNote !== null && (
+          <p className="mt-2 text-xs font-medium" role="status">
+            {exportNote}
+          </p>
+        )}
       </div>
 
       <div className="rounded-2xl bg-white/70 p-4 backdrop-blur">

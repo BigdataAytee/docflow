@@ -2,12 +2,16 @@
  * Settings → Data & sync (§G, §L7, §Q Phase 2.5).
  */
 
+import { readFileSync } from 'node:fs'
+import { join } from 'node:path'
+
 import { describe, expect, it, vi } from 'vitest'
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 
 import { CompanyProvider } from '../../app/context'
 import { createMemoryRepositories, emptyState } from '../../data/repositories'
+import type { ExportOutcome } from '../export/action'
 import { DataAndSync } from './DataAndSync'
 
 function renderPanel(over: Partial<React.ComponentProps<typeof DataAndSync>> = {}) {
@@ -93,5 +97,70 @@ describe('The sync-conflict demo (§L7)', () => {
     await user.click(screen.getByRole('button', { name: 'Show me' }))
     await user.click(screen.getByRole('button', { name: 'Use mine' }))
     expect(screen.getByRole('status')).toHaveTextContent('Both versions are saved')
+  })
+})
+
+describe('The export button does something (Rule #6)', () => {
+  it('was wired to nothing for four phases, and now is not', async () => {
+    // `onExport` was optional and no caller passed it: the button rendered
+    // under the sentence promising export is free forever, and did nothing.
+    const settings = readFileSync(
+      join(process.cwd(), 'src/app/screens/SettingsScreen.tsx'),
+      'utf8',
+    )
+
+    expect(settings).toContain('onExport=')
+    expect(settings).toContain('runExport')
+  })
+
+  it('says what happened, naming the file', async () => {
+    const outcome: ExportOutcome = {
+      kind: 'shared',
+      filename: 'docflow-export-2026-09-13.json',
+      result: { archive: {} as never, failed: [], complete: true },
+    }
+    renderPanel({ onExport: () => Promise.resolve(outcome) })
+
+    await userEvent.click(screen.getByRole('button', { name: /export/i }))
+
+    expect(await screen.findByRole('status')).toHaveTextContent('docflow-export-2026-09-13.json')
+  })
+
+  it('says nothing was exported when the archive was incomplete', async () => {
+    const outcome: ExportOutcome = {
+      kind: 'incomplete',
+      result: {
+        archive: {} as never,
+        failed: [{ part: 'payments', reason: 'the disk is full' }],
+        complete: false,
+      },
+    }
+    renderPanel({ onExport: () => Promise.resolve(outcome) })
+
+    await userEvent.click(screen.getByRole('button', { name: /export/i }))
+
+    const note = await screen.findByRole('status')
+    expect(note).toHaveTextContent(/Nothing was saved/i)
+    expect(note).toHaveTextContent('payments')
+  })
+
+  it('disables the button while the export runs', async () => {
+    let release: (value: ExportOutcome) => void = () => undefined
+    const pending = new Promise<ExportOutcome>((resolve) => {
+      release = resolve
+    })
+    renderPanel({ onExport: () => pending })
+
+    const button = screen.getByRole('button', { name: /export/i })
+    await userEvent.click(button)
+
+    expect(button).toBeDisabled()
+    release({
+      kind: 'shared',
+      filename: 'x.json',
+      result: { archive: {} as never, failed: [], complete: true },
+    })
+    await screen.findByRole('status')
+    expect(button).not.toBeDisabled()
   })
 })

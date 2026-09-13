@@ -11,7 +11,7 @@
  * nothing here touches them.
  */
 
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { Navigate, NavLink, useParams } from 'react-router-dom'
 
 import { useCompany } from '../context'
@@ -25,6 +25,8 @@ import { SavedItems } from '../../features/settings/SavedItems'
 import { SignatureSettings } from '../../features/settings/SignatureSettings'
 import { TaxSettings } from '../../features/settings/TaxSettings'
 import { DataAndSync } from '../../features/settings/DataAndSync'
+import { runExport } from '../../features/export/action'
+import { createWebSharePort } from '../../share/web'
 import { applyLabelOverride, applyRegion, regionProfile } from '../../features/settings/region'
 import { PPM, percentToPpm } from '../../domain/money/money'
 import { type UiStrings, format } from '../../domain/locale/data/strings'
@@ -179,8 +181,28 @@ function SettingsPanelBody() {
       return <DefaultSignature />
 
     case 'data':
-      return <DataAndSync pendingCount={0} failedCount={0} />
+      return <DataAndSyncPanel />
   }
+}
+
+/**
+ * Settings → Data & sync, with the export actually connected.
+ *
+ * Its own component so the share port is built once per mount rather than on
+ * every render of the switch above, and so the panel that owns the Rule #6
+ * promise owns the thing that keeps it.
+ */
+function DataAndSyncPanel() {
+  const { companyId, repositories } = useCompany()
+  const port = useMemo(() => createWebSharePort(), [])
+
+  return (
+    <DataAndSync
+      pendingCount={0}
+      failedCount={0}
+      onExport={() => runExport(repositories, companyId, port)}
+    />
+  )
 }
 
 /** An unknown region must not crash Settings — it is the screen that fixes it. */
