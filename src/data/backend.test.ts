@@ -11,7 +11,10 @@ import { createBackend, isConfigured } from './backend'
 import { createMemoryRepositories } from './repositories'
 import { emptyState } from './repositories'
 
-const demo = () => ({ companyId: 'co_demo', repositories: createMemoryRepositories(emptyState()) })
+const demo = async () => ({
+  companyId: 'co_demo',
+  repositories: createMemoryRepositories(emptyState()),
+})
 
 // A JWT-shaped anon key. `createBrowserClient` refuses a service-role one, and
 // that refusal is what must not be softened into a demo.
@@ -22,13 +25,13 @@ const ANON = jwt({ role: 'anon' })
 const SERVICE = jwt({ role: 'service_role' })
 
 describe('Configuration, and only configuration, chooses the backend', () => {
-  it('runs the demo when no project is configured', () => {
-    const backend = createBackend({}, demo)
+  it('runs the demo when no project is configured', async () => {
+    const backend = await createBackend({}, demo)
     expect(backend.kind).toBe('demo')
   })
 
-  it('runs on the account when one is', () => {
-    const backend = createBackend(
+  it('runs on the account when one is', async () => {
+    const backend = await createBackend(
       { VITE_SUPABASE_URL: 'https://project.supabase.co', VITE_SUPABASE_ANON_KEY: ANON },
       demo,
     )
@@ -48,22 +51,22 @@ describe('Configuration, and only configuration, chooses the backend', () => {
 })
 
 describe('A broken account is never softened into a demo (§R)', () => {
-  it('throws rather than falling back when the anon key is a service-role key', () => {
+  it('rejects rather than falling back when the anon key is a service-role key', async () => {
     // It would ship BYPASSRLS to every browser. Falling back to the demo would
     // hide a total compromise behind a working-looking app.
-    expect(() =>
+    await expect(
       createBackend(
         { VITE_SUPABASE_URL: 'https://project.supabase.co', VITE_SUPABASE_ANON_KEY: SERVICE },
         demo,
       ),
-    ).toThrow(/service-role/i)
+    ).rejects.toThrow(/service-role/i)
   })
 
-  it('never calls the demo seed on an account build', () => {
+  it('never calls the demo seed on an account build', async () => {
     let seeded = false
-    createBackend(
+    await createBackend(
       { VITE_SUPABASE_URL: 'https://project.supabase.co', VITE_SUPABASE_ANON_KEY: ANON },
-      () => {
+      async () => {
         seeded = true
         return demo()
       },
@@ -75,13 +78,13 @@ describe('A broken account is never softened into a demo (§R)', () => {
 })
 
 describe('What each backend hands over', () => {
-  it('gives the demo a company id, because nobody signs in', () => {
-    const backend = createBackend({}, demo)
+  it('gives the demo a company id, because nobody signs in', async () => {
+    const backend = await createBackend({}, demo)
     expect(backend.kind === 'demo' && backend.companyId).toBe('co_demo')
   })
 
-  it('gives the account a session instead, because the company is not known yet', () => {
-    const backend = createBackend(
+  it('gives the account a session instead, because the company is not known yet', async () => {
+    const backend = await createBackend(
       { VITE_SUPABASE_URL: 'https://project.supabase.co', VITE_SUPABASE_ANON_KEY: ANON },
       demo,
     )
@@ -91,10 +94,10 @@ describe('What each backend hands over', () => {
     expect('companyId' in backend).toBe(false)
   })
 
-  it('hands over all ten repositories either way', () => {
+  it('hands over all ten repositories either way', async () => {
     for (const backend of [
-      createBackend({}, demo),
-      createBackend(
+      await createBackend({}, demo),
+      await createBackend(
         { VITE_SUPABASE_URL: 'https://project.supabase.co', VITE_SUPABASE_ANON_KEY: ANON },
         demo,
       ),
