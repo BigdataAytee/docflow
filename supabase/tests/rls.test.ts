@@ -233,7 +233,7 @@ describe('Two seeded companies cannot read each other (§Q gate)', () => {
 
 describe('What FORCE does NOT protect against', () => {
   /**
-   * TODO(Phase 7) — service-role penetration checks, tested separately.
+   * Phase 7 — service-role penetration checks, tested separately.
    *
    * FORCE closes the table-owner exemption. It does nothing about BYPASSRLS:
    * service_role sees and writes everything by design, because the edge
@@ -245,7 +245,9 @@ describe('What FORCE does NOT protect against', () => {
    * permission/RLS penetration checks run as wrong user, wrong role and
    * revoked device". Those must additionally assert that no client bundle,
    * log line, sync payload or edge-function response ever carries the service
-   * key — which is a build-and-deploy check, not a SQL one.
+   * key — which is a build-and-deploy check, not a SQL one. That half now
+   * exists and runs in CI: `tools/pentest/secrets.test.ts`. The scripted
+   * roster is `tools/pentest/checks.ts` and still needs an instance.
    *
    * This test exists so the limitation is executable rather than a comment
    * someone can skim past: it asserts the bypass is real and expected.
