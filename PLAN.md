@@ -18,7 +18,7 @@ claims nothing the gates have not proven (§X).
 | **2.5** | Remaining improvements | each §L behaviour verified offline; "Kept" moves the moment an expense is added; a reissued receipt never increments income | **gate passed** |
 | **3** | Sync | five offline documents arrive once; two-device edits retain both; no chaos scenario double-counts, resurrects or alters a frozen label | **code complete** — gate verified at logic level |
 | 4 | Native polish | installable builds pass all flows on physical Android and iOS | not started |
-| **5** | Web + public links | cross-device visibility; token behaviour per §P; one payment per event | **part built** — 2 of 5 scope items done, 1 part done (3 of 10 repositories, nothing wired); gate NOT passed (0 of 3 clauses) |
+| **5** | Web + public links | cross-device visibility; token behaviour per §P; one payment per event | **part built** — 2 of 5 scope items done, 1 part done (4 of 10 repositories, nothing wired); gate NOT passed (0 of 3 clauses) |
 | 6 | Local AI + logo | the §N six-step gate per tier; the §O definition of done | not started |
 | 7 | Admin, hardening, migration, launch | the §V checklist green end to end | not started |
 
@@ -583,14 +583,14 @@ been begun.
 
 ### Part-built
 
-- [~] **Repositories on Supabase.** Three of the ten contracts — companies,
-      customers and documents — are implemented over `supabase-js`
-      (`src/data/supabase/repositories.ts`, `documents.ts`, `mutate.ts`,
-      `rows.ts`). The other seven are deliberately NOT stubbed, and the
-      factory is typed `Pick<Repositories, …>` so that is visible in the type
-      rather than in a comment: a repository that silently does nothing would
-      typecheck, wire cleanly into the app, and lose money the first time
-      someone recorded a payment.
+- [~] **Repositories on Supabase.** Four of the ten contracts — companies,
+      customers, documents and payments — are implemented over `supabase-js`
+      (`src/data/supabase/repositories.ts`, `documents.ts`, `payments.ts`,
+      `mutate.ts`, `rows.ts`). The other six are deliberately NOT stubbed, and
+      the factory is typed `Pick<Repositories, …>` so that is visible in the
+      type rather than in a comment: a repository that silently does nothing
+      would typecheck, wire cleanly into the app, and lose money the first
+      time someone recorded a payment.
 
       Nothing is wired to them yet. `src/app/store.tsx` still builds the
       in-memory store, and pointing it at a project needs the four secrets and
@@ -619,6 +619,41 @@ been begun.
          snapshot, not a standing rule, and the failure is invisible: RLS
          enabled, policies correct, PostgREST answering "permission denied".
          Now asserted in `rls.test.ts`.
+
+      **Payments needed a function, not a table.** A payment and its
+      allocations are two tables and one fact, and PostgREST cannot span both
+      in one call. Two calls can half-succeed: the payment written and the
+      allocations lost leaves an invoice reading unpaid after it was paid, and
+      nothing in the record says allocations were ever meant to exist, so
+      nothing can detect or correct it later. `record_payment`
+      (`0010_record_payment.sql`) makes the pair one statement and therefore
+      one transaction.
+
+      It is SECURITY **INVOKER**, and that is load-bearing: it is called by
+      the client, so it must meet the same `company_isolation` policies a
+      plain insert would. A DEFINER function here would hand every signed-in
+      user a BYPASSRLS-shaped hole — the opposite of `apply_public_link`,
+      which runs from a service-role edge function with no user at all. It
+      also takes **no company argument**; the company comes from the caller's
+      own claims, so there is no parameter for an attack to land on.
+
+      Writing it found a fourth hole, this one already open in the schema:
+      **a client could allocate its own payment against another company's
+      invoice.** A foreign key does not consult RLS, so `invoice_id` accepted
+      any document id in the database; the allocation row was the caller's
+      own, so `company_isolation` passed it happily. The result would be a
+      payment permanently attached to a document neither company can
+      reconcile — and which the other can no longer delete, the reference
+      being ON DELETE RESTRICT. The function now requires every invoice to be
+      one the caller can see, as an EXISTS under their own rights rather than
+      a company comparison, so the boundary stays in one place. An invoice
+      that does not exist is refused identically, which also means a wrong id
+      reveals nothing about what exists elsewhere.
+
+      The function refuses an over-allocation too (§K, Rule #3): the per-row
+      `> 0` check cannot see a sum, and allocating more than arrived settles a
+      debt with money nobody paid. The domain enforces it as well; it is
+      repeated at the last point before the money is durable.
 
       Tested in two halves, both against something real. `supabase/tests/`
       round-trips every mapper through the migrated schema and proves the
@@ -1535,6 +1570,12 @@ vectors of a few hundred bytes.
 | 88 | A typed `*` or `%` is stripped from a search, not passed through | Both mean "anything" to an `ilike` filter, so a search for "50%" would quietly return every row starting with "50" — broader than what was asked for, with nothing on screen to say so. Widening a search unasked is the same class of error as narrowing it. `_` is left alone: it over-matches by at most a character, and stripping it would break searching an email address. | `src/data/supabase/search.ts` |
 | 89 | A write is conditioned on the status it read | Two devices editing one document cannot interleave into a state neither asked for: the second finds no row to update and is told, rather than overwriting a transition it never saw. Stricter than the in-memory store, which cannot have concurrent writers. | `src/data/supabase/mutate.ts` |
 | 90 | Only three repositories exist, and the factory's type says so | Returning stubs for the other seven would typecheck, wire cleanly into the app, and lose money the first time someone recorded a payment. `Pick<Repositories, …>` makes "not written yet" a compile error at the call site instead of a comment nobody reads. | `src/data/supabase/repositories.ts` |
+| 91 | Recording a payment goes through a function, not a table | A payment and its allocations are two tables and one fact, and PostgREST cannot span both in one call. Payment written with allocations lost leaves an invoice reading unpaid after it was paid — and nothing in the record says allocations were ever meant to exist, so nothing can detect or correct it afterwards. | `0010_record_payment.sql`, `src/data/supabase/payments.ts` |
+| 92 | That function is SECURITY INVOKER and takes no company argument | It is called BY THE CLIENT, so it must meet the same policies a plain insert would; a DEFINER function here would hand every signed-in user a BYPASSRLS-shaped hole. The company comes from the caller's own claims rather than a parameter, so there is nothing for an attack to land on — the opposite posture from `apply_public_link`, which runs service-role with no user at all. | `0010_record_payment.sql` |
+| 93 | Every allocation must name an invoice the caller can see | A foreign key does not consult RLS, so `invoice_id` accepted any document in the database while `company_isolation` passed the allocation row as the caller's own. A client could attach its payment to a stranger's invoice — unreconcilable for both, and undeletable for the other, the reference being ON DELETE RESTRICT. Checked as an EXISTS under the caller's rights, so the boundary stays in one place; a nonexistent invoice is refused identically, revealing nothing. | `0010_record_payment.sql` |
+| 94 | The database refuses an over-allocation, not only the domain | The per-row `> 0` check cannot see a sum, and allocating more than arrived settles a debt with money nobody paid (Rule #3). Repeated at the last point before the money is durable, because a sync client that skipped the domain would otherwise write it. | `0010_record_payment.sql` |
+| 95 | Supabase scopes payments by `company_id`, where memory scopes by customer | The memory store derives the scope from the customer because `Payment` carries no company, which is right for a `Map`. The table has the column, so a standalone payment from a customer later deleted still belongs to the company that received it — under the memory rule that money quietly leaves the ledger. | `src/data/supabase/payments.ts` |
+| 96 | An invoice's payments are an INNER join, not a nullable embed | Without `!inner` every payment in the company comes back, each carrying an empty allocation list, and the invoice reads as settled by money that never touched it. | `src/data/supabase/payments.ts` |
 
 ## Deviations from the spec
 

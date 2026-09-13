@@ -29,8 +29,18 @@ export interface Exchange {
   readonly prefer: string
 }
 
-/** What a stubbed exchange answers with: rows, or a PostgREST error. */
-export type Reply = readonly unknown[] | { readonly error: { message: string; code?: string } }
+/**
+ * What a stubbed exchange answers with.
+ *
+ * Rows for a table query; `{ json }` for a body PostgREST sends verbatim — an
+ * RPC returning a scalar `jsonb` answers with the object itself, NOT an array,
+ * and wrapping it would let a repository pass here while failing against a
+ * real function; or `{ error }` for a refusal.
+ */
+export type Reply =
+  | readonly unknown[]
+  | { readonly json: unknown }
+  | { readonly error: { message: string; code?: string } }
 
 export interface Harness {
   readonly db: SupabaseClient
@@ -38,6 +48,8 @@ export interface Harness {
   /** The exchange at `index`, with a readable failure when there isn't one. */
   call(index: number): Exchange
 }
+
+const isRows = (reply: Reply): reply is readonly unknown[] => Array.isArray(reply)
 
 let clients = 0
 
@@ -57,16 +69,24 @@ export function harness(replies: readonly Reply[]): Harness {
     })
 
     const reply = replies[calls.length - 1] ?? []
-    if (!Array.isArray(reply)) {
-      const { error } = reply as { error: { message: string; code?: string } }
-      return new Response(JSON.stringify({ ...error, details: null, hint: null }), {
-        status: 400,
+    // An explicit predicate: `Array.isArray` does not narrow a `readonly`
+    // array out of a union, so the negative branch would still carry it.
+    if (!isRows(reply)) {
+      if ('error' in reply) {
+        const { error } = reply
+        return new Response(JSON.stringify({ ...error, details: null, hint: null }), {
+          status: 400,
+          headers: { 'content-type': 'application/json' },
+        })
+      }
+      return new Response(JSON.stringify(reply.json), {
+        status: 200,
         headers: { 'content-type': 'application/json' },
       })
     }
-    // Always an array: `maybeSingle()` asks for the normal representation and
-    // unwraps client-side, so returning a bare object would be a shape
-    // PostgREST never sends.
+    // A table query answers with an array. `maybeSingle()` asks for the normal
+    // representation and unwraps client-side, so a bare object here would be a
+    // shape PostgREST never sends.
     return new Response(JSON.stringify(reply), {
       status: 200,
       headers: { 'content-type': 'application/json' },

@@ -28,6 +28,8 @@ import {
   fromExpense,
   fromItem,
   fromLinkToken,
+  fromPayment,
+  fromAllocation,
   toAsset,
   toCompany,
   toCustomer,
@@ -35,6 +37,7 @@ import {
   toExpense,
   toItem,
   toLinkToken,
+  toPayment,
 } from '../../src/data/supabase/rows'
 import { money } from '../../src/domain/money/money'
 import { quantity } from '../../src/domain/documents/types'
@@ -337,6 +340,62 @@ describe('Every mapped field has a column that exists (§E)', () => {
     expect(back.kind).toBe('signature')
     expect(back.dataUrl).toBe('data:image/svg+xml,%3Csvg%2F%3E')
     expect(back.createdAt).not.toBe('')
+  })
+
+  it('round-trips a payment and the allocations beside it', async () => {
+    const invoice = await roundTrip(
+      'documents',
+      fromDocument({ companyId: COMPANY, type: 'invoice', status: 'issued', currency: 'NGN', totalMinor: 50_000_00 }),
+    )
+    const row = await roundTrip(
+      'payments',
+      fromPayment({
+        companyId: COMPANY,
+        customerId: CUSTOMER,
+        amount: money('NGN', 50_000_00),
+        paidAt: '2026-09-11T10:00:00.000Z',
+        method: 'bank_transfer',
+        reference: 'FT2609110001',
+        source: 'manual',
+      }),
+    )
+    const allocation = await roundTrip('payment_allocations', {
+      company_id: COMPANY,
+      payment_id: row['id'],
+      ...fromAllocation({ invoiceId: String(invoice['id']), amount: money('NGN', 30_000_00) }),
+    })
+
+    const back = toPayment(row, [allocation])
+    expect(back.amount).toEqual(money('NGN', 50_000_00))
+    expect(back.method).toBe('bank_transfer')
+    expect(back.reference).toBe('FT2609110001')
+    expect(back.source).toBe('manual')
+    // The allocation takes its currency from the payment — the table has no
+    // currency column, and should not.
+    expect(back.allocations[0]?.amount).toEqual(money('NGN', 30_000_00))
+    expect(back.allocations[0]?.paymentId).toBe(row['id'])
+    // A manual payment has neither of these, and must not carry them as
+    // `undefined` — that is a different record from one without them (§I).
+    expect('externalEventId' in back).toBe(false)
+    expect('reversalOfId' in back).toBe(false)
+  })
+
+  it('never lets a payment amount come back as a string (Rule #3)', async () => {
+    const row = await roundTrip(
+      'payments',
+      fromPayment({
+        companyId: COMPANY,
+        customerId: CUSTOMER,
+        amount: money('NGN', 123_456_789),
+        paidAt: '2026-09-11T10:00:00.000Z',
+        method: 'cash',
+        source: 'manual',
+      }),
+    )
+    // `bigint` arrives as a STRING from `pg`. Unconverted, every total built
+    // on it becomes string concatenation and the money is silently wrong.
+    expect(typeof toPayment(row).amount.minor).toBe('number')
+    expect(toPayment(row).amount.minor).toBe(123_456_789)
   })
 
   it('round-trips a link token, storing only the hash (§P)', async () => {

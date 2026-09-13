@@ -21,9 +21,10 @@
  *  · **Idempotency.** `mutate.ts` owns it, against the unique index from
  *    `0009_idempotency.sql`.
  *
- * Only companies, customers and documents are here. The remaining seven
- * contracts are not stubbed: a repository that silently does nothing is worse
- * than one that does not exist, because the app would look wired.
+ * Only companies, customers, documents and payments are here (payments in
+ * `payments.ts`). The remaining six contracts are not stubbed: a repository
+ * that silently does nothing is worse than one that does not exist, because
+ * the app would look wired.
  */
 
 import type { SupabaseClient } from '@supabase/supabase-js'
@@ -39,6 +40,7 @@ import { type Row, fromCompany, fromCustomer, toCompany, toCustomer } from './ro
 import { currentRow, insertOnce, orThrow } from './mutate'
 import { anyColumnLike, searchable } from './search'
 import { createDocumentRepository } from './documents'
+import { createPaymentRepository } from './payments'
 
 export function createCompanyRepository(db: SupabaseClient): CompanyRepository {
   return {
@@ -125,20 +127,21 @@ export function createCustomerRepository(db: SupabaseClient): CustomerRepository
 }
 
 /**
- * The three repositories that exist so far.
+ * The repositories that exist so far.
  *
  * Typed as a `Pick` of `Repositories` rather than the whole thing, because the
- * other seven are genuinely not written yet. A factory that returned stubs
+ * other six are genuinely not written yet. A factory that returned stubs
  * would typecheck, wire cleanly into the app, and lose money silently the
  * first time someone recorded a payment — the type is the honest record of
  * what is finished.
  */
 export function createSupabaseRepositories(
   db: SupabaseClient,
-): Pick<Repositories, 'companies' | 'customers' | 'documents'> {
+): Pick<Repositories, 'companies' | 'customers' | 'documents' | 'payments'> {
   return {
     companies: createCompanyRepository(db),
     customers: createCustomerRepository(db),
     documents: createDocumentRepository(db),
+    payments: createPaymentRepository(db),
   }
 }
