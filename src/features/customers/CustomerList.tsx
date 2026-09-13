@@ -236,7 +236,11 @@ function CustomerCard({
           </span>
         )}
       </span>
-      <span className="shrink-0">
+      {/*
+        Not `shrink-0`: at 200% text the balances held the row wider than the
+        phone. They keep their own column and wrap inside it instead.
+      */}
+      <span className="flex min-w-0 shrink flex-col items-end gap-1">
         {/* Each currency shown separately — never summed (§G). */}
         {owing ? (
           balances
