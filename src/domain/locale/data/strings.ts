@@ -587,6 +587,15 @@ export interface UiStrings {
     readonly uploadState: string
     readonly exportAll: string
     readonly exportAlwaysFree: string
+    /** After a successful export. Names the file, so it can be found again. */
+    readonly exportDone: string
+    /**
+     * Said when the archive could not be read whole. It is never handed over
+     * in that state: an owner who keeps a short export believes it complete.
+     */
+    readonly exportIncomplete: string
+    readonly exportUnavailable: string
+    readonly exportFailed: string
     readonly conflictDemo: string
     readonly conflictDemoHint: string
     readonly showExample: string
@@ -1178,6 +1187,12 @@ const EN: UiStrings = {
     uploadState: 'Upload state',
     exportAll: 'Export all my data',
     exportAlwaysFree: 'Your documents and export are never locked, on any plan.',
+    exportDone: 'Exported everything as',
+    exportIncomplete:
+      'Not exported — some of your records could not be read, so the file would have been ' +
+      'incomplete. Nothing was saved. What failed:',
+    exportUnavailable: 'This device has no way to save or share a file.',
+    exportFailed: 'Nothing was exported.',
     conflictDemo: 'See what happens when two phones edit at once',
     conflictDemoHint: 'A worked example. Nothing on this phone changes.',
     showExample: 'Show me',

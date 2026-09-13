@@ -20,7 +20,7 @@ claims nothing the gates have not proven (§X).
 | 4 | Native polish | installable builds pass all flows on physical Android and iOS | not started |
 | **5** | Web + public links | cross-device visibility; token behaviour per §P; one payment per event | **part built** — 4 of 5 scope items done, webhooks part done; gate NOT passed (0 of 3 clauses, needs the deploy) |
 | **6** | Local AI + logo | the §N six-step gate per tier; the §O definition of done | **part built** — Tier-B extractor and the ladder's logic; gate needs devices |
-| **7** | Admin, hardening, migration, launch | the §V checklist green end to end | **part built** — admin, server-enforced permissions, the legacy migration, the pen-check roster, the generated §T listings, the marketing site, the store screenshots and the store-policy verification; gate NOT passed — the roster has never been run, because nothing is deployed |
+| **7** | Admin, hardening, migration, launch | the §V checklist green end to end | **part built** — admin, server-enforced permissions, the legacy migration, the pen-check roster, the generated §T listings, the marketing site, the store screenshots, the store-policy verification and the data export; gate NOT passed — the roster has never been run, because nothing is deployed |
 
 ---
 
@@ -1449,6 +1449,54 @@ gate itself is deferred with everything else that needs a phone.
       every time, so **none of the three had ever actually run in CI**,
       including the key scan that the whole two-company boundary rests on.
 
+- [x] **Full user data export, and the backup schedule** (`src/features/export/`,
+      `tools/backup/`). §Q Phase 7: "backup schedule; full user data export".
+      Rule #6: "a lapsed or cancelled subscription never blocks viewing,
+      sharing or exporting anything the user already created, and **full data
+      export stays free forever**."
+
+      **The button was wired to nothing.** Settings has carried "Export all my
+      data" and the Rule #6 sentence beneath it since Phase 2. `onExport` was
+      optional and **no caller ever passed it**, so the one control that makes
+      Rule #6 true did nothing at all, for four phases, on the screen that
+      promises it hardest.
+
+      The export is complete or it says so. A short archive that looks whole is
+      the worst outcome available here: the owner keeps it, deletes the app,
+      and finds out eighteen months later. So every repository read is
+      accounted for and `complete` is false the moment one fails — the same
+      shape as the migration's `balanced` — and an incomplete archive is
+      **never handed over**. It is readable without DocFlow: one JSON file,
+      money in the integer minor units it is stored in (Rule #3), the labels an
+      issued document was issued under (Rule #5), and images inline as data
+      URLs so the file needs nothing else. It says in itself what it left out —
+      link tokens are hashes and would open nothing — because an owner should
+      not have to guess.
+
+      It goes out through the SHARE port, the same one a PDF uses, so it works
+      in airplane mode (§M) and Phase 4's Capacitor adapter carries it to a
+      phone's file picker without this code changing. A dismissed share is
+      reported as a failure, not a success: saying "Exported" about a file
+      nobody saved is the same lie as a short archive.
+
+      **A backup nobody has restored is not a backup**, so the export ships
+      with its reader and a test round-trips real records through both. The
+      reader catches the §V failure specifically — "interrupted downloads and
+      full-storage failures" — by checking the arrays against the counts the
+      archive claims about itself: a truncation in the right place still parses
+      as JSON and is otherwise indistinguishable from a smaller business.
+
+      The same rule governs the server schedule. It is stated as data —
+      daily plus PITR, 30 days' retention, an hour's recovery point, with what
+      it covers and what it does **not** — and the verification **refuses to
+      report a configured schedule as verified**. It requires a dated restore
+      rehearsal, and the rehearsal expires after 90 days, because a restore
+      that worked two quarters ago says nothing about the schema as it is now.
+      A rehearsal that restored fewer rows than it started with is a failure,
+      not a qualified pass. Nothing is configured and nothing has been
+      rehearsed: there is no project, and inventing plausible values would make
+      the report green for a database that does not exist.
+
 ### Not started
 
 - [ ] **Store billing** (StoreKit 2 + Play Billing) — needs devices and store
@@ -1466,7 +1514,6 @@ gate itself is deferred with everything else that needs a phone.
       lists all 33 questions with the page to read for each. `npm run site`,
       `npm run shots` and `npm run policy` name every one of these on every
       run.
-- [ ] **Backup schedule and full user data export.**
 - [ ] **The final sweeps** — accessibility, dark mode, RTL readiness,
       responsive, terminology per locale, onboarding, command palette.
 
@@ -2476,6 +2523,14 @@ vectors of a few hundred bytes.
 | 192 | The test-only destination exemption is EARNED against the build | `harness.ts` names a stub host and never ships, but "only tests import it" is an arrangement, and this check exists because arrangements rot. The host must be absent from the built bundle, and with no build the exemption is not granted. | `src/marketing/policy/checks.ts` |
 | 193 | No default host is compiled into the app, so the declaration names what the scan cannot see | The Supabase project is configuration, supplied per install. A declaration built only from what a literal-scan finds would omit the one destination that actually carries the data. | `src/marketing/policy/checks.ts` |
 | 194 | CI builds BEFORE it tests | Three checks read the built bundle and each says so when there is none — but with the tests running first, "there is no build" was the answer every time, so none of the three had ever run in CI, the Phase-7c service-role key scan included. | `.github/workflows/ci.yml` |
+| 195 | The export button was wired to nothing for four phases | `onExport` was optional and no caller passed it, so the one control that makes Rule #6 true rendered under the sentence promising it and did nothing. Found by building the thing it was supposed to call. A test now reads `SettingsScreen.tsx` and requires the wiring, because optional-and-unpassed is invisible from either side. | `src/features/settings/DataAndSync.tsx` |
+| 196 | An incomplete archive is never handed over | A short export that looks whole is the worst outcome available: the owner keeps it, deletes the app, and finds out when it is the only copy. `complete` is false the moment one repository read fails, and the share is not attempted. | `src/features/export/action.ts` |
+| 197 | The export reads back, and the reader ships with it | A backup nobody has restored is not a backup — it is a file with a reassuring name, and the moment it is needed is the worst moment to find out. The reader checks the arrays against the counts the archive claims about itself, which catches §V's "interrupted downloads and full-storage failures": a truncation in the right place still parses as JSON. | `src/features/export/restore.ts` |
+| 198 | A dismissed share is a failure, not a success | The person changed their mind, so no file exists. "Exported" would be a claim about a file that was never written — the same lie as a short archive, told faster. | `src/features/export/action.ts` |
+| 199 | The export code contains no entitlement vocabulary at all | Rule #6's durable form is not a comment and not an arity check: there is nothing to branch on, so there is nothing for a later change to start branching on. Asserted against code with comments and string literals stripped — the archive literally says "free, on every plan, forever", and a note cannot gate anything. | `src/features/export/export.test.ts` |
+| 200 | A configured backup schedule is never verified on its own | A dashboard saying backups are enabled is not evidence that a restore produces a working database. Verification requires a dated restore rehearsal, and the rehearsal expires after 90 days because a restore that worked two quarters ago says nothing about the schema as it is now. | `tools/backup/schedule.ts` |
+| 201 | A rehearsal that lost rows is a failure, not a qualified pass | The number that matters is rows out against rows in. A restore that is "mostly" complete is one somebody will discover is not, later, under pressure. | `tools/backup/schedule.ts` |
+| 202 | Retention is 30 days, written down where it can be argued with | The realistic disaster is not a dropped table noticed in an hour; it is a bad migration or a quiet corruption noticed weeks later, after a daily backup has rotated away. It is a cost decision, so it belongs in the repo rather than implicit in a dashboard. | `tools/backup/schedule.ts` |
 
 ## Deviations from the spec
 
