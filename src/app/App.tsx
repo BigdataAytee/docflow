@@ -40,6 +40,7 @@ import { ContactScreen, CustomersScreen, StatementScreen } from './screens/Custo
 import { AnalyticsScreen } from './screens/AnalyticsScreen'
 import { SettingsIndexScreen, SettingsPanelScreen } from './screens/SettingsScreen'
 import { WelcomeScreen } from './screens/WelcomeScreen'
+import { PublicLinkPage } from '../public/PublicLinkPage'
 
 export interface AppProps {
   readonly repositories?: Repositories
@@ -61,9 +62,24 @@ export function App({
   )
 
   const tree = (
-    <ProfileGate companyId={companyId} repositories={repos}>
-      <AppRoutes />
-    </ProfileGate>
+    <Routes>
+      {/*
+        The public pages sit ABOVE the providers, deliberately. Inside them
+        they would load the OWNER's company, records and locale — for a
+        stranger holding a link. A customer has no account and no company
+        (§P); what they see comes from the edge function and nowhere else.
+      */}
+      <Route path="/accept/:token" element={<PublicLinkPage kind="accept" />} />
+      <Route path="/sign/:token" element={<PublicLinkPage kind="sign" />} />
+      <Route
+        path="*"
+        element={
+          <ProfileGate companyId={companyId} repositories={repos}>
+            <AppRoutes />
+          </ProfileGate>
+        }
+      />
+    </Routes>
   )
 
   return router === 'memory' ? (

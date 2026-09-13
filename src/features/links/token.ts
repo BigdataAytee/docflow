@@ -133,8 +133,12 @@ export async function checkToken(
 export function linkFor(baseUrl: string, kind: LinkKind, token: string): string {
   const base = baseUrl.trim().replace(/\/+$/, '')
   if (base === '') throw new LinkError('A link needs somewhere to point.')
-  if (!/^https:\/\//i.test(base)) {
-    // A customer document must never travel over plain http (§P).
+  // A customer document must never travel over plain http (§P). The one
+  // exception is the loopback address, which browsers themselves treat as a
+  // secure context — without it the action is untestable in development, and
+  // an action nobody can try is an action nobody has checked.
+  const loopback = /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/i.test(base)
+  if (!/^https:\/\//i.test(base) && !loopback) {
     throw new LinkError('A public link must be https.')
   }
   if (!/^[0-9A-Z]+$/.test(token)) throw new LinkError('That is not a token this app minted.')

@@ -19,6 +19,7 @@ import {
   type DocumentType,
   type FrozenLabels,
   type LineItem,
+  QUANTITY_SCALE,
   carriesMoney,
 } from '../domain/documents/types'
 import type { Money } from '../domain/money/money'
@@ -204,7 +205,7 @@ export function composeDocument(
 
   const rows: TableRow[] = document.lineItems.map((line) => ({
     description: line.description,
-    quantity: String(line.quantityMilli / 1000),
+    quantity: String(line.quantityMilli / QUANTITY_SCALE),
     ...(showsMoney ? { amount: lineTotal(document.currency, line) } : {}),
   }))
 

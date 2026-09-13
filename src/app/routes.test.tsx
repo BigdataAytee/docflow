@@ -1820,10 +1820,43 @@ describe('Signing (§G, §I, §P)', () => {
       expect(await screen.findByRole('button', { name: 'Confirm delivery' })).toBeInTheDocument()
     })
 
-    it('says plainly that the customer-facing link is not here yet (§N)', async () => {
-      renderAt('/doc/doc_way', delivery('dispatched'))
-      expect(await screen.findByText(/link they can sign on their own phone/i)).toBeInTheDocument()
-      expect(screen.queryByRole('button', { name: /copy.*link/i })).not.toBeInTheDocument()
+    it('offers a link for the customer to sign on their own phone (§G)', async () => {
+      const user = userEvent.setup()
+      const state = renderAt('/doc/doc_way', delivery('dispatched'))
+
+      await user.click(
+        await screen.findByRole('button', { name: 'Copy a link for them to sign' }),
+      )
+
+      // Only the HASH is kept: a leaked row cannot open a link (§P).
+      await waitFor(() => expect(state.linkTokens).toHaveLength(1))
+      const stored = state.linkTokens[0]
+      expect(stored?.documentId).toBe('doc_way')
+      expect(stored?.tokenHash).toMatch(/^[0-9a-f]{64}$/)
+      expect(stored?.consumedAt).toBeUndefined()
+
+      // The link is shown as well as copied — a clipboard write can be
+      // refused, and an owner who cannot see it has nothing to send.
+      const shown = await screen.findByText(/\/sign\/[0-9A-Z]{32}$/)
+      expect(shown).toBeInTheDocument()
+      // The token itself is never what was stored.
+      expect(stored?.tokenHash).not.toBe(shown.textContent?.split('/').pop())
+    })
+
+    it('replaces the link when one is copied again, killing the old one (§P)', async () => {
+      const user = userEvent.setup()
+      const state = renderAt('/doc/doc_way', delivery('dispatched'))
+
+      const button = await screen.findByRole('button', { name: 'Copy a link for them to sign' })
+      await user.click(button)
+      await waitFor(() => expect(state.linkTokens).toHaveLength(1))
+      const first = state.linkTokens[0]?.tokenHash
+
+      await user.click(button)
+      await waitFor(() => expect(state.linkTokens[0]?.tokenHash).not.toBe(first))
+      // One live link per document: two ways in, only one revocable, is the
+      // thing this avoids.
+      expect(state.linkTokens).toHaveLength(1)
     })
 
     it('captures the signer and the mark in one write, and delivers it (§P)', async () => {
@@ -2530,12 +2563,27 @@ describe('Recording the customer’s answer (§G, §P)', () => {
     expect(screen.queryByRole('button', { name: 'They accepted' })).not.toBeInTheDocument()
   })
 
-  it('says plainly that the customer-facing link is not here yet (§N)', async () => {
-    // No greyed "copy link" button that cannot work: an unavailable
-    // capability is stated, never dressed up.
-    renderAt('/doc/doc_quote', offered())
-    expect(await screen.findByText(/link they can answer on themselves/i)).toBeInTheDocument()
-    expect(screen.queryByRole('button', { name: /copy.*link/i })).not.toBeInTheDocument()
+  it('offers a link for the customer to accept on their own phone (§G)', async () => {
+    const user = userEvent.setup()
+    const state = renderAt('/doc/doc_quote', offered())
+
+    await user.click(
+      await screen.findByRole('button', { name: 'Copy a link for them to accept' }),
+    )
+
+    await waitFor(() => expect(state.linkTokens).toHaveLength(1))
+    expect(state.linkTokens[0]?.documentId).toBe('doc_quote')
+    expect(await screen.findByText(/\/accept\/[0-9A-Z]{32}$/)).toBeInTheDocument()
+  })
+
+  it('offers no link once the offer has been answered', async () => {
+    // The page behind it would refuse anyway, but an owner should not be
+    // handed a link that cannot work.
+    renderAt('/doc/doc_quote', offered('accepted'))
+    expect(await screen.findByText(/Answered Accepted/)).toBeInTheDocument()
+    expect(
+      screen.queryByRole('button', { name: 'Copy a link for them to accept' }),
+    ).not.toBeInTheDocument()
   })
 
   it('an accepted offer can then be converted, which nothing could reach before', async () => {

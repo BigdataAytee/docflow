@@ -357,15 +357,7 @@ export function DocumentScreen({ today = new Date().toISOString().slice(0, 10) }
           </section>
         )}
 
-        {/*
-          §N: an unavailable capability is stated plainly, never dressed up.
-          The same line the quotation gets, for the same reason — no greyed
-          "copy signing link" that cannot work, one sentence beside the thing
-          that does.
-        */}
-        {canSign(record) && !signing && (
-          <p className="text-center text-[11px] opacity-60">{strings.signature.linkLater}</p>
-        )}
+        {canSign(record) && !signing && <CopyLinkRow documentId={record.id} kind="sign" />}
 
         {signing && (
           <SignDeliverySheet
@@ -624,12 +616,7 @@ export function DocumentScreen({ today = new Date().toISOString().slice(0, 10) }
                 </button>
               ))}
             </div>
-            {/*
-              §N: an unavailable capability is stated plainly, never dressed
-              up. No greyed "copy link" button that cannot work — a line
-              saying when it will, beside the thing that works now.
-            */}
-            <p className="mt-2 text-[11px] opacity-60">{strings.answer.linkLater}</p>
+            <CopyLinkRow documentId={record.id} kind="accept" />
           </section>
         )}
 
@@ -1052,6 +1039,77 @@ export function DocumentScreen({ today = new Date().toISOString().slice(0, 10) }
           </button>
         )}
       </div>
+    </div>
+  )
+}
+
+/**
+ * §G's copy-link actions (§P, §Q Phase 5).
+ *
+ * The link opens a page on the web, so unlike everything else in this app it
+ * cannot work offline — §Q says so directly: "Copy-link actions disabled with
+ * a 'needs internet' note until synced." That note is now TRUE, where before
+ * the page did not exist and saying "needs internet" would have been a lie.
+ *
+ * The token is shown once and never stored (§P); only its hash is kept, so
+ * there is nothing here to copy a second time. Copying again mints a fresh
+ * link and kills the old one, which is also how an owner revokes one sent to
+ * the wrong number.
+ */
+function CopyLinkRow({ documentId, kind }: { documentId: string; kind: 'accept' | 'sign' }) {
+  const { strings } = useCompany()
+  const { actions } = useAppData()
+  const [copied, setCopied] = useState<string | null>(null)
+  const [problem, setProblem] = useState<string | null>(null)
+  const online = typeof navigator === 'undefined' ? true : navigator.onLine
+
+  if (!online) {
+    return (
+      <p className="text-center text-[11px] opacity-60">{strings.publicLink.needsInternet}</p>
+    )
+  }
+
+  return (
+    <div className="space-y-1">
+      <button
+        type="button"
+        className="min-h-tap w-full rounded-xl border border-black/10 bg-white px-4 text-sm font-medium"
+        onClick={() => {
+          setProblem(null)
+          void actions
+            .mintPublicLink(documentId, kind, window.location.origin)
+            .then(async (url) => {
+              setCopied(url)
+              await navigator.clipboard?.writeText(url).catch(() => undefined)
+            })
+            .catch((cause: unknown) => {
+              setProblem(
+                format(strings.publicLink.mintFailed, {
+                  reason: cause instanceof Error ? cause.message : String(cause),
+                }),
+              )
+            })
+        }}
+      >
+        {kind === 'accept' ? strings.publicLink.copyAccept : strings.publicLink.copySign}
+      </button>
+
+      {copied !== null && (
+        <>
+          <p className="text-center text-[11px] opacity-60">{strings.publicLink.copied}</p>
+          {/* Shown as well as copied: a clipboard write can be refused, and
+              an owner who cannot see the link has nothing to send. */}
+          <p className="break-all rounded-lg bg-white/70 px-2 py-1 text-center text-[11px] tabular-nums">
+            {copied}
+          </p>
+        </>
+      )}
+
+      {problem !== null && (
+        <p className="text-center text-[11px] text-status-warn" role="alert">
+          {problem}
+        </p>
+      )}
     </div>
   )
 }

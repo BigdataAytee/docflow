@@ -320,6 +320,33 @@ export interface UiStrings {
     readonly noPayment: string
     readonly failed: string
   }
+  readonly publicLink: {
+    readonly checking: string
+    readonly wrong: string
+    readonly expired: string
+    readonly used: string
+    readonly notAnswerable: string
+    readonly rateLimited: string
+    readonly from: string
+    readonly accept: string
+    readonly reject: string
+    readonly accepted: string
+    readonly rejected: string
+    readonly signHere: string
+    readonly whoAreYou: string
+    readonly yourRole: string
+    readonly signedThanks: string
+    readonly optionalSignature: string
+    readonly deliverTo: string
+    readonly sending: string
+    readonly failed: string
+    readonly copyAccept: string
+    readonly copySign: string
+    readonly copied: string
+    readonly expiresIn: string
+    readonly needsInternet: string
+    readonly mintFailed: string
+  }
   readonly photo: {
     readonly add: string
     readonly change: string
@@ -845,6 +872,37 @@ const EN: UiStrings = {
     openReceipt: 'Open it',
     noPayment: 'Record the payment first.',
     failed: 'That could not be recorded: {reason}',
+  },
+  publicLink: {
+    checking: 'One moment…',
+    // §P: a wrong token and an unknown document say the same thing, and
+    // neither says whether a document is there.
+    wrong: 'This link does not work. Ask whoever sent it for a new one.',
+    expired: 'This link has expired. Ask whoever sent it for a new one.',
+    used: 'This link has already been used.',
+    notAnswerable: 'This has already been dealt with. Nothing more to do here.',
+    rateLimited: 'Too many tries. Wait a minute and open the link again.',
+    from: 'From {business}',
+    accept: 'Accept',
+    reject: 'Turn it down',
+    accepted: 'Thank you — {business} has been told you accepted.',
+    rejected: 'Thank you — {business} has been told.',
+    signHere: 'Sign to confirm you received these goods',
+    whoAreYou: 'Your name',
+    yourRole: 'Your role (optional)',
+    signedThanks: 'Thank you. {business} has been told this arrived.',
+    optionalSignature: 'Add your signature (optional)',
+    deliverTo: 'Delivered to',
+    sending: 'Sending…',
+    failed: 'That did not go through. Check your connection and try again.',
+    copyAccept: 'Copy a link for them to accept',
+    copySign: 'Copy a link for them to sign',
+    copied: 'Copied. It works for 14 days, once.',
+    expiresIn: 'A link is already out. Copying again replaces it.',
+    // §Q: "Copy-link actions disabled with a 'needs internet' note until
+    // synced." The link opens a page on the web, so it cannot be made offline.
+    needsInternet: 'Needs internet — the link opens a page on the web.',
+    mintFailed: 'That link could not be made: {reason}',
   },
   photo: {
     add: 'Add a photo',

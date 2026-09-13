@@ -41,6 +41,7 @@ import type {
   AssetRecord,
 } from '../data/repositories'
 import { DOCUMENT_TYPES, type DocumentType } from '../domain/documents/types'
+import { type LinkKind, linkFor, mintToken } from '../features/links/token'
 import type { FrozenLabels } from '../domain/documents/types'
 
 export interface AppData {
@@ -122,6 +123,13 @@ export interface AppActions {
   storeAsset(kind: AssetRecord['kind'], dataUrl: string): Promise<AssetRecord>
   /** §E's "delivery photo asset", captured on an issued delivery (§G, §P). */
   attachDeliveryPhoto(id: string, assetId: string): Promise<void>
+  /**
+   * §G's copy-link actions. Returns the URL ONCE — the token exists in one
+   * place for one moment, and only its hash is kept (§P). Asking again mints
+   * a new link and kills the old one, which is also how a link sent by
+   * mistake is revoked.
+   */
+  mintPublicLink(documentId: string, kind: LinkKind, baseUrl: string): Promise<string>
   /** Rule #5's middle correction. Append-only; the invoice is untouched. */
   issueCreditNote(
     note: Omit<CreditNoteRecord, 'id' | 'companyId'>,
@@ -304,6 +312,27 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
             key('asset.store'),
           ),
         )
+      },
+      async mintPublicLink(documentId, kind, baseUrl) {
+        const minted = await mintToken()
+        // The URL is built BEFORE anything is stored. Minting replaces the
+        // document's live token, so a failure after the write would have
+        // killed a link the owner had already sent — and handed them an
+        // error instead of a replacement.
+        const url = linkFor(baseUrl, kind, minted.token)
+        await repositories.linkTokens.mint(
+          {
+            documentId,
+            companyId,
+            tokenHash: minted.tokenHash,
+            expiresAt: minted.expiresAt,
+          },
+          key('link.mint'),
+        )
+        await load()
+        // The only moment the secret is in one place: it goes into the URL
+        // and is never written down (§P).
+        return url
       },
       async attachDeliveryPhoto(id, assetId) {
         await repositories.documents.attachDeliveryPhoto(id, assetId, key('document.photo'))
