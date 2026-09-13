@@ -5,7 +5,7 @@ import docflow from './tools/eslint/no-hardcoded-type-name.js'
 
 export default tseslint.config(
   // /legacy is read-only reference (CLAUDE.md). Never linted, never built.
-  { ignores: ['dist', 'legacy', 'node_modules', 'coverage'] },
+  { ignores: ['dist', 'dist-site', 'dist-shots', 'dist-shots-png', 'legacy', 'node_modules', 'coverage'] },
 
   js.configs.recommended,
   ...tseslint.configs.recommended,

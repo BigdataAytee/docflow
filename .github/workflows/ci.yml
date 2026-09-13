@@ -12,6 +12,12 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
+# The store-screenshot capture (§T) needs a browser; CI never runs it, and
+# downloading ~150 MB of Chromium on every job to leave it unused would make
+# every check slower for nothing. `npm run shots` is a local command.
+env:
+  PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: '1'
+
 jobs:
   verify:
     name: typecheck · lint · tests · build

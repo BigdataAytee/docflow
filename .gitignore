@@ -36,3 +36,5 @@ dist
 coverage
 *.tsbuildinfo
 dist-site/
+dist-shots/
+dist-shots-png/

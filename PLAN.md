@@ -20,7 +20,7 @@ claims nothing the gates have not proven (§X).
 | 4 | Native polish | installable builds pass all flows on physical Android and iOS | not started |
 | **5** | Web + public links | cross-device visibility; token behaviour per §P; one payment per event | **part built** — 4 of 5 scope items done, webhooks part done; gate NOT passed (0 of 3 clauses, needs the deploy) |
 | **6** | Local AI + logo | the §N six-step gate per tier; the §O definition of done | **part built** — Tier-B extractor and the ladder's logic; gate needs devices |
-| **7** | Admin, hardening, migration, launch | the §V checklist green end to end | **part built** — admin, server-enforced permissions, the legacy migration, the pen-check roster, the generated §T listings and the marketing site; gate NOT passed — the roster has never been run, because nothing is deployed |
+| **7** | Admin, hardening, migration, launch | the §V checklist green end to end | **part built** — admin, server-enforced permissions, the legacy migration, the pen-check roster, the generated §T listings, the marketing site and the store screenshots; gate NOT passed — the roster has never been run, because nothing is deployed |
 
 ---
 
@@ -1338,6 +1338,60 @@ gate itself is deferred with everything else that needs a phone.
       the product rather than stock copy, and a design that is deleted cannot
       then be advertised.
 
+- [x] **The store screenshots, captured from the real app** (`src/marketing/shots/`,
+      `tools/screenshots/`; `npm run shots`). §T: "screenshots and preview video
+      **re-shot with that locale's labels and currency**… screenshots showing
+      each document type by its local name", and the prohibition it states
+      outright: "**Not a translated caption over an EN-NG screenshot.**"
+
+      **That failure is invisible in a PNG**, which is what shapes all of this.
+      Nobody reviewing a folder of images notices that the Spanish set says
+      "Invoice", and the store will not either. So every frame carries the
+      words it must contain — the type's plural label from the §D terminology
+      table, and the market's currency symbol — and the capture asks the page
+      whether it actually rendered them before writing the file. A frame that
+      did not is **not saved**: a missing file is a problem somebody finds, and
+      a wrong file is one nobody does.
+
+      They are shot against the REAL app: the same components, the same
+      routing, the same locale resolution, driven in Chromium at each store's
+      exact pixel size (1290×2796 and 2064×2752 for Apple, 1080×1920 for Play —
+      CSS pixels times device scale, because a 1290-CSS-pixel-wide page is a
+      tablet layout photographed at phone size). 105 frames render today.
+
+      **None of them is submittable, and the reasons are the interesting part.**
+
+      · **The demo banner.** The screenshot build runs on the demo backend, and
+        §R says "a local demo is never passed off as an account" — so
+        `DemoBanner` states it across every screen, correctly. A real user in a
+        real account never sees that strip, so every frame taken here depicts a
+        state the product does not ship. Suppressing the banner for the camera
+        would be §R's rule broken at a store instead of at an owner. It is
+        therefore a blocker, and the same blocker as everything else: the app
+        has to be photographed signed in to a deployed project.
+      · **Three markets have no UI to photograph.** FR, ES and AR have no UI
+        strings (`strings.ts`, Phase 1), so their frames would show the English
+        app under a French flag — the same lie as the French landing page, except
+        submitted to a store as a depiction of the product.
+      · **Every terminology table is still `draft`.** An image is harder to
+        correct than a string.
+
+      The records are their own fixtures, not §R's first-run sample: that
+      sample is badged as a sample and excluded from balances, which is right
+      in the app and wrong in a listing, and removing the badge while keeping
+      the records would be depicting as ordinary what the app labels as a
+      sample. They are per-market — Northgate Joinery in Stockport, Al Noor
+      Trading in Deira — and they **never reach the app anybody installs**: a
+      separate Vite entry, a separate output directory, and a test that scans
+      the built `dist/assets` for their names rather than trusting the
+      arrangement. Planting one import into `src/app/seed.ts` fails it.
+
+      Output splits in two: `submittable/`, empty today with a README listing
+      every reason, and `draft/`, each market's folder carrying its own
+      `BLOCKERS.txt`. Drafts exist so the machinery is exercised rather than
+      written, never run, and trusted — which is exactly how `npm run pentest`
+      came to do nothing at all.
+
 ### Not started
 
 - [ ] **Store billing** (StoreKit 2 + Play Billing) — needs devices and store
@@ -1345,12 +1399,14 @@ gate itself is deferred with everything else that needs a phone.
 - [ ] **The rest of the discoverability package.** The listings, keyword
       sheets, landing pages and sitemap are now generated (above). Still
       missing, and each blocked on something real: **FR, ES and AR marketing
-      copy**, which needs a translator, and without which those three locales
-      publish nothing; screenshots re-shot per locale, which need a device;
-      **Universal Links and App Links**, which need an Apple Team ID and the
-      release signing certificate fingerprint; the **store smart banners**,
-      which need submitted apps; and store-policy verification at submission
-      time. `npm run site` names every one of these on every run.
+      copy and UI strings**, which need a translator, and without which those
+      three locales publish neither pages nor screenshots; **submittable
+      screenshots**, which need the app photographed signed in to a deployed
+      project rather than on the demo backend; **Universal Links and App
+      Links**, which need an Apple Team ID and the release signing certificate
+      fingerprint; the **store smart banners**, which need submitted apps; and
+      store-policy verification at submission time. `npm run site` and
+      `npm run shots` name every one of these on every run.
 - [ ] **Backup schedule and full user data export.**
 - [ ] **The final sweeps** — accessibility, dark mode, RTL readiness,
       responsive, terminology per locale, onboarding, command palette.
@@ -2344,6 +2400,14 @@ vectors of a few hundred bytes.
 | 175 | No smart banner until there is an App Store id | §T asks for smart banners; an app id is a fact about a submitted app, and nothing has been submitted. `app-id=0000000000` renders a banner that 404s on tap, which is worse than no banner. | `src/marketing/page.ts` |
 | 176 | The Offer markup states the free tier and invents nothing else | §U records the exact free/Pro line as a product decision nobody has taken. Offer markup is read by search engines and shown to people as fact — the one place a placeholder must never go. No `aggregateRating` either: there are no ratings. | `src/marketing/seo.ts` |
 | 177 | Each locale gets a self-canonical, never a cross-locale one | EN-GH and EN-NG ship identical vocabulary, which is exactly when somebody reaches for a cross-locale canonical to "fix duplicate content". It would delete the EN-GH page from the index and take its hreflang cluster with it; self-canonical plus hreflang is the pair that handles regional duplicates. | `src/marketing/seo.ts` |
+| 178 | A frame that did not render the market's own words is NOT saved | §T's named failure — "not a translated caption over an EN-NG screenshot" — is invisible in a PNG, so a folder of images cannot be reviewed for it. The proof strings come from the terminology table and the currency, and a missing file is a problem somebody finds where a wrong file is one nobody does. | `tools/screenshots/capture.ts` |
+| 179 | Screenshots are shot against the real app, at each store's exact pixel size | The same components, routing and locale resolution the product ships; a mock would photograph a mock. CSS pixels times device scale, because a 1290-CSS-pixel-wide page is a tablet layout photographed at phone size. | `src/marketing/shots/spec.ts` |
+| 180 | The §R demo banner blocks every market, and is never suppressed for the camera | The screenshot build runs on the demo backend, where §R correctly says so on every screen. A real user in an account never sees that strip, so every frame depicts a state the product does not ship — and hiding it for a store would be §R's rule broken at a store instead of at an owner. Submittable frames need the app signed in to a deployed project. | `src/marketing/shots/plan.ts` |
+| 181 | A market whose language has no UI strings gets no screenshot | The same rule as the landing pages, one step further: a screenshot of the English app submitted as the French listing's is a depiction of a product that does not exist. | `src/marketing/shots/plan.ts` |
+| 182 | The screenshot records are their own fixtures, not the §R sample | §R's sample is badged as a sample and excluded from balances — right in the app, wrong in a listing. Removing the badge while keeping the records would depict as ordinary what the app labels as a sample. | `src/marketing/shots/fixtures.ts` |
+| 183 | The fixtures are proved absent from the shipped bundle, not assumed | A separate Vite entry and output directory is an arrangement, and "it is only in the screenshot build" rots the first time somebody adds an import. The test scans built `dist/assets` for the fixture names — and first asserts those names really are in the fixtures, so it cannot pass by scanning for strings that were renamed away. | `src/marketing/shots/isolation.test.ts` |
+| 184 | Blocked markets still shoot, into a `draft/` folder with their BLOCKERS.txt | A capture harness that refuses everything is never run, and a harness nobody has watched work is how `npm run pentest` came to do nothing at all. `submittable/` stays empty with a README naming every reason. | `tools/screenshots/capture.ts` |
+| 185 | CI never downloads a browser | The capture is a local command; pulling ~150 MB of Chromium into every job to leave it unused would make every check slower for nothing. | `.github/workflows/ci.yml` |
 
 ## Deviations from the spec
 
