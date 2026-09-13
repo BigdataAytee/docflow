@@ -10,6 +10,24 @@
     "composite": true,
     "skipLibCheck": true
   },
-  "include": ["vite.config.ts", "vitest.rls.config.ts", "vitest.setup.ts", "eslint.config.js", "tools", "supabase/tests"],
+    // The RLS project also typechecks the row mappers and what they depend on,
+  // so `supabase/tests/rows.test.ts` is checked rather than merely run. Listed
+  // as FILES, not directories: `src/features/credits` as a directory would
+  // drag in a React component and its test, and this project has no DOM lib.
+  "include": [
+    "vite.config.ts",
+    "vitest.rls.config.ts",
+    "vitest.setup.ts",
+    "eslint.config.js",
+    "tools",
+    "supabase/tests",
+    "src/data/repositories",
+    "src/data/supabase/rows.ts",
+    "src/domain",
+    "src/share/events.ts",
+    "src/share/port.ts",
+    "src/features/credits/issue.ts",
+    "src/features/documents/reference.ts"
+  ],
   "exclude": ["legacy"]
 }
