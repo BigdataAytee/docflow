@@ -20,7 +20,7 @@ claims nothing the gates have not proven (§X).
 | 4 | Native polish | installable builds pass all flows on physical Android and iOS | not started |
 | **5** | Web + public links | cross-device visibility; token behaviour per §P; one payment per event | **part built** — 4 of 5 scope items done, webhooks part done; gate NOT passed (0 of 3 clauses, needs the deploy) |
 | **6** | Local AI + logo | the §N six-step gate per tier; the §O definition of done | **part built** — Tier-B extractor and the ladder's logic; gate needs devices |
-| **7** | Admin, hardening, migration, launch | the §V checklist green end to end | **part built** — admin, server-enforced permissions, the legacy migration, the pen-check roster and the generated §T listings; gate NOT passed — the roster has never been run, because nothing is deployed |
+| **7** | Admin, hardening, migration, launch | the §V checklist green end to end | **part built** — admin, server-enforced permissions, the legacy migration, the pen-check roster, the generated §T listings and the marketing site; gate NOT passed — the roster has never been run, because nothing is deployed |
 
 ---
 
@@ -1276,17 +1276,81 @@ gate itself is deferred with everything else that needs a phone.
       Nothing here ships in the app bundle: `dist/assets` is byte-for-byte the
       size it was, because nothing in `src/app` imports any of it.
 
+- [x] **The marketing site and the sitemap** (`src/marketing/routes.ts`,
+      `seo.ts`, `page.ts`, `sitemap.ts`, `site.ts`; `npm run site`). §T: "a
+      marketing site with a localized landing page per document type per
+      language… fast, static, `hreflang`-linked, with `schema.org`
+      SoftwareApplication + Offer markup, a sitemap, and store smart-banners",
+      and the boundary: public signing pages are "`noindex, nofollow` and
+      **excluded from the sitemap** — customer documents must never enter a
+      search index."
+
+      **The URLs are PINNED, and that is the exact opposite of the listing next
+      door.** Decision 159 made the store listing follow a renamed type,
+      because a listing is read fresh every time. A URL is not: it is a
+      permanent commitment carrying every inbound link, every share and every
+      store campaign parameter. Deriving it would mean a reviewer changing one
+      word silently 404s the web and discards whatever ranking the page had.
+      So a rename changes the page's WORDS and never its address, and a
+      retired address goes to `previousSlugs` and keeps working — validated in
+      code rather than in a test, because a test can only check the table that
+      exists today.
+
+      **The French page was wrong, and the repo had already said why.** The
+      first version rendered *"Create a devis on your phone, with or without a
+      connection"* — an English sentence with a French noun dropped into it,
+      which is worse than machine translation because no translator was
+      involved at all. `src/domain/locale/data/strings.ts` settled this for the
+      app in Phase 1: FR, ES and AR are "deliberately ABSENT rather than
+      machine-filled… instead of silently serving English under a French flag".
+      A landing page is not exempt. So the copy catalogue holds English only,
+      and **FR, ES and AR publish no pages at all** rather than English ones.
+
+      That has a consequence worth naming: the `hreflang` clusters and the
+      sitemap are built from the PUBLISHED locales, never from the launch set.
+      A cluster naming a page that was never published is a 404 advertised to
+      a search engine.
+
+      **The sitemap is built by inclusion, never by exclusion.** It enumerates
+      the marketing route table; it does not walk a directory and filter. A
+      sitemap built by filtering is one forgotten rule away from publishing a
+      customer's invoice, and §T's boundary is the one rule here that cannot
+      be half-kept. `robots.txt` disallows the document paths as well, because
+      `Disallow` and `noindex` fail in opposite directions: `noindex` needs the
+      crawler to fetch the page, and the thing that must not be indexed is the
+      token in the URL.
+
+      **The page's own escaping test found a live XSS.** `JSON.stringify` does
+      not escape `<`, so a label containing `</script>` closes the JSON-LD
+      block and hands the rest of the document to the HTML parser. Escaped at
+      the source as `\u003c`, which is still valid JSON and parses to the same
+      string.
+
+      Two things deliberately absent, each because inventing them would be a
+      lie: **no smart banner** until there is an App Store id (`app-id=0000…`
+      renders a banner that 404s on tap), and **no price in the Offer markup**
+      beyond the free tier, because §U records the free/Pro line as a decision
+      nobody has taken — and Offer markup is shown to people as fact. No
+      `aggregateRating` either: there are no ratings.
+
+      The gallery renders the real sixteen designs from `src/pdf/templates`, in
+      each one's own paper, ink and header style — §T asks the page to show
+      the product rather than stock copy, and a design that is deleted cannot
+      then be advertised.
+
 ### Not started
 
 - [ ] **Store billing** (StoreKit 2 + Play Billing) — needs devices and store
       accounts; on the deferred list as D10.
-- [ ] **The rest of the discoverability package.** The listings and keyword
-      sheets are now generated (above). Still missing, and each blocked on
-      something real: the marketing site with a landing page per document type
-      per language (§T's `/invoice-maker`, `/fr/devis`) and its sitemap;
-      screenshots re-shot per locale, which need a device; Universal Links and
-      App Links, which need a team ID and a signing certificate; and
-      store-policy verification at submission time.
+- [ ] **The rest of the discoverability package.** The listings, keyword
+      sheets, landing pages and sitemap are now generated (above). Still
+      missing, and each blocked on something real: **FR, ES and AR marketing
+      copy**, which needs a translator, and without which those three locales
+      publish nothing; screenshots re-shot per locale, which need a device;
+      **Universal Links and App Links**, which need an Apple Team ID and the
+      release signing certificate fingerprint; the **store smart banners**,
+      which need submitted apps; and store-policy verification at submission
+      time. `npm run site` names every one of these on every run.
 - [ ] **Backup schedule and full user data export.**
 - [ ] **The final sweeps** — accessibility, dark mode, RTL readiness,
       responsive, terminology per locale, onboarding, command palette.
@@ -2270,6 +2334,16 @@ vectors of a few hundred bytes.
 | 165 | Keyword overflow is a NOTE, not a blocker | There is always more vocabulary than fits in a hundred characters — that is the nature of the field, not a defect. Counting it as a blocker would make `submittable` unreachable in every locale forever, and a signal that is always red is one nobody reads. | `src/marketing/listing.ts` |
 | 166 | The qualifiers lead the keyword field, ahead of the type synonyms | It looks backwards until you remember what the field is for: the title and subtitle already carry the type names, Apple indexes those separately, and their words are excluded here. So the field's job is precisely what the title could not say — and §T names "offline", "small business" and "PDF" as required coverage rather than decoration. | `src/marketing/listing.ts` |
 | 167 | The per-locale listing inputs contain no document type name, and a test proves it | The four types come from the §D synonyms at generation time. A label typed into that file would be a second source of truth for the one word CLAUDE.md says has exactly one. Asserted against the VALUES and whole-word — the French qualifier "facturation" contains the Spanish label "Factura" as a substring, and a substring check would fail a perfectly good French word and teach the next person to weaken the test. | `src/marketing/package.test.ts` |
+| 168 | A landing-page URL is PINNED; a store listing is derived | The opposite treatments follow from the difference between the surfaces. A listing is read fresh every time, so it must follow a renamed type (decision 159). A URL is a permanent commitment carrying every inbound link, share and campaign parameter, so deriving it would let one word change 404 the web and discard the page's ranking. | `src/marketing/routes.ts` |
+| 169 | A retired address becomes a redirect and is never reused | A URL that once existed is never simply deleted. The checks — a retired address that is also live, a redirect to a page that does not exist — live in `routeProblems` rather than in a test, because a test can only assert about the table that exists today. | `src/marketing/routes.ts` |
+| 170 | FR, ES and AR publish NO landing pages rather than English ones | The first version rendered "Create a devis on your phone" — an English sentence with a French noun in it, which is worse than machine translation because no translator was involved. `strings.ts` settled this in Phase 1: those languages are "deliberately ABSENT rather than machine-filled… instead of silently serving English under a French flag". A landing page is not exempt. | `src/marketing/copy.ts` |
+| 171 | hreflang clusters and the sitemap are built from the PUBLISHED locales | A cluster naming a page that was never published is a 404 advertised to a search engine. Building both from one list is the only way they cannot disagree. | `src/marketing/site.ts` |
+| 172 | The sitemap is built by inclusion, never by exclusion | It enumerates the marketing route table rather than walking a directory and filtering. A sitemap built by filtering is one forgotten rule away from publishing a customer's invoice, and §T's privacy boundary is the one rule here that cannot be half-kept. | `src/marketing/sitemap.ts` |
+| 173 | robots.txt disallows the document paths as well as the pages saying noindex | The two fail in opposite directions: `noindex` requires the crawler to fetch the page, and the thing that must not be indexed is the token in the URL. §P gets both. | `src/marketing/sitemap.ts` |
+| 174 | JSON-LD escapes `<` as `\\u003c` | `JSON.stringify` does not escape it, so a label containing `</script>` closes the block and hands the rest of the document to the HTML parser. Found by the page's own escaping test, fixed at the source; still valid JSON, still the same string once parsed. | `src/marketing/seo.ts` |
+| 175 | No smart banner until there is an App Store id | §T asks for smart banners; an app id is a fact about a submitted app, and nothing has been submitted. `app-id=0000000000` renders a banner that 404s on tap, which is worse than no banner. | `src/marketing/page.ts` |
+| 176 | The Offer markup states the free tier and invents nothing else | §U records the exact free/Pro line as a product decision nobody has taken. Offer markup is read by search engines and shown to people as fact — the one place a placeholder must never go. No `aggregateRating` either: there are no ratings. | `src/marketing/seo.ts` |
+| 177 | Each locale gets a self-canonical, never a cross-locale one | EN-GH and EN-NG ship identical vocabulary, which is exactly when somebody reaches for a cross-locale canonical to "fix duplicate content". It would delete the EN-GH page from the index and take its hreflang cluster with it; self-canonical plus hreflang is the pair that handles regional duplicates. | `src/marketing/seo.ts` |
 
 ## Deviations from the spec
 

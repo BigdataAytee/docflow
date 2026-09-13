@@ -35,3 +35,4 @@ base44/.app.jsonc
 dist
 coverage
 *.tsbuildinfo
+dist-site/

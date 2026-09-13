@@ -20,7 +20,8 @@
     "gate:hosted": "node --experimental-strip-types supabase/tests/hosted-gate.ts",
     "gate:hosted:local": "node --env-file=.env --experimental-strip-types supabase/tests/hosted-gate.ts",
     "pentest": "node --experimental-strip-types tools/pentest/run.ts",
-    "discoverability": "UPDATE_DISCOVERABILITY=1 vitest run src/marketing/sheet.test.ts"
+    "discoverability": "UPDATE_DISCOVERABILITY=1 vitest run src/marketing/sheet.test.ts",
+    "site": "EMIT_SITE=1 vitest run src/marketing/emit.test.ts"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.116.0",
