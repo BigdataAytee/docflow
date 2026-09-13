@@ -17,6 +17,7 @@ import { useId, useState } from 'react'
 
 import { useCompany } from '../../app/context'
 import { type Money, money } from '../../domain/money/money'
+import { parseAmount } from '../../domain/money/parse'
 import { minorUnitsFor } from '../../domain/locale/bank-fields'
 import type { Customer } from '../../data/repositories'
 import { formatMoney } from '../customers/formatMoney'
@@ -63,9 +64,11 @@ export function NewReceiptSheet({
   const [reference, setReference] = useState('')
   const [invoiceId, setInvoiceId] = useState('')
 
-  const scale = minorUnitsFor(currency)
-  const parsed = Number.parseFloat(major.replace(/,/g, ''))
-  const minor = Number.isFinite(parsed) ? Math.round(parsed * scale) : 0
+  // Through the domain parser rather than `parseFloat`: a blank must not
+  // become zero money, and "5,000" must not become 5. `null` is "not an
+  // amount", which is a different thing from an amount of nothing (Rule #3).
+  const parsed = parseAmount(major, { scale: minorUnitsFor(currency) })
+  const minor = parsed ?? 0
 
   // Only what this money could actually settle: the payer's own balances, in
   // the currency handed over (§G — "offers only what makes sense").
