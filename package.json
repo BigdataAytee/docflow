@@ -25,7 +25,8 @@
     "shots:build": "vite build --config vite.shots.config.ts",
     "shots": "npm run shots:build && SHOOT=1 vitest run tools/screenshots/capture.test.ts",
     "policy": "npm run build && POLICY=1 vitest run src/marketing/policy/run.test.ts",
-    "sweep:responsive": "npm run shots:build && SWEEP=1 vitest run tools/sweeps/responsive.test.ts"
+    "sweep:responsive": "npm run shots:build && SWEEP=1 vitest run tools/sweeps/responsive.test.ts",
+    "sweep:largetext": "npm run shots:build && SWEEP=1 vitest run tools/sweeps/largetext.test.ts"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.116.0",

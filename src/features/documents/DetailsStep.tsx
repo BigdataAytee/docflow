@@ -64,7 +64,10 @@ function DateField({
   onChange: (value: string) => void
 }) {
   return (
-    <label className="block flex-1">
+    // `min-w-0`: a date input has a wide intrinsic minimum, and a flex item
+    // will not shrink below its content, so two side by side pushed the
+    // builder past the edge of a 320px phone. Found by the sweeps.
+    <label className="block min-w-0 flex-1">
       <span className="mb-1 block text-xs font-medium opacity-70">{label}</span>
       <input
         type="date"

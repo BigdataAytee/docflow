@@ -36,7 +36,7 @@ export function Shell() {
       >
         <ul className="mx-auto flex max-w-2xl">
           {tabs.map((tab) => (
-            <li key={tab.to} className="flex-1">
+            <li key={tab.to} className="min-w-0 flex-1">
               <NavLink
                 to={tab.to}
                 end={tab.to === HOME}
@@ -50,7 +50,14 @@ export function Shell() {
                 <span aria-hidden="true" className="text-base leading-none">
                   {tab.glyph}
                 </span>
-                {tab.label}
+                {/*
+                  Truncated, not shortened: at 200% text four labels held the
+                  bar 10px wider than the phone. The full word stays in the
+                  DOM, so the accessible name a screen reader announces is
+                  unchanged — it is the visible glyph that gives way, which is
+                  the right way round (§V).
+                */}
+                <span className="w-full truncate text-center">{tab.label}</span>
               </NavLink>
             </li>
           ))}

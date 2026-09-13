@@ -1555,11 +1555,60 @@ gate itself is deferred with everything else that needs a phone.
       agree about everything else. FR, ES and AR are recorded as unwalkable
       rather than skipped: there is no French app to walk.
 
-      **Still to do, and none of it is device work:** the accessibility sweep
-      covers the navigation (names in the active language, keyboard
-      reachability, tap targets) but not large text, screen readers or reduced
-      motion across every screen; onboarding and the §V command
-      palette/sidebar are untouched; and the dark-mode feature itself.
+- [x] **The remaining three sweeps — and a flaw in the two before them.**
+
+      **Large text found seven real bugs, and my own measurement was wrong.**
+      §V: "Large text… without clipped actions." At 200% root text four routes
+      scrolled sideways — Home by 208px — and the builder overflowed a 320px
+      phone. All seven fixed, and every one was the same root cause worth
+      naming once: **a flex or grid item defaults to `min-width: auto` and
+      will not shrink below its content.** `min-w-0` on the stat cards, the
+      type tiles, the customer row, the date fields and the customer picker;
+      `overflow-wrap: anywhere` on the tile labels, because `break-words`
+      breaks a long word but does **not** reduce the element's min-content
+      width, which is exactly the case that bit; and a cap on two rem-width
+      inputs that became 192px in a 390px row.
+
+      Then a fifth finding would not go away, and it was mine. The sweep
+      judged overflow by `scrollWidth > clientWidth` — **an unsound test**:
+      `clientWidth` excludes the scrollbar and `scrollWidth` does not, so any
+      page with a vertical scrollbar reads ~10px over. Worse, a full-width
+      `fixed inset-x-0` bar sizes to the initial containing block, which
+      *includes* that width, so the bottom nav looked guilty on every page
+      forever. Proved by hiding the nav: the page measured identically without
+      it. **The responsive sweep shipped in the previous PR carried the same
+      flaw** — it passed, so it produced no false failure, but it would have,
+      and it was also blind in the other direction. Both now judge by elements
+      past the viewport edge, measured without mobile emulation (whose layout
+      viewport expands to fit the overflow and then hides what caused it). The
+      corrected check immediately found two 320px bugs the old one had
+      reported clean.
+
+      **Reduced motion** passed on the one animation that carried
+      `motion-safe:` and failed on two that did not — a builder progress bar
+      and the repeat toggle, both now guarded. The scan reads `className`
+      only: a first version flagged eight uses of `actions.transition()`, the
+      document lifecycle method, and a check that cries wolf on the domain
+      layer is one somebody turns off.
+
+      **Onboarding** walks §R's first run: the suggested type named by its
+      local word in every walkable locale and for all four types, nothing
+      demanded before either way forward (Rule #1), the sample labelled as a
+      sample in its own words, and the checklist ticking from the state it
+      describes — with a sample never ticking "first document".
+
+      **The command palette and sidebar are NOT built, and this did not build
+      them.** §Q names them in a list of sweeps; no section of v6 specifies
+      either — not what they contain, not how they open, not what a sidebar
+      means on a phone-first product whose navigation §G defines as four tabs.
+      Designing both from one phrase would be inventing product. What the
+      sweep does instead is check the requirement they exist to serve and that
+      §V *does* state — keyboard navigation — asserting every destination is
+      tabbable and activatable, and recording the two features as unbuilt so
+      the phrase cannot be read as done.
+
+      **Still open:** dark mode itself (245 surfaces, a §F design decision),
+      and screen-reader testing beyond structure, which wants a real reader.
 
 ### The physical-device remainder — one consolidated list
 
@@ -2581,6 +2630,12 @@ vectors of a few hundred bytes.
 | 206 | Responsive is checked in a real engine, not in jsdom | jsdom computes no layout, so every element is zero by zero and every overflow check passes. 17 routes at 320 CSS pixels with records in them; proved it can fail by planting a 900px element, which it caught and named. | `tools/sweeps/responsive.ts` |
 | 207 | The terminology walk asserts the wrong word is ABSENT, not just the right word present | The lint rule stops a label being typed; it cannot stop a screen resolving the wrong one, which is a correct-looking call. EN-NG against EN-GB is the pair that catches it: they disagree about the delivery document and agree about everything else. | `src/sweeps/terminology.test.tsx` |
 | 208 | A nav name must be in the active language, not merely present | An icon labelled "Home" passes every automated accessibility tool and is still wrong in a French build: the tools check that a name exists, not that it is in the right language, and a screen-reader user is the one person who cannot see that it is not. | `src/sweeps/a11y.test.tsx` |
+| 209 | Overflow is judged by ELEMENTS, never by `scrollWidth` against `clientWidth` | That comparison is unsound: `clientWidth` excludes the scrollbar and `scrollWidth` does not, so any page with a vertical scrollbar reads ~10px over — and a full-width `fixed inset-x-0` bar sizes to the containing block, which includes it, so the bottom nav looked guilty everywhere. Proved by hiding the nav: the page measured identically without it. The responsive sweep shipped with the same flaw in #39. | `tools/sweeps/largetext.ts` |
+| 210 | Overflow is measured WITHOUT mobile emulation | A mobile layout viewport expands to fit content wider than the screen, then re-lays everything out at the expanded width — so the element that caused it fits by the time it is measured, and only innocent full-width boxes look guilty. Screenshots keep mobile emulation, where it is right; measurement does not. | `tools/sweeps/largetext.test.ts` |
+| 211 | `min-width: auto` is the root cause of nearly every clipped layout | A flex or grid item will not shrink below its content unless told to. Seven findings at 200% text and 320px, all fixed the same way: `min-w-0` on the item. Worth knowing once rather than rediscovering per screen. | `src/features/home/Home.tsx` |
+| 212 | `overflow-wrap: anywhere`, not `break-words`, where a label must shrink | They differ in exactly the case that bit: `break-word` breaks a long word to avoid overflowing but does not reduce the element's min-content width, so "Quotation" at 200% text still held a 151px tile open at 157px. | `src/features/home/Home.tsx` |
+| 213 | The motion scan reads `className` only | A first version flagged eight uses of `actions.transition()` — §M's document lifecycle method — as unguarded animations. A check that cries wolf on the domain layer is one somebody turns off. | `src/sweeps/motion.test.ts` |
+| 214 | The command palette and sidebar are recorded as unbuilt, not swept | §Q names them; no section of v6 specifies either. Designing both from one phrase would be inventing product. The sweep checks the requirement they exist to serve and that §V does state — keyboard navigation — and records them unbuilt so the phrase cannot read as done. | `src/sweeps/navigation.test.tsx` |
 
 ## Deviations from the spec
 

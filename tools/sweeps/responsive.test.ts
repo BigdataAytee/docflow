@@ -18,10 +18,10 @@ import { chromium } from 'playwright'
 
 import { NARROWEST, type Overflow, overflowAt, reportOf } from './responsive'
 
-const BUILD = join(process.cwd(), 'dist-shots')
+export const BUILD = join(process.cwd(), 'dist-shots')
 
 /** Every route a person can reach, by its internal path (§G). */
-const ROUTES = [
+export const ROUTES = [
   '/',
   '/list/invoice',
   '/list/quotation',
@@ -47,7 +47,7 @@ const TYPES: Record<string, string> = {
   '.css': 'text/css; charset=utf-8',
 }
 
-function serve(dir: string) {
+export function serve(dir: string) {
   const server = createServer((request, response) => {
     const path = new URL(request.url ?? '/', 'http://localhost').pathname
     const asset = join(dir, path)
@@ -85,7 +85,13 @@ describe.runIf(process.env.SWEEP === '1')('Nothing scrolls sideways at 320px (§
       const context = await browser.newContext({
         viewport: { width: NARROWEST, height: 640 },
         deviceScaleFactor: 2,
-        isMobile: true,
+        // NOT `isMobile`. A mobile layout viewport expands to fit content
+        // wider than the screen and then re-lays everything out at the
+        // expanded width — so the element that caused the overflow fits by
+        // the time it is measured, and only innocent full-width boxes look
+        // guilty. The screenshot capture keeps mobile emulation, where it
+        // is right; measurement does not.
+        isMobile: false,
         hasTouch: true,
       })
       const page = await context.newPage()

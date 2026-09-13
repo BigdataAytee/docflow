@@ -91,7 +91,7 @@ export function CustomerPicker({
       <div className="flex items-center gap-3">
         <button
           type="button"
-          className="flex min-h-tap flex-1 items-center gap-3 rounded-lg bg-page px-3 text-start shadow-inner"
+          className="flex min-h-tap min-w-0 flex-1 items-center gap-3 rounded-lg bg-page px-3 text-start shadow-inner"
           aria-expanded={open}
           aria-label={strings.details.chooseCustomer}
           onClick={() => setOpen((was) => !was)}

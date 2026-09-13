@@ -65,7 +65,10 @@ function StatCard({
 
   return (
     <section
-      className="flex-1 rounded-2xl bg-white/70 p-4 backdrop-blur"
+      // `min-w-0` because a flex item defaults to `min-width: auto` and will
+      // not shrink below its content — so at 200% text these two cards pushed
+      // the page 208px wider than the phone. Found by the large-text sweep.
+      className="min-w-0 flex-1 rounded-2xl bg-white/70 p-4 backdrop-blur"
       aria-label={title}
     >
       <p className="text-xs font-medium opacity-70">{title}</p>
@@ -166,14 +169,26 @@ export function Home({
             {DOCUMENT_TYPES.map((type) => {
               const palette = TYPE_PALETTE[type]
               return (
-                <li key={type}>
+                // `min-w-0` for the same reason as the stat cards above: a
+                // GRID item also defaults to `min-width: auto`, so the widest
+                // label held the column open and `break-words` never got the
+                // chance to wrap it.
+                <li key={type} className="min-w-0">
                   <button
                     type="button"
                     onClick={() => onOpenType(type)}
-                    className="flex w-full flex-col items-start gap-1 rounded-2xl p-4 text-start text-white"
+                    className="flex w-full min-w-0 flex-col items-start gap-1 rounded-2xl p-4 text-start text-white"
                     style={{ backgroundColor: palette.accent, boxShadow: `0 8px 20px -8px ${palette.accent}` }}
                   >
-                    <span className="break-words text-sm font-bold leading-tight">
+                    {/*
+                      `overflow-wrap: anywhere`, not `break-words`. The two
+                      differ in exactly the case that bit here: `break-word`
+                      breaks a long word to avoid overflowing, but does not
+                      reduce the element's min-content width — so "Quotation"
+                      at 200% text still held the tile 157px wide in a 151px
+                      column. `anywhere` does shrink it.
+                    */}
+                    <span className="text-sm font-bold leading-tight [overflow-wrap:anywhere]">
                       {typeLabel(profile, type)}
                     </span>
                     <span className="text-xs font-semibold opacity-80 tabular-nums">

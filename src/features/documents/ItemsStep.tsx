@@ -104,7 +104,7 @@ export function ItemsStep({ draft, onChange, onRemember }: ItemsStepProps) {
 
           {/* No price field at all on a delivery document (§G, §V). */}
           {showsMoney && (
-            <label className="block flex-1">
+            <label className="block min-w-0 flex-1">
               <span className="mb-1 block text-xs font-medium opacity-70">
                 {strings.items.unitPrice}
               </span>

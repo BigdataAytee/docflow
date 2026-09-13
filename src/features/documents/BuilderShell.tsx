@@ -91,7 +91,7 @@ export function BuilderShell({
               onClick={() => onStep(index)}
               aria-current={index === step ? 'step' : undefined}
               aria-label={name}
-              className={`h-1.5 flex-1 rounded-full transition-opacity ${
+              className={`h-1.5 flex-1 rounded-full motion-safe:transition-opacity ${
                 index <= step ? 'bg-white' : 'bg-white/35'
               }`}
             />

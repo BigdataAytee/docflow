@@ -124,7 +124,10 @@ export function CompanySettings({
               placeholder={numberingPrefix(profile, type)}
               onChange={(event) => onPrefix(type, event.target.value)}
               aria-label={typeLabel(profile, type)}
-              className="min-h-tap w-24 rounded-lg bg-page px-3 text-end text-sm uppercase shadow-inner"
+              // `w-24` is rem-based, so at 200% text it is 192px in a 390px
+              // row and pushes the page sideways. The cap keeps it a
+              // proportion of the row it sits in.
+              className="min-h-tap w-24 max-w-[45%] shrink rounded-lg bg-page px-3 text-end text-sm uppercase shadow-inner"
             />
           </label>
         ))}

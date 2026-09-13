@@ -45,7 +45,7 @@ export function RepeatToggle({
           type="button"
           aria-pressed={on}
           aria-label={on ? r.repeatOn : r.repeatOff}
-          className={`flex h-7 w-12 shrink-0 items-center rounded-full px-1 transition ${
+          className={`flex h-7 w-12 shrink-0 items-center rounded-full px-1 motion-safe:transition ${
             on ? 'justify-end bg-emerald-500' : 'justify-start bg-black/20'
           }`}
           onClick={on ? onStop : onStart}
