@@ -31,11 +31,38 @@ export async function applyMigrations(client: Client): Promise<void> {
 export const connectionString = (): string =>
   process.env.DATABASE_URL ?? 'postgresql://postgres@localhost:5432/postgres'
 
+/**
+ * The claims a REAL Supabase access token carries.
+ *
+ * This shape is not a detail. The harness used to hand the policies a flat
+ * `{ "company_id": ... }` object, which Supabase has never issued: custom
+ * claims arrive NESTED under `app_metadata`. Every RLS test passed against a
+ * claims shape that does not exist, while in production `current_company_id()`
+ * returned NULL and every policy denied everything.
+ *
+ * So this mirrors a token as Supabase issues it, field for field. If it ever
+ * drifts from the real thing again, the tests go back to proving nothing.
+ */
+export function supabaseClaims(companyId: string, userId?: string): string {
+  return JSON.stringify({
+    sub: userId ?? '99999999-9999-9999-9999-999999999999',
+    aud: 'authenticated',
+    role: 'authenticated',
+    app_metadata: { provider: 'email', providers: ['email'], company_id: companyId },
+    user_metadata: {},
+  })
+}
+
+/** The flat shape an edge function sets on its own connection. */
+export const flatClaims = (companyId: string): string =>
+  JSON.stringify({ company_id: companyId, role: 'authenticated' })
+
 /** Run a query as a signed-in user of `companyId`, the way PostgREST does. */
 export async function asCompany<T>(
   client: Client,
   companyId: string | null,
   run: () => Promise<T>,
+  claims: (companyId: string) => string = supabaseClaims,
 ): Promise<T> {
   await client.query('begin')
   try {
@@ -44,7 +71,7 @@ export async function asCompany<T>(
       companyId === null
         ? `select set_config('request.jwt.claims', '', true)`
         : `select set_config('request.jwt.claims', $1, true)`,
-      companyId === null ? [] : [JSON.stringify({ company_id: companyId, role: 'authenticated' })],
+      companyId === null ? [] : [claims(companyId)],
     )
     return await run()
   } finally {

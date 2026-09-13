@@ -41,10 +41,23 @@ import { AnalyticsScreen } from './screens/AnalyticsScreen'
 import { SettingsIndexScreen, SettingsPanelScreen } from './screens/SettingsScreen'
 import { WelcomeScreen } from './screens/WelcomeScreen'
 import { PublicLinkPage } from '../public/PublicLinkPage'
+import { AccountGate } from './AccountGate'
+import type { Backend } from '../data/backend'
 
 export interface AppProps {
+  /**
+   * Injected repositories win over everything. Tests and stories pass them,
+   * and doing so keeps this component free of any decision about backends —
+   * `backend` below is only consulted when nobody has said.
+   */
   readonly repositories?: Repositories
   readonly companyId?: string
+  /**
+   * Which backend to run on. Resolved once at the composition root
+   * (`main.tsx`); passed in so that this component stays a pure function of
+   * its props and the tests never touch `import.meta.env`.
+   */
+  readonly backend?: Backend
   /** Tests and stories drive the URL in memory; the app uses the address bar. */
   readonly router?: 'browser' | 'memory'
   readonly initialPath?: string
@@ -53,13 +66,38 @@ export interface AppProps {
 export function App({
   repositories,
   companyId = DEV_COMPANY_ID,
+  backend,
   router = 'browser',
   initialPath = HOME,
 }: AppProps = {}) {
   const repos = useMemo(
-    () => repositories ?? createMemoryRepositories(devState(companyId)),
-    [repositories, companyId],
+    () => repositories ?? backend?.repositories ?? createMemoryRepositories(devState(companyId)),
+    [repositories, backend, companyId],
   )
+
+  /*
+    An account backend has no company until somebody signs in, so the app sits
+    behind the gate. Everything else — an injected repository set, or the demo
+    — already knows its company and mounts straight away.
+
+    `repositories` overriding the backend is what keeps every existing test
+    working unchanged, and is also correct: a caller who hands over a
+    repository set has already decided where the records come from.
+  */
+  const privateTree =
+    backend?.kind === 'account' && repositories === undefined ? (
+      <AccountGate session={backend.session}>
+        {(signedInCompanyId) => (
+          <ProfileGate companyId={signedInCompanyId} repositories={repos}>
+            <AppRoutes />
+          </ProfileGate>
+        )}
+      </AccountGate>
+    ) : (
+      <ProfileGate companyId={companyId} repositories={repos}>
+        <AppRoutes />
+      </ProfileGate>
+    )
 
   const tree = (
     <Routes>
@@ -68,17 +106,14 @@ export function App({
         they would load the OWNER's company, records and locale — for a
         stranger holding a link. A customer has no account and no company
         (§P); what they see comes from the edge function and nowhere else.
+
+        They sit above the ACCOUNT GATE for the same reason, and it matters
+        more: a customer following a link has no account at all, and must
+        never be shown a sign-in screen to read a document sent to them.
       */}
       <Route path="/accept/:token" element={<PublicLinkPage kind="accept" />} />
       <Route path="/sign/:token" element={<PublicLinkPage kind="sign" />} />
-      <Route
-        path="*"
-        element={
-          <ProfileGate companyId={companyId} repositories={repos}>
-            <AppRoutes />
-          </ProfileGate>
-        }
-      />
+      <Route path="*" element={privateTree} />
     </Routes>
   )
 

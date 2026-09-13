@@ -18,7 +18,7 @@ claims nothing the gates have not proven (§X).
 | **2.5** | Remaining improvements | each §L behaviour verified offline; "Kept" moves the moment an expense is added; a reissued receipt never increments income | **gate passed** |
 | **3** | Sync | five offline documents arrive once; two-device edits retain both; no chaos scenario double-counts, resurrects or alters a frozen label | **code complete** — gate verified at logic level |
 | 4 | Native polish | installable builds pass all flows on physical Android and iOS | not started |
-| **5** | Web + public links | cross-device visibility; token behaviour per §P; one payment per event | **part built** — 3 of 5 scope items done (repositories complete, nothing wired); gate NOT passed (0 of 3 clauses) |
+| **5** | Web + public links | cross-device visibility; token behaviour per §P; one payment per event | **part built** — 3 of 5 scope items done and the app wired to them; gate NOT passed (0 of 3 clauses, needs the deploy) |
 | 6 | Local AI + logo | the §N six-step gate per tier; the §O definition of done | not started |
 | 7 | Admin, hardening, migration, launch | the §V checklist green end to end | not started |
 
@@ -592,14 +592,28 @@ So three of the five scope items are built and two have not been begun.
       into the app, and lost money the first time someone recorded a payment.
       "Not written yet" belonged in the compiler, not in a comment.
 
-      Nothing is wired to them yet. `src/app/store.tsx` still builds the
-      in-memory store, and pointing it at a project needs the four secrets and
-      a deploy that only a human can do — so this is code that is finished and
-      unreached, not code that is half-connected.
+      **The app now runs on them** (`src/data/backend.ts`,
+      `src/app/AccountGate.tsx`, `src/main.tsx`). One decision, made once at
+      the composition root: a configured project means the account backend and
+      sign-in; no configuration means the demo, on memory repositories.
 
-      Writing them found **five columns the schema did not have** and **one
-      cross-company hole**, each of which would have failed in production
-      rather than in a test:
+      §R's "a local demo is never passed off as an account" decides the shape
+      of that. The demo is chosen ONLY by the absence of configuration at
+      build time, never by a failure at runtime — a project that is configured
+      but broken throws, because degrading it to a demo would hand the owner a
+      sandbox wearing their account's clothes and lose whatever they typed
+      into it. The demo also says what it is, on every screen.
+
+      Writing the wiring is what found the two schema bugs below. It still
+      needs the deploy to run against anything.
+
+      Writing them found **five columns the schema did not have**, **one
+      cross-company hole**, and **two bugs that made the entire §P design
+      inert** — each of which would have failed in production rather than in a
+      test. The last two are the most serious defects found in this build so
+      far, and are set out under "The claim that was never there" below.
+
+      The column and hole findings:
 
       1. **Three columns did not exist** — `documents.delivery_address`,
          `companies.default_signature_asset_id`, `companies.signature_required`
@@ -704,6 +718,67 @@ So three of the five scope items are built and two have not been begun.
       one has not. It cannot without a live PostgREST, which needs the hosted
       project. The suite is not weakened to let it pass; it stays a debt
       against the §Q Phase 5 gate, recorded here rather than quietly dropped.
+
+### The claim that was never there — the two worst bugs so far
+
+Wiring the app is what exposed them. Both were invisible to every test, and
+both would have produced the same symptom in production: **an owner signs in
+successfully and sees an empty account, on every screen, with no error
+anywhere.**
+
+**1. `current_company_id()` read a claim Supabase does not issue.** It read a
+TOP-LEVEL `company_id`. A real access token nests custom claims under
+`app_metadata`:
+
+```
+{ "sub": "...", "role": "authenticated",
+  "app_metadata": { "provider": "email", "company_id": "..." } }
+```
+
+So in production the function returned NULL for every signed-in user, every
+policy denied everything, and §P — the whole two-company isolation design,
+sixteen passing tests, the Phase 1 gate — was inert.
+
+**Nothing caught it because the test harness invented the shape.**
+`supabase/tests/apply.ts` set the claims GUC to a flat `{"company_id": …}`
+object by hand, so the suite proved the policies were right about a claims
+shape that does not exist. That is the deeper failure: a harness that encodes
+a fiction makes every test built on it worthless while looking like coverage.
+The harness now mirrors a real token field for field, and removing migration
+`0013` fails 22 tests — which is the check that it is no longer a fiction.
+
+**2. A normal sign-up had no company at all.** `auth.signUp` sets no custom
+claims, so even with (1) fixed a new user's token names no company and RLS
+denies them everything. They cannot fix it themselves, and should not be able
+to: creating the company is an INSERT whose policy is
+`with check (id = current_company_id())` — NULL, so refused. That refusal is
+correct; it just means the first company must be created by something holding
+more authority than the client. `create_company_for_new_user` (`0014`) is that
+something, and it is the only SECURITY DEFINER function a signed-in client can
+call. Its authority is bounded by what it will do, and each bound is tested:
+it acts only on `auth.uid()`, it refuses outright if that user already belongs
+to a company, and it takes no company id, so nobody can use it to join one.
+
+It also stamps `raw_app_meta_data`, which is what puts the claim into the NEXT
+token — and the client refreshes its session afterwards, because the token in
+hand was minted before the company existed and cannot know about it. Without
+that refresh the app sits correctly authenticated, reading an empty account.
+
+### A cost this change carries
+
+The production bundle went from **119 kB to 186 kB gzipped**, because
+`supabase-js` is now imported eagerly at the composition root. That is a real
+concern for this product specifically — DocFlow is for cheap Android phones on
+metered connections, and Rule #1 says nothing may be harder than the legacy
+app.
+
+It is recorded rather than fixed, because the fix is a separate change with
+its own risk: make `createBackend` async and dynamically import the Supabase
+module, so a demo build drops it entirely and an account build loads it as its
+own chunk. The sharper version of the same problem is that a CUSTOMER
+following a public link — who needs none of it, the public pages talk to the
+edge function over plain `fetch` — currently downloads the whole client before
+the page renders. That one is worth doing before any launch.
 
 ### Not started
 
@@ -1623,6 +1698,13 @@ vectors of a few hundred bytes.
 | 101 | Minting a link token carries no idempotency key | Every other write has one; this is the exception and the reason is the rule. A key makes a REPLAY a no-op, and each mint is a deliberate revocation of the last — that is how an owner kills a link they sent by mistake. It upserts on `document_id` so there is never a second live token, and clears `consumed_at` so the replacement is not born dead. | `src/data/supabase/catalogue.ts` |
 | 102 | A share list filters the audit log down to share actions | `audit_log` carries every action a company takes. Unfiltered, "the times you shared this" would quietly include issues and voids — a list that is not the thing its name says. | `src/data/supabase/catalogue.ts` |
 | 103 | A suggestion matches a prefix; a search matches a contains | `%ce%` would offer "office chair" for "ce". §L2 asks for a shortcut, not a menu — which is also why an empty prefix suggests nothing at all, where an empty search shows everything. | `src/data/supabase/catalogue.ts` |
+| 104 | `current_company_id()` reads the claim Supabase actually issues | It read a top-level `company_id`; a real token nests custom claims under `app_metadata`. In production the function returned NULL for every signed-in user and every policy denied everything — §P was inert, with sixteen tests passing. Both shapes are now read, nested first, because the edge function sets the flat one on its own connection. | `0013_company_claim.sql` |
+| 105 | The test harness mirrors a real token, field for field | The deeper bug. `apply.ts` invented a flat claims object, so the suite proved the policies were right about a shape that does not exist — coverage that was worth nothing while looking like coverage. Removing `0013` now fails 22 tests, which is the check that the harness is no longer a fiction. | `supabase/tests/apply.ts`, `rls.test.ts` |
+| 106 | The first company is created by a bounded SECURITY DEFINER function | `auth.signUp` sets no claims, so a new user names no company and RLS denies them everything — and they cannot create one, because the INSERT policy checks a claim they do not have. That refusal is right; it just means something with more authority must go first. Bounded by what it will do rather than by a policy: acts only on `auth.uid()`, refuses if the user already has a company, takes no company id. | `0014_new_account.sql` |
+| 107 | The session is refreshed after the company is created | The token in hand was minted before the company existed and cannot carry a claim about it. Without the refresh the app sits correctly authenticated, reading an empty account — the same symptom as 104, arrived at from the other side. | `src/data/supabase/account.ts` |
+| 108 | The demo is chosen by missing configuration, never by a runtime failure | §R: "a local demo is never passed off as an account." A configured-but-broken project throws; degrading it to a demo would hand the owner a sandbox wearing their account's clothes and lose whatever they typed into it. The demo also says what it is, on every screen. | `src/data/backend.ts`, `src/app/DemoBanner.tsx` |
+| 109 | The gate talks to a session PORT, not to Supabase | `src/app` may not import a DB client (§C), and the lint rule caught the first attempt. The port is the right answer rather than an exemption: the gate now has no opinion about Supabase and would work unchanged over Phase 4's SQLite-plus-sync. | `src/data/session.ts`, `src/app/AccountGate.tsx` |
+| 110 | The DB-client lint rule now catches relative imports too | It matched `**/data/supabase/*` only, so any file inside `src/data` could import a client via `./supabase/*` and nothing would notice — the one place such a leak is easiest to introduce. `src/data/backend.ts` is exempt as a single named FILE, so a second cannot quietly join it. | `eslint.config.js` |
 
 ## Deviations from the spec
 

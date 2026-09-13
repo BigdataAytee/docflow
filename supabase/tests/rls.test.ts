@@ -13,7 +13,7 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import { Client } from 'pg'
 
-import { applyMigrations, asCompany, connectionString } from './apply'
+import { applyMigrations, asCompany, connectionString, flatClaims, supabaseClaims } from './apply'
 
 const ACME = '11111111-1111-1111-1111-111111111111'
 const RIVAL = '22222222-2222-2222-2222-222222222222'
@@ -85,6 +85,69 @@ describe('RLS is enabled AND forced on every table (§P)', () => {
       'document_signing_tokens',
     ]) {
       expect(tables, `missing table ${expected}`).toContain(expected)
+    }
+  })
+})
+
+describe('The company claim, as Supabase actually issues it (§P)', () => {
+  /**
+   * PERMANENT REGRESSION TEST — do not delete, and do not "simplify" the
+   * claims shape it builds.
+   *
+   * `current_company_id()` read a TOP-LEVEL `company_id` claim. A real
+   * Supabase token has no such thing: custom claims arrive nested under
+   * `app_metadata`. In production the function returned NULL for every
+   * signed-in user, every policy denied everything, and the app would have
+   * signed people in and then shown them an empty account on every screen,
+   * with no error anywhere.
+   *
+   * The whole suite passed throughout, because the harness set the claims GUC
+   * to a flat object by hand — it proved the policies were right about a
+   * shape that does not exist. That is the failure this test exists to stop
+   * repeating, so it asserts the NESTED shape specifically.
+   */
+  it('resolves a company from a real nested app_metadata claim', async () => {
+    await asCompany(db, ACME, async () => {
+      const { rows } = await db.query('select public.current_company_id() as company')
+      expect(rows[0]?.company).toBe(ACME)
+    }, supabaseClaims)
+  })
+
+  it('still resolves the flat shape an edge function sets', async () => {
+    await asCompany(db, ACME, async () => {
+      const { rows } = await db.query('select public.current_company_id() as company')
+      expect(rows[0]?.company).toBe(ACME)
+    }, flatClaims)
+  })
+
+  it('sees a company through the nested claim, not just the function', async () => {
+    // The function resolving is necessary but not sufficient: what matters is
+    // that a policy lets a real token read a real row.
+    await asCompany(db, ACME, async () => {
+      const { rows } = await db.query('select name from public.customers')
+      expect(rows.map((r) => r.name)).toEqual(['Okoro & Sons'])
+    }, supabaseClaims)
+  })
+
+  it('returns null when app_metadata carries no company at all', async () => {
+    // What a NORMAL sign-up looks like: Supabase sets provider fields and
+    // nothing else. Denying is correct; the account just has no company yet.
+    await db.query('begin')
+    try {
+      await db.query('set local role authenticated')
+      await db.query(`select set_config('request.jwt.claims', $1, true)`, [
+        JSON.stringify({
+          sub: '99999999-9999-9999-9999-999999999999',
+          role: 'authenticated',
+          app_metadata: { provider: 'email', providers: ['email'] },
+        }),
+      ])
+      const { rows } = await db.query('select public.current_company_id() as company')
+      expect(rows[0]?.company).toBeNull()
+      const customers = await db.query('select * from public.customers')
+      expect(customers.rows).toEqual([])
+    } finally {
+      await db.query('rollback')
     }
   })
 })
