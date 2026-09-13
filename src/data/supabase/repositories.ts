@@ -21,10 +21,9 @@
  *  · **Idempotency.** `mutate.ts` owns it, against the unique index from
  *    `0009_idempotency.sql`.
  *
- * Only companies, customers, documents and payments are here (payments in
- * `payments.ts`). The remaining six contracts are not stubbed: a repository
- * that silently does nothing is worse than one that does not exist, because
- * the app would look wired.
+ * Companies and customers are here; documents in `documents.ts`, payments in
+ * `payments.ts`, and the six append-only and catalogue contracts in
+ * `catalogue.ts` — split by what makes each one hard rather than by size.
  */
 
 import type { SupabaseClient } from '@supabase/supabase-js'
@@ -41,6 +40,14 @@ import { currentRow, insertOnce, orThrow } from './mutate'
 import { anyColumnLike, searchable } from './search'
 import { createDocumentRepository } from './documents'
 import { createPaymentRepository } from './payments'
+import {
+  createAssetRepository,
+  createCreditNoteRepository,
+  createExpenseRepository,
+  createItemRepository,
+  createLinkTokenRepository,
+  createShareEventRepository,
+} from './catalogue'
 
 export function createCompanyRepository(db: SupabaseClient): CompanyRepository {
   return {
@@ -127,21 +134,29 @@ export function createCustomerRepository(db: SupabaseClient): CustomerRepository
 }
 
 /**
- * The repositories that exist so far.
+ * Every repository contract, over Supabase.
  *
- * Typed as a `Pick` of `Repositories` rather than the whole thing, because the
- * other six are genuinely not written yet. A factory that returned stubs
- * would typecheck, wire cleanly into the app, and lose money silently the
- * first time someone recorded a payment — the type is the honest record of
- * what is finished.
+ * Now a full `Repositories` rather than a `Pick`: the ten contracts are
+ * implemented, so the type no longer has to say which are missing. It said so
+ * for two increments because a stub factory would have typechecked, wired
+ * cleanly into the app, and lost money the first time someone recorded a
+ * payment — "not written yet" belonged in the compiler, not in a comment.
+ *
+ * What this still does NOT mean: nothing is wired to it. `src/app/store.tsx`
+ * builds the in-memory store, and pointing the app at a project needs the
+ * secrets and a deploy. None of this has spoken to PostgREST.
  */
-export function createSupabaseRepositories(
-  db: SupabaseClient,
-): Pick<Repositories, 'companies' | 'customers' | 'documents' | 'payments'> {
+export function createSupabaseRepositories(db: SupabaseClient): Repositories {
   return {
     companies: createCompanyRepository(db),
     customers: createCustomerRepository(db),
     documents: createDocumentRepository(db),
     payments: createPaymentRepository(db),
+    items: createItemRepository(db),
+    expenses: createExpenseRepository(db),
+    shares: createShareEventRepository(db),
+    credits: createCreditNoteRepository(db),
+    assets: createAssetRepository(db),
+    linkTokens: createLinkTokenRepository(db),
   }
 }
