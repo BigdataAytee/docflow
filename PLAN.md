@@ -18,7 +18,7 @@ claims nothing the gates have not proven (§X).
 | **2.5** | Remaining improvements | each §L behaviour verified offline; "Kept" moves the moment an expense is added; a reissued receipt never increments income | **gate passed** |
 | **3** | Sync | five offline documents arrive once; two-device edits retain both; no chaos scenario double-counts, resurrects or alters a frozen label | **code complete** — gate verified at logic level |
 | 4 | Native polish | installable builds pass all flows on physical Android and iOS | not started |
-| **5** | Web + public links | cross-device visibility; token behaviour per §P; one payment per event | **part built** — 3 of 5 scope items done and the app wired to them; gate NOT passed (0 of 3 clauses, needs the deploy) |
+| **5** | Web + public links | cross-device visibility; token behaviour per §P; one payment per event | **part built** — 4 of 5 scope items done, webhooks part done; gate NOT passed (0 of 3 clauses, needs the deploy) |
 | 6 | Local AI + logo | the §N six-step gate per tier; the §O definition of done | not started |
 | 7 | Admin, hardening, migration, launch | the §V checklist green end to end | not started |
 
@@ -562,7 +562,8 @@ work wearing a §G label. (The third straggler, "add photo", was the opposite
 mistake: Phase 2 work I had recorded three times as needing the Phase 4
 camera, when `capture="environment"` needed nothing at all.)
 
-So three of the five scope items are built and two have not been begun.
+So three of the five scope items are built, one is part-built, and one has
+not been begun.
 
 ### Built
 
@@ -719,6 +720,76 @@ So three of the five scope items are built and two have not been begun.
       project. The suite is not weakened to let it pass; it stays a debt
       against the §Q Phase 5 gate, recorded here rather than quietly dropped.
 
+### Provider payment webhooks — verified for one provider, parked for two
+
+§Q: "Provider payment webhooks (Paystack/Flutterwave/PayPal) verified and
+idempotent." §271: "provider-backed payments are confirmed only by a verified,
+idempotent provider event." The gate clause: "a confirmed provider event
+records exactly one payment."
+
+**The three providers do not offer the same guarantee, and that decides the
+design.** This was checked against their documentation rather than recalled,
+because being wrong here means accepting forged money:
+
+| | what the header proves | verdict |
+| --- | --- | --- |
+| Paystack | hex HMAC-SHA512 of the RAW BODY, keyed with the merchant secret | `authentic` — money may be recorded |
+| Flutterwave | `verif-hash` is a STATIC string covering none of the body | `needs_confirmation` |
+| PayPal | a certificate signature, verified by a call back to PayPal | `needs_confirmation` |
+
+So `verify` returns a verdict, not a boolean, and **two of the three never
+return `authentic`.** Flutterwave's header is identical on every request and
+says nothing about the amount — anyone who has seen one request can post any
+body with the same header. Recording on that would be inferring money from an
+unauthenticated source, which is Rule #3 with the consequence spelled out: the
+amount is attacker-controlled. Those events are acknowledged so the provider
+stops retrying, and nothing is written.
+
+**Recording is idempotent at the index, not by checking first.** Two
+deliveries of one event arriving together would both see nothing and both
+write, so `record_provider_payment` (`0015`) uses `on conflict do nothing` and
+reads back the winner. The event id is the TRANSACTION, namespaced by
+provider: two different events about one successful charge — a redelivery, or
+a charge plus a settlement notice — must still be one payment.
+
+That surfaced a defect only a real database shows: `payments_external_event_unique`
+is a PARTIAL index (`where external_event_id is not null`), and a partial index
+only arbitrates a conflict when the predicate is repeated in the `on conflict`
+clause. Without it Postgres refuses the statement outright — the good failure,
+and the reason this is tested against Postgres rather than reasoned about.
+
+**Money conversion is the other place this loses money quietly.** Paystack
+sends MINOR units (kobo); Flutterwave and PayPal send MAJOR units as decimals.
+`minorFromDecimal` counts digits in the string. The usual justification for
+that — "floats can't hold 500.10" — turns out to be **wrong as stated**:
+`Math.round(Number(t) * scale)` recovers every ordinary amount, and a search
+over four million of them found no divergence. The real reasons are narrower
+and are each tested: `Number('')` is 0, so a MISSING amount would record as
+zero money; `Number('0x10')` is 16 and `Number('5e2')` is 500; and
+`Math.round(1.005 * 100)` is 100, not 101, where rounding genuinely does not
+recover.
+
+**Where the secret lives.** Each business connects their own provider account,
+so the webhook URL is `/payment-webhook/:provider/:companyId` — nothing in a
+Paystack charge says which DocFlow company it belongs to, because we did not
+create the charge. The company id in the path selects which secret to check
+against and is not itself authority. `payment_provider_credentials` has RLS
+enabled and **no client policy at all**, the same default-deny shape as
+`subscriptions` and `entitlements`: a company cannot read even its own row.
+
+Worth saying plainly, because it is a real risk the owner takes: **Paystack
+signs with the merchant secret key, which is the same key that can move
+money.** There is no webhook-only secret to use instead. Flutterwave's secret
+hash is verification-only, and PayPal needs a webhook id rather than a key.
+
+**Not done, and not claimable:** nothing here has met a real provider. The
+signature schemes are pinned against known-answer vectors computed
+independently, which catches a wrong algorithm or encoding and does not catch
+a provider changing their scheme. Confirming Flutterwave and PayPal needs an
+authenticated call back to each, built against a real merchant account. The
+§Q gate clause "a confirmed provider event records exactly one payment" is
+proven in Postgres and has never been proven in production.
+
 ### The claim that was never there — the two worst bugs so far
 
 Wiring the app is what exposed them. Both were invisible to every test, and
@@ -807,10 +878,7 @@ client's 59.
 - [ ] **Per-user language preference.** `users.language_preference` has been
       in the schema since Phase 1 and nothing reads or writes it; the app
       resolves language from `company.localeLanguage`. Schema only.
-- [ ] **Provider payment webhooks** (Paystack/Flutterwave/PayPal). Not a line
-      of code. The ledger is *built for* them — `externalEventId` collapses a
-      duplicated notification, and that is property-tested — but no endpoint
-      receives one.
+(Provider payment webhooks moved to "Built — but unreached" above.)
 - [ ] **Web billing and entitlement sync** (§U). Not started; §U schedules it
       here and store billing in Phase 7.
 
@@ -1729,6 +1797,13 @@ vectors of a few hundred bytes.
 | 111 | The backend is loaded on demand, and resolved inside the private route | 59 kB gzipped of database client, downloaded before anything renders, by a customer opening a public link who has no account and whose page talks to the edge function over plain `fetch` — the cheapest phone on the slowest connection paying for a feature it never uses (Rule #1). `App` takes a LOADER rather than a backend, and `BackendBoundary` sits inside the private route, so the public pages resolve nothing. | `src/data/backend.ts`, `src/app/BackendBoundary.tsx` |
 | 112 | The bundle guard asserts reachability, not kilobytes | A size budget drifts a kilobyte at a time and nobody reads the build log; one static import undoes the split silently with every other test still green. The graph is walked from `main.tsx` instead. The guard also says what it cannot see — Rollup tree-shakes unused exports out of a reached module — so a pass is not read for more than it proves. | `src/bundle.test.ts` |
 | 113 | A build that cannot start shows a message, not a white screen | `createBackend` throws on a service-role key in the anon slot. Eager, that threw at module scope and left the page blank; §N says an unavailable capability is stated plainly. The page says only that the app is not set up correctly — the specific misconfiguration goes to the console, because a stranger should not be told which way a deploy is broken. | `src/app/BackendBoundary.tsx` |
+| 114 | `verify` returns a verdict, not a boolean | The three providers do not offer the same guarantee. Paystack signs the raw body; Flutterwave's `verif-hash` is a static string covering none of it; PayPal needs a call back to PayPal. A boolean would flatten "proven" and "not yet proven" into one answer, and two of the three would then record attacker-controlled amounts. | `payment-webhook/rules.ts` |
+| 115 | Flutterwave and PayPal events are acknowledged and NOT recorded | Answering non-2xx earns a retry storm for a request that will never become valid; recording would be inferring money from an unauthenticated source (Rule #3). Confirming them needs an authenticated call back to each provider, which needs a merchant account. | `payment-webhook/index.ts` |
+| 116 | The event id is the TRANSACTION, namespaced by provider | Two different events about one successful charge — a redelivery, or a charge plus a settlement notice — must record one payment. Keying on the event id records two. | `payment-webhook/rules.ts` |
+| 117 | A partial unique index needs its predicate repeated in `on conflict` | `payments_external_event_unique` is partial; without `where external_event_id is not null` in the clause, Postgres refuses the statement. Found against a real database, which is the only place it shows. | `0015_provider_webhooks.sql` |
+| 118 | Provider amounts are parsed from the string, never through `Number()` | Not for the usual reason — `Math.round(Number(t) * scale)` recovers every ordinary amount. Because `Number('')` is 0, so a missing amount records as ZERO money with nothing to say why; because `Number('0x10')` is 16 and `Number('5e2')` is 500; and because `Math.round(1.005 * 100)` is 100, where rounding does not recover. | `payment-webhook/rules.ts` |
+| 119 | Provider secrets have no client policy at all | A company cannot read even its own row. Paystack signs with the merchant SECRET KEY — the same key that moves money — and there is no webhook-only secret to use instead, so nothing in a browser may ever hold it. | `0015_provider_webhooks.sql` |
+| 120 | Unmatched provider money is customer credit, never a new invoice | §G forbids inventing an invoice and §K says unallocated money is credit. A reference that names no issued document, or one in a different currency, records standalone rather than being forced onto something. | `payment-webhook/index.ts` |
 
 ## Deviations from the spec
 

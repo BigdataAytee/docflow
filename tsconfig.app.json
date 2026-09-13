@@ -31,6 +31,10 @@
   // own tests import them to prove the two runtimes agree (§P). Its Deno entry
   // point is not: it imports from a URL and uses Deno globals, and nothing in
   // `src` reaches it.
-  "include": ["src", "supabase/functions/public-link/rules.ts"],
+  "include": [
+    "src",
+    "supabase/functions/public-link/rules.ts",
+    "supabase/functions/payment-webhook/rules.ts"
+  ],
   "exclude": ["legacy"]
 }
