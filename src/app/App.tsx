@@ -26,8 +26,8 @@ import { CompanyProvider, useCompany } from './context'
 import { AppDataProvider, useAppData } from './store'
 import { Shell } from './Shell'
 import { HOME, SETTINGS_PANELS } from './paths'
-import { DEV_COMPANY_ID, devState } from './seed'
-import { type Repositories, createMemoryRepositories } from '../data/repositories'
+import { DEV_COMPANY_ID } from './seed'
+import type { Repositories } from '../data/repositories'
 import { EmptyState, SkeletonList } from '../ui'
 import { localeProfileOf } from '../features/settings/region'
 import type { LocaleProfile } from '../domain/locale/profile'
@@ -42,6 +42,8 @@ import { SettingsIndexScreen, SettingsPanelScreen } from './screens/SettingsScre
 import { WelcomeScreen } from './screens/WelcomeScreen'
 import { PublicLinkPage } from '../public/PublicLinkPage'
 import { AccountGate } from './AccountGate'
+import { BackendBoundary } from './BackendBoundary'
+import { DemoBanner } from './DemoBanner'
 import type { Backend } from '../data/backend'
 
 export interface AppProps {
@@ -53,50 +55,73 @@ export interface AppProps {
   readonly repositories?: Repositories
   readonly companyId?: string
   /**
-   * Which backend to run on. Resolved once at the composition root
-   * (`main.tsx`); passed in so that this component stays a pure function of
-   * its props and the tests never touch `import.meta.env`.
+   * How to get the backend, NOT the backend itself.
+   *
+   * A function rather than a value so that resolving it can be deferred to the
+   * routes that need one — the public link pages do not, and making a customer
+   * download a database client before their page renders is exactly the cost
+   * this shape removes (Rule #1).
    */
-  readonly backend?: Backend
+  readonly loadBackend?: () => Promise<Backend>
   /** Tests and stories drive the URL in memory; the app uses the address bar. */
   readonly router?: 'browser' | 'memory'
   readonly initialPath?: string
 }
 
-export function App({
-  repositories,
-  companyId = DEV_COMPANY_ID,
-  backend,
-  router = 'browser',
-  initialPath = HOME,
-}: AppProps = {}) {
-  const repos = useMemo(
-    () => repositories ?? backend?.repositories ?? createMemoryRepositories(devState(companyId)),
-    [repositories, backend, companyId],
-  )
-
-  /*
-    An account backend has no company until somebody signs in, so the app sits
-    behind the gate. Everything else — an injected repository set, or the demo
-    — already knows its company and mounts straight away.
-
-    `repositories` overriding the backend is what keeps every existing test
-    working unchanged, and is also correct: a caller who hands over a
-    repository set has already decided where the records come from.
-  */
-  const privateTree =
-    backend?.kind === 'account' && repositories === undefined ? (
+/**
+ * The app, once the backend is known.
+ *
+ * An account has no company until somebody signs in, so it sits behind the
+ * gate; a demo already knows its company and mounts straight away — and says
+ * that it is a demo, on every screen, because §R does not allow one to be
+ * passed off as an account.
+ */
+function mounted(backend: Backend) {
+  if (backend.kind === 'account') {
+    return (
       <AccountGate session={backend.session}>
         {(signedInCompanyId) => (
-          <ProfileGate companyId={signedInCompanyId} repositories={repos}>
+          <ProfileGate companyId={signedInCompanyId} repositories={backend.repositories}>
             <AppRoutes />
           </ProfileGate>
         )}
       </AccountGate>
-    ) : (
-      <ProfileGate companyId={companyId} repositories={repos}>
+    )
+  }
+  return (
+    <>
+      <DemoBanner />
+      <ProfileGate companyId={backend.companyId} repositories={backend.repositories}>
         <AppRoutes />
       </ProfileGate>
+    </>
+  )
+}
+
+export function App({
+  repositories,
+  companyId = DEV_COMPANY_ID,
+  loadBackend,
+  router = 'browser',
+  initialPath = HOME,
+}: AppProps = {}) {
+  /*
+    A caller who hands over repositories has already decided where the records
+    come from, so that path resolves no backend at all — which is what keeps
+    every existing test working unchanged and free of `import.meta.env`.
+  */
+  const privateTree =
+    repositories !== undefined ? (
+      <ProfileGate companyId={companyId} repositories={repositories}>
+        <AppRoutes />
+      </ProfileGate>
+    ) : loadBackend !== undefined ? (
+      <BackendBoundary load={loadBackend}>{mounted}</BackendBoundary>
+    ) : (
+      // Neither is a programming error rather than a state a user can reach:
+      // the composition root always passes one. Said out loud rather than
+      // rendering an empty app that looks like it lost the records.
+      <p role="alert">App needs either `repositories` or `loadBackend`.</p>
     )
 
   const tree = (

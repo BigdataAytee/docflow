@@ -1,43 +1,45 @@
 /**
  * The composition root.
  *
- * The one place that reads the environment and decides which backend the app
- * runs on. `App` takes the answer as a prop, so nothing below here — and no
- * test — has to know that `import.meta.env` exists.
+ * The one place that reads the environment. It decides nothing else: `App`
+ * takes a LOADER rather than a backend, so nothing below here — and no test —
+ * has to know that `import.meta.env` exists, and nothing is fetched until a
+ * route needs it.
  *
- * A configured project that cannot be built is a hard failure, deliberately.
- * §R: "a local demo is never passed off as an account" — quietly dropping to
- * the demo would hand the owner a sandbox wearing their account's clothes, and
- * whatever they typed into it would be gone.
+ * The demo store is loaded on demand too. That one is for tidiness rather than
+ * for bytes — it is a few kilobytes against the Supabase client's 59 — and it
+ * is NOT what keeps sample records out of an account build. Nothing needs to:
+ * `devState` builds an empty company, and the sample PREVIEW
+ * (`features/onboarding/sampleData`) is a real §R feature that every account
+ * has, shown rather than seeded so its money never enters a real one.
  */
 
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 
 import { App } from './app/App'
-import { DemoBanner } from './app/DemoBanner'
 import { createBackend } from './data/backend'
-import { DEV_COMPANY_ID, devState } from './app/seed'
-import { createMemoryRepositories } from './data/repositories'
 import './index.css'
 
 const root = document.getElementById('root')
 if (root === null) throw new Error('Missing #root')
 
-// The demo seed is passed IN rather than reached for: `src/data` has no
-// business knowing about the app's sample records, and this keeps the seed out
-// of an account build's bundle entirely.
-const backend = createBackend(
-  import.meta.env as unknown as Record<string, string | undefined>,
-  () => ({
-    companyId: DEV_COMPANY_ID,
-    repositories: createMemoryRepositories(devState(DEV_COMPANY_ID)),
-  }),
-)
+const env = import.meta.env as unknown as Record<string, string | undefined>
+
+const loadBackend = () =>
+  createBackend(env, async () => {
+    const [{ DEV_COMPANY_ID, devState }, { createMemoryRepositories }] = await Promise.all([
+      import('./app/seed'),
+      import('./data/repositories'),
+    ])
+    return {
+      companyId: DEV_COMPANY_ID,
+      repositories: createMemoryRepositories(devState(DEV_COMPANY_ID)),
+    }
+  })
 
 createRoot(root).render(
   <StrictMode>
-    {backend.kind === 'demo' && <DemoBanner />}
-    <App backend={backend} />
+    <App loadBackend={loadBackend} />
   </StrictMode>,
 )

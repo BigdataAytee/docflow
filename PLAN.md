@@ -764,21 +764,42 @@ token — and the client refreshes its session afterwards, because the token in
 hand was minted before the company existed and cannot know about it. Without
 that refresh the app sits correctly authenticated, reading an empty account.
 
-### A cost this change carries
+### The cost of wiring, and the fix — now done
 
-The production bundle went from **119 kB to 186 kB gzipped**, because
-`supabase-js` is now imported eagerly at the composition root. That is a real
-concern for this product specifically — DocFlow is for cheap Android phones on
-metered connections, and Rule #1 says nothing may be harder than the legacy
-app.
+Wiring the app first pushed the production bundle from **119 kB to 186 kB
+gzipped**, because `supabase-js` was imported eagerly at the composition root.
+That was recorded as a debt and then paid:
 
-It is recorded rather than fixed, because the fix is a separate change with
-its own risk: make `createBackend` async and dynamically import the Supabase
-module, so a demo build drops it entirely and an account build loads it as its
-own chunk. The sharper version of the same problem is that a CUSTOMER
-following a public link — who needs none of it, the public pages talk to the
-edge function over plain `fetch` — currently downloads the whole client before
-the page renders. That one is worth doing before any launch.
+| | first chunk (gzip) | on demand |
+| --- | --- | --- |
+| before wiring | 119 kB | — |
+| wired, eager | 186 kB | — |
+| wired, split | **122.6 kB** | 59 kB Supabase, when an account route needs it |
+
+`createBackend` is now async and reaches Supabase only through `import()`, so
+the client is its own chunk. The residual +3 kB is the sign-in and
+first-business screens and the session port, which every account build needs.
+
+**The sharpest part was never the total.** A CUSTOMER opening a public link
+has no account, and their page talks to the edge function over plain `fetch` —
+they were downloading a whole database client before anything rendered. They
+now download none of it, because `BackendBoundary` is mounted INSIDE the
+private route rather than above it.
+
+Guarded by `src/bundle.test.ts`, which walks the static import graph from
+`main.tsx` and fails if the client becomes reachable again. Reachability, not
+byte count: a number in a build log drifts a kilobyte at a time and nobody
+reads it, whereas one static import undoes the whole split silently. The file
+also states what it does NOT measure — Rollup still tree-shakes unused exports
+out of a module that IS reached — so a pass is not read for more than it says.
+
+**A correction to what this plan said before.** The previous entry claimed the
+eager import also put "sample records" into an account build. It did not:
+`devState` builds an empty company, and the sample PREVIEW
+(`features/onboarding/sampleData`) is a real §R feature that every account
+has, shown rather than seeded so its money never enters a real one. The demo
+store is deferred too, but for tidiness — it is a few kilobytes against the
+client's 59.
 
 ### Not started
 
@@ -1705,6 +1726,9 @@ vectors of a few hundred bytes.
 | 108 | The demo is chosen by missing configuration, never by a runtime failure | §R: "a local demo is never passed off as an account." A configured-but-broken project throws; degrading it to a demo would hand the owner a sandbox wearing their account's clothes and lose whatever they typed into it. The demo also says what it is, on every screen. | `src/data/backend.ts`, `src/app/DemoBanner.tsx` |
 | 109 | The gate talks to a session PORT, not to Supabase | `src/app` may not import a DB client (§C), and the lint rule caught the first attempt. The port is the right answer rather than an exemption: the gate now has no opinion about Supabase and would work unchanged over Phase 4's SQLite-plus-sync. | `src/data/session.ts`, `src/app/AccountGate.tsx` |
 | 110 | The DB-client lint rule now catches relative imports too | It matched `**/data/supabase/*` only, so any file inside `src/data` could import a client via `./supabase/*` and nothing would notice — the one place such a leak is easiest to introduce. `src/data/backend.ts` is exempt as a single named FILE, so a second cannot quietly join it. | `eslint.config.js` |
+| 111 | The backend is loaded on demand, and resolved inside the private route | 59 kB gzipped of database client, downloaded before anything renders, by a customer opening a public link who has no account and whose page talks to the edge function over plain `fetch` — the cheapest phone on the slowest connection paying for a feature it never uses (Rule #1). `App` takes a LOADER rather than a backend, and `BackendBoundary` sits inside the private route, so the public pages resolve nothing. | `src/data/backend.ts`, `src/app/BackendBoundary.tsx` |
+| 112 | The bundle guard asserts reachability, not kilobytes | A size budget drifts a kilobyte at a time and nobody reads the build log; one static import undoes the split silently with every other test still green. The graph is walked from `main.tsx` instead. The guard also says what it cannot see — Rollup tree-shakes unused exports out of a reached module — so a pass is not read for more than it proves. | `src/bundle.test.ts` |
+| 113 | A build that cannot start shows a message, not a white screen | `createBackend` throws on a service-role key in the anon slot. Eager, that threw at module scope and left the page blank; §N says an unavailable capability is stated plainly. The page says only that the app is not set up correctly — the specific misconfiguration goes to the console, because a stranger should not be told which way a deploy is broken. | `src/app/BackendBoundary.tsx` |
 
 ## Deviations from the spec
 
