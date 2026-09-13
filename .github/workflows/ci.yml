@@ -40,15 +40,23 @@ jobs:
       - name: Lint
         run: npm run lint
 
+      # BEFORE the tests, and that order is deliberate.
+      #
+      # Three checks read the built bundle: the service-role key scan
+      # (tools/pentest), the screenshot-fixture isolation check, and §T's
+      # destination scan. Each of them says out loud when there is no build
+      # rather than skipping silently — but with the tests running first,
+      # "there is no build" was the answer every time, and none of the three
+      # had ever actually run here.
+      - name: Build
+        run: npm run build
+
       # Blocking before merge: money property tests (fast-check), lifecycle
       # transition tests, and — since Phase 3 — the sync chaos suite
       # (CLAUDE.md: "Sync work additionally requires the chaos suite
       # scenarios it touches").
       - name: Money, lifecycle and sync chaos tests
         run: npm test
-
-      - name: Build
-        run: npm run build
 
   rls:
     name: RLS — two-company isolation (§P, §Q gate)

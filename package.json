@@ -15,7 +15,7 @@
     "lint:fix": "eslint . --fix",
     "test": "vitest run",
     "test:watch": "vitest",
-    "verify": "npm run typecheck && npm run lint && npm run test && npm run build",
+    "verify": "npm run typecheck && npm run lint && npm run build && npm run test",
     "test:rls": "vitest run --config vitest.rls.config.ts",
     "gate:hosted": "node --experimental-strip-types supabase/tests/hosted-gate.ts",
     "gate:hosted:local": "node --env-file=.env --experimental-strip-types supabase/tests/hosted-gate.ts",
@@ -23,7 +23,8 @@
     "discoverability": "UPDATE_DISCOVERABILITY=1 vitest run src/marketing/sheet.test.ts",
     "site": "EMIT_SITE=1 vitest run src/marketing/emit.test.ts",
     "shots:build": "vite build --config vite.shots.config.ts",
-    "shots": "npm run shots:build && SHOOT=1 vitest run tools/screenshots/capture.test.ts"
+    "shots": "npm run shots:build && SHOOT=1 vitest run tools/screenshots/capture.test.ts",
+    "policy": "npm run build && POLICY=1 vitest run src/marketing/policy/run.test.ts"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.116.0",
