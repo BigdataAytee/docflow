@@ -28,7 +28,19 @@ export default tseslint.config(
         {
           patterns: [
             {
-              group: ['**/data/sqlite/*', '**/data/supabase/*', '@supabase/*', '@powersync/*'],
+              // Both spellings. `**/data/supabase/*` catches the way UI code
+              // reaches for it (`../data/supabase/client`), and `./supabase/*`
+              // catches the way a file already INSIDE src/data would — which
+              // the first pattern does not match at all, and which is exactly
+              // where a client leak is easiest to introduce by accident.
+              group: [
+                '**/data/sqlite/*',
+                '**/data/supabase/*',
+                './sqlite/*',
+                './supabase/*',
+                '@supabase/*',
+                '@powersync/*',
+              ],
               message:
                 'UI and domain code must go through src/data/repositories — never a DB client directly (v6 §C).',
             },
@@ -72,6 +84,16 @@ export default tseslint.config(
   // still forbidden from importing one.
   {
     files: ['src/data/supabase/**/*.ts', 'src/data/sqlite/**/*.ts', 'supabase/tests/**/*.ts'],
+    rules: { 'no-restricted-imports': 'off' },
+  },
+
+  // The backend factory is the one other place, and for the one other reason:
+  // choosing between implementations means naming them. It hands back a
+  // `Repositories` and a `SessionService` — two ports, no client — so nothing
+  // downstream inherits the exemption. Listed as a single FILE, not a
+  // directory, so a second file cannot quietly join it.
+  {
+    files: ['src/data/backend.ts'],
     rules: { 'no-restricted-imports': 'off' },
   },
 

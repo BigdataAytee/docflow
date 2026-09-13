@@ -27,6 +27,35 @@ export interface UiStrings {
     readonly savingAutomatically: string
     readonly remove: string
   }
+  /**
+   * Signing in, and the first business (§R, §S).
+   *
+   * Every word here goes through the catalogue like every other word: an
+   * account screen is not exempt from §S because it happens before the app.
+   */
+  readonly account: {
+    readonly signInTitle: string
+    readonly signInBody: string
+    readonly email: string
+    readonly password: string
+    readonly signIn: string
+    readonly createAccount: string
+    readonly haveAccount: string
+    readonly noAccount: string
+    readonly forgotPassword: string
+    readonly resetSent: string
+    readonly continueWithGoogle: string
+    readonly needsConnection: string
+    readonly signOut: string
+    readonly businessTitle: string
+    readonly businessBody: string
+    readonly businessName: string
+    readonly businessCountry: string
+    readonly createBusiness: string
+    readonly creating: string
+    readonly demoTitle: string
+    readonly demoBody: string
+  }
   readonly nav: {
     readonly home: string
     readonly customers: string
@@ -581,6 +610,34 @@ const EN: UiStrings = {
     saved: 'Saved',
     savingAutomatically: 'Draft saved automatically',
     remove: 'Remove',
+  },
+  account: {
+    signInTitle: 'Sign in to DocFlow',
+    signInBody: 'Your records sync to your account, so they are on every device you use.',
+    email: 'Email',
+    password: 'Password',
+    signIn: 'Sign in',
+    createAccount: 'Create an account',
+    haveAccount: 'Already have an account? Sign in',
+    noAccount: 'New here? Create an account',
+    forgotPassword: 'Forgot your password?',
+    resetSent: 'If that email has an account, a reset link is on its way.',
+    continueWithGoogle: 'Continue with Google',
+    // §R: "Initial auth needs a connection." Said plainly, before the
+    // attempt, rather than as an error afterwards (§N).
+    needsConnection: 'Signing in needs an internet connection. Everything after this works offline.',
+    signOut: 'Sign out',
+    businessTitle: 'Name your business',
+    businessBody:
+      'This goes at the top of every document you send. Your country sets the words, the currency and the payment details — you can change all of it later.',
+    businessName: 'Business name',
+    businessCountry: 'Business country',
+    createBusiness: 'Create my business',
+    creating: 'Creating your business…',
+    demoTitle: 'Demo',
+    // §R: "a local demo is never passed off as an account".
+    demoBody:
+      'This is a demo with sample records on this device only. Nothing is saved to an account, and it is cleared when you close the tab.',
   },
   nav: {
     home: 'Home',
