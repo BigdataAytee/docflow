@@ -20,7 +20,7 @@ claims nothing the gates have not proven (§X).
 | 4 | Native polish | installable builds pass all flows on physical Android and iOS | not started |
 | **5** | Web + public links | cross-device visibility; token behaviour per §P; one payment per event | **part built** — 4 of 5 scope items done, webhooks part done; gate NOT passed (0 of 3 clauses, needs the deploy) |
 | **6** | Local AI + logo | the §N six-step gate per tier; the §O definition of done | **part built** — Tier-B extractor and the ladder's logic; gate needs devices |
-| **7** | Admin, hardening, migration, launch | the §V checklist green end to end | **part built** — admin, server-enforced permissions, the legacy migration, the pen-check roster, the generated §T listings, the marketing site and the store screenshots; gate NOT passed — the roster has never been run, because nothing is deployed |
+| **7** | Admin, hardening, migration, launch | the §V checklist green end to end | **part built** — admin, server-enforced permissions, the legacy migration, the pen-check roster, the generated §T listings, the marketing site, the store screenshots and the store-policy verification; gate NOT passed — the roster has never been run, because nothing is deployed |
 
 ---
 
@@ -1392,6 +1392,63 @@ gate itself is deferred with everything else that needs a phone.
       written, never run, and trusted — which is exactly how `npm run pentest`
       came to do nothing at all.
 
+- [x] **Store-policy verification** (`src/marketing/policy/`; `npm run policy`).
+      §T: "store-policy verification at submission time". §U: "store
+      steering/external-purchase policies change frequently and vary by
+      region: **verify the current rules at submission time in each store
+      market** rather than assuming today's."
+
+      **The one thing this must not do is state a store's rule.** Writing down
+      "Apple requires X" — from memory, mine or anyone's — and then trusting it
+      for a year is precisely what §U warns against, and it is worse than no
+      checklist because it looks like diligence. So the work splits in two,
+      and the split is the design.
+
+      **What the CODE does is checked, today, here.** The rejection that
+      actually happens is not misreading a rule; it is a privacy declaration
+      that does not match the binary. So: every outbound destination
+      enumerated from source against an allowlist, so a NEW one fails here
+      rather than being found by a reviewer; §N's no-cloud-AI claim checked as
+      the absence of any network primitive in the AI paths; no analytics,
+      attribution or advertising SDK, checked against the dependency list. Each
+      check emits the sentence a person can put on a store form — filled from
+      evidence rather than memory.
+
+      Two things that only showed up by running it. The scan's first run
+      flagged `harness.ts`, which names a stub Supabase host and never ships —
+      so the exemption is **earned** rather than declared: the host must be
+      absent from the built bundle, and without a build the exemption is not
+      granted at all. And the allowlist originally conflated a hostname with
+      an env-var name; the substantive point underneath is that the Supabase
+      project is configuration, so **no default host is compiled into the
+      app** and a scan for literals cannot find the one destination that
+      actually carries the data. The declaration names it in words; the scan
+      polices only the literals.
+
+      **What the STORES require is a question, with a date on it.** Nine
+      questions, each naming what DocFlow does and asking whether the store
+      currently permits it, with the page to read — never what the answer is.
+      Four are per-market, because §U says the rules vary by region and one
+      market's answer says nothing about another's. **Answers expire after 30
+      days**, which is the whole point: "verify at submission time" is not
+      satisfied by a checklist ticked last spring, and an answer with no
+      expiry becomes the assumption §U warns about. An expired answer reads as
+      unanswered, and the report says when it was last read.
+
+      **No answer is recorded, because nobody has read a store rule for this
+      app.** 33 open questions. `verified` requires both halves and neither
+      substitutes for the other: a repository that passes every check is not
+      verified, it is one whose claims are true, waiting for somebody to read
+      the rules they will be judged against.
+
+- [x] **CI now builds before it tests** — and that is a fix, not a tidy-up.
+      Three checks read the built bundle: the Phase-7c service-role key scan,
+      the screenshot-fixture isolation check, and the destination scan above.
+      Each says out loud when there is no build rather than skipping silently
+      — but with `npm test` running first, "there is no build" was the answer
+      every time, so **none of the three had ever actually run in CI**,
+      including the key scan that the whole two-company boundary rests on.
+
 ### Not started
 
 - [ ] **Store billing** (StoreKit 2 + Play Billing) — needs devices and store
@@ -1405,8 +1462,10 @@ gate itself is deferred with everything else that needs a phone.
       project rather than on the demo backend; **Universal Links and App
       Links**, which need an Apple Team ID and the release signing certificate
       fingerprint; the **store smart banners**, which need submitted apps; and
-      store-policy verification at submission time. `npm run site` and
-      `npm run shots` name every one of these on every run.
+      **the store rules themselves**, which nobody has read — `npm run policy`
+      lists all 33 questions with the page to read for each. `npm run site`,
+      `npm run shots` and `npm run policy` name every one of these on every
+      run.
 - [ ] **Backup schedule and full user data export.**
 - [ ] **The final sweeps** — accessibility, dark mode, RTL readiness,
       responsive, terminology per locale, onboarding, command palette.
@@ -2408,6 +2467,15 @@ vectors of a few hundred bytes.
 | 183 | The fixtures are proved absent from the shipped bundle, not assumed | A separate Vite entry and output directory is an arrangement, and "it is only in the screenshot build" rots the first time somebody adds an import. The test scans built `dist/assets` for the fixture names — and first asserts those names really are in the fixtures, so it cannot pass by scanning for strings that were renamed away. | `src/marketing/shots/isolation.test.ts` |
 | 184 | Blocked markets still shoot, into a `draft/` folder with their BLOCKERS.txt | A capture harness that refuses everything is never run, and a harness nobody has watched work is how `npm run pentest` came to do nothing at all. `submittable/` stays empty with a README naming every reason. | `tools/screenshots/capture.ts` |
 | 185 | CI never downloads a browser | The capture is a local command; pulling ~150 MB of Chromium into every job to leave it unused would make every check slower for nothing. | `.github/workflows/ci.yml` |
+| 186 | The repo states no store rule as fact | §U: those rules "change frequently and vary by region"; my knowledge of one has a date on it too. A sentence asserting one would be the assumption §U warns about, written in the place people trust most. Every entry names what DocFlow does and asks whether it is currently permitted — and a test requires each question to end in a question mark. | `src/marketing/policy/questions.ts` |
+| 187 | Answers expire after 30 days | "Verify at submission time" is not satisfied by a checklist ticked last spring. An answer with no expiry becomes the assumption itself, and is worse than no checklist because it looks like diligence. An expired answer reads as unanswered, and the report says when it was last read. | `src/marketing/policy/questions.ts` |
+| 188 | A date in the future is not a fresh answer | A typo or a lie; either way it must not read as verified. | `src/marketing/policy/questions.ts` |
+| 189 | One market's answer never covers another's | §U says the rules vary by region, and a flat checklist is exactly how that gets missed: an answer read for the US says nothing about Nigeria. | `src/marketing/policy/report.ts` |
+| 190 | `verified` needs both halves, and neither substitutes for the other | A repository passing every check is not verified — it is one whose claims are true, waiting for somebody to read the rules they will be judged against. | `src/marketing/policy/report.ts` |
+| 191 | Outbound destinations are enumerated from source against an allowlist | Apple's privacy label and Play's Data Safety form are declarations checked against the binary, and the rejection that happens is a mismatch rather than a misread rule. An allowlist means a NEW destination fails here instead of being found by a reviewer. | `src/marketing/policy/checks.ts` |
+| 192 | The test-only destination exemption is EARNED against the build | `harness.ts` names a stub host and never ships, but "only tests import it" is an arrangement, and this check exists because arrangements rot. The host must be absent from the built bundle, and with no build the exemption is not granted. | `src/marketing/policy/checks.ts` |
+| 193 | No default host is compiled into the app, so the declaration names what the scan cannot see | The Supabase project is configuration, supplied per install. A declaration built only from what a literal-scan finds would omit the one destination that actually carries the data. | `src/marketing/policy/checks.ts` |
+| 194 | CI builds BEFORE it tests | Three checks read the built bundle and each says so when there is none — but with the tests running first, "there is no build" was the answer every time, so none of the three had ever run in CI, the Phase-7c service-role key scan included. | `.github/workflows/ci.yml` |
 
 ## Deviations from the spec
 
