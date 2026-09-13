@@ -33,6 +33,8 @@ import type {
   DocumentRecord,
   Expense,
   LinkTokenRecord,
+  Payment,
+  PaymentAllocation,
   SavedItem,
 } from '../repositories'
 import type { DocumentType, FrozenLabels, LineItem } from '../../domain/documents/types'
@@ -362,4 +364,71 @@ export function fromLinkToken(patch: Partial<LinkTokenRecord>): Row {
     expires_at: patch.expiresAt,
     consumed_at: patch.consumedAt,
   })
+}
+
+// ----------------------------------------------------------------- payments
+
+/**
+ * A payment and its allocations are two tables and one fact (§E, §K).
+ *
+ * The domain type nests the allocations inside the payment because that is
+ * what the money means: this much arrived, and this is what it settled. The
+ * schema splits them because an allocation points at an invoice. So the
+ * mapper takes both — there is no `toPayment(row)` that could invent the
+ * allocations, and a payment mapped without them would read as unallocated
+ * money, which is a different fact about someone's balance.
+ */
+export function toPayment(row: Row, allocations: readonly Row[] = []): Payment {
+  const currency = String(row['currency'] ?? '')
+  const id = String(row['id'])
+  return {
+    id,
+    customerId: String(row['customer_id'] ?? ''),
+    amount: money(currency, minor(row['amount_minor'])),
+    paidAt: stamp(row['paid_at']) ?? '',
+    method: String(row['method'] ?? ''),
+    source: (text(row['source']) as Payment['source']) ?? 'manual',
+    allocations: allocations.map((allocation) => toAllocation(allocation, currency)),
+    ...omitNull({
+      reference: text(row['reference']),
+      externalEventId: text(row['external_event_id']),
+      reversalOfId: text(row['reversal_of_id']),
+    }),
+  }
+}
+
+/**
+ * The currency comes from the PAYMENT, because the allocations table has no
+ * currency column — and should not: an allocation in a currency other than
+ * the money that arrived is not a thing that can happen, and a second column
+ * would be a second place for it to disagree (Rule #3).
+ */
+export function toAllocation(row: Row, currency: string): PaymentAllocation {
+  return {
+    id: String(row['id']),
+    paymentId: String(row['payment_id']),
+    invoiceId: String(row['invoice_id']),
+    amount: money(currency, minor(row['amount_minor'])),
+  }
+}
+
+export function fromPayment(patch: Partial<Payment> & { companyId?: string }): Row {
+  return omitNull({
+    company_id: patch.companyId,
+    customer_id: patch.customerId,
+    currency: patch.amount?.currency,
+    amount_minor: patch.amount?.minor,
+    paid_at: patch.paidAt,
+    method: patch.method,
+    reference: patch.reference,
+    source: patch.source,
+    external_event_id: patch.externalEventId,
+    reversal_of_id: patch.reversalOfId,
+  })
+}
+
+export function fromAllocation(
+  allocation: Pick<PaymentAllocation, 'invoiceId' | 'amount'>,
+): Row {
+  return { invoice_id: allocation.invoiceId, amount_minor: allocation.amount.minor }
 }
