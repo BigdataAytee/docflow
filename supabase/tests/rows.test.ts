@@ -1,0 +1,362 @@
+/**
+ * The row mappers, against the REAL schema (§C, §E).
+ *
+ * Every other test of `src/data/supabase/rows.ts` compares an object this
+ * repo wrote to an object this repo expected — which proves the mapper is
+ * self-consistent and nothing about whether the columns exist. That gap is
+ * not hypothetical: writing these mappers is what found
+ * `documents.delivery_address` missing, a column the shipped `public-link`
+ * edge function already SELECTs by name.
+ *
+ * So each mapper here writes into the migrated schema and reads back out. A
+ * column that does not exist fails the INSERT; a column spelled differently
+ * comes back absent and fails the comparison. Neither can be argued with.
+ *
+ * Runs against the Postgres service container, with no secrets and no hosted
+ * project — the same harness the RLS gate uses.
+ */
+
+import { afterAll, beforeAll, describe, expect, it } from 'vitest'
+import { Client } from 'pg'
+
+import { applyMigrations, connectionString } from './apply'
+import {
+  fromAsset,
+  fromCompany,
+  fromCustomer,
+  fromDocument,
+  fromExpense,
+  fromItem,
+  fromLinkToken,
+  toAsset,
+  toCompany,
+  toCustomer,
+  toDocument,
+  toExpense,
+  toItem,
+  toLinkToken,
+} from '../../src/data/supabase/rows'
+import { money } from '../../src/domain/money/money'
+import { quantity } from '../../src/domain/documents/types'
+import type { DocumentRecord } from '../../src/data/repositories'
+
+const COMPANY = '11111111-1111-1111-1111-111111111111'
+const CUSTOMER = 'aaaaaaaa-0000-0000-0000-000000000001'
+
+let db: Client
+
+/**
+ * Which columns are jsonb, read from the database rather than kept by hand.
+ *
+ * A JS array is ambiguous on the wire: `customers.labels` is a real Postgres
+ * `text[]`, while `documents.line_items` is a jsonb array. `pg` serialises a
+ * JS array to an array literal, which is right for the first and rejected by
+ * the second; JSON.stringify is right for the second and rejected by the
+ * first. No blanket rule can serve both, so the test asks the schema — which
+ * also means a column that changes type later cannot quietly pass here.
+ *
+ * PostgREST, the path the app actually uses, does this same disambiguation
+ * server-side from the column type, so the mappers stay free of it.
+ */
+const jsonColumns = new Map<string, Set<string>>()
+
+async function jsonColumnsFor(table: string): Promise<Set<string>> {
+  const cached = jsonColumns.get(table)
+  if (cached !== undefined) return cached
+  const { rows } = await db.query<{ column_name: string }>(
+    `select column_name from information_schema.columns
+      where table_schema = 'public' and table_name = $1 and udt_name in ('json', 'jsonb')`,
+    [table],
+  )
+  const names = new Set(rows.map((r) => r.column_name))
+  jsonColumns.set(table, names)
+  return names
+}
+
+/** Insert a mapped row as service_role and read the whole row back. */
+async function roundTrip(table: string, row: Record<string, unknown>): Promise<Record<string, unknown>> {
+  const json = await jsonColumnsFor(table)
+  const keys = Object.keys(row)
+  const columns = keys.map((k) => `"${k}"`).join(', ')
+  const params = keys.map((_, i) => `$${i + 1}`).join(', ')
+  const { rows } = await db.query(
+    `insert into public.${table} (${columns}) values (${params}) returning *`,
+    keys.map((k) => (json.has(k) ? JSON.stringify(row[k]) : row[k])),
+  )
+  return rows[0] as Record<string, unknown>
+}
+
+beforeAll(async () => {
+  db = new Client({ connectionString: connectionString() })
+  await db.connect()
+  await applyMigrations(db)
+  await db.query('set role service_role')
+  await db.query(
+    `insert into public.companies (id, name, currency, locale_region) values ($1, 'Sola Ventures', 'NGN', 'NG')`,
+    [COMPANY],
+  )
+  await db.query(
+    `insert into public.customers (id, company_id, name) values ($1, $2, 'Ade Stores')`,
+    [CUSTOMER, COMPANY],
+  )
+})
+
+afterAll(async () => {
+  await db?.end()
+})
+
+describe('Every mapped field has a column that exists (§E)', () => {
+  it('round-trips a company with everything set', async () => {
+    const patch = {
+      name: 'Sola Ventures',
+      localeRegion: 'NG',
+      localeLanguage: 'en',
+      labelOverrides: { waybill: 'Delivery note' },
+      currency: 'NGN',
+      numberingPrefixes: { invoice: 'INV' },
+      bankFields: { bank_name: 'GTB' },
+      enabledPaymentMethods: ['bank_transfer'],
+      brandColour: '#2b3fd6',
+      nameStyle: 'serif' as const,
+      logoSize: 'L' as const,
+      taxRatePpm: 75_000,
+      whtRatePpm: 50_000,
+      signatureRequired: true,
+    }
+    const back = toCompany(await roundTrip('companies', fromCompany(patch)))
+
+    expect(back.name).toBe('Sola Ventures')
+    expect(back.labelOverrides).toEqual({ waybill: 'Delivery note' })
+    expect(back.enabledPaymentMethods).toEqual(['bank_transfer'])
+    expect(back.brandColour).toBe('#2b3fd6')
+    expect(back.nameStyle).toBe('serif')
+    expect(back.logoSize).toBe('L')
+    // Parts per million survive the jsonb column as integers (§K).
+    expect(back.taxRatePpm).toBe(75_000)
+    expect(back.whtRatePpm).toBe(50_000)
+    expect(back.signatureRequired).toBe(true)
+  })
+
+  it('keeps "the owner removed the default signature" distinct from "unchanged"', async () => {
+    // null MEANS something here, so it must survive the round trip as null
+    // rather than being dropped like every other empty value (§M).
+    const cleared = toCompany(
+      await roundTrip('companies', {
+        ...fromCompany({ name: 'Cleared', defaultSignatureAssetId: null }),
+        currency: 'NGN',
+      }),
+    )
+    expect(cleared.defaultSignatureAssetId).toBeNull()
+    expect('defaultSignatureAssetId' in cleared).toBe(true)
+  })
+
+  it('round-trips a customer, and an absent field stays absent', async () => {
+    const back = toCustomer(
+      await roundTrip(
+        'customers',
+        fromCustomer({
+          companyId: COMPANY,
+          kind: 'company',
+          name: 'Ade Stores',
+          phone: '+234 803 111 2222',
+          labels: ['Wholesale', 'VIP'],
+          privateNote: 'Pays after harvest',
+        }),
+      ),
+    )
+
+    expect(back.name).toBe('Ade Stores')
+    expect(back.kind).toBe('company')
+    expect(back.phone).toBe('+234 803 111 2222')
+    expect(back.labels).toEqual(['Wholesale', 'VIP'])
+    expect(back.privateNote).toBe('Pays after harvest')
+    // Not `email: undefined`: a record carrying that prints a blank line (§I).
+    expect('email' in back).toBe(false)
+    expect('address' in back).toBe(false)
+  })
+
+  it('round-trips a document with every field the app can set', async () => {
+    // The one that matters: this is the list the schema had drifted behind.
+    const document: Partial<DocumentRecord> = {
+      companyId: COMPANY,
+      type: 'waybill',
+      status: 'delivered',
+      currency: 'NGN',
+      customerId: CUSTOMER,
+      lineItems: [
+        { id: 'li_1', description: 'Bag of cement', quantityMilli: quantity(20), taxable: false },
+      ],
+      totalMinor: 0,
+      issueDate: '2026-09-01',
+      dueDate: '2026-09-30',
+      validUntil: '2026-10-01',
+      issuedReference: 'WAY-0007',
+      frozenLabels: {
+        printedTitle: 'WAYBILL',
+        partyLabel: 'Deliver to',
+        signatureCaption: 'RECEIVED BY',
+        language: 'en',
+      },
+      deliveryAddress: '14 Adeola Odeku, Victoria Island',
+      driverName: 'Musa',
+      vehicleNumber: 'LAG-123-XY',
+      dispatchDate: '2026-09-02',
+      signerName: 'Bisi Adeyemi',
+      signerRole: 'Storekeeper',
+      signedAt: '2026-09-03T14:30:00.000Z',
+    }
+    const back = toDocument(await roundTrip('documents', fromDocument(document)))
+
+    for (const [key, value] of Object.entries(document)) {
+      if (key === 'companyId' || key === 'lineItems' || key === 'frozenLabels') continue
+      expect({ [key]: back[key as keyof DocumentRecord] }).toEqual({ [key]: value })
+    }
+    expect(back.lineItems).toEqual(document.lineItems)
+    expect(back.frozenLabels).toEqual(document.frozenLabels)
+  })
+
+  it('round-trips the links between documents', async () => {
+    const first = await roundTrip(
+      'documents',
+      fromDocument({ companyId: COMPANY, type: 'quotation', status: 'sent', currency: 'NGN', totalMinor: 0 }),
+    )
+    const second = toDocument(
+      await roundTrip(
+        'documents',
+        fromDocument({
+          companyId: COMPANY,
+          type: 'quotation',
+          status: 'draft',
+          currency: 'NGN',
+          totalMinor: 0,
+          supersedesId: String(first['id']),
+          convertedFromId: String(first['id']),
+          linkedInvoiceId: String(first['id']),
+        }),
+      ),
+    )
+    expect(second.supersedesId).toBe(String(first['id']))
+    expect(second.convertedFromId).toBe(String(first['id']))
+    expect(second.linkedInvoiceId).toBe(String(first['id']))
+  })
+
+  it('keeps a draft reference and labels NULL rather than absent (§M)', async () => {
+    const draft = toDocument(
+      await roundTrip(
+        'documents',
+        fromDocument({
+          companyId: COMPANY,
+          type: 'invoice',
+          status: 'draft',
+          currency: 'NGN',
+          totalMinor: 0,
+          issuedReference: null,
+          frozenLabels: null,
+        }),
+      ),
+    )
+    // Null, not undefined: the null is what says "not issued yet".
+    expect(draft.issuedReference).toBeNull()
+    expect(draft.frozenLabels).toBeNull()
+  })
+
+  it('never lets a bigint come back as a string (Rule #3)', async () => {
+    const back = toDocument(
+      await roundTrip(
+        'documents',
+        fromDocument({
+          companyId: COMPANY,
+          type: 'invoice',
+          status: 'issued',
+          currency: 'NGN',
+          totalMinor: 145_000_00,
+        }),
+      ),
+    )
+    // `pg` returns bigint as a string; an amount that reached the domain as
+    // "14500000" would compare, sort and add wrongly everywhere.
+    expect(back.totalMinor).toBe(145_000_00)
+    expect(typeof back.totalMinor).toBe('number')
+  })
+
+  it('round-trips a saved item with its price', async () => {
+    const back = toItem(
+      await roundTrip(
+        'items',
+        fromItem({
+          companyId: COMPANY,
+          name: 'Bag of cement',
+          unit: 'bag',
+          timesUsed: 3,
+          lastPrice: money('NGN', 5_000_00),
+        }),
+      ),
+    )
+    expect(back.name).toBe('Bag of cement')
+    expect(back.unit).toBe('bag')
+    expect(back.timesUsed).toBe(3)
+    expect(back.lastPrice).toEqual(money('NGN', 5_000_00))
+  })
+
+  it('round-trips an expense, photo and all', async () => {
+    const asset = await roundTrip(
+      'assets',
+      fromAsset({ companyId: COMPANY, kind: 'expense_photo', dataUrl: 'data:image/jpeg;base64,x' }),
+    )
+    const back = toExpense(
+      await roundTrip(
+        'expenses',
+        fromExpense({
+          companyId: COMPANY,
+          description: 'Diesel',
+          category: 'Transport',
+          amount: money('NGN', 9_500_00),
+          spentOn: '2026-09-11',
+          photoAssetId: String(asset['id']),
+        }),
+      ),
+    )
+    expect(back.description).toBe('Diesel')
+    expect(back.category).toBe('Transport')
+    expect(back.amount).toEqual(money('NGN', 9_500_00))
+    expect(back.spentOn).toBe('2026-09-11')
+    expect(back.photoAssetId).toBe(String(asset['id']))
+  })
+
+  it('round-trips an asset, including the inline data URL', async () => {
+    const back = toAsset(
+      await roundTrip(
+        'assets',
+        fromAsset({
+          companyId: COMPANY,
+          kind: 'signature',
+          dataUrl: 'data:image/svg+xml,%3Csvg%2F%3E',
+        }),
+      ),
+    )
+    expect(back.kind).toBe('signature')
+    expect(back.dataUrl).toBe('data:image/svg+xml,%3Csvg%2F%3E')
+    expect(back.createdAt).not.toBe('')
+  })
+
+  it('round-trips a link token, storing only the hash (§P)', async () => {
+    const document = await roundTrip(
+      'documents',
+      fromDocument({ companyId: COMPANY, type: 'quotation', status: 'sent', currency: 'NGN', totalMinor: 0 }),
+    )
+    const row = await roundTrip(
+      'document_signing_tokens',
+      fromLinkToken({
+        documentId: String(document['id']),
+        companyId: COMPANY,
+        tokenHash: 'a'.repeat(64),
+        expiresAt: '2026-09-27T00:00:00.000Z',
+      }),
+    )
+    const back = toLinkToken(row)
+    expect(back.tokenHash).toBe('a'.repeat(64))
+    expect(back.consumedAt).toBeUndefined()
+    // The secret itself is nowhere in the row.
+    expect(Object.values(row).join(' ')).not.toContain('GOODTOKEN')
+  })
+})

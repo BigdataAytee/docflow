@@ -89,6 +89,30 @@ describe('RLS is enabled AND forced on every table (§P)', () => {
   })
 })
 
+describe('Every table is reachable at all (§P)', () => {
+  /**
+   * `grant select, insert, update, delete on all tables in schema public` in
+   * 0006 is a SNAPSHOT, not a standing rule: it grants on the tables that
+   * exist when it runs. A table added by a later migration gets no grant, and
+   * the failure is invisible here — RLS is enabled and forced, every policy
+   * reads correctly, and PostgREST still answers "permission denied for
+   * table". The policies would be perfect and the table unusable.
+   *
+   * Asserted rather than remembered, because the next person to add a table
+   * will not have read 0006.
+   */
+  it('grants the signed-in role access to every table, including ones added later', async () => {
+    const { rows } = await db.query<{ table: string }>(
+      `select c.relname as table
+         from pg_class c join pg_namespace n on n.oid = c.relnamespace
+        where n.nspname = 'public' and c.relkind = 'r'
+          and not has_table_privilege('authenticated', c.oid, 'SELECT')
+        order by c.relname`,
+    )
+    expect(rows.map((r) => r.table)).toEqual([])
+  })
+})
+
 describe('Two seeded companies cannot read each other (§Q gate)', () => {
   it('shows a company only its own rows', async () => {
     await asCompany(db, ACME, async () => {

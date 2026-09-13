@@ -18,7 +18,7 @@ claims nothing the gates have not proven (§X).
 | **2.5** | Remaining improvements | each §L behaviour verified offline; "Kept" moves the moment an expense is added; a reissued receipt never increments income | **gate passed** |
 | **3** | Sync | five offline documents arrive once; two-device edits retain both; no chaos scenario double-counts, resurrects or alters a frozen label | **code complete** — gate verified at logic level |
 | 4 | Native polish | installable builds pass all flows on physical Android and iOS | not started |
-| **5** | Web + public links | cross-device visibility; token behaviour per §P; one payment per event | **part built** — 2 of 5 scope items; gate NOT passed (0 of 3 clauses) |
+| **5** | Web + public links | cross-device visibility; token behaviour per §P; one payment per event | **part built** — 2 of 5 scope items done, 1 part done (3 of 10 repositories, nothing wired); gate NOT passed (0 of 3 clauses) |
 | 6 | Local AI + logo | the §N six-step gate per tier; the §O definition of done | not started |
 | 7 | Admin, hardening, migration, launch | the §V checklist green end to end | not started |
 
@@ -562,7 +562,8 @@ work wearing a §G label. (The third straggler, "add photo", was the opposite
 mistake: Phase 2 work I had recorded three times as needing the Phase 4
 camera, when `capture="environment"` needed nothing at all.)
 
-So two of the five scope items are built and three have not been begun.
+So two of the five scope items are built, one is part-built, and two have not
+been begun.
 
 ### Built
 
@@ -580,12 +581,57 @@ So two of the five scope items are built and three have not been begun.
 - [x] **The token rules**, checked on read and again on sign, pinned by test
       against the edge function's own copy so two runtimes cannot drift.
 
+### Part-built
+
+- [~] **Repositories on Supabase.** Three of the ten contracts — companies,
+      customers and documents — are implemented over `supabase-js`
+      (`src/data/supabase/repositories.ts`, `documents.ts`, `mutate.ts`,
+      `rows.ts`). The other seven are deliberately NOT stubbed, and the
+      factory is typed `Pick<Repositories, …>` so that is visible in the type
+      rather than in a comment: a repository that silently does nothing would
+      typecheck, wire cleanly into the app, and lose money the first time
+      someone recorded a payment.
+
+      Nothing is wired to them yet. `src/app/store.tsx` still builds the
+      in-memory store, and pointing it at a project needs the four secrets and
+      a deploy that only a human can do — so this is code that is finished and
+      unreached, not code that is half-connected.
+
+      Three things were found by writing them, each of which would have failed
+      in production rather than in a test:
+
+      1. **Three columns did not exist** — `documents.delivery_address`,
+         `companies.default_signature_asset_id`, `companies.signature_required`
+         (migration `0008`). The first is not theoretical: the already-merged
+         `public-link` edge function SELECTs `delivery_address` by name, so
+         every public sign request would have failed the moment it was
+         deployed.
+      2. **There was nowhere to record an idempotency key** (migration
+         `0009`). Every mutation in the contract carries one and the in-memory
+         store honours it with a `Map` — which cannot serve the case the rule
+         exists for, because the retry arrives after the process holding that
+         `Map` is gone. That is what an outbox IS. Without a column the retry
+         inserts a second row and the owner has two invoices for one sale.
+         The key now lives on the row under a unique index per company, so §M
+         is a constraint rather than a promise.
+      3. **A table added after `0006` would have had no grants.** The
+         `grant … on all tables in schema public` in the RLS migration is a
+         snapshot, not a standing rule, and the failure is invisible: RLS
+         enabled, policies correct, PostgREST answering "permission denied".
+         Now asserted in `rls.test.ts`.
+
+      Tested in two halves, both against something real. `supabase/tests/`
+      round-trips every mapper through the migrated schema and proves the
+      unique index actually de-duplicates, against a real Postgres with no
+      secrets. `src/data/supabase/repositories.test.ts` runs the REAL
+      `supabase-js` query builder over a stub transport and asserts the HTTP
+      requests that would reach PostgREST — because every interesting bug in a
+      repository is in the request it builds, and a hand-written client stub
+      returns whatever it is asked for and sees none of them. Neither proves
+      PostgREST's own behaviour, which is why the gate below still fails.
+
 ### Not started
 
-- [ ] **Repositories on Supabase.** `src/data/supabase/` holds a client and
-      auth and nothing else — there is no implementation of the repository
-      contracts, so the app still runs entirely on the in-memory store. This
-      is the largest single piece of Phase 5 and nothing depends on it yet.
 - [ ] **Web deployment.** No hosting, no build target, no domain.
 - [ ] **Per-user language preference.** `users.language_preference` has been
       in the schema since Phase 1 and nothing reads or writes it; the app
@@ -601,13 +647,15 @@ So two of the five scope items are built and three have not been begun.
 
 | §Q clause | Result |
 | --- | --- |
-| Cross-device visibility | ❌ not verifiable — no Supabase repositories, no deployment |
+| Cross-device visibility | ❌ not verifiable — three repositories exist but nothing is deployed and the app is not pointed at a project |
 | Token behaviour per §P | ⚠️ verified at logic level only; the function is written and tested but **not deployed**, so no token has ever been checked by a server |
 | One payment per event | ❌ not verifiable — no webhook endpoint exists |
 
 **Nothing here is claimed as passing.** Two of the three clauses cannot be
-attempted without work that has not begun, and the third has been proven in
-tests and never in production. The public pages refuse every link today, which
+attempted without a deployment, and the third has been proven in tests and
+never in production. Writing the repositories moved no clause: a repository
+that has never spoken to PostgREST has not demonstrated cross-device
+anything. The public pages refuse every link today, which
 is correct behaviour and leaks nothing — but a refusal is not a feature.
 
 The one action that moves this: **deploy the function** (see "Needs a human"
@@ -1480,6 +1528,13 @@ vectors of a few hundred bytes.
 | 81 | The write and the token's death are one database transaction | `apply_public_link` locks the document, re-checks the lifecycle server-side, consumes the token only if still live, and writes the evidence. Two statements from the function could leave a signed document with a live link — the single thing §P forbids — and the function cannot roll back a half-applied pair. | `0007_public_links.sql` |
 | 82 | The public pages sit above every provider | Inside them they would load the OWNER's company, records and locale for a stranger holding a link. The isolation is structural rather than careful: they import no repository, no store and no company context, and the one component they reused had to be changed to take its words rather than reach for them. | `src/app/App.tsx`, `src/public/` |
 | 83 | The link URL is built before the token is stored | Minting replaces the document's live token. Storing first meant a failure after the write killed a link the owner had already sent and handed them an error instead of a replacement — found by probing the real screen, not by a test. | `store.tsx` (`mintPublicLink`) |
+| 84 | The idempotency key lives on the row, under a unique index per company | The in-memory store honours §M with a `Map`, which cannot survive the case the rule exists for: the retry arrives after the process holding that `Map` is gone — that is what an outbox IS. The database decides the race instead, so two devices replaying one queue entry converge on one record because an index says they must. Scoped per company because the keys are DERIVED and therefore deliberately guessable; a global index would let one company's key silently swallow another's write. | `0009_idempotency.sql`, `src/data/supabase/mutate.ts` |
+| 85 | The replay check runs BEFORE the lifecycle guard | Placed after, every retry of a successful-but-unacknowledged write becomes an error the owner cannot act on: the document IS issued, and the app would refuse to issue it and say so. The order is what makes a retry safe rather than merely harmless. | `src/data/supabase/documents.ts` |
+| 86 | No repository read filters by `company_id` on a single row | RLS already draws that boundary (§P). A second enforcement point is a second place to be wrong — and one that would pass its own tests while the policy underneath it rotted. `companyId` is used where it narrows a LIST, never as the thing standing between two companies. | `src/data/supabase/repositories.ts` |
+| 87 | The repository tests drive the real `supabase-js` over a stub transport | A hand-written client stub returns whatever it is asked for, so it cannot see the only bugs that matter here: a filter on the wrong column, a missing scope on a list, an `or` group PostgREST parses as three filters. Replacing `fetch` instead means the assertions are about the request that would actually go on the wire. | `src/data/supabase/harness.ts` |
+| 88 | A typed `*` or `%` is stripped from a search, not passed through | Both mean "anything" to an `ilike` filter, so a search for "50%" would quietly return every row starting with "50" — broader than what was asked for, with nothing on screen to say so. Widening a search unasked is the same class of error as narrowing it. `_` is left alone: it over-matches by at most a character, and stripping it would break searching an email address. | `src/data/supabase/search.ts` |
+| 89 | A write is conditioned on the status it read | Two devices editing one document cannot interleave into a state neither asked for: the second finds no row to update and is told, rather than overwriting a transition it never saw. Stricter than the in-memory store, which cannot have concurrent writers. | `src/data/supabase/mutate.ts` |
+| 90 | Only three repositories exist, and the factory's type says so | Returning stubs for the other seven would typecheck, wire cleanly into the app, and lose money the first time someone recorded a payment. `Pick<Repositories, …>` makes "not written yet" a compile error at the call site instead of a comment nobody reads. | `src/data/supabase/repositories.ts` |
 
 ## Deviations from the spec
 
