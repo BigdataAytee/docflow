@@ -1,0 +1,63 @@
+{
+  "accountId": "legacy-acct-001",
+  "companyName": "Dynamic Renaissance Ltd",
+  "documents": [
+    {
+      "id": "doc-1", "type": "invoice", "number": "INV-0001", "status": "paid",
+      "currency": "NGN", "issue_date": "2025-03-04", "due_date": "2025-03-18",
+      "customer_name": "Okoro & Sons", "total": 145000, "paid_amount": 145000, "balance_due": 0,
+      "items": [{ "description": "Cement", "quantity": 29, "unit_price": 5000, "amount": 145000 }]
+    },
+    {
+      "id": "doc-2", "type": "invoice", "number": "INV-0002", "status": "partially_paid",
+      "currency": "NGN", "issue_date": "2025-04-11", "due_date": "2025-04-25",
+      "customer_name": "Ade Stores", "total": 87500.5, "paid_amount": 40000.25, "balance_due": 47500.25,
+      "items": [{ "description": "Roofing sheets", "quantity": 17.5, "unit_price": 5000.03, "amount": 87500.5 }]
+    },
+    {
+      "id": "doc-3", "type": "invoice", "number": "INV-0003", "status": "overdue",
+      "currency": "NGN", "issue_date": "2025-01-02", "due_date": "2025-01-16",
+      "customer_name": "Late Payer Ltd", "total": 22000, "paid_amount": 0, "balance_due": 22000,
+      "items": [{ "description": "Sand", "quantity": 4, "unit_price": 5500, "amount": 22000 }]
+    },
+    {
+      "id": "doc-4", "type": "quotation", "number": "QUO-0001", "status": "accepted",
+      "currency": "NGN", "issue_date": "2025-05-02", "customer_name": "Okoro & Sons",
+      "total": 60000, "paid_amount": 0,
+      "items": [{ "description": "Blocks", "quantity": 100, "unit_price": 600, "amount": 60000 }]
+    },
+    {
+      "id": "doc-5", "type": "waybill", "number": "WB-0001", "status": "delivered",
+      "currency": "NGN", "issue_date": "2025-05-06", "customer_name": "Okoro & Sons",
+      "total": 0, "paid_amount": 0,
+      "items": [{ "description": "Blocks", "quantity": 100, "unit_price": 0, "amount": 0 }]
+    },
+    {
+      "id": "doc-6", "type": "receipt", "number": "RCT-0001", "status": "paid",
+      "currency": "NGN", "issue_date": "2025-03-04", "customer_name": "Okoro & Sons",
+      "total": 145000, "paid_amount": 145000,
+      "items": [{ "description": "Payment received", "quantity": 1, "unit_price": 145000, "amount": 145000 }]
+    },
+    {
+      "id": "doc-7", "type": "invoice", "number": "INV-0004", "status": "draft",
+      "currency": "NGN", "customer_name": "Nobody Yet", "total": 0, "paid_amount": 0, "items": []
+    },
+    {
+      "id": "doc-8", "type": "waybill", "number": "WB-0002", "status": "returned",
+      "currency": "NGN", "issue_date": "2025-06-01", "customer_name": "Ade Stores",
+      "total": 0, "paid_amount": 0, "items": []
+    },
+    {
+      "id": "doc-9", "type": "invoice", "number": "INV-0005", "status": "sent",
+      "currency": "NGN", "issue_date": "2025-06-10", "customer_name": "Half Kobo Ltd",
+      "total": 1234.565, "paid_amount": 0,
+      "items": [{ "description": "Odd amount", "quantity": 1, "unit_price": 1234.565, "amount": 1234.565 }]
+    },
+    {
+      "id": "doc-10", "type": "invoice", "number": "INV-0006", "status": "cancelled",
+      "currency": "NGN", "issue_date": "2025-02-01", "customer_name": "Changed Mind Ltd",
+      "total": 5000, "paid_amount": 0,
+      "items": [{ "description": "Cement", "quantity": 1, "unit_price": 5000, "amount": 5000 }]
+    }
+  ]
+}

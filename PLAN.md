@@ -1114,6 +1114,59 @@ gate itself is deferred with everything else that needs a phone.
       for. An owner is never missing a permission, so no permission state
       locks the last owner out of their own company.
 
+- [x] **The legacy Base44 migration, rehearsed against exported test data**
+      (`tools/migration/`). §Q: "a **parallel-run cutover, not a big bang**…
+      accounts migrate in batches with per-account reconciliation… 17-value
+      status enum mapped to per-type statuses; counts and totals reconciled to
+      the naira… webdocflow.com points at the new app **only after totals
+      match**."
+
+      Everything about its shape follows from "not a big bang". It converts
+      ONE account and returns a reconciliation, so a batch is a loop and a
+      failure is one account's problem. It is **pure** — it reads an export
+      and returns records plus a report, and writes nothing, because if it
+      wrote as it went the cutover decision would already have been made. It
+      never touches the legacy backend at all, so "readable, never writable"
+      is not a rule anybody has to remember.
+
+      **The three statuses that are not statuses.** `paid`, `partially_paid`
+      and `overdue` do not exist in the new model — CLAUDE.md: derived states
+      are computed at read time, never stored. So they map to a lifecycle
+      state PLUS the payment that made them true, and the mapping records
+      which ones imply money moved. Writing the status and dropping the
+      payment is the worst thing this migration could do, precisely because
+      it is silent: every document present, every total right, and the
+      business's receivables wrong.
+
+      **The same word meant different things per type.** `sent` on an invoice
+      is `sent`; on a waybill it means the goods left, so `dispatched`. One
+      table keyed on the old value alone would have to pick one and be wrong
+      for the other.
+
+      **Nothing is guessed.** A `returned` waybill has no new state — it is
+      not delivered and not void, and somebody has to say which — so it is
+      refused, and the account does not migrate until a person decides.
+
+      **Money crosses through the decimal TEXT, not the binary value.** The
+      legacy schema types every amount as a float in major units. `1234.56` is
+      `1234.5599999999999` in memory, which is exactly what the legacy app
+      stored when someone typed it, so refusing that would block a migration
+      over an artefact of how a number was written down —
+      `String(1234.5599999999999)` is `"1234.56"`, the shortest string that
+      round-trips, which is the number the person typed. Half a kobo
+      (`1234.565`) is refused instead of rounded: §Q asks for reconciliation
+      to the naira, and half a kobo reconciles to nothing.
+
+      **A legacy row that disagrees with itself is reported, never
+      corrected.** The new model recomputes totals from the lines; where that
+      differs from the stored legacy total, the reconciliation says so and
+      keeps the legacy figure. Correcting somebody's invoice while copying it
+      would be changing history rather than moving it.
+
+      `balanced` is true only when nothing was refused, every document
+      converted, and the totals match — which is §Q's "only after totals
+      match" as one boolean a person can act on.
+
 ### Not started
 
 - [ ] **Store billing** (StoreKit 2 + Play Billing) — needs devices and store
@@ -2075,6 +2128,12 @@ vectors of a few hundred bytes.
 | 142 | The activity feed view is `security_invoker` | A view runs with its OWNER's rights unless told otherwise — the classic way a view hands every company's rows to every caller straight past RLS. Asserted by a test rather than assumed. | `0016_admin.sql` |
 | 143 | Revoking a device stamps a time; it never deletes the row | §M: a credential problem never destroys local work, and an audit log that loses the device it is about answers fewer questions than it was kept for. | `0016_admin.sql` |
 | 144 | An owner is never missing a permission | `current_user_can` returns true for an owner whatever is asked, so there is no permission state in which the last owner is locked out of their own company. | `0016_admin.sql` |
+| 145 | The migration is pure and converts one account at a time | §Q asks for a parallel-run cutover, not a big bang. Writing as it went would make the cutover decision before the reconciliation was read; converting one account means a failure is one account's problem. It never touches the legacy backend, so "readable, never writable" is not a rule to remember. | `tools/migration/migrate.ts` |
+| 146 | `paid`, `partially_paid` and `overdue` map to a state PLUS a payment | They are derived states in the new model, never stored. Writing the status and dropping the payment is the worst thing this migration could do, because it is silent: every document present, every total right, and the receivables wrong. | `tools/migration/status.ts` |
+| 147 | The status map is keyed per TYPE | `sent` on an invoice is sent; on a waybill it means the goods left. One table keyed on the old value alone would have to pick one and be wrong for the other. | `tools/migration/status.ts` |
+| 148 | A legacy value with no honest mapping is refused | A `returned` waybill is not delivered and not void — somebody has to say which. A guess writes the wrong lifecycle state onto a real document, and nothing downstream can tell it was guessed. | `tools/migration/status.ts` |
+| 149 | Legacy money converts through the decimal text, not the binary value | `1234.56` is `1234.5599999999999` in memory, and that is exactly what was stored when somebody typed it; `String()` gives back the shortest round-tripping decimal, which is the number they typed. Half a kobo is refused rather than rounded, because §Q asks for reconciliation to the naira and half a kobo reconciles to nothing. | `tools/migration/money.ts` |
+| 150 | A legacy row that disagrees with its own lines is reported, not corrected | The new model recomputes totals; where that differs from the stored one, the reconciliation says so and keeps the legacy figure. Correcting an invoice while copying it is changing history rather than moving it. | `tools/migration/migrate.ts` |
 
 ## Deviations from the spec
 
