@@ -979,6 +979,54 @@ gate itself is deferred with everything else that needs a phone.
       It also follows the locale's decimal mark, since reading "1.234,56" as
       one-point-two is a hundredfold error that looks entirely ordinary (§S).
 
+- [x] **The mandatory review gate** (`src/features/ai/review.ts`). §N:
+      "nothing issues a document, creates a payment, updates a customer or
+      completes a delivery without confirmation."
+
+      Written as a GATE rather than a screen, because the rule is not that a
+      review UI exists but that no path around it does. An extraction becomes
+      a draft only through `confirm`, and `confirm` takes the EDITED values —
+      there is deliberately no `toDraft(extraction)`, since one would give
+      every future caller a way past the screen and the rule would hold only
+      until somebody was in a hurry. A test asserts the module's whole
+      function surface, so adding that door breaks it.
+
+      Flags are CATEGORIES — missing, unreadable, conflict — never numbers.
+      §N forbids showing confidence as calibrated probability, and a rules
+      extractor has no probability at all, so "87% sure" would be a number
+      with nothing behind it. "This was not readable" is true and actionable;
+      a percentage is neither.
+
+- [x] **The ask box's plan and compiler** (`src/features/ask/`). §N's hard
+      rule is one sentence — "Never execute model-returned SQL or code" — and
+      these make it structural.
+
+      A model proposes a PLAN: a small closed object drawn from fixed
+      vocabularies (intent, metric, period, grouping, chart, filters, limit).
+      `validatePlan` checks every field against an allowlist and then BUILDS
+      the plan field by field rather than casting the input — the difference
+      between validation and hope, since a merely checked object still
+      carries every extra key it arrived with.
+
+      The compiler enforces what §N lists, none of it taken from the plan:
+
+      · **Company scope** is added unconditionally, and a plan has no field
+        that could express it. What cannot be expressed cannot be subverted.
+      · **Parameterized**: only allowlisted COLUMN names reach the SQL text,
+        from a fixed table in the compiler; every value is a parameter. A
+        filter value of `issued'; drop table documents; --` is just a string
+        in the parameter list.
+      · **Read-only** structurally — there is no branch that emits anything
+        but a SELECT.
+      · **Currency separation** whether the plan asked or not (Rule #3): one
+        total spanning naira and cedis is not a total, it is two facts added
+        together as though they were one.
+      · **Limits** applied by the compiler from the validated, capped value.
+
+      Chips are plans too, so Tier B and C reach the same compiler by the same
+      path — the only thing a model changes is whether a plan can be composed
+      from words rather than chosen from a list.
+
 ### The physical-device remainder — one consolidated list
 
 Everything below needs a phone in a hand. It is gathered here rather than
@@ -1912,6 +1960,14 @@ vectors of a few hundred bytes.
 | 124 | Pasted text cannot express an instruction, structurally | There is no model to address and every value lands in a typed field; the result has no field for a status, a payment or a document id. §N's "data, never instructions" is a property of the shape rather than a filter to maintain. | `src/features/ai/extract.ts` |
 | 125 | Amount separators are matched only where one can legitimately be | The naive `[^\s,;]+` stops at the grouping comma, so "₦5,000" reads as ₦5.00; zero-or-more grouping runs makes a bare "5000" match as "500". Both lose two orders of magnitude and neither looks wrong. A grouping mark is followed by exactly three digits, a decimal by one to three. | `src/features/ai/extract.ts` |
 | 126 | A blank amount is null, never zero | `Number('')` is 0, so the receipt sheet's `parseFloat` path turned a BLANK into no money owed: the payment saved, the invoice stayed unpaid, nothing said why. Null is "not an amount", which is a different fact from an amount of nothing. | `src/domain/money/parse.ts` |
+| 127 | The review is a gate in the TYPE, not a screen in the flow | §N: nothing issues, pays, updates or delivers without confirmation. An extraction reaches a draft only through `confirm`, which takes the edited values; there is no `toDraft(extraction)`, because one would give every future caller a way past the screen. A test asserts the module's whole function surface so adding that door breaks it. | `src/features/ai/review.ts` |
+| 128 | Uncertainty is a category, never a percentage | §N forbids showing confidence as calibrated probability — and a rules extractor has no probability at all, so a number would have nothing behind it. "Not readable" is true and actionable; "87% sure" is neither. | `src/features/ai/review.ts` |
+| 129 | The ask box validates a PLAN and never sees SQL | §N: "Never execute model-returned SQL or code." A plan is a closed object from fixed vocabularies; an allowlist has a readable, finite size, where a denylist is a losing game played forever. | `src/features/ask/plan.ts` |
+| 130 | The validated plan is BUILT, not cast | A merely checked input still carries every extra key straight into whatever reads it next. Each field is copied after passing its allowlist, so nothing else survives. | `src/features/ask/plan.ts` |
+| 131 | Only allowlisted column names reach SQL text; every value is a parameter | The columns come from a fixed table in the compiler, never from the plan's strings, so a filter value of `issued'; drop table documents; --` is just a string in the parameter list with no concatenation to escape from. | `src/features/ask/compile.ts` |
+| 132 | The company scope has no plan field that could express it | Added by the compiler unconditionally. What cannot be expressed cannot be subverted — there is no key a hostile plan could set to name another company. | `src/features/ask/compile.ts` |
+| 133 | Every money answer groups by currency, asked for or not | One total spanning naira and cedis is not a total; it is two facts added together as though they were one (Rule #3). | `src/features/ask/compile.ts` |
+| 134 | A period is half-open | `>= from` and `< until`, so a document issued on the last day of a month is counted once. Inclusive-both double-counts across adjacent periods — an arithmetic error a chart makes invisible. | `src/features/ask/compile.ts` |
 
 ## Deviations from the spec
 
