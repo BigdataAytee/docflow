@@ -44,6 +44,8 @@ import {
   voidAndReissue,
 } from '../../features/payments/reissue'
 import { SignDeliverySheet } from '../../features/delivery/SignDeliverySheet'
+import { attachDeliveryPhoto, canAttachPhoto } from '../../features/delivery/photo'
+import { PhotoButton } from '../../features/photos/PhotoButton'
 import {
   DeliverySignError,
   canSign,
@@ -134,6 +136,8 @@ export function DocumentScreen({ today = new Date().toISOString().slice(0, 10) }
 
   /** The mark on this document, resolved from the id it holds (§E). */
   const signatureUrl = assets.find((asset) => asset.id === record.signatureAssetId)?.dataUrl
+  const deliveryPhotoUrl = assets.find((asset) => asset.id === record.deliveryPhotoAssetId)
+    ?.dataUrl
 
   // Where this offer sits in its chain — all derived, nothing stored (§G).
   const revisionNumber = revisionNumberOf(documents, record)
@@ -318,6 +322,42 @@ export function DocumentScreen({ today = new Date().toISOString().slice(0, 10) }
         )}
 
         {/*
+          §G's fourth delivery action, and §E's "delivery photo asset". It is
+          what settles an argument three weeks later: the stack at the gate,
+          the plate number, the state the goods arrived in. It seals with the
+          signature, because a photo added after the customer signed would
+          change what the record says happened (§P).
+        */}
+        {(canAttachPhoto(record) || deliveryPhotoUrl !== undefined) && (
+          <section className="rounded-2xl bg-white/70 p-4" aria-label={strings.photo.title}>
+            <h2 className="text-sm font-semibold">{strings.photo.title}</h2>
+            <p className="mt-0.5 mb-3 text-xs opacity-70">
+              {canAttachPhoto(record) ? strings.photo.explain : strings.photo.sealed}
+            </p>
+            {canAttachPhoto(record) ? (
+              <PhotoButton
+                {...(deliveryPhotoUrl === undefined ? {} : { currentUrl: deliveryPhotoUrl })}
+                onPhoto={async (dataUrl) => {
+                  // Stored first, then referenced: a document may only name
+                  // an asset the repository accepted (§P).
+                  const asset = await actions.storeAsset('delivery_photo', dataUrl)
+                  const attached = attachDeliveryPhoto(record, asset.id)
+                  await actions.attachDeliveryPhoto(attached.documentId, attached.assetId)
+                }}
+              />
+            ) : (
+              deliveryPhotoUrl !== undefined && (
+                <img
+                  src={deliveryPhotoUrl}
+                  alt={strings.photo.taken}
+                  className="max-h-48 w-full rounded-xl object-cover"
+                />
+              )
+            )}
+          </section>
+        )}
+
+        {/*
           §N: an unavailable capability is stated plainly, never dressed up.
           The same line the quotation gets, for the same reason — no greyed
           "copy signing link" that cannot work, one sentence beside the thing
@@ -336,7 +376,7 @@ export function DocumentScreen({ today = new Date().toISOString().slice(0, 10) }
               // repository accepted, or the page would print a blank mark
               // and claim to be signed for (§P).
               void actions
-                .storeSignature(input.signature.dataUrl)
+                .storeAsset('signature', input.signature.dataUrl)
                 .then((asset) => {
                   const decision = signDelivery({
                     document: record,

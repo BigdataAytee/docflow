@@ -320,6 +320,16 @@ export interface UiStrings {
     readonly noPayment: string
     readonly failed: string
   }
+  readonly photo: {
+    readonly add: string
+    readonly change: string
+    readonly taken: string
+    readonly title: string
+    readonly explain: string
+    readonly sealed: string
+    readonly notAnImage: string
+    readonly failed: string
+  }
   readonly signature: {
     readonly title: string
     readonly explain: string
@@ -835,6 +845,16 @@ const EN: UiStrings = {
     openReceipt: 'Open it',
     noPayment: 'Record the payment first.',
     failed: 'That could not be recorded: {reason}',
+  },
+  photo: {
+    add: 'Add a photo',
+    change: 'Take another',
+    taken: 'Photo attached',
+    title: 'Proof of delivery',
+    explain: 'The goods at the gate, the stack, the plate number — whatever settles an argument later.',
+    sealed: 'This was taken at delivery and cannot be changed.',
+    notAnImage: 'That file is not a photo.',
+    failed: 'That photo could not be saved: {reason}',
   },
   signature: {
     title: 'Sign',

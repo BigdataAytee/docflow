@@ -581,12 +581,12 @@ device in airplane mode walking create → build → preview in all sixteen desi
 force-kill and recover. Routes being reachable in a browser is a precondition
 for walking it, not the walk.
 
-What §G describes and is still deliberately absent rather than stubbed:
-"add photo" on a delivery, which needs the camera (Phase 4); and the PUBLIC
-PAGES behind the copy-link actions, which need a deployed edge function
-(Phase 5). Each is a missing screen, not a broken one — and the RULES both
-pages will run are built and tested, so Phase 5 is a page and a deployment
-rather than a design problem.
+What §G describes and is still deliberately absent: the PUBLIC PAGES behind
+the copy-link actions, which need a deployed edge function (Phase 5). The
+RULES both pages will run are built and tested, so that is a page and a
+deployment rather than a design problem.
+
+**Every other §G action is built.**
 
 **Every §G action that does not need a camera or a server is built**, and the
 two that do now have their offline halves: a delivery is signed for on the
@@ -1193,6 +1193,57 @@ its place on the journey that takes days, where "sent out" on Monday and still
 **No dead button, again.** The same honest line the quotation got: no greyed
 "copy signing link" that cannot work, one sentence beside the thing that does.
 
+### The photo on a delivery (§G, §E, §P, §M)
+
+§G's fourth delivery action, and §E's "delivery photo asset": the thing that
+settles an argument three weeks later — the stack at the gate, the plate
+number, the state the goods arrived in.
+
+**It did not need the camera, and I had said three times that it did.** The
+same mistake as the signature pad: `capture="environment"` opens the rear
+camera on Android and iOS, a file picker everywhere else, and works in a
+WebView. There was no plugin to wait for. `ExpenseSheet` even carried a
+comment saying "Phase 4 wires the camera".
+
+- [x] **A photo is stored legible, not archival.** 1600px on the long edge at
+      JPEG 0.8. A photo off a phone is 3–8 MB, and every one of them uploads
+      on the connection §M assumes is bad — §M's asset uploads "resume and
+      verify hashes" for a reason. Verified in a browser: a 4032×3024 source
+      lands at 1600×1200 and about 40 KB.
+- [x] **Never enlarged, never stretched.** A small photo blown up is a bigger
+      file carrying no more information. The shape property is stated as what
+      the function actually promises — each dimension is the exact scaled one
+      rounded to a whole pixel — after a first version failed on an 11:1
+      panorama. The tolerance had been absolute, which punishes extreme
+      aspect ratios for the same half-pixel of rounding; a tuned constant
+      would have hidden that rather than explained it.
+- [x] **Re-encoded, not passed through**, which also drops EXIF: a delivery
+      photo carries the goods, not the owner's GPS track. Orientation is
+      applied first, so a portrait photo does not arrive sideways.
+- [x] **It is evidence, so it seals** (§P). Attachable right up to the moment
+      of signing, and not after — a photo added once the customer signed
+      would change what the record says happened, on a document they already
+      hold. Refused in the repository as well as the UI; verified by mutation.
+- [x] **It is not a signature and cannot stand in for one.** A stack of bags
+      proves goods arrived somewhere; it does not say who took them.
+      `attachDeliveryPhoto` returns `isNotASignature: true` and produces
+      nothing `signDelivery` could read a signer out of.
+
+**The expense receipt photo was dead at four levels**, and has been since
+Phase 2.5. §G promises "a three-field sheet **or** receipt photo":
+
+1. `AnalyticsScreen` never passed `onAttachPhoto`, so the button never
+   rendered — the prop was optional with a comment explaining that Phase 4
+   would wire it.
+2. `onAddExpense` dropped `photoAssetId` on the way to the store.
+3. The `Expense` record had no `photoAssetId` field at all, though §E lists
+   one — so an expense saved as a photo alone would have stored neither the
+   photo nor a description.
+4. And there was no capture anywhere to feed it.
+
+All four are fixed, and an expense can now be saved as a photo with no
+description typed, which is what §G describes.
+
 ## Decisions taken
 
 | # | Decision | Why | Where |
@@ -1270,6 +1321,10 @@ its place on the journey that takes days, where "sent out" on Monday and still
 | 71 | A public-link token is checked on read AND again at the moment of signing | §P says so, and the reason is a real race rather than caution: a page can sit open for a day, and the driver may have signed on their own phone in between. Trusting the first check puts two signatures on one delivery, with the second silently winning. | `src/features/links/remoteSigning.ts` |
 | 72 | Remote signing produces its evidence through `signDelivery`, not its own copy | The sealed-evidence rule, the lifecycle and "a mark with nobody behind it is not evidence" then hold through the link without being restated. Two implementations of what signing means would drift, and the one nobody watches — the public page — would drift first. | `remoteSigning.ts` |
 | 73 | "On the way" is an optional step, not a required one | §F gives it a colour, §D a word and `linkKindFor` a signing link, but nothing could reach it. Making it compulsory would be a second tap for no gain, since a delivery is signed for from "sent out" just as well (Rule #1). It exists for the multi-day journey, where an unchanging "sent out" tells the owner nothing. | `optionalDeliveryStep` |
+| 74 | Photos are captured with `capture="environment"`, not a native plugin | It opens the rear camera on Android and iOS and a file picker elsewhere, and it works in a WebView. I had recorded "add photo" as Phase 4 camera work three times; like the signature pad, there was no native dependency in it, only an assumed one. | `src/features/photos/PhotoButton.tsx` |
+| 75 | A photo is shrunk to 1600px / JPEG 0.8 before it is ever stored | A phone photo is 3–8 MB and every one of them uploads on the connection §M assumes is bad. A delivery photo has to be legible, not archival: the bags, the gate, the plate. Re-encoding also drops EXIF, so the photo carries the goods rather than the owner's GPS track. | `src/features/photos/resize.ts` |
+| 76 | The shape property asserts the rounding guarantee, not a ratio tolerance | The first version compared aspect ratios with an absolute tolerance and failed on an 11:1 panorama — the same half-pixel of rounding moves a long thin photo's ratio far more than a 4:3 photo's. Picking a bigger constant would have buried that; asserting "each dimension is the exact scaled one, rounded" says what the function actually promises. | `resize.test.ts` |
+| 77 | A delivery photo seals with the signature, and is never a substitute for it | §E lists it beside `signer_name` and `signed_at`, and §P forbids altering delivery evidence once captured — a photo added after the customer signed would change what the record says happened. And a photo proves goods arrived somewhere, never who took them, so `signDelivery` still requires a name and a mark. | `src/features/delivery/photo.ts` |
 
 ## Deviations from the spec
 

@@ -12,6 +12,7 @@
 import { useId, useState } from 'react'
 
 import { useCompany } from '../../app/context'
+import { PhotoButton } from '../photos/PhotoButton'
 import { money, type Money } from '../../domain/money/money'
 import { minorUnitsFor } from '../../domain/locale/bank-fields'
 
@@ -27,8 +28,15 @@ export interface ExpenseSheetProps {
     photoAssetId?: string
   }) => void
   readonly onCancel: () => void
-  /** Phase 4 wires the camera; until then the row is absent, not a dead button. */
-  readonly onAttachPhoto?: () => Promise<string | null>
+  /**
+   * Stores the photo and returns its asset id.
+   *
+   * This was `onAttachPhoto`, optional, with a comment saying Phase 4 would
+   * wire the camera — and nothing ever passed it, so §G's "three-field sheet
+   * OR receipt photo" was only ever three fields. There was no camera to
+   * wait for: `capture="environment"` opens one, in a WebView too.
+   */
+  readonly onStorePhoto?: (dataUrl: string) => Promise<string>
 }
 
 export function ExpenseSheet({
@@ -37,7 +45,7 @@ export function ExpenseSheet({
   knownCategories,
   onSave,
   onCancel,
-  onAttachPhoto,
+  onStorePhoto,
 }: ExpenseSheetProps) {
   const { strings } = useCompany()
   const ids = useId()
@@ -47,6 +55,7 @@ export function ExpenseSheet({
   const [description, setDescription] = useState('')
   const [category, setCategory] = useState('')
   const [photoAssetId, setPhotoAssetId] = useState<string | null>(null)
+  const [photoUrl, setPhotoUrl] = useState<string | null>(null)
 
   const scale = minorUnitsFor(currency)
   const parsed = Number.parseFloat(major.replace(/,/g, ''))
@@ -120,18 +129,23 @@ export function ExpenseSheet({
         ))}
       </datalist>
 
-      {onAttachPhoto !== undefined && (
-        <button
-          type="button"
-          className="mt-3 w-full rounded-xl border border-black/10 bg-white px-3 py-2 text-sm font-medium"
-          onClick={() => {
-            void onAttachPhoto().then((assetId) => {
-              if (assetId !== null) setPhotoAssetId(assetId)
-            })
-          }}
-        >
-          {photoAssetId === null ? strings.expenses.attachPhoto : strings.expenses.photoAttached}
-        </button>
+      {onStorePhoto !== undefined && (
+        <div className="mt-3">
+          <PhotoButton
+            label={
+              photoAssetId === null ? strings.expenses.attachPhoto : strings.expenses.photoAttached
+            }
+            {...(photoUrl === null ? {} : { currentUrl: photoUrl })}
+            onPhoto={async (dataUrl) => {
+              const assetId = await onStorePhoto(dataUrl)
+              setPhotoAssetId(assetId)
+              // Shown, not just announced: §G lets the photo stand in for the
+              // description, and an owner cannot tell whether the right
+              // receipt is attached from the word "attached".
+              setPhotoUrl(dataUrl)
+            }}
+          />
+        </div>
       )}
 
       <div className="mt-4 flex gap-2">

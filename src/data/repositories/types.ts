@@ -127,6 +127,11 @@ export interface DocumentRecord {
   readonly signerName?: string
   readonly signerRole?: string
   readonly signedAt?: string
+  /**
+   * §E's "delivery photo asset" — the goods at the gate. Part of the same
+   * evidence as the signature, so it seals when the delivery does (§P).
+   */
+  readonly deliveryPhotoAssetId?: string
   /** Both null until issue, then frozen forever (§M). */
   readonly issuedReference: string | null
   readonly frozenLabels: FrozenLabels | null
@@ -149,6 +154,12 @@ export interface Expense {
   readonly category?: string
   readonly amount: Money
   readonly spentOn: string
+  /**
+   * §E's "photo asset" on an expense. §G lets the receipt photo stand in for
+   * the description, so without this an expense saved as a photo alone would
+   * store neither — the record could not hold the one thing it had.
+   */
+  readonly photoAssetId?: string
 }
 
 /** Every mutation carries one, so a retry is a no-op (§M). */
@@ -189,6 +200,20 @@ export interface DocumentRepository {
     ctx: MutationContext,
   ): Promise<DocumentRecord>
   transition(id: string, to: string, ctx: MutationContext): Promise<DocumentRecord>
+  /**
+   * §E's "delivery photo asset", on an issued delivery.
+   *
+   * Not `updateDraft`: an issued document refuses that, and rightly — but a
+   * delivery photo is evidence being CAPTURED rather than a document being
+   * edited, the same as the signature. Refuses a delivery whose evidence is
+   * sealed, so a photo can never be added to change what a signed record
+   * says happened (§P).
+   */
+  attachDeliveryPhoto(
+    id: string,
+    assetId: string,
+    ctx: MutationContext,
+  ): Promise<DocumentRecord>
   /**
    * Delivery evidence and the transition to delivered, in ONE write (§P:
    * "atomic delivered + timestamp").
@@ -274,7 +299,8 @@ export interface ShareEventRepository {
 export interface AssetRecord {
   readonly id: string
   readonly companyId: string
-  readonly kind: 'signature'
+  /** What this image is. A delivery photo and a signature seal alike (§P). */
+  readonly kind: 'signature' | 'delivery_photo' | 'expense_photo'
   /** A `data:` URL. Never a remote one — §M: nothing needed to open a saved document touches a CDN. */
   readonly dataUrl: string
   readonly createdAt: string

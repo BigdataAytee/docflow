@@ -231,7 +231,7 @@ function DefaultSignature() {
       onDraw={(drawn) => {
         setProblem(null)
         void actions
-          .storeSignature(drawn.dataUrl)
+          .storeAsset('signature', drawn.dataUrl)
           .then((asset) => actions.updateCompany({ defaultSignatureAssetId: asset.id }))
           .catch((cause: unknown) => {
             setProblem(

@@ -585,7 +585,7 @@ export function BuilderScreen({ now = () => new Date().toISOString() }: { now?: 
               // the repository never accepted would print a blank signature
               // and claim to be signed (§P).
               void actions
-                .storeSignature(drawn.dataUrl)
+                .storeAsset('signature', drawn.dataUrl)
                 .then((asset) => signWith(asset.id))
                 .catch((cause: unknown) => {
                   setSignProblem(
