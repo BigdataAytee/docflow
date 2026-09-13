@@ -19,7 +19,7 @@ claims nothing the gates have not proven (§X).
 | **3** | Sync | five offline documents arrive once; two-device edits retain both; no chaos scenario double-counts, resurrects or alters a frozen label | **code complete** — gate verified at logic level |
 | 4 | Native polish | installable builds pass all flows on physical Android and iOS | not started |
 | **5** | Web + public links | cross-device visibility; token behaviour per §P; one payment per event | **part built** — 4 of 5 scope items done, webhooks part done; gate NOT passed (0 of 3 clauses, needs the deploy) |
-| 6 | Local AI + logo | the §N six-step gate per tier; the §O definition of done | not started |
+| **6** | Local AI + logo | the §N six-step gate per tier; the §O definition of done | **part built** — Tier-B extractor and the ladder's logic; gate needs devices |
 | 7 | Admin, hardening, migration, launch | the §V checklist green end to end | not started |
 
 ---
@@ -900,6 +900,108 @@ is correct behaviour and leaks nothing — but a refusal is not a feature.
 The one action that moves this: **deploy the function** (see "Needs a human"
 under Phase 2). Everything else in Phase 5 is unstarted scope, not a blocked
 task.
+
+
+---
+
+## Phase 6 — detail
+
+§Q: "Tier A model pipeline, Tier B deterministic extractor (with per-locale
+terminology grammars), Tier C states; split downloads; the consented cloud
+carve-out with the Admin kill-switch; voice, scan, type/paste, mandatory
+review, ask box; the logo engine at its spike-determined rung."
+
+Most of Phase 6 is device work. What is NOT — the ladder's reasoning, the
+deterministic extractor, the review rules, the ask-box plan validation, the
+procedural logo engine — is device-free and is being built now; the acceptance
+gate itself is deferred with everything else that needs a phone.
+
+### Built
+
+- [x] **The ladder's classification** (`src/features/ai/tier.ts`). The facts
+      come from a device; deciding what they mean does not, so every boundary
+      is testable without one. §N's rule that an unsupported phone "is
+      described as unsupported — never relabelled 'needs internet'" is
+      enforced by a test that rejects the words *internet, offline, connect,
+      network* in any reason string.
+
+      That test caught its own first violation: the Tier-C reason read
+      "offline tools are not installed", using §N's own name for the feature.
+      Correct as a feature name, and a claim about connectivity when it
+      appears as a reason — so the feature keeps its name in Settings and the
+      reason talks about the phone.
+
+      What is NOT known is never assumed good: a phone that reported no memory
+      is Tier C, not Tier A, because claiming otherwise means a 1GB download
+      that fails after the bytes are spent. A phone whose benchmark has not
+      run is Tier B until it has. A decline is Tier C whatever the hardware
+      says — overriding it because the phone is fast is the app deciding for
+      someone.
+
+      `TIER_A_MAX_BENCHMARK_MS` and `TIER_A_SOC_ALLOWLIST` are placeholders
+      carrying a Phase-0 TODO: the spike sets them and the spike needs
+      devices. Named so a later measurement replaces a constant rather than
+      being hunted through conditionals.
+
+- [x] **The Tier-B deterministic extractor** (`src/features/ai/extract.ts`).
+      §N's own example — "3 bags of cement at ₦5,000 each" — read exactly, with
+      the locale's terminology and number formats in the grammar and no model
+      download anywhere.
+
+      Four §N rules shape it, and each is a refusal: a field it cannot read
+      stays BLANK; an amount it cannot read is UNCERTAIN rather than resolved;
+      the original text is preserved untouched; and totals are never computed
+      here — quantities and unit prices only, because §K's money code is the
+      authority and a rules parser is no more of one than a model.
+
+      "Pasted and OCR text is data, never instructions" is structurally true
+      rather than carefully handled: there is no model to address, every value
+      lands in a typed field, and the result has no field that could express
+      "mark this invoice paid" even if someone wrote it.
+
+      Two real bugs were found by its own fixtures, both of which read money
+      wrong by two orders of magnitude and neither of which looks wrong:
+
+      1. The price capture stopped at the grouping comma, so **"₦5,000" read as
+         ₦5.00.** Separators are now matched only where one can legitimately
+         be — a grouping mark followed by exactly three digits, a decimal by
+         one to three — which reads "5,000" and "1.234,56" whole and still
+         stops at the punctuation comma in "at 5,000, 2 rolls of wire".
+      2. Requiring zero-or-more grouping runs made **a bare "5000" match as
+         "500"** — three digits, then no groups, then done. One character
+         (`*` to `+`) and ten times the money walks through.
+
+- [x] **An exact amount parser** (`src/domain/money/parse.ts`), and the UI
+      switched onto it. The receipt sheet was doing
+      `Math.round(parseFloat(text.replace(/,/g,'')) * scale)`. The float is
+      not the problem — `Number('')` is, because a BLANK amount became zero
+      money: the payment saves, the invoice stays unpaid, nothing says why.
+      It also follows the locale's decimal mark, since reading "1.234,56" as
+      one-point-two is a hundredfold error that looks entirely ordinary (§S).
+
+### The physical-device remainder — one consolidated list
+
+Everything below needs a phone in a hand. It is gathered here rather than
+scattered through the phase sections so the honest total is visible in one
+place, and it grows as new deferrals join it.
+
+| # | What | Which gate | Why it needs a device |
+| --- | --- | --- | --- |
+| D1 | Airplane-mode walk-through of every core journey | §Q Phase 2 | Radios off, on real hardware |
+| D2 | Auth taps ≤ the legacy app | §Q Phase 1 | Measured on a device |
+| D3 | Encrypted SQLite with keys in secure storage | §Q Phase 1 | Capacitor secure storage |
+| D4 | Installable builds pass all flows on Android and iOS | §Q Phase 4 | Store builds |
+| D5 | The §N six-step AI gate, per tier, radios off | §Q Phase 6 | Voice, camera, on-device models |
+| D6 | Terminology-synonym extraction per launch locale, on device | §Q Phase 6 | Part of D5's matrix |
+| D7 | The §O logo definition-of-done (download → airplane → 20 concepts → recover) | §Q Phase 6 | Force-kill and recovery on hardware |
+| D8 | Tier thresholds: SoC allowlist and benchmark ceiling | §Q Phase 0 spike | Measurements from target phones |
+| D9 | Generation time, memory and thermal behaviour | §O | Only meaningful on hardware |
+| D10 | Store billing: sandbox, restore, grace, refund | §Q Phase 7, §U | StoreKit / Play Billing |
+| D11 | Zero outbound AI bytes, confirmed by traffic inspection | §Q Phase 6 | A device on a watched network |
+
+Two further items are deferred but need a SERVER rather than a device, and are
+tracked with the Phase 5 gate instead: the hosted deploy, and Paystack test
+credentials.
 
 ---
 
@@ -1804,6 +1906,12 @@ vectors of a few hundred bytes.
 | 118 | Provider amounts are parsed from the string, never through `Number()` | Not for the usual reason — `Math.round(Number(t) * scale)` recovers every ordinary amount. Because `Number('')` is 0, so a missing amount records as ZERO money with nothing to say why; because `Number('0x10')` is 16 and `Number('5e2')` is 500; and because `Math.round(1.005 * 100)` is 100, where rounding does not recover. | `payment-webhook/rules.ts` |
 | 119 | Provider secrets have no client policy at all | A company cannot read even its own row. Paystack signs with the merchant SECRET KEY — the same key that moves money — and there is no webhook-only secret to use instead, so nothing in a browser may ever hold it. | `0015_provider_webhooks.sql` |
 | 120 | Unmatched provider money is customer credit, never a new invoice | §G forbids inventing an invoice and §K says unallocated money is credit. A reference that names no issued document, or one in a different currency, records standalone rather than being forced onto something. | `payment-webhook/index.ts` |
+| 121 | An unsupported phone is told it is unsupported, and a test enforces the words | §N forbids relabelling it "needs internet", because that sounds fixable and is a lie. The guard rejects *internet, offline, connect, network* in any reason string — and caught its own first violation, where the Tier-C reason borrowed §N's feature name "Offline tools". | `src/features/ai/tier.ts` |
+| 122 | What the ladder does not know, it does not assume is good | A phone reporting no memory is Tier C, not Tier A: claiming otherwise means a 1GB download that fails after the bytes are spent. A phone whose benchmark has not run is Tier B until it has. | `src/features/ai/tier.ts` |
+| 123 | The extractor produces quantities and unit prices, never a total | §K's money code is the authority on amounts, and a rules parser is no more of one than a model (Rule #3). There is no field in the result that could hold a total. | `src/features/ai/extract.ts` |
+| 124 | Pasted text cannot express an instruction, structurally | There is no model to address and every value lands in a typed field; the result has no field for a status, a payment or a document id. §N's "data, never instructions" is a property of the shape rather than a filter to maintain. | `src/features/ai/extract.ts` |
+| 125 | Amount separators are matched only where one can legitimately be | The naive `[^\s,;]+` stops at the grouping comma, so "₦5,000" reads as ₦5.00; zero-or-more grouping runs makes a bare "5000" match as "500". Both lose two orders of magnitude and neither looks wrong. A grouping mark is followed by exactly three digits, a decimal by one to three. | `src/features/ai/extract.ts` |
+| 126 | A blank amount is null, never zero | `Number('')` is 0, so the receipt sheet's `parseFloat` path turned a BLANK into no money owed: the payment saved, the invoice stayed unpaid, nothing said why. Null is "not an amount", which is a different fact from an amount of nothing. | `src/domain/money/parse.ts` |
 
 ## Deviations from the spec
 
