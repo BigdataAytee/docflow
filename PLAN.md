@@ -20,7 +20,7 @@ claims nothing the gates have not proven (§X).
 | 4 | Native polish | installable builds pass all flows on physical Android and iOS | not started |
 | **5** | Web + public links | cross-device visibility; token behaviour per §P; one payment per event | **part built** — 4 of 5 scope items done, webhooks part done; gate NOT passed (0 of 3 clauses, needs the deploy) |
 | **6** | Local AI + logo | the §N six-step gate per tier; the §O definition of done | **part built** — Tier-B extractor and the ladder's logic; gate needs devices |
-| **7** | Admin, hardening, migration, launch | the §V checklist green end to end | **part built** — admin, server-enforced permissions, the legacy migration and the pen-check roster; gate NOT passed — the roster has never been run, because nothing is deployed |
+| **7** | Admin, hardening, migration, launch | the §V checklist green end to end | **part built** — admin, server-enforced permissions, the legacy migration, the pen-check roster and the generated §T listings; gate NOT passed — the roster has never been run, because nothing is deployed |
 
 ---
 
@@ -1222,12 +1222,71 @@ gate itself is deferred with everything else that needs a phone.
       test now spawns the real command and requires exit 2 — and removing the
       entry point again fails that one test and no other.
 
+- [x] **The launch discoverability package, generated from the terminology
+      tables** (`src/marketing/`, `docs/discoverability/generated.md`). §T:
+      "Localized listing per launch locale, **generated from the terminology
+      tables**… a per-locale keyword sheet derived from the terminology
+      synonyms **maintained in the repo** beside the terminology tables…
+      updated in the same cycle as terminology-table changes."
+
+      **Generated, because prose drifts.** The §T sheets existed as markdown a
+      person wrote. CLAUDE.md Rule 4 says a type name resolves ONLY through
+      `src/domain/locale` — and a store listing is the outermost surface of the
+      product, the one place somebody reads *before* installing. A hand-written
+      listing is correct the day it is written; the failure it invites is the
+      quiet one six months later, when a reviewer renames a type, every screen
+      and PDF follows because Rule 4 makes them, and the listing still says the
+      old word. So the listing derives, and a test fails CI with a diff when
+      the committed sheet is stale. `npm run discoverability` regenerates it.
+
+      The hand-written sheets stay, with a different job: they carry the
+      QUESTIONS for the native speaker ("is 'way bill' typed as two words in
+      this market?"), which no generator can produce.
+
+      **Apple and Play want opposite shapes from the same vocabulary.** Apple
+      recombines the words in its 100-character keyword field into phrases
+      itself, so submitting "delivery note" spends fourteen characters on a
+      combination it would have formed for free from "delivery" and "note" —
+      and those two words then also combine with everything else in the field.
+      Play indexes the long description as prose, so whole phrases belong
+      there. One vocabulary, two renderings, for a reason rather than a
+      preference.
+
+      Three things the generator refuses to do:
+
+      · **Truncate.** Apple's 30-character title cap is *reported*, never
+        applied. §T's draft sheet already said it: trimmed "by the reviewer,
+        not by a script". The reviewer's trim lands in the repo as an override
+        and is then held to one extra rule — it must still name a local
+        document type, because that is the half that must survive a trim. A
+        title trimmed down to "DocFlow: Business Paperwork" is refused.
+      · **Ship anything unreviewed.** A table that is not `approved` blocks its
+        listing, same as it blocks a PDF heading. Every launch locale is
+        blocked on exactly this today.
+      · **Split a phrase to make it fit.** "small" without "business"
+        recombines into nothing anybody searches and spends five characters
+        saying so, so a term goes in whole or stays out.
+
+      **Overflow is a note, not a blocker** — and that distinction is the
+      difference between a signal people read and one they have learned to
+      click past. There is always more vocabulary than fits in a hundred
+      characters; counting that as a blocker would make "submittable"
+      unreachable in every locale forever.
+
+      Nothing here ships in the app bundle: `dist/assets` is byte-for-byte the
+      size it was, because nothing in `src/app` imports any of it.
+
 ### Not started
 
 - [ ] **Store billing** (StoreKit 2 + Play Billing) — needs devices and store
       accounts; on the deferred list as D10.
-- [ ] **The launch discoverability package.** §T keyword sheets exist; the
-      listings, screenshots per locale and store-policy verification do not.
+- [ ] **The rest of the discoverability package.** The listings and keyword
+      sheets are now generated (above). Still missing, and each blocked on
+      something real: the marketing site with a landing page per document type
+      per language (§T's `/invoice-maker`, `/fr/devis`) and its sitemap;
+      screenshots re-shot per locale, which need a device; Universal Links and
+      App Links, which need a team ID and a signing certificate; and
+      store-policy verification at submission time.
 - [ ] **Backup schedule and full user data export.**
 - [ ] **The final sweeps** — accessibility, dark mode, RTL readiness,
       responsive, terminology per locale, onboarding, command palette.
@@ -2202,6 +2261,15 @@ vectors of a few hundred bytes.
 | 156 | `npm run pentest` refuses to run with a credential missing, and exits 2 | A pentest that skips itself and exits 0 is worse than no pentest, because it reports green. Refusing names which credential is absent. | `tools/pentest/run.ts` |
 | 157 | The revoked-device retention property was REMOVED from the roster | It legitimately passed against the permissive fake, because it expects rows to come back rather than none — it is a retention property (§M), not an attack, and it is already proved against real Postgres in `admin.test.ts`. A roster where some checks want rows and others want none cannot be held to "every one must fail against a database with nothing enforced". | `tools/pentest/checks.ts` |
 | 158 | One test runs `npm run pentest` as a real command | It was written, committed, and did nothing: `main` was defined, exported and never called, so the command printed nothing and exited 0 — a green report from a suite that attacked nothing, which is the precise failure decision 156 exists to prevent. Twenty tests passed over it, because they all asserted the functions the file exports rather than the program it is. Removing the entry point again fails exactly one test, and it is this one. | `tools/pentest/checks.test.ts` |
+| 159 | The store listing is GENERATED from the terminology tables | CLAUDE.md Rule 4 says a type name resolves only through `src/domain/locale`, and a store listing is the outermost surface of the product — the one place somebody reads before installing. A hand-written listing is correct the day it is written; the failure it invites is silent, six months later, when a reviewer renames a type and every screen follows but the listing does not. | `src/marketing/listing.ts` |
+| 160 | A stale committed sheet fails CI with a diff | §T asks for the sheets to be "updated in the same cycle as terminology-table changes", which is a promise about somebody remembering. Rendering the file and comparing it makes it a promise the build keeps. `npm run discoverability` regenerates it. | `src/marketing/sheet.test.ts` |
+| 161 | Apple gets single words, Play gets whole phrases | Apple recombines the words in its 100-character field into phrases itself, so "delivery note" spends fourteen characters on a combination it would have formed free from "delivery" and "note" — which then also combine with everything else there. Play indexes the long description as prose, where phrases belong. | `src/marketing/listing.ts` |
+| 162 | The generator reports Apple's caps and never applies them | §T's own draft sheet: trimmed "by the reviewer, not by a script". A script that truncated would make the editorial decision silently, and the half it cut would be the wrong half. | `src/marketing/listing.ts` |
+| 163 | A reviewer's trim must still name a local document type | "What survives the trim is the local type name, never the generic half" is the rule §T states and nothing enforced. A title trimmed to "DocFlow: Business Paperwork" saved characters and lost the listing. | `src/marketing/listing.ts` |
+| 164 | A multi-word term goes in whole or stays out | Apple forms phrases only from words that are present, so "small" without "business" recombines into nothing anybody searches and spends five characters saying so. | `src/marketing/listing.ts` |
+| 165 | Keyword overflow is a NOTE, not a blocker | There is always more vocabulary than fits in a hundred characters — that is the nature of the field, not a defect. Counting it as a blocker would make `submittable` unreachable in every locale forever, and a signal that is always red is one nobody reads. | `src/marketing/listing.ts` |
+| 166 | The qualifiers lead the keyword field, ahead of the type synonyms | It looks backwards until you remember what the field is for: the title and subtitle already carry the type names, Apple indexes those separately, and their words are excluded here. So the field's job is precisely what the title could not say — and §T names "offline", "small business" and "PDF" as required coverage rather than decoration. | `src/marketing/listing.ts` |
+| 167 | The per-locale listing inputs contain no document type name, and a test proves it | The four types come from the §D synonyms at generation time. A label typed into that file would be a second source of truth for the one word CLAUDE.md says has exactly one. Asserted against the VALUES and whole-word — the French qualifier "facturation" contains the Spanish label "Factura" as a substring, and a substring check would fail a perfectly good French word and teach the next person to weaken the test. | `src/marketing/package.test.ts` |
 
 ## Deviations from the spec
 
