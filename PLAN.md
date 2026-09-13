@@ -1514,8 +1514,52 @@ gate itself is deferred with everything else that needs a phone.
       lists all 33 questions with the page to read for each. `npm run site`,
       `npm run shots` and `npm run policy` name every one of these on every
       run.
-- [ ] **The final sweeps** — accessibility, dark mode, RTL readiness,
-      responsive, terminology per locale, onboarding, command palette.
+- [x] **The final sweeps — four of seven done, and each one measured**
+      (`src/sweeps/`, `tools/sweeps/`). §Q Phase 7: "final sweeps —
+      accessibility, dark mode, RTL readiness assessment, responsive,
+      terminology… onboarding, command palette/sidebar."
+
+      **RTL readiness — fixed.** §V: "RTL locales (when shipped) mirror
+      completely, **PDFs included**." The sweep found 25 physical-direction
+      utilities across 14 files, five of them in the PDF — exactly what §V
+      calls out. All 25 are now logical (`text-start`, `ms-`, `pe-`, `end-`),
+      which is identical in English and correct in Arabic, so being right cost
+      nothing and being wrong would have cost a rewrite across forty files the
+      day an Arabic build existed. A test keeps them out.
+
+      **Dark mode — NOT implemented, and it no longer pretends otherwise.**
+      `:root` declared `color-scheme: light dark`, which tells the browser the
+      page handles both — so a dark-preferring user got dark scrollbars, dark
+      form controls and a dark canvas around an app whose every surface is
+      painted white. It now declares `light`. §N: an unavailable capability is
+      stated plainly, never dressed up. The gap is measured rather than
+      guessed: **245 surfaces** are literal `bg-white` / `border-black` /
+      `text-white` / `bg-black`, there is **not one `dark:` variant anywhere**,
+      and the palette has no dark tokens to move them onto. Repainting 245
+      surfaces is a §F glass-layer design decision, not a find-and-replace, and
+      a test now couples the declaration to the implementation so the pair
+      cannot drift apart again.
+
+      **Responsive — passes, and the check can fail.** 17 routes driven in
+      Chromium at 320 CSS pixels, with records in them, checked for horizontal
+      overflow; none scrolls sideways. jsdom cannot find this class of bug at
+      all — it computes no layout, so every element is zero by zero and every
+      check passes. Proved by planting a 900px element in Home: the sweep
+      caught it and named it.
+
+      **Terminology — walked, for the four locales there is an app to walk.**
+      The lint rule stops a label being TYPED; it cannot stop a screen
+      resolving the wrong one, which is a correct-looking call. So the sweep
+      asserts each locale's own word appears and another locale's does not —
+      EN-NG against EN-GB, which disagree about the delivery document and
+      agree about everything else. FR, ES and AR are recorded as unwalkable
+      rather than skipped: there is no French app to walk.
+
+      **Still to do, and none of it is device work:** the accessibility sweep
+      covers the navigation (names in the active language, keyboard
+      reachability, tap targets) but not large text, screen readers or reduced
+      motion across every screen; onboarding and the §V command
+      palette/sidebar are untouched; and the dark-mode feature itself.
 
 ### The physical-device remainder — one consolidated list
 
@@ -2531,6 +2575,12 @@ vectors of a few hundred bytes.
 | 200 | A configured backup schedule is never verified on its own | A dashboard saying backups are enabled is not evidence that a restore produces a working database. Verification requires a dated restore rehearsal, and the rehearsal expires after 90 days because a restore that worked two quarters ago says nothing about the schema as it is now. | `tools/backup/schedule.ts` |
 | 201 | A rehearsal that lost rows is a failure, not a qualified pass | The number that matters is rows out against rows in. A restore that is "mostly" complete is one somebody will discover is not, later, under pressure. | `tools/backup/schedule.ts` |
 | 202 | Retention is 30 days, written down where it can be argued with | The realistic disaster is not a dropped table noticed in an hour; it is a bad migration or a quiet corruption noticed weeks later, after a daily backup has rotated away. It is a cost decision, so it belongs in the repo rather than implicit in a dashboard. | `tools/backup/schedule.ts` |
+| 203 | Every direction in the UI is logical, before RTL ships | `text-start` and `ms-` are identical in English and correct in Arabic, so being right costs nothing now and being wrong costs a rewrite across forty files the day an Arabic build exists. The sweep found 25 physical utilities, five of them in the PDF — which is exactly the case §V calls out. | `src/sweeps/rtl.test.ts` |
+| 204 | The app declares `color-scheme: light`, because it is light | It declared `light dark`, so a dark-preferring user got dark scrollbars and form controls around an app whose every surface is white. Declaring a capability the app does not have is worse than not having it (§N), and it made dark mode look half-working rather than not started. | `src/index.css` |
+| 205 | The dark-mode gap is a number, not an impression | 245 literal white/black surfaces, zero `dark:` variants, no dark tokens. Repainting them is a §F glass-layer design decision rather than a find-and-replace, and a test couples the declaration to the implementation so the two cannot drift apart again. | `src/sweeps/darkmode.test.ts` |
+| 206 | Responsive is checked in a real engine, not in jsdom | jsdom computes no layout, so every element is zero by zero and every overflow check passes. 17 routes at 320 CSS pixels with records in them; proved it can fail by planting a 900px element, which it caught and named. | `tools/sweeps/responsive.ts` |
+| 207 | The terminology walk asserts the wrong word is ABSENT, not just the right word present | The lint rule stops a label being typed; it cannot stop a screen resolving the wrong one, which is a correct-looking call. EN-NG against EN-GB is the pair that catches it: they disagree about the delivery document and agree about everything else. | `src/sweeps/terminology.test.tsx` |
+| 208 | A nav name must be in the active language, not merely present | An icon labelled "Home" passes every automated accessibility tool and is still wrong in a French build: the tools check that a name exists, not that it is in the right language, and a screen-reader user is the one person who cannot see that it is not. | `src/sweeps/a11y.test.tsx` |
 
 ## Deviations from the spec
 

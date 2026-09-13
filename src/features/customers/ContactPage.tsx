@@ -223,7 +223,7 @@ export function ContactPage({
                   <button
                     type="button"
                     onClick={() => onOpenDocument(row.id)}
-                    className="flex min-h-tap w-full items-center gap-3 rounded-xl bg-white px-3 py-2 text-left"
+                    className="flex min-h-tap w-full items-center gap-3 rounded-xl bg-white px-3 py-2 text-start"
                   >
                     <span className="min-w-0 flex-1">
                       <span className="block break-words text-sm font-semibold">{row.reference}</span>

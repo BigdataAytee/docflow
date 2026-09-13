@@ -90,7 +90,7 @@ export function TotalsStep({
           value={String(discountPercent)}
           onChange={(event) => onRates({ discountPercent: Number(event.target.value) || 0 })}
           aria-label={strings.totals.discount}
-          className="min-h-tap w-20 rounded-lg bg-page px-3 text-right text-sm shadow-inner"
+          className="min-h-tap w-20 rounded-lg bg-page px-3 text-end text-sm shadow-inner"
         />
       </label>
       {totals.discount.minor !== 0 && (

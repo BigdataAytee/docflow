@@ -210,7 +210,7 @@ function CustomerCard({
     <button
       type="button"
       onClick={() => onOpen?.(customer)}
-      className="flex min-h-tap w-full items-center gap-3 rounded-2xl bg-white/80 p-3 text-left"
+      className="flex min-h-tap w-full items-center gap-3 rounded-2xl bg-white/80 p-3 text-start"
     >
       <span
         className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-brand-tint text-sm font-bold text-brand"

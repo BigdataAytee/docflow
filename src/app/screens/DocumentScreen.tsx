@@ -445,7 +445,7 @@ export function DocumentScreen({ today = new Date().toISOString().slice(0, 10) }
         {newerRevision !== null && (
           <button
             type="button"
-            className="w-full rounded-2xl bg-status-warn-tint p-4 text-left text-sm text-status-warn"
+            className="w-full rounded-2xl bg-status-warn-tint p-4 text-start text-sm text-status-warn"
             onClick={() => navigate(documentPath(newerRevision.id))}
           >
             <span className="font-semibold">
@@ -462,7 +462,7 @@ export function DocumentScreen({ today = new Date().toISOString().slice(0, 10) }
         {revisedFrom !== null && (
           <button
             type="button"
-            className="w-full rounded-2xl bg-white/70 p-4 text-left text-sm"
+            className="w-full rounded-2xl bg-white/70 p-4 text-start text-sm"
             onClick={() => navigate(documentPath(revisedFrom.id))}
           >
             {record.type === 'quotation' && (
