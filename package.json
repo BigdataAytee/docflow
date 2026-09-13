@@ -18,7 +18,8 @@
     "verify": "npm run typecheck && npm run lint && npm run test && npm run build",
     "test:rls": "vitest run --config vitest.rls.config.ts",
     "gate:hosted": "node --experimental-strip-types supabase/tests/hosted-gate.ts",
-    "gate:hosted:local": "node --env-file=.env --experimental-strip-types supabase/tests/hosted-gate.ts"
+    "gate:hosted:local": "node --env-file=.env --experimental-strip-types supabase/tests/hosted-gate.ts",
+    "pentest": "node --experimental-strip-types tools/pentest/run.ts"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.116.0",

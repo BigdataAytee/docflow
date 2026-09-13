@@ -8,6 +8,11 @@
     "strict": true,
     "noEmit": true,
     "composite": true,
+    // `npm run pentest` runs run.ts through node's type stripping, which does
+    // no module resolution of its own: node needs the real filename on disk.
+    // Permitted, not required — every other file here is resolved by vitest
+    // and stays extensionless.
+    "allowImportingTsExtensions": true,
     "skipLibCheck": true
   },
     // The RLS project also typechecks the row mappers and what they depend on,

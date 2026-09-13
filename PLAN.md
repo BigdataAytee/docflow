@@ -20,7 +20,7 @@ claims nothing the gates have not proven (§X).
 | 4 | Native polish | installable builds pass all flows on physical Android and iOS | not started |
 | **5** | Web + public links | cross-device visibility; token behaviour per §P; one payment per event | **part built** — 4 of 5 scope items done, webhooks part done; gate NOT passed (0 of 3 clauses, needs the deploy) |
 | **6** | Local AI + logo | the §N six-step gate per tier; the §O definition of done | **part built** — Tier-B extractor and the ladder's logic; gate needs devices |
-| **7** | Admin, hardening, migration, launch | the §V checklist green end to end | **part built** — admin and server-enforced permissions; migration and pen checks next |
+| **7** | Admin, hardening, migration, launch | the §V checklist green end to end | **part built** — admin, server-enforced permissions, the legacy migration and the pen-check roster; gate NOT passed — the roster has never been run, because nothing is deployed |
 
 ---
 
@@ -1167,6 +1167,61 @@ gate itself is deferred with everything else that needs a phone.
       converted, and the totals match — which is §Q's "only after totals
       match" as one boolean a person can act on.
 
+- [x] **The scripted penetration checks** (`tools/pentest/`). §P: "scripted
+      permission/RLS penetration checks run as **wrong user, wrong role and
+      revoked device**", plus §Q's Phase 7 gate: "a staff account cannot exceed
+      its permissions via direct API; a revoked device cannot sync."
+
+      It splits in two, because the two halves are blocked on different
+      things. **The secrets half runs today** and is in CI: it decodes every
+      JWT-shaped string in tracked files and in `dist/assets`, and fails on a
+      payload whose `role` is `service_role`; it asserts `.env` is untracked
+      AND gitignored; it asserts `src/` never names the service-role variable;
+      and it asserts no edge function puts the key in a `Response` or a
+      `console.*` line. That closes the half of the Phase-1 `TODO(Phase 7)`
+      that was always a build-and-deploy check rather than a SQL one — the
+      half on which the entire two-company boundary rests, since `service_role`
+      holds BYPASSRLS and no policy or SQL test would notice a leak. Verified
+      by planting a real-shaped service-role token in a tracked file and in a
+      built bundle: both scanners caught it, and both passed again after
+      cleanup. A scanner nobody has seen fail is not evidence.
+
+      **The roster half has never been run**, because it needs a deployed
+      project. So it is built as DATA — each check is a name, an axis and a
+      function — and the roster is asserted complete and adversarial *without*
+      an instance: `checks.test.ts` runs every check against a deliberately
+      permissive fake and requires **every one of them to fail**. A security
+      check that cannot fail is decoration, and this is the only way to know
+      the difference before there is anything to attack.
+
+      Three things that shape the roster:
+
+      · **RLS does not raise on a forbidden read — it returns no rows.**
+        "Denied" and "there was nothing there" look identical, so each read
+        check asserts EMPTINESS against data known to exist. A check that only
+        asserted "no error" would pass against a database with every policy
+        dropped. The same is true of a denied UPDATE, which is silent: those
+        assert no rows came back from `.select()`.
+      · **A crash is a failure, not a pass.** `runChecks` catches and records
+        it as FAILED. The one thing worse than a failing security check is one
+        that counts its own crash as a success.
+      · **Device revocation belongs to the AUTH layer, not to RLS.** A stolen
+        phone's holder controls every header the client sends, so a device id
+        in a request proves nothing about the device; what must stop is the
+        refresh token turning into a new access token. That is what the
+        revoked-device check attacks.
+
+      `npm run pentest` **refuses to run** when any of the four credentials is
+      missing, and exits 2. A pentest that skips itself and exits 0 is worse
+      than no pentest, because it reports green.
+
+      Which is exactly what it did when first written. `main` was defined,
+      exported and **never called**: the command printed nothing and exited 0.
+      Twenty passing tests did not notice, because every one of them tested a
+      function the file exports rather than the program the file is. So one
+      test now spawns the real command and requires exit 2 — and removing the
+      entry point again fails that one test and no other.
+
 ### Not started
 
 - [ ] **Store billing** (StoreKit 2 + Play Billing) — needs devices and store
@@ -1199,7 +1254,12 @@ place, and it grows as new deferrals join it.
 
 Two further items are deferred but need a SERVER rather than a device, and are
 tracked with the Phase 5 gate instead: the hosted deploy, and Paystack test
-credentials.
+credentials. A third now joins them: **the scripted penetration checks in
+`tools/pentest/checks.ts` have never been run against anything**, because
+there is no deployed instance to run them against. They are written, and
+proved adversarial against a permissive fake, but until `npm run pentest` has
+been run for real the §Q Phase 7 gate stands unmet. The secrets half of the
+same work does run today, in CI.
 
 ---
 
@@ -2134,6 +2194,14 @@ vectors of a few hundred bytes.
 | 148 | A legacy value with no honest mapping is refused | A `returned` waybill is not delivered and not void — somebody has to say which. A guess writes the wrong lifecycle state onto a real document, and nothing downstream can tell it was guessed. | `tools/migration/status.ts` |
 | 149 | Legacy money converts through the decimal text, not the binary value | `1234.56` is `1234.5599999999999` in memory, and that is exactly what was stored when somebody typed it; `String()` gives back the shortest round-tripping decimal, which is the number they typed. Half a kobo is refused rather than rounded, because §Q asks for reconciliation to the naira and half a kobo reconciles to nothing. | `tools/migration/money.ts` |
 | 150 | A legacy row that disagrees with its own lines is reported, not corrected | The new model recomputes totals; where that differs from the stored one, the reconciliation says so and keeps the legacy figure. Correcting an invoice while copying it is changing history rather than moving it. | `tools/migration/migrate.ts` |
+| 151 | Every penetration check must FAIL against a permissive fake | The roster cannot be run — there is no instance — so the only thing provable today is that these checks are capable of failing. A security check that cannot fail is decoration, and the fake is the only way to tell the difference before there is anything to attack. | `tools/pentest/checks.test.ts` |
+| 152 | Read checks assert emptiness, not the absence of an error | RLS does not raise on a forbidden SELECT; it returns no rows, so "denied" and "there was nothing there" are indistinguishable. Asserting no error would pass against a database with every policy dropped. A denied UPDATE is silent in the same way, so those assert no rows came back. | `tools/pentest/checks.ts` |
+| 153 | A check that throws counts as FAILED | A check that blew up proved nothing, and the one thing worse than a failing security check is one that counts its own crash as a success. | `tools/pentest/checks.ts` |
+| 154 | Device revocation is attacked at the AUTH layer, not through RLS | A stolen phone's holder controls every header the client sends, so a device id in a request proves nothing about which device sent it. What must actually stop is the refresh token turning into a new access token — so the check tries exactly that, through the anon client a stolen phone holds. | `tools/pentest/checks.ts` |
+| 155 | The service-key scan decodes JWT payloads rather than matching strings | A key is not recognisable by its shape — anon and service-role tokens look identical until decoded, and matching on a prefix would flag every anon key (which belongs in the bundle) and miss a re-encoded service key. The scan reads `role` out of the payload. | `tools/pentest/secrets.test.ts` |
+| 156 | `npm run pentest` refuses to run with a credential missing, and exits 2 | A pentest that skips itself and exits 0 is worse than no pentest, because it reports green. Refusing names which credential is absent. | `tools/pentest/run.ts` |
+| 157 | The revoked-device retention property was REMOVED from the roster | It legitimately passed against the permissive fake, because it expects rows to come back rather than none — it is a retention property (§M), not an attack, and it is already proved against real Postgres in `admin.test.ts`. A roster where some checks want rows and others want none cannot be held to "every one must fail against a database with nothing enforced". | `tools/pentest/checks.ts` |
+| 158 | One test runs `npm run pentest` as a real command | It was written, committed, and did nothing: `main` was defined, exported and never called, so the command printed nothing and exited 0 — a green report from a suite that attacked nothing, which is the precise failure decision 156 exists to prevent. Twenty tests passed over it, because they all asserted the functions the file exports rather than the program it is. Removing the entry point again fails exactly one test, and it is this one. | `tools/pentest/checks.test.ts` |
 
 ## Deviations from the spec
 
@@ -2225,6 +2293,15 @@ Added by Phase 0:
   offline.
 
 Added by Phase 1:
+
+- ~~**Service-role penetration checks are Phase 7 work, and FORCE does not
+  cover them.**~~ — **half closed**, see decisions 151-157. The
+  build-and-deploy half (no bundle, tracked file, `src/` reference or
+  edge-function response carries the service key) is now executable and runs
+  in CI: `tools/pentest/secrets.test.ts`. The scripted roster is written and
+  proved adversarial against a permissive fake, but has never been run against
+  an instance, because there is none. The original note stands below for the
+  reasoning it records.
 
 - **Service-role penetration checks are Phase 7 work, and FORCE does not cover
   them.** FORCE closes the table-owner exemption; it does nothing about

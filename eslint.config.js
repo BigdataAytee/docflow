@@ -97,6 +97,16 @@ export default tseslint.config(
     rules: { 'no-restricted-imports': 'off' },
   },
 
+  // The penetration checks are the attacker. They hold a raw client on
+  // purpose: the whole point is to hit the API with a real token and no
+  // repository in the way, because a check routed through the repositories
+  // would only prove that the repositories behave — which is not the question
+  // §P asks. Two files by name, so the exemption cannot spread.
+  {
+    files: ['tools/pentest/checks.ts', 'tools/pentest/run.ts'],
+    rules: { 'no-restricted-imports': 'off' },
+  },
+
   {
     files: ['tools/**/*.js', '*.config.js', '*.config.ts'],
     languageOptions: { globals: globals.node },
