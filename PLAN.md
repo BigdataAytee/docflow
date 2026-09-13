@@ -20,7 +20,7 @@ claims nothing the gates have not proven (§X).
 | 4 | Native polish | installable builds pass all flows on physical Android and iOS | not started |
 | **5** | Web + public links | cross-device visibility; token behaviour per §P; one payment per event | **part built** — 4 of 5 scope items done, webhooks part done; gate NOT passed (0 of 3 clauses, needs the deploy) |
 | **6** | Local AI + logo | the §N six-step gate per tier; the §O definition of done | **part built** — Tier-B extractor and the ladder's logic; gate needs devices |
-| 7 | Admin, hardening, migration, launch | the §V checklist green end to end | not started |
+| **7** | Admin, hardening, migration, launch | the §V checklist green end to end | **part built** — admin and server-enforced permissions; migration and pen checks next |
 
 ---
 
@@ -1070,6 +1070,60 @@ gate itself is deferred with everything else that needs a phone.
       launch. Nothing automatable can stand in for that, and it is not
       claimed.
 
+---
+
+## Phase 7 — detail
+
+### Built
+
+- [x] **Server-enforced staff permissions, an activity feed and device
+      revoke** (`0016_admin.sql`). §P: "Staff permissions enforced
+      **server-side**." The word doing the work is *server-side* — a
+      permission checked in the UI is a suggestion, because the same account
+      and the same token reach the API with `curl`.
+
+      **This found a live privilege-escalation hole.** `public.users` already
+      carried the blanket `company_isolation` policy from `0006`
+      (`for all … using company_id = current_company_id()`). RLS policies are
+      PERMISSIVE and OR'd together, so adding a stricter policy grants nothing
+      and forbids nothing — the blanket one still says yes. **Any staff member
+      could promote themselves to owner with one UPDATE.** §P's rule was
+      defeated by the very policy that draws the company boundary. Found by
+      testing it rather than by reading it.
+
+      A policy cannot express the rule in either direction, because the rule
+      is about the DIFFERENCE between the old row and the new one: `USING`
+      sees the old, `WITH CHECK` sees the new, neither sees both. So the guard
+      is a trigger, scoped to `role` and `permissions` only — everything else
+      about a person's own row stays self-service (§S).
+
+      Two more things that showed up only by running it:
+
+      · The trigger must be SECURITY **INVOKER**. Inside a DEFINER function
+        `current_user` is the function's owner rather than the caller, so the
+        `service_role` exemption never fires and every legitimate server-side
+        staff change is refused.
+      · The activity feed is a view, and **a view runs with its OWNER's rights
+        unless told otherwise** — the classic way a view hands every company's
+        rows to every caller straight past RLS. `security_invoker = on` stops
+        it, and a test proves it rather than assuming.
+
+      Revoking a device stamps a time rather than deleting the row (§M): a
+      credential problem never destroys local work, and an audit log that
+      loses the device it is about answers fewer questions than it was kept
+      for. An owner is never missing a permission, so no permission state
+      locks the last owner out of their own company.
+
+### Not started
+
+- [ ] **Store billing** (StoreKit 2 + Play Billing) — needs devices and store
+      accounts; on the deferred list as D10.
+- [ ] **The launch discoverability package.** §T keyword sheets exist; the
+      listings, screenshots per locale and store-policy verification do not.
+- [ ] **Backup schedule and full user data export.**
+- [ ] **The final sweeps** — accessibility, dark mode, RTL readiness,
+      responsive, terminology per locale, onboarding, command palette.
+
 ### The physical-device remainder — one consolidated list
 
 Everything below needs a phone in a hand. It is gathered here rather than
@@ -2016,6 +2070,11 @@ vectors of a few hundred bytes.
 | 137 | The name is never read for an industry | §O: the description is the primary source of meaning, "never an inferred industry that contradicts the description". A generator-repair business called Sunrise Bakery gets gears — and gets no food motif even with a blank description, because guessing produces a logo about somebody else's company. | `src/features/logo/vocabulary.ts` |
 | 138 | Symbol artwork and lettering never touch | The symbol output contains no `<text>` at all. A model asked for artwork "saying Ọkọrọ & Sons" returns approximate letters, and a misspelled name in artwork is worse than no logo and unfixable without regenerating. | `src/features/logo/render.ts` |
 | 139 | A clarifying question is asked only for incompatible readings | §O allows one only when the description is "genuinely ambiguous between incompatible readings". Asking whenever unsure would turn a two-field screen into an interview, which §O rules out in its first paragraph — so an unrecognised trade is never a reason to ask. | `src/features/logo/vocabulary.ts` |
+| 140 | A privilege change is guarded by a TRIGGER, not a policy | RLS policies are permissive and OR'd, so the blanket `company_isolation` on `public.users` meant any staff member could promote themselves — a stricter policy alongside it grants and forbids nothing. And the rule concerns the difference between the old and new row, which `USING` and `WITH CHECK` each see only half of. | `0016_admin.sql` |
+| 141 | That trigger is SECURITY INVOKER | Inside a DEFINER function `current_user` is the function's owner rather than the caller, so the service_role exemption would never fire and every server-side staff change would be refused. The privileged read it needs already lives inside `current_user_can`. | `0016_admin.sql` |
+| 142 | The activity feed view is `security_invoker` | A view runs with its OWNER's rights unless told otherwise — the classic way a view hands every company's rows to every caller straight past RLS. Asserted by a test rather than assumed. | `0016_admin.sql` |
+| 143 | Revoking a device stamps a time; it never deletes the row | §M: a credential problem never destroys local work, and an audit log that loses the device it is about answers fewer questions than it was kept for. | `0016_admin.sql` |
+| 144 | An owner is never missing a permission | `current_user_can` returns true for an owner whatever is asked, so there is no permission state in which the last owner is locked out of their own company. | `0016_admin.sql` |
 
 ## Deviations from the spec
 
