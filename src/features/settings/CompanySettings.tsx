@@ -124,7 +124,7 @@ export function CompanySettings({
               placeholder={numberingPrefix(profile, type)}
               onChange={(event) => onPrefix(type, event.target.value)}
               aria-label={typeLabel(profile, type)}
-              className="min-h-tap w-24 rounded-lg bg-page px-3 text-right text-sm uppercase shadow-inner"
+              className="min-h-tap w-24 rounded-lg bg-page px-3 text-end text-sm uppercase shadow-inner"
             />
           </label>
         ))}

@@ -174,7 +174,7 @@ export function PublicLinkPage({ kind, transport }: PublicLinkPageProps) {
             </ul>
 
             {view.total !== undefined && (
-              <p className="mt-3 border-t border-black/10 pt-3 text-right text-base font-bold tabular-nums">
+              <p className="mt-3 border-t border-black/10 pt-3 text-end text-base font-bold tabular-nums">
                 {formatMoney(money(view.total.currency, view.total.minor))}
               </p>
             )}

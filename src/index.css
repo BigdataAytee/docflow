@@ -4,7 +4,24 @@
 
 @layer base {
   :root {
-    color-scheme: light dark;
+    /*
+     * Light only, and that is the honest declaration today.
+     *
+     * This said `light dark`, which tells the browser the page handles both —
+     * so a dark-preferring user got dark scrollbars, dark form controls and a
+     * dark canvas around an app whose every surface is still painted white.
+     * Declaring a capability the app does not have is worse than not having
+     * it (§N), and it looked like dark mode was half working rather than not
+     * started.
+     *
+     * The `.dark body` rule below flips the two tokens the body uses. It is
+     * the whole of dark mode: 245 surfaces across the app are literal
+     * `bg-white` / `border-black`, there is not one `dark:` variant anywhere,
+     * and the palette has no dark tokens to point them at. The sweep in
+     * `src/sweeps/darkmode.test.ts` measures that gap and fails the day
+     * somebody re-declares dark support without closing it.
+     */
+    color-scheme: light;
   }
   body {
     @apply bg-page text-navy font-sans antialiased;

@@ -91,7 +91,7 @@ export function CustomerPicker({
       <div className="flex items-center gap-3">
         <button
           type="button"
-          className="flex min-h-tap flex-1 items-center gap-3 rounded-lg bg-page px-3 text-left shadow-inner"
+          className="flex min-h-tap flex-1 items-center gap-3 rounded-lg bg-page px-3 text-start shadow-inner"
           aria-expanded={open}
           aria-label={strings.details.chooseCustomer}
           onClick={() => setOpen((was) => !was)}
@@ -149,7 +149,7 @@ export function CustomerPicker({
               <li key={row.id}>
                 <button
                   type="button"
-                  className="flex min-h-tap w-full flex-col justify-center rounded-lg px-3 text-left hover:bg-black/[0.04]"
+                  className="flex min-h-tap w-full flex-col justify-center rounded-lg px-3 text-start hover:bg-black/[0.04]"
                   onClick={() => {
                     onSelect(row.id)
                     setOpen(false)
@@ -173,7 +173,7 @@ export function CustomerPicker({
           {typed !== '' && (
             <button
               type="button"
-              className="mt-1 min-h-tap w-full rounded-lg bg-brand-tint px-3 text-left text-sm font-semibold text-brand"
+              className="mt-1 min-h-tap w-full rounded-lg bg-brand-tint px-3 text-start text-sm font-semibold text-brand"
               onClick={() => setAdding(true)}
             >
               {format(strings.details.addNamed, { name: typed })}

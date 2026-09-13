@@ -77,7 +77,7 @@ function Cell({ row, column, formatAmount, currency }: {
   const style: CSSProperties = { textAlign: column.align }
   switch (column.key) {
     case 'description':
-      return <td style={style} className="py-1.5 pr-2">{row.description}</td>
+      return <td style={style} className="py-1.5 pe-2">{row.description}</td>
     case 'quantity':
       return <td style={style} className="py-1.5 tabular-nums">{row.quantity}</td>
     case 'unit':
@@ -152,7 +152,7 @@ export function DocumentPage({
             <p className="font-semibold">{model.party.name}</p>
             {model.party.address !== undefined && <p className="opacity-80">{model.party.address}</p>}
           </div>
-          <div className="shrink-0 text-right">
+          <div className="shrink-0 text-end">
             <p className="tabular-nums">{model.issueDate}</p>
             {model.dueDate !== undefined && <p className="tabular-nums opacity-70">{model.dueDate}</p>}
           </div>
@@ -241,7 +241,7 @@ export function DocumentPage({
                 </div>
               )}
 
-              <div className="shrink-0 text-right">
+              <div className="shrink-0 text-end">
                 {/*
                   §I: the actual captured signature, then a short ~76px rule,
                   then the localised caption and the signer's name. The mark
@@ -254,11 +254,11 @@ export function DocumentPage({
                     <img
                       src={model.signature.imageUrl}
                       alt={model.signature.caption}
-                      className="ml-auto max-h-10 w-auto max-w-[140px] object-contain object-bottom"
+                      className="ms-auto max-h-10 w-auto max-w-[140px] object-contain object-bottom"
                     />
                   </div>
                 )}
-                <div className="ml-auto w-[76px] border-t" style={{ borderColor: ink }} />
+                <div className="ms-auto w-[76px] border-t" style={{ borderColor: ink }} />
                 <p className="mt-1 font-bold uppercase tracking-wide">{model.signature.caption}</p>
                 {model.signature.signerName !== undefined && (
                   <p className="opacity-70">{model.signature.signerName}</p>

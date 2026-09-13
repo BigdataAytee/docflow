@@ -113,7 +113,7 @@ export function DocumentList({ type, rows, onOpen, onNew }: DocumentListProps) {
                 <button
                   type="button"
                   onClick={() => onOpen(row.id)}
-                  className="flex min-h-tap w-full items-center gap-3 p-3 text-left"
+                  className="flex min-h-tap w-full items-center gap-3 p-3 text-start"
                 >
                   <span className="min-w-0 flex-1">
                     <span className="flex items-center gap-2">
@@ -151,7 +151,7 @@ export function DocumentList({ type, rows, onOpen, onNew }: DocumentListProps) {
         type="button"
         onClick={onNew}
         aria-label={format(strings.lists.newDocument, { label })}
-        className="fixed bottom-24 right-5 grid h-14 w-14 place-items-center rounded-full text-2xl font-light text-white shadow-lg"
+        className="fixed bottom-24 end-5 grid h-14 w-14 place-items-center rounded-full text-2xl font-light text-white shadow-lg"
         style={{ backgroundColor: palette.accent }}
       >
         +

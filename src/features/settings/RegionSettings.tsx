@@ -67,7 +67,7 @@ export function RegionSettings({ settings, onRegion, onOverride }: RegionSetting
         </div>
         <div className="flex justify-between gap-3">
           <dt className="opacity-70">{strings.settings.bankFieldsAre}</dt>
-          <dd className="text-right font-semibold">
+          <dd className="text-end font-semibold">
             {fieldsFor(profile.currency).map((field) => field.label).join(' · ')}
           </dd>
         </div>

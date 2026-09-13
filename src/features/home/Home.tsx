@@ -170,7 +170,7 @@ export function Home({
                   <button
                     type="button"
                     onClick={() => onOpenType(type)}
-                    className="flex w-full flex-col items-start gap-1 rounded-2xl p-4 text-left text-white"
+                    className="flex w-full flex-col items-start gap-1 rounded-2xl p-4 text-start text-white"
                     style={{ backgroundColor: palette.accent, boxShadow: `0 8px 20px -8px ${palette.accent}` }}
                   >
                     <span className="break-words text-sm font-bold leading-tight">
@@ -194,7 +194,7 @@ export function Home({
                     <button
                       type="button"
                       onClick={() => onOpenDocument(item.documentId)}
-                      className="flex min-h-tap w-full items-center gap-3 rounded-2xl bg-white/85 p-3 text-left"
+                      className="flex min-h-tap w-full items-center gap-3 rounded-2xl bg-white/85 p-3 text-start"
                     >
                       <span className="flex-1">
                         <StatusBadge

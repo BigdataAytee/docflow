@@ -67,7 +67,7 @@ export function DesignStep({
           type="button"
           onClick={() => onToggleLogo(!showLogo)}
           aria-pressed={showLogo}
-          className="ml-auto flex min-h-tap items-center gap-2 rounded-full bg-page px-3 text-xs font-semibold"
+          className="ms-auto flex min-h-tap items-center gap-2 rounded-full bg-page px-3 text-xs font-semibold"
         >
           <span
             className={`flex h-5 w-9 items-center rounded-full p-0.5 ${
@@ -93,7 +93,7 @@ export function DesignStep({
                 type="button"
                 onClick={() => onSelect(template.id)}
                 aria-pressed={template.id === selected}
-                className={`w-28 rounded-xl border-2 bg-white p-2 text-left ${
+                className={`w-28 rounded-xl border-2 bg-white p-2 text-start ${
                   template.id === selected ? 'border-brand' : 'border-transparent'
                 }`}
               >

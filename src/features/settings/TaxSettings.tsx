@@ -68,7 +68,7 @@ export function TaxSettings({
             value={String(taxPercent)}
             onChange={(event) => onTaxPercent(Number(event.target.value) || 0)}
             aria-label={format(strings.settings.taxRate, { label: taxLabel })}
-            className="min-h-tap w-20 rounded-lg bg-page px-3 text-right text-sm shadow-inner"
+            className="min-h-tap w-20 rounded-lg bg-page px-3 text-end text-sm shadow-inner"
           />
         </label>
 
@@ -79,7 +79,7 @@ export function TaxSettings({
             value={String(whtPercent)}
             onChange={(event) => onWhtPercent(Number(event.target.value) || 0)}
             aria-label={strings.settings.withholdingRate}
-            className="min-h-tap w-20 rounded-lg bg-page px-3 text-right text-sm shadow-inner"
+            className="min-h-tap w-20 rounded-lg bg-page px-3 text-end text-sm shadow-inner"
           />
         </label>
       </div>

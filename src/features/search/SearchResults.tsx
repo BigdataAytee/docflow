@@ -125,7 +125,7 @@ export function SearchResults({
                     <button
                       type="button"
                       onClick={() => open(entry)}
-                      className="flex min-h-tap w-full flex-col items-start justify-center rounded-2xl bg-white/85 px-4 py-2.5 text-left"
+                      className="flex min-h-tap w-full flex-col items-start justify-center rounded-2xl bg-white/85 px-4 py-2.5 text-start"
                     >
                       <span className="w-full break-words text-sm font-semibold">{entry.label}</span>
                       {detail !== undefined && detail !== '' && (
