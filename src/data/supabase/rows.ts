@@ -29,6 +29,7 @@
 import type {
   AssetRecord,
   Company,
+  CreditNoteRecord,
   Customer,
   DocumentRecord,
   Expense,
@@ -36,6 +37,7 @@ import type {
   Payment,
   PaymentAllocation,
   SavedItem,
+  ShareEvent,
 } from '../repositories'
 import type { DocumentType, FrozenLabels, LineItem } from '../../domain/documents/types'
 import { money } from '../../domain/money/money'
@@ -431,4 +433,92 @@ export function fromAllocation(
   allocation: Pick<PaymentAllocation, 'invoiceId' | 'amount'>,
 ): Row {
   return { invoice_id: allocation.invoiceId, amount_minor: allocation.amount.minor }
+}
+
+// ------------------------------------------------------------ share events
+
+/**
+ * A share event is an `audit_log` row (§M, §E).
+ *
+ * Not a table of its own: a share IS an action taken on a document, and the
+ * audit log is append-only, which is exactly the right shape — a handoff
+ * happened, and nothing later can un-happen it.
+ */
+export function toShareEvent(row: Row): ShareEvent {
+  return {
+    id: String(row['id']),
+    companyId: String(row['company_id']),
+    action: String(row['action']) as ShareEvent['action'],
+    entity: 'document',
+    recordId: String(row['record_id'] ?? ''),
+    at: stamp(row['at']) ?? '',
+    // 'none' rather than a guess at 'sheet': the fallback value must be the
+    // one that claims the least about what happened (§M).
+    channel: (text(row['channel']) as ShareEvent['channel']) ?? 'none',
+    ...omitNull({
+      deviceId: text(row['device_id']),
+      actorId: text(row['user_id']),
+    }),
+  }
+}
+
+export function fromShareEvent(patch: Partial<ShareEvent>): Row {
+  return omitNull({
+    company_id: patch.companyId,
+    action: patch.action,
+    entity: patch.entity,
+    record_id: patch.recordId,
+    at: patch.at,
+    channel: patch.channel,
+    device_id: patch.deviceId,
+    user_id: patch.actorId,
+  })
+}
+
+// ------------------------------------------------------------- credit notes
+
+/**
+ * A credit note, and the invoice as it was when it was credited (§E, Rule #5).
+ *
+ * `invoice_snapshot` holds the reference and total of the invoice at the
+ * moment of issue, not a live link to it. That is the point: the invoice is
+ * frozen, but a credit note must still say what it credited even if the
+ * document is later voided or the company's terminology changes under it.
+ */
+export function toCreditNote(row: Row): CreditNoteRecord {
+  const currency = String(row['currency'] ?? '')
+  const snapshot = json<{ reference?: string; totalMinor?: number }>(row['invoice_snapshot'], {})
+  return {
+    id: String(row['id']),
+    companyId: String(row['company_id']),
+    invoiceId: String(row['invoice_id']),
+    amount: money(currency, minor(row['amount_minor'])),
+    reference: String(row['reference'] ?? ''),
+    reason: String(row['reason'] ?? ''),
+    issuedAt: stamp(row['issued_at']) ?? '',
+    invoiceReference: String(snapshot.reference ?? ''),
+    invoiceTotal: money(currency, minor(snapshot.totalMinor)),
+  }
+}
+
+export function fromCreditNote(patch: Partial<CreditNoteRecord>): Row {
+  const row: Row = omitNull({
+    company_id: patch.companyId,
+    invoice_id: patch.invoiceId,
+    // The currency lives in its own column, beside the amount, because minor
+    // units alone are not money (Rule #3) — and reading it off the invoice
+    // would be inferring it.
+    currency: patch.amount?.currency,
+    amount_minor: patch.amount?.minor,
+    reference: patch.reference,
+    reason: patch.reason,
+    issued_at: patch.issuedAt,
+  })
+  if (patch.invoiceReference !== undefined || patch.invoiceTotal !== undefined) {
+    row['invoice_snapshot'] = {
+      reference: patch.invoiceReference ?? '',
+      totalMinor: patch.invoiceTotal?.minor ?? 0,
+    }
+  }
+  return row
 }

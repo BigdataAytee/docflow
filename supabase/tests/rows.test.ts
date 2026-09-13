@@ -30,6 +30,8 @@ import {
   fromLinkToken,
   fromPayment,
   fromAllocation,
+  fromShareEvent,
+  fromCreditNote,
   toAsset,
   toCompany,
   toCustomer,
@@ -38,6 +40,8 @@ import {
   toItem,
   toLinkToken,
   toPayment,
+  toShareEvent,
+  toCreditNote,
 } from '../../src/data/supabase/rows'
 import { money } from '../../src/domain/money/money'
 import { quantity } from '../../src/domain/documents/types'
@@ -396,6 +400,85 @@ describe('Every mapped field has a column that exists (§E)', () => {
     // on it becomes string concatenation and the money is silently wrong.
     expect(typeof toPayment(row).amount.minor).toBe('number')
     expect(toPayment(row).amount.minor).toBe(123_456_789)
+  })
+
+  it('round-trips a share event, including which route it took (§M)', async () => {
+    const document = await roundTrip(
+      'documents',
+      fromDocument({ companyId: COMPANY, type: 'invoice', status: 'issued', currency: 'NGN', totalMinor: 0 }),
+    )
+    const back = toShareEvent(
+      await roundTrip(
+        'audit_log',
+        fromShareEvent({
+          companyId: COMPANY,
+          action: 'shared',
+          entity: 'document',
+          recordId: String(document['id']),
+          at: '2026-09-13T09:00:00.000Z',
+          channel: 'clipboard',
+          deviceId: 'dev-1',
+        }),
+      ),
+    )
+
+    expect(back.action).toBe('shared')
+    expect(back.recordId).toBe(document['id'])
+    // A clipboard fallback means the share sheet was unavailable — a
+    // materially different handoff, and one §M must not overstate.
+    expect(back.channel).toBe('clipboard')
+    expect(back.deviceId).toBe('dev-1')
+    // No user was recorded, so the record must not carry one.
+    expect('actorId' in back).toBe(false)
+  })
+
+  it('falls back to the channel that claims least, never to "sheet"', async () => {
+    const document = await roundTrip(
+      'documents',
+      fromDocument({ companyId: COMPANY, type: 'invoice', status: 'issued', currency: 'NGN', totalMinor: 0 }),
+    )
+    const back = toShareEvent(
+      await roundTrip(
+        'audit_log',
+        fromShareEvent({
+          companyId: COMPANY,
+          action: 'share_failed',
+          entity: 'document',
+          recordId: String(document['id']),
+          at: '2026-09-13T09:00:00.000Z',
+        }),
+      ),
+    )
+    expect(back.channel).toBe('none')
+  })
+
+  it('round-trips a credit note, with a currency of its own (Rule #3)', async () => {
+    const invoice = await roundTrip(
+      'documents',
+      fromDocument({ companyId: COMPANY, type: 'invoice', status: 'issued', currency: 'GHS', totalMinor: 90_000 }),
+    )
+    const back = toCreditNote(
+      await roundTrip(
+        'credit_notes',
+        fromCreditNote({
+          companyId: COMPANY,
+          invoiceId: String(invoice['id']),
+          amount: money('GHS', 25_000),
+          reference: 'CN-0001',
+          reason: 'Two bags short',
+          issuedAt: '2026-09-13T09:00:00.000Z',
+          invoiceReference: 'INV-0007',
+          invoiceTotal: money('GHS', 90_000),
+        }),
+      ),
+    )
+
+    expect(back.amount).toEqual(money('GHS', 25_000))
+    expect(back.reason).toBe('Two bags short')
+    // The snapshot says what was credited, as it was — not a live link to a
+    // document that may since have been voided (Rule #5).
+    expect(back.invoiceReference).toBe('INV-0007')
+    expect(back.invoiceTotal).toEqual(money('GHS', 90_000))
   })
 
   it('round-trips a link token, storing only the hash (§P)', async () => {

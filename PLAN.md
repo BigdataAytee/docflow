@@ -18,7 +18,7 @@ claims nothing the gates have not proven (§X).
 | **2.5** | Remaining improvements | each §L behaviour verified offline; "Kept" moves the moment an expense is added; a reissued receipt never increments income | **gate passed** |
 | **3** | Sync | five offline documents arrive once; two-device edits retain both; no chaos scenario double-counts, resurrects or alters a frozen label | **code complete** — gate verified at logic level |
 | 4 | Native polish | installable builds pass all flows on physical Android and iOS | not started |
-| **5** | Web + public links | cross-device visibility; token behaviour per §P; one payment per event | **part built** — 2 of 5 scope items done, 1 part done (4 of 10 repositories, nothing wired); gate NOT passed (0 of 3 clauses) |
+| **5** | Web + public links | cross-device visibility; token behaviour per §P; one payment per event | **part built** — 3 of 5 scope items done (repositories complete, nothing wired); gate NOT passed (0 of 3 clauses) |
 | 6 | Local AI + logo | the §N six-step gate per tier; the §O definition of done | not started |
 | 7 | Admin, hardening, migration, launch | the §V checklist green end to end | not started |
 
@@ -562,8 +562,7 @@ work wearing a §G label. (The third straggler, "add photo", was the opposite
 mistake: Phase 2 work I had recorded three times as needing the Phase 4
 camera, when `capture="environment"` needed nothing at all.)
 
-So two of the five scope items are built, one is part-built, and two have not
-been begun.
+So three of the five scope items are built and two have not been begun.
 
 ### Built
 
@@ -581,24 +580,26 @@ been begun.
 - [x] **The token rules**, checked on read and again on sign, pinned by test
       against the edge function's own copy so two runtimes cannot drift.
 
-### Part-built
+### Built — but unreached
 
-- [~] **Repositories on Supabase.** Four of the ten contracts — companies,
-      customers, documents and payments — are implemented over `supabase-js`
-      (`src/data/supabase/repositories.ts`, `documents.ts`, `payments.ts`,
-      `mutate.ts`, `rows.ts`). The other six are deliberately NOT stubbed, and
-      the factory is typed `Pick<Repositories, …>` so that is visible in the
-      type rather than in a comment: a repository that silently does nothing
-      would typecheck, wire cleanly into the app, and lose money the first
-      time someone recorded a payment.
+- [x] **Repositories on Supabase.** All ten contracts, over `supabase-js`:
+      companies and customers in `repositories.ts`, documents in
+      `documents.ts`, payments in `payments.ts`, and the six append-only and
+      catalogue contracts in `catalogue.ts` — split by what makes each one
+      hard rather than by size. `createSupabaseRepositories` now returns a
+      full `Repositories`; for the two increments before this it returned a
+      `Pick`, because a stub factory would have typechecked, wired cleanly
+      into the app, and lost money the first time someone recorded a payment.
+      "Not written yet" belonged in the compiler, not in a comment.
 
       Nothing is wired to them yet. `src/app/store.tsx` still builds the
       in-memory store, and pointing it at a project needs the four secrets and
       a deploy that only a human can do — so this is code that is finished and
       unreached, not code that is half-connected.
 
-      Three things were found by writing them, each of which would have failed
-      in production rather than in a test:
+      Writing them found **five columns the schema did not have** and **one
+      cross-company hole**, each of which would have failed in production
+      rather than in a test:
 
       1. **Three columns did not exist** — `documents.delivery_address`,
          `companies.default_signature_asset_id`, `companies.signature_required`
@@ -619,6 +620,20 @@ been begun.
          snapshot, not a standing rule, and the failure is invisible: RLS
          enabled, policies correct, PostgREST answering "permission denied".
          Now asserted in `rls.test.ts`.
+      4. **A share event had nowhere to record which route it took**
+         (`audit_log.channel`, migration `0011`). A clipboard fallback means
+         the OS share sheet was unavailable, so "shared" happened in a
+         materially different way. Dropped on write and invented on read, that
+         is the one thing §M's share record is careful not to do — claim more
+         about a handoff than actually happened.
+      5. **A credit note's amount had no currency** (`credit_notes.currency`,
+         `0011`). `amount_minor` sat alone while `payments`, `expenses` and
+         `documents` all carry one. Minor units are not money: 250000 is
+         ₵2,500.00 or ₦2,500.00 depending on a fact the row did not record,
+         and reading it off the invoice is exactly what Rule #3 forbids — as
+         well as being wrong the moment a credit note outlives the document it
+         credits. Backfilled from the invoice, then made NOT NULL so a later
+         writer cannot skip it.
 
       **Payments needed a function, not a table.** A payment and its
       allocations are two tables and one fact, and PostgREST cannot span both
@@ -655,6 +670,26 @@ been begun.
       debt with money nobody paid. The domain enforces it as well; it is
       repeated at the last point before the money is durable.
 
+      **The catalogue needed a function too.** §L2's item catalogue builds
+      itself from what gets typed, so `remember` is an upsert on the NAME, not
+      an insert — and the naive two-call version (read `times_used`, write
+      `times_used + 1`) loses counts under exactly the condition the app is
+      built for: two devices doing the same thing at once. The count is the
+      only thing ordering the suggestion list, so it degrades quietly, and the
+      list slowly stops reflecting what the owner actually types.
+      `remember_item` (`0012`) does it in one statement, matched
+      case-insensitively — "Cement" and "cement" are one item to the person
+      typing them, and two rows would split one item's history in two.
+
+      **Minting a link token is the one write that deliberately destroys
+      something.** It upserts on `document_id` (the primary key) so a document
+      can never have two live tokens — two ways in, only one revocable — and
+      it clears `consumed_at`, because replacing the link IS how an owner
+      revokes one they sent by mistake, and a stale consumed stamp would leave
+      the replacement born dead. It carries no idempotency key, and that is
+      the point: a key would make a replay a no-op, when each mint is a
+      deliberate revocation of the last.
+
       Tested in two halves, both against something real. `supabase/tests/`
       round-trips every mapper through the migrated schema and proves the
       unique index actually de-duplicates, against a real Postgres with no
@@ -662,8 +697,13 @@ been begun.
       `supabase-js` query builder over a stub transport and asserts the HTTP
       requests that would reach PostgREST — because every interesting bug in a
       repository is in the request it builds, and a hand-written client stub
-      returns whatever it is asked for and sees none of them. Neither proves
-      PostgREST's own behaviour, which is why the gate below still fails.
+      returns whatever it is asked for and sees none of them.
+
+      What is NOT done: `src/data/repositories/repositories.test.ts` says
+      every implementation must pass the same contract suite, and the Supabase
+      one has not. It cannot without a live PostgREST, which needs the hosted
+      project. The suite is not weakened to let it pass; it stays a debt
+      against the §Q Phase 5 gate, recorded here rather than quietly dropped.
 
 ### Not started
 
@@ -1576,6 +1616,13 @@ vectors of a few hundred bytes.
 | 94 | The database refuses an over-allocation, not only the domain | The per-row `> 0` check cannot see a sum, and allocating more than arrived settles a debt with money nobody paid (Rule #3). Repeated at the last point before the money is durable, because a sync client that skipped the domain would otherwise write it. | `0010_record_payment.sql` |
 | 95 | Supabase scopes payments by `company_id`, where memory scopes by customer | The memory store derives the scope from the customer because `Payment` carries no company, which is right for a `Map`. The table has the column, so a standalone payment from a customer later deleted still belongs to the company that received it — under the memory rule that money quietly leaves the ledger. | `src/data/supabase/payments.ts` |
 | 96 | An invoice's payments are an INNER join, not a nullable embed | Without `!inner` every payment in the company comes back, each carrying an empty allocation list, and the invoice reads as settled by money that never touched it. | `src/data/supabase/payments.ts` |
+| 97 | A share event records which route the handoff took | `ShareEvent.channel` had no column, so it was dropped on write and invented on read. A clipboard fallback means the OS sheet was unavailable — "shared" happened in a materially different way, and inventing 'sheet' claims more about a handoff than happened, which is the one thing §M's share record is built not to do. The fallback on read is `none`, the value that claims least. | `0011_…sql`, `src/data/supabase/rows.ts` |
+| 98 | A credit note's amount carries its own currency | `amount_minor` sat alone while payments, expenses and documents all have one. Minor units are not money (Rule #3): 250000 is ₵2,500.00 or ₦2,500.00 depending on a fact the row did not record. Reading it off the invoice is inferring it, and wrong the moment a credit note outlives the document it credits. Backfilled from the invoice, then NOT NULL. | `0011_…sql` |
+| 99 | `remember` is an upsert on the name, done in one statement | §L2's catalogue learns from what gets typed, so saying "cement" twice must raise a count rather than add a row. Read-then-write loses counts under exactly the condition the app is built for — two devices at once — and the count is the only thing ordering the suggestion list, so it degrades quietly. Matched case-insensitively, because "Cement" and "cement" are one item to the person typing them. | `0012_remember_item.sql` |
+| 100 | A later use never erases the price already known | `coalesce(excluded.…, items.…)` on price, currency and unit: an item used again without a price must not blank the one the catalogue has (§L2). The existing NAME wins too, so a later lower-case typing does not re-case an entry the owner deliberately wrote. | `0012_remember_item.sql` |
+| 101 | Minting a link token carries no idempotency key | Every other write has one; this is the exception and the reason is the rule. A key makes a REPLAY a no-op, and each mint is a deliberate revocation of the last — that is how an owner kills a link they sent by mistake. It upserts on `document_id` so there is never a second live token, and clears `consumed_at` so the replacement is not born dead. | `src/data/supabase/catalogue.ts` |
+| 102 | A share list filters the audit log down to share actions | `audit_log` carries every action a company takes. Unfiltered, "the times you shared this" would quietly include issues and voids — a list that is not the thing its name says. | `src/data/supabase/catalogue.ts` |
+| 103 | A suggestion matches a prefix; a search matches a contains | `%ce%` would offer "office chair" for "ce". §L2 asks for a shortcut, not a menu — which is also why an empty prefix suggests nothing at all, where an empty search shows everything. | `src/data/supabase/catalogue.ts` |
 
 ## Deviations from the spec
 
