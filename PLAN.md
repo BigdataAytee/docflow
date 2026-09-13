@@ -1027,6 +1027,49 @@ gate itself is deferred with everything else that needs a phone.
       path — the only thing a model changes is whether a plan can be composed
       from words rather than chosen from a list.
 
+- [x] **The procedural logo engine** — rung 2 of §O's ladder
+      (`src/features/logo/`). An algorithmic compositor: description-derived
+      symbol vocabularies, geometry grammars, structural composition rules,
+      and the name set locally in a bundled face. Offline on every tier, and
+      deterministic — §O asks for seeds to be tracked, and having no
+      randomness at all is stronger, because "More ideas" then cannot
+      accidentally repeat.
+
+      **Distinctness is declared, not measured.** §O is explicit that
+      "duplicate detection alone is insufficient", and the reason is that two
+      images can differ in every pixel and still be one idea recoloured. So a
+      CONCEPT is a motif and a construction — what the mark is and how it is
+      built — and everything the rubric excludes is *absent from the key*
+      rather than compared and ignored: palette, font and background are
+      render-time choices with nowhere to be recorded; rotation is a transform
+      of one construction; whether the name appears is a layout. The quota
+      counts concepts, which is what makes §O's "named and symbol-only entries
+      must not duplicate one another" true by construction.
+
+      **"More ideas" admits the end.** When the concepts are spent it returns
+      nothing and says `exhausted`, rather than starting again in new colours
+      — the one dishonesty §O forbids by name. A short final batch is labelled
+      `partial` as data, so the UI cannot forget to say it.
+
+      **The description is the only source of meaning.** The name is read for
+      initials and lettering and never for an industry. §O's fixed test set
+      includes a deliberately misleading name for exactly this, and it is in
+      the suite: a generator-repair business called *Sunrise Bakery* gets
+      gears, not bread — and gets no food motif even when the description is
+      blank, because guessing produces a logo about somebody else's company.
+
+      **Lettering is set, never drawn.** `symbolOf` and `letteringOf` never
+      call each other, and the symbol output contains no `<text>` at all. A
+      generative model asked for artwork "saying Ọkọrọ & Sons" returns
+      approximate letters, and a misspelled name baked into artwork is worse
+      than no logo and unfixable without regenerating.
+
+      All ten of §O's fixed descriptions produce the full quota, and every
+      concept is checked in light and dark. **What is NOT done:** §O requires
+      the rubric to be passed by *human review* of that test set before
+      launch. Nothing automatable can stand in for that, and it is not
+      claimed.
+
 ### The physical-device remainder — one consolidated list
 
 Everything below needs a phone in a hand. It is gathered here rather than
@@ -1968,6 +2011,11 @@ vectors of a few hundred bytes.
 | 132 | The company scope has no plan field that could express it | Added by the compiler unconditionally. What cannot be expressed cannot be subverted — there is no key a hostile plan could set to name another company. | `src/features/ask/compile.ts` |
 | 133 | Every money answer groups by currency, asked for or not | One total spanning naira and cedis is not a total; it is two facts added together as though they were one (Rule #3). | `src/features/ask/compile.ts` |
 | 134 | A period is half-open | `>= from` and `< until`, so a document issued on the last day of a month is counted once. Inclusive-both double-counts across adjacent periods — an arithmetic error a chart makes invisible. | `src/features/ask/compile.ts` |
+| 135 | A logo concept's identity excludes everything §O's rubric excludes | Palette, font, background and layout are absent from the concept key rather than compared and ignored — a recolour cannot become a new idea because there is nowhere for the colour to be recorded. "Duplicate detection alone is insufficient" (§O): two images can differ in every pixel and be one idea. | `src/features/logo/concepts.ts` |
+| 136 | "More ideas" returns nothing when the concepts are spent | Starting again in new colours is the specific dishonesty §O forbids by name, and the only way to avoid it is to admit the end. A short final batch is labelled `partial` as data, so the UI cannot forget. | `src/features/logo/engine.ts` |
+| 137 | The name is never read for an industry | §O: the description is the primary source of meaning, "never an inferred industry that contradicts the description". A generator-repair business called Sunrise Bakery gets gears — and gets no food motif even with a blank description, because guessing produces a logo about somebody else's company. | `src/features/logo/vocabulary.ts` |
+| 138 | Symbol artwork and lettering never touch | The symbol output contains no `<text>` at all. A model asked for artwork "saying Ọkọrọ & Sons" returns approximate letters, and a misspelled name in artwork is worse than no logo and unfixable without regenerating. | `src/features/logo/render.ts` |
+| 139 | A clarifying question is asked only for incompatible readings | §O allows one only when the description is "genuinely ambiguous between incompatible readings". Asking whenever unsure would turn a two-field screen into an interview, which §O rules out in its first paragraph — so an unrecognised trade is never a reason to ask. | `src/features/logo/vocabulary.ts` |
 
 ## Deviations from the spec
 
