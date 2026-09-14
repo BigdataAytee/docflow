@@ -78,14 +78,16 @@ import { format } from '../../domain/locale/data/strings'
 import { ShareSheet } from '../../share/ShareSheet'
 import { useReview } from '../ReviewHost'
 import { createWebSharePort } from '../../share/web'
+import { todayIso } from '../../domain/dates/calendar'
 import { lastShared, shareCount, shareEventFor } from '../../share/events'
 // `shareFileName` is deliberately not imported: there is no rendered file to
 // attach until §Q Phase 4's native PDF writer, and the sheet says so.
 import { shareTextFor } from '../../share/text'
 import { deviceId } from '../device'
 import { displayStatus, totalOf } from '../derive'
+import { localDay } from '../../domain/dates/calendar'
 
-export function DocumentScreen({ today = new Date().toISOString().slice(0, 10) }: { today?: string }) {
+export function DocumentScreen({ today = todayIso() }: { today?: string }) {
   const { id } = useParams<{ id: string }>()
   const { profile, strings } = useCompany()
   const review = useReview()
@@ -414,7 +416,7 @@ export function DocumentScreen({ today = new Date().toISOString().slice(0, 10) }
             aria-label={strings.signature.confirmDelivery}
           >
             <p className="font-semibold">
-              {format(strings.signature.deliveredOn, { date: record.signedAt.slice(0, 10) })}
+              {format(strings.signature.deliveredOn, { date: localDay(record.signedAt) })}
             </p>
             <p className="mt-0.5 opacity-80">
               {format(strings.signature.signedBy, {
@@ -915,7 +917,7 @@ export function DocumentScreen({ today = new Date().toISOString().slice(0, 10) }
             port={port}
             text={shareText}
             sharedCount={timesShared}
-            {...(latestShare === null ? {} : { lastSharedAt: latestShare.at.slice(0, 10) })}
+            {...(latestShare === null ? {} : { lastSharedAt: localDay(latestShare.at) })}
             onClose={() => setSharing(false)}
             onResult={(result) => {
               const event = shareEventFor({

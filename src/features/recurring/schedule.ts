@@ -21,6 +21,8 @@
  *    list. The number is handed back so the UI can say it out loud.
  */
 
+import { localDay } from '../../domain/dates/calendar'
+
 export class RecurrenceError extends Error {}
 
 export interface Recurrence {
@@ -152,7 +154,7 @@ export function nextPeriod(recurrence: Recurrence, today: string): string | null
 
 /** Switching Repeat off. Past drafts stand; nothing new is produced (§L4). */
 export function stopRepeating(recurrence: Recurrence, on: string): Recurrence {
-  return { ...recurrence, endedOn: on.slice(0, 10) }
+  return { ...recurrence, endedOn: localDay(on) }
 }
 
 /** Switching Repeat on, from the document being looked at. */

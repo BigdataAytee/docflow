@@ -41,6 +41,7 @@ import type {
 } from '../repositories'
 import type { DocumentType, FrozenLabels, LineItem } from '../../domain/documents/types'
 import { money } from '../../domain/money/money'
+import { toIsoDay } from '../../domain/dates/calendar'
 
 /** A row as the driver hands it over. Deliberately loose: this is the seam. */
 export type Row = Record<string, unknown>
@@ -78,9 +79,18 @@ const minor = (value: unknown): number => {
 const bool = (value: unknown): boolean | undefined =>
   typeof value === 'boolean' ? value : undefined
 
-/** A `date` column comes back as a Date from `pg` and a string from PostgREST. */
+/**
+ * A `date` column comes back as a Date from `pg` and a string from PostgREST.
+ *
+ * `pg` parses a bare `DATE` to LOCAL midnight, so `toISOString()` shifted it
+ * backwards a day everywhere west of Greenwich — an invoice stored as the
+ * 14th read back as the 13th. The local getters return the day that was
+ * stored, which is the only answer a `date` column has.
+ */
 const day = (value: unknown): string | undefined => {
-  if (value instanceof Date) return value.toISOString().slice(0, 10)
+  if (value instanceof Date) {
+    return toIsoDay(value.getFullYear(), value.getMonth() + 1, value.getDate())
+  }
   return text(value)
 }
 

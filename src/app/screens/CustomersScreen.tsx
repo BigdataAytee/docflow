@@ -22,6 +22,8 @@ import { composeStatement, statementCurrencies } from '../../features/statements
 import { PageHeader, SkeletonList } from '../../ui'
 import { numberingPrefix } from '../../domain/locale/profile'
 import { billedInvoices, displayStatus, statementDocuments, totalOf } from '../derive'
+import { todayIso } from '../../domain/dates/calendar'
+import { localDay } from '../../domain/dates/calendar'
 
 export function CustomersScreen() {
   const { documents, payments, creditNotes, actions } = useAppData()
@@ -57,7 +59,7 @@ export function CustomersScreen() {
   )
 }
 
-export function ContactScreen({ today = new Date().toISOString().slice(0, 10) }: { today?: string }) {
+export function ContactScreen({ today = todayIso() }: { today?: string }) {
   const { customerId } = useParams<{ customerId: string }>()
   const { profile, strings } = useCompany()
   const { company, customers, documents, payments, creditNotes, loading, actions } =
@@ -120,7 +122,7 @@ export function ContactScreen({ today = new Date().toISOString().slice(0, 10) }:
   )
 }
 
-export function StatementScreen({ today = new Date().toISOString().slice(0, 10) }: { today?: string }) {
+export function StatementScreen({ today = todayIso() }: { today?: string }) {
   const { customerId, currency } = useParams<{ customerId: string; currency: string }>()
   const { strings } = useCompany()
   const { company, customers, documents, payments, creditNotes, loading } = useAppData()
@@ -143,7 +145,7 @@ export function StatementScreen({ today = new Date().toISOString().slice(0, 10) 
       payments,
       // §G's statement lists credits as their own line; now it has some.
       creditNotes,
-      creditNoteDates: new Map(creditNotes.map((note) => [note.id, note.issuedAt.slice(0, 10)])),
+      creditNoteDates: new Map(creditNotes.map((note) => [note.id, localDay(note.issuedAt)])),
       creditNoteCustomers: new Map(
         creditNotes.flatMap((note) => {
           const invoice = documents.find((row) => row.id === note.invoiceId)

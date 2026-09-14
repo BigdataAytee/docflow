@@ -13,8 +13,9 @@ import { useAppData } from '../store'
 import { Analytics } from '../../features/analytics/Analytics'
 import { knownCategories } from '../../features/expenses/record'
 import { analyticsRecords, customerNames, customerOf } from '../derive'
+import { todayIso } from '../../domain/dates/calendar'
 
-export function AnalyticsScreen({ today = new Date().toISOString().slice(0, 10) }: { today?: string }) {
+export function AnalyticsScreen({ today = todayIso() }: { today?: string }) {
   const { company, customers, documents, payments, expenses, creditNotes, loading, actions } =
     useAppData()
 

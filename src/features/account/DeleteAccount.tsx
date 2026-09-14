@@ -15,6 +15,7 @@ import { useState } from 'react'
 import { GRACE_DAYS, type Lifecycle, type Refusal, type Role, daysLeft } from '../../domain/account/deletion'
 import { useCompany } from '../../app/context'
 import { format } from '../../domain/locale/data/strings'
+import { localDay } from '../../domain/dates/calendar'
 
 export interface DeleteAccountProps {
   readonly lifecycle: Lifecycle
@@ -54,7 +55,7 @@ export function DeleteAccount({
           how long it takes.
         */}
         <p className="text-sm font-semibold tabular-nums">
-          {new Date(lifecycle.request.purgeAfter).toISOString().slice(0, 10)} ·{' '}
+          {localDay(lifecycle.request.purgeAfter)} ·{' '}
           {format(d.daysLeft, { days: left })}
         </p>
         <p className="text-sm opacity-80">{d.scheduledBody}</p>

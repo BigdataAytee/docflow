@@ -34,6 +34,7 @@ import {
   statDocuments,
   totalOf,
 } from '../derive'
+import { todayIso } from '../../domain/dates/calendar'
 
 export function HomeScreen({ now = new Date() }: { now?: Date }) {
   const { strings } = useCompany()
@@ -45,7 +46,10 @@ export function HomeScreen({ now = new Date() }: { now?: Date }) {
   // results catch up (§L10 — performance is invisible).
   const deferredQuery = useDeferredValue(query)
 
-  const today = now.toISOString().slice(0, 10)
+  // The local day, not the UTC one. This feeds `needsAttention`, and an
+  // invoice reading as overdue five hours early every evening is the bug
+  // that idiom was quietly causing west of Greenwich.
+  const today = todayIso(now)
 
   const stats = useMemo(() => statDocuments(documents), [documents])
   const due = useMemo(() => dueDates(documents), [documents])
@@ -139,7 +143,8 @@ export function HomeScreen({ now = new Date() }: { now?: Date }) {
       pendingCount={0}
       failedCount={0}
       outstanding={outstandingByCurrency(stats, payments, creditNotes)}
-      received={receivedThisMonth(payments, now.toISOString())}
+      // The calendar DAY, so the month boundary is the company's own (§V).
+      received={receivedThisMonth(payments, today)}
       counts={counts}
       attention={attention}
       onOpenType={(type) => navigate(listPath(type))}

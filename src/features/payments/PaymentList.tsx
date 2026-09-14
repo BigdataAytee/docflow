@@ -16,6 +16,7 @@ import { money } from '../../domain/money/money'
 import { effectivePayments, type Payment } from '../../domain/payments/ledger'
 import { formatMoney } from '../customers/formatMoney'
 import { methodName } from './methods'
+import { localDay } from '../../domain/dates/calendar'
 
 export interface PaymentListProps {
   readonly payments: readonly Payment[]
@@ -56,7 +57,7 @@ export function PaymentList({ payments, prefill, onRecord, onReceipt }: PaymentL
                   {formatMoney(payment.amount)}
                 </span>
                 <span className="block truncate text-xs opacity-70">
-                  {payment.paidAt.slice(0, 10)} · {methodName(strings, payment.method)}
+                  {localDay(payment.paidAt)} · {methodName(strings, payment.method)}
                   {payment.reference !== undefined && ` · ${payment.reference}`}
                 </span>
               </span>

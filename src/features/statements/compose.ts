@@ -23,6 +23,7 @@ import {
 } from '../../domain/money/money'
 import { type CreditNote, type Payment, effectivePayments } from '../../domain/payments/ledger'
 import type { DocumentType } from '../../domain/documents/types'
+import { localDay } from '../../domain/dates/calendar'
 
 export interface StatementDocument {
   readonly id: string
@@ -110,7 +111,7 @@ export function composeStatement(input: StatementInput): Statement {
     if (payment.amount.currency !== currency) continue
     movements.push({
       kind: 'payment',
-      date: payment.paidAt.slice(0, 10),
+      date: localDay(payment.paidAt),
       reference: payment.reference ?? payment.id,
       amount: payment.amount,
     })

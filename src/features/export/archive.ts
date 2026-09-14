@@ -35,6 +35,7 @@ import type {
   ShareEvent,
 } from '../../data/repositories/types'
 import { DOCUMENT_TYPES } from '../../domain/documents/types'
+import { localDay } from '../../domain/dates/calendar'
 
 /** Bumped when the SHAPE changes, so a reader knows what it is holding. */
 export const ARCHIVE_VERSION = 1
@@ -185,4 +186,4 @@ export async function exportArchive(
 export const archiveJson = (archive: Archive): string => JSON.stringify(archive, null, 2)
 
 export const archiveFilename = (archive: Archive): string =>
-  `docflow-export-${archive.meta.exportedAt.slice(0, 10)}.json`
+  `docflow-export-${localDay(archive.meta.exportedAt)}.json`

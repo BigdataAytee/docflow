@@ -30,6 +30,7 @@
 import { type DocumentType, carriesMoney } from '../../domain/documents/types'
 import type { LineItem } from '../../domain/documents/types'
 import type { DocumentDraft } from './builder'
+import { localDay } from '../../domain/dates/calendar'
 
 export class ConvertError extends Error {}
 
@@ -142,7 +143,7 @@ export function convertDocument(
     lineItems,
     // The new document is dated today. Carrying the original's date would
     // backdate work that is happening now.
-    issueDate: on.slice(0, 10),
+    issueDate: localDay(on),
     ...(source.customerId === undefined ? {} : { customerId: source.customerId }),
     ...(to === 'waybill' && source.deliveryAddress !== undefined
       ? { deliveryAddress: source.deliveryAddress }

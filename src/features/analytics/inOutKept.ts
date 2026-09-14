@@ -24,6 +24,7 @@ import {
   zero,
 } from '../../domain/money/money'
 import { effectivePayments, type Payment } from '../../domain/payments/ledger'
+import { localDay } from '../../domain/dates/calendar'
 
 /** What the analytics page needs of an expense; the record itself lives in §E. */
 export interface ExpenseEntry {
@@ -64,13 +65,13 @@ export function inOutKept(
   const outgoing = new Map<CurrencyCode, Money>()
 
   for (const payment of effectivePayments(payments)) {
-    if (!withinPeriod(payment.paidAt.slice(0, 10), period)) continue
+    if (!withinPeriod(localDay(payment.paidAt), period)) continue
     const currency = payment.amount.currency
     incoming.set(currency, add(incoming.get(currency) ?? zero(currency), payment.amount))
   }
 
   for (const expense of expenses) {
-    if (!withinPeriod(expense.spentOn.slice(0, 10), period)) continue
+    if (!withinPeriod(localDay(expense.spentOn), period)) continue
     const currency = expense.amount.currency
     outgoing.set(currency, add(outgoing.get(currency) ?? zero(currency), expense.amount))
   }

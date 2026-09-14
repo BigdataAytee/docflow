@@ -16,6 +16,11 @@ import { type CurrencyCode, type Money, add, zero } from '../../domain/money/mon
 import type { CreditNote, Payment } from '../../domain/payments/ledger'
 import { effectivePayments, invoiceOutstanding } from '../../domain/payments/ledger'
 import type { DocumentType } from '../../domain/documents/types'
+import {
+  localDay,
+  monthStart as monthStartOf,
+  nextMonthStart as nextMonthStartOf,
+} from '../../domain/dates/calendar'
 
 export interface StatDocument {
   readonly id: string
@@ -53,21 +58,16 @@ export function outstandingByCurrency(
   return buckets
 }
 
-/** The first instant of the calendar month containing `at`, as an ISO date. */
-export function monthStart(at: string): string {
-  const date = new Date(at)
-  if (Number.isNaN(date.getTime())) throw new RangeError(`Not a date: ${at}`)
-  return `${date.getUTCFullYear()}-${String(date.getUTCMonth() + 1).padStart(2, '0')}-01`
-}
-
-/** The first instant of the following month. */
-export function nextMonthStart(at: string): string {
-  const date = new Date(at)
-  if (Number.isNaN(date.getTime())) throw new RangeError(`Not a date: ${at}`)
-  const year = date.getUTCMonth() === 11 ? date.getUTCFullYear() + 1 : date.getUTCFullYear()
-  const month = date.getUTCMonth() === 11 ? 0 : date.getUTCMonth() + 1
-  return `${year}-${String(month + 1).padStart(2, '0')}-01`
-}
+/**
+ * The month boundaries, in the COMPANY's calendar.
+ *
+ * These read local fields now, where they read `getUTC*`. §V asks for
+ * "payments dated within the company's calendar month", and a business in
+ * Lagos closing its books on the 31st does not mean 23:00 on the 31st in
+ * London. Re-exported from the shared calendar module so the month a payment
+ * lands in and the day an invoice falls due are decided by one rule.
+ */
+export { monthStart, nextMonthStart } from '../../domain/dates/calendar'
 
 /**
  * Received this calendar month, per currency.
@@ -81,12 +81,17 @@ export function receivedThisMonth(
   payments: readonly Payment[],
   now: string,
 ): Map<CurrencyCode, Money> {
-  const from = monthStart(now)
-  const to = nextMonthStart(now)
+  const from = monthStartOf(now)
+  const to = nextMonthStartOf(now)
 
   const buckets = new Map<CurrencyCode, Money>()
   for (const payment of effectivePayments(payments)) {
-    const day = payment.paidAt.slice(0, 10)
+    // `paidAt` is an INSTANT, stored in UTC as it should be. Which calendar
+    // day it fell on is a local question, and slicing the first ten
+    // characters answered it in UTC — so a payment taken at 20:00 in Lagos
+    // on the 31st counted as the 31st, but the same payment at 20:00 in New
+    // York counted as the 1st of the next month.
+    const day = localDay(payment.paidAt)
     if (day < from || day >= to) continue
     const currency = payment.amount.currency
     buckets.set(currency, add(buckets.get(currency) ?? zero(currency), payment.amount))

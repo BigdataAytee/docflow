@@ -120,13 +120,26 @@ describe('Outstanding counts only money actually owed (§G)', () => {
 })
 
 describe('Received this month is payments, never receipts (§G, §V)', () => {
+  /**
+   * Instants built from LOCAL fields at midday.
+   *
+   * These fixtures used to be written as `'2026-09-30T23:59:59Z'`, and that
+   * is the shape of the bug rather than a way to test it: which calendar day
+   * such an instant falls on depends on the zone the test happens to run in,
+   * so the assertion passed in Greenwich and failed an hour east of it.
+   * Midday local is the same calendar day in every zone on Earth, so these
+   * tests now assert the rule rather than the runner's offset.
+   */
+  const middayLocal = (year: number, month: number, day: number): string =>
+    new Date(year, month - 1, day, 12, 0, 0).toISOString()
+
   it('sums effective payments inside the calendar month', () => {
     const received = receivedThisMonth(
       [
-        payment({ id: 'p1', amount: NGN(50_000_00), paidAt: '2026-09-01T00:00:00Z' }),
-        payment({ id: 'p2', amount: NGN(25_000_00), paidAt: '2026-09-30T23:59:59Z' }),
+        payment({ id: 'p1', amount: NGN(50_000_00), paidAt: middayLocal(2026, 9, 1) }),
+        payment({ id: 'p2', amount: NGN(25_000_00), paidAt: middayLocal(2026, 9, 30) }),
       ],
-      '2026-09-11T12:00:00Z',
+      '2026-09-11',
     )
     expect(received.get('NGN')).toEqual(NGN(75_000_00))
   })
@@ -134,13 +147,37 @@ describe('Received this month is payments, never receipts (§G, §V)', () => {
   it('excludes last month and next month', () => {
     const received = receivedThisMonth(
       [
-        payment({ id: 'p1', amount: NGN(10_00), paidAt: '2026-08-31T23:59:59Z' }),
-        payment({ id: 'p2', amount: NGN(20_00), paidAt: '2026-09-15T00:00:00Z' }),
-        payment({ id: 'p3', amount: NGN(40_00), paidAt: '2026-10-01T00:00:00Z' }),
+        payment({ id: 'p1', amount: NGN(10_00), paidAt: middayLocal(2026, 8, 31) }),
+        payment({ id: 'p2', amount: NGN(20_00), paidAt: middayLocal(2026, 9, 15) }),
+        payment({ id: 'p3', amount: NGN(40_00), paidAt: middayLocal(2026, 10, 1) }),
       ],
-      '2026-09-11T12:00:00Z',
+      '2026-09-11',
     )
     expect(received.get('NGN')).toEqual(NGN(20_00))
+  })
+
+  it('puts a late-evening payment in the day the OWNER was having', () => {
+    // The bug this replaced: an instant was sliced to its UTC day, so a
+    // payment taken at 23:30 on the 30th counted as October for a business
+    // east of Greenwich, and one taken at 20:00 on the 1st counted as the
+    // previous month for a business west of it. Built from local fields,
+    // both of these are unambiguously September wherever this runs.
+    const received = receivedThisMonth(
+      [
+        payment({
+          id: 'p1',
+          amount: NGN(10_000_00),
+          paidAt: new Date(2026, 8, 30, 23, 30).toISOString(),
+        }),
+        payment({
+          id: 'p2',
+          amount: NGN(5_000_00),
+          paidAt: new Date(2026, 8, 1, 0, 30).toISOString(),
+        }),
+      ],
+      '2026-09-11',
+    )
+    expect(received.get('NGN')).toEqual(NGN(15_000_00))
   })
 
   it('drops a reversed payment', () => {
@@ -153,8 +190,8 @@ describe('Received this month is payments, never receipts (§G, §V)', () => {
   })
 
   it('handles a December month boundary', () => {
-    expect(monthStart('2026-12-15T00:00:00Z')).toBe('2026-12-01')
-    expect(nextMonthStart('2026-12-15T00:00:00Z')).toBe('2027-01-01')
+    expect(monthStart('2026-12-15')).toBe('2026-12-01')
+    expect(nextMonthStart('2026-12-15')).toBe('2027-01-01')
   })
 
   it('keeps currencies apart here too', () => {

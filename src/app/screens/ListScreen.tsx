@@ -18,11 +18,12 @@ import { DOCUMENT_TYPES, type DocumentType } from '../../domain/documents/types'
 import { numberingPrefix } from '../../domain/locale/profile'
 import { format } from '../../domain/locale/data/strings'
 import { documentsOf, listRows } from '../derive'
+import { todayIso } from '../../domain/dates/calendar'
 
 const isDocumentType = (value: string | undefined): value is DocumentType =>
   value !== undefined && (DOCUMENT_TYPES as readonly string[]).includes(value)
 
-export function ListScreen({ today = new Date().toISOString().slice(0, 10) }: { today?: string }) {
+export function ListScreen({ today = todayIso() }: { today?: string }) {
   const { type } = useParams<{ type: string }>()
   const { profile, strings } = useCompany()
   const { company, customers, documents, payments, creditNotes, loading } = useAppData()

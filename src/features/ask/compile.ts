@@ -23,6 +23,7 @@
  */
 
 import type { AskPlan, FilterField, Grouping, Metric } from './plan'
+import { toIsoDay } from '../../domain/dates/calendar'
 
 export interface CompiledQuery {
   readonly sql: string
@@ -137,10 +138,19 @@ export interface DateRange {
  * chart makes invisible.
  */
 export function rangeFor(period: AskPlan['period'], now = new Date()): DateRange | null {
-  const year = now.getUTCFullYear()
-  const month = now.getUTCMonth()
-  const day = (y: number, m: number, d: number) =>
-    new Date(Date.UTC(y, m, d)).toISOString().slice(0, 10)
+  // LOCAL fields. "This month" is the month the owner is in, not the month
+  // Greenwich is in — and for the last hours of every evening in the
+  // Americas those are different months.
+  const year = now.getFullYear()
+  const month = now.getMonth()
+  // `m` is 0-BASED here, and deliberately allowed to overflow: callers below
+  // pass `month + 3` and `12` to roll into the next quarter and the next
+  // year. The Date constructor normalises that; formatting the number
+  // directly does not, and produced "2026-13-01".
+  const day = (y: number, m: number, d: number) => {
+    const at = new Date(y, m, d)
+    return toIsoDay(at.getFullYear(), at.getMonth() + 1, at.getDate())
+  }
 
   switch (period) {
     case 'this_month':

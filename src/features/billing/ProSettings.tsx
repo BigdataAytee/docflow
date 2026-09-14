@@ -15,6 +15,7 @@ import type { Standing } from '../../domain/billing/entitlement'
 import { noticeFor } from '../../domain/billing/entitlement'
 import { useCompany } from '../../app/context'
 import { format } from '../../domain/locale/data/strings'
+import { localDay } from '../../domain/dates/calendar'
 
 export interface ProSettingsProps {
   readonly standing: Standing
@@ -46,7 +47,7 @@ export function ProSettings({
         // Calm, and with a date on it. §U: "a calm one-line notice, no data
         // loss, no locked documents."
         <p className="rounded-xl bg-status-warn-tint px-3 py-2.5 text-sm text-status-warn" role="status">
-          {format(p.graceNotice, { date: standing.graceEndsAt.slice(0, 10) })}
+          {format(p.graceNotice, { date: localDay(standing.graceEndsAt) })}
         </p>
       )}
       {notice === 'lapsed' && (

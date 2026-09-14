@@ -19,6 +19,7 @@
  */
 
 import { type Money, isPositive } from '../../domain/money/money'
+import { localDay } from '../../domain/dates/calendar'
 
 /**
  * Carries a token, not a sentence. The words shown to the owner come from the
@@ -81,7 +82,11 @@ export function recordExpense(input: RecordExpenseInput): ExpenseRecord {
     id: input.id,
     companyId: input.companyId,
     amount: input.amount,
-    spentOn: input.spentOn.slice(0, 10),
+    // `localDay` rather than a slice: a caller handing in a full timestamp
+    // would otherwise have the expense stored against its UTC day, which is
+    // tomorrow for anyone spending money in the evening west of Greenwich.
+    // A bare `YYYY-MM-DD` passes straight through.
+    spentOn: localDay(input.spentOn),
     // A photo-only expense stays blank here and reads as its own evidence on
     // screen (§G: never a blank row). The word comes from the caller's strings.
     description,

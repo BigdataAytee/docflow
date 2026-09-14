@@ -98,12 +98,30 @@ describe('In / Out / Kept (§G)', () => {
   })
 
   it('ignores anything outside the period', () => {
+    // Midday LOCAL on 31 August. Written as '2026-08-31T23:00:00Z' this
+    // fixture was a boundary instant, so which side of the period it fell on
+    // depended on the zone the test ran in — it passed in Greenwich and
+    // failed an hour east of it. Midday is the same calendar day everywhere.
+    const augustThirtyFirst = new Date(2026, 7, 31, 12, 0).toISOString()
     const rows = inOutKept(
-      [payment({ id: 'pay_1', amount: NGN(100_00), paidAt: '2026-08-31T23:00:00Z' })],
+      [payment({ id: 'pay_1', amount: NGN(100_00), paidAt: augustThirtyFirst })],
       [expense('exp_1', NGN(50_00), '2026-10-01')],
       SEPTEMBER,
     )
     expect(rows.size).toBe(0)
+  })
+
+  it('counts a late-evening payment on the day the owner was having', () => {
+    // 23:30 on the 30th, local. Sliced to its UTC day this landed in October
+    // for any business east of Greenwich, taking the money out of September's
+    // In / Out / Kept entirely.
+    const lateOnTheThirtieth = new Date(2026, 8, 30, 23, 30).toISOString()
+    const rows = inOutKept(
+      [payment({ id: 'pay_1', amount: NGN(100_00), paidAt: lateOnTheThirtieth })],
+      [],
+      SEPTEMBER,
+    )
+    expect(rows.get('NGN')?.moneyIn).toEqual(NGN(100_00))
   })
 
   it('a receipt cannot increment income, because only payments are counted', () => {

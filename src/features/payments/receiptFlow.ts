@@ -30,6 +30,7 @@ import { quantity } from '../../domain/documents/types'
 import { type Money, isPositive } from '../../domain/money/money'
 import { type Payment, LedgerError, effectivePayments } from '../../domain/payments/ledger'
 import { type ReceiptDraft, receiptDraftFor, recordPayment } from './record'
+import { localDay } from '../../domain/dates/calendar'
 
 /**
  * Carries a token, not a sentence. The words the owner reads come from the
@@ -227,7 +228,13 @@ export function receiptRecordFor(input: {
     ],
     totalMinor: payment.amount.minor,
     // `paidAt` is a timestamp; a document date is a day (§E).
-    issueDate: payment.paidAt.slice(0, 10),
+    // The day the MONEY arrived, in the owner's calendar. Slicing the
+    // instant dated the receipt in UTC, which west of Greenwich puts an
+    // evening payment on tomorrow's receipt.
+    // The day the MONEY arrived, in the owner's calendar. Slicing the
+    // instant dated the receipt in UTC, which west of Greenwich puts an
+    // evening payment on tomorrow's receipt.
+    issueDate: localDay(payment.paidAt),
     customerId: payment.customerId,
     paymentId: payment.id,
     ...(input.linkedInvoiceId === undefined ? {} : { linkedInvoiceId: input.linkedInvoiceId }),
