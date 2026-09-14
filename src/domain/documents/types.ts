@@ -52,6 +52,18 @@ export interface LineItem {
   readonly quantityMilli: number
   /** Unit price in minor units. Absent on waybill lines, which carry no money. */
   readonly unitPriceMinor?: number
+  /**
+   * What the quantity is counted IN — "cartons", "bags", "pallets" (§E).
+   *
+   * A delivery document's whole content is what was handed over, and "3"
+   * against "3 cartons" is the difference between a record somebody can sign
+   * for and a number. Optional, and carried by the money types too, because
+   * a line that reads "3 bags of cement" is no worse on an invoice.
+   *
+   * Line items are stored as JSON on both sides, so this needs no migration
+   * and old rows simply have no unit.
+   */
+  readonly unit?: string
   /** Whether this line is in the tax base (§E line_items.tax_flag). */
   readonly taxable: boolean
 }

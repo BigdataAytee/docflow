@@ -55,6 +55,8 @@ export interface StepBodyProps {
   readonly onSign: () => void
   readonly signatureUrl?: string
   readonly onRememberItem: (item: { name: string; unitPriceMinor?: number }) => void
+  /** §G: "a list icon jumps to Settings → Saved items". */
+  readonly onOpenCatalogue: () => void
   readonly preview: ReactNode
 }
 
@@ -78,7 +80,12 @@ export function StepBody(props: StepBodyProps) {
       )
     case 1:
       return (
-        <ItemsStep draft={props.draft} onChange={props.onChange} onRemember={props.onRememberItem} />
+        <ItemsStep
+          draft={props.draft}
+          onChange={props.onChange}
+          onRemember={props.onRememberItem}
+          onOpenCatalogue={props.onOpenCatalogue}
+        />
       )
     case 2:
       return (
