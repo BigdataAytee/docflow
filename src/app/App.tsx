@@ -24,6 +24,7 @@ import {
 
 import { CompanyProvider, useCompany } from './context'
 import { AppDataProvider, useAppData } from './store'
+import { PaletteProvider } from './PaletteHost'
 import { Shell } from './Shell'
 import { HOME, SETTINGS_PANELS } from './paths'
 import { DEV_COMPANY_ID } from './seed'
@@ -226,7 +227,7 @@ function LocaleFromCompany({
       profile={profile}
       language={language}
     >
-      {error === null ? children : <LoadError message={error} />}
+      {error === null ? <PaletteProvider>{children}</PaletteProvider> : <LoadError message={error} />}
     </CompanyProvider>
   )
 }

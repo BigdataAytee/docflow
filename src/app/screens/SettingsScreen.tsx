@@ -17,6 +17,7 @@ import { Navigate, NavLink, useParams } from 'react-router-dom'
 import { useCompany } from '../context'
 import { useAppData } from '../store'
 import { SETTINGS_PANELS, type SettingsPanel, settingsPath } from '../paths'
+import { settingsDestinations } from '../destinations'
 import { PageHeader, SkeletonList } from '../../ui'
 import { CompanySettings } from '../../features/settings/CompanySettings'
 import { PaymentSettings } from '../../features/settings/PaymentSettings'
@@ -40,25 +41,19 @@ const isPanel = (value: string | undefined): value is SettingsPanel =>
 export function SettingsIndexScreen() {
   const { strings } = useCompany()
 
-  const rows: { panel: SettingsPanel; label: string }[] = [
-    { panel: 'region', label: strings.settings.regionAndLanguage },
-    { panel: 'company', label: strings.settings.company },
-    { panel: 'tax', label: strings.settings.tax },
-    { panel: 'payment', label: strings.settings.howYouGetPaid },
-    { panel: 'items', label: strings.settings.savedItems },
-    { panel: 'signature', label: strings.settings.defaultSignature },
-    { panel: 'appearance', label: strings.settings.theme },
-    { panel: 'data', label: strings.dataSync.title },
-  ]
+  // One list, shared with the command palette. Two copies of this drifted
+  // apart the moment a panel was added — which is exactly what happened to
+  // `appearance` before the palette existed to notice.
+  const rows = settingsDestinations(strings)
 
   return (
     <div className="pb-28">
       <PageHeader title={strings.nav.settings} />
       <ul className="mt-4 space-y-2 px-4">
         {rows.map((row) => (
-          <li key={row.panel}>
+          <li key={row.id}>
             <NavLink
-              to={settingsPath(row.panel)}
+              to={row.path}
               className="flex min-h-tap items-center rounded-2xl bg-surface/70 px-4 text-sm font-medium"
             >
               {row.label}

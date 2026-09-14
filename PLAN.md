@@ -1514,7 +1514,7 @@ gate itself is deferred with everything else that needs a phone.
       lists all 33 questions with the page to read for each. `npm run site`,
       `npm run shots` and `npm run policy` name every one of these on every
       run.
-- [x] **The final sweeps — six of seven done, and each one measured**
+- [x] **The final sweeps — seven of seven, and each one measured**
       (`src/sweeps/`, `tools/sweeps/`). §Q Phase 7: "final sweeps —
       accessibility, dark mode, RTL readiness assessment, responsive,
       terminology… onboarding, command palette/sidebar."
@@ -1599,15 +1599,46 @@ gate itself is deferred with everything else that needs a phone.
       sample in its own words, and the checklist ticking from the state it
       describes — with a sample never ticking "first document".
 
-      **The command palette and sidebar are NOT built, and this did not build
-      them.** §Q names them in a list of sweeps; no section of v6 specifies
-      either — not what they contain, not how they open, not what a sidebar
-      means on a phone-first product whose navigation §G defines as four tabs.
-      Designing both from one phrase would be inventing product. What the
-      sweep does instead is check the requirement they exist to serve and that
-      §V *does* state — keyboard navigation — asserting every destination is
-      tabbable and activatable, and recording the two features as unbuilt so
-      the phrase cannot be read as done.
+      **The command palette and sidebar are BUILT** (`src/features/palette/`,
+      `src/app/destinations.ts`, the rail in `src/app/Shell.tsx`). §Q names
+      them once, in its list of Phase-7 sweeps, and **no section of v6 says
+      what either contains** — not what is in them, not how they open, not
+      what a sidebar means on a phone-first product whose navigation §G
+      defines as four tabs. So what they are was decided here, and the
+      decisions are written down rather than smuggled in:
+
+      · **Neither adds a destination or an action.** Every palette row is a
+        route from `paths.ts` or a record already in the search index; the
+        sidebar shows the same four tabs as the bottom bar and a test asserts
+        the two lists are identical. Nothing in the app is reachable only
+        from either, so a phone with no keyboard loses nothing (Rule #1).
+      · **Every word resolves through `src/domain/locale`** (Rule #4), and
+        destinations carry §D.3's search terms: "delivery note" finds the
+        waybill list in a company that has never typed "waybill", and the
+        internal type finds it too.
+      · **Offline, like everything else** (Rule #2): it searches records that
+        are already loaded and navigates with the router. No network, ever.
+      · **The rail is the same navigation, moved** — not a second one. §F
+        keeps creation on the list page as a FAB, so the sidebar offers no
+        create; the palette does, because a palette without "New invoice" is
+        a menu with extra steps, and a palette is not the nav.
+
+      The work found two faults of its own making and one inherited. The
+      sidebar first shipped as `hidden lg:flex` beside `lg:hidden` — two
+      `<nav>`s with the same name and the same four links in the DOM at once,
+      where only the stylesheet decided which one a person met. It renders
+      one, chosen by a media query. The palette itself then failed the
+      screen-reader sweep: the dialog, its field and its result list were all
+      called "Go anywhere", so opening it announced the same three words three
+      times before a row. And the sweep's own `outside-landmark` rule called
+      every control in the palette stranded — a dialog is not a landmark, but
+      `aria-modal` scopes a reader to it, so a dialog now counts as a place.
+
+      The settings index and the palette now read ONE destination table.
+      Before it existed, the panels' labels lived in `SettingsScreen` and
+      their paths in `paths.ts` — which is how `appearance` was added to one
+      and not the other. A closed `SettingsPanel` union makes the next such
+      omission a type error.
 
 - [x] **Dark mode, built** (`src/features/theme/`, the themed half of §F in
       `tailwind.config.js` and `src/index.css`). §G lists it as a Settings row;
@@ -2763,6 +2794,14 @@ vectors of a few hundred bytes.
 | 228 | Two links may share a name if they share a destination | WCAG fails identical names going to DIFFERENT places. The list page's header button and its FAB are the same action and are not a defect, and a rule that flagged them would have been argued with until it was deleted. | `tools/sweeps/screenreader.ts` |
 | 229 | A navigation moves focus to `main` — except on a cold load | It is the one thing that announces an SPA route change. On first paint the reader is already reading from the top, and interrupting to say "main" would cut off the page title. | `src/app/focus.ts` |
 | 230 | An opened panel takes focus; the hand-back is best effort | Six panels replace their own trigger, so there is nothing to hand focus back TO. Doing the right thing where it is possible beats doing nothing everywhere — and the first version of the test could not tell the difference, because it closed the panel from the opener. | `src/ui/focus.ts` |
+| 232 | The palette adds no destination and no action — it is a VIEW of the route table | A palette that is the only way to reach something makes the phone the second-class client of a phone-first product. Every row is a route from `paths.ts` or a record already indexed, and a test asserts the sidebar's destinations equal the tab bar's. | `src/features/palette/CommandPalette.tsx` |
+| 233 | One destination table, read by the Shell, the settings index and the palette | Two copies is how `appearance` came to exist in `paths.ts` and not in the settings index. The panel union is closed, so the next omission is a type error rather than a missing row. | `src/app/destinations.ts` |
+| 234 | The palette lives above the routes, not inside the Shell | The builder and the welcome page are full-screen routes OUTSIDE the Shell (§G). A palette that stopped working on the screen where the work happens would be a gimmick. | `src/app/PaletteHost.tsx` |
+| 235 | ONE navigation is rendered, chosen by a media query — never two hidden from each other by CSS | The first sidebar was `hidden lg:flex` next to `lg:hidden`: two identically-named `<nav>`s in the DOM at once, a duplicate landmark anywhere the stylesheet is not the arbiter. | `src/app/useWide.ts` |
+| 236 | `search` is generic over anything with terms | Destinations and records are matched by the same rules, so §D.3's "waybill finds delivery note" is implemented once. Two matchers would have been two answers. | `src/features/search/index.ts` |
+| 237 | A dialog counts as a place for the landmark rule; sharing its name with its own control does not | `aria-modal` scopes a reader to the dialog, so its controls are not stranded — but the palette's dialog, field and list were all "Go anywhere", which is the tab-bar fault three deep. | `tools/sweeps/screenreader.ts` |
+| 238 | The screen-reader sweep runs at two widths, and with the palette open | No route URL reaches either. A sweep that only ran at phone width would never once have seen the sidebar, and a dialog is exactly where unnamed controls and stranded focus hide. | `tools/sweeps/screenreader.test.ts` |
+| 239 | ⌘K opens it, and is never the only way in | The shortcut every tool uses, so there is no reason to invent another — but §V asks that things work FROM a keyboard, not that they are reachable only from one, so the rail carries a visible button too. | `src/features/palette/usePaletteShortcut.ts` |
 | 231 | Content inside a horizontal scroller is not page overflow | The statement's five money columns do not fit a phone and now scroll inside their own region. Measured naively, every legitimate scroller reports as sideways scroll forever — the same way the `scrollWidth` comparison would have. | `tools/sweeps/responsive.ts` |
 | 223 | The theme choice is per DEVICE and never syncs | It is about the screen in somebody's hand and the light in the room. Two people sharing a company share neither, so it goes nowhere near the outbox. | `src/features/theme/theme.ts` |
 

@@ -75,8 +75,16 @@ const INTERACTIVE = new Set([
   'treeitem',
 ])
 
-/** The roles "browse by landmark" can reach. */
-const LANDMARKS = new Set([
+/**
+ * What COUNTS AS A PLACE — the landmarks "browse by landmark" reaches, plus
+ * the dialog roles.
+ *
+ * A dialog is not a landmark, and a control inside a modal one is not
+ * stranded either: `aria-modal` scopes the reader to the dialog, which is
+ * the whole point of it. The first version of this set left dialogs out and
+ * reported every control in the command palette as belonging to nowhere.
+ */
+const SCOPES = new Set([
   'banner',
   'navigation',
   'main',
@@ -85,6 +93,8 @@ const LANDMARKS = new Set([
   'search',
   'form',
   'region',
+  'dialog',
+  'alertdialog',
 ])
 
 function text(value: unknown): string {
@@ -129,7 +139,7 @@ function walk(nodes: readonly AxNode[], visit: (node: AxNode, place: Place) => v
     if (seen.has(node.nodeId)) return
     seen.add(node.nodeId)
     if (node.ignored !== true) visit(node, place)
-    const isLandmark = LANDMARKS.has(roleOf(node))
+    const isLandmark = SCOPES.has(roleOf(node))
     const inside: Place = {
       landmarked: place.landmarked || isLandmark,
       landmark: isLandmark ? nameOf(node) : place.landmark,
@@ -185,12 +195,14 @@ export function auditTree(route: string, nodes: readonly AxNode[]): Finding[] {
     if (INTERACTIVE.has(role)) {
       if (name === '') say('unnamed-control', `${role} with no accessible name`)
       else if (isGlyphOnly(name)) say('glyph-name', `${role} announced as "${name}"`)
-      // A landmark that shares its name with something inside it is named
+      // A container that shares its name with something inside it is named
       // after its own contents: the tab bar was `aria-label="Home"` and
       // announced as "Home, navigation" while holding a link called Home.
+      // The command palette did the same, three deep — the dialog, its field
+      // and its result list all called "Go anywhere".
       if (name !== '' && name === place.landmark) collisions.add(name)
       if (!place.landmarked && name !== '') {
-        say('outside-landmark', `${role} "${name}" is in no landmark`)
+        say('outside-landmark', `${role} "${name}" is in no landmark or dialog`)
       }
     }
 
@@ -203,7 +215,7 @@ export function auditTree(route: string, nodes: readonly AxNode[]): Finding[] {
   })
 
   for (const name of collisions) {
-    say('landmark-name-collides', `a landmark named "${name}" contains a control with that name`)
+    say('landmark-name-collides', `a container named "${name}" holds a control with that name`)
   }
 
   if (mains === 0) say('no-main', 'the page has no main landmark')

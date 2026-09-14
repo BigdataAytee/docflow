@@ -74,6 +74,29 @@ export interface UiStrings {
     readonly goHome: string
     readonly somethingWrong: string
   }
+  /**
+   * The command palette (§Q Phase 7, §V). Every word here names a way to
+   * REACH something that already exists — the palette adds no feature of its
+   * own, and the catalogue should read that way.
+   */
+  readonly palette: {
+    readonly title: string
+    readonly placeholder: string
+    readonly open: string
+    readonly goTo: string
+    readonly create: string
+    readonly records: string
+    readonly noMatch: string
+    readonly resultCount: string
+    /**
+     * The RESULT LIST's own name. It was `title`, so the dialog, the field
+     * and the list were all called "Go anywhere" and a reader heard the same
+     * three words three times before reaching a row.
+     */
+    readonly results: string
+    /** "All Invoices" — the plural label goes in. */
+    readonly openList: string
+  }
   readonly sync: {
     readonly savedLocal: string
     readonly waiting: string
@@ -684,6 +707,18 @@ const EN: UiStrings = {
     notFoundBody: 'The link may be old, or the record may have been removed.',
     goHome: 'Go to Home',
     somethingWrong: 'Something went wrong loading your work',
+  },
+  palette: {
+    title: 'Go anywhere',
+    placeholder: 'Search, or jump to a page',
+    open: 'Open the command palette',
+    goTo: 'Go to',
+    create: 'Create',
+    records: 'Records',
+    noMatch: 'Nothing matches that',
+    resultCount: '{count} results',
+    results: 'Results',
+    openList: 'All {label}',
   },
   sync: {
     savedLocal: 'Saved on this phone',

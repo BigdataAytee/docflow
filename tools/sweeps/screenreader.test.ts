@@ -207,6 +207,34 @@ describe('The rules a screen reader would stumble on', () => {
     expect(inside.map((f) => f.rule)).not.toContain('outside-landmark')
   })
 
+  it('counts a dialog as a place, and flags a dialog named after its own field', () => {
+    // A modal scopes the reader to itself, so its controls are not stranded —
+    // but three things inside it saying the same words is the same fault as a
+    // tab bar named after one of its links.
+    const found = auditTree(
+      '/',
+      tree(
+        { role: 'RootWebArea', children: ['1', '2'] },
+        { role: 'main' },
+        { role: 'dialog', name: 'Go anywhere', children: ['3'] },
+        { role: 'combobox', name: 'Go anywhere', properties: focusable },
+      ),
+    )
+    expect(found.map((f) => f.rule)).not.toContain('outside-landmark')
+    expect(found.find((f) => f.rule === 'landmark-name-collides')?.detail).toContain('Go anywhere')
+
+    const named = auditTree(
+      '/',
+      tree(
+        { role: 'RootWebArea', children: ['1', '2'] },
+        { role: 'main' },
+        { role: 'dialog', name: 'Go anywhere', children: ['3'] },
+        { role: 'combobox', name: 'Search, or jump to a page', properties: focusable },
+      ),
+    )
+    expect(named).toEqual([])
+  })
+
   it('walks through an ignored wrapper to the live control beneath it', () => {
     const found = auditTree(
       '/',
@@ -231,8 +259,15 @@ describe('The rules a screen reader would stumble on', () => {
   })
 })
 
+/**
+ * Two widths, because the app has two navigations and shows one at a time.
+ * A sweep that only ever ran at phone width would never once have seen the
+ * sidebar or the button that opens the palette.
+ */
+const WIDTHS = [390, 1280]
+
 describe.runIf(process.env.SWEEP === '1')('The real app, through the accessibility tree (§V)', () => {
-  it('audits every route', async () => {
+  it('audits every route, at a phone and at a desk', async () => {
     expect(existsSync(join(BUILD, 'shots.html')), 'build it first: npm run shots:build').toBe(true)
 
     const { origin, close } = await serve(BUILD)
@@ -240,18 +275,38 @@ describe.runIf(process.env.SWEEP === '1')('The real app, through the accessibili
     const findings: Finding[] = []
 
     try {
-      const context = await browser.newContext({ viewport: { width: 390, height: 844 } })
+      for (const width of WIDTHS) {
+        const context = await browser.newContext({ viewport: { width, height: 844 } })
+        const page = await context.newPage()
+        const cdp = await context.newCDPSession(page)
+        await cdp.send('Accessibility.enable')
+
+        for (const route of ROUTES) {
+          const where = `${route} @${width}`
+          await page.goto(`${origin}${route}?region=NG`, { waitUntil: 'networkidle' })
+          const { nodes } = (await cdp.send('Accessibility.getFullAXTree')) as { nodes: AxNode[] }
+          findings.push(...auditTree(where, nodes))
+          for (const [rule, detail] of (await page.evaluate(DOM_AUDIT)) as [Rule, string][]) {
+            findings.push({ route: where, rule, detail })
+          }
+        }
+        await context.close()
+      }
+
+      // And the palette, which no route URL reaches: it is opened with a
+      // keystroke and audited with the dialog on screen, because a dialog is
+      // exactly where unnamed controls and stranded focus hide.
+      const context = await browser.newContext({ viewport: { width: 1280, height: 844 } })
       const page = await context.newPage()
       const cdp = await context.newCDPSession(page)
       await cdp.send('Accessibility.enable')
-
-      for (const route of ROUTES) {
-        await page.goto(`${origin}${route}?region=NG`, { waitUntil: 'networkidle' })
-        const { nodes } = (await cdp.send('Accessibility.getFullAXTree')) as { nodes: AxNode[] }
-        findings.push(...auditTree(route, nodes))
-        for (const [rule, detail] of (await page.evaluate(DOM_AUDIT)) as [Rule, string][]) {
-          findings.push({ route, rule, detail })
-        }
+      await page.goto(`${origin}/?region=NG`, { waitUntil: 'networkidle' })
+      await page.keyboard.press('Control+k')
+      await page.waitForSelector('[role="dialog"]')
+      const { nodes } = (await cdp.send('Accessibility.getFullAXTree')) as { nodes: AxNode[] }
+      findings.push(...auditTree('/ with the palette open', nodes))
+      for (const [rule, detail] of (await page.evaluate(DOM_AUDIT)) as [Rule, string][]) {
+        findings.push({ route: '/ with the palette open', rule, detail })
       }
       await context.close()
     } finally {
@@ -259,7 +314,7 @@ describe.runIf(process.env.SWEEP === '1')('The real app, through the accessibili
       await close()
     }
 
-    console.log(reportOf(findings, ROUTES.length))
-    expect(findings, reportOf(findings, ROUTES.length)).toEqual([])
-  }, 600_000)
+    console.log(reportOf(findings, ROUTES.length * WIDTHS.length + 1))
+    expect(findings, reportOf(findings, ROUTES.length * WIDTHS.length + 1)).toEqual([])
+  }, 900_000)
 })

@@ -45,12 +45,21 @@ export interface IndexableItem {
   readonly name: string
 }
 
-export interface IndexEntry {
+/**
+ * Anything with terms can be matched. The command palette searches
+ * DESTINATIONS with the same rules that search records — one matching
+ * behaviour, so "waybill" finds the waybill list and the waybills in it
+ * without two implementations that drift apart.
+ */
+export interface Searchable {
+  /** Everything this entry can be found by, lower-cased. */
+  readonly terms: readonly string[]
+}
+
+export interface IndexEntry extends Searchable {
   readonly id: string
   readonly kind: IndexedKind
   readonly label: string
-  /** Everything this entry can be found by, lower-cased. */
-  readonly terms: readonly string[]
 }
 
 const norm = (value: string): string => value.trim().toLocaleLowerCase()
@@ -111,8 +120,17 @@ export function buildIndex(
   return entries
 }
 
-/** Substring match across every term. Empty query returns nothing, not all. */
-export function search(entries: readonly IndexEntry[], query: string, limit = 20): IndexEntry[] {
+/**
+ * Substring match across every term. Empty query returns nothing, not all.
+ *
+ * Generic over the entry, so a caller gets back what it put in rather than a
+ * narrowed `IndexEntry` it has to look up again by id.
+ */
+export function search<T extends Searchable>(
+  entries: readonly T[],
+  query: string,
+  limit = 20,
+): T[] {
   const q = norm(query)
   if (q === '') return []
 
