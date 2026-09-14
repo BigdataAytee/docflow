@@ -20,7 +20,14 @@ claims nothing the gates have not proven (§X).
 | 4 | Native polish | installable builds pass all flows on physical Android and iOS | not started |
 | **5** | Web + public links | cross-device visibility; token behaviour per §P; one payment per event | **part built** — 4 of 5 scope items done, webhooks part done; gate NOT passed (0 of 3 clauses, needs the deploy) |
 | **6** | Local AI + logo | the §N six-step gate per tier; the §O definition of done | **part built** — Tier-B extractor and the ladder's logic; gate needs devices |
-| **7** | Admin, hardening, migration, launch | the §V checklist green end to end | **part built** — admin, server-enforced permissions, the legacy migration, the pen-check roster, the generated §T listings, the marketing site, the store screenshots, the store-policy verification and the data export; gate NOT passed — the roster has never been run, because nothing is deployed |
+| **7** | Admin, hardening, migration, launch | the §V checklist green end to end | **mostly built, gate NOT passed** — admin and server-enforced permissions, the legacy migration, the pen-check roster, the §T discoverability package, the marketing site, the store screenshots and policy questionnaire, backup and export, **all seven sweeps**, account deletion, the ratings prompt, store billing's non-device half, the unlock sheets and the D12 preparation. **One scope item has no real implementation: rate-limit verification** (below). The rest of what is left needs a person: devices, store accounts, a deploy, and §W's decisions |
+
+**The one thing the whole build is waiting on** (2026-09-14): nothing is
+deployed. `supabase db push`; deploy `public-link`, `payment-webhook` and
+`store-notifications` with `--no-verify-jwt`; rotate both Supabase keys;
+open a Paystack test-mode merchant account. Phase 5's gate is **0 of 3**
+until then, and Phase 7's §V checklist cannot be green while Phase 5's is
+not. All eighteen migrations and all three edge functions are written and unrun.
 
 ---
 
@@ -879,8 +886,12 @@ client's 59.
       in the schema since Phase 1 and nothing reads or writes it; the app
       resolves language from `company.localeLanguage`. Schema only.
 (Provider payment webhooks moved to "Built — but unreached" above.)
-- [ ] **Web billing and entitlement sync** (§U). Not started; §U schedules it
-      here and store billing in Phase 7.
+- [ ] **Web billing and entitlement SYNC** (§U). Part built, from the other
+      end: Phase 7's store-billing work (below) derives one `entitlements` row
+      per company server-side and reads a cached signed payload offline, so
+      the rules at both ends exist and are tested. What is missing is the
+      middle — minting the signed, expiring payload and caching it on the
+      device — plus web card billing itself, which needs a provider account.
 
 ### The Phase 5 gate — assessed honestly
 
@@ -2075,219 +2086,29 @@ gate itself is deferred with everything else that needs a phone.
       checked as files, so changing the function that writes them changed
       nothing anybody would notice.
 
-### The physical-device remainder — one consolidated list- [x] **The ratings prompt — built, and it shows nothing yet** (`src/domain/ratings/`,
-      `src/features/ratings/`). §T: "ratings prompts appear only at happy
-      moments." The store-policy pass found the questionnaire describing this
-      as though it shipped; it had never been written.
+### Rate-limit verification — §Q asks for it and it is NOT done
 
-      **The whole design is the word ONLY.** Every store's review API already
-      rate-limits the prompt itself — the system decides whether anything
-      appears, and an app that asks too often burns its allowance in silence.
-      So nothing here counts prompts to obey a store. It counts them because a
-      request the system swallows is a request wasted, and because the MOMENT
-      is ours to choose even when the showing is not.
+§Q's Phase-7 scope names "rate-limit verification"; §P asks for "rate limiting
+on auth and public endpoints". **The plan has never mentioned either, which is
+how a scope item goes missing** — found while writing this board, by checking a
+claim instead of making it.
 
-      The moment §T names is a share that worked: the one point in this app
-      where somebody has just finished the thing they came to do. Everything
-      else is a reason not to ask, and the reasons are the substance — never
-      after an error, a void, a credit note or a deletion; never before three
-      successful shares, because §R's sample is not an achievement; never
-      while the account is scheduled for deletion, which would be asking
-      somebody on their way out what they think of the place; never in a demo;
-      at most three times ever, four months apart; and nothing anywhere is
-      gated behind it (Apple 3.2.2(x)). The refusals are ORDERED so the
-      insulting ones come first: a device that is both leaving and short of
-      shares is refused for leaving.
+What exists is a fixed-window limiter in `public-link`: twenty attempts per
+token per minute, keyed by token rather than by IP so a customer on a shared
+mobile network cannot be locked out by a stranger. Its rules are unit-tested.
 
-      **Nothing can show it, and that is stated rather than hidden.** There is
-      no web review API — and an App Store page for an app that is not
-      installed is an advertisement in the middle of somebody's invoice, not a
-      rating prompt. So the port reports `unavailable`, the decision refuses
-      before anything is attempted, and `npm run policy` declares both halves
-      separately: wired to a happy moment, and shown to nobody. Phase 4 swaps
-      in StoreKit and Play; no screen changes.
+What it is not is a rate limiter. The counter is `new Map()` in module scope —
+**in-memory, per instance** — so it resets on every cold start and counts
+nothing across the instances a real deployment runs. The code says so in its
+own comment rather than pretending, which is the right thing to have done and
+is not the same as the item being complete.
 
-      **There is deliberately no outcome and no pre-prompt.** Both platforms
-      report nothing about what the person did — by design, so an app cannot
-      treat rating as a transaction — so `request()` returns whether the ASK
-      was made and nothing else. And the "show our own dialog first" pattern,
-      which filters unhappy people out of the listing, is a thing to do to a
-      rating rather than for a person.
-
-      Eleven mutations, eleven caught. The last one found a gap in the POLICY
-      suite rather than this one: `checkRatingsPrompt` was reading prose, and
-      would have counted the comment "Phase 4 calls `requestReview` here" as
-      an implementation — the same fault as `checkAccountDeletion` finding
-      `deleteAccount` in its own regex, and the same fix, now pinned by a test.
-
-- [x] **Store billing — the half that does not need a device** (`src/domain/billing/`,
-      `supabase/migrations/0018_store_billing.sql`,
-      `supabase/functions/store-notifications/`). §U; §Q Phase 7's "store
-      billing (StoreKit 2 + Play Billing, server notifications, restore,
-      offline grace, sandbox-tested)". D10.
-
-      `subscriptions` and `entitlements` have existed since 0005 and **nothing
-      had ever written to or read from them.** Both halves now exist, and the
-      split between what could be built here and what could not is the point
-      of this entry.
-
-      **Entitlements, offline.** §U: "Pro features check the cache locally —
-      so Pro works in airplane mode — with a built-in offline grace window …
-      Past grace with no successful refresh, the app degrades politely to
-      Free." The rules are pure and the failure directions are chosen: a cache
-      that is absent, unsigned or holds nonsense dates is FREE, never
-      optimistic — guessing Pro hands a paid plan to anybody who corrupts a
-      file, guessing Free costs a feature until the next refresh. And
-      `NEVER_GATED` is checked BEFORE the plan is read, so no later edit to
-      the plan logic can reach the six things Rule #6 protects.
-
-      **Replay and out-of-order, proven against Postgres.** §V's gate:
-      "replayed or out-of-order billing webhooks change nothing." Idempotence
-      by event id is the easy half; ORDER is not, and the failure is
-      expensive — a retried `DID_RENEW` arriving after the `EXPIRED` that
-      followed it resurrects a dead subscription and hands out a month nobody
-      paid for. So nothing is applied because of what it IS: every decision is
-      the event's own timestamp against the newest already applied, which
-      makes replay and reordering one problem solved once. Eight tests in
-      `supabase/tests/billing.test.ts` hold it against a real database,
-      including that a signed-in user cannot call the apply function at all.
-
-      **The door is shut, deliberately.** Apple signs ASSN v2 as a JWS whose
-      `x5c` chain must validate to Apple's root; Google delivers RTDN through
-      Pub/Sub with a Google-signed OIDC token. **Neither can be implemented
-      honestly without something to test it against** — a sandbox notification
-      from a real App Store Connect account, a real Pub/Sub push — and an
-      unexercised verifier standing between a stranger and a paid plan is
-      worse than a closed door. It is the same call the payment webhook made
-      for Flutterwave and PayPal. So every event is PARKED in the ledger with
-      a reason naming exactly what it needs, and nothing reaches a
-      subscription.
-
-      **Nothing is gated, because nobody has drawn the line.** §U: "the exact
-      free/Pro line is a product decision recorded in §W before Phase 5 — the
-      architecture below is indifferent to where the line lands." §W still
-      lists it under decisions requiring evidence. So the split is data, it is
-      empty, and a `reviewStatus` gates it the way native-speaker sign-off
-      gates the terminology tables: fill in `proFeatures` without recording
-      the decision and it still gates nothing. Inventing the line would be
-      inventing product, and the expensive kind — a feature that becomes Pro
-      after people have used it free cannot be taken back without a fight.
-
-      Twelve mutations, twelve caught, three of them against the database.
-
-      **Still D10, and still needs a human with hardware and accounts:** the
-      native purchase flow (StoreKit 2 and Play Billing, which need Phase 4's
-      shell), Restore purchases on a wiped reinstall, sandbox and internal
-      testing, the two signature verifiers, and §U's contextual unlock sheets
-      — which cannot be written before §W says what they would be unlocking.
-
-- [x] **The unlock sheets, the badge and the quiet Settings row** (§U,
-      Rule #1, Rule #6). `src/domain/billing/unlock.ts`,
-      `src/features/billing/`. The mechanism §U describes, built against a
-      line §W has still not drawn — so it is complete, tested, and reachable
-      by nobody.
-
-      §U: "contextual unlock sheets exactly where a gated feature is tapped …
-      each with **the price, the trial, and a no-hard-feelings dismiss**. No
-      modal ambushes, no fake urgency, no feature that silently produces a
-      paywall after work is done — a gated feature announces itself **before**
-      the user invests effort."
-
-      Three rules come out of that, and all three live in the domain rather
-      than in the component, because a rule in a component is one refactor
-      from gone.
-
-      · **A sheet without a price does not open.** "Tap to find out what it
-        costs" is the dark pattern that paragraph describes, told backwards.
-        No price for this market, no offer — and the feature stays USABLE.
-        Every refusal fails towards the person rather than towards the money,
-        which is the direction that matters: a bug that hides a paywall costs
-        money, and a bug that shows one without a price costs trust.
-      · **Nothing is gated without an announcement point.** A Pro feature must
-        name the control somebody meets BEFORE they start work, so the badge
-        can sit on it. `featuresWithNoEntryPoint()` is asserted empty, so the
-        commit that gates a feature with nowhere to announce it fails here
-        rather than shipping a paywall that appears after the work.
-      · **The dismiss is the equal of the purchase** — same size, and FIRST in
-        the DOM, which is also what a keyboard and a screen reader reach
-        first. "Not now", never "I don't want to grow my business".
-
-      A test sweeps the rendered sheet for manufactured urgency — "only
-      today", "last chance", "expires", "hurry", "ends in" — and the four
-      forbidden things are written down as data so the tests read as the rule
-      rather than as somebody's taste.
-
-      **Prices are §W's.** §U wants "regional pricing per store templates so
-      NGN, GHS, INR prices are sane, not naive conversions"; §W still lists
-      price points under decisions requiring evidence. So `PRICES` is empty
-      behind the same `reviewStatus` as the split, and — found by mutation —
-      filling in the numbers without recording the decision still sells
-      nothing. Prices are integer minor units, because Rule #3 does not stop
-      at invoices.
-
-      The sweep from the screen-reader work earned its keep the same day:
-      `UnlockSheet.tsx` was written without `useFocusOnOpen`, and the "wired
-      into every sheet, including ones written later" test failed on the
-      commit that added it. Fixed rather than exempted.
-
-      Ten mutations, ten caught.
-
-- [x] **D12, prepared — the pass itself still needs a person**
-      (`docs/a11y/d12-screen-reader-pass.md`, `docs/a11y/transcripts/`,
-      `tools/sweeps/readingorder.ts`). Nothing here completes D12, and no
-      test in this repository should be read as having done so.
-
-      What it does is three things, and the first is the one that was
-      genuinely still open.
-
-      **Reading order is now machine-checked.** A screen reader announces in
-      DOM order; a sighted person reads in visual order; `order`,
-      `row-reverse`, grid placement and absolute positioning separate the
-      two — and nothing in an accessibility tree reveals it. Every name is
-      right, every role is right, and the sentences arrive in the wrong
-      sequence. The sweep now compares heard against seen, sibling by
-      sibling, across 42 route-widths.
-
-      The first version of that rule **reported four settings screens and both
-      builders as broken, and was wrong**: it compared tops with a tolerance,
-      and a row with `items-center` holding a 20px label beside a 44px button
-      puts the label's top twelve pixels lower. A row is decided by vertical
-      OVERLAP now, which is what a person sees. The app reads in the order it
-      looks, on every route.
-
-      **Every route has a transcript** — the nodes a reader walks and the name
-      each carries, committed. Two reasons: a tester reads the screen before
-      listening to it and the difference is the finding; and a change to what
-      the app SAYS shows up in a diff rather than in somebody's ear six weeks
-      later. The first capture was half noise — "region: Outstanding" followed
-      by "StaticText: Outstanding" — because a name a parent already used is
-      not a second announcement. A CI test refuses to let a route exist
-      without one, which is the only guard CI can offer with no browser.
-
-      **And the protocol**, written the way the Phase-0 spikes are: kill
-      criteria fixed in advance so a bad result is work rather than a
-      negotiation, ten journeys walked with the screen curtain on, empty
-      results tables, and a list of what a machine has already checked so
-      nobody spends the visit on it.
-
-      The most useful part is the list of what a machine CANNOT judge —
-      whether the order makes sense, whether the app is exhausting to listen
-      to, how money and references are spoken, the rotor, gestures, braille,
-      and the second translation layer a native WebView adds. Including one
-      redundancy found while reading the transcripts and deliberately left
-      alone: Home announces "Needs attention" as a region and again as its
-      heading. It is a listening question, and pre-empting the listener is
-      the one thing this preparation must not do.
-
-      **Run it with somebody who uses a screen reader daily, and pay them.**
-      Not a sighted developer switching VoiceOver on for an hour — that finds
-      "the button has no label", which is already machine-checked. It does not
-      find "this is the third time this screen has said my company name".
-
-      Six mutations, six caught — two only after the mutation found that the
-      transcript GENERATOR had no test of its own: the committed files are
-      checked as files, so changing the function that writes them changed
-      nothing anybody would notice.
+- [ ] **A limiter with shared state**, on the public endpoints and on auth.
+      Postgres is already there and a token bucket in a table is honest and
+      cheap; Supabase's own gateway limits are the alternative and need the
+      project to exist. Either way this is verifiable only against a
+      deployment, which is the same thing Phase 5's gate is waiting for.
+- [ ] **Auth endpoints**, which have no limiter of any kind today.
 
 ### The physical-device remainder — one consolidated list
 
