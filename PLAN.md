@@ -28,6 +28,9 @@ deployed. `supabase db push`; deploy `public-link`, `payment-webhook` and
 open a Paystack test-mode merchant account. Phase 5's gate is **0 of 3**
 until then, and Phase 7's §V checklist cannot be green while Phase 5's is
 not. All nineteen migrations and all three edge functions are written and unrun.
+**Ten separate items now queue behind that one act** — they are listed as S1–S10
+under "The server remainder" below, so the cost of not deploying is countable
+rather than scattered.
 
 ---
 
@@ -158,8 +161,8 @@ not start until they are.
 | Money and transition property tests pass | ✅ verified — 66 tests across `src/domain/{money,documents,payments}`, blocking in CI |
 | Label resolution passes its own property test; no hardcoded type name survives the lint rule | ✅ verified, both halves — 36 tests in `src/domain/locale`, plus the lint rule |
 | Encrypted SQLite opens on device | ⏸ **deferred to Phase 4** — needs the native shell and a physical device |
-| Login / register / Google / reset in ≤ legacy tap counts | ⛔ **unverified** — code complete, no reachable instance |
-| *(self-imposed)* the same denial suite against the hosted instance | ⛔ **unverified** — same reason |
+| Login / register / Google / reset in ≤ legacy tap counts | ⛔ **unverified** — code complete, no reachable instance (S6; the tap count itself is D2) |
+| *(self-imposed)* the same denial suite against the hosted instance | ⛔ **unverified** — same reason (S4) |
 
 **The Phase 1 gate is NOT passed.** Three clauses verified, one deferred to
 Phase 4, two unverifiable until the project is reachable. Nothing here is
@@ -1566,6 +1569,16 @@ gate itself is deferred with everything else that needs a phone.
       rehearsed: there is no project, and inventing plausible values would make
       the report green for a database that does not exist.
 
+- [x] **The auth limits: declared, probed, and said in our own words**
+      (`src/domain/auth/limits.ts`, `src/features/auth/refusal.ts`, hosted
+      gate step 10). GoTrue has no seam to put a counter in, so the limiter
+      stays the provider's and the numbers, the probe and the wording are
+      ours. The probe never touches an endpoint that sends mail, signs in as
+      an address RFC 2606 reserves for nobody, and stops at a ceiling; the
+      step is exported and driven against a stub, because a gate step CI can
+      never run is decision 158 waiting to happen again. Running it for real
+      is S5. Detail under "Rate-limit verification" below.
+
 - [x] **Rate limiting on the public endpoints, with a counter every instance
       shares** (`0019_rate_limits.sql`, `supabase/functions/_shared/`). §P's
       "rate limiting on auth and public endpoints", which §Q's Phase-7 scope
@@ -2231,14 +2244,28 @@ place, and it grows as new deferrals join it.
 | D11 | Zero outbound AI bytes, confirmed by traffic inspection | §Q Phase 6 | A device on a watched network |
 | D12 | A VoiceOver and TalkBack pass by somebody who uses one | §Q Phase 7, §V | The protocol, the pre-agreed criteria and the per-route transcripts are written (`docs/a11y/d12-screen-reader-pass.md`); reading order is now machine-checked. What remains is a person listening: whether the order MAKES SENSE, whether it is exhausting, how money and references are spoken, the rotor, gestures and braille |
 
-Two further items are deferred but need a SERVER rather than a device, and are
-tracked with the Phase 5 gate instead: the hosted deploy, and Paystack test
-credentials. A third now joins them: **the scripted penetration checks in
-`tools/pentest/checks.ts` have never been run against anything**, because
-there is no deployed instance to run them against. They are written, and
-proved adversarial against a permissive fake, but until `npm run pentest` has
-been run for real the §Q Phase 7 gate stands unmet. The secrets half of the
-same work does run today, in CI.
+### The server remainder — the other consolidated list
+
+This list used to be a sentence that read "two further items… a third now
+joins them", patched each time something else queued up behind the deploy.
+It had reached ten, which is not a sentence any more. The device list gets a
+table; so does this one.
+
+Nothing here needs a phone. Every row needs the same one thing — a reachable
+Supabase project — and each is **written and unrun**, never half-built.
+
+| # | What | Which gate | What it is waiting for |
+| --- | --- | --- | --- |
+| S1 | The deploy itself: nineteen migrations, three edge functions with `--no-verify-jwt`, both keys rotated | §Q Phase 5 | Somebody to run it. Every row below is downstream of this one |
+| S2 | Paystack test-mode credentials, and the webhook path end to end | §Q Phase 5 | A merchant account nobody here can open |
+| S3 | `npm run pentest` against a live instance | §Q Phase 7 | Written, proved adversarial against a permissive fake, never run for real. The secrets half does run today, in CI |
+| S4 | The two-company denial suite against the HOSTED project | §Q Phase 1 *(self-imposed)* | It passes against local Postgres in CI; the clause asks about the host |
+| S5 | The auth rate-limit probe — gate step 10 | §Q Phase 7 | The numbers are declared and the probe is driven against a stub in CI. Only the real project can answer |
+| S6 | Login / register / Google / reset working against real auth | §Q Phase 1 | Code complete, no reachable instance. (D2 is the separate question of how many taps it takes) |
+| S7 | The public-link journeys — accept, reject, sign — through a deployed function | §Q Phase 5 | The pages, the token rules and the RPC are built and tested; nothing has ever served one |
+| S8 | Submittable store screenshots | §T, §Q Phase 7 | The app has to be photographed signed in to a deployed project, not on the demo backend (decision 180) |
+| S9 | Backup schedule configured, and a dated restore rehearsal | §V | The schedule is stated as data and the verification REFUSES to call a configured schedule verified. Nothing is configured and nothing has been rehearsed |
+| S10 | The entitlement middle: minting the signed, expiring payload | §U | Both ends exist — the server derivation and the offline cached read. The middle needs a server to mint from |
 
 ---
 
@@ -3301,6 +3328,7 @@ vectors of a few hundred bytes.
 | 276 | A probe never touches an endpoint that sends mail, and stops at a ceiling | A mail-bomb check that mail-bombs is not a check; the address in a reset request is chosen by whoever is asking. The ceiling is the second lock: a wrong number in the declaration must not be able to turn the gate into the flood it is checking for. | `src/domain/auth/limits.ts` |
 | 277 | The provider's English never reaches the screen | `error.message` put "Email rate limit exceeded" in front of a person in a product with seven locales, in jargon, at the worst possible moment — and told whoever was probing how the system is built. Classified by status first, code next, prose last, and said in our own words. | `src/features/auth/refusal.ts` |
 | 278 | A gate step CI can never run is exported and driven against a stub | Decision 158 is a pentest entry point that was written, committed and never called. A step that needs a project nobody has is the same shape of lie, so the auth step takes its host as an argument and a test points it at a server that answers the way a limiter does. | `supabase/tests/hosted-gate.test.ts` |
+| 279 | The deploy's cost is a numbered list, not a sentence that gets patched | "Two further items… a third now joins them" had quietly reached ten. The device remainder has had a table since it was three items long; the server remainder now has one too, and the test counts the rows against the sentence that summarises them. | `PLAN.md`, `src/sweeps/plan.test.ts` |
 
 ## Deviations from the spec
 
