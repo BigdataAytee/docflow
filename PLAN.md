@@ -18,16 +18,16 @@ claims nothing the gates have not proven (§X).
 | **2.5** | Remaining improvements | each §L behaviour verified offline; "Kept" moves the moment an expense is added; a reissued receipt never increments income | **gate passed** |
 | **3** | Sync | five offline documents arrive once; two-device edits retain both; no chaos scenario double-counts, resurrects or alters a frozen label | **code complete** — gate verified at logic level |
 | 4 | Native polish | installable builds pass all flows on physical Android and iOS | not started |
-| **5** | Web + public links | cross-device visibility; token behaviour per §P; one payment per event | **part built** — 4 of 5 scope items done, webhooks part done; gate NOT passed (0 of 3 clauses, needs the deploy) |
+| **5** | Web + public links | cross-device visibility; token behaviour per §P; one payment per event | **part built** — 2 of §Q's 4 scope items whole (the public pages, the copy-link note); the repositories are built but nothing is deployed and per-user language is schema-only; webhooks verified for **one provider of three**. Gate NOT passed (0 of 3 clauses, needs the deploy) |
 | **6** | Local AI + logo | the §N six-step gate per tier; the §O definition of done | **part built** — Tier-B extractor and the ladder's logic; gate needs devices |
-| **7** | Admin, hardening, migration, launch | the §V checklist green end to end | **mostly built, gate NOT passed** — admin and server-enforced permissions, the legacy migration, the pen-check roster, the §T discoverability package, the marketing site, the store screenshots and policy questionnaire, backup and export, **all seven sweeps**, account deletion, the ratings prompt, store billing's non-device half, the unlock sheets, the D12 preparation and the shared-state rate limiter. What is left needs a person: devices, store accounts, a deploy, and §W's decisions — including the one half of rate-limit verification that only a live project can answer (auth, step 10 of the hosted gate) |
+| **7** | Admin, hardening, migration, launch | the §V checklist green end to end | **mostly built, gate NOT passed** — admin with server-enforced permissions, the legacy migration, the pen-check roster, the §T discoverability package, the marketing site, the store screenshots and policy questionnaire, backup and export, **all seven sweeps**, account deletion, the ratings prompt, store billing's non-device half, the unlock sheets, the D12 preparation, and the shared-state rate limiter. Everything still open needs a person: devices, store accounts, a deploy, §W's decisions — and the auth half of rate-limit verification, which is step 10 of a gate no project exists to run |
 
 **The one thing the whole build is waiting on** (2026-09-14): nothing is
 deployed. `supabase db push`; deploy `public-link`, `payment-webhook` and
 `store-notifications` with `--no-verify-jwt`; rotate both Supabase keys;
 open a Paystack test-mode merchant account. Phase 5's gate is **0 of 3**
 until then, and Phase 7's §V checklist cannot be green while Phase 5's is
-not. All eighteen migrations and all three edge functions are written and unrun.
+not. All nineteen migrations and all three edge functions are written and unrun.
 
 ---
 
@@ -154,9 +154,9 @@ not start until they are.
 
 | §Q clause | Result |
 | --- | --- |
-| Two seeded companies cannot read or write each other | ✅ verified, local Postgres — 15 tests, blocking in CI |
-| Money and transition property tests pass | ✅ verified — 113 tests, blocking in CI |
-| Label resolution passes its own property test; no hardcoded type name survives the lint rule | ✅ verified, both halves |
+| Two seeded companies cannot read or write each other | ✅ verified, local Postgres — 21 tests in `supabase/tests/rls.test.ts`, blocking in CI |
+| Money and transition property tests pass | ✅ verified — 66 tests across `src/domain/{money,documents,payments}`, blocking in CI |
+| Label resolution passes its own property test; no hardcoded type name survives the lint rule | ✅ verified, both halves — 36 tests in `src/domain/locale`, plus the lint rule |
 | Encrypted SQLite opens on device | ⏸ **deferred to Phase 4** — needs the native shell and a physical device |
 | Login / register / Google / reset in ≤ legacy tap counts | ⛔ **unverified** — code complete, no reachable instance |
 | *(self-imposed)* the same denial suite against the hosted instance | ⛔ **unverified** — same reason |
@@ -164,6 +164,14 @@ not start until they are.
 **The Phase 1 gate is NOT passed.** Three clauses verified, one deferred to
 Phase 4, two unverifiable until the project is reachable. Nothing here is
 recorded as passing on local evidence when the clause asks about the host.
+
+The counts above were **re-measured on 2026-09-14**, by path, and two of them
+had drifted: the denial suite had grown from 15 tests to 21, and "113" no
+longer matched anything that could be pointed at. A number in a status board
+is a claim like any other, and correcting these by hand fixes today without
+fixing the habit — so each count now names its path and `src/sweeps/plan.test.ts`
+re-derives it from that path on every commit. The board goes stale on the
+commit that makes it stale, not months later when somebody notices.
 
 ## Phase 2 — detail
 
@@ -569,8 +577,13 @@ work wearing a §G label. (The third straggler, "add photo", was the opposite
 mistake: Phase 2 work I had recorded three times as needing the Phase 4
 camera, when `capture="environment"` needed nothing at all.)
 
-So three of the five scope items are built, one is part-built, and one has
-not been begun.
+§Q's sentence names four things, and the honest count against them is two
+whole: the tokenized public pages, and the copy-link note. "Web deployment"
+is part-built — the repositories are real and the app runs on them, but there
+is no deployment and per-user language preference is schema only. The webhooks
+are verified for one provider of three, and the other two are parked for
+reasons no amount of work here can change (§U's web billing sits alongside,
+part built from the other end).
 
 ### Built
 
@@ -1552,6 +1565,15 @@ gate itself is deferred with everything else that needs a phone.
       not a qualified pass. Nothing is configured and nothing has been
       rehearsed: there is no project, and inventing plausible values would make
       the report green for a database that does not exist.
+
+- [x] **Rate limiting on the public endpoints, with a counter every instance
+      shares** (`0019_rate_limits.sql`, `supabase/functions/_shared/`). §P's
+      "rate limiting on auth and public endpoints", which §Q's Phase-7 scope
+      calls rate-limit verification. `public-link` charges a per-token and a
+      per-caller bucket; `store-notifications` bounds the one row an unsigned
+      caller can write; the payment webhook is deliberately left alone. The
+      auth half is a live check nothing can run yet. Detail under
+      "Rate-limit verification" below.
 
 ### Not started
 
@@ -3231,6 +3253,13 @@ vectors of a few hundred bytes.
 | 239 | ⌘K opens it, and is never the only way in | The shortcut every tool uses, so there is no reason to invent another — but §V asks that things work FROM a keyboard, not that they are reachable only from one, so the rail carries a visible button too. | `src/features/palette/usePaletteShortcut.ts` |
 | 231 | Content inside a horizontal scroller is not page overflow | The statement's five money columns do not fit a phone and now scroll inside their own region. Measured naively, every legitimate scroller reports as sideways scroll forever — the same way the `scrollWidth` comparison would have. | `tools/sweeps/responsive.ts` |
 | 223 | The theme choice is per DEVICE and never syncs | It is about the screen in somebody's hand and the light in the room. Two people sharing a company share neither, so it goes nowhere near the outbox. | `src/features/theme/theme.ts` |
+| 267 | The rate-limit counter lives in Postgres, and the window slides | A `Map` in module scope counts one instance and forgets on every cold start, which is not a limit however well it is tested. A fixed window is the other half-measure: twenty at 11:59:59 and twenty more at 12:00:00 is twice the limit through the boundary. | `0019_rate_limits.sql` |
+| 268 | The increment and the decision are ONE statement | Read-then-decide lets two callers both see "nineteen" and both pass. The row lock the upsert takes is the whole of the concurrency argument, and ten racers against a limit of three get exactly three. | `0019_rate_limits.sql` |
+| 269 | `public-link` charges per token AND per caller | Per token alone cannot see a guessing run at all: every guess is a different token and so a different key. Per caller alone would lock out an office behind one address, so it is loose on purpose — it stops a script, not a family. No `x-forwarded-for` means no per-caller bucket, never one shared "unknown" key. | `supabase/functions/_shared/ratelimit.ts` |
+| 270 | The limiter fails OPEN | Failing closed takes every customer's link dark on a database blip, which is Rule #6 broken by a defence. Failing open costs a minute of unthrottled guessing against 32 random bytes. | `supabase/functions/_shared/ratelimit.ts` |
+| 271 | The payment webhook is deliberately unlimited; the store webhook is not | The payment webhook's callers are the provider's own addresses and a dropped event is money the ledger never hears about — and every write sits below the signature check, so an unsigned flood buys one indexed lookup. The store endpoint writes a parked row BEFORE any signature, with an id from the body, so distinct ids meant unbounded rows: that one write is bucketed and the verified path is not. | `src/features/webhooks/routing.test.ts` |
+| 272 | A test that depends on where the wall clock stands is a coin flip | The sliding-window test asserted the carry-forward from wherever the minute happened to be — and how much carries over IS where the minute is. It passed locally and CI called it at 2.94 against a limit of 3. It waits for a window boundary now; the window was never wrong. | `supabase/tests/ratelimit.test.ts` |
+| 273 | The status board's numbers are tested, not maintained | The migration count was a word behind within a day, and "113 tests" had drifted until it matched nothing. Correcting a number by hand fixes the sentence and not the habit, so each count names a path and a test re-derives it. Deleting the sentence fails too — an assertion that quietly matches nothing is the failure it exists to prevent. | `src/sweeps/plan.test.ts` |
 
 ## Deviations from the spec
 
