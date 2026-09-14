@@ -87,6 +87,7 @@ export function settingsDestinations(strings: UiStrings): Destination[] {
     signature: strings.settings.defaultSignature,
     appearance: strings.settings.theme,
     data: strings.dataSync.title,
+    delete: strings.deleteAccount.rowLabel,
   }
 
   return (Object.keys(labels) as SettingsPanel[]).map((panel) => ({

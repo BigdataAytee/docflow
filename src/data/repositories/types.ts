@@ -14,6 +14,12 @@
  *    record (§M), and the key is how each implementation guarantees that.
  */
 
+import type {
+  DeletionRequest,
+  Lifecycle,
+  Result,
+  Role,
+} from '../../domain/account/deletion'
 import type { DocumentType, FrozenLabels, LineItem } from '../../domain/documents/types'
 import type { Money } from '../../domain/money/money'
 import type { Payment } from '../../domain/payments/ledger'
@@ -341,7 +347,30 @@ export interface ExpenseRepository {
   create(expense: Omit<Expense, 'id'>, ctx: MutationContext): Promise<Expense>
 }
 
+/**
+ * Ending the account (§S; Apple 5.1.1(v)).
+ *
+ * A repository rather than a call from the screen, like everything else: the
+ * UI must not know whether this is an RPC or a row in memory. The RULES —
+ * who may ask, the window, what survives — live in `src/domain/account`, and
+ * the server enforces them again in `0017_account_deletion.sql`, because a
+ * rule checked only in the client is a suggestion.
+ */
+export interface AccountRepository {
+  lifecycle(companyId: string): Promise<Lifecycle>
+  request(input: {
+    readonly companyId: string
+    readonly companyName: string
+    readonly requestedBy: string
+    readonly role: Role
+    readonly typedName: string
+    readonly exported: boolean
+  }): Promise<Result<DeletionRequest>>
+  cancel(companyId: string, role: Role): Promise<Result<Lifecycle>>
+}
+
 export interface Repositories {
+  readonly account: AccountRepository
   readonly companies: CompanyRepository
   readonly customers: CustomerRepository
   readonly documents: DocumentRepository

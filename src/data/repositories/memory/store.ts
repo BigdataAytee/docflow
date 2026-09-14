@@ -12,6 +12,7 @@
  */
 
 import {
+  type AccountRepository,
   type Company,
   type CompanyRepository,
   type Customer,
@@ -36,6 +37,11 @@ import {
   type ShareEventRepository,
   RepositoryError,
 } from '../types'
+import {
+  type DeletionRequest,
+  cancelDeletion,
+  requestDeletion,
+} from '../../../domain/account/deletion'
 import { assertTransition, isDraft, isEvidenceSealed } from '../../../domain/documents/lifecycle'
 import { reversalOf } from '../../../domain/payments/ledger'
 
@@ -66,6 +72,8 @@ export interface MemoryState {
   credits: CreditNoteRecord[]
   assets: AssetRecord[]
   linkTokens: LinkTokenRecord[]
+  /** Absent until somebody asks to leave. */
+  deletion?: DeletionRequest
 }
 
 export const emptyState = (): MemoryState => ({
@@ -141,7 +149,7 @@ export function createMemoryRepositories(state: MemoryState = emptyState()): Rep
     const index = state.documents.findIndex((d) => d.id === id)
     const row = state.documents[index]
     if (row === undefined) throw new RepositoryError(`No document ${id}.`)
-    return { index, row }
+      return { index, row }
   }
 
   const documents: DocumentRepository = {
@@ -424,7 +432,40 @@ export function createMemoryRepositories(state: MemoryState = emptyState()): Rep
     },
   }
 
+  /**
+   * Ending the account, in memory.
+   *
+   * The RULES are the domain module's, called here rather than restated: the
+   * demo and the deployed app must agree about who may ask and how long the
+   * window is, and the only way to be sure is for both to call the same
+   * function. The server checks them AGAIN in `0017_account_deletion.sql`,
+   * because a rule checked only in the client is a suggestion.
+   */
+  const account: AccountRepository = {
+    async lifecycle(companyId) {
+      const request = state.deletion
+      return request !== undefined && request.companyId === companyId
+        ? { state: 'scheduled', request }
+        : { state: 'active' }
+    },
+    async request(input) {
+      const outcome = requestDeletion({
+        ...input,
+        lifecycle: await account.lifecycle(input.companyId),
+        now: new Date(),
+      })
+      if (outcome.ok) state.deletion = outcome.value
+      return outcome
+    },
+    async cancel(companyId, role) {
+      const outcome = cancelDeletion(await account.lifecycle(companyId), role)
+      if (outcome.ok) delete state.deletion
+      return outcome
+    },
+  }
+
   return {
+    account,
     companies,
     customers,
     documents,
