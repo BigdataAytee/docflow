@@ -27,11 +27,11 @@ export function Shell() {
   ]
 
   return (
-    <div className="min-h-screen bg-page text-navy">
+    <div className="min-h-screen bg-page text-ink">
       <Outlet />
 
       <nav
-        className="fixed inset-x-0 bottom-0 z-10 border-t border-black/5 bg-white/90 pb-[env(safe-area-inset-bottom)] backdrop-blur"
+        className="fixed inset-x-0 bottom-0 z-10 border-t border-edge/5 bg-surface/90 pb-[env(safe-area-inset-bottom)] backdrop-blur"
         aria-label={strings.nav.home}
       >
         <ul className="mx-auto flex max-w-2xl">

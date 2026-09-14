@@ -99,14 +99,14 @@ export function DataAndSync({
 
   return (
     <section className="space-y-4 px-4 py-4" aria-label={strings.dataSync.title}>
-      <div className="rounded-2xl bg-white/70 p-4 backdrop-blur">
+      <div className="rounded-2xl bg-surface/70 p-4 backdrop-blur">
         <div className="flex items-baseline justify-between gap-3 text-sm">
           <span className="opacity-70">{strings.dataSync.uploadState}</span>
           <span className="font-medium">{uploadState}</span>
         </div>
       </div>
 
-      <div className="rounded-2xl bg-white/70 p-4 backdrop-blur">
+      <div className="rounded-2xl bg-surface/70 p-4 backdrop-blur">
         <button
           type="button"
           className="min-h-tap w-full rounded-xl bg-brand px-4 text-sm font-semibold text-white"
@@ -125,12 +125,12 @@ export function DataAndSync({
         )}
       </div>
 
-      <div className="rounded-2xl bg-white/70 p-4 backdrop-blur">
+      <div className="rounded-2xl bg-surface/70 p-4 backdrop-blur">
         <p className="text-sm font-semibold">{strings.dataSync.conflictDemo}</p>
         <p className="mt-0.5 text-xs opacity-70">{strings.dataSync.conflictDemoHint}</p>
         <button
           type="button"
-          className="mt-3 min-h-tap rounded-full border border-black/10 bg-white px-4 text-sm font-medium"
+          className="mt-3 min-h-tap rounded-full border border-edge/10 bg-surface px-4 text-sm font-medium"
           aria-expanded={demoOpen}
           onClick={() => {
             setDemoOpen((open) => !open)

@@ -31,7 +31,7 @@ export function LineItemRow({
   removeLabel,
 }: LineItemRowProps) {
   return (
-    <div className="flex items-center gap-3 rounded-2xl bg-white/80 p-3">
+    <div className="flex items-center gap-3 rounded-2xl bg-surface/80 p-3">
       {photo !== undefined && <div className="h-11 w-11 shrink-0 overflow-hidden rounded-lg">{photo}</div>}
       <div className="min-w-0 flex-1">
         <p className="truncate text-sm font-semibold">{description}</p>
@@ -47,7 +47,7 @@ export function LineItemRow({
           onClick={onRemove}
           aria-label={removeLabel}
           // §F: tap targets ≥ 44px.
-          className="min-h-tap min-w-tap shrink-0 rounded-full text-navy/50 hover:text-status-bad"
+          className="min-h-tap min-w-tap shrink-0 rounded-full text-ink/50 hover:text-status-bad"
         >
           ×
         </button>

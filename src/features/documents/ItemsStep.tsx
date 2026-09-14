@@ -69,7 +69,7 @@ export function ItemsStep({ draft, onChange, onRemember }: ItemsStepProps) {
 
   return (
     <div className="space-y-4">
-      <section className="space-y-3 rounded-2xl bg-white/85 p-4">
+      <section className="space-y-3 rounded-2xl bg-surface/85 p-4">
         <label className="block">
           <span className="mb-1 block text-xs font-medium opacity-70">
             {strings.items.description}

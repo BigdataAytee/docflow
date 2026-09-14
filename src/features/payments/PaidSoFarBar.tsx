@@ -36,7 +36,7 @@ export function PaidSoFarBar({ bar }: { bar: PaidSoFar }) {
         )}
       </p>
       <div
-        className="mt-2 h-2 overflow-hidden rounded-full bg-white/70"
+        className="mt-2 h-2 overflow-hidden rounded-full bg-surface/70"
         role="progressbar"
         aria-label={spoken}
         aria-valuenow={Math.round(percent)}

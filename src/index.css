@@ -2,31 +2,89 @@
 @tailwind components;
 @tailwind utilities;
 
+/*
+ * The themed half of §F's palette.
+ *
+ * §F is Locked and specifies LIGHT values only — page `#eef2fb`, text-navy
+ * `#1d2452`, glass as "translucent white". A dark theme therefore cannot be
+ * read out of §F; it has to be DERIVED from it, and the derivation follows
+ * one rule: keep every hue §F fixes, move only the lightness.
+ *
+ * The direction was already set in this file before dark mode existed —
+ * `.dark body` paired `bg-navy` with `text-page`, which is exactly §F's two
+ * neutrals swapped. Everything below extends that swap to the rest of the
+ * palette rather than choosing new colours.
+ *
+ * Values are bare `R G B` triples so Tailwind's opacity modifiers still work.
+ * That matters more here than usual: §F's glass layer is built from them, and
+ * `bg-surface/70` has to stay one class that is right in both themes.
+ */
 @layer base {
   :root {
-    /*
-     * Light only, and that is the honest declaration today.
-     *
-     * This said `light dark`, which tells the browser the page handles both —
-     * so a dark-preferring user got dark scrollbars, dark form controls and a
-     * dark canvas around an app whose every surface is still painted white.
-     * Declaring a capability the app does not have is worse than not having
-     * it (§N), and it looked like dark mode was half working rather than not
-     * started.
-     *
-     * The `.dark body` rule below flips the two tokens the body uses. It is
-     * the whole of dark mode: 245 surfaces across the app are literal
-     * `bg-white` / `border-black`, there is not one `dark:` variant anywhere,
-     * and the palette has no dark tokens to point them at. The sweep in
-     * `src/sweeps/darkmode.test.ts` measures that gap and fails the day
-     * somebody re-declares dark support without closing it.
-     */
     color-scheme: light;
+
+    --page: 238 242 251; /* #eef2fb — §F */
+    --surface: 255 255 255; /* §F: glass is translucent white */
+    --ink: 29 36 82; /* #1d2452 — §F text-navy */
+    --edge: 0 0 0; /* hairlines are black at low alpha in light */
+
+    --brand-tint: 238 241 255; /* #eef1ff */
+    --invoice-tint: 230 235 255;
+    --quotation-tint: 238 237 254;
+    --receipt-tint: 225 245 238;
+    --waybill-tint: 250 238 218;
+
+    --status-info: 24 95 165;
+    --status-info-tint: 230 241 251;
+    --status-good: 15 110 86;
+    --status-good-tint: 225 245 238;
+    --status-warn: 133 79 11;
+    --status-warn-tint: 250 238 218;
+    --status-bad: 153 60 29;
+    --status-bad-tint: 250 236 231;
   }
+
+  .dark {
+    color-scheme: dark;
+
+    /*
+     * Page and ink are §F's own two neutrals, swapped — the pairing this file
+     * already used for `.dark body`.
+     */
+    --page: 20 25 58; /* a shade under §F navy, so a navy card lifts off it */
+    --ink: 238 242 251; /* §F page, as ink */
+    /*
+     * Glass is a LIFT, not a colour. In light it is white over a pale page;
+     * in dark it is a lighter navy over a darker one, at the same alphas, so
+     * every `bg-surface/70` in the app keeps working untouched.
+     */
+    --surface: 47 56 104;
+    --edge: 255 255 255; /* hairlines invert: §F's "white inner borders" */
+
+    /*
+     * Tints become dark washes of the SAME hue. Derived by keeping §F's hue
+     * and swapping lightness, not by picking new colours — which is why the
+     * amber wash still reads as the amber that belongs to a delivery
+     * document, and a Delivery note is still amber everywhere a Waybill is.
+     */
+    --brand-tint: 34 43 96;
+    --invoice-tint: 32 42 100;
+    --quotation-tint: 45 40 88;
+    --receipt-tint: 16 58 48;
+    --waybill-tint: 68 45 14;
+
+    /* Status inks lighten so they still read on those washes. */
+    --status-info: 141 190 232;
+    --status-info-tint: 20 45 72;
+    --status-good: 126 214 187;
+    --status-good-tint: 14 58 47;
+    --status-warn: 232 186 116;
+    --status-warn-tint: 66 42 10;
+    --status-bad: 240 168 141;
+    --status-bad-tint: 74 33 20;
+  }
+
   body {
-    @apply bg-page text-navy font-sans antialiased;
-  }
-  .dark body {
-    @apply bg-navy text-page;
+    @apply bg-page text-ink font-sans antialiased;
   }
 }

@@ -58,7 +58,7 @@ export function TaxSettings({
     <section className="space-y-4 px-4 py-4">
       <h1 className="text-lg font-bold">{strings.settings.tax}</h1>
 
-      <div className="space-y-3 rounded-2xl bg-white/85 p-4">
+      <div className="space-y-3 rounded-2xl bg-surface/85 p-4">
         <label className="flex items-center justify-between gap-3">
           <span className="text-sm opacity-70">
             {format(strings.settings.taxRate, { label: taxLabel })}

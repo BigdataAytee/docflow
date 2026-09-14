@@ -57,7 +57,7 @@ export function PeriodPicker({ period, today, onChange }: PeriodPickerProps) {
   ]
 
   return (
-    <section className="rounded-2xl bg-white/70 p-4" aria-label={strings.statements.pickPeriod}>
+    <section className="rounded-2xl bg-surface/70 p-4" aria-label={strings.statements.pickPeriod}>
       <h2 className="text-sm font-semibold">{strings.statements.pickPeriod}</h2>
 
       <div className="mt-3 flex flex-wrap gap-2">
@@ -70,7 +70,7 @@ export function PeriodPicker({ period, today, onChange }: PeriodPickerProps) {
               type="button"
               aria-pressed={on}
               className={`min-h-tap rounded-full px-3 text-xs font-medium ${
-                on ? 'bg-brand text-white' : 'border border-black/10 bg-white'
+                on ? 'bg-brand text-white' : 'border border-edge/10 bg-surface'
               }`}
               onClick={() => onChange(candidate)}
             >
@@ -85,7 +85,7 @@ export function PeriodPicker({ period, today, onChange }: PeriodPickerProps) {
           <span className="block font-medium opacity-70">{strings.statements.from}</span>
           <input
             type="date"
-            className="mt-1 min-h-tap w-full rounded-xl border border-black/10 bg-white px-3 text-sm"
+            className="mt-1 min-h-tap w-full rounded-xl border border-edge/10 bg-surface px-3 text-sm"
             value={period.from === OPEN_START ? '' : period.from}
             onChange={(event) =>
               onChange({ ...period, from: event.target.value === '' ? OPEN_START : event.target.value })
@@ -96,7 +96,7 @@ export function PeriodPicker({ period, today, onChange }: PeriodPickerProps) {
           <span className="block font-medium opacity-70">{strings.statements.to}</span>
           <input
             type="date"
-            className="mt-1 min-h-tap w-full rounded-xl border border-black/10 bg-white px-3 text-sm"
+            className="mt-1 min-h-tap w-full rounded-xl border border-edge/10 bg-surface px-3 text-sm"
             value={period.to}
             onChange={(event) => {
               if (event.target.value !== '') onChange({ ...period, to: event.target.value })

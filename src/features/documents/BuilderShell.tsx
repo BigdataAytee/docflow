@@ -92,7 +92,7 @@ export function BuilderShell({
               aria-current={index === step ? 'step' : undefined}
               aria-label={name}
               className={`h-1.5 flex-1 rounded-full motion-safe:transition-opacity ${
-                index <= step ? 'bg-white' : 'bg-white/35'
+                index <= step ? 'bg-surface' : 'bg-surface/35'
               }`}
             />
           ))}
@@ -102,12 +102,12 @@ export function BuilderShell({
 
       <main className="flex-1 overflow-y-auto px-4 py-4">{children}</main>
 
-      <footer className="flex gap-3 border-t border-navy/10 bg-white/80 px-4 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
+      <footer className="flex gap-3 border-t border-ink/10 bg-surface/80 px-4 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
         <button
           type="button"
           onClick={() => onStep(step - 1)}
           disabled={step === 0}
-          className="min-h-tap flex-1 rounded-full border border-navy/15 text-sm font-semibold disabled:opacity-40"
+          className="min-h-tap flex-1 rounded-full border border-ink/15 text-sm font-semibold disabled:opacity-40"
         >
           {strings.common.back}
         </button>

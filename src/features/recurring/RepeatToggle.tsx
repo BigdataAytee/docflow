@@ -35,7 +35,7 @@ export function RepeatToggle({
   const next = recurrence === null ? null : nextPeriod(recurrence, today)
 
   return (
-    <section className="rounded-2xl bg-white/70 p-4 backdrop-blur">
+    <section className="rounded-2xl bg-surface/70 p-4 backdrop-blur">
       <div className="flex items-center justify-between gap-3">
         <div className="min-w-0">
           <p className="text-sm font-semibold">{r.repeat}</p>
@@ -46,11 +46,11 @@ export function RepeatToggle({
           aria-pressed={on}
           aria-label={on ? r.repeatOn : r.repeatOff}
           className={`flex h-7 w-12 shrink-0 items-center rounded-full px-1 motion-safe:transition ${
-            on ? 'justify-end bg-emerald-500' : 'justify-start bg-black/20'
+            on ? 'justify-end bg-emerald-500' : 'justify-start bg-ink/20'
           }`}
           onClick={on ? onStop : onStart}
         >
-          <span className="h-5 w-5 rounded-full bg-white" />
+          <span className="h-5 w-5 rounded-full bg-surface" />
         </button>
       </div>
 

@@ -42,7 +42,7 @@ export function StatementPage({
 
   return (
     <article
-      className="mx-auto w-full max-w-[720px] bg-white text-navy shadow-sm"
+      className="mx-auto w-full max-w-[720px] bg-surface text-ink shadow-sm"
       style={{ aspectRatio: String(A4_ASPECT) }}
       aria-label={s.title}
     >
@@ -65,7 +65,7 @@ export function StatementPage({
       </header>
 
       <div className="px-8 pt-6">
-        <div className="flex items-baseline justify-between border-b border-black/10 pb-2 text-sm">
+        <div className="flex items-baseline justify-between border-b border-edge/10 pb-2 text-sm">
           <span className="opacity-70">{s.openingBalance}</span>
           <span className="tabular-nums font-medium">{formatMoney(statement.openingBalance)}</span>
         </div>
@@ -98,12 +98,12 @@ export function StatementPage({
             </thead>
             <tbody>
               {statement.rows.map((row) => (
-                <tr key={`${row.kind}-${row.reference}-${row.date}`} className="border-t border-black/5">
+                <tr key={`${row.kind}-${row.reference}-${row.date}`} className="border-t border-edge/5">
                   <td className="py-1.5 tabular-nums">{row.date}</td>
                   <td className="py-1.5 break-words">
                     {row.reference}
                     {row.kind === 'credit' && (
-                      <span className="ms-2 rounded bg-black/5 px-1 py-0.5 text-[10px]">
+                      <span className="ms-2 rounded bg-ink/5 px-1 py-0.5 text-[10px]">
                         {s.credited}
                       </span>
                     )}

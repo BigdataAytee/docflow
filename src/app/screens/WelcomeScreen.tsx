@@ -35,7 +35,7 @@ export function WelcomeScreen() {
       />
 
       {showSample && (
-        <section className="mx-4 mt-4 rounded-2xl bg-white/80 p-4" aria-label={strings.firstRun.sampleBadge}>
+        <section className="mx-4 mt-4 rounded-2xl bg-surface/80 p-4" aria-label={strings.firstRun.sampleBadge}>
           <SampleBadge label={strings.firstRun.sampleBadge} />
           <p className="mt-2 text-sm font-semibold">{sample.customer.name}</p>
           <p className="text-xs opacity-70">{sample.document.reference}</p>

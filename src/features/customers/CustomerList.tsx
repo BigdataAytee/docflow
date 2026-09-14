@@ -79,7 +79,7 @@ export function CustomerList({
           onChange={(event) => setQuery(event.target.value)}
           placeholder={strings.customers.searchPlaceholder}
           aria-label={strings.customers.searchPlaceholder}
-          className="min-h-tap w-full rounded-lg bg-white/80 px-4 text-sm shadow-inner"
+          className="min-h-tap w-full rounded-lg bg-surface/80 px-4 text-sm shadow-inner"
         />
       </label>
 
@@ -97,7 +97,7 @@ export function CustomerList({
                 type="button"
                 aria-pressed={on}
                 className={`rounded-full px-3 py-1.5 text-xs font-medium ${
-                  on ? 'bg-brand text-white' : 'border border-black/10 bg-white'
+                  on ? 'bg-brand text-white' : 'border border-edge/10 bg-surface'
                 }`}
                 onClick={() =>
                   setSelectedLabels((current) =>
@@ -210,7 +210,7 @@ function CustomerCard({
     <button
       type="button"
       onClick={() => onOpen?.(customer)}
-      className="flex min-h-tap w-full items-center gap-3 rounded-2xl bg-white/80 p-3 text-start"
+      className="flex min-h-tap w-full items-center gap-3 rounded-2xl bg-surface/80 p-3 text-start"
     >
       <span
         className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-brand-tint text-sm font-bold text-brand"

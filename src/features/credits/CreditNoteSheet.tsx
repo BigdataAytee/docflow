@@ -54,7 +54,7 @@ export function CreditNoteSheet({
   const canIssue = minor > 0 && minor <= remaining.minor && reason.trim() !== ''
 
   return (
-    <section className="rounded-2xl bg-white/85 p-4 backdrop-blur" aria-label={c.sheetTitle}>
+    <section className="rounded-2xl bg-surface/85 p-4 backdrop-blur" aria-label={c.sheetTitle}>
       <div className="flex items-start justify-between gap-3">
         <h2 className="text-sm font-semibold">{c.sheetTitle}</h2>
         <button
@@ -82,7 +82,7 @@ export function CreditNoteSheet({
           <label className="mt-3 block">
             <span className="mb-1 block text-xs font-medium opacity-70">{c.amount}</span>
             <input
-              className="min-h-tap w-full rounded-xl border border-black/10 bg-white px-3 text-lg tabular-nums"
+              className="min-h-tap w-full rounded-xl border border-edge/10 bg-surface px-3 text-lg tabular-nums"
               inputMode="decimal"
               aria-label={c.amount}
               value={major}
@@ -91,7 +91,7 @@ export function CreditNoteSheet({
           </label>
           <button
             type="button"
-            className="mt-2 min-h-tap rounded-full border border-black/10 bg-white px-3 text-xs font-medium"
+            className="mt-2 min-h-tap rounded-full border border-edge/10 bg-surface px-3 text-xs font-medium"
             onClick={() => setMajor(String(remaining.minor / scale))}
           >
             {c.creditAll}
@@ -100,7 +100,7 @@ export function CreditNoteSheet({
           <label className="mt-3 block">
             <span className="mb-1 block text-xs font-medium opacity-70">{c.reason}</span>
             <input
-              className="min-h-tap w-full rounded-xl border border-black/10 bg-white px-3 text-sm"
+              className="min-h-tap w-full rounded-xl border border-edge/10 bg-surface px-3 text-sm"
               aria-label={c.reason}
               value={reason}
               onChange={(event) => setReason(event.target.value)}

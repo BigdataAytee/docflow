@@ -27,7 +27,7 @@ export function AskBox({ facts, chipLabels, bucketLabels }: AskBoxProps) {
   const [answer, setAnswer] = useState<AskAnswer | null>(null)
 
   return (
-    <section className="rounded-2xl bg-white/70 p-4 backdrop-blur" aria-label={strings.analytics.askAnything}>
+    <section className="rounded-2xl bg-surface/70 p-4 backdrop-blur" aria-label={strings.analytics.askAnything}>
       <h2 className="text-sm font-semibold">{strings.analytics.askAnything}</h2>
 
       <div className="mt-3 flex flex-wrap gap-2">
@@ -35,7 +35,7 @@ export function AskBox({ facts, chipLabels, bucketLabels }: AskBoxProps) {
           <button
             key={chip}
             type="button"
-            className="rounded-full border border-black/10 bg-white px-3 py-1.5 text-xs font-medium"
+            className="rounded-full border border-edge/10 bg-surface px-3 py-1.5 text-xs font-medium"
             onClick={() => setAnswer(answerChip(chip, facts))}
           >
             {chipLabels[chip]}
@@ -51,7 +51,7 @@ export function AskBox({ facts, chipLabels, bucketLabels }: AskBoxProps) {
         }}
       >
         <input
-          className="min-w-0 flex-1 rounded-xl border border-black/10 bg-white px-3 py-2 text-sm"
+          className="min-w-0 flex-1 rounded-xl border border-edge/10 bg-surface px-3 py-2 text-sm"
           placeholder={strings.analytics.askPlaceholder}
           aria-label={strings.analytics.askAnything}
           value={question}
@@ -63,7 +63,7 @@ export function AskBox({ facts, chipLabels, bucketLabels }: AskBoxProps) {
       </form>
 
       {answer !== null && (
-        <p className="mt-3 rounded-xl bg-black/[0.04] px-3 py-2.5 text-sm" role="status">
+        <p className="mt-3 rounded-xl bg-ink/[0.04] px-3 py-2.5 text-sm" role="status">
           {sentenceFor(answer, strings, bucketLabels)}
         </p>
       )}

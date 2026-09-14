@@ -50,7 +50,7 @@ export function ConvertSheet({
   const options = conversionsFor(document)
 
   return (
-    <section className="rounded-2xl bg-white/85 p-4 backdrop-blur" aria-label={strings.convert.title}>
+    <section className="rounded-2xl bg-surface/85 p-4 backdrop-blur" aria-label={strings.convert.title}>
       <div className="flex items-start justify-between gap-3">
         <h2 className="text-sm font-semibold">{strings.convert.title}</h2>
         <button
@@ -91,13 +91,13 @@ export function ConvertSheet({
                       {format(strings.convert.turnInto, { label: word })}
                     </button>
                   ) : (
-                    <div className="rounded-xl bg-black/[0.04] p-3">
+                    <div className="rounded-xl bg-ink/[0.04] p-3">
                       <p className="text-xs opacity-80">
                         {format(strings.convert.alreadyMade, { label: word })}
                       </p>
                       <button
                         type="button"
-                        className="mt-2 min-h-tap w-full rounded-xl border border-black/10 bg-white text-sm font-semibold"
+                        className="mt-2 min-h-tap w-full rounded-xl border border-edge/10 bg-surface text-sm font-semibold"
                         onClick={() => onOpen(made)}
                       >
                         {strings.convert.openIt}

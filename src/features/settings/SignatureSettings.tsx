@@ -36,11 +36,11 @@ export function SignatureSettings({
       <p className="text-xs opacity-70">{strings.settings.signatureHint}</p>
 
       {signatureUrl === undefined ? (
-        <p className="rounded-2xl bg-white/70 px-4 py-6 text-center text-sm opacity-60">
+        <p className="rounded-2xl bg-surface/70 px-4 py-6 text-center text-sm opacity-60">
           {strings.signature.nothingDrawn}
         </p>
       ) : (
-        <div className="flex items-center justify-center rounded-2xl bg-white/70 p-4">
+        <div className="flex items-center justify-center rounded-2xl bg-surface/70 p-4">
           <img
             src={signatureUrl}
             alt={strings.settings.defaultSignature}
@@ -70,7 +70,7 @@ export function SignatureSettings({
           {signatureUrl !== undefined && (
             <button
               type="button"
-              className="min-h-tap rounded-xl border border-black/10 px-4 text-sm font-medium"
+              className="min-h-tap rounded-xl border border-edge/10 px-4 text-sm font-medium"
               onClick={onRemove}
             >
               {strings.common.remove}

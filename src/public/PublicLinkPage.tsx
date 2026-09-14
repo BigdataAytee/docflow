@@ -120,7 +120,7 @@ export function PublicLinkPage({ kind, transport }: PublicLinkPageProps) {
       {screen.state === 'loading' && <p className="text-center text-sm opacity-60">{s.checking}</p>}
 
       {screen.state === 'refused' && (
-        <section className="rounded-2xl bg-white/80 p-6 text-center" aria-label={s.wrong}>
+        <section className="rounded-2xl bg-surface/80 p-6 text-center" aria-label={s.wrong}>
           {/* A message, and nothing else. Never a reference, never a name. */}
           <p className="text-sm font-medium">
             {screen.reason === 'expired'
@@ -146,7 +146,7 @@ export function PublicLinkPage({ kind, transport }: PublicLinkPageProps) {
             <p className="text-sm tabular-nums opacity-70">{view.reference}</p>
           </header>
 
-          <section className="mt-4 rounded-2xl bg-white/80 p-4">
+          <section className="mt-4 rounded-2xl bg-surface/80 p-4">
             <p className="text-xs uppercase tracking-wide opacity-60">{view.partyLabel}</p>
             <p className="text-sm font-semibold">{view.customerName}</p>
             {view.deliveryAddress !== null && (
@@ -156,7 +156,7 @@ export function PublicLinkPage({ kind, transport }: PublicLinkPageProps) {
               <p className="mt-1 text-xs tabular-nums opacity-60">{view.issueDate}</p>
             )}
 
-            <ul className="mt-3 space-y-2 border-t border-black/5 pt-3">
+            <ul className="mt-3 space-y-2 border-t border-edge/5 pt-3">
               {view.lines.map((line, i) => (
                 <li key={i} className="flex justify-between gap-3 text-sm">
                   <span className="min-w-0 flex-1">{line.description}</span>
@@ -174,7 +174,7 @@ export function PublicLinkPage({ kind, transport }: PublicLinkPageProps) {
             </ul>
 
             {view.total !== undefined && (
-              <p className="mt-3 border-t border-black/10 pt-3 text-end text-base font-bold tabular-nums">
+              <p className="mt-3 border-t border-edge/10 pt-3 text-end text-base font-bold tabular-nums">
                 {formatMoney(money(view.total.currency, view.total.minor))}
               </p>
             )}
@@ -220,7 +220,7 @@ export function PublicLinkPage({ kind, transport }: PublicLinkPageProps) {
               <button
                 type="button"
                 disabled={busy}
-                className="min-h-tap w-full rounded-xl border border-black/10 bg-white px-4 text-sm font-medium disabled:opacity-40"
+                className="min-h-tap w-full rounded-xl border border-edge/10 bg-surface px-4 text-sm font-medium disabled:opacity-40"
                 onClick={() => void submit({ answer: 'rejected' })}
               >
                 {s.reject}
@@ -247,7 +247,7 @@ export function PublicLinkPage({ kind, transport }: PublicLinkPageProps) {
           </label>
           <input
             id="public-signer"
-            className="min-h-tap w-full rounded-xl border border-black/10 bg-white px-3 text-sm"
+            className="min-h-tap w-full rounded-xl border border-edge/10 bg-surface px-3 text-sm"
             value={signerName}
             onChange={(event) => setSignerName(event.target.value)}
           />
@@ -256,7 +256,7 @@ export function PublicLinkPage({ kind, transport }: PublicLinkPageProps) {
           </label>
           <input
             id="public-role"
-            className="min-h-tap w-full rounded-xl border border-black/10 bg-white px-3 text-sm"
+            className="min-h-tap w-full rounded-xl border border-edge/10 bg-surface px-3 text-sm"
             value={signerRole}
             onChange={(event) => setSignerRole(event.target.value)}
           />

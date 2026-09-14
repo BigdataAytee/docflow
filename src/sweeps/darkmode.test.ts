@@ -1,26 +1,24 @@
 /**
- * The dark-mode sweep (§Q Phase 7, §G, §V).
+ * The dark-mode sweep (§Q Phase 7, §G, §V, §F).
  *
- * §G lists "Dark mode" as a Settings row and §V requires the glass layer to
- * degrade cleanly. **Dark mode is not implemented**, and this file exists to
- * say so with a number rather than an impression, and to stop the gap being
- * papered over.
+ * This file used to measure a gap: 245 surfaces painted literal `bg-white`,
+ * zero `dark:` variants, no dark tokens. Dark mode is now built, and what it
+ * measures is the property that keeps it built.
  *
- * The state found by the sweep: `darkMode: 'class'` configured, one `.dark
- * body` rule flipping two tokens, **zero `dark:` variants in any component**,
- * no dark tokens in the palette, and 245 surfaces painted literal `bg-white`,
- * `border-black`, `text-white` or `bg-black`. A toggle over that produces a
- * dark body behind unchanged white panels.
+ * **The mechanism is tokens, not `dark:` variants.** `bg-surface/70` is one
+ * class that is right in both themes, resolved through a CSS variable — so a
+ * screen written tomorrow gets dark mode without its author remembering
+ * anything, which is the only version of this that survives contact with a
+ * growing app. There are still zero `dark:` variants, and that is the design
+ * rather than the gap.
  *
- * What the sweep FIXED is the dishonest half: `:root` declared
- * `color-scheme: light dark`, which tells the browser the page handles both,
- * so a dark-preferring user got dark scrollbars and dark form controls around
- * a white app. §N: an unavailable capability is stated plainly, never dressed
- * up.
+ * Two things the sweep learned the hard way and now guards:
  *
- * What it did not fix is the feature. Repainting 245 surfaces is a design
- * decision about the §F glass layer, not a find-and-replace, and doing it
- * badly would be worse than the honest light-only app there is now.
+ * · A literal `bg-white` is invisible to a theme.
+ * · So is an inline `style={{ backgroundColor: … }}`, and that is worse,
+ *   because no class scan can see it. The status badges were exactly this:
+ *   pale-blue-on-white pills over a dark page, applied through inline styles
+ *   from a map of hex.
  */
 
 import { execFileSync } from 'node:child_process'
@@ -31,66 +29,126 @@ import { describe, expect, it } from 'vitest'
 
 const ROOT = process.cwd()
 
+/** The PDF is PAPER. It stays light in both themes, and is not swept. */
+const PAPER = 'src/pdf/'
+
 const componentFiles = (): string[] =>
   execFileSync('git', ['ls-files', 'src'], { cwd: ROOT, encoding: 'utf8' })
     .split('\n')
-    .filter((file) => /\.tsx$/.test(file) && !/\.test\.tsx$/.test(file))
+    .filter(
+      (file) => /\.tsx$/.test(file) && !/\.test\.tsx$/.test(file) && !file.startsWith(PAPER),
+    )
 
 const read = (file: string): string => readFileSync(join(ROOT, file), 'utf8')
 
-const HARD_SURFACE = /\b(?:bg|text|border|ring|divide)-(?:white|black)(?:\/[0-9.[\]]+)?\b/g
+const HARD_SURFACE = /\b(?:bg|border|ring|divide)-(?:white|black)(?:\/[0-9.[\]]+)?\b/g
 
-function hardSurfaces(): string[] {
-  return componentFiles().flatMap((file) => read(file).match(HARD_SURFACE) ?? [])
-}
+describe('Every surface goes through a token (§F)', () => {
+  it('paints nothing with a literal white or black', () => {
+    const findings = componentFiles().flatMap((file) =>
+      (read(file).match(HARD_SURFACE) ?? []).map((hit) => `${file}: ${hit}`),
+    )
 
-const darkVariants = (): string[] =>
-  componentFiles().flatMap((file) => read(file).match(/\bdark:[a-z0-9-]+/g) ?? [])
-
-describe('The app does not claim a dark mode it does not have (§N)', () => {
-  it('declares light only, because every surface is light', () => {
-    const css = read('src/index.css')
-
-    expect(css).toContain('color-scheme: light;')
-    expect(css).not.toContain('color-scheme: light dark')
+    expect(findings, findings.join('\n')).toEqual([])
   })
 
-  it('couples the declaration to the implementation', () => {
-    // The pair is the point: either the app tells the browser it handles dark
-    // AND components carry dark variants, or it declares light. Half of each
-    // is what produced dark scrollbars around white panels.
-    const css = read('src/index.css')
-    const claimsDark = css.includes('color-scheme: light dark') || css.includes('color-scheme: dark')
+  it('leaves `text-white` alone, because white on an accent is white in both', () => {
+    // §F locks the type and brand accents in both themes, so the label on a
+    // blue button is white on blue either way. Tokenising it would be wrong.
+    const onAccent = componentFiles().flatMap((file) => read(file).match(/\btext-white\b/g) ?? [])
 
-    if (claimsDark) {
-      expect(
-        darkVariants().length,
-        'the page claims dark support and no component has a dark: variant',
-      ).toBeGreaterThan(0)
-    } else {
-      expect(darkVariants()).toEqual([])
+    expect(onAccent.length).toBeGreaterThan(0)
+  })
+
+  it('sets no theme-dependent colour through an inline style', () => {
+    // The bug this catches: the status badges applied hex through
+    // `style={{ color, backgroundColor }}` from a map, so they stayed
+    // pale-on-white over a dark page — invisible to any class scan.
+    const findings: string[] = []
+    // Only the COLOUR properties, and only their own values. A hex inside a
+    // `boxShadow` is a shadow, and the design-step swatch legitimately paints
+    // a template's paper — paper is paper in both themes, like the PDF.
+    const COLOUR_PROPERTY = /(?:backgroundColor|(?<![a-zA-Z])color)\s*:\s*([^,}]+)/g
+
+    for (const file of componentFiles()) {
+      for (const style of read(file).matchAll(/style=\{\{[^}]*\}\}/g)) {
+        for (const property of style[0].matchAll(COLOUR_PROPERTY)) {
+          const value = property[1] ?? ''
+          if (/#[0-9a-fA-F]{3,8}/.test(value)) findings.push(`${file}: ${property[0].slice(0, 60)}`)
+        }
+      }
     }
+
+    expect(findings, findings.join('\n')).toEqual([])
   })
 })
 
-describe('The size of the gap, measured rather than guessed', () => {
-  it('counts the surfaces a dark mode would have to repaint', () => {
-    const surfaces = hardSurfaces()
+describe('Both themes exist, and the document says which it is in', () => {
+  const css = (): string => read('src/index.css')
 
-    // Not a target to chip away at — a number that says why dark mode is a
-    // design decision rather than a find-and-replace. If it grows a lot, the
-    // work grew; if it collapses, somebody built the tokens and this test
-    // should be rewritten to check them.
-    expect(surfaces.length).toBeGreaterThan(200)
-    expect(surfaces.length).toBeLessThan(320)
+  it('declares a colour scheme per theme', () => {
+    expect(css()).toMatch(/:root\s*\{[^}]*color-scheme:\s*light/)
+    expect(css()).toMatch(/\.dark\s*\{[^}]*color-scheme:\s*dark/)
   })
 
-  it('has no dark tokens in the palette to point them at', () => {
+  it('gives every themed token a value in both', () => {
+    // Sliced on the SELECTORS, not on the first mention of the word: the
+    // commentary above `.dark` refers to it, and slicing there cut the light
+    // block off before a single variable — a check that then passed by
+    // finding nothing to check.
+    const text = css()
+    const lightAt = text.indexOf(':root {')
+    const darkAt = text.indexOf('.dark {')
+    expect(lightAt).toBeGreaterThan(-1)
+    expect(darkAt).toBeGreaterThan(lightAt)
+
+    const light = text.slice(lightAt, darkAt)
+    const dark = text.slice(darkAt)
+    const names = [...light.matchAll(/--([a-z-]+):/g)].map((match) => match[1])
+
+    expect(names.length).toBeGreaterThan(10)
+    for (const name of names) {
+      expect(dark.includes(`--${name}:`), `--${name} has no dark value`).toBe(true)
+    }
+  })
+
+  it('keeps §F’s locked accents identical in both themes', () => {
+    // §F is marked Locked and says colours belong to the internal type. A dark
+    // theme may change what an accent sits ON, never the accent.
     const config = read('tailwind.config.js')
 
-    // `page` and `navy` are the light pair the body already uses. A dark mode
-    // needs surface/ink tokens the 245 usages above can move onto.
-    expect(config).not.toContain('surface-dark')
-    expect(config).not.toContain('ink-dark')
+    for (const locked of ['#2b3fd6', '#534AB7', '#0F6E56', '#BA7517']) {
+      expect(config, `${locked} is no longer a fixed accent`).toContain(locked)
+    }
+    expect(css()).not.toContain('#534AB7')
+  })
+})
+
+describe('Every opacity modifier actually produces a colour', () => {
+  /**
+   * `border-ink/8` produced NOTHING.
+   *
+   * Tailwind's default opacity scale runs in steps of five, so `/8` matches no
+   * utility and the border silently fell back to Tailwind's default colour — a
+   * light grey. On a white page that is invisibly wrong; the moment the page
+   * went dark it became a hard white rule between every row in the list. The
+   * class had been there since Phase 2, doing nothing anybody could see.
+   */
+  // Tailwind's default scale is every five from 0 to 100 — nothing else.
+  const SCALE = new Set(Array.from({ length: 21 }, (_, i) => i * 5))
+
+  it('uses only opacities Tailwind emits', () => {
+    const findings: string[] = []
+
+    for (const file of componentFiles()) {
+      for (const match of read(file).matchAll(
+        /\b(?:bg|text|border|divide|ring|from|via|to)-[a-z-]+\/(\d+)\b/g,
+      )) {
+        const step = Number(match[1])
+        if (!SCALE.has(step)) findings.push(`${file}: ${match[0]} — not on the default scale`)
+      }
+    }
+
+    expect(findings, findings.join('\n')).toEqual([])
   })
 })

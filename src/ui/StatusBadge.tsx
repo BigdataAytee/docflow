@@ -19,8 +19,7 @@ export function StatusBadge({ status, label, tone }: StatusBadgeProps) {
   const palette = TONE_PALETTE[tone ?? toneFor(status)]
   return (
     <span
-      className="inline-flex min-h-[24px] items-center rounded-full px-2.5 py-0.5 text-xs font-semibold"
-      style={{ color: palette.fg, backgroundColor: palette.bg }}
+      className={`inline-flex min-h-[24px] items-center rounded-full px-2.5 py-0.5 text-xs font-semibold ${palette.className}`}
       // Never rely on colour alone (§K): the label carries the meaning and the
       // role gives assistive tech something to announce.
       role="status"

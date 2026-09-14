@@ -60,7 +60,7 @@ export function PaymentSettings({
         </p>
       )}
 
-      <section className="space-y-3 rounded-2xl bg-white/85 p-4">
+      <section className="space-y-3 rounded-2xl bg-surface/85 p-4">
         <h2 className="text-xs font-bold uppercase tracking-wide opacity-60">
           {strings.settings.bankTransfer}
         </h2>
@@ -90,7 +90,7 @@ export function PaymentSettings({
         })}
       </section>
 
-      <ul className="divide-y divide-navy/8 overflow-hidden rounded-2xl bg-white/85">
+      <ul className="divide-y divide-ink/10 overflow-hidden rounded-2xl bg-surface/85">
         {methods.map((method) => (
           <li key={method.id} className="flex items-center gap-3 p-3">
             <span className="flex-1 text-sm font-medium">{method.name}</span>
@@ -101,10 +101,10 @@ export function PaymentSettings({
               aria-label={method.name}
               onClick={() => onToggleMethod(method.id, !method.enabled)}
               className={`flex h-6 w-11 shrink-0 items-center rounded-full p-0.5 ${
-                method.enabled ? 'justify-end bg-status-good' : 'justify-start bg-navy/25'
+                method.enabled ? 'justify-end bg-status-good' : 'justify-start bg-ink/25'
               }`}
             >
-              <span className="h-5 w-5 rounded-full bg-white" />
+              <span className="h-5 w-5 rounded-full bg-surface" />
             </button>
           </li>
         ))}

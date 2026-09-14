@@ -30,17 +30,29 @@ export const TYPE_PALETTE: Readonly<Record<DocumentType, TypePalette>> = {
 /** The four status tones of §F. Everything a badge can be resolves to one. */
 export type StatusTone = 'info' | 'good' | 'warn' | 'bad' | 'neutral'
 
+/**
+ * The tone palette, as CLASSES rather than hex.
+ *
+ * It was a map of literal colours applied through an inline `style`, and that
+ * is why it was the one part of the app dark mode did not reach: an inline
+ * style cannot know about a theme. The badges stayed pale-blue-on-white over a
+ * dark page — a bug invisible to the class scan, because there were no classes
+ * to scan.
+ *
+ * §F's hues are unchanged; the classes resolve to the same values in light and
+ * to the dark washes in dark.
+ */
 export interface TonePalette {
-  readonly fg: string
-  readonly bg: string
+  /** Tailwind classes for text and background together. */
+  readonly className: string
 }
 
 export const TONE_PALETTE: Readonly<Record<StatusTone, TonePalette>> = {
-  info: { fg: '#185FA5', bg: '#E6F1FB' },
-  good: { fg: '#0F6E56', bg: '#E1F5EE' },
-  warn: { fg: '#854F0B', bg: '#FAEEDA' },
-  bad: { fg: '#993C1D', bg: '#FAECE7' },
-  neutral: { fg: '#1d2452', bg: '#eef2fb' },
+  info: { className: 'text-status-info bg-status-info-tint' },
+  good: { className: 'text-status-good bg-status-good-tint' },
+  warn: { className: 'text-status-warn bg-status-warn-tint' },
+  bad: { className: 'text-status-bad bg-status-bad-tint' },
+  neutral: { className: 'text-ink bg-page' },
 }
 
 /**

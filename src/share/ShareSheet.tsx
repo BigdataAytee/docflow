@@ -63,7 +63,7 @@ export function ShareSheet({
   }
 
   return (
-    <section className="rounded-2xl bg-white/85 p-4 backdrop-blur" aria-label={s.title}>
+    <section className="rounded-2xl bg-surface/85 p-4 backdrop-blur" aria-label={s.title}>
       <div className="flex items-start justify-between gap-3">
         <h2 className="text-sm font-semibold">{s.title}</h2>
         <button
@@ -78,7 +78,7 @@ export function ShareSheet({
 
       {/* Nothing sent unseen: the exact text, before it goes anywhere. */}
       <p className="mt-3 text-xs font-medium opacity-70">{s.preview}</p>
-      <pre className="mt-1 whitespace-pre-wrap rounded-xl bg-black/[0.04] p-3 text-xs">
+      <pre className="mt-1 whitespace-pre-wrap rounded-xl bg-ink/[0.04] p-3 text-xs">
         {text.body}
       </pre>
 

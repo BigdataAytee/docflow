@@ -76,7 +76,7 @@ export function NewBusinessScreen({
         </label>
         <input
           id={`${ids}-name`}
-          className="mt-1 min-h-tap w-full rounded-xl border border-black/10 bg-white px-3 text-sm"
+          className="mt-1 min-h-tap w-full rounded-xl border border-edge/10 bg-surface px-3 text-sm"
           value={name}
           onChange={(event) => setName(event.target.value)}
         />
@@ -86,7 +86,7 @@ export function NewBusinessScreen({
         </label>
         <select
           id={`${ids}-region`}
-          className="mt-1 min-h-tap w-full rounded-xl border border-black/10 bg-white px-3 text-sm"
+          className="mt-1 min-h-tap w-full rounded-xl border border-edge/10 bg-surface px-3 text-sm"
           value={region}
           onChange={(event) => setRegion(event.target.value)}
         >
