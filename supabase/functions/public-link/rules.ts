@@ -216,18 +216,8 @@ export function planFor(
 }
 
 /**
- * A very small fixed-window limiter (§P: "rate limiting on auth and public
- * endpoints").
- *
- * Per token, not per IP: a customer on a shared mobile network must not be
- * locked out by a stranger, and the token is the thing being guessed at.
+ * Rate limiting lives in `../_shared/ratelimit.ts`, which both public
+ * endpoints import: the buckets, the keys and the fail-open decision. It is
+ * not here because it is not specific to this endpoint, and a second copy of
+ * a limiter is how two endpoints end up limiting differently.
  */
-export const RATE_LIMIT = { attempts: 20, windowMs: 60_000 } as const
-
-export function isRateLimited(
-  attempts: readonly number[],
-  now: number,
-  limit: { attempts: number; windowMs: number } = RATE_LIMIT,
-): boolean {
-  return attempts.filter((at) => now - at < limit.windowMs).length >= limit.attempts
-}

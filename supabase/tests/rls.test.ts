@@ -156,17 +156,23 @@ describe('The company claim, as Supabase actually issues it (§P)', () => {
  * Tables nobody signs in to read.
  *
  * The rule below exists because a table added after 0006's blanket grant is
- * unusable in a way that looks perfect from here. `deleted_accounts` is the
- * deliberate opposite: it is the tombstone left after an account is purged,
- * and no user token should ever reach it — the company it names no longer
- * exists, and there is nobody left to be entitled to the row.
+ * unusable in a way that looks perfect from here. Two tables are the
+ * deliberate opposite.
+ *
+ * `deleted_accounts` is the tombstone left after an account is purged, and no
+ * user token should ever reach it — the company it names no longer exists,
+ * and there is nobody left to be entitled to the row.
+ *
+ * `rate_limit_windows` holds the counters behind §P's rate limiting. A caller
+ * who can read them can plan around them, and a caller who can write them has
+ * no limit at all.
  *
  * Named rather than skipped by a regex, and EARNED rather than declared: the
  * test below proves the exempt table really is closed to `authenticated`, has
  * RLS enabled and forced, and carries no policy that could open it. A second
  * name on this list has to be argued for in this file.
  */
-const SERVICE_ROLE_ONLY = ['deleted_accounts']
+const SERVICE_ROLE_ONLY = ['deleted_accounts', 'rate_limit_windows']
 
 describe('Every table is reachable at all (§P)', () => {
   /**

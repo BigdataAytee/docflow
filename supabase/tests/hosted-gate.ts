@@ -9,6 +9,7 @@
  *   3. an anonymous caller sees nothing
  *   4. the client cannot write billing
  *   5. sessions are configured to survive ≥30 days offline
+ *   6. auth refuses a run of sign-in attempts (§P)
  *
  * It needs, from the gitignored .env:
  *   VITE_SUPABASE_URL, VITE_SUPABASE_ANON_KEY, SUPABASE_SERVICE_ROLE_KEY
@@ -161,6 +162,48 @@ async function seedTwoRealUsers() {
   return { admin, users: made }
 }
 
+/**
+ * §P asks for rate limiting on auth as well as on the public endpoints. Auth
+ * is GoTrue — code we do not own and cannot wrap — so the only honest check
+ * is to ask it: a run of failed sign-ins should stop being answered.
+ *
+ * Never against a real account. The address is random and belongs to nobody,
+ * so nothing that exists can be locked out; GoTrue counts per IP, which is
+ * what is being tested. It does spend this project's sign-in budget for a few
+ * minutes, which is why this lives in the gate and not in the test suite.
+ *
+ * A failure here is a SETTING, not a bug in this repository: Dashboard →
+ * Authentication → Rate Limits.
+ */
+const AUTH_ATTEMPTS = 40
+
+async function checkAuthRateLimit(url: string, anonKey: string): Promise<void> {
+  const email = `gate-ratelimit-${Date.now().toString(36)}@example.com`
+
+  for (let attempt = 1; attempt <= AUTH_ATTEMPTS; attempt += 1) {
+    const response = await fetch(`${url}/auth/v1/token?grant_type=password`, {
+      method: 'POST',
+      headers: { apikey: anonKey, 'content-type': 'application/json' },
+      body: JSON.stringify({ email, password: 'not-the-password' }),
+    })
+
+    if (response.status === 429) {
+      record(
+        '10. auth throttles a run of sign-in attempts (§P)',
+        'pass',
+        `refused after ${attempt} attempts`,
+      )
+      return
+    }
+  }
+
+  record(
+    '10. auth throttles a run of sign-in attempts (§P)',
+    'fail',
+    `${AUTH_ATTEMPTS} failed sign-ins, none refused — set Dashboard → Authentication → Rate Limits`,
+  )
+}
+
 async function main(): Promise<void> {
   console.log('DocFlow — Phase 1 gate against the hosted project\n')
 
@@ -231,6 +274,10 @@ async function main(): Promise<void> {
   for (const u of users) {
     if (u.userId !== undefined) await admin.auth.admin.deleteUser(u.userId)
   }
+
+  // LAST, after the cleanup above: it deliberately exhausts the project's
+  // sign-in budget for a few minutes, and nothing that follows should need it.
+  await checkAuthRateLimit(need('VITE_SUPABASE_URL'), need('VITE_SUPABASE_ANON_KEY'))
 
   const failed = results.filter((r) => r.status === 'fail')
   const skipped = results.filter((r) => r.status === 'skip')

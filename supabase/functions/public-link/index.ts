@@ -27,13 +27,13 @@
 // @ts-expect-error — Deno resolves this at deploy time; the app never builds it.
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
+import { CALLER_BUCKET, TOKEN_BUCKET, callerKey, overLimit } from '../_shared/ratelimit.ts'
 import {
   type DocumentRow,
   type Refusal,
   type WriteRequest,
   checkRow,
   hashToken,
-  isRateLimited,
   planFor,
   viewFor,
 } from './rules.ts'
@@ -46,13 +46,6 @@ const admin = createClient(
   Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
   { auth: { persistSession: false } },
 )
-
-/**
- * In-memory, per-instance, per-token. Enough to blunt a guessing run without
- * a second store; a serious limiter belongs at the edge (§P) and this does
- * not pretend otherwise.
- */
-const attempts = new Map<string, number[]>()
 
 const CORS = {
   'Access-Control-Allow-Origin': '*',
@@ -105,16 +98,26 @@ Deno.serve?.(async (request: Request): Promise<Response> => {
   if (!/^[0-9A-Z]{16,64}$/.test(token)) return refuse('wrong')
 
   const now = new Date()
-  const seen = attempts.get(token) ?? []
-  if (isRateLimited(seen, now.getTime())) return refuse('rate_limited')
-  attempts.set(token, [...seen.filter((at) => now.getTime() - at < 60_000), now.getTime()])
+  const tokenHash = await hashToken(token)
+  const caller = callerKey(request.headers.get('x-forwarded-for'))
+
+  // Both buckets are charged BEFORE either decides. Returning on the first
+  // one over would hide a run against a single token from the per-caller
+  // bucket, and the per-caller bucket is the one that sees a guessing run at
+  // all. `overLimit` hashes what it is given, so the key the database stores
+  // for this bucket is exactly `tokenHash` — never the token (§P).
+  const charged = await Promise.all([
+    overLimit(admin, TOKEN_BUCKET, token),
+    caller === null ? Promise.resolve(false) : overLimit(admin, CALLER_BUCKET, caller),
+  ])
+  if (charged.some(Boolean)) return refuse('rate_limited')
 
   // Looked up BY HASH: the token itself never reaches the database, so a
   // query log cannot be replayed into a working link (§P).
   const { data: row } = await admin
     .from('document_signing_tokens')
     .select('document_id, token_hash, expires_at, consumed_at')
-    .eq('token_hash', await hashToken(token))
+    .eq('token_hash', tokenHash)
     .maybeSingle()
 
   const refusal = await checkRow(row ?? null, token, now)

@@ -23,6 +23,7 @@
 // @ts-expect-error — Deno resolves this at deploy time; the app never builds it.
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
+import { STORE_PARK_BUCKET, overLimit } from '../_shared/ratelimit.ts'
 import {
   type StoreEvent,
   UNVERIFIED_REASON,
@@ -90,6 +91,15 @@ export default async function handler(request: Request): Promise<Response> {
 
   // The door. Everything below it is built; nothing goes through it yet.
   if (!verified(route.platform, { headers: request.headers, raw })) {
+    // The parked row below is the ONE thing an unsigned caller can make this
+    // endpoint write, and its id comes out of the body, so distinct ids mean
+    // unbounded rows. Bounded per company, and charged HERE rather than at the
+    // top of the handler: a verified store event is never throttled, because
+    // dropping one loses a subscription change and §U's ordering assumes every
+    // event arrives. Over the limit we still answer 200 — a store that retries
+    // a parked event for days helps nobody, and the row is diagnostic, not money.
+    if (await overLimit(admin, STORE_PARK_BUCKET, route.companyId)) return ok('rate_limited')
+
     await admin.from('store_billing_events').upsert(
       {
         event_id: event.eventId,

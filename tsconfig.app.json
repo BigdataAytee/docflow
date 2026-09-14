@@ -33,6 +33,7 @@
   // `src` reaches it.
   "include": [
     "src",
+    "supabase/functions/_shared/ratelimit.ts",
     "supabase/functions/public-link/rules.ts",
     "supabase/functions/payment-webhook/rules.ts",
     "supabase/functions/store-notifications/rules.ts"
