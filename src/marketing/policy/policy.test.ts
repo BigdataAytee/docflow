@@ -16,6 +16,7 @@ import {
   checkDestinations,
   checkAccountDeletion,
   checkLocalAi,
+  codeOnly,
   checkNoTrackers,
   checkRatingsPrompt,
   runChecks,
@@ -238,6 +239,34 @@ describe('What the code says is checked, not remembered', () => {
     // The check that failed from the day it was written until the flow
     // existed. Given a source tree without one, it fails again.
     expect(checkAccountDeletion([]).passed).toBe(false)
+  })
+
+  it('reads code, not the prose explaining the code', () => {
+    // Learned twice: `checkAccountDeletion` found `deleteAccount` in its own
+    // regex, and the review port's comment says "StoreKit's requestReview"
+    // while implementing nothing of the sort. A check a comment can satisfy
+    // is not a check.
+    const source = [
+      '// Phase 4 calls requestReview here.',
+      ' * SKStoreReview is the older name for it.',
+      '/* InAppReview on Android. */',
+      'const port = { request: async () => "unavailable" }',
+    ].join('\n')
+
+    const code = codeOnly(source)
+    expect(code).not.toContain('requestReview')
+    expect(code).not.toContain('SKStoreReview')
+    expect(code).not.toContain('InAppReview')
+    expect(code).toContain('const port')
+  })
+
+  it('says the prompt is wired and that nothing can show it yet', () => {
+    // Two questions, and conflating them is how "we have a prompt" comes to
+    // mean "a prompt appears". §T asks for the first; §N asks that the
+    // second be stated plainly when the answer is no.
+    const found = checkRatingsPrompt()
+    expect(found.declares).toContain('wired to a happy moment')
+    expect(found.declares).toContain('NO platform can show it yet')
   })
 
   it('does not let a check find itself', () => {

@@ -21,6 +21,15 @@ export interface CompanyContextValue {
   readonly profile: LocaleProfile
   readonly strings: UiStrings
   readonly direction: 'ltr' | 'rtl'
+  /**
+   * §R: "a local demo is never passed off as an account."
+   *
+   * Carried here because more than the banner needs to know. The ratings
+   * prompt is the second thing: a sample document shared from a demo is not
+   * an achievement, and asking somebody to rate an app on the strength of it
+   * is asking about something that did not happen.
+   */
+  readonly isDemo: boolean
 }
 
 const CompanyContext = createContext<CompanyContextValue | null>(null)
@@ -31,6 +40,8 @@ export interface CompanyProviderProps {
   readonly profile: LocaleProfile
   /** Defaults to the locale's own language; §D allows a per-user override. */
   readonly language?: string
+  /** Defaults to false: an account unless something says otherwise. */
+  readonly isDemo?: boolean
   readonly children: ReactNode
 }
 
@@ -39,6 +50,7 @@ export function CompanyProvider({
   repositories,
   profile,
   language,
+  isDemo = false,
   children,
 }: CompanyProviderProps) {
   const value = useMemo<CompanyContextValue>(() => {
@@ -49,8 +61,9 @@ export function CompanyProvider({
       profile,
       strings: stringsFor(language ?? table.language),
       direction: table.direction,
+      isDemo,
     }
-  }, [companyId, repositories, profile, language])
+  }, [companyId, repositories, profile, language, isDemo])
 
   return (
     <CompanyContext.Provider value={value}>
