@@ -8,6 +8,12 @@
  *  · what the STORES currently require — a question for a person, and a
  *    failure is an unread rule.
  *
+ * The second half now has three failure modes rather than one, because
+ * reading the rules found all three: a rule nobody has opened, a rule that
+ * HAS been opened but by a machine and not yet stood behind, and a question
+ * that cannot be answered at all until something exists — a plan in a
+ * console, a form behind a developer account, or a feature nobody built.
+ *
  * Neither half can stand in for the other, which is why they are combined
  * rather than merged. A repository that passes every check is not verified;
  * it is a repository whose claims are true, waiting for somebody to read the
@@ -35,7 +41,12 @@ export interface OpenQuestion {
 
 export interface PolicyReport {
   readonly checks: readonly CheckResult[]
+  /** Answerable today, and unanswered. */
   readonly open: readonly OpenQuestion[]
+  /** Answerable by nobody yet, and why. */
+  readonly blocked: readonly OpenQuestion[]
+  /** Read, cited, and not yet stood behind by a person. */
+  readonly unconfirmed: readonly { question: PolicyQuestion; market?: string; answer: Answer }[]
   /** Everything a store form can be filled in with, from evidence. */
   readonly declarations: readonly string[]
   readonly codeClean: boolean
@@ -58,17 +69,43 @@ export function policyReport(
   now: Date = new Date(),
   answers: readonly Answer[] = ANSWERS,
   checks: readonly CheckResult[] = runChecks(),
+  questions: readonly PolicyQuestion[] = QUESTIONS,
 ): PolicyReport {
   const open: OpenQuestion[] = []
+  const blocked: OpenQuestion[] = []
+  const unconfirmed: { question: PolicyQuestion; market?: string; answer: Answer }[] = []
 
-  for (const entry of required()) {
+  for (const entry of required(questions)) {
     const matching = answers.filter(
       (answer) =>
         answer.questionId === entry.question.id &&
         (entry.market === undefined || answer.market === entry.market),
     )
     const current = matching.find((answer) => isCurrent(answer, now))
-    if (current !== undefined) continue
+
+    // Blocked FIRST, and regardless of the answer. A question whose rule has
+    // been read but whose subject does not exist is not satisfied; the
+    // account-deletion rule is read and the app still has no deletion.
+    if (entry.question.blockedBy !== undefined) {
+      blocked.push({
+        question: entry.question,
+        ...(entry.market === undefined ? {} : { market: entry.market }),
+        why: current === undefined ? 'never answered' : 'answer expired',
+        ...(current === undefined ? {} : { stale: current }),
+      })
+      continue
+    }
+
+    if (current !== undefined) {
+      if (current.confirmedBy === undefined) {
+        unconfirmed.push({
+          question: entry.question,
+          ...(entry.market === undefined ? {} : { market: entry.market }),
+          answer: current,
+        })
+      }
+      continue
+    }
 
     // The most recent stale answer, so the report can say when it was read
     // rather than only that it is too old.
@@ -86,10 +123,14 @@ export function policyReport(
   return {
     checks,
     open,
+    blocked,
+    unconfirmed,
     declarations: checks.map((check) => check.declares),
     codeClean,
-    // Both halves, and never one standing in for the other.
-    verified: codeClean && open.length === 0,
+    // Every half, and never one standing in for another. A machine-read
+    // answer with a citation is a draft: §U asks for a person at submission
+    // time, so `confirmedBy` is part of the gate and not a decoration.
+    verified: codeClean && open.length === 0 && blocked.length === 0 && unconfirmed.length === 0,
   }
 }
 
@@ -115,11 +156,33 @@ export function reportOf(report: PolicyReport): string {
     }
   }
 
+  lines.push('', 'What cannot be answered yet, and what is in the way:')
+  if (report.blocked.length === 0) lines.push('  nothing')
+  for (const entry of report.blocked) {
+    const where = entry.market === undefined ? '' : ` [${entry.market}]`
+    lines.push(`  ${entry.question.store}/${entry.question.id}${where}`)
+    lines.push(`       blocked by: ${entry.question.blockedBy ?? ''}`)
+    if (entry.stale !== undefined) {
+      lines.push(`       the rule itself was read ${entry.stale.readAt} by ${entry.stale.readBy}`)
+    }
+  }
+
+  lines.push('', 'Read and cited, waiting for a person to stand behind it:')
+  if (report.unconfirmed.length === 0) lines.push('  nothing')
+  for (const entry of report.unconfirmed) {
+    const where = entry.market === undefined ? '' : ` [${entry.market}]`
+    lines.push(
+      `  ${entry.question.store}/${entry.question.id}${where} — read ${entry.answer.readAt} by ${entry.answer.readBy}`,
+    )
+    lines.push(`       source: ${entry.answer.source}`)
+  }
+
   lines.push(
     '',
     report.verified
       ? 'Verified: the code is clean and every rule has been read recently.'
-      : `NOT verified — ${report.open.length} unread rules` +
+      : `NOT verified — ${report.open.length} unread, ${report.blocked.length} blocked, ` +
+          `${report.unconfirmed.length} awaiting a person` +
           (report.codeClean ? '' : ', and the code checks are failing'),
   )
   return lines.join('\n')

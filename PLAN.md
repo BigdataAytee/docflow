@@ -1435,11 +1435,56 @@ gate itself is deferred with everything else that needs a phone.
       expiry becomes the assumption §U warns about. An expired answer reads as
       unanswered, and the report says when it was last read.
 
-      **No answer is recorded, because nobody has read a store rule for this
-      app.** 33 open questions. `verified` requires both halves and neither
-      substitutes for the other: a repository that passes every check is not
-      verified, it is one whose claims are true, waiting for somebody to read
-      the rules they will be judged against.
+      **The rules have now been read, and reading them found two features
+      that do not exist.** The questionnaire said "an owner can export
+      everything and delete their account in Settings" and "the ratings prompt
+      fires via the native review API after a successful share". Neither was
+      ever built. The export half is real; the deletion half is not, and
+      **Apple 5.1.1(v) makes in-app account deletion mandatory for any app
+      that offers account creation** — so that is a submission blocker rather
+      than a nicety, and `checks.ts` now fails on it by name.
+
+      That is the whole value of the exercise, and it arrived the way these
+      things do: not from the rules being surprising, but from holding a
+      claim about our own code against one. Both claims now say what is true,
+      and two new checks keep them honest — which immediately caught a third
+      fault, this time in the checks themselves. `checkAccountDeletion` scans
+      `src/` for `deleteAccount` and found the word **in its own regex**, one
+      file away, and declared that an owner could delete their account "in
+      `src/marketing/policy/checks.ts`". A check that can find itself is not a
+      check. The same directory was being read by the destination scan as
+      somewhere the app sends data, because the questionnaire had started
+      citing real pages: `developer.apple.com` in a citation is not a
+      destination. Both are fixed by excluding the directory that TALKS ABOUT
+      the app from the scans that examine the app, and the exclusion is
+      earned against the built bundle rather than asserted.
+
+      **What was answerable, answered — from the page, not from memory.**
+      Every answer carries the URL fetched and the date. The steering rule
+      turned out to be exactly as region-dependent as §U said: 3.1.1(a) allows
+      buttons, links and other calls to action in the **United States**
+      storefront with no entitlement, and prohibits them in every other one,
+      so NG, GH, GB and AE are answered "say nothing, in the app and in its
+      metadata". **FR and ES are deliberately left open**: the EU has its own
+      external-purchase regime under the DMA and its entitlement page 404s, so
+      answering them from the global paragraph would be the assumption §U
+      warns about. Play's target API level is answered and is an input to
+      Phase 4 — API 36 for new apps and updates since **31 August 2026**, a
+      deadline that has already passed, with Billing Library 8 required from
+      the same date.
+
+      **And what could not be answered says why.** Every Play policy page —
+      `support.google.com`, `play.google.com` — is blocked by this
+      environment's egress proxy, so the Play half was read only where
+      `developer.android.com` carries it. The two store FORMS are behind
+      developer accounts. Three questions are blocked on a plan existing in a
+      console at all (D10).
+
+      So the report now has three buckets instead of one: **9 unread, 18
+      blocked, 13 read and awaiting a person.** `confirmedBy` is part of the
+      gate — an answer fetched by a machine is a draft with a citation, and
+      §U asks for a person at submission time — so `verified` stays false, and
+      correctly.
 
 - [x] **CI now builds before it tests** — and that is a fix, not a tidy-up.
       Three checks read the built bundle: the Phase-7c service-role key scan,
@@ -1510,8 +1555,9 @@ gate itself is deferred with everything else that needs a phone.
       project rather than on the demo backend; **Universal Links and App
       Links**, which need an Apple Team ID and the release signing certificate
       fingerprint; the **store smart banners**, which need submitted apps; and
-      **the store rules themselves**, which nobody has read — `npm run policy`
-      lists all 33 questions with the page to read for each. `npm run site`,
+      **the store rules themselves**, now partly read — `npm run policy`
+      lists what is unread, what is blocked and on what, and what is waiting
+      for a person to stand behind it. `npm run site`,
       `npm run shots` and `npm run policy` name every one of these on every
       run.
 - [x] **The final sweeps — seven of seven, and each one measured**
@@ -1751,6 +1797,22 @@ gate itself is deferred with everything else that needs a phone.
       VoiceOver's rotor and TalkBack's gestures, a braille display, and how the
       native shell maps the same tree on iOS and Android are all a device pass
       by somebody who uses one. That is D12 below.
+
+### Open, buildable, and blocking a submission
+
+- [ ] **Account deletion.** Apple 5.1.1(v): an app that offers account
+      creation must offer account deletion inside the app. DocFlow offers
+      creation and has no deletion flow at all — `npm run policy` fails on it
+      by name. The rule has been read (2026-09-14): the option must be easy to
+      find and is normally in account settings; it must delete the entire
+      account record and the personal data with it, user-generated content
+      included; deactivating is explicitly insufficient; whatever law requires
+      keeping may be kept if the person is told; a slow or manual process is
+      acceptable if the person is told how long and gets a confirmation; and
+      an app may require an auto-renewable subscription to be cancelled first.
+      Rule #6 cuts across it: export is free forever, so deletion must offer
+      the export on the way out rather than being the only way to end up with
+      nothing.
 
 ### The physical-device remainder — one consolidated list
 
@@ -2794,6 +2856,10 @@ vectors of a few hundred bytes.
 | 228 | Two links may share a name if they share a destination | WCAG fails identical names going to DIFFERENT places. The list page's header button and its FAB are the same action and are not a defect, and a rule that flagged them would have been argued with until it was deleted. | `tools/sweeps/screenreader.ts` |
 | 229 | A navigation moves focus to `main` — except on a cold load | It is the one thing that announces an SPA route change. On first paint the reader is already reading from the top, and interrupting to say "main" would cut off the page title. | `src/app/focus.ts` |
 | 230 | An opened panel takes focus; the hand-back is best effort | Six panels replace their own trigger, so there is nothing to hand focus back TO. Doing the right thing where it is possible beats doing nothing everywhere — and the first version of the test could not tell the difference, because it closed the panel from the opener. | `src/ui/focus.ts` |
+| 240 | A store question can be BLOCKED, and blocked is not unread | Reading a rule and meeting it are different things. The account-deletion rule is read, cited and current, and the app still has no deletion flow — so the question is reported as blocked by the missing feature and can never count as satisfied. | `src/marketing/policy/report.ts` |
+| 241 | An answer fetched by a machine is a draft with a citation | §U asks for a person at submission time. `readBy` says who fetched the page; `confirmedBy` says who stood behind it, and `verified` needs the second. Thirteen answers currently wait on it. | `src/marketing/policy/questions.ts` |
+| 242 | FR and ES are left unanswered rather than answered from the global rule | 3.1.1(a) reads as "the United States, and everywhere else", but the EU runs its own external-purchase regime under the DMA and the entitlement page 404s. Answering them from the global paragraph is exactly the assumption §U warns about. | `src/marketing/policy/questions.ts` |
+| 243 | The directory that TALKS ABOUT the app is excluded from the scans that examine it | `checkAccountDeletion` found `deleteAccount` in its own regex and declared the feature present. A check that can find itself is not a check — and a cited URL is not a network destination. | `src/marketing/policy/checks.ts` |
 | 232 | The palette adds no destination and no action — it is a VIEW of the route table | A palette that is the only way to reach something makes the phone the second-class client of a phone-first product. Every row is a route from `paths.ts` or a record already indexed, and a test asserts the sidebar's destinations equal the tab bar's. | `src/features/palette/CommandPalette.tsx` |
 | 233 | One destination table, read by the Shell, the settings index and the palette | Two copies is how `appearance` came to exist in `paths.ts` and not in the settings index. The panel union is closed, so the next omission is a type error rather than a missing row. | `src/app/destinations.ts` |
 | 234 | The palette lives above the routes, not inside the Shell | The builder and the welcome page are full-screen routes OUTSIDE the Shell (§G). A palette that stopped working on the screen where the work happens would be a gimmick. | `src/app/PaletteHost.tsx` |

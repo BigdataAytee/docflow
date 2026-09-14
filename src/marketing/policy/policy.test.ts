@@ -14,11 +14,14 @@ import {
   ALLOWED_DESTINATIONS,
   type CheckResult,
   checkDestinations,
+  checkAccountDeletion,
   checkLocalAi,
   checkNoTrackers,
+  checkRatingsPrompt,
   runChecks,
 } from './checks'
 import {
+  ANSWERS,
   ANSWER_VALID_DAYS,
   type Answer,
   QUESTIONS,
@@ -53,9 +56,13 @@ describe('It never says verified on an old answer (§U)', () => {
   })
 
   it('says WHEN a stale answer was read, not just that it is stale', () => {
-    const stale = answer({ questionId: 'apple-privacy-label', readAt: daysAgo(400) })
+    // A question with no `blockedBy`: a blocked one is reported as blocked
+    // whatever its answer's age, which is the point of the third bucket.
+    const stale = answer({ questionId: 'apple-steering', market: 'US', readAt: daysAgo(400) })
     const report = policyReport(NOW, [stale], passing)
-    const entry = report.open.find((open) => open.question.id === 'apple-privacy-label')
+    const entry = report.open.find(
+      (open) => open.question.id === 'apple-steering' && open.market === 'US',
+    )
 
     expect(entry?.why).toBe('answer expired')
     expect(entry?.stale?.readAt).toBe(stale.readAt)
@@ -105,23 +112,62 @@ describe('Both halves are required, and neither substitutes for the other', () =
     expect(reportOf(report)).toContain('code checks are failing')
   })
 
-  it('is verified only when both halves hold', () => {
+  it('is verified only when every half holds', () => {
     const all = required().map((entry) =>
+      answer({
+        questionId: entry.question.id,
+        ...(entry.market === undefined ? {} : { market: entry.market }),
+        confirmedBy: 'a person',
+      }),
+    )
+    // Blocked questions are blocked by something no answer can supply, so
+    // verification is tested against the questions that CAN be answered.
+    const answerable = QUESTIONS.filter((question) => question.blockedBy === undefined)
+    const report = policyReport(NOW, all, passing, answerable)
+
+    expect(report.verified).toBe(true)
+  })
+
+  it('is not verified while an answer has nobody standing behind it', () => {
+    const answerable = QUESTIONS.filter((question) => question.blockedBy === undefined)
+    const unconfirmed = required(answerable).map((entry) =>
       answer({
         questionId: entry.question.id,
         ...(entry.market === undefined ? {} : { market: entry.market }),
       }),
     )
-    const report = policyReport(NOW, all, passing)
+    const report = policyReport(NOW, unconfirmed, passing, answerable)
 
-    expect(report.verified).toBe(true)
+    // Read, cited, current — and still not verified. §U asks for a person at
+    // submission time, and a fetch is not one.
+    expect(report.open).toHaveLength(0)
+    expect(report.unconfirmed.length).toBeGreaterThan(0)
+    expect(report.verified).toBe(false)
+  })
+
+  it('never counts a blocked question as done, however fresh its answer', () => {
+    const blocked = QUESTIONS.find((question) => question.blockedBy !== undefined)
+    if (blocked === undefined) throw new Error('no blocked question')
+
+    const report = policyReport(
+      NOW,
+      [answer({ questionId: blocked.id, market: 'US', confirmedBy: 'a person' })],
+      passing,
+    )
+
+    // The account-deletion rule is read, confirmed, and the app still has no
+    // deletion flow. Reading a rule is not meeting it.
+    expect(report.blocked.map((entry) => entry.question.id)).toContain(blocked.id)
+    expect(report.verified).toBe(false)
   })
 
   it('does not let one market’s answer cover another’s', () => {
     // §U: the rules "vary by region". An answer read for the US says nothing
     // about Nigeria, and this is the mistake a flat checklist makes.
-    const perMarket = QUESTIONS.find((question) => question.perMarket)
-    if (perMarket === undefined) throw new Error('no per-market question')
+    const perMarket = QUESTIONS.find(
+      (question) => question.perMarket && question.blockedBy === undefined,
+    )
+    if (perMarket === undefined) throw new Error('no answerable per-market question')
 
     const report = policyReport(NOW, [answer({ questionId: perMarket.id, market: 'US' })], passing)
     const stillOpen = report.open.filter((open) => open.question.id === perMarket.id)
@@ -143,11 +189,32 @@ describe('Nothing here states what a store rule is', () => {
     }
   })
 
-  it('records no answers, because nobody has read a rule', () => {
-    const report = policyReport(NOW, undefined, passing)
+  it('carries a source and a date on every answer it does record', () => {
+    // The answers are no longer empty: the public rules have been read. What
+    // must stay true is that none of them was written from memory — every one
+    // names the page it came from and the day it was fetched.
+    expect(ANSWERS.length).toBeGreaterThan(0)
+    for (const recorded of ANSWERS) {
+      expect(recorded.source, `${recorded.questionId} cites nothing`).toMatch(/^https:\/\//)
+      expect(recorded.readAt, `${recorded.questionId} has no date`).toMatch(/^\d{4}-\d{2}-\d{2}$/)
+      expect(recorded.readBy.length, `${recorded.questionId} has no reader`).toBeGreaterThan(0)
+      expect(
+        QUESTIONS.some((question) => question.id === recorded.questionId),
+        `${recorded.questionId} answers a question that does not exist`,
+      ).toBe(true)
+    }
+  })
 
-    expect(report.open).toHaveLength(required().length)
-    for (const entry of report.open) expect(entry.why).toBe('never answered')
+  it('leaves the EU storefronts unanswered rather than answering them from the global rule', () => {
+    // 3.1.1(a) is written as "the United States, and everywhere else". The EU
+    // has its own external-purchase regime under the DMA, and its entitlement
+    // page 404s — so FR and ES are open on purpose, not by omission.
+    const euAnswers = ANSWERS.filter(
+      (recorded) =>
+        recorded.questionId === 'apple-steering' &&
+        (recorded.market === 'FR' || recorded.market === 'ES'),
+    )
+    expect(euAnswers).toHaveLength(0)
   })
 
   it('asks per market where §U says the rules vary', () => {
@@ -158,11 +225,21 @@ describe('Nothing here states what a store rule is', () => {
 })
 
 describe('What the code says is checked, not remembered', () => {
-  it('passes against the repository as it stands', () => {
-    for (const check of runChecks()) {
-      expect(check.passed, `${check.check}: ${check.findings.map((f) => f.detail).join('; ')}`).toBe(
-        true,
-      )
+  it('passes against the repository as it stands, except where it should not', () => {
+    const failing = runChecks().filter((check) => !check.passed)
+
+    // Exactly one, and known: there is no account-deletion flow, which Apple
+    // 5.1.1(v) requires of any app that offers account creation. Named rather
+    // than allowed in bulk, so a new failure still breaks this.
+    expect(failing.map((check) => check.check)).toEqual(['account-deletion'])
+  })
+
+  it('does not let a check find itself', () => {
+    // Both new checks scan `src/` for a string that also appears in their own
+    // source. The first version reported that an owner could delete their
+    // account "in src/marketing/policy/checks.ts".
+    for (const check of [checkAccountDeletion(), checkRatingsPrompt()]) {
+      expect(check.declares, check.check).not.toContain('src/marketing/policy/')
     }
   })
 
