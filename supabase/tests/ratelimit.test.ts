@@ -138,19 +138,46 @@ describe('The counter is shared, which is the whole point', () => {
 })
 
 describe('A sliding window, not a fixed one', () => {
+  /**
+   * A short window, and the test waits for its start.
+   *
+   * How much of the previous window still counts depends on where the clock
+   * stands inside the current one — that is what "sliding" means, and it makes
+   * a test that simply calls and hopes into a coin flip. This one flipped
+   * tails the first time it ran on CI: 2.94 against a limit of 3, from a
+   * request that landed 48 seconds into a 60-second window. The window was not
+   * wrong; the test was.
+   *
+   * Four seconds keeps the wait under four seconds, and starting within the
+   * first quarter leaves the previous window weighted at 0.75 or more — room
+   * enough that no amount of scheduling jitter decides the result.
+   */
+  const WINDOW = 4
+
+  async function atTheStartOfAWindow(): Promise<void> {
+    const { rows } = await db.query<{ into_window: string }>(
+      `select extract(epoch from clock_timestamp())::numeric % ${WINDOW} as into_window`,
+    )
+    const into = Number(rows[0]?.into_window ?? 0)
+    if (into <= WINDOW / 4) return
+    await new Promise((resolve) => setTimeout(resolve, (WINDOW - into) * 1000 + 50))
+  }
+
   it('carries the previous window forward instead of forgiving it wholesale', async () => {
-    // The cliff a fixed window has: spend the budget at the end of one
-    // window and the next instant hands over a fresh one, so twice the limit
-    // passes across the boundary. Written directly into the PREVIOUS window's
-    // row, because waiting sixty seconds in a test is not a test.
-    const previous = `to_timestamp(floor(extract(epoch from clock_timestamp()) / 60) * 60) - interval '60 seconds'`
+    // The cliff a fixed window has: spend the budget at the end of one window
+    // and the next instant hands over a fresh one, so twice the limit passes
+    // across the boundary. Written directly into the PREVIOUS window's row,
+    // because waiting out a whole window in a test is not a test.
+    await atTheStartOfAWindow()
+    const previous = `to_timestamp(floor(extract(epoch from clock_timestamp()) / ${WINDOW}) * ${WINDOW}) - interval '${WINDOW} seconds'`
     await db.query(
       `insert into public.rate_limit_windows (bucket, key, window_start, hits)
        values ('test', 'edge', ${previous}, 10)`,
     )
 
-    const verdict = await ask('edge', 3, 60)
-    // One hit this window, ten weighted from the last: far over three.
+    // One hit this window, ten from the last at a weight of at least 0.75:
+    // eight and a half or more, against a limit of three.
+    const verdict = await ask('edge', 3, WINDOW)
     expect(verdict.estimate).toBeGreaterThan(3)
     expect(verdict.allowed).toBe(false)
   })
