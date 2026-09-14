@@ -40,7 +40,7 @@ export function CustomerSheet({ initialName = '', onSave, onCancel }: CustomerSh
   // accessible name is one too many for anyone navigating by label.
   return (
     <form
-      className="rounded-2xl bg-white/80 p-4 backdrop-blur"
+      className="rounded-2xl bg-surface/80 p-4 backdrop-blur"
       aria-label={strings.customers.newCustomer}
       onSubmit={(event) => {
         event.preventDefault()
@@ -62,7 +62,7 @@ export function CustomerSheet({ initialName = '', onSave, onCancel }: CustomerSh
       </label>
       <input
         id={`${ids}-name`}
-        className="mt-1 min-h-tap w-full rounded-xl border border-black/10 bg-white px-3 text-sm"
+        className="mt-1 min-h-tap w-full rounded-xl border border-edge/10 bg-surface px-3 text-sm"
         value={name}
         onChange={(event) => setName(event.target.value)}
       />
@@ -74,7 +74,7 @@ export function CustomerSheet({ initialName = '', onSave, onCancel }: CustomerSh
             type="button"
             aria-pressed={kind === option}
             className={`min-h-tap flex-1 rounded-xl border text-sm font-medium ${
-              kind === option ? 'border-transparent bg-brand text-white' : 'border-black/10 bg-white'
+              kind === option ? 'border-transparent bg-brand text-white' : 'border-edge/10 bg-surface'
             }`}
             onClick={() => setKind(option)}
           >
@@ -130,7 +130,7 @@ function Field({
       </label>
       <input
         id={id}
-        className="mt-1 min-h-tap w-full rounded-xl border border-black/10 bg-white px-3 text-sm"
+        className="mt-1 min-h-tap w-full rounded-xl border border-edge/10 bg-surface px-3 text-sm"
         value={value}
         onChange={(event) => onChange(event.target.value)}
       />

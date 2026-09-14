@@ -203,6 +203,11 @@ export interface UiStrings {
     readonly noSavedItems: string
     readonly noSavedItemsBody: string
     readonly usedTimes: string
+    readonly theme: string
+    readonly themeHint: string
+    readonly themeSystem: string
+    readonly themeLight: string
+    readonly themeDark: string
     readonly defaultSignature: string
     readonly signatureHint: string
   }
@@ -795,6 +800,11 @@ const EN: UiStrings = {
     noSavedItems: 'Nothing saved yet',
     noSavedItemsBody: 'Items you type into a document are kept here for next time.',
     usedTimes: 'used {count}×',
+    theme: 'Dark mode',
+    themeHint: 'Follows your phone unless you choose.',
+    themeSystem: 'Follow phone',
+    themeLight: 'Light',
+    themeDark: 'Dark',
     defaultSignature: 'Default signature',
     signatureHint: 'Signs new documents unless you draw a different one.',
   },

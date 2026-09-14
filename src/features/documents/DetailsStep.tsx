@@ -42,7 +42,7 @@ export interface DetailsStepProps {
 
 function Card({ title, accent, children }: { title: string; accent: string; children: ReactNode }) {
   return (
-    <section className="overflow-hidden rounded-2xl bg-white/85">
+    <section className="overflow-hidden rounded-2xl bg-surface/85">
       <h3
         className="px-4 py-2 text-[10.5px] font-bold uppercase tracking-[0.12em]"
         style={{ backgroundColor: `${accent}1a`, color: accent }}
@@ -124,7 +124,7 @@ export function DetailsStep({
           <button
             type="button"
             aria-label={strings.details.editReference}
-            className="min-h-tap min-w-tap rounded-full text-navy/60"
+            className="min-h-tap min-w-tap rounded-full text-ink/60"
           >
             ✎
           </button>
@@ -206,7 +206,7 @@ export function DetailsStep({
           type="button"
           onClick={onSign}
           aria-label={signatureUrl === undefined ? strings.details.tapToSign : strings.signature.title}
-          className="flex min-h-[72px] w-full items-center justify-center rounded-lg border-2 border-dashed border-navy/25 p-2 text-sm opacity-70"
+          className="flex min-h-[72px] w-full items-center justify-center rounded-lg border-2 border-dashed border-ink/25 p-2 text-sm opacity-70"
         >
           {signatureUrl === undefined ? (
             strings.details.tapToSign

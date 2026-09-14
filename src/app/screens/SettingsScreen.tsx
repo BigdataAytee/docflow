@@ -25,6 +25,8 @@ import { SavedItems } from '../../features/settings/SavedItems'
 import { SignatureSettings } from '../../features/settings/SignatureSettings'
 import { TaxSettings } from '../../features/settings/TaxSettings'
 import { DataAndSync } from '../../features/settings/DataAndSync'
+import { ThemeSettings } from '../../features/theme/ThemeSettings'
+import { useThemeChoice } from '../../features/theme/ThemeContext'
 import { runExport } from '../../features/export/action'
 import { createWebSharePort } from '../../share/web'
 import { applyLabelOverride, applyRegion, regionProfile } from '../../features/settings/region'
@@ -45,6 +47,7 @@ export function SettingsIndexScreen() {
     { panel: 'payment', label: strings.settings.howYouGetPaid },
     { panel: 'items', label: strings.settings.savedItems },
     { panel: 'signature', label: strings.settings.defaultSignature },
+    { panel: 'appearance', label: strings.settings.theme },
     { panel: 'data', label: strings.dataSync.title },
   ]
 
@@ -56,7 +59,7 @@ export function SettingsIndexScreen() {
           <li key={row.panel}>
             <NavLink
               to={settingsPath(row.panel)}
-              className="flex min-h-tap items-center rounded-2xl bg-white/70 px-4 text-sm font-medium"
+              className="flex min-h-tap items-center rounded-2xl bg-surface/70 px-4 text-sm font-medium"
             >
               {row.label}
             </NavLink>
@@ -180,9 +183,24 @@ function SettingsPanelBody() {
     case 'signature':
       return <DefaultSignature />
 
+    case 'appearance':
+      return <AppearancePanel />
+
     case 'data':
       return <DataAndSyncPanel />
   }
+}
+
+/**
+ * Settings → Dark mode (§G).
+ *
+ * The choice comes from the provider at the app root: `.dark` belongs to the
+ * document, so applying it from a panel would give a dark mode that worked
+ * only on the screen where it was chosen.
+ */
+function AppearancePanel() {
+  const { choice, setChoice } = useThemeChoice()
+  return <ThemeSettings choice={choice} onChoice={setChoice} />
 }
 
 /**

@@ -14,7 +14,7 @@ export interface EmptyStateProps {
 
 export function EmptyState({ title, body, action, icon }: EmptyStateProps) {
   return (
-    <div className="flex flex-col items-center gap-3 rounded-2xl bg-white/70 px-6 py-10 text-center">
+    <div className="flex flex-col items-center gap-3 rounded-2xl bg-surface/70 px-6 py-10 text-center">
       {icon !== undefined && <div aria-hidden="true">{icon}</div>}
       <p className="text-base font-semibold">{title}</p>
       {body !== undefined && <p className="max-w-sm text-sm opacity-70">{body}</p>}

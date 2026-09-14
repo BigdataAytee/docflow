@@ -77,7 +77,7 @@ export function NewReceiptSheet({
   const canRecord = minor > 0 && customerId !== ''
 
   return (
-    <section className="rounded-2xl bg-white/85 p-4 backdrop-blur" aria-label={r.title}>
+    <section className="rounded-2xl bg-surface/85 p-4 backdrop-blur" aria-label={r.title}>
       <div className="flex items-start justify-between gap-3">
         <h2 className="text-sm font-semibold">{r.title}</h2>
         <button
@@ -96,7 +96,7 @@ export function NewReceiptSheet({
       </label>
       <select
         id={`${ids}-who`}
-        className="mt-1 min-h-tap w-full rounded-xl border border-black/10 bg-white px-3 text-sm"
+        className="mt-1 min-h-tap w-full rounded-xl border border-edge/10 bg-surface px-3 text-sm"
         value={customerId}
         onChange={(event) => {
           setCustomerId(event.target.value)
@@ -118,7 +118,7 @@ export function NewReceiptSheet({
       </label>
       <input
         id={`${ids}-amount`}
-        className="mt-1 min-h-tap w-full rounded-xl border border-black/10 bg-white px-3 text-lg tabular-nums"
+        className="mt-1 min-h-tap w-full rounded-xl border border-edge/10 bg-surface px-3 text-lg tabular-nums"
         inputMode="decimal"
         value={major}
         onChange={(event) => setMajor(event.target.value)}
@@ -130,7 +130,7 @@ export function NewReceiptSheet({
       <input
         id={`${ids}-when`}
         type="date"
-        className="mt-1 min-h-tap w-full rounded-xl border border-black/10 bg-white px-3 text-sm"
+        className="mt-1 min-h-tap w-full rounded-xl border border-edge/10 bg-surface px-3 text-sm"
         value={paidAt}
         onChange={(event) => setPaidAt(event.target.value)}
       />
@@ -140,7 +140,7 @@ export function NewReceiptSheet({
       </label>
       <select
         id={`${ids}-how`}
-        className="mt-1 min-h-tap w-full rounded-xl border border-black/10 bg-white px-3 text-sm"
+        className="mt-1 min-h-tap w-full rounded-xl border border-edge/10 bg-surface px-3 text-sm"
         value={method}
         onChange={(event) => setMethod(event.target.value)}
       >
@@ -156,7 +156,7 @@ export function NewReceiptSheet({
       </label>
       <input
         id={`${ids}-ref`}
-        className="mt-1 min-h-tap w-full rounded-xl border border-black/10 bg-white px-3 text-sm"
+        className="mt-1 min-h-tap w-full rounded-xl border border-edge/10 bg-surface px-3 text-sm"
         value={reference}
         onChange={(event) => setReference(event.target.value)}
       />
@@ -166,7 +166,7 @@ export function NewReceiptSheet({
       </label>
       <select
         id={`${ids}-against`}
-        className="mt-1 min-h-tap w-full rounded-xl border border-black/10 bg-white px-3 text-sm"
+        className="mt-1 min-h-tap w-full rounded-xl border border-edge/10 bg-surface px-3 text-sm"
         value={invoiceId}
         onChange={(event) => setInvoiceId(event.target.value)}
         disabled={customerId === ''}

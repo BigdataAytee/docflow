@@ -134,7 +134,7 @@ export function CustomerPicker({
       )}
 
       {open && (
-        <div className="rounded-xl border border-black/10 bg-white p-2">
+        <div className="rounded-xl border border-edge/10 bg-surface p-2">
           <input
             type="search"
             className="min-h-tap w-full rounded-lg bg-page px-3 text-sm shadow-inner"
@@ -149,7 +149,7 @@ export function CustomerPicker({
               <li key={row.id}>
                 <button
                   type="button"
-                  className="flex min-h-tap w-full flex-col justify-center rounded-lg px-3 text-start hover:bg-black/[0.04]"
+                  className="flex min-h-tap w-full flex-col justify-center rounded-lg px-3 text-start hover:bg-ink/[0.04]"
                   onClick={() => {
                     onSelect(row.id)
                     setOpen(false)

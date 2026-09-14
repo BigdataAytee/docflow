@@ -78,7 +78,7 @@ export function DocumentList({ type, rows, onOpen, onNew }: DocumentListProps) {
         <button
           type="button"
           onClick={onNew}
-          className="mt-3 min-h-tap rounded-full bg-white/20 px-4 text-sm font-semibold backdrop-blur"
+          className="mt-3 min-h-tap rounded-full bg-surface/20 px-4 text-sm font-semibold backdrop-blur"
         >
           {format(strings.lists.newDocument, { label })}
         </button>
@@ -92,7 +92,7 @@ export function DocumentList({ type, rows, onOpen, onNew }: DocumentListProps) {
           onChange={(event) => setQuery(event.target.value)}
           placeholder={format(strings.lists.searchIn, { label: plural })}
           aria-label={format(strings.lists.searchIn, { label: plural })}
-          className="min-h-tap w-full rounded-lg bg-white/80 px-4 text-sm shadow-inner"
+          className="min-h-tap w-full rounded-lg bg-surface/80 px-4 text-sm shadow-inner"
         />
       </label>
 
@@ -107,9 +107,9 @@ export function DocumentList({ type, rows, onOpen, onNew }: DocumentListProps) {
         )}
 
         {visible !== null && visible.length > 0 && (
-          <ul className="overflow-hidden rounded-2xl bg-white/85">
+          <ul className="overflow-hidden rounded-2xl bg-surface/85">
             {visible.map((row) => (
-              <li key={row.id} className="border-b border-navy/8 last:border-0">
+              <li key={row.id} className="border-b border-ink/10 last:border-0">
                 <button
                   type="button"
                   onClick={() => onOpen(row.id)}

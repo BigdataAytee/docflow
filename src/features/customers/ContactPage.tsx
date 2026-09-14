@@ -104,7 +104,7 @@ export function ContactPage({
       />
 
       <div className="space-y-4 px-4 pt-4">
-        <section className="rounded-2xl bg-white/70 p-4" aria-label={strings.customers.labels}>
+        <section className="rounded-2xl bg-surface/70 p-4" aria-label={strings.customers.labels}>
           <h2 className="text-sm font-semibold">{strings.customers.labels}</h2>
           {customer.labels.length > 0 && (
             <ul className="mt-2 flex flex-wrap gap-2">
@@ -142,7 +142,7 @@ export function ContactPage({
             }}
           >
             <input
-              className="min-h-tap min-w-0 flex-1 rounded-xl border border-black/10 bg-white px-3 text-sm"
+              className="min-h-tap min-w-0 flex-1 rounded-xl border border-edge/10 bg-surface px-3 text-sm"
               placeholder={strings.customers.addLabel}
               aria-label={strings.contact.newLabel}
               maxLength={MAX_LABEL_LENGTH}
@@ -171,7 +171,7 @@ export function ContactPage({
               </a>
               <a
                 href={`tel:${customer.phone ?? ''}`}
-                className="flex min-h-tap flex-1 items-center justify-center rounded-2xl bg-white/70 text-sm font-semibold"
+                className="flex min-h-tap flex-1 items-center justify-center rounded-2xl bg-surface/70 text-sm font-semibold"
               >
                 {strings.contact.call}
               </a>
@@ -180,14 +180,14 @@ export function ContactPage({
           <button
             type="button"
             onClick={onStatement}
-            className="min-h-tap flex-1 rounded-2xl bg-white/70 text-sm font-semibold"
+            className="min-h-tap flex-1 rounded-2xl bg-surface/70 text-sm font-semibold"
           >
             {strings.contact.statement}
           </button>
         </section>
         {!canReach && <p className="px-1 text-xs opacity-70">{strings.contact.noPhone}</p>}
 
-        <section className="rounded-2xl bg-white/70 p-4" aria-label={strings.contact.balance}>
+        <section className="rounded-2xl bg-surface/70 p-4" aria-label={strings.contact.balance}>
           <h2 className="text-sm font-semibold">{strings.contact.balance}</h2>
 
           {balances.length === 0 ? (
@@ -207,7 +207,7 @@ export function ContactPage({
           )}
         </section>
 
-        <section className="rounded-2xl bg-white/70 p-4" aria-label={strings.contact.history}>
+        <section className="rounded-2xl bg-surface/70 p-4" aria-label={strings.contact.history}>
           <h2 className="text-sm font-semibold">{strings.contact.history}</h2>
           {history.length === 0 ? (
             <div className="mt-2">
@@ -223,7 +223,7 @@ export function ContactPage({
                   <button
                     type="button"
                     onClick={() => onOpenDocument(row.id)}
-                    className="flex min-h-tap w-full items-center gap-3 rounded-xl bg-white px-3 py-2 text-start"
+                    className="flex min-h-tap w-full items-center gap-3 rounded-xl bg-surface px-3 py-2 text-start"
                   >
                     <span className="min-w-0 flex-1">
                       <span className="block break-words text-sm font-semibold">{row.reference}</span>
@@ -246,11 +246,11 @@ export function ContactPage({
 
         {/* No aria-label on the section: the heading below already names it,
             and repeating the word would give the textarea a twin. */}
-        <section className="rounded-2xl bg-white/70 p-4">
+        <section className="rounded-2xl bg-surface/70 p-4">
           <h2 className="text-sm font-semibold">{strings.contact.notes}</h2>
           <p className="mt-0.5 text-xs opacity-70">{strings.contact.notesHint}</p>
           <textarea
-            className="mt-2 min-h-[88px] w-full rounded-xl border border-black/10 bg-white p-3 text-sm"
+            className="mt-2 min-h-[88px] w-full rounded-xl border border-edge/10 bg-surface p-3 text-sm"
             placeholder={strings.contact.notesPlaceholder}
             aria-label={strings.contact.notes}
             value={note}
@@ -281,7 +281,7 @@ function BalanceBlock({ balance }: { balance: CurrencyBalance }) {
         <Row label={strings.customers.owingNow} value={formatMoney(balance.owing)} strong />
       </dl>
       <div
-        className="mt-2 h-2 overflow-hidden rounded-full bg-black/[0.06]"
+        className="mt-2 h-2 overflow-hidden rounded-full bg-ink/[0.06]"
         role="progressbar"
         aria-label={`${strings.customers.paid} ${balance.currency}`}
         aria-valuenow={Math.round(percent)}

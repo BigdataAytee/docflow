@@ -34,7 +34,7 @@ export function SignDeliverySheet({ onSign, onClose, error }: SignDeliverySheetP
   const named = signerName.trim() !== ''
 
   return (
-    <section className="rounded-2xl bg-white/85 p-4 backdrop-blur" aria-label={s.confirmDelivery}>
+    <section className="rounded-2xl bg-surface/85 p-4 backdrop-blur" aria-label={s.confirmDelivery}>
       <div className="flex items-start justify-between gap-3">
         <h2 className="text-sm font-semibold">{s.confirmDelivery}</h2>
         <button
@@ -53,7 +53,7 @@ export function SignDeliverySheet({ onSign, onClose, error }: SignDeliverySheetP
       </label>
       <input
         id="sign-who"
-        className="mt-1 min-h-tap w-full rounded-xl border border-black/10 bg-white px-3 text-sm"
+        className="mt-1 min-h-tap w-full rounded-xl border border-edge/10 bg-surface px-3 text-sm"
         value={signerName}
         onChange={(event) => setSignerName(event.target.value)}
       />
@@ -63,7 +63,7 @@ export function SignDeliverySheet({ onSign, onClose, error }: SignDeliverySheetP
       </label>
       <input
         id="sign-role"
-        className="mt-1 min-h-tap w-full rounded-xl border border-black/10 bg-white px-3 text-sm"
+        className="mt-1 min-h-tap w-full rounded-xl border border-edge/10 bg-surface px-3 text-sm"
         placeholder={s.rolePlaceholder}
         value={signerRole}
         onChange={(event) => setSignerRole(event.target.value)}
@@ -90,7 +90,7 @@ export function SignDeliverySheet({ onSign, onClose, error }: SignDeliverySheetP
           />
         </div>
       ) : (
-        <p className="mt-3 rounded-xl bg-navy/5 px-3 py-2.5 text-xs opacity-70">{s.nameFirst}</p>
+        <p className="mt-3 rounded-xl bg-ink/5 px-3 py-2.5 text-xs opacity-70">{s.nameFirst}</p>
       )}
     </section>
   )

@@ -38,7 +38,7 @@ export function DesignStep({
 
   return (
     <div className="space-y-4">
-      <div className="overflow-hidden rounded-2xl bg-white/85 p-3">{preview}</div>
+      <div className="overflow-hidden rounded-2xl bg-surface/85 p-3">{preview}</div>
 
       <div className="flex flex-wrap items-center gap-3">
         <span className="rounded-full bg-brand-tint px-3 py-1 text-xs font-semibold text-brand">
@@ -71,10 +71,10 @@ export function DesignStep({
         >
           <span
             className={`flex h-5 w-9 items-center rounded-full p-0.5 ${
-              showLogo ? 'justify-end bg-status-good' : 'justify-start bg-navy/25'
+              showLogo ? 'justify-end bg-status-good' : 'justify-start bg-ink/25'
             }`}
           >
-            <span className="h-4 w-4 rounded-full bg-white" />
+            <span className="h-4 w-4 rounded-full bg-surface" />
           </span>
           {showLogo ? strings.design.logoOn : strings.design.logoOff}
         </button>
@@ -93,7 +93,7 @@ export function DesignStep({
                 type="button"
                 onClick={() => onSelect(template.id)}
                 aria-pressed={template.id === selected}
-                className={`w-28 rounded-xl border-2 bg-white p-2 text-start ${
+                className={`w-28 rounded-xl border-2 bg-surface p-2 text-start ${
                   template.id === selected ? 'border-brand' : 'border-transparent'
                 }`}
               >

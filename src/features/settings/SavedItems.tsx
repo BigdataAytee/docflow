@@ -46,7 +46,7 @@ export function SavedItems({ onRemove }: { onRemove?: (id: string) => void }) {
       )}
 
       {items !== null && items.length > 0 && (
-        <ul className="divide-y divide-navy/8 overflow-hidden rounded-2xl bg-white/85">
+        <ul className="divide-y divide-ink/10 overflow-hidden rounded-2xl bg-surface/85">
           {items.map((item) => (
             <li key={item.id} className="flex items-center gap-3 p-3">
               <span className="min-w-0 flex-1">
@@ -65,7 +65,7 @@ export function SavedItems({ onRemove }: { onRemove?: (id: string) => void }) {
                   type="button"
                   onClick={() => onRemove(item.id)}
                   aria-label={`${strings.common.remove} ${item.name}`}
-                  className="min-h-tap min-w-tap shrink-0 rounded-full text-navy/50"
+                  className="min-h-tap min-w-tap shrink-0 rounded-full text-ink/50"
                 >
                   ×
                 </button>

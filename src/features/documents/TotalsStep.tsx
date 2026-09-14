@@ -54,7 +54,7 @@ export function TotalsStep({
   // is no money branch below it — not a zero total, no totals block at all.
   if (!carriesMoney(draft.type)) {
     return (
-      <div className="space-y-3 rounded-2xl bg-white/85 p-4">
+      <div className="space-y-3 rounded-2xl bg-surface/85 p-4">
         <label className="block">
           <span className="mb-1 block text-xs font-medium opacity-70">{strings.totals.driver}</span>
           <input
@@ -80,7 +80,7 @@ export function TotalsStep({
   })
 
   return (
-    <div className="space-y-3 rounded-2xl bg-white/85 p-4">
+    <div className="space-y-3 rounded-2xl bg-surface/85 p-4">
       <Row label={strings.totals.subtotal} value={formatMoney(totals.subtotal)} />
 
       <label className="flex items-center justify-between gap-3 text-sm">
@@ -102,7 +102,7 @@ export function TotalsStep({
         <Row label={strings.totals.withholding} value={`−${formatMoney(totals.wht)}`} />
       )}
 
-      <div className="border-t-2 border-navy/20 pt-3">
+      <div className="border-t-2 border-ink/20 pt-3">
         <div className="flex justify-between text-base font-bold" style={{ color: accent }}>
           <span>{strings.totals.payable}</span>
           <span className="tabular-nums">{formatMoney(totals.payable)}</span>

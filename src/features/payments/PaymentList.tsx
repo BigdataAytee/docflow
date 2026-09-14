@@ -49,7 +49,7 @@ export function PaymentList({ payments, prefill, onRecord, onReceipt }: PaymentL
           {settled.map((payment) => (
             <li
               key={payment.id}
-              className="flex items-center gap-3 rounded-2xl bg-white/85 p-3"
+              className="flex items-center gap-3 rounded-2xl bg-surface/85 p-3"
             >
               <span className="min-w-0 flex-1">
                 <span className="block text-sm font-semibold tabular-nums">
@@ -81,7 +81,7 @@ export function PaymentList({ payments, prefill, onRecord, onReceipt }: PaymentL
       </button>
 
       {open && (
-        <div className="space-y-3 rounded-2xl bg-white/90 p-4" role="dialog" aria-label={strings.payments.recordPayment}>
+        <div className="space-y-3 rounded-2xl bg-surface/90 p-4" role="dialog" aria-label={strings.payments.recordPayment}>
           <label className="block">
             <span className="mb-1 block text-xs font-medium opacity-70">
               {strings.payments.amount}

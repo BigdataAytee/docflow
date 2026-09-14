@@ -1607,8 +1607,56 @@ gate itself is deferred with everything else that needs a phone.
       tabbable and activatable, and recording the two features as unbuilt so
       the phrase cannot be read as done.
 
-      **Still open:** dark mode itself (245 surfaces, a §F design decision),
-      and screen-reader testing beyond structure, which wants a real reader.
+- [x] **Dark mode, built** (`src/features/theme/`, the themed half of §F in
+      `tailwind.config.js` and `src/index.css`). §G lists it as a Settings row;
+      §V requires it.
+
+      **The mechanism is tokens, not 245 `dark:` variants.** Every surface goes
+      through a CSS variable, so `bg-surface/70` is one class that is right in
+      both themes — and a screen written next year gets dark mode without its
+      author remembering anything, which is the only version of this that
+      survives a growing app. There are still zero `dark:` variants, and that
+      is now the design rather than the gap.
+
+      **The palette is DERIVED from §F, not invented.** §F is marked Locked and
+      gives light values only, so a dark theme cannot be read out of it. The
+      rule: keep every hue §F fixes, move only the lightness. The direction was
+      already in this repo before dark mode existed — `.dark body` paired
+      `bg-navy` with `text-page`, §F's two neutrals swapped — and everything
+      else extends that swap. Type and brand accents are **identical in both
+      themes**, because §F says colours belong to the internal type; a tint is
+      the one thing that cannot survive inversion (a pale wash on a dark page
+      is a glare), so tints and the status inks that sit on them get dark
+      values of the same hue.
+
+      **Three bugs the work uncovered, each invisible in light:**
+
+      · The status badges set colour through an **inline style** from a map of
+        hex, so they stayed pale-blue-on-white pills over a dark page. No class
+        scan could ever have seen them; the sweep now looks for inline colour
+        too.
+      · `border-ink/8` **produced no CSS at all**. Tailwind's opacity scale
+        runs in steps of five, so `/8` matched nothing and the border fell back
+        to a default grey — invisible on white since Phase 2, and a hard white
+        rule between every list row the moment the page went dark. A sweep now
+        rejects any opacity Tailwind does not emit.
+      · The theme hook first lived in the Settings panel, so `.dark` was
+        applied while Settings was open and dropped on the way back to Home — a
+        dark mode that worked only on the screen where you chose it. It belongs
+        at the root, because `.dark` is a property of the document.
+
+      **The PDF stays light in both themes**, and is excluded from the sweep: a
+      printed page is paper. The first pass tokenised it and would have printed
+      a dark invoice.
+
+      Three choices, not two: `system` is the default and is not a third
+      colour — it is the absence of a choice, which is what §G's "follows the
+      phone" means and what most people want. It listens, so a phone that goes
+      dark at sunset takes the app with it. The choice is per DEVICE and never
+      goes near the sync outbox: it is about the screen in somebody's hand.
+
+      **Still open:** screen-reader testing beyond structure, which wants a
+      real reader.
 
 ### The physical-device remainder — one consolidated list
 
@@ -2636,6 +2684,15 @@ vectors of a few hundred bytes.
 | 212 | `overflow-wrap: anywhere`, not `break-words`, where a label must shrink | They differ in exactly the case that bit: `break-word` breaks a long word to avoid overflowing but does not reduce the element's min-content width, so "Quotation" at 200% text still held a 151px tile open at 157px. | `src/features/home/Home.tsx` |
 | 213 | The motion scan reads `className` only | A first version flagged eight uses of `actions.transition()` — §M's document lifecycle method — as unguarded animations. A check that cries wolf on the domain layer is one somebody turns off. | `src/sweeps/motion.test.ts` |
 | 214 | The command palette and sidebar are recorded as unbuilt, not swept | §Q names them; no section of v6 specifies either. Designing both from one phrase would be inventing product. The sweep checks the requirement they exist to serve and that §V does state — keyboard navigation — and records them unbuilt so the phrase cannot read as done. | `src/sweeps/navigation.test.tsx` |
+| 215 | Dark mode is CSS variables, not `dark:` variants | `bg-surface/70` is one class that is right in both themes, so a screen written next year gets dark mode without its author remembering anything. 245 `dark:` variants would have been 245 chances to forget one. | `tailwind.config.js`, `src/index.css` |
+| 216 | The dark palette is derived from §F, never invented | §F is Locked and gives light values only. The rule is to keep every hue it fixes and move only the lightness — and the direction was already in the repo: `.dark body` paired `bg-navy` with `text-page`, which is §F's two neutrals swapped. | `src/index.css` |
+| 217 | Type and brand accents are identical in both themes | §F: "colours belong to the internal type and never change with the label". A dark theme may change what an accent sits ON, never the accent — so a Delivery note is still amber everywhere a Waybill is. Tints are the exception, because a pale wash on a dark page is a glare. | `tailwind.config.js` |
+| 218 | No theme-dependent colour is set through an inline style | The status badges applied hex through `style={{ color, backgroundColor }}` and stayed pale-blue-on-white over a dark page. An inline style cannot know about a theme, and no class scan can see one. | `src/ui/tokens.ts` |
+| 219 | Every opacity modifier must be one Tailwind actually emits | `border-ink/8` produced NOTHING: the default scale runs in fives, so the border fell back to a default grey — invisible on white since Phase 2, and a hard white rule between every list row on a dark page. | `src/sweeps/darkmode.test.ts` |
+| 220 | The theme is provided at the app ROOT, not in the Settings panel | `.dark` belongs to the document. Applied from a panel it went on when Settings opened and came off on the way back to Home — a dark mode that worked only where you chose it. | `src/features/theme/ThemeContext.tsx` |
+| 221 | The PDF stays light in both themes | A printed page is paper. The first pass tokenised it and would have printed a dark invoice; `src/pdf` is excluded from the sweep for the same reason. | `src/pdf/DocumentPage.tsx` |
+| 222 | `system` is the default, and is not a third colour | It is the absence of a choice — what §G's "follows the phone" means. It listens, so a phone that goes dark at sunset takes the app with it; an app that read the preference once at startup would only look like it followed. | `src/features/theme/useTheme.ts` |
+| 223 | The theme choice is per DEVICE and never syncs | It is about the screen in somebody's hand and the light in the room. Two people sharing a company share neither, so it goes nowhere near the outbox. | `src/features/theme/theme.ts` |
 
 ## Deviations from the spec
 

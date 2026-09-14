@@ -77,7 +77,7 @@ export function ExpenseSheet({
 
   return (
     <section
-      className="rounded-2xl bg-white/80 p-4 backdrop-blur"
+      className="rounded-2xl bg-surface/80 p-4 backdrop-blur"
       aria-label={strings.expenses.add}
     >
       <label className="block text-xs font-medium opacity-70" htmlFor={`${ids}-amount`}>
@@ -85,7 +85,7 @@ export function ExpenseSheet({
       </label>
       <input
         id={`${ids}-amount`}
-        className="mt-1 w-full rounded-xl border border-black/10 bg-white px-3 py-2 text-lg tabular-nums"
+        className="mt-1 w-full rounded-xl border border-edge/10 bg-surface px-3 py-2 text-lg tabular-nums"
         inputMode="decimal"
         value={major}
         onChange={(event) => setMajor(event.target.value)}
@@ -98,7 +98,7 @@ export function ExpenseSheet({
       <input
         id={`${ids}-date`}
         type="date"
-        className="mt-1 w-full rounded-xl border border-black/10 bg-white px-3 py-2"
+        className="mt-1 w-full rounded-xl border border-edge/10 bg-surface px-3 py-2"
         value={spentOn}
         onChange={(event) => setSpentOn(event.target.value)}
       />
@@ -108,7 +108,7 @@ export function ExpenseSheet({
       </label>
       <input
         id={`${ids}-what`}
-        className="mt-1 w-full rounded-xl border border-black/10 bg-white px-3 py-2"
+        className="mt-1 w-full rounded-xl border border-edge/10 bg-surface px-3 py-2"
         value={description}
         onChange={(event) => setDescription(event.target.value)}
       />
@@ -118,7 +118,7 @@ export function ExpenseSheet({
       </label>
       <input
         id={`${ids}-category`}
-        className="mt-1 w-full rounded-xl border border-black/10 bg-white px-3 py-2"
+        className="mt-1 w-full rounded-xl border border-edge/10 bg-surface px-3 py-2"
         list={`${ids}-categories`}
         value={category}
         onChange={(event) => setCategory(event.target.value)}

@@ -84,7 +84,7 @@ export function SearchResults({
                     <button
                       key={type}
                       type="button"
-                      className="min-h-tap rounded-full border border-black/10 bg-white px-3 text-xs font-medium"
+                      className="min-h-tap rounded-full border border-edge/10 bg-surface px-3 text-xs font-medium"
                       onClick={() => onSuggest(word)}
                     >
                       {word}
@@ -125,7 +125,7 @@ export function SearchResults({
                     <button
                       type="button"
                       onClick={() => open(entry)}
-                      className="flex min-h-tap w-full flex-col items-start justify-center rounded-2xl bg-white/85 px-4 py-2.5 text-start"
+                      className="flex min-h-tap w-full flex-col items-start justify-center rounded-2xl bg-surface/85 px-4 py-2.5 text-start"
                     >
                       <span className="w-full break-words text-sm font-semibold">{entry.label}</span>
                       {detail !== undefined && detail !== '' && (

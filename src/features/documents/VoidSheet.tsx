@@ -48,7 +48,7 @@ export function VoidSheet({
   const alternatives = alternativesFor(document, payments, creditNotes)
 
   return (
-    <section className="rounded-2xl bg-white/85 p-4 backdrop-blur" aria-label={v.title}>
+    <section className="rounded-2xl bg-surface/85 p-4 backdrop-blur" aria-label={v.title}>
       <div className="flex items-start justify-between gap-3">
         <h2 className="text-sm font-semibold">{v.title}</h2>
         <button
@@ -87,7 +87,7 @@ export function VoidSheet({
                   // Reversing is done on the payment itself, where the record
                   // lives — this only says so, rather than offering a second
                   // route into the ledger.
-                  <p className="rounded-xl bg-black/[0.04] px-3 py-2.5 text-xs opacity-80">
+                  <p className="rounded-xl bg-ink/[0.04] px-3 py-2.5 text-xs opacity-80">
                     {v.reverseThePayment}
                   </p>
                 )}
@@ -107,7 +107,7 @@ export function VoidSheet({
           <label className="mt-3 block">
             <span className="mb-1 block text-xs font-medium opacity-70">{v.why}</span>
             <input
-              className="min-h-tap w-full rounded-xl border border-black/10 bg-white px-3 text-sm"
+              className="min-h-tap w-full rounded-xl border border-edge/10 bg-surface px-3 text-sm"
               aria-label={v.why}
               value={reason}
               onChange={(event) => setReason(event.target.value)}

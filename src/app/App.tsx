@@ -27,6 +27,7 @@ import { AppDataProvider, useAppData } from './store'
 import { Shell } from './Shell'
 import { HOME, SETTINGS_PANELS } from './paths'
 import { DEV_COMPANY_ID } from './seed'
+import { ThemeProvider } from '../features/theme/ThemeContext'
 import type { Repositories } from '../data/repositories'
 import { EmptyState, SkeletonList } from '../ui'
 import { localeProfileOf } from '../features/settings/region'
@@ -98,7 +99,17 @@ function mounted(backend: Backend) {
   )
 }
 
-export function App({
+export function App(props: AppProps = {}) {
+  // The theme wraps everything, because `.dark` is a property of the document
+  // and not of whichever screen happens to be open.
+  return (
+    <ThemeProvider>
+      <AppTree {...props} />
+    </ThemeProvider>
+  )
+}
+
+function AppTree({
   repositories,
   companyId = DEV_COMPANY_ID,
   loadBackend,

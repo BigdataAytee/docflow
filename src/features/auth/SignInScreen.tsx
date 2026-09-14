@@ -78,7 +78,7 @@ export function SignInScreen({
           id={`${ids}-email`}
           type="email"
           autoComplete="email"
-          className="mt-1 min-h-tap w-full rounded-xl border border-black/10 bg-white px-3 text-sm"
+          className="mt-1 min-h-tap w-full rounded-xl border border-edge/10 bg-surface px-3 text-sm"
           value={email}
           onChange={(event) => setEmail(event.target.value)}
         />
@@ -90,7 +90,7 @@ export function SignInScreen({
           id={`${ids}-password`}
           type="password"
           autoComplete={mode === 'in' ? 'current-password' : 'new-password'}
-          className="mt-1 min-h-tap w-full rounded-xl border border-black/10 bg-white px-3 text-sm"
+          className="mt-1 min-h-tap w-full rounded-xl border border-edge/10 bg-surface px-3 text-sm"
           value={password}
           onChange={(event) => setPassword(event.target.value)}
         />
@@ -108,7 +108,7 @@ export function SignInScreen({
         <button
           type="button"
           disabled={busy}
-          className="mt-3 min-h-tap w-full rounded-xl border border-black/10 px-4 text-sm font-semibold disabled:opacity-40"
+          className="mt-3 min-h-tap w-full rounded-xl border border-edge/10 px-4 text-sm font-semibold disabled:opacity-40"
           onClick={() => void run(onGoogle)}
         >
           {a.continueWithGoogle}
@@ -154,7 +154,7 @@ export function SignInScreen({
       <p className="mt-6 text-[11px] opacity-60">{a.needsConnection}</p>
 
       {notice !== null && (
-        <p className="mt-3 rounded-xl bg-black/5 px-3 py-2.5 text-sm" role="status">
+        <p className="mt-3 rounded-xl bg-ink/5 px-3 py-2.5 text-sm" role="status">
           {notice}
         </p>
       )}

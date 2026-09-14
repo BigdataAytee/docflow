@@ -46,7 +46,7 @@ export function CompanySettings({
     <section className="space-y-4 px-4 py-4">
       <h1 className="text-lg font-bold">{strings.settings.company}</h1>
 
-      <label className="block rounded-2xl bg-white/85 p-4">
+      <label className="block rounded-2xl bg-surface/85 p-4">
         <span className="mb-1 block text-xs font-medium opacity-70">
           {strings.settings.businessName}
         </span>
@@ -58,7 +58,7 @@ export function CompanySettings({
         />
       </label>
 
-      <fieldset className="rounded-2xl bg-white/85 p-4">
+      <fieldset className="rounded-2xl bg-surface/85 p-4">
         <legend className="text-xs font-bold uppercase tracking-wide opacity-60">
           {strings.settings.nameStyle}
         </legend>
@@ -90,7 +90,7 @@ export function CompanySettings({
         </p>
       </fieldset>
 
-      <fieldset className="rounded-2xl bg-white/85 p-4">
+      <fieldset className="rounded-2xl bg-surface/85 p-4">
         <legend className="text-xs font-bold uppercase tracking-wide opacity-60">
           {strings.settings.logoSize}
         </legend>
@@ -111,7 +111,7 @@ export function CompanySettings({
         </div>
       </fieldset>
 
-      <section className="space-y-3 rounded-2xl bg-white/85 p-4">
+      <section className="space-y-3 rounded-2xl bg-surface/85 p-4">
         <h2 className="text-xs font-bold uppercase tracking-wide opacity-60">
           {strings.settings.numberingPrefixes}
         </h2>

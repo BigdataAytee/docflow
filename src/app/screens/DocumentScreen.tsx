@@ -268,7 +268,7 @@ export function DocumentScreen({ today = new Date().toISOString().slice(0, 10) }
         {nextDeliveryStep(record) !== null && (
           <button
             type="button"
-            className="min-h-tap w-full rounded-full border border-brand/30 bg-white px-4 text-sm font-semibold text-brand"
+            className="min-h-tap w-full rounded-full border border-brand/30 bg-surface px-4 text-sm font-semibold text-brand"
             onClick={() => {
               // An issued delivery cannot jump to delivered — it has to go
               // out first. Without this the sign action below would be
@@ -296,7 +296,7 @@ export function DocumentScreen({ today = new Date().toISOString().slice(0, 10) }
             {optionalDeliveryStep(record) !== null && (
               <button
                 type="button"
-                className="min-h-tap w-full rounded-full border border-black/10 bg-white px-4 text-sm font-medium"
+                className="min-h-tap w-full rounded-full border border-edge/10 bg-surface px-4 text-sm font-medium"
                 onClick={() => {
                   const step = optionalDeliveryStep(record)
                   if (step !== null) void actions.transition(record.id, step)
@@ -311,7 +311,7 @@ export function DocumentScreen({ today = new Date().toISOString().slice(0, 10) }
         {canSign(record) && !signing && (
           <button
             type="button"
-            className="min-h-tap w-full rounded-full border border-brand/30 bg-white px-4 text-sm font-semibold text-brand"
+            className="min-h-tap w-full rounded-full border border-brand/30 bg-surface px-4 text-sm font-semibold text-brand"
             onClick={() => {
               setSignProblem(null)
               setSigning(true)
@@ -329,7 +329,7 @@ export function DocumentScreen({ today = new Date().toISOString().slice(0, 10) }
           change what the record says happened (§P).
         */}
         {(canAttachPhoto(record) || deliveryPhotoUrl !== undefined) && (
-          <section className="rounded-2xl bg-white/70 p-4" aria-label={strings.photo.title}>
+          <section className="rounded-2xl bg-surface/70 p-4" aria-label={strings.photo.title}>
             <h2 className="text-sm font-semibold">{strings.photo.title}</h2>
             <p className="mt-0.5 mb-3 text-xs opacity-70">
               {canAttachPhoto(record) ? strings.photo.explain : strings.photo.sealed}
@@ -462,7 +462,7 @@ export function DocumentScreen({ today = new Date().toISOString().slice(0, 10) }
         {revisedFrom !== null && (
           <button
             type="button"
-            className="w-full rounded-2xl bg-white/70 p-4 text-start text-sm"
+            className="w-full rounded-2xl bg-surface/70 p-4 text-start text-sm"
             onClick={() => navigate(documentPath(revisedFrom.id))}
           >
             {record.type === 'quotation' && (
@@ -486,7 +486,7 @@ export function DocumentScreen({ today = new Date().toISOString().slice(0, 10) }
         {linkedInvoice !== null && (
           <button
             type="button"
-            className="min-h-tap w-full rounded-full border border-brand/30 bg-white px-4 text-sm font-semibold text-brand"
+            className="min-h-tap w-full rounded-full border border-brand/30 bg-surface px-4 text-sm font-semibold text-brand"
             onClick={() => navigate(documentPath(linkedInvoice.id))}
           >
             {strings.reissue.openInvoice}
@@ -502,7 +502,7 @@ export function DocumentScreen({ today = new Date().toISOString().slice(0, 10) }
         {canReissue(record, payments) && newerRevision === null && (
           <button
             type="button"
-            className="min-h-tap w-full rounded-full border border-brand/30 bg-white px-4 text-sm font-semibold text-brand"
+            className="min-h-tap w-full rounded-full border border-brand/30 bg-surface px-4 text-sm font-semibold text-brand"
             onClick={() => {
               setReissueProblem(null)
               let plan
@@ -548,7 +548,7 @@ export function DocumentScreen({ today = new Date().toISOString().slice(0, 10) }
         */}
         {record.type === 'receipt' &&
           reasonsReissueIsBlocked(record, payments) === 'payment_reversed' && (
-            <p className="rounded-xl bg-white/70 px-3 py-2.5 text-xs opacity-70">
+            <p className="rounded-xl bg-surface/70 px-3 py-2.5 text-xs opacity-70">
               {strings.reissue.paymentReversed}
             </p>
           )}
@@ -576,7 +576,7 @@ export function DocumentScreen({ today = new Date().toISOString().slice(0, 10) }
           quotation may be converted from — and nothing could reach either.
         */}
         {answers.length > 0 && (
-          <section className="rounded-2xl bg-white/70 p-4" aria-label={strings.answer.title}>
+          <section className="rounded-2xl bg-surface/70 p-4" aria-label={strings.answer.title}>
             <h2 className="text-sm font-semibold">{strings.answer.title}</h2>
             <p className="mt-0.5 text-xs opacity-70">{strings.answer.explain}</p>
             <div className="mt-3 flex gap-2">
@@ -584,7 +584,7 @@ export function DocumentScreen({ today = new Date().toISOString().slice(0, 10) }
                 <button
                   key={answer}
                   type="button"
-                  className="min-h-tap flex-1 rounded-xl border border-black/10 bg-white px-3 text-sm font-medium"
+                  className="min-h-tap flex-1 rounded-xl border border-edge/10 bg-surface px-3 text-sm font-medium"
                   onClick={() => {
                     setAnswerProblem(null)
                     let decision
@@ -621,7 +621,7 @@ export function DocumentScreen({ today = new Date().toISOString().slice(0, 10) }
         )}
 
         {recordedAnswer !== null && (
-          <p className="rounded-2xl bg-white/70 px-4 py-3 text-xs opacity-70">
+          <p className="rounded-2xl bg-surface/70 px-4 py-3 text-xs opacity-70">
             {format(strings.answer.recorded, {
               answer: strings.statuses[recordedAnswer] ?? recordedAnswer,
             })}
@@ -646,7 +646,7 @@ export function DocumentScreen({ today = new Date().toISOString().slice(0, 10) }
         {canRevise(record) && newerRevision === null && (
           <button
             type="button"
-            className="min-h-tap w-full rounded-full border border-brand/30 bg-white px-4 text-sm font-semibold text-brand"
+            className="min-h-tap w-full rounded-full border border-brand/30 bg-surface px-4 text-sm font-semibold text-brand"
             onClick={() => {
               setRevisionProblem(null)
               let revised
@@ -708,7 +708,7 @@ export function DocumentScreen({ today = new Date().toISOString().slice(0, 10) }
         {conversionsFor(convertible).length > 0 && !converting && (
           <button
             type="button"
-            className="min-h-tap w-full rounded-full border border-brand/30 bg-white px-4 text-sm font-semibold text-brand"
+            className="min-h-tap w-full rounded-full border border-brand/30 bg-surface px-4 text-sm font-semibold text-brand"
             onClick={() => {
               setConvertProblem(null)
               setConverting(true)
@@ -780,7 +780,7 @@ export function DocumentScreen({ today = new Date().toISOString().slice(0, 10) }
           <div className="flex gap-2">
             <button
               type="button"
-              className="min-h-tap flex-1 rounded-full border border-status-bad/30 bg-white px-4 text-sm font-semibold text-status-bad"
+              className="min-h-tap flex-1 rounded-full border border-status-bad/30 bg-surface px-4 text-sm font-semibold text-status-bad"
               onClick={() => {
                 setVoidProblem(null)
                 setVoiding(true)
@@ -791,7 +791,7 @@ export function DocumentScreen({ today = new Date().toISOString().slice(0, 10) }
             {isInvoice && record.status !== 'void' && (
               <button
                 type="button"
-                className="min-h-tap flex-1 rounded-full border border-brand/30 bg-white px-4 text-sm font-semibold text-brand"
+                className="min-h-tap flex-1 rounded-full border border-brand/30 bg-surface px-4 text-sm font-semibold text-brand"
                 onClick={() => {
                   setCreditProblem(null)
                   setCrediting(true)
@@ -896,7 +896,7 @@ export function DocumentScreen({ today = new Date().toISOString().slice(0, 10) }
         {source !== null && (
           <button
             type="button"
-            className="min-h-tap w-full rounded-2xl bg-white/70 px-4 text-sm font-medium"
+            className="min-h-tap w-full rounded-2xl bg-surface/70 px-4 text-sm font-medium"
             onClick={() => navigate(documentPath(source.id))}
           >
             {format(strings.convert.madeFrom, {
@@ -983,7 +983,7 @@ export function DocumentScreen({ today = new Date().toISOString().slice(0, 10) }
               }}
             />
 
-            <section className="rounded-2xl bg-white/70 p-4" aria-label={strings.chase.title}>
+            <section className="rounded-2xl bg-surface/70 p-4" aria-label={strings.chase.title}>
               <h2 className="text-sm font-semibold">{strings.chase.title}</h2>
               {outstanding.minor <= 0 ? (
                 <p className="mt-1 text-xs opacity-70">{strings.chase.nothingToChase}</p>
@@ -996,7 +996,7 @@ export function DocumentScreen({ today = new Date().toISOString().slice(0, 10) }
                         type="button"
                         aria-pressed={tone === option}
                         className={`min-h-tap flex-1 rounded-full border text-sm font-medium ${
-                          tone === option ? 'border-transparent bg-brand text-white' : 'border-black/10 bg-white'
+                          tone === option ? 'border-transparent bg-brand text-white' : 'border-edge/10 bg-surface'
                         }`}
                         onClick={() => setTone(option)}
                       >
@@ -1006,7 +1006,7 @@ export function DocumentScreen({ today = new Date().toISOString().slice(0, 10) }
                   </div>
                   {chase !== null && (
                     <>
-                      <pre className="mt-3 whitespace-pre-wrap rounded-xl bg-black/[0.04] p-3 text-xs">
+                      <pre className="mt-3 whitespace-pre-wrap rounded-xl bg-ink/[0.04] p-3 text-xs">
                         {chase.text}
                       </pre>
                       <p className="mt-2 text-[11px] opacity-60">{strings.chase.nothingSendsUnseen}</p>
@@ -1032,7 +1032,7 @@ export function DocumentScreen({ today = new Date().toISOString().slice(0, 10) }
         {customer !== undefined && (
           <button
             type="button"
-            className="min-h-tap w-full rounded-2xl bg-white/70 px-4 text-sm font-medium"
+            className="min-h-tap w-full rounded-2xl bg-surface/70 px-4 text-sm font-medium"
             onClick={() => navigate(statementPath(customer.id, record.currency))}
           >
             {strings.savedDocument.openStatement}
@@ -1073,7 +1073,7 @@ function CopyLinkRow({ documentId, kind }: { documentId: string; kind: 'accept' 
     <div className="space-y-1">
       <button
         type="button"
-        className="min-h-tap w-full rounded-xl border border-black/10 bg-white px-4 text-sm font-medium"
+        className="min-h-tap w-full rounded-xl border border-edge/10 bg-surface px-4 text-sm font-medium"
         onClick={() => {
           setProblem(null)
           void actions
@@ -1099,7 +1099,7 @@ function CopyLinkRow({ documentId, kind }: { documentId: string; kind: 'accept' 
           <p className="text-center text-[11px] opacity-60">{strings.publicLink.copied}</p>
           {/* Shown as well as copied: a clipboard write can be refused, and
               an owner who cannot see the link has nothing to send. */}
-          <p className="break-all rounded-lg bg-white/70 px-2 py-1 text-center text-[11px] tabular-nums">
+          <p className="break-all rounded-lg bg-surface/70 px-2 py-1 text-center text-[11px] tabular-nums">
             {copied}
           </p>
         </>

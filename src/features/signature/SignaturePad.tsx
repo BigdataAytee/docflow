@@ -118,7 +118,7 @@ function SignaturePadView({
   const ready = !isBlank(strokes)
 
   return (
-    <section className="rounded-2xl bg-white/85 p-4 backdrop-blur" aria-label={s.title}>
+    <section className="rounded-2xl bg-surface/85 p-4 backdrop-blur" aria-label={s.title}>
       <div className="flex items-start justify-between gap-3">
         <h2 className="text-sm font-semibold">{s.title}</h2>
         <button
@@ -137,7 +137,7 @@ function SignaturePadView({
         role="application"
         aria-label={s.pad}
         viewBox={`0 0 ${WIDTH} ${HEIGHT}`}
-        className="mt-3 w-full touch-none rounded-xl border-2 border-dashed border-navy/25 bg-white"
+        className="mt-3 w-full touch-none rounded-xl border-2 border-dashed border-ink/25 bg-surface"
         style={{ aspectRatio: `${WIDTH} / ${HEIGHT}` }}
         onPointerDown={start}
         onPointerMove={extend}
@@ -152,7 +152,7 @@ function SignaturePadView({
           y2={HEIGHT - 34}
           stroke="currentColor"
           strokeWidth={1}
-          className="text-navy/20"
+          className="text-ink/20"
         />
         {strokes.map((stroke, i) => (
           <path
@@ -165,7 +165,7 @@ function SignaturePadView({
             strokeWidth={STROKE_WIDTH}
             strokeLinecap="round"
             strokeLinejoin="round"
-            className="text-navy"
+            className="text-ink"
           />
         ))}
       </svg>
@@ -174,7 +174,7 @@ function SignaturePadView({
       <div className="mt-3 flex gap-2">
         <button
           type="button"
-          className="min-h-tap flex-1 rounded-xl border border-black/10 px-3 text-sm font-medium disabled:opacity-40"
+          className="min-h-tap flex-1 rounded-xl border border-edge/10 px-3 text-sm font-medium disabled:opacity-40"
           disabled={strokes.length === 0}
           onClick={() => setStrokes(undoStroke(strokes))}
         >
@@ -182,7 +182,7 @@ function SignaturePadView({
         </button>
         <button
           type="button"
-          className="min-h-tap flex-1 rounded-xl border border-black/10 px-3 text-sm font-medium disabled:opacity-40"
+          className="min-h-tap flex-1 rounded-xl border border-edge/10 px-3 text-sm font-medium disabled:opacity-40"
           disabled={strokes.length === 0}
           onClick={() => setStrokes([])}
         >
@@ -208,7 +208,7 @@ function SignaturePadView({
       {onUseDefault !== undefined && (
         <button
           type="button"
-          className="mt-2 min-h-tap w-full rounded-xl border border-black/10 px-4 text-sm font-medium"
+          className="mt-2 min-h-tap w-full rounded-xl border border-edge/10 px-4 text-sm font-medium"
           onClick={onUseDefault}
         >
           {s.useDefault}

@@ -68,7 +68,7 @@ function StatCard({
       // `min-w-0` because a flex item defaults to `min-width: auto` and will
       // not shrink below its content — so at 200% text these two cards pushed
       // the page 208px wider than the phone. Found by the large-text sweep.
-      className="min-w-0 flex-1 rounded-2xl bg-white/70 p-4 backdrop-blur"
+      className="min-w-0 flex-1 rounded-2xl bg-surface/70 p-4 backdrop-blur"
       aria-label={title}
     >
       <p className="text-xs font-medium opacity-70">{title}</p>
@@ -110,7 +110,7 @@ export function Home({
       <header className="rounded-b-2xl bg-gradient-to-br from-brand-light via-brand to-brand-deep px-4 pb-6 pt-[max(1rem,env(safe-area-inset-top))] text-white">
         <div className="flex items-center gap-3">
           <span
-            className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-white/90 text-[9px] font-semibold text-navy"
+            className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-surface/90 text-[9px] font-semibold text-ink"
             aria-label={strings.home.addLogo}
           >
             +
@@ -156,7 +156,7 @@ export function Home({
             onChange={(event) => onSearch(event.target.value)}
             placeholder={strings.home.searchEverything}
             aria-label={strings.home.searchEverything}
-            className="min-h-tap w-full rounded-lg bg-white/80 px-4 text-sm shadow-inner"
+            className="min-h-tap w-full rounded-lg bg-surface/80 px-4 text-sm shadow-inner"
           />
         </label>
       </div>
@@ -209,7 +209,7 @@ export function Home({
                     <button
                       type="button"
                       onClick={() => onOpenDocument(item.documentId)}
-                      className="flex min-h-tap w-full items-center gap-3 rounded-2xl bg-white/85 p-3 text-start"
+                      className="flex min-h-tap w-full items-center gap-3 rounded-2xl bg-surface/85 p-3 text-start"
                     >
                       <span className="flex-1">
                         <StatusBadge

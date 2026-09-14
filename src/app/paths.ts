@@ -31,6 +31,7 @@ export const SETTINGS_PANELS = [
   'payment',
   'items',
   'signature',
+  'appearance',
   'data',
 ] as const
 export type SettingsPanel = (typeof SETTINGS_PANELS)[number]
