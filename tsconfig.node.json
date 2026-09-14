@@ -27,6 +27,11 @@
     "tools",
     "supabase/tests",
     "src/data/repositories",
+    // The SQLite layer, because `src/data/repositories` now runs its contract
+    // suite against it too (§Q Phase 4) — and because `node.ts` imports
+    // `node:sqlite`, which only this project has the types for.
+    "src/data/sqlite",
+    "src/sync/operations.ts",
     // The screenshot PLAN — not its entry point, which is a .tsx needing the
     // DOM lib this project does not have and belongs to the app project.
     "src/marketing/shots/spec.ts",

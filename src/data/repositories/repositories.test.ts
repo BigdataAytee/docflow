@@ -1,19 +1,24 @@
 /**
- * The repository contracts. These tests run against the in-memory
- * implementation, but they assert CONTRACT behaviour — every implementation
- * (SQLite in Phase 2/3, Supabase in Phase 5) must pass the same suite, so a
- * caller never discovers a rule only once it reaches a real database.
+ * The repository contracts — run against EVERY implementation (§C, §Q Phase 4).
+ *
+ * These assert what a repository MEANS: mutations are idempotent, issued
+ * documents refuse edits, reads are company-scoped, search matches the frozen
+ * label, delivery evidence is one write and is captured once. A caller must
+ * never discover one of those rules only when it reaches a real database.
+ *
+ * Which is why the suite no longer runs against the in-memory store alone. It
+ * runs, case for case, against both that and SQLite — the implementation the
+ * phone actually uses, on the real engine, via `node:sqlite`. Before Phase 4
+ * the file said "every implementation must pass the same suite" and only one
+ * implementation existed to say it about.
  */
 
-import { beforeEach, describe, expect, it } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 
-import {
-  type MemoryState,
-  type Repositories,
-  RepositoryError,
-  createMemoryRepositories,
-  emptyState,
-} from './index'
+import { type Repositories, RepositoryError } from './index'
+import type { CountableTable, RepositoryHarness } from './harness'
+import { memoryHarness } from './memory/harness'
+import { sqliteHarness } from '../sqlite/harness'
 import { freezeLabels } from '../../domain/locale/profile'
 import { money } from '../../domain/money/money'
 import { quantity } from '../../domain/documents/types'
@@ -21,28 +26,7 @@ import { quantity } from '../../domain/documents/types'
 const ACME = 'co_acme'
 const RIVAL = 'co_rival'
 
-let state: MemoryState
-let repos: Repositories
-
 const ctx = (key: string) => ({ idempotencyKey: key })
-
-beforeEach(() => {
-  state = emptyState()
-  for (const id of [ACME, RIVAL]) {
-    state.companies.push({
-      id,
-      name: id,
-      localeRegion: 'NG',
-      localeLanguage: 'en',
-      labelOverrides: {},
-      currency: 'NGN',
-      numberingPrefixes: {},
-      bankFields: {},
-      enabledPaymentMethods: [],
-    })
-  }
-  repos = createMemoryRepositories(state)
-})
 
 const draft = (companyId = ACME) => ({
   companyId,
@@ -53,6 +37,34 @@ const draft = (companyId = ACME) => ({
     { id: 'l1', description: 'Cement', quantityMilli: quantity(3), unitPriceMinor: 500_000, taxable: true },
   ],
   totalMinor: 1_500_000,
+})
+
+for (const harness of [memoryHarness, sqliteHarness]) {
+  describe(harness.name, () => {
+    contract(harness)
+  })
+}
+
+/**
+ * Declared, not inlined, so the two runs above read as one sentence. Hoisting
+ * makes the order legal; the suite is the same object either way.
+ */
+function contract(harness: RepositoryHarness): void {
+let repos: Repositories
+let count: (table: CountableTable) => Promise<number>
+let linkTokenFields: () => Promise<string[]>
+let dispose: () => Promise<void>
+
+beforeEach(async () => {
+  const store = await harness.create([ACME, RIVAL])
+  repos = store.repositories
+  count = store.count
+  linkTokenFields = store.linkTokenFields
+  dispose = store.dispose
+})
+
+afterEach(async () => {
+  await dispose()
 })
 
 describe('Every mutation is idempotent (§M)', () => {
@@ -66,7 +78,10 @@ describe('Every mutation is idempotent (§M)', () => {
       ctx('k1'),
     )
 
-    expect(replayed).toBe(first)
+    // The same RECORD, not necessarily the same object: a store that reads the
+    // row back satisfies §M exactly as well as one that returns its own array
+    // entry. That one row exists is asserted on the next line.
+    expect(replayed).toEqual(first)
     expect(await repos.customers.list(ACME)).toHaveLength(1)
   })
 
@@ -86,7 +101,7 @@ describe('Every mutation is idempotent (§M)', () => {
       allocations: [],
     }
     for (const _ of [1, 2, 3]) await repos.payments.record(payment, ctx('pay-key'))
-    expect(state.payments).toHaveLength(1)
+    expect(await count('payments')).toBe(1)
   })
 
   it('stamps the allocations with the id it minted, not the caller handle', async () => {
@@ -339,13 +354,13 @@ describe('Public-link tokens: only the hash, and one per document (§P)', () => 
     await repos.linkTokens.mint(minted({ tokenHash: 'b'.repeat(64) }), ctx('link-2'))
 
     // Two live links would mean two ways in and only one of them revocable.
-    expect(state.linkTokens).toHaveLength(1)
+    expect(await count('linkTokens')).toBe(1)
     expect((await repos.linkTokens.get(ACME, 'doc_1'))?.tokenHash).toBe('b'.repeat(64))
   })
 
   it('mints once however often the same tap is replayed (§M)', async () => {
     for (const _ of [1, 2, 3]) await repos.linkTokens.mint(minted(), ctx('link-1'))
-    expect(state.linkTokens).toHaveLength(1)
+    expect(await count('linkTokens')).toBe(1)
   })
 
   it('never returns another company token', async () => {
@@ -356,12 +371,7 @@ describe('Public-link tokens: only the hash, and one per document (§P)', () => 
   it('holds nothing that could be turned back into a link', async () => {
     await repos.linkTokens.mint(minted(), ctx('link-1'))
     // Only the hash: a leaked row cannot open a link.
-    expect(Object.keys(state.linkTokens[0] ?? {}).sort()).toEqual([
-      'companyId',
-      'documentId',
-      'expiresAt',
-      'tokenHash',
-    ])
+    expect(await linkTokenFields()).toEqual(['companyId', 'documentId', 'expiresAt', 'tokenHash'])
   })
 })
 
@@ -375,7 +385,7 @@ describe('An asset is evidence: written once, never changed (§P)', () => {
 
   it('stores once however often the same draw is replayed (§M)', async () => {
     for (const _ of [1, 2, 3]) await repos.assets.store(mark, ctx('ast-1'))
-    expect(state.assets).toHaveLength(1)
+    expect(await count('assets')).toBe(1)
   })
 
   it('offers no way to change or remove one', () => {
@@ -394,12 +404,15 @@ describe('An asset is evidence: written once, never changed (§P)', () => {
 describe('Every read is company-scoped', () => {
   it('never returns another company rows', async () => {
     await repos.customers.create({ companyId: RIVAL, kind: 'person', name: 'Theirs', labels: [] }, ctx('r1'))
-    await repos.documents.createDraft(draft(RIVAL), ctx('r2'))
+    const theirs = await repos.documents.createDraft(draft(RIVAL), ctx('r2'))
 
     expect(await repos.customers.list(ACME)).toEqual([])
     expect(await repos.documents.listByType(ACME, 'invoice')).toEqual([])
     expect(await repos.customers.search(ACME, 'Theirs')).toEqual([])
-    expect(await repos.documents.get(ACME, (state.documents[0] as { id: string }).id)).toBeNull()
+    // Asked for by id, across the boundary — the row exists, and is still
+    // invisible from here.
+    expect(await count('documents')).toBe(1)
+    expect(await repos.documents.get(ACME, theirs.id)).toBeNull()
   })
 })
 
@@ -448,3 +461,5 @@ describe('Search matches the frozen label as well as the type (§D.3)', () => {
     expect(await repos.documents.search(ACME, 'WAY-0001')).toHaveLength(1)
   })
 })
+
+}

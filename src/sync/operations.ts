@@ -13,6 +13,13 @@
 export type Entity =
   | 'company' | 'customer' | 'document' | 'payment' | 'payment_allocation'
   | 'credit_note' | 'item' | 'expense' | 'asset'
+  /**
+   * A sharing handoff (§M, §E `audit_log`). Added in Phase 4, when the SQLite
+   * repositories made every mutation enqueue an operation and a share turned
+   * out to be the one record with nothing here to call itself. Recording it as
+   * `asset` would have put a handoff in the asset stream on the server.
+   */
+  | 'share_event'
 
 export type OperationKind = 'create' | 'update' | 'delete'
 
