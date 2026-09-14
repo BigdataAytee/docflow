@@ -1800,21 +1800,68 @@ gate itself is deferred with everything else that needs a phone.
 
 ### Open, buildable, and blocking a submission
 
-- [ ] **Account deletion.** Apple 5.1.1(v): an app that offers account
-      creation must offer account deletion inside the app. DocFlow offers
-      creation and has no deletion flow at all — `npm run policy` fails on it
-      by name. The rule has been read (2026-09-14): the option must be easy to
-      find and is normally in account settings; it must delete the entire
-      account record and the personal data with it, user-generated content
-      included; deactivating is explicitly insufficient; whatever law requires
-      keeping may be kept if the person is told; a slow or manual process is
-      acceptable if the person is told how long and gets a confirmation; and
-      an app may require an auto-renewable subscription to be cancelled first.
-      Rule #6 cuts across it: export is free forever, so deletion must offer
-      the export on the way out rather than being the only way to end up with
-      nothing.
+- [x] **Account deletion — built** (`src/domain/account/`, `src/features/account/`,
+      `supabase/migrations/0017_account_deletion.sql`). Apple 5.1.1(v): an app
+      that offers account creation must offer account deletion inside it.
+      DocFlow offered creation and no way out; the store-policy pass found it,
+      and `npm run policy` failed on it by name until this.
 
-### The physical-device remainder — one consolidated list
+      **Scheduled, not instant, and the window belongs to the person leaving.**
+      Thirty days: long enough to notice a mistake — an angry evening, a
+      staff member with the owner's phone, a mis-tap — and short enough that
+      it is still a deletion. The rule permits exactly this: "if your process
+      for account deletion is manual or otherwise takes time to complete, this
+      is acceptable. Inform the user how long it will take."
+
+      **Asked for six months of admin-readable retention; not built, and
+      here is why.** It would be the thing the same rule calls insufficient —
+      "only offering to temporarily deactivate or disable an account is
+      insufficient" — a deactivation with extra steps. Two launch markets are
+      in the EU, where erasure is a right and "an administrator might want it"
+      is not a lawful basis for holding somebody's invoices. And it inverts
+      Rule #6: a company that keeps your records after you leave is holding
+      them hostage just the same, pointed the other way. What the instinct
+      wants is served three other ways instead — the grace window recovers
+      from the mistake, the export the flow offers means the owner walks away
+      holding everything, and the tombstone lets support still answer "was
+      this deleted, and when". If six months is still wanted it is one
+      constant, `GRACE_DAYS`, and it needs a stated legal basis rather than a
+      preference.
+
+      · **Owner only**, and no permission promotes anybody into it: an admin
+        who can delete the company can end the business's records in an
+        afternoon. Enforced in the RPC, not in a policy — a policy sees rows,
+        and this rule is about who is calling.
+      · **The business name, typed.** Not a checkbox, not "type DELETE": the
+        name differs per company and cannot come from muscle memory. An
+        unnamed company cannot be confirmed by typing nothing, which the
+        first version allowed.
+      · **A banner, not a lock.** The records are not deleted yet and are
+        still the owner's, so everything keeps working for the thirty days
+        and the way back is on every screen. Locking the account would make
+        the window a punishment and would hold the data hostage from the one
+        person entitled to it.
+      · **Cancelling is one tap, with no name to type.** Asymmetric on
+        purpose: destroying is slow and deliberate, recovering is immediate.
+      · **The purge is one DELETE.** Every company-scoped table references
+        `companies(id) ON DELETE CASCADE`, so deleting the company row takes
+        all nineteen with it — plus the auth users, because 5.1.1(v) is about
+        the ACCOUNT record and a company deleted without its sign-ins leaves
+        somebody able to log in to nothing. That cascade is not trusted
+        quietly: a test reads the migrations and fails if a company-scoped
+        table is ever added without it, so the purge stays complete by
+        construction rather than by a list somebody remembers to extend.
+      · **What survives is ids and dates.** No name, no email, no document,
+        no amount. A test asserts the tombstone's exact field set, because
+        the company name was in scope through the whole flow and is the field
+        most likely to be kept "just for support".
+
+      Nine mutations, nine caught — and three of them only after the mutation
+      exposed the TEST rather than the code: commenting out `delete from
+      auth.users` left the words in the file and passed a grep, so SQL
+      comments are stripped before anything is matched now.
+
+### The physical-device remainder — one consolidated list### The physical-device remainder — one consolidated list
 
 Everything below needs a phone in a hand. It is gathered here rather than
 scattered through the phase sections so the honest total is visible in one
@@ -2856,6 +2903,12 @@ vectors of a few hundred bytes.
 | 228 | Two links may share a name if they share a destination | WCAG fails identical names going to DIFFERENT places. The list page's header button and its FAB are the same action and are not a defect, and a rule that flagged them would have been argued with until it was deleted. | `tools/sweeps/screenreader.ts` |
 | 229 | A navigation moves focus to `main` — except on a cold load | It is the one thing that announces an SPA route change. On first paint the reader is already reading from the top, and interrupting to say "main" would cut off the page title. | `src/app/focus.ts` |
 | 230 | An opened panel takes focus; the hand-back is best effort | Six panels replace their own trigger, so there is nothing to hand focus back TO. Doing the right thing where it is possible beats doing nothing everywhere — and the first version of the test could not tell the difference, because it closed the panel from the opener. | `src/ui/focus.ts` |
+| 244 | Deletion is scheduled thirty days out, not instant, and not a six-month admin copy | The rule that requires deletion calls deactivation insufficient, two launch markets are in the EU, and Rule #6 says documents are never hostage — including from the person leaving. The window recovers a mistake; the export means they keep everything; the tombstone answers "was this deleted". | `src/domain/account/deletion.ts` |
+| 245 | Owner only, enforced in an RPC rather than a policy | A policy sees rows; this rule is about who is calling. `account_deletions` has no insert, update or delete policy at all — both directions go through SECURITY DEFINER functions that read the caller's role. | `supabase/migrations/0017_account_deletion.sql` |
+| 246 | A banner, never a lock, during the window | The records are not deleted yet and are still the owner's. Locking would make the window a punishment and hold the data hostage from the one person entitled to it. | `src/app/AccountNotice.tsx` |
+| 247 | The purge is one DELETE, and a test keeps the cascade complete | Deleting the company row takes all nineteen company-scoped tables with it — true today, and exactly the kind of truth that stops being true when somebody adds a table. The migrations are read rather than trusted. | `src/domain/account/purge.test.ts` |
+| 248 | A second deletion request never extends the window | Otherwise asking to delete every month keeps an account alive forever by asking to end it. `on conflict do update` touches `exported` and never `purge_after`. | `supabase/migrations/0017_account_deletion.sql` |
+| 249 | SQL comments are stripped before a migration is matched | Mutation found it: commenting out `delete from auth.users` left the words in the file and passed the grep. A check a comment can satisfy is not a check. | `src/domain/account/purge.test.ts` |
 | 240 | A store question can be BLOCKED, and blocked is not unread | Reading a rule and meeting it are different things. The account-deletion rule is read, cited and current, and the app still has no deletion flow — so the question is reported as blocked by the missing feature and can never count as satisfied. | `src/marketing/policy/report.ts` |
 | 241 | An answer fetched by a machine is a draft with a citation | §U asks for a person at submission time. `readBy` says who fetched the page; `confirmedBy` says who stood behind it, and `verified` needs the second. Thirteen answers currently wait on it. | `src/marketing/policy/questions.ts` |
 | 242 | FR and ES are left unanswered rather than answered from the global rule | 3.1.1(a) reads as "the United States, and everywhere else", but the EU runs its own external-purchase regime under the DMA and the entitlement page 404s. Answering them from the global paragraph is exactly the assumption §U warns about. | `src/marketing/policy/questions.ts` |

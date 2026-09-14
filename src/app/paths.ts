@@ -33,6 +33,7 @@ export const SETTINGS_PANELS = [
   'signature',
   'appearance',
   'data',
+  'delete',
 ] as const
 export type SettingsPanel = (typeof SETTINGS_PANELS)[number]
 export const settingsPath = (panel: SettingsPanel): string => `/settings/${panel}`

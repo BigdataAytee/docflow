@@ -40,6 +40,7 @@ import { currentRow, insertOnce, orThrow } from './mutate'
 import { anyColumnLike, searchable } from './search'
 import { createDocumentRepository } from './documents'
 import { createPaymentRepository } from './payments'
+import { accountRepository } from './accountDeletion'
 import {
   createAssetRepository,
   createCreditNoteRepository,
@@ -148,6 +149,7 @@ export function createCustomerRepository(db: SupabaseClient): CustomerRepository
  */
 export function createSupabaseRepositories(db: SupabaseClient): Repositories {
   return {
+    account: accountRepository(db),
     companies: createCompanyRepository(db),
     customers: createCustomerRepository(db),
     documents: createDocumentRepository(db),

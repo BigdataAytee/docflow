@@ -100,17 +100,18 @@ export const QUESTIONS: readonly PolicyQuestion[] = [
     id: 'apple-account-deletion',
     store: 'apple',
     whatWeDo:
-      'An owner can export everything (§S, Rule #6: export is free forever and documents are ' +
-      'never held hostage). **There is no account deletion.** This entry claimed there was, ' +
-      'and reading Apple 5.1.1(v) is what found the claim untrue — `checks.ts` now fails on it.',
+      'An owner — and only an owner — can delete the business from Settings, confirming by ' +
+      'typing its name. Deletion is SCHEDULED 30 days out and cancellable in one tap for the ' +
+      'whole window; nobody at DocFlow gains a read path during it. The purge deletes the ' +
+      'company row, which every company-scoped table cascades from, plus the auth users, ' +
+      'leaving a tombstone of ids and dates. Export is offered on the way out and never ' +
+      'required (Rule #6). Built because reading 5.1.1(v) found this entry claiming a flow ' +
+      'that did not exist.',
     question:
       'Does the in-app deletion flow meet the current requirement — its placement, what it ' +
       'must delete, and what it may keep?',
     lookIn: 'App Review Guidelines on account deletion',
     perMarket: false,
-    blockedBy:
-      'an account-deletion flow, which is not built. The rule has been read; the app does ' +
-      'not meet it, and no iOS submission can proceed until it does.',
   },
   {
     id: 'apple-ratings-prompt',

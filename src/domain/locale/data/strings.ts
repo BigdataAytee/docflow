@@ -79,6 +79,29 @@ export interface UiStrings {
    * REACH something that already exists — the palette adds no feature of its
    * own, and the catalogue should read that way.
    */
+  /**
+   * Ending the account (§S; Apple 5.1.1(v)). Plain words for a serious
+   * action: no "deactivate", no "we hope you come back", and a date rather
+   * than a period, because a date is what a person can act on.
+   */
+  readonly deleteAccount: {
+    readonly title: string
+    readonly rowLabel: string
+    readonly body: string
+    readonly exportFirst: string
+    readonly exportAction: string
+    readonly exportDone: string
+    readonly typeName: string
+    readonly confirm: string
+    readonly ownerOnly: string
+    readonly nameMismatch: string
+    readonly scheduledTitle: string
+    readonly scheduledBody: string
+    readonly daysLeft: string
+    readonly keep: string
+    readonly whatGoes: string
+    readonly whatStays: string
+  }
   readonly palette: {
     readonly title: string
     readonly placeholder: string
@@ -707,6 +730,27 @@ const EN: UiStrings = {
     notFoundBody: 'The link may be old, or the record may have been removed.',
     goHome: 'Go to Home',
     somethingWrong: 'Something went wrong loading your work',
+  },
+  deleteAccount: {
+    title: 'Delete this business',
+    rowLabel: 'Delete this business',
+    body:
+      'Everything goes: documents, customers, payments, photos and signatures. ' +
+      'Nobody at DocFlow keeps a copy you cannot reach.',
+    exportFirst: 'Take your records with you first. Export is free, always.',
+    exportAction: 'Export everything',
+    exportDone: 'Exported',
+    typeName: 'Type the business name to confirm',
+    confirm: 'Delete in {days} days',
+    ownerOnly: 'Only the owner can delete the business.',
+    nameMismatch: 'That is not the business name.',
+    scheduledTitle: 'This business will be deleted',
+    scheduledBody:
+      'Everything is still here until then. Sign in and tap Keep it to stop the deletion.',
+    daysLeft: '{days} days left',
+    keep: 'Keep it',
+    whatGoes: 'Deleted: every document, customer, payment, photo and signature, and the sign-in itself.',
+    whatStays: 'Kept: the date it was deleted, and nothing else about it.',
   },
   palette: {
     title: 'Go anywhere',

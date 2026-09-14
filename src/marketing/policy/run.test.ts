@@ -20,13 +20,9 @@ describe.runIf(process.env.POLICY === '1')('Reporting store-policy readiness', (
     // deletion, this fails and is updated, which is the whole idea.
     expect(report.verified).toBe(false)
 
-    // ONE failing check, and it is known: there is no account deletion, which
-    // Apple 5.1.1(v) requires of any app offering account creation. Pinned by
-    // name so a NEW failure is not swallowed by a blanket allowance, and so
-    // that building the flow breaks this test rather than passing quietly.
-    expect(report.checks.filter((check) => !check.passed).map((check) => check.check)).toEqual([
-      'account-deletion',
-    ])
+    // No failing checks. The account-deletion one failed from the day it was
+    // written until the flow was built, which is exactly what it was for.
+    expect(report.checks.filter((check) => !check.passed).map((check) => check.check)).toEqual([])
 
     // Answers exist now, and none is confirmed. §U wants a person at
     // submission time; a machine that fetched the page is a citation, not a

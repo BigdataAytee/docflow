@@ -225,13 +225,19 @@ describe('Nothing here states what a store rule is', () => {
 })
 
 describe('What the code says is checked, not remembered', () => {
-  it('passes against the repository as it stands, except where it should not', () => {
+  it('passes against the repository as it stands', () => {
     const failing = runChecks().filter((check) => !check.passed)
+    expect(failing.map((check) => check.check)).toEqual([])
+  })
 
-    // Exactly one, and known: there is no account-deletion flow, which Apple
-    // 5.1.1(v) requires of any app that offers account creation. Named rather
-    // than allowed in bulk, so a new failure still breaks this.
-    expect(failing.map((check) => check.check)).toEqual(['account-deletion'])
+  it('sees the account-deletion flow, and would notice it going away', () => {
+    const found = checkAccountDeletion()
+    expect(found.passed).toBe(true)
+    expect(found.declares).toContain('delete their account')
+
+    // The check that failed from the day it was written until the flow
+    // existed. Given a source tree without one, it fails again.
+    expect(checkAccountDeletion([]).passed).toBe(false)
   })
 
   it('does not let a check find itself', () => {

@@ -11,13 +11,15 @@
  * nothing here touches them.
  */
 
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Navigate, NavLink, useParams } from 'react-router-dom'
 
 import { useCompany } from '../context'
 import { useAppData } from '../store'
 import { SETTINGS_PANELS, type SettingsPanel, settingsPath } from '../paths'
 import { settingsDestinations } from '../destinations'
+import { DeleteAccount } from '../../features/account/DeleteAccount'
+import type { Lifecycle, Refusal } from '../../domain/account/deletion'
 import { PageHeader, SkeletonList } from '../../ui'
 import { CompanySettings } from '../../features/settings/CompanySettings'
 import { PaymentSettings } from '../../features/settings/PaymentSettings'
@@ -183,7 +185,72 @@ function SettingsPanelBody() {
 
     case 'data':
       return <DataAndSyncPanel />
+    case 'delete':
+      return <DeleteAccountPanel />
   }
+}
+
+/**
+ * Settings → Delete this business (§S; Apple 5.1.1(v)).
+ *
+ * The role comes from the signed-in user. In the demo and the dev store there
+ * is one user and they are the owner, which is why the panel is reachable at
+ * all there — the SERVER is the thing that decides in a deployed app, and it
+ * decides again regardless of what this passes.
+ */
+function DeleteAccountPanel() {
+  const { companyId, repositories, strings } = useCompany()
+  const { company } = useAppData()
+  const port = useMemo(() => createWebSharePort(), [])
+
+  const [lifecycle, setLifecycle] = useState<Lifecycle>({ state: 'active' })
+  const [exported, setExported] = useState(false)
+  const [refusal, setRefusal] = useState<Refusal | undefined>(undefined)
+
+  useEffect(() => {
+    void repositories.account.lifecycle(companyId).then(setLifecycle)
+  }, [repositories, companyId])
+
+  if (company === null) return <SkeletonList rows={3} label={strings.common.loading} />
+
+  return (
+    <DeleteAccount
+      lifecycle={lifecycle}
+      companyName={company.name}
+      role="owner"
+      now={new Date()}
+      exported={exported}
+      onExport={() => {
+        void runExport(repositories, companyId, port).then((outcome) => {
+          // "Exported" means the archive left the app, not that a button was
+          // pressed: an incomplete or failed export must not tick the box a
+          // person is relying on before they end the account.
+          setExported(outcome.kind === 'shared' || outcome.kind === 'copied')
+        })
+      }}
+      onRequest={(typedName) => {
+        void repositories.account
+          .request({
+            companyId,
+            companyName: company.name,
+            requestedBy: companyId,
+            role: 'owner',
+            typedName,
+            exported,
+          })
+          .then((outcome) => {
+            setRefusal(outcome.ok ? undefined : outcome.why)
+            if (outcome.ok) setLifecycle({ state: 'scheduled', request: outcome.value })
+          })
+      }}
+      onCancel={() => {
+        void repositories.account.cancel(companyId, 'owner').then((outcome) => {
+          if (outcome.ok) setLifecycle({ state: 'active' })
+        })
+      }}
+      {...(refusal === undefined ? {} : { refusal })}
+    />
+  )
 }
 
 /**
