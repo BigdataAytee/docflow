@@ -33,6 +33,7 @@ export interface UiStrings {
      */
     readonly voice: string
     readonly scan: string
+    readonly offlineToolsNeeded: string
   }
   /**
    * Signing in, and the first business (§R, §S).
@@ -384,6 +385,24 @@ export interface UiStrings {
      * appearing — and it is the same sentence whether they are full or empty.
      */
     readonly greetingLine: string
+  }
+  /**
+   * Home's "Your next steps" card (§18, §R).
+   *
+   * Every item is DERIVED from the state it describes, so these words label a
+   * question the app can answer rather than a box somebody ticked.
+   */
+  readonly setup: {
+    readonly title: string
+    readonly body: string
+    readonly progress: string
+    readonly start: string
+    readonly viewGuide: string
+    readonly hide: string
+    readonly businessDetails: string
+    readonly logo: string
+    readonly payment: string
+    readonly firstDocument: string
   }
   readonly payments: {
     readonly paidOfTotal: string
@@ -770,6 +789,8 @@ const EN: UiStrings = {
     remove: 'Remove',
     voice: 'Say it out loud',
     scan: 'Photograph a document',
+    /** §N: a missing model says so plainly — never "needs internet". */
+    offlineToolsNeeded: 'These work on this phone once the offline tools are installed. Download them when you are connected.',
   },
   account: {
     signInTitle: 'Sign in to DocFlow',
@@ -1074,6 +1095,18 @@ const EN: UiStrings = {
     addLogo: 'Tap to add your logo',
     logOut: 'Log out',
     greetingLine: 'Here is where your money stands today.',
+  },
+  setup: {
+    title: 'Your next steps',
+    body: 'Use your own details, or explore with the sample data.',
+    progress: '{done} of {total} complete',
+    start: 'Start',
+    viewGuide: 'View guide',
+    hide: 'Hide checklist',
+    businessDetails: 'Set up your business',
+    logo: 'Add your logo',
+    payment: 'Set up how you get paid',
+    firstDocument: 'Complete your first document',
   },
   payments: {
     paidOfTotal: '{paid} paid of {total}',

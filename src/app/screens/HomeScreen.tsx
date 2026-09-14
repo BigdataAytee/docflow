@@ -17,7 +17,7 @@ import { useNavigate } from 'react-router-dom'
 
 import { useCompany } from '../context'
 import { useAppData } from '../store'
-import { customerPath, documentPath, listPath, settingsPath } from '../paths'
+import { customerPath, documentPath, listPath, newDocumentPath, settingsPath } from '../paths'
 import { Home } from '../../features/home/Home'
 import { needsAttention, outstandingByCurrency, receivedThisMonth } from '../../features/home/stats'
 import { SearchResults } from '../../features/search/SearchResults'
@@ -25,6 +25,12 @@ import { search, type IndexEntry } from '../../features/search'
 import { format } from '../../domain/locale/data/strings'
 import { useSearchIndex } from '../useSearchIndex'
 import { formatMoney } from '../../features/customers/formatMoney'
+import {
+  checklist,
+  shouldShowChecklist,
+  type ChecklistItemId,
+} from '../../features/onboarding/checklist'
+import { realOnly } from '../../features/onboarding/sample'
 import { SkeletonList } from '../../ui'
 import type { DocumentType } from '../../domain/documents/types'
 import {
@@ -42,6 +48,17 @@ export function HomeScreen({ now = new Date() }: { now?: Date }) {
   const navigate = useNavigate()
 
   const [query, setQuery] = useState('')
+  /*
+   * §18: "short, DISMISSIBLE". Kept on the device rather than the record —
+   * hiding a nudge is a preference about this screen, not a fact about the
+   * business, and syncing it would hide the checklist on a colleague's phone
+   * because somebody else had finished reading it.
+   */
+  const [checklistHidden, setChecklistHidden] = useState(
+    () => globalThis.localStorage?.getItem('docflow.checklistHidden') === '1',
+  )
+  /** §N's line, shown only once a capture control has actually been pressed. */
+  const [captureNotice, setCaptureNotice] = useState<string | undefined>(undefined)
   // Typing stays responsive on a large account: the field updates now, the
   // results catch up (§L10 — performance is invisible).
   const deferredQuery = useDeferredValue(query)
@@ -125,6 +142,40 @@ export function HomeScreen({ now = new Date() }: { now?: Date }) {
 
   const searching = query.trim() !== ''
 
+  /*
+   * Every row is DERIVED from the state it describes (§R), so completing a
+   * step anywhere in the app ticks it here with nothing to keep in sync.
+   * Sample records deliberately do not count towards the first document.
+   */
+  const setupState = {
+    companyName: company?.name ?? '',
+    region: company?.localeRegion ?? '',
+    hasLogo: company?.logoAssetId !== undefined,
+    enabledPaymentMethodCount: company?.enabledPaymentMethods.length ?? 0,
+    // `realOnly`, not a hand-rolled filter: §R makes excluding samples a
+    // property of the record with one way in, so a sample can never tick
+    // "complete your first document".
+    realDocumentCount: realOnly(documents).length,
+    dismissed: checklistHidden,
+  }
+
+  const hideChecklist = () => {
+    setChecklistHidden(true)
+    try {
+      globalThis.localStorage?.setItem('docflow.checklistHidden', '1')
+    } catch {
+      // Private browsing, or blocked site data. The card stays hidden for
+      // this session either way; it is a preference, not a record.
+    }
+  }
+
+  const startTask = (id: ChecklistItemId) => {
+    if (id === 'business_details') navigate(settingsPath('company'))
+    else if (id === 'logo') navigate(settingsPath('company'))
+    else if (id === 'payment') navigate(settingsPath('payment'))
+    else navigate(newDocumentPath('invoice'))
+  }
+
   return (
     <Home
       businessName={company?.name ?? ''}
@@ -138,6 +189,21 @@ export function HomeScreen({ now = new Date() }: { now?: Date }) {
       // `<img>` can load until the local asset store lands. The holder shows
       // the empty state, which is the truth on every install today.
       onAddLogo={() => navigate(settingsPath('company'))}
+      // §N: a capability that is not installed says so. Never a toast
+      // claiming work that did not happen.
+      onVoice={() => setCaptureNotice(strings.common.offlineToolsNeeded)}
+      onScan={() => setCaptureNotice(strings.common.offlineToolsNeeded)}
+      {...(captureNotice === undefined ? {} : { captureNotice })}
+      {...(shouldShowChecklist(setupState)
+        ? {
+            setup: {
+              items: checklist(setupState),
+              onStart: startTask,
+              onGuide: () => navigate(settingsPath('company')),
+              onHide: hideChecklist,
+            },
+          }
+        : {})}
       now={now}
       online={false}
       pendingCount={0}

@@ -38,8 +38,10 @@ import { format } from '../../domain/locale/data/strings'
 import { ConnectivityPill, Icon, TYPE_PALETTE } from '../../ui'
 import { DOCUMENT_TYPES, type DocumentType } from '../../domain/documents/types'
 import type { CurrencyCode, Money } from '../../domain/money/money'
-import { formatMoney } from '../customers/formatMoney'
+import { formatMoney, formatMoneyCompact } from '../customers/formatMoney'
 import type { AttentionItem } from './stats'
+import { SetupChecklist } from './SetupChecklist'
+import type { ChecklistItem, ChecklistItemId } from '../onboarding/checklist'
 
 export interface HomeProps {
   readonly businessName: string
@@ -60,9 +62,22 @@ export interface HomeProps {
   /** Where "Tap to add your logo" goes. Absent leaves the holder inert. */
   readonly onAddLogo?: () => void
   readonly onLogOut?: () => void
-  /** §G's two round controls. Rendered only when there is something behind them. */
+  /**
+   * §G's two round controls. Always rendered now, per the accepted
+   * reference — and what they DO when a model is not installed is say so
+   * (§N), never a success message for work that did not happen.
+   */
   readonly onVoice?: () => void
   readonly onScan?: () => void
+  /** §N's honest line, shown under the controls once one is pressed. */
+  readonly captureNotice?: string
+  /** §18's "Your next steps". Absent once finished or dismissed. */
+  readonly setup?: {
+    readonly items: readonly ChecklistItem[]
+    readonly onStart: (id: ChecklistItemId) => void
+    readonly onGuide: () => void
+    readonly onHide: () => void
+  }
   /**
    * §G: "typing replaces the body with results". When this is present the
    * tiles and the attention list step aside for it — the header, the stat
@@ -105,10 +120,13 @@ function StatCard({
   title,
   amounts,
   emptyLabel,
+  tone,
 }: {
   title: string
   amounts: ReadonlyMap<CurrencyCode, Money>
   emptyLabel: string
+  /** `in` is money that arrived, and reads green; `owed` keeps brand blue. */
+  tone: 'in' | 'owed'
 }) {
   const entries = [...amounts.entries()].filter(([, amount]) => amount.minor !== 0)
 
@@ -117,25 +135,36 @@ function StatCard({
       // `min-w-0` because a flex item defaults to `min-width: auto` and will
       // not shrink below its content — so at 200% text these two cards pushed
       // the page 208px wider than the phone. Found by the large-text sweep.
-      className="min-w-0 flex-1 rounded-[14px] border border-on-accent/35 p-2.5 text-center"
-      style={{
-        backgroundImage:
-          'linear-gradient(180deg, rgb(255 255 255 / 0.24), rgb(255 255 255 / 0.1))',
-        boxShadow: 'inset 0 1px 0 rgb(255 255 255 / 0.4)',
-      }}
+      className="stat-card min-w-0 flex-1 rounded-[15px] px-2.5 py-3 text-start"
       aria-label={title}
     >
       {entries.length === 0 ? (
-        <p className="text-[19px] font-semibold leading-tight opacity-60">{emptyLabel}</p>
+        <p className="text-[23px] font-semibold leading-tight opacity-40">{emptyLabel}</p>
       ) : (
         // One line per currency — never a combined figure (§G, §V).
         entries.map(([currency, amount]) => (
-          <p key={currency} className="text-[19px] font-semibold leading-tight tabular-nums">
-            {formatMoney(amount)}
+          <p
+            key={currency}
+            className="text-[23px] font-semibold leading-tight tabular-nums"
+            // Money that ARRIVED is green; money still owed keeps the brand
+            // blue. Tokens rather than literals: the green is a 23px NUMBER
+            // and has to stay legible on a dark card, which the light value
+            // does not.
+            style={{ color: tone === 'in' ? 'var(--money-in)' : 'var(--money-owed)' }}
+          >
+            {/*
+              Shortened on screen, EXACT to a reader. "₦324K" fits the card
+              and tells you the shape of the number; it does not tell you
+              whether you are owed ₦323,500 or ₦324,499, and somebody using
+              a screen reader should not be the only one who cannot find out.
+              The full figure is one tap away on the list either way.
+            */}
+            <span aria-hidden="true">{formatMoneyCompact(amount)}</span>
+            <span className="sr-only">{formatMoney(amount)}</span>
           </p>
         ))
       )}
-      <p className="mt-0.5 text-[10px] opacity-75">{title}</p>
+      <p className="mt-0.5 text-[10.5px] font-medium text-stat-label">{title}</p>
     </section>
   )
 }
@@ -207,6 +236,8 @@ export function Home({
   onLogOut,
   onVoice,
   onScan,
+  captureNotice,
+  setup,
   searchQuery,
   results,
 }: HomeProps) {
@@ -214,26 +245,15 @@ export function Home({
 
   return (
     <div className="pb-[118px]">
-      <header className="header-gloss sheen-strong relative overflow-hidden rounded-b-[30px] px-3.5 pb-3.5 pt-[max(0.875rem,env(safe-area-inset-top))] text-white">
-        {/*
-          The prototype's two header decorations: a soft corner circle, and a
-          slow sheen crossing the band. Both decorative, both inert, and the
-          sheen is `motion-safe` — §F allows a sheen and requires it to stop
-          for somebody who has asked their phone to hold still.
-        */}
-        <span
-          aria-hidden="true"
-          className="pointer-events-none absolute -top-8 end-[-20px] h-[120px] w-[120px] rounded-full bg-on-accent/10"
-        />
-        <span
-          aria-hidden="true"
-          className="pointer-events-none absolute inset-y-0 w-14 motion-safe:animate-header-sheen"
-          style={{
-            backgroundImage:
-              'linear-gradient(90deg, transparent, rgb(255 255 255 / 0.16), transparent)',
-          }}
-        />
-
+      {/*
+        Home's header, SOFTENED — the one surface where the accepted
+        reference overrules the earlier prototype outright. A later
+        stylesheet repaints `#vHome > .hd` pale, turns its text navy, and
+        hides both decorations with `#vHome > .hd > span { display: none }`.
+        So the corner circle and the travelling sheen are not omitted here;
+        they were taken out.
+      */}
+      <header className="header-soft relative overflow-hidden rounded-b-[30px] p-3.5 pt-[max(0.875rem,env(safe-area-inset-top))]">
         <div className="relative flex items-center gap-2.5">
           <LogoHolder
             {...(logoUrl === undefined ? {} : { logoUrl })}
@@ -250,7 +270,7 @@ export function Home({
               announced twice.
             */}
             {logoUrl === undefined && (
-              <p aria-hidden="true" className="truncate text-[9.5px] opacity-60">
+              <p aria-hidden="true" className="truncate text-[9.5px] text-header-muted">
                 {strings.home.addLogo}
               </p>
             )}
@@ -273,7 +293,7 @@ export function Home({
               type="button"
               onClick={onLogOut}
               aria-label={strings.home.logOut}
-              className="tap-scale grid h-[26px] w-[26px] shrink-0 place-items-center rounded-[9px] bg-on-accent/15 text-white/70"
+              className="tap-scale grid h-[26px] w-[26px] shrink-0 place-items-center rounded-[9px] bg-on-accent/45 text-header-muted"
             >
               <Icon name="logout" size={0.9} />
             </button>
@@ -286,22 +306,24 @@ export function Home({
           jumping by heading could not tell where the page began. The biggest
           line on the screen is now also the biggest line in the outline.
         */}
-        <h1 className="relative mb-0.5 mt-3 text-base font-medium">
+        <h1 className="relative mb-0.5 mt-3 text-[17px] font-semibold">
           {greeting(now, strings)}
           {userName === '' ? '' : `, ${userName}`}
         </h1>
-        <p className="relative mb-3 text-[11px] opacity-65">{strings.home.greetingLine}</p>
+        <p className="relative mb-3 text-[11px] text-header-muted">{strings.home.greetingLine}</p>
 
         <div className="relative flex gap-2.5">
           <StatCard
             title={strings.home.outstanding}
             amounts={outstanding}
             emptyLabel={strings.home.nothingOutstanding}
+            tone="owed"
           />
           <StatCard
             title={strings.home.receivedThisMonth}
             amounts={received}
             emptyLabel={strings.home.nothingReceived}
+            tone="in"
           />
         </div>
       </header>
@@ -325,32 +347,51 @@ export function Home({
           field above stay put, so there is always a way back. */}
       {results ?? (
         <div className="px-3.5">
-          {/* §G's two round controls, when Phase 6 has given them a job. */}
-          {(onVoice !== undefined || onScan !== undefined) && (
-            <div className="flex justify-between pt-3">
-              {onVoice !== undefined && (
-                <button
-                  type="button"
-                  onClick={onVoice}
-                  aria-label={strings.common.voice}
-                  className="raised-soft tap-scale grid h-11 w-11 place-items-center rounded-full border border-on-accent/90 text-brand"
-                  style={{ backgroundImage: 'linear-gradient(180deg,#fff,#e9eeff)' }}
-                >
-                  <Icon name="microphone" size={1.25} />
-                </button>
-              )}
-              {onScan !== undefined && (
-                <button
-                  type="button"
-                  onClick={onScan}
-                  aria-label={strings.common.scan}
-                  className="raised-soft tap-scale grid h-11 w-11 place-items-center rounded-full border border-on-accent/90 text-brand"
-                  style={{ backgroundImage: 'linear-gradient(180deg,#fff,#e9eeff)' }}
-                >
-                  <Icon name="camera" size={1.25} />
-                </button>
-              )}
-            </div>
+          {/* §18's checklist, above the capture controls as the reference has it. */}
+          {setup !== undefined && (
+            <SetupChecklist
+              items={setup.items}
+              onStart={setup.onStart}
+              onGuide={setup.onGuide}
+              onHide={setup.onHide}
+            />
+          )}
+
+          {/*
+            §G's two round controls, at either end of the row.
+            
+            They are always here now. What changes with the §N capability
+            ladder is what they SAY: with no model installed they explain
+            that plainly rather than pretending to record anything.
+          */}
+          <div className="my-3 flex justify-between px-0.5">
+            <button
+              type="button"
+              onClick={onVoice}
+              aria-label={strings.common.voice}
+              className="raised-soft tap-scale grid h-11 w-11 place-items-center rounded-full border border-on-accent/90 text-brand"
+              style={{ backgroundImage: 'linear-gradient(180deg,#fff,#e9eeff)' }}
+            >
+              <Icon name="microphone" size={1.25} />
+            </button>
+            <button
+              type="button"
+              onClick={onScan}
+              aria-label={strings.common.scan}
+              className="raised-soft tap-scale grid h-11 w-11 place-items-center rounded-full border border-on-accent/90 text-brand"
+              style={{ backgroundImage: 'linear-gradient(180deg,#fff,#e9eeff)' }}
+            >
+              <Icon name="camera" size={1.25} />
+            </button>
+          </div>
+
+          {captureNotice !== undefined && (
+            <p
+              role="status"
+              className="mb-3 rounded-xl bg-status-warn-tint px-3 py-2 text-[10.5px] leading-relaxed text-status-warn"
+            >
+              {captureNotice}
+            </p>
           )}
 
           <ul className="grid grid-cols-2 gap-2.5 pt-3">
