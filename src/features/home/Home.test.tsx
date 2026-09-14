@@ -185,6 +185,6 @@ describe('One page per type, never combined tabs (§G)', () => {
 
   it('carries a FAB labelled with the type, not a bare plus (§F)', () => {
     wrap(<DocumentList type="quotation" rows={[]} onOpen={vi.fn()} onNew={vi.fn()} />)
-    expect(screen.getAllByRole('button', { name: '+ New Quotation' }).length).toBeGreaterThanOrEqual(1)
+    expect(screen.getAllByRole('button', { name: '+ New quotation' }).length).toBeGreaterThanOrEqual(1)
   })
 })

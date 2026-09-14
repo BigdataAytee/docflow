@@ -40,7 +40,7 @@ const wrap = (node: React.ReactNode, locale: string) => {
 
 /** The longest label across every shipped table, per §F's instruction to test it. */
 const longestOf = (
-  pick: (entry: { label: string; pluralLabel: string }) => string,
+  pick: (entry: { label: string; labelInSentence: string; pluralLabel: string }) => string,
 ): { locale: string; label: string } => {
   let winner = { locale: 'EN-NG', label: '' }
   for (const locale of LAUNCH_LOCALES) {
@@ -56,6 +56,8 @@ const longestOf = (
 
 const longestLabel = () => longestOf((entry) => entry.label)
 const longestPlural = () => longestOf((entry) => entry.pluralLabel)
+/** The singular inside a sentence — "New bon de livraison", "+ New …". */
+const longestInSentence = () => longestOf((entry) => entry.labelInSentence)
 
 describe('The longest shipped label wraps rather than clipping (§F)', () => {
   it('is one of the labels §F names as the stress case', () => {
@@ -87,7 +89,8 @@ describe('The longest shipped label wraps rather than clipping (§F)', () => {
   })
 
   it('renders in full in the builder header', () => {
-    const { locale, label } = longestLabel()
+    // The header says "New {label}", which puts the word in a sentence.
+    const { locale, label } = longestInSentence()
     wrap(
       <BuilderShell type="waybill" step={0} dirty={false} problems={[]} onStep={vi.fn()} onClose={vi.fn()} onSave={vi.fn()}>
         <p>body</p>
@@ -100,7 +103,7 @@ describe('The longest shipped label wraps rather than clipping (§F)', () => {
   })
 
   it('puts the whole label inside the new-document button', () => {
-    const { locale, label } = longestLabel()
+    const { locale, label } = longestInSentence()
     wrap(<DocumentList type="waybill" rows={[]} onOpen={vi.fn()} onNew={vi.fn()} />, locale)
     expect(screen.getAllByRole('button', { name: `+ New ${label}` }).length).toBeGreaterThan(0)
   })

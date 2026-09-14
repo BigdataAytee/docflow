@@ -10,12 +10,15 @@
  *  · delivery documents show a delivery address and no money anywhere.
  */
 
-import type { ReactNode } from 'react'
+import { useState } from 'react'
 
 import { useCompany } from '../../app/context'
-import { partyLabel } from '../../domain/locale/profile'
+import { partyLabel, signatureCaption } from '../../domain/locale/profile'
 import { format } from '../../domain/locale/data/strings'
-import { TYPE_PALETTE } from '../../ui'
+import { Icon, TYPE_PALETTE } from '../../ui'
+import { BuilderCard, TinyButton } from './BuilderCard'
+import { InlineCalendar } from './InlineCalendar'
+import { parseIsoDate, todayIso, type DateSlot } from './dateChips'
 import { carriesMoney, type DocumentType } from '../../domain/documents/types'
 import type { Customer } from '../../data/repositories'
 import type { Payment } from '../../domain/payments/ledger'
@@ -38,51 +41,71 @@ export interface DetailsStepProps {
   readonly onSign: () => void
   /** The drawn signature itself, resolved from the draft's asset id (§G). */
   readonly signatureUrl?: string
-}
-
-function Card({ title, accent, children }: { title: string; accent: string; children: ReactNode }) {
-  return (
-    <section className="glass-solid overflow-hidden rounded-2xl">
-      {/*
-        h2, not h3. The only heading above these cards is the builder's h1, so
-        an h3 leaves a reader jumping by heading level with nothing at level 2
-        and no way to tell where the step begins. Found by the screen-reader
-        sweep, which reads Chromium's accessibility tree rather than the DOM.
-      */}
-      <h2
-        className="px-4 py-2 text-[10.5px] font-bold uppercase tracking-[0.12em]"
-        style={{ backgroundColor: `${accent}1a`, color: accent }}
-      >
-        {title}
-      </h2>
-      <div className="space-y-3 p-4">{children}</div>
-    </section>
-  )
+  /**
+   * Today, `YYYY-MM-DD`, in the phone's own calendar.
+   *
+   * Injected so a test can sit on a fixed date, and defaulted rather than
+   * required because every caller would otherwise compute the same thing.
+   */
+  readonly today?: string
 }
 
 function DateField({
   label,
+  emptyLabel,
   value,
-  onChange,
+  locale,
+  open,
+  accent,
+  onToggle,
 }: {
   label: string
+  /** What the name says when nothing is chosen — "Choose a date". */
+  emptyLabel: string
   value: string | undefined
-  onChange: (value: string) => void
+  locale: string
+  open: boolean
+  accent: string
+  onToggle: () => void
 }) {
+  const parts = parseIsoDate(value)
+  const shown =
+    parts === null
+      ? ''
+      : (() => {
+          try {
+            return new Intl.DateTimeFormat(locale, {
+              day: 'numeric',
+              month: 'short',
+              year: 'numeric',
+            }).format(new Date(parts.y, parts.m - 1, parts.d))
+          } catch {
+            return value ?? ''
+          }
+        })()
+
   return (
-    // `min-w-0`: a date input has a wide intrinsic minimum, and a flex item
-    // will not shrink below its content, so two side by side pushed the
-    // builder past the edge of a 320px phone. Found by the sweeps.
-    <label className="block min-w-0 flex-1">
-      <span className="mb-1 block text-xs font-medium opacity-70">{label}</span>
-      <input
-        type="date"
-        value={value ?? ''}
-        onChange={(event) => onChange(event.target.value)}
-        aria-label={label}
-        className="sunken min-h-tap w-full rounded-lg px-3 text-sm"
-      />
-    </label>
+    // `min-w-0`: a flex item will not shrink below its content, so two fields
+    // side by side pushed the builder past the edge of a 320px phone. Found by
+    // the sweeps.
+    <span className="block min-w-0 flex-1">
+      <span className="mb-1 block text-[9.5px] opacity-55">{label}</span>
+      <button
+        type="button"
+        onClick={onToggle}
+        aria-expanded={open}
+        // The label AND the value. "Due" alone does not say what is in it,
+        // and an em dash is not something to read aloud — an empty field
+        // says what it is for. The name still starts with the visible label,
+        // which is what WCAG 2.5.3 is about.
+        aria-label={`${label}: ${shown === '' ? emptyLabel : shown}`}
+        className="sunken tap-scale flex min-h-tap w-full items-center gap-2 rounded-[10px] px-2.5 text-start"
+        style={open ? { borderColor: accent, boxShadow: `0 0 0 3px ${accent}1a` } : undefined}
+      >
+        <Icon name="calendar" size={0.85} className="shrink-0 opacity-45" />
+        <span className="min-w-0 flex-1 truncate text-[11px] font-medium">{shown}</span>
+      </button>
+    </span>
   )
 }
 
@@ -116,44 +139,93 @@ export function DetailsStep({
   onSetUpPayment,
   onSign,
   signatureUrl,
+  today = todayIso(),
 }: DetailsStepProps) {
   const { profile, strings } = useCompany()
-  const accent = TYPE_PALETTE[draft.type].accent
+  const { accent, tint } = TYPE_PALETTE[draft.type]
+  const [openCalendar, setOpenCalendar] = useState<DateSlot | null>(null)
   const second = secondDateFor(draft.type, strings)
   const showsMoney = carriesMoney(draft.type)
 
   return (
     <div className="space-y-3">
-      <Card title={strings.details.numberAndDates} accent={accent}>
+      <BuilderCard title={strings.details.numberAndDates} icon="hash" accent={accent}>
         <div className="flex items-center gap-2">
-          <span className="flex-1 text-sm font-semibold tabular-nums">{reference}</span>
-          <button
-            type="button"
-            aria-label={strings.details.editReference}
-            className="min-h-tap min-w-tap rounded-full text-ink/60"
-          >
-            ✎
-          </button>
+          <span className="min-w-0 flex-1">
+            <span className="mb-0.5 block text-[9.5px] opacity-55">
+              {strings.details.numberLabel}
+            </span>
+            {/*
+              Monospace, because a reference is read CHARACTER BY CHARACTER
+              when somebody reads it down a phone — and a proportional 0 next
+              to a proportional O is where that goes wrong.
+            */}
+            <span className="block truncate font-mono text-xs font-semibold">{reference}</span>
+          </span>
+          <TinyButton
+            label={strings.details.editReference}
+            icon="pencil"
+            accent={accent}
+            tint={tint}
+            onClick={() => {
+              // §G gives the reference a pencil override. The sheet behind it
+              // is not built yet, and a button that silently does nothing is
+              // worse than one that is not there — so this stays inert and
+              // visible rather than pretending. Noted in PLAN.
+            }}
+          />
         </div>
-        <div className="flex gap-3">
+        <div className="flex gap-2.5">
           <DateField
             label={draft.type === 'receipt' ? strings.details.datePaid : strings.details.issueDate}
+            emptyLabel={strings.details.chooseDate}
             value={draft.issueDate}
-            onChange={(value) => onChange({ issueDate: value })}
+            locale={profile.locale}
+            accent={accent}
+            open={openCalendar === 'first'}
+            onToggle={() => setOpenCalendar(openCalendar === 'first' ? null : 'first')}
           />
           {second !== null && (
             <DateField
               label={second.label}
+              emptyLabel={strings.details.chooseDate}
               value={draft[second.key]}
-              onChange={(value) => onChange({ [second.key]: value })}
+              locale={profile.locale}
+              accent={accent}
+              open={openCalendar === 'second'}
+              onToggle={() => setOpenCalendar(openCalendar === 'second' ? null : 'second')}
             />
           )}
         </div>
-      </Card>
+
+        {/*
+          One calendar, under the pair — never two open at once. The prototype
+          does the same, and it is the only arrangement that fits: two month
+          grids side by side on a 360px phone are two unusable month grids.
+        */}
+        {openCalendar !== null && (
+          <InlineCalendar
+            type={draft.type}
+            slot={openCalendar}
+            value={(openCalendar === 'first' ? draft.issueDate : draft[second?.key ?? 'issueDate']) ?? ''}
+            firstDate={draft.issueDate ?? ''}
+            today={today}
+            accent={accent}
+            onPick={(picked) => {
+              onChange(
+                openCalendar === 'first' || second === null
+                  ? { issueDate: picked }
+                  : { [second.key]: picked },
+              )
+              setOpenCalendar(null)
+            }}
+          />
+        )}
+      </BuilderCard>
 
       {/* The title is the localised party word — Bill to / Deliver to / Client /
           Received from — resolved through the locale layer (§D, Rule #4). */}
-      <Card title={partyLabel(profile, draft.type)} accent={accent}>
+      <BuilderCard title={partyLabel(profile, draft.type)} icon="user" accent={accent}>
         <CustomerPicker
           customers={customers}
           {...(draft.customerId === undefined ? {} : { selectedId: draft.customerId })}
@@ -176,12 +248,12 @@ export function DetailsStep({
             />
           </label>
         )}
-      </Card>
+      </BuilderCard>
 
       {/* §J: payment setup is never shown on a quotation, and a delivery
           document carries no money at all — so neither gets this card. */}
       {showsMoney && draft.type !== 'quotation' && (
-        <Card title={strings.details.currencyAndPayment} accent={accent}>
+        <BuilderCard title={strings.details.currencyAndPayment} icon="credit-card" accent={accent}>
           <div className="flex items-center gap-3">
             <span className="text-sm font-semibold">{draft.currency}</span>
             {enabledPaymentMethodCount > 0 ? (
@@ -198,10 +270,16 @@ export function DetailsStep({
               </button>
             )}
           </div>
-        </Card>
+        </BuilderCard>
       )}
 
-      <Card title={strings.details.signature} accent={accent}>
+      {/*
+        Titled by the per-type caption, not the word "Signature". It is the
+        same caption that prints under the line (§I), so the builder says what
+        the document will say — and a delivery's "DISPATCHED BY" is a
+        different promise from an invoice's "AUTHORISED SIGNATURE".
+      */}
+      <BuilderCard title={signatureCaption(profile, draft.type)} icon="signature" accent={accent}>
         {/*
           §G: "a dashed tap-to-sign box, OR the drawn signature". A tick is
           neither — it says a signature exists without showing which one, and
@@ -220,7 +298,7 @@ export function DetailsStep({
             <img src={signatureUrl} alt={strings.signature.drawn} className="max-h-14 w-auto" />
           )}
         </button>
-      </Card>
+      </BuilderCard>
     </div>
   )
 }

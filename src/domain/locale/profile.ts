@@ -58,6 +58,7 @@ export function resolve(profile: LocaleProfile, type: DocumentType): TypeTermino
   return {
     ...base,
     label: override,
+    labelInSentence: override,
     pluralLabel: override,
     pluralInSentence: override,
     printedTitle: override.toLocaleUpperCase(),
@@ -67,6 +68,10 @@ export function resolve(profile: LocaleProfile, type: DocumentType): TypeTermino
 /** The name on a tile, a list hero, a builder header, a chip, the share text. */
 export const label = (profile: LocaleProfile, type: DocumentType): string =>
   resolve(profile, type).label
+
+/** The name inside a sentence — "New invoice". Cased by the locale, not here. */
+export const labelInSentence = (profile: LocaleProfile, type: DocumentType): string =>
+  resolve(profile, type).labelInSentence
 
 /** The plural standing alone — a list hero's heading, a tile. */
 export const pluralLabel = (profile: LocaleProfile, type: DocumentType): string =>

@@ -55,12 +55,14 @@ function shell(options: {
 describe('Every word follows the terminology layer (Rule #5)', () => {
   it('titles a delivery document by its regional name', () => {
     shell({ type: 'waybill', profile: { locale: 'EN-NG' } })
-    expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('Waybill')
+    // Creating, so the header is the sentence form: "New waybill". The
+    // REGIONAL word is what this test is about, and it is still in there.
+    expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('New waybill')
   })
 
   it('shows the same document as "Delivery note" in EN-GB', () => {
     shell({ type: 'waybill', profile: { locale: 'EN-GB' } })
-    expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('Delivery note')
+    expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('New delivery note')
   })
 
   it('names the steps per type', () => {
@@ -71,7 +73,7 @@ describe('Every word follows the terminology layer (Rule #5)', () => {
 
   it('puts the label inside the save button on the last step (§G)', () => {
     shell({ type: 'waybill', step: 4, profile: { locale: 'EN-GB' } })
-    expect(screen.getByRole('button', { name: 'Save Delivery note' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Save delivery note' })).toBeInTheDocument()
   })
 
   it('shows Next on every earlier step', () => {

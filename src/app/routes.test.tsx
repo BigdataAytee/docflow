@@ -1745,7 +1745,10 @@ describe('Signing (§G, §I, §P)', () => {
 
       await user.click(screen.getByRole('link', { name: 'Home' }))
       await user.click(await screen.findByRole('button', { name: /^\d+ Invoice/ }))
-      await user.click((await screen.findAllByRole('button', { name: /New Invoice/ }))[0]!)
+      // "+ New invoice" — the sentence form, cased by the terminology table
+      // rather than by the call site (§D). Matched case-insensitively so this
+      // test stays about the signature reaching the next document.
+      await user.click((await screen.findAllByRole('button', { name: /New invoice/i }))[0]!)
 
       await waitFor(() => expect(state.documents).toHaveLength(1))
       expect(state.documents[0]?.signatureAssetId).toBe(state.assets[0]?.id)

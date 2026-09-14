@@ -11,7 +11,7 @@
 import { useMemo, useState } from 'react'
 
 import { useCompany } from '../../app/context'
-import { label as typeLabel, pluralInSentence, pluralLabel } from '../../domain/locale/profile'
+import { labelInSentence, pluralInSentence, pluralLabel } from '../../domain/locale/profile'
 import { format } from '../../domain/locale/data/strings'
 import { EmptyState, Icon, SkeletonList, StatusBadge, TYPE_PALETTE } from '../../ui'
 import { carriesMoney, type DocumentType } from '../../domain/documents/types'
@@ -55,7 +55,8 @@ export function DocumentList({ type, rows, onOpen, onNew, onBack }: DocumentList
   const [query, setQuery] = useState('')
 
   const palette = TYPE_PALETTE[type]
-  const label = typeLabel(profile, type)
+  // "+ New invoice" is a sentence, so the word is cased for one (§D).
+  const label = labelInSentence(profile, type)
   const plural = pluralLabel(profile, type)
   // "3 invoices", not "3 Invoices" — and cased by the table, not by a
   // `toLowerCase()` here that would be wrong the first time a language that

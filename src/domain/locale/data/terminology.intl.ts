@@ -25,6 +25,7 @@ export const FR: TerminologyTable = {
   types: {
     invoice: {
       label: 'Facture',
+      labelInSentence: 'facture',
       pluralLabel: 'Factures',
       pluralInSentence: 'factures',
       printedTitle: 'FACTURE',
@@ -35,6 +36,7 @@ export const FR: TerminologyTable = {
     },
     quotation: {
       label: 'Devis',
+      labelInSentence: 'devis',
       pluralLabel: 'Devis',
       pluralInSentence: 'devis',
       printedTitle: 'DEVIS',
@@ -45,6 +47,7 @@ export const FR: TerminologyTable = {
     },
     receipt: {
       label: 'Reçu',
+      labelInSentence: 'reçu',
       pluralLabel: 'Reçus',
       pluralInSentence: 'reçus',
       printedTitle: 'REÇU',
@@ -55,6 +58,7 @@ export const FR: TerminologyTable = {
     },
     waybill: {
       label: 'Bon de livraison',
+      labelInSentence: 'bon de livraison',
       pluralLabel: 'Bons de livraison',
       pluralInSentence: 'bons de livraison',
       printedTitle: 'BON DE LIVRAISON',
@@ -86,6 +90,7 @@ export const ES: TerminologyTable = {
   types: {
     invoice: {
       label: 'Factura',
+      labelInSentence: 'factura',
       pluralLabel: 'Facturas',
       pluralInSentence: 'facturas',
       printedTitle: 'FACTURA',
@@ -96,6 +101,7 @@ export const ES: TerminologyTable = {
     },
     quotation: {
       label: 'Cotización',
+      labelInSentence: 'cotización',
       pluralLabel: 'Cotizaciones',
       pluralInSentence: 'cotizaciones',
       printedTitle: 'COTIZACIÓN',
@@ -106,6 +112,7 @@ export const ES: TerminologyTable = {
     },
     receipt: {
       label: 'Recibo',
+      labelInSentence: 'recibo',
       pluralLabel: 'Recibos',
       pluralInSentence: 'recibos',
       printedTitle: 'RECIBO',
@@ -118,6 +125,7 @@ export const ES: TerminologyTable = {
       // §D offers "Guía de remisión / Nota de entrega" — the split is a
       // per-market call for review, not a machine choice. MX/PE lean guía.
       label: 'Nota de entrega',
+      labelInSentence: 'nota de entrega',
       pluralLabel: 'Notas de entrega',
       pluralInSentence: 'notas de entrega',
       printedTitle: 'NOTA DE ENTREGA',
@@ -149,6 +157,7 @@ export const AR: TerminologyTable = {
   types: {
     invoice: {
       label: 'فاتورة',
+      labelInSentence: 'فاتورة',
       pluralLabel: 'فواتير',
       pluralInSentence: 'فواتير',
       printedTitle: 'فاتورة',
@@ -159,6 +168,7 @@ export const AR: TerminologyTable = {
     },
     quotation: {
       label: 'عرض سعر',
+      labelInSentence: 'عرض سعر',
       pluralLabel: 'عروض أسعار',
       pluralInSentence: 'عروض أسعار',
       printedTitle: 'عرض سعر',
@@ -169,6 +179,7 @@ export const AR: TerminologyTable = {
     },
     receipt: {
       label: 'إيصال',
+      labelInSentence: 'إيصال',
       pluralLabel: 'إيصالات',
       pluralInSentence: 'إيصالات',
       printedTitle: 'إيصال',
@@ -179,6 +190,7 @@ export const AR: TerminologyTable = {
     },
     waybill: {
       label: 'بوليصة شحن',
+      labelInSentence: 'بوليصة شحن',
       pluralLabel: 'بوالص شحن',
       pluralInSentence: 'بوالص شحن',
       printedTitle: 'بوليصة شحن',

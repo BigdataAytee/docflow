@@ -88,7 +88,7 @@ describe('Switching region changes every surface at once (§V)', () => {
     ng.unmount()
 
     const ngList = wrap(<DocumentList type="waybill" rows={[]} onOpen={vi.fn()} onNew={vi.fn()} />)
-    expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('Waybill')
+    expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent(/waybill/i)
     ngList.unmount()
 
     const ngBuilder = wrap(
@@ -96,7 +96,7 @@ describe('Switching region changes every surface at once (§V)', () => {
         <p>body</p>
       </BuilderShell>,
     )
-    expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('Waybill')
+    expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent(/waybill/i)
     ngBuilder.unmount()
 
     // The company moves to the UK. Every one of those surfaces follows.
@@ -108,7 +108,7 @@ describe('Switching region changes every surface at once (§V)', () => {
     gbHome.unmount()
 
     const gbList = wrap(<DocumentList type="waybill" rows={[]} onOpen={vi.fn()} onNew={vi.fn()} />, gb)
-    expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('Delivery note')
+    expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent(/delivery note/i)
     gbList.unmount()
 
     wrap(
@@ -117,7 +117,7 @@ describe('Switching region changes every surface at once (§V)', () => {
       </BuilderShell>,
       gb,
     )
-    expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('Delivery note')
+    expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent(/delivery note/i)
   })
 
   it('lets a per-type override reach the same surfaces', () => {

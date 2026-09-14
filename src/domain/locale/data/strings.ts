@@ -224,6 +224,8 @@ export interface UiStrings {
   readonly builder: {
     readonly stepOf: string
     readonly saveDocument: string
+    /** The header when the builder is CREATING — "New invoice". */
+    readonly newDocument: string
     readonly missingTitle: string
     readonly fixThis: string
     readonly notReadyYet: string
@@ -245,6 +247,10 @@ export interface UiStrings {
     readonly tomorrow: string
     readonly yesterday: string
     readonly inDays: string
+    /** The calendar's month arrows, and the name of the picker itself. */
+    readonly previousMonth: string
+    readonly nextMonth: string
+    readonly chooseDate: string
     readonly currencyAndPayment: string
     readonly currency: string
     readonly paymentReady: string
@@ -269,6 +275,10 @@ export interface UiStrings {
     readonly quantity: string
     readonly unitPrice: string
     readonly unit: string
+    /** The Goods card's title on a delivery — money types say "Add an item". */
+    readonly goods: string
+    /** The description field's placeholder, which also explains autocomplete. */
+    readonly typeAnItem: string
     readonly add: string
     readonly none: string
     readonly noneBody: string
@@ -900,6 +910,7 @@ const EN: UiStrings = {
   builder: {
     stepOf: 'Step {current} of {total}',
     saveDocument: 'Save {label}',
+    newDocument: 'New {label}',
     missingTitle: 'Before you can issue this',
     notReadyYet: 'Not quite ready — the amber band above says what is missing.',
     couldNotIssue: 'That could not be issued: {reason}',
@@ -920,6 +931,9 @@ const EN: UiStrings = {
     tomorrow: 'Tomorrow',
     yesterday: 'Yesterday',
     inDays: '{days} days',
+    previousMonth: 'Previous month',
+    nextMonth: 'Next month',
+    chooseDate: 'Choose a date',
     currencyAndPayment: 'Currency & payment',
     currency: 'Currency',
     paymentReady: '{count} payment method ready',
@@ -944,6 +958,8 @@ const EN: UiStrings = {
     quantity: 'Qty',
     unitPrice: 'Unit price',
     unit: 'Unit',
+    goods: 'Goods',
+    typeAnItem: 'Type an item — saved ones appear',
     add: 'Add',
     none: 'Nothing added yet',
     noneBody: 'Type what you are selling and it is saved for next time.',

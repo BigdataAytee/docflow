@@ -16,6 +16,7 @@ const DELIVERY_STEPS = ['Deliver to', 'Goods', 'Dispatch', 'Design', 'Review'] a
 
 const invoice = (over: Partial<TypeTerminology> = {}): TypeTerminology => ({
   label: 'Invoice',
+  labelInSentence: 'invoice',
   pluralLabel: 'Invoices',
   pluralInSentence: 'invoices',
   printedTitle: 'INVOICE',
@@ -28,6 +29,7 @@ const invoice = (over: Partial<TypeTerminology> = {}): TypeTerminology => ({
 
 const receipt = (over: Partial<TypeTerminology> = {}): TypeTerminology => ({
   label: 'Receipt',
+  labelInSentence: 'receipt',
   pluralLabel: 'Receipts',
   pluralInSentence: 'receipts',
   printedTitle: 'RECEIPT',
@@ -61,6 +63,7 @@ export const EN_NG: TerminologyTable = {
     invoice: invoice(),
     quotation: {
       label: 'Quotation',
+      labelInSentence: 'quotation',
       pluralLabel: 'Quotations',
       pluralInSentence: 'quotations',
       printedTitle: 'QUOTATION',
@@ -72,6 +75,7 @@ export const EN_NG: TerminologyTable = {
     receipt: receipt(),
     waybill: {
       label: 'Waybill',
+      labelInSentence: 'waybill',
       pluralLabel: 'Waybills',
       pluralInSentence: 'waybills',
       printedTitle: 'WAYBILL',
@@ -96,6 +100,7 @@ export const EN_GB: TerminologyTable = {
     ...EN_NG.types,
     waybill: {
       label: 'Delivery note',
+      labelInSentence: 'delivery note',
       pluralLabel: 'Delivery notes',
       pluralInSentence: 'delivery notes',
       printedTitle: 'DELIVERY NOTE',
@@ -115,6 +120,7 @@ export const EN_US: TerminologyTable = {
     ...EN_NG.types,
     quotation: {
       label: 'Quote',
+      labelInSentence: 'quote',
       pluralLabel: 'Quotes',
       pluralInSentence: 'quotes',
       // §D: "printed title: Estimate optional per region".
@@ -126,6 +132,7 @@ export const EN_US: TerminologyTable = {
     },
     waybill: {
       label: 'Packing slip',
+      labelInSentence: 'packing slip',
       pluralLabel: 'Packing slips',
       pluralInSentence: 'packing slips',
       printedTitle: 'PACKING SLIP',

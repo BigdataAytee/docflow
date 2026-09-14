@@ -21,8 +21,16 @@ export type ReviewStatus = 'draft' | 'in_review' | 'approved'
 
 /** Everything a document type is called, on every surface, in one locale. */
 export interface TypeTerminology {
-  /** The name on tiles, lists, builder titles, share text — one word everywhere. */
+  /** The name standing alone — a tile, a list heading, a builder title. */
   readonly label: string
+  /**
+   * The same word inside a sentence: "New invoice", "Save bon de livraison".
+   *
+   * The singular twin of `pluralInSentence`, and it exists for the same
+   * reason: case is part of the word, and which part depends on the language.
+   * See the note there.
+   */
+  readonly labelInSentence: string
   /** Plural, standing on its own — a list hero's heading, a tile. */
   readonly pluralLabel: string
   /**

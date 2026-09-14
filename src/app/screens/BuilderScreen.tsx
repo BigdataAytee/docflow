@@ -15,7 +15,7 @@
  */
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { Navigate, useNavigate, useParams } from 'react-router-dom'
+import { Navigate, useLocation, useNavigate, useParams } from 'react-router-dom'
 
 import { useCompany } from '../context'
 import { useAppData } from '../store'
@@ -54,6 +54,7 @@ import type { ComposableDocument, ComposeOptions } from '../../pdf/compose'
 import { SkeletonList } from '../../ui'
 import { BRAND_COLOURS, StepBody } from './builderSteps'
 import { billedInvoices, documentsOf, totalOf } from '../derive'
+import { localDay, todayIso } from '../../domain/dates/calendar'
 
 const isDocumentType = (value: string | undefined): value is DocumentType =>
   value !== undefined && (DOCUMENT_TYPES as readonly string[]).includes(value)
@@ -75,7 +76,11 @@ export function NewDocumentScreen() {
     void actions
       .createDraft(type, company.currency, company.defaultSignatureAssetId ?? undefined)
       .then((created) => {
-        navigate(editDocumentPath(created.id), { replace: true })
+        // `created` rides along so the builder's header can say "New
+        // invoice" rather than the draft's reference. It is a fact about how
+        // somebody ARRIVED, which no record field can carry: a draft opened
+        // from the list tomorrow is the same row, and is not new.
+        navigate(editDocumentPath(created.id), { replace: true, state: { created: true } })
       })
   }, [type, needsPaymentFirst, company, actions, navigate])
 
@@ -95,7 +100,7 @@ export function NewDocumentScreen() {
  * what makes §V's "issuing or resharing its receipt never increments income"
  * true by construction.
  */
-function NewReceiptFlow({ today = new Date().toISOString().slice(0, 10) }: { today?: string }) {
+function NewReceiptFlow({ today = todayIso() }: { today?: string }) {
   const { profile, strings } = useCompany()
   const { company, customers, documents, payments, creditNotes, loading, actions } = useAppData()
   const navigate = useNavigate()
@@ -231,6 +236,8 @@ function NewDocumentSkeleton() {
 
 export function BuilderScreen({ now = () => new Date().toISOString() }: { now?: () => string }) {
   const { id } = useParams<{ id: string }>()
+  const location = useLocation()
+  const justCreated = (location.state as { created?: boolean } | null)?.created === true
   const { profile, strings } = useCompany()
   const { company, customers, documents, payments, assets, loading, actions } = useAppData()
   const navigate = useNavigate()
@@ -375,7 +382,10 @@ export function BuilderScreen({ now = () => new Date().toISOString() }: { now?: 
       status: record?.status ?? 'draft',
       currency: draft.currency,
       reference: record?.issuedReference ?? provisional(draft.type),
-      issueDate: draft.issueDate ?? now().slice(0, 10),
+      // `now()` is an INSTANT; an issue date is a DAY. Slicing the instant
+      // dated a document in UTC, which west of Greenwich is tomorrow for the
+      // last hours of every evening.
+      issueDate: draft.issueDate ?? localDay(now()),
       ...(draft.dueDate === undefined ? {} : { dueDate: draft.dueDate }),
       lineItems: draft.lineItems,
       party: {
@@ -512,6 +522,9 @@ export function BuilderScreen({ now = () => new Date().toISOString() }: { now?: 
   return (
     <BuilderShell
       type={state.draft.type}
+      // Absent while creating, so the header reads "New invoice"; otherwise
+      // the issued reference, falling back to the plain type name.
+      {...(justCreated ? {} : { reference: record?.issuedReference ?? '' })}
       step={state.step}
       dirty={state.dirty}
       lastSavedAt={state.lastSavedAt}
@@ -562,6 +575,7 @@ export function BuilderScreen({ now = () => new Date().toISOString() }: { now?: 
           setSigning(true)
         }}
         {...(signatureUrl === undefined ? {} : { signatureUrl })}
+        onOpenCatalogue={() => navigate(settingsPath('items'))}
         onRememberItem={(item) => {
           void actions.rememberItem({
             name: item.name,
