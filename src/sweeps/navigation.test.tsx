@@ -1,21 +1,20 @@
 /**
  * The navigation sweep (§Q Phase 7: "command palette/sidebar").
  *
- * **There is no command palette and no sidebar, and this sweep does not build
- * one.** §Q names them in a list of Phase 7 sweeps and no section of v6
- * specifies either: not what they contain, not how they open, not what a
- * sidebar would mean on a phone-first product whose navigation §G defines as
- * four tabs. Designing both from that one phrase would be inventing product,
- * which is a different job from sweeping.
+ * §Q names both in its list of Phase-7 sweeps and no section of v6 says what
+ * either contains, so what they ARE is written down in PLAN.md as a
+ * deviation. What they are FOR is not in doubt: §V's "**keyboard navigation**
+ * … without clipped actions".
  *
- * What a sweep CAN do is check the requirement those two features exist to
- * serve, which §V does state: "**keyboard navigation** … without clipped
- * actions". So this asserts that every destination is reachable and operable
- * from a keyboard today, and records the two features as unbuilt and
- * unspecified rather than quietly ticking them off.
+ * So this sweep checks the property both features exist to serve — every
+ * destination reachable and operable from a keyboard — and the property the
+ * sidebar must not break: that there is exactly ONE navigation on the page,
+ * whichever width it is rendered at. Two navigations with the same four
+ * links is a duplicate landmark, and the first version of the sidebar had
+ * exactly that, hidden from view by a stylesheet and from nobody else.
  */
 
-import { describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import { render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter } from 'react-router-dom'
@@ -89,5 +88,72 @@ describe('What is NOT built, recorded rather than ticked off', () => {
     // all routed, which is what makes the palette an improvement rather than
     // a missing capability.
     expect(SETTINGS_PANELS.length).toBe(8)
+  })
+})
+
+/**
+ * There is no layout in jsdom, so the rail is chosen by `matchMedia` — which
+ * jsdom does not implement either. Stubbing it is the only way to render the
+ * wide layout at all, and stubbing it is honest: the real decision is one
+ * media query, and this is that query answering yes.
+ */
+function widen(wide: boolean) {
+  Object.defineProperty(globalThis, 'matchMedia', {
+    configurable: true,
+    writable: true,
+    value: (query: string) => ({
+      matches: wide,
+      media: query,
+      addEventListener: () => undefined,
+      removeEventListener: () => undefined,
+    }),
+  })
+}
+
+afterEach(() => {
+  Reflect.deleteProperty(globalThis as object, 'matchMedia')
+  vi.restoreAllMocks()
+})
+
+describe('The sidebar is the same navigation, moved (§Q Phase 7)', () => {
+  it('shows one navigation on a phone, and one on a wide screen — never two', () => {
+    widen(false)
+    const narrow = renderShell()
+    expect(screen.getAllByRole('navigation')).toHaveLength(1)
+    narrow.unmount()
+
+    widen(true)
+    renderShell()
+    expect(screen.getAllByRole('navigation')).toHaveLength(1)
+  })
+
+  it('offers exactly the destinations the tab bar offers, and no others', () => {
+    const strings = stringsFor('en')
+    widen(false)
+    const narrow = renderShell()
+    const onPhone = within(screen.getByRole('navigation', { name: strings.nav.sections }))
+      .getAllByRole('link')
+      .map((link) => link.getAttribute('href'))
+    narrow.unmount()
+
+    widen(true)
+    renderShell()
+    const onDesktop = within(screen.getByRole('navigation', { name: strings.nav.sections }))
+      .getAllByRole('link')
+      .map((link) => link.getAttribute('href'))
+
+    // A sidebar with destinations the phone does not have is a second
+    // navigation to keep in step, and the phone is the product (Rule #1).
+    expect(onDesktop).toEqual(onPhone)
+  })
+
+  it('puts the palette within reach of a mouse, not only a shortcut', () => {
+    const strings = stringsFor('en')
+    widen(true)
+    renderShell()
+    const nav = screen.getByRole('navigation', { name: strings.nav.sections })
+    expect(within(nav).getByRole('button')).toBeInTheDocument()
+    // The ⌘K badge is decoration beside a control that already has a name.
+    expect(within(nav).getByRole('button').textContent).toContain(strings.palette.placeholder)
   })
 })

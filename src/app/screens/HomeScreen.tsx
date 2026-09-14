@@ -21,10 +21,10 @@ import { customerPath, documentPath, listPath, settingsPath } from '../paths'
 import { Home } from '../../features/home/Home'
 import { needsAttention, outstandingByCurrency, receivedThisMonth } from '../../features/home/stats'
 import { SearchResults } from '../../features/search/SearchResults'
-import { buildIndex, search, type IndexEntry } from '../../features/search'
+import { search, type IndexEntry } from '../../features/search'
+import { useSearchIndex } from '../useSearchIndex'
 import { formatMoney } from '../../features/customers/formatMoney'
 import { SkeletonList } from '../../ui'
-import { numberingPrefix } from '../../domain/locale/profile'
 import type { DocumentType } from '../../domain/documents/types'
 import {
   customerNames,
@@ -34,23 +34,9 @@ import {
   totalOf,
 } from '../derive'
 
-/**
- * `customerName` is optional on the index entry and `exactOptionalPropertyTypes`
- * means absent and undefined are different things — so the key is spread in
- * only when there is a name.
- */
-function customerNameOf(
-  names: ReadonlyMap<string, string>,
-  customerId: string | undefined,
-): { customerName?: string } {
-  if (customerId === undefined) return {}
-  const name = names.get(customerId)
-  return name === undefined ? {} : { customerName: name }
-}
-
 export function HomeScreen({ now = new Date() }: { now?: Date }) {
-  const { profile, strings } = useCompany()
-  const { company, customers, documents, payments, items, creditNotes, loading } = useAppData()
+  const { strings } = useCompany()
+  const { company, customers, documents, payments, creditNotes, loading } = useAppData()
   const navigate = useNavigate()
 
   const [query, setQuery] = useState('')
@@ -71,33 +57,7 @@ export function HomeScreen({ now = new Date() }: { now?: Date }) {
 
   const names = useMemo(() => customerNames(customers), [customers])
 
-  const index = useMemo(
-    () =>
-      buildIndex(profile, {
-        documents: documents.map((document) => ({
-          id: document.id,
-          type: document.type,
-          // A draft is findable by its provisional number, which is what the
-          // owner sees on the list page (§M).
-          reference:
-            document.issuedReference ??
-            `${company?.numberingPrefixes?.[document.type] ?? numberingPrefix(profile, document.type)}-…`,
-          frozenLabels: document.frozenLabels,
-          ...customerNameOf(names, document.customerId),
-          // A delivery document carries no money, so it is not findable by one.
-          ...(document.type === 'waybill' ? {} : { total: totalOf(document) }),
-          lineDescriptions: document.lineItems.map((line) => line.description),
-        })),
-        customers: customers.map((customer) => ({
-          id: customer.id,
-          name: customer.name,
-          ...(customer.phone === undefined ? {} : { phone: customer.phone }),
-          ...(customer.address === undefined ? {} : { address: customer.address }),
-        })),
-        items: items.map((item) => ({ id: item.id, name: item.name })),
-      }),
-    [profile, documents, customers, items, company, names],
-  )
+  const index = useSearchIndex(names)
 
   const results = useMemo(() => search(index, deferredQuery), [index, deferredQuery])
 
