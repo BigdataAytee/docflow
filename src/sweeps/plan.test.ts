@@ -37,6 +37,9 @@ const WORDS: Record<string, number> = {
   'twenty-four': 24, 'twenty-five': 25,
 }
 
+/** The board capitalises a word that opens a sentence; the table does not. */
+const asNumber = (word: string): number | undefined => WORDS[word.toLowerCase()]
+
 const claimed = (pattern: RegExp): string => {
   const found = PLAN.match(pattern)
   // A missing claim is a failure too: the sentence this test guards was
@@ -72,7 +75,7 @@ describe('The status board counts what is actually here (§X)', () => {
   it('knows how many migrations are written and unrun', () => {
     const word = claimed(/All ([a-z-]+) migrations and all [a-z-]+ edge functions are written and unrun/)
     const actual = readdirSync(root('supabase/migrations')).filter((f) => f.endsWith('.sql')).length
-    expect(WORDS[word], `"${word}" is not a number this test knows`).toBe(actual)
+    expect(asNumber(word), `"${word}" is not a number this test knows`).toBe(actual)
   })
 
   it('knows how many edge functions there are', () => {
@@ -81,7 +84,31 @@ describe('The status board counts what is actually here (§X)', () => {
     const actual = readdirSync(root('supabase/functions'), { withFileTypes: true }).filter(
       (entry) => entry.isDirectory() && !entry.name.startsWith('_'),
     ).length
-    expect(WORDS[word]).toBe(actual)
+    expect(asNumber(word)).toBe(actual)
+  })
+})
+
+describe('The two remainder lists are counted, not estimated (§X)', () => {
+  /** The `| D3 |` / `| S3 |` cells that open a row in each table. */
+  const idsIn = (prefix: string): number[] =>
+    [...PLAN.matchAll(new RegExp(`^\\| ${prefix}(\\d+) \\|`, 'gm'))].map((m) => Number(m[1]))
+
+  it('says how many things are waiting on the deploy, and means it', () => {
+    // The sentence this checks replaced a prose list that had been patched
+    // from "two" to "a third now joins them" and was silently at ten.
+    const word = claimed(/\*\*([A-Za-z-]+) separate items now queue behind that one act\*\*/)
+    expect(asNumber(word), `"${word}" is not a number this test knows`).toBe(idsIn('S').length)
+  })
+
+  it('numbers both lists from 1 with no gaps and no repeats', () => {
+    for (const prefix of ['D', 'S']) {
+      const ids = idsIn(prefix)
+      expect(ids.length, `${prefix} list is empty`).toBeGreaterThan(0)
+      expect(ids).toEqual([...ids].sort((a, b) => a - b))
+      expect(new Set(ids).size, `${prefix} ids repeat`).toBe(ids.length)
+      expect(ids[0]).toBe(1)
+      expect(ids[ids.length - 1]).toBe(ids.length)
+    }
   })
 })
 
