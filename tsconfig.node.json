@@ -48,6 +48,8 @@
     "src/sync/operations.ts",
     // The screenshot PLAN — not its entry point, which is a .tsx needing the
     // DOM lib this project does not have and belongs to the app project.
+    // The containment check both file-writing generators share.
+    "src/marketing/outputPath.ts",
     "src/marketing/shots/spec.ts",
     "src/marketing/shots/plan.ts",
     "src/marketing/shots/fixtures.ts",

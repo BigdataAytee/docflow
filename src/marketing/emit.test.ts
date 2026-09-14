@@ -12,6 +12,7 @@ import { dirname, join, resolve } from 'node:path'
 import { describe, expect, it } from 'vitest'
 
 import { buildSite, reportOf } from './site'
+import { isInside } from './outputPath'
 
 const OUT = join(process.cwd(), 'dist-site')
 
@@ -20,10 +21,13 @@ describe('Emitting the site', () => {
     const site = buildSite()
 
     for (const file of site.files) {
-      const target = resolve(OUT, file.file)
       // The one thing a file-writing generator must never do: escape its own
       // output directory because a path came from data.
-      expect(target.startsWith(`${OUT}/`), `${file.file} escapes the output root`).toBe(true)
+      //
+      // Asked through `relative()` rather than a string prefix: `resolve()`
+      // returns the platform's separator, so comparing against a hard-coded
+      // `/` refused every legitimate path on Windows.
+      expect(isInside(OUT, file.file), `${file.file} escapes the output root`).toBe(true)
     }
 
     if (process.env.EMIT_SITE !== '1') return

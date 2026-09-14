@@ -24,7 +24,9 @@
 
 import { createServer } from 'node:http'
 import { createReadStream, existsSync, mkdirSync, statSync, writeFileSync } from 'node:fs'
-import { dirname, extname, join, resolve } from 'node:path'
+import { dirname, extname, join } from 'node:path'
+
+import { resolveInside } from '../../src/marketing/outputPath'
 
 import { chromium, type Browser, type Page } from 'playwright'
 
@@ -105,8 +107,12 @@ export async function capture(
     }
   }
 
-  const target = resolve(outRoot, plan.file)
-  if (!target.startsWith(`${outRoot}/`)) {
+  // A frame's filename comes from the shot plan, which is data — so it is
+  // checked before anything is written. Through `relative()`, not a string
+  // prefix: `resolve()` speaks the platform's separator, and on Windows the
+  // old prefix test refused every frame and shot nothing.
+  const target = resolveInside(outRoot, plan.file)
+  if (target === null) {
     return { file: plan.file, saved: false, reason: 'the path escapes the output directory' }
   }
   mkdirSync(dirname(target), { recursive: true })

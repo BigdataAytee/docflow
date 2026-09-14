@@ -65,6 +65,17 @@ function resolveLocal(from: string, specifier: string): string | null {
   return null
 }
 
+/**
+ * One separator, whatever the platform.
+ *
+ * `resolve()` and `join()` hand back backslashes on Windows, and the
+ * assertions below ask about paths with `/` in them — so every one of them
+ * silently matched nothing there, and a Supabase import would have sailed
+ * through the check that exists to stop it. Normalising at the point files
+ * enter the set means the set has one shape and the assertions can be read.
+ */
+const posix = (file: string) => file.split('\\').join('/')
+
 function reachable(entry: string): { files: Set<string>; packages: Set<string> } {
   const files = new Set<string>()
   const packages = new Set<string>()
@@ -72,13 +83,13 @@ function reachable(entry: string): { files: Set<string>; packages: Set<string> }
 
   while (queue.length > 0) {
     const file = queue.pop()
-    if (file === undefined || files.has(file)) continue
-    files.add(file)
+    if (file === undefined || files.has(posix(file))) continue
+    files.add(posix(file))
 
     for (const specifier of staticImportsOf(file)) {
       if (specifier.startsWith('.')) {
         const target = resolveLocal(file, specifier)
-        if (target !== null && !files.has(target)) queue.push(target)
+        if (target !== null && !files.has(posix(target))) queue.push(target)
       } else if (!specifier.endsWith('.css')) {
         packages.add(specifier)
       }
@@ -87,7 +98,7 @@ function reachable(entry: string): { files: Set<string>; packages: Set<string> }
   return { files, packages }
 }
 
-const short = (file: string) => file.replace(SRC, 'src')
+const short = (file: string) => file.replace(posix(SRC), 'src')
 
 describe('The first chunk carries only what everyone needs (Rule #1)', () => {
   const graph = reachable(join(SRC, 'main.tsx'))

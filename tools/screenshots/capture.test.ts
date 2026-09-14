@@ -11,7 +11,7 @@
  */
 
 import { existsSync } from 'node:fs'
-import { join } from 'node:path'
+import { join, resolve } from 'node:path'
 
 import { describe, expect, it } from 'vitest'
 
@@ -75,7 +75,10 @@ describe('A frame that did not render the locale is not saved (§T)', () => {
 
     expect(frame.saved).toBe(true)
     expect(shots).toHaveLength(1)
-    expect(shots[0]).toBe(`/tmp/out/${plan.file}`)
+    // Built with `resolve`, like the code under test. A hard-coded
+    // `/tmp/out/...` asserts the platform's separator as well as the path,
+    // and on Windows that is the only half that fails.
+    expect(shots[0]).toBe(resolve('/tmp/out', plan.file))
   })
 
   it('requires words that came from the terminology table, not from here', async () => {

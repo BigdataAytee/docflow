@@ -18,5 +18,22 @@ export default defineConfig({
     // somebody's money and its rehearsal has to block a release exactly as the
     // money tests do (§Q Phase 7).
     include: ['src/**/*.test.ts', 'src/**/*.test.tsx', 'tools/**/*.test.ts'],
+    // Vitest's default is 5s per test, which is a statement about the machine
+    // rather than about the code. On a slow laptop — or a CI box running the
+    // suite beside a build — standing up jsdom for 148 files eats most of
+    // that budget before a test body starts, and the suite reported 57
+    // failures where the clean run has 4.
+    //
+    // A timeout cascade is worse than slow: a test that times out leaves its
+    // component mounted and its half-finished interaction in flight, so the
+    // stray click lands on the NEXT test's render and fails it too, with an
+    // assertion error that looks nothing like a timeout. One machine hiccup
+    // becomes a page of unrelated red, and the real failures hide in it.
+    //
+    // 30s is not a licence for slow tests. Nothing here takes more than a
+    // second on a warm machine; the headroom exists so that a genuine
+    // failure is the only thing that ever goes red.
+    testTimeout: 30_000,
+    hookTimeout: 30_000,
   },
 })

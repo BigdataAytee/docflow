@@ -27,10 +27,19 @@ describe('The generated sheet is in the repo and current (§T)', () => {
     }
 
     expect(existsSync(SHEET), `${SHEET} is missing — run: npm run discoverability`).toBe(true)
+
+    // Line endings normalised on both sides. The question this asks is
+    // whether the committed sheet still says what the terminology tables
+    // say — not which newline the checkout happened to use. Git's
+    // `core.autocrlf` rewrites the working copy to CRLF on Windows, so
+    // without this the test fails on every line of an identical file and
+    // tells the reader to regenerate a sheet that is already current.
+    const lf = (text: string) => text.split('\r\n').join('\n')
+
     expect(
-      readFileSync(SHEET, 'utf8'),
+      lf(readFileSync(SHEET, 'utf8')),
       'the committed sheet is stale — run: npm run discoverability',
-    ).toBe(rendered)
+    ).toBe(lf(rendered))
   })
 
   it('says BLOCKED rather than presenting a listing as ready', () => {
