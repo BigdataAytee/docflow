@@ -1861,7 +1861,97 @@ gate itself is deferred with everything else that needs a phone.
       auth.users` left the words in the file and passed a grep, so SQL
       comments are stripped before anything is matched now.
 
-### The physical-device remainder — one consolidated list### The physical-device remainder — one consolidated list
+- [x] **The ratings prompt — built, and it shows nothing yet** (`src/domain/ratings/`,
+      `src/features/ratings/`). §T: "ratings prompts appear only at happy
+      moments." The store-policy pass found the questionnaire describing this
+      as though it shipped; it had never been written.
+
+      **The whole design is the word ONLY.** Every store's review API already
+      rate-limits the prompt itself — the system decides whether anything
+      appears, and an app that asks too often burns its allowance in silence.
+      So nothing here counts prompts to obey a store. It counts them because a
+      request the system swallows is a request wasted, and because the MOMENT
+      is ours to choose even when the showing is not.
+
+      The moment §T names is a share that worked: the one point in this app
+      where somebody has just finished the thing they came to do. Everything
+      else is a reason not to ask, and the reasons are the substance — never
+      after an error, a void, a credit note or a deletion; never before three
+      successful shares, because §R's sample is not an achievement; never
+      while the account is scheduled for deletion, which would be asking
+      somebody on their way out what they think of the place; never in a demo;
+      at most three times ever, four months apart; and nothing anywhere is
+      gated behind it (Apple 3.2.2(x)). The refusals are ORDERED so the
+      insulting ones come first: a device that is both leaving and short of
+      shares is refused for leaving.
+
+      **Nothing can show it, and that is stated rather than hidden.** There is
+      no web review API — and an App Store page for an app that is not
+      installed is an advertisement in the middle of somebody's invoice, not a
+      rating prompt. So the port reports `unavailable`, the decision refuses
+      before anything is attempted, and `npm run policy` declares both halves
+      separately: wired to a happy moment, and shown to nobody. Phase 4 swaps
+      in StoreKit and Play; no screen changes.
+
+      **There is deliberately no outcome and no pre-prompt.** Both platforms
+      report nothing about what the person did — by design, so an app cannot
+      treat rating as a transaction — so `request()` returns whether the ASK
+      was made and nothing else. And the "show our own dialog first" pattern,
+      which filters unhappy people out of the listing, is a thing to do to a
+      rating rather than for a person.
+
+      Eleven mutations, eleven caught. The last one found a gap in the POLICY
+      suite rather than this one: `checkRatingsPrompt` was reading prose, and
+      would have counted the comment "Phase 4 calls `requestReview` here" as
+      an implementation — the same fault as `checkAccountDeletion` finding
+      `deleteAccount` in its own regex, and the same fix, now pinned by a test.
+
+### The physical-device remainder — one consolidated list- [x] **The ratings prompt — built, and it shows nothing yet** (`src/domain/ratings/`,
+      `src/features/ratings/`). §T: "ratings prompts appear only at happy
+      moments." The store-policy pass found the questionnaire describing this
+      as though it shipped; it had never been written.
+
+      **The whole design is the word ONLY.** Every store's review API already
+      rate-limits the prompt itself — the system decides whether anything
+      appears, and an app that asks too often burns its allowance in silence.
+      So nothing here counts prompts to obey a store. It counts them because a
+      request the system swallows is a request wasted, and because the MOMENT
+      is ours to choose even when the showing is not.
+
+      The moment §T names is a share that worked: the one point in this app
+      where somebody has just finished the thing they came to do. Everything
+      else is a reason not to ask, and the reasons are the substance — never
+      after an error, a void, a credit note or a deletion; never before three
+      successful shares, because §R's sample is not an achievement; never
+      while the account is scheduled for deletion, which would be asking
+      somebody on their way out what they think of the place; never in a demo;
+      at most three times ever, four months apart; and nothing anywhere is
+      gated behind it (Apple 3.2.2(x)). The refusals are ORDERED so the
+      insulting ones come first: a device that is both leaving and short of
+      shares is refused for leaving.
+
+      **Nothing can show it, and that is stated rather than hidden.** There is
+      no web review API — and an App Store page for an app that is not
+      installed is an advertisement in the middle of somebody's invoice, not a
+      rating prompt. So the port reports `unavailable`, the decision refuses
+      before anything is attempted, and `npm run policy` declares both halves
+      separately: wired to a happy moment, and shown to nobody. Phase 4 swaps
+      in StoreKit and Play; no screen changes.
+
+      **There is deliberately no outcome and no pre-prompt.** Both platforms
+      report nothing about what the person did — by design, so an app cannot
+      treat rating as a transaction — so `request()` returns whether the ASK
+      was made and nothing else. And the "show our own dialog first" pattern,
+      which filters unhappy people out of the listing, is a thing to do to a
+      rating rather than for a person.
+
+      Eleven mutations, eleven caught. The last one found a gap in the POLICY
+      suite rather than this one: `checkRatingsPrompt` was reading prose, and
+      would have counted the comment "Phase 4 calls `requestReview` here" as
+      an implementation — the same fault as `checkAccountDeletion` finding
+      `deleteAccount` in its own regex, and the same fix, now pinned by a test.
+
+### The physical-device remainder — one consolidated list
 
 Everything below needs a phone in a hand. It is gathered here rather than
 scattered through the phase sections so the honest total is visible in one
@@ -2903,6 +2993,11 @@ vectors of a few hundred bytes.
 | 228 | Two links may share a name if they share a destination | WCAG fails identical names going to DIFFERENT places. The list page's header button and its FAB are the same action and are not a defect, and a rule that flagged them would have been argued with until it was deleted. | `tools/sweeps/screenreader.ts` |
 | 229 | A navigation moves focus to `main` — except on a cold load | It is the one thing that announces an SPA route change. On first paint the reader is already reading from the top, and interrupting to say "main" would cut off the page title. | `src/app/focus.ts` |
 | 230 | An opened panel takes focus; the hand-back is best effort | Six panels replace their own trigger, so there is nothing to hand focus back TO. Doing the right thing where it is possible beats doing nothing everywhere — and the first version of the test could not tell the difference, because it closed the panel from the opener. | `src/ui/focus.ts` |
+| 250 | The ratings prompt counts its own asks, though no store requires it to | The platform already rate-limits the prompt; an app that asks too often burns its allowance in silence. The count exists because a swallowed request is a wasted one, and because the moment is ours to choose even when the showing is not. | `src/domain/ratings/prompt.ts` |
+| 251 | The refusals are ordered, insulting ones first | A device both leaving and short of shares is refused for LEAVING. A log that says "the counter was low" about somebody who is deleting their account is a log that hides the thing worth knowing. | `src/domain/ratings/prompt.ts` |
+| 252 | The port reports no outcome, and there is no pre-prompt | Both platforms report nothing about what the person did, by design, so an app cannot treat rating as a transaction — a field for it could only hold a guess. The "our own dialog first" pattern filters unhappy people out of the listing, which is a thing to do to a rating rather than for a person. | `src/features/ratings/port.ts` |
+| 253 | A share is counted even when the answer is "do not ask" | A counter that only moved when the app asked would never reach the threshold that lets it ask. | `src/features/ratings/ask.ts` |
+| 254 | A failed request never burns the cooldown | It was not an ask. Recording it would cost a real one, months later, for nothing. | `src/features/ratings/ask.ts` |
 | 244 | Deletion is scheduled thirty days out, not instant, and not a six-month admin copy | The rule that requires deletion calls deactivation insufficient, two launch markets are in the EU, and Rule #6 says documents are never hostage — including from the person leaving. The window recovers a mistake; the export means they keep everything; the tombstone answers "was this deleted". | `src/domain/account/deletion.ts` |
 | 245 | Owner only, enforced in an RPC rather than a policy | A policy sees rows; this rule is about who is calling. `account_deletions` has no insert, update or delete policy at all — both directions go through SECURITY DEFINER functions that read the caller's role. | `supabase/migrations/0017_account_deletion.sql` |
 | 246 | A banner, never a lock, during the window | The records are not deleted yet and are still the owner's. Locking would make the window a punishment and hold the data hostage from the one person entitled to it. | `src/app/AccountNotice.tsx` |

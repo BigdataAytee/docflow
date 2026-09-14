@@ -354,34 +354,76 @@ export function checkAccountDeletion(
   }
 }
 
+/**
+ * Source with its comments removed.
+ *
+ * Learned twice now. A scan that reads prose finds the word it is looking for
+ * in the sentence explaining why the word is not there: this file's own
+ * `deleteAccount` regex, and — the moment the review port was written —
+ * "StoreKit's `requestReview`" in a comment describing what Phase 4 will
+ * call. A check a comment can satisfy is not a check.
+ */
+export function codeOnly(source: string): string {
+  return source
+    .split('\n')
+    .filter((line) => {
+      const trimmed = line.trimStart()
+      return !trimmed.startsWith('//') && !trimmed.startsWith('*') && !trimmed.startsWith('/*')
+    })
+    .join('\n')
+}
+
+/**
+ * Is there a ratings prompt, and can anything show it?
+ *
+ * Two different questions, and conflating them is how "we have a prompt"
+ * comes to mean "a prompt appears". §T asks for a prompt at a happy moment;
+ * §N asks that an unavailable capability be stated plainly. Both are answered
+ * separately here, and the declaration says both out loud.
+ *
+ * Not a blocker either way: no store requires an app to ask for ratings, and
+ * an app with no platform to ask through cannot ask at the wrong moment.
+ */
 export function checkRatingsPrompt(files = trackedFiles(/^src\/.*\.tsx?$/)): CheckResult {
-  const found = files
+  const source = files
     .filter((file) => !isTest(file) && !isAboutTheApp(file))
-    .filter((file) => /requestReview|SKStoreReview|AppStore\.requestReview/.test(read(file)))
+    .map((file) => ({ file, code: codeOnly(read(file)) }))
+
+  // Wired: a screen reports a moment, and the decision runs.
+  const wired = source
+    .filter(({ file }) => !file.startsWith('src/features/ratings/'))
+    .filter(({ code }) => /\bmaybeAskForReview\b|\buseReview\b/.test(code))
+    .map(({ file }) => file)
+
+  // Showable: some port can actually reach a platform review API.
+  const platform = source
+    .filter(({ code }) => /\brequestReview\b|\bSKStoreReview\b|\bInAppReview\b/.test(code))
+    .map(({ file }) => file)
+
+  const findings: Finding[] =
+    wired.length > 0
+      ? []
+      : [
+          {
+            check: 'ratings-prompt',
+            severity: 'note' as const,
+            detail:
+              'no ratings prompt is wired to any moment. §T asks for one at a happy moment; ' +
+              'there is nothing to time, and nothing that could breach a rule about timing',
+          },
+        ]
 
   return {
     check: 'ratings-prompt',
     passed: true,
-    findings:
-      found.length > 0
-        ? []
-        : [
-            {
-              check: 'ratings-prompt',
-              severity: 'note' as const,
-              detail:
-                'no ratings prompt in src/. §T wants one at a happy moment; there is nothing ' +
-                'to time, and nothing that could breach a store rule about timing either',
-            },
-          ],
-    // Not a blocker: no store requires an app to ASK for ratings. It passes
-    // because an app with no prompt cannot prompt at the wrong moment — but
-    // the declaration says so plainly rather than letting silence imply one
-    // exists.
+    findings,
     declares:
-      found.length > 0
-        ? `A ratings prompt exists (${found.join(', ')}) and its timing needs checking.`
-        : 'There is no ratings prompt. §T asks for one; nothing is shipped, so nothing is timed wrongly.',
+      wired.length === 0
+        ? 'There is no ratings prompt. §T asks for one; nothing is shipped, so nothing is timed wrongly.'
+        : `A ratings prompt is wired to a happy moment (${wired.join(', ')}). ` +
+          (platform.length > 0
+            ? `A platform can show it (${platform.join(', ')}), so its timing and frequency need checking against the current rules.`
+            : 'NO platform can show it yet — the web has no review API and Phase 4 has not shipped — so nothing is shown to anybody today.'),
   }
 }
 

@@ -117,16 +117,24 @@ export const QUESTIONS: readonly PolicyQuestion[] = [
     id: 'apple-ratings-prompt',
     store: 'apple',
     whatWeDo:
-      '**Nothing.** §T wants a prompt at a happy moment — after a successful share, never ' +
-      'after an error, never gated behind anything — and none is built. This entry described ' +
-      'the intended behaviour as though it shipped.',
+      'The prompt is wired to ONE moment: a share the OS accepted, which is the only point ' +
+      'in the app where somebody has just finished what they came to do. Never after an ' +
+      'error, a void, a credit note or a deletion; never before three successful shares; ' +
+      'never in a demo (§R); never while the account is scheduled for deletion; at most ' +
+      'three times ever, months apart; and nothing anywhere is gated behind it. **No ' +
+      'platform can show it yet** — the web has no review API and Phase 4 has not shipped — ' +
+      'so today the decision runs and always answers "unavailable" (§N).',
     question: 'Is that timing and frequency within the current rules for the review API?',
     lookIn:
       'App Review Guidelines 3.2.2(x) covers the coercion half and is readable. The frequency ' +
       'limit of the review API is in the StoreKit documentation, which renders through ' +
       'JavaScript and could not be read from a fetch — open it in a browser.',
     perMarket: false,
-    blockedBy: 'a ratings prompt, which is not built. There is no timing to judge.',
+    blockedBy:
+      'Phase 4\'s native review port. The prompt and its timing exist and are tested; what ' +
+      'cannot be judged yet is behaviour against a REAL review API, and the frequency limit ' +
+      'itself is in StoreKit documentation that renders through JavaScript and returned no ' +
+      'text to a fetch — open it in a browser.',
   },
   {
     id: 'play-billing',
@@ -356,10 +364,12 @@ export const ANSWERS: readonly Answer[] = [
     answer:
       'The coercion half, read: 3.2.2(x) — "Apps must not force users to rate the app, review ' +
       'the app, download other apps, or other store-related actions in order to access ' +
-      'functionality, content, or use of the app." DocFlow has no prompt at all, so it cannot ' +
-      'breach that. The review API’s own frequency limit is in Apple’s StoreKit ' +
-      'documentation, which renders through JavaScript and returned no text to a fetch, so it ' +
-      'has NOT been read.',
+      'functionality, content, or use of the app." Nothing in DocFlow is behind the prompt: ' +
+      'it fires after a share that has already succeeded, and declining it withholds ' +
+      'nothing. The review API\u2019s own frequency limit is in Apple\u2019s StoreKit ' +
+      'documentation, which renders through JavaScript and returned no text to a fetch, so ' +
+      'it has NOT been read — which is why the app keeps a cooldown of its own rather than ' +
+      'assuming the platform\u2019s.',
     source: `${APPLE_GUIDELINES} (3.2.2(x))`,
     readAt: READ_AT,
     readBy: READ_BY,

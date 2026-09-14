@@ -76,6 +76,7 @@ import { displayLabels } from '../../domain/locale/profile'
 import { formatMoney } from '../../features/customers/formatMoney'
 import { format } from '../../domain/locale/data/strings'
 import { ShareSheet } from '../../share/ShareSheet'
+import { useReview } from '../ReviewHost'
 import { createWebSharePort } from '../../share/web'
 import { lastShared, shareCount, shareEventFor } from '../../share/events'
 // `shareFileName` is deliberately not imported: there is no rendered file to
@@ -87,6 +88,7 @@ import { displayStatus, totalOf } from '../derive'
 export function DocumentScreen({ today = new Date().toISOString().slice(0, 10) }: { today?: string }) {
   const { id } = useParams<{ id: string }>()
   const { profile, strings } = useCompany()
+  const review = useReview()
   const { company, customers, documents, payments, shares, creditNotes, assets, loading, actions } =
     useAppData()
   const navigate = useNavigate()
@@ -925,6 +927,15 @@ export function DocumentScreen({ today = new Date().toISOString().slice(0, 10) }
                 result,
                 deviceId: deviceId(),
               })
+              // §T's happy moment, and the only one in the app: an invoice
+              // made, signed and out. The MOMENT is reported; whether to ask
+              // is decided by the host, which knows the three things this
+              // screen does not — demo, leaving, and whether the platform has
+              // a review API at all.
+              review.report(
+                result.outcome === 'handed_off' ? 'share_handed_off' : 'share_failed',
+              )
+
               // `unavailable` produces no event: nothing was attempted, so
               // there is nothing that happened to record (§M).
               if (event !== null) {

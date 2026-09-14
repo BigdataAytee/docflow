@@ -26,6 +26,7 @@ import { CompanyProvider, useCompany } from './context'
 import { AppDataProvider, useAppData } from './store'
 import { PaletteProvider } from './PaletteHost'
 import { AccountNotice } from './AccountNotice'
+import { ReviewProvider } from './ReviewHost'
 import { Shell } from './Shell'
 import { HOME, SETTINGS_PANELS } from './paths'
 import { DEV_COMPANY_ID } from './seed'
@@ -94,7 +95,7 @@ function mounted(backend: Backend) {
   return (
     <>
       <DemoBanner />
-      <ProfileGate companyId={backend.companyId} repositories={backend.repositories}>
+      <ProfileGate companyId={backend.companyId} repositories={backend.repositories} isDemo>
         <AppRoutes />
       </ProfileGate>
     </>
@@ -170,16 +171,23 @@ function AppTree({
 function ProfileGate({
   companyId,
   repositories,
+  isDemo = false,
   children,
 }: {
   companyId: string
   repositories: Repositories
+  isDemo?: boolean
   children: ReactNode
 }) {
   return (
-    <CompanyProvider companyId={companyId} repositories={repositories} profile={{ locale: 'EN-NG' }}>
+    <CompanyProvider
+      companyId={companyId}
+      repositories={repositories}
+      profile={{ locale: 'EN-NG' }}
+      isDemo={isDemo}
+    >
       <AppDataProvider>
-        <LocaleFromCompany companyId={companyId} repositories={repositories}>
+        <LocaleFromCompany companyId={companyId} repositories={repositories} isDemo={isDemo}>
           {children}
         </LocaleFromCompany>
       </AppDataProvider>
@@ -190,10 +198,12 @@ function ProfileGate({
 function LocaleFromCompany({
   companyId,
   repositories,
+  isDemo = false,
   children,
 }: {
   companyId: string
   repositories: Repositories
+  isDemo?: boolean
   children: ReactNode
 }) {
   const { company, loading, error } = useAppData()
@@ -227,11 +237,14 @@ function LocaleFromCompany({
       repositories={repositories}
       profile={profile}
       language={language}
+      isDemo={isDemo}
     >
       {error === null ? (
         <PaletteProvider>
-          <AccountNotice />
-          {children}
+          <ReviewProvider>
+            <AccountNotice />
+            {children}
+          </ReviewProvider>
         </PaletteProvider>
       ) : (
         <LoadError message={error} />
