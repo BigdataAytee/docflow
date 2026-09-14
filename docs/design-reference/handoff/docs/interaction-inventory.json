@@ -1,0 +1,1213 @@
+{
+  "staticScreens": [
+    "vHome",
+    "vList",
+    "vBuild",
+    "vDoc",
+    "vCust",
+    "vOne",
+    "vAna",
+    "vSet",
+    "vCo",
+    "vLogo",
+    "vPay",
+    "vCat",
+    "vTax",
+    "vAcc",
+    "vLang",
+    "vData",
+    "vAdm",
+    "vHelp"
+  ],
+  "dynamicScreens": [
+    "vOnboarding",
+    "vSignedOut"
+  ],
+  "navigationTargets": [
+    "vAcc",
+    "vAdm",
+    "vAna",
+    "vBuild",
+    "vCat",
+    "vCo",
+    "vCust",
+    "vData",
+    "vDoc",
+    "vHelp",
+    "vHome",
+    "vLang",
+    "vList",
+    "vLogo",
+    "vOnboarding",
+    "vOne",
+    "vPay",
+    "vSet",
+    "vSignedOut",
+    "vTax"
+  ],
+  "inlineControls": [
+    {
+      "line": 155,
+      "tag": "button",
+      "id": "logoSlot",
+      "label": "Your logo",
+      "handlers": {
+        "onclick": "go('vCo')"
+      }
+    },
+    {
+      "line": 157,
+      "tag": "button",
+      "id": "",
+      "label": "",
+      "handlers": {
+        "onclick": "net()"
+      }
+    },
+    {
+      "line": 158,
+      "tag": "button",
+      "id": "",
+      "label": "Log out",
+      "handlers": {
+        "onclick": "tos('A confirmation sheet asks first.')"
+      }
+    },
+    {
+      "line": 168,
+      "tag": "input",
+      "id": "sq",
+      "label": "Search by customer, number, amount, item\u2026",
+      "handlers": {
+        "oninput": "doSearch()"
+      }
+    },
+    {
+      "line": 172,
+      "tag": "button",
+      "id": "",
+      "label": "Voice",
+      "handlers": {
+        "onclick": "ai('voice')"
+      }
+    },
+    {
+      "line": 173,
+      "tag": "button",
+      "id": "",
+      "label": "Scan",
+      "handlers": {
+        "onclick": "ai('scan')"
+      }
+    },
+    {
+      "line": 176,
+      "tag": "button",
+      "id": "",
+      "label": "",
+      "handlers": {
+        "onclick": "list('inv')"
+      }
+    },
+    {
+      "line": 177,
+      "tag": "button",
+      "id": "",
+      "label": "",
+      "handlers": {
+        "onclick": "list('quo')"
+      }
+    },
+    {
+      "line": 178,
+      "tag": "button",
+      "id": "",
+      "label": "",
+      "handlers": {
+        "onclick": "list('rec')"
+      }
+    },
+    {
+      "line": 179,
+      "tag": "button",
+      "id": "",
+      "label": "",
+      "handlers": {
+        "onclick": "list('way')"
+      }
+    },
+    {
+      "line": 183,
+      "tag": "button",
+      "id": "",
+      "label": "",
+      "handlers": {
+        "onclick": "cur='inv';theme();doc()"
+      }
+    },
+    {
+      "line": 184,
+      "tag": "button",
+      "id": "",
+      "label": "",
+      "handlers": {
+        "onclick": "cur='way';theme();doc()"
+      }
+    },
+    {
+      "line": 191,
+      "tag": "button",
+      "id": "",
+      "label": "",
+      "handlers": {
+        "onclick": "home()"
+      }
+    },
+    {
+      "line": 195,
+      "tag": "button",
+      "id": "",
+      "label": "Create",
+      "handlers": {
+        "onclick": "mk()"
+      }
+    },
+    {
+      "line": 199,
+      "tag": "button",
+      "id": "",
+      "label": "Close",
+      "handlers": {
+        "onclick": "list(cur)"
+      }
+    },
+    {
+      "line": 205,
+      "tag": "button",
+      "id": "bB",
+      "label": "",
+      "handlers": {
+        "onclick": "pv()"
+      }
+    },
+    {
+      "line": 206,
+      "tag": "button",
+      "id": "bN",
+      "label": "",
+      "handlers": {
+        "onclick": "nx()"
+      }
+    },
+    {
+      "line": 210,
+      "tag": "button",
+      "id": "",
+      "label": "",
+      "handlers": {
+        "onclick": "list(cur)"
+      }
+    },
+    {
+      "line": 211,
+      "tag": "button",
+      "id": "",
+      "label": "",
+      "handlers": {
+        "onclick": "openAdd('')"
+      }
+    },
+    {
+      "line": 212,
+      "tag": "button",
+      "id": "",
+      "label": "",
+      "handlers": {
+        "onclick": "goT('vCust',1)"
+      }
+    },
+    {
+      "line": 226,
+      "tag": "button",
+      "id": "",
+      "label": "Add expense",
+      "handlers": {
+        "onclick": "expSheet()"
+      }
+    },
+    {
+      "line": 227,
+      "tag": "input",
+      "id": "",
+      "label": "Ask anything about your business\u2026",
+      "handlers": {
+        "onkeydown": "if(event.key==='Enter')ansr()"
+      }
+    },
+    {
+      "line": 228,
+      "tag": "button",
+      "id": "",
+      "label": "",
+      "handlers": {
+        "onclick": "ansr()"
+      }
+    },
+    {
+      "line": 237,
+      "tag": "button",
+      "id": "",
+      "label": "",
+      "handlers": {
+        "onclick": "go('vCo')"
+      }
+    },
+    {
+      "line": 238,
+      "tag": "button",
+      "id": "",
+      "label": "",
+      "handlers": {
+        "onclick": "go('vTax')"
+      }
+    },
+    {
+      "line": 239,
+      "tag": "button",
+      "id": "",
+      "label": "",
+      "handlers": {
+        "onclick": "go('vPay')"
+      }
+    },
+    {
+      "line": 240,
+      "tag": "button",
+      "id": "",
+      "label": "",
+      "handlers": {
+        "onclick": "go('vCat')"
+      }
+    },
+    {
+      "line": 241,
+      "tag": "button",
+      "id": "",
+      "label": "",
+      "handlers": {
+        "onclick": "opSig()"
+      }
+    },
+    {
+      "line": 245,
+      "tag": "button",
+      "id": "",
+      "label": "",
+      "handlers": {
+        "onclick": "go('vAcc')"
+      }
+    },
+    {
+      "line": 246,
+      "tag": "button",
+      "id": "",
+      "label": "",
+      "handlers": {
+        "onclick": "go('vLang')"
+      }
+    },
+    {
+      "line": 247,
+      "tag": "button",
+      "id": "",
+      "label": "Dark mode",
+      "handlers": {
+        "onclick": "flip(this,'Dark mode')"
+      }
+    },
+    {
+      "line": 248,
+      "tag": "button",
+      "id": "",
+      "label": "Larger text",
+      "handlers": {
+        "onclick": "flip(this,'Larger text')"
+      }
+    },
+    {
+      "line": 249,
+      "tag": "button",
+      "id": "",
+      "label": "",
+      "handlers": {
+        "onclick": "go('vData')"
+      }
+    },
+    {
+      "line": 250,
+      "tag": "button",
+      "id": "",
+      "label": "",
+      "handlers": {
+        "onclick": "go('vAdm')"
+      }
+    },
+    {
+      "line": 251,
+      "tag": "button",
+      "id": "",
+      "label": "",
+      "handlers": {
+        "onclick": "go('vHelp')"
+      }
+    },
+    {
+      "line": 256,
+      "tag": "button",
+      "id": "",
+      "label": "",
+      "handlers": {
+        "onclick": "go('vSet')"
+      }
+    },
+    {
+      "line": 257,
+      "tag": "button",
+      "id": "",
+      "label": "",
+      "handlers": {
+        "onclick": "upl()"
+      }
+    },
+    {
+      "line": 257,
+      "tag": "button",
+      "id": "",
+      "label": "",
+      "handlers": {
+        "onclick": "go('vLogo')"
+      }
+    },
+    {
+      "line": 268,
+      "tag": "button",
+      "id": "",
+      "label": "",
+      "handlers": {
+        "onclick": "go('vCo')"
+      }
+    },
+    {
+      "line": 269,
+      "tag": "button",
+      "id": "genB",
+      "label": "",
+      "handlers": {
+        "onclick": "gen()"
+      }
+    },
+    {
+      "line": 274,
+      "tag": "button",
+      "id": "",
+      "label": "",
+      "handlers": {
+        "onclick": "back('vSet')"
+      }
+    },
+    {
+      "line": 277,
+      "tag": "button",
+      "id": "bcBtn",
+      "label": "",
+      "handlers": {
+        "onclick": "tgBC()"
+      }
+    },
+    {
+      "line": 281,
+      "tag": "button",
+      "id": "",
+      "label": "",
+      "handlers": {
+        "onclick": "savePay()"
+      }
+    },
+    {
+      "line": 285,
+      "tag": "button",
+      "id": "",
+      "label": "",
+      "handlers": {
+        "onclick": "go('vSet')"
+      }
+    },
+    {
+      "line": 291,
+      "tag": "button",
+      "id": "",
+      "label": "",
+      "handlers": {
+        "onclick": "go('vSet')"
+      }
+    },
+    {
+      "line": 293,
+      "tag": "input",
+      "id": "vatS",
+      "label": "VAT",
+      "handlers": {
+        "oninput": "vnum(this);taxCalc()"
+      }
+    },
+    {
+      "line": 294,
+      "tag": "input",
+      "id": "whtS",
+      "label": "WHT",
+      "handlers": {
+        "oninput": "vnum(this);taxCalc()"
+      }
+    },
+    {
+      "line": 299,
+      "tag": "button",
+      "id": "",
+      "label": "",
+      "handlers": {
+        "onclick": "go('vSet')"
+      }
+    },
+    {
+      "line": 301,
+      "tag": "input",
+      "id": "",
+      "label": "",
+      "handlers": {
+        "oninput": "vname(this)"
+      }
+    },
+    {
+      "line": 301,
+      "tag": "input",
+      "id": "em",
+      "label": "",
+      "handlers": {
+        "onblur": "vmail(this)"
+      }
+    },
+    {
+      "line": 302,
+      "tag": "button",
+      "id": "",
+      "label": "",
+      "handlers": {
+        "onclick": "tos('Current password, then the new one twice.')"
+      }
+    },
+    {
+      "line": 303,
+      "tag": "button",
+      "id": "",
+      "label": "",
+      "handlers": {
+        "onclick": "tos('A confirmation sheet asks first, then back to sign-in.')"
+      }
+    },
+    {
+      "line": 306,
+      "tag": "button",
+      "id": "",
+      "label": "",
+      "handlers": {
+        "onclick": "go('vSet')"
+      }
+    },
+    {
+      "line": 309,
+      "tag": "button",
+      "id": "",
+      "label": "",
+      "handlers": {
+        "onclick": "go('vSet')"
+      }
+    },
+    {
+      "line": 310,
+      "tag": "button",
+      "id": "",
+      "label": "",
+      "handlers": {
+        "onclick": "tos('Already up to date.')"
+      }
+    },
+    {
+      "line": 312,
+      "tag": "button",
+      "id": "",
+      "label": "",
+      "handlers": {
+        "onclick": "tos('CSV and JSON, sent to your email.')"
+      }
+    },
+    {
+      "line": 312,
+      "tag": "button",
+      "id": "",
+      "label": "",
+      "handlers": {
+        "onclick": "conflict()"
+      }
+    },
+    {
+      "line": 316,
+      "tag": "button",
+      "id": "",
+      "label": "",
+      "handlers": {
+        "onclick": "go('vSet')"
+      }
+    },
+    {
+      "line": 317,
+      "tag": "button",
+      "id": "",
+      "label": "",
+      "handlers": {
+        "onclick": "tos('Toggle create, delete, see totals \u2014 enforced on the server.')"
+      }
+    },
+    {
+      "line": 317,
+      "tag": "button",
+      "id": "",
+      "label": "",
+      "handlers": {
+        "onclick": "tos('Invite by email with the permissions you choose.')"
+      }
+    },
+    {
+      "line": 319,
+      "tag": "button",
+      "id": "revB",
+      "label": "",
+      "handlers": {
+        "onclick": "rev()"
+      }
+    },
+    {
+      "line": 325,
+      "tag": "button",
+      "id": "",
+      "label": "",
+      "handlers": {
+        "onclick": "go('vSet')"
+      }
+    },
+    {
+      "line": 326,
+      "tag": "button",
+      "id": "",
+      "label": "",
+      "handlers": {
+        "onclick": "tos('Opens WhatsApp \u2014 usually answered same day.')"
+      }
+    },
+    {
+      "line": 335,
+      "tag": "button",
+      "id": "",
+      "label": "",
+      "handlers": {
+        "onclick": "clr()"
+      }
+    },
+    {
+      "line": 337,
+      "tag": "button",
+      "id": "",
+      "label": "",
+      "handlers": {
+        "onclick": "okSig()"
+      }
+    },
+    {
+      "line": 338,
+      "tag": "button",
+      "id": "",
+      "label": "",
+      "handlers": {
+        "onclick": "cl('ovSig')"
+      }
+    },
+    {
+      "line": 343,
+      "tag": "button",
+      "id": "",
+      "label": "Home",
+      "handlers": {
+        "onclick": "home()"
+      }
+    },
+    {
+      "line": 344,
+      "tag": "button",
+      "id": "",
+      "label": "Customers",
+      "handlers": {
+        "onclick": "goT('vCust',1)"
+      }
+    },
+    {
+      "line": 345,
+      "tag": "button",
+      "id": "",
+      "label": "Analytics",
+      "handlers": {
+        "onclick": "goT('vAna',2)"
+      }
+    },
+    {
+      "line": 346,
+      "tag": "button",
+      "id": "",
+      "label": "Settings",
+      "handlers": {
+        "onclick": "goT('vSet',3)"
+      }
+    }
+  ],
+  "functions": [
+    {
+      "name": "tos",
+      "line": 354
+    },
+    {
+      "name": "cl",
+      "line": 355
+    },
+    {
+      "name": "flip",
+      "line": 356
+    },
+    {
+      "name": "nav",
+      "line": 357
+    },
+    {
+      "name": "showS",
+      "line": 358
+    },
+    {
+      "name": "go",
+      "line": 359
+    },
+    {
+      "name": "goT",
+      "line": 360
+    },
+    {
+      "name": "bad",
+      "line": 362
+    },
+    {
+      "name": "filt",
+      "line": 363
+    },
+    {
+      "name": "vnum",
+      "line": 364
+    },
+    {
+      "name": "vint",
+      "line": 367
+    },
+    {
+      "name": "vtel",
+      "line": 368
+    },
+    {
+      "name": "vname",
+      "line": 369
+    },
+    {
+      "name": "vsort",
+      "line": 370
+    },
+    {
+      "name": "viban",
+      "line": 371
+    },
+    {
+      "name": "vmail",
+      "line": 372
+    },
+    {
+      "name": "back",
+      "line": 375
+    },
+    {
+      "name": "net",
+      "line": 377
+    },
+    {
+      "name": "acctFields",
+      "line": 393
+    },
+    {
+      "name": "paintLogo",
+      "line": 398
+    },
+    {
+      "name": "upl",
+      "line": 404
+    },
+    {
+      "name": "paintStudio",
+      "line": 407
+    },
+    {
+      "name": "gen",
+      "line": 410
+    },
+    {
+      "name": "nameHTML",
+      "line": 415
+    },
+    {
+      "name": "paintN",
+      "line": 422
+    },
+    {
+      "name": "tgBC",
+      "line": 427
+    },
+    {
+      "name": "paintBC",
+      "line": 428
+    },
+    {
+      "name": "foc",
+      "line": 433
+    },
+    {
+      "name": "pkBC",
+      "line": 434
+    },
+    {
+      "name": "pmDesc",
+      "line": 437
+    },
+    {
+      "name": "pmOn",
+      "line": 438
+    },
+    {
+      "name": "paintPM",
+      "line": 439
+    },
+    {
+      "name": "pmAdd",
+      "line": 442
+    },
+    {
+      "name": "pmOff",
+      "line": 443
+    },
+    {
+      "name": "openPM",
+      "line": 444
+    },
+    {
+      "name": "savePay",
+      "line": 445
+    },
+    {
+      "name": "needPay",
+      "line": 446
+    },
+    {
+      "name": "fmt",
+      "line": 468
+    },
+    {
+      "name": "sym",
+      "line": 469
+    },
+    {
+      "name": "mny",
+      "line": 470
+    },
+    {
+      "name": "ini",
+      "line": 471
+    },
+    {
+      "name": "theme",
+      "line": 472
+    },
+    {
+      "name": "home",
+      "line": 473
+    },
+    {
+      "name": "list",
+      "line": 476
+    },
+    {
+      "name": "ST",
+      "line": 480
+    },
+    {
+      "name": "mk",
+      "line": 481
+    },
+    {
+      "name": "card",
+      "line": 482
+    },
+    {
+      "name": "custPick",
+      "line": 483
+    },
+    {
+      "name": "dfield",
+      "line": 488
+    },
+    {
+      "name": "calWrap",
+      "line": 489
+    },
+    {
+      "name": "calH",
+      "line": 490
+    },
+    {
+      "name": "missing",
+      "line": 500
+    },
+    {
+      "name": "rd",
+      "line": 501
+    },
+    {
+      "name": "sugg",
+      "line": 532
+    },
+    {
+      "name": "pickIt",
+      "line": 537
+    },
+    {
+      "name": "addLine",
+      "line": 538
+    },
+    {
+      "name": "del",
+      "line": 545
+    },
+    {
+      "name": "ph",
+      "line": 546
+    },
+    {
+      "name": "tgP",
+      "line": 547
+    },
+    {
+      "name": "pkC",
+      "line": 548
+    },
+    {
+      "name": "pkU",
+      "line": 549
+    },
+    {
+      "name": "kind",
+      "line": 550
+    },
+    {
+      "name": "openAdd",
+      "line": 552
+    },
+    {
+      "name": "addC",
+      "line": 554
+    },
+    {
+      "name": "tgC",
+      "line": 558
+    },
+    {
+      "name": "mvm",
+      "line": 559
+    },
+    {
+      "name": "stD",
+      "line": 560
+    },
+    {
+      "name": "qk",
+      "line": 561
+    },
+    {
+      "name": "cc",
+      "line": 562
+    },
+    {
+      "name": "nx",
+      "line": 565
+    },
+    {
+      "name": "pv",
+      "line": 566
+    },
+    {
+      "name": "L2",
+      "line": 572
+    },
+    {
+      "name": "TT",
+      "line": 573
+    },
+    {
+      "name": "BILL",
+      "line": 574
+    },
+    {
+      "name": "ROWS",
+      "line": 576
+    },
+    {
+      "name": "PAYBOX",
+      "line": 580
+    },
+    {
+      "name": "FOOT",
+      "line": 586
+    },
+    {
+      "name": "bld",
+      "line": 590
+    },
+    {
+      "name": "tglLogo",
+      "line": 610
+    },
+    {
+      "name": "pd",
+      "line": 612
+    },
+    {
+      "name": "selT",
+      "line": 616
+    },
+    {
+      "name": "doc",
+      "line": 618
+    },
+    {
+      "name": "paySheet",
+      "line": 632
+    },
+    {
+      "name": "addPay",
+      "line": 634
+    },
+    {
+      "name": "remind",
+      "line": 638
+    },
+    {
+      "name": "conv",
+      "line": 640
+    },
+    {
+      "name": "drawCust",
+      "line": 647
+    },
+    {
+      "name": "one",
+      "line": 648
+    },
+    {
+      "name": "stmt",
+      "line": 655
+    },
+    {
+      "name": "paintExp",
+      "line": 658
+    },
+    {
+      "name": "expSheet",
+      "line": 661
+    },
+    {
+      "name": "addExp",
+      "line": 663
+    },
+    {
+      "name": "conflict",
+      "line": 664
+    },
+    {
+      "name": "opSig",
+      "line": 668
+    },
+    {
+      "name": "ip",
+      "line": 669
+    },
+    {
+      "name": "clr",
+      "line": 675
+    },
+    {
+      "name": "okSig",
+      "line": 676
+    },
+    {
+      "name": "ai",
+      "line": 680
+    },
+    {
+      "name": "aiT",
+      "line": 683
+    },
+    {
+      "name": "pkT",
+      "line": 684
+    },
+    {
+      "name": "aiGo",
+      "line": 685
+    },
+    {
+      "name": "doSearch",
+      "line": 688
+    },
+    {
+      "name": "ansr",
+      "line": 693
+    },
+    {
+      "name": "taxCalc",
+      "line": 695
+    },
+    {
+      "name": "paintCat",
+      "line": 697
+    },
+    {
+      "name": "rev",
+      "line": 700
+    },
+    {
+      "name": "paintLang",
+      "line": 703
+    },
+    {
+      "name": "fq",
+      "line": 706
+    },
+    {
+      "name": "finishLogout",
+      "line": 737
+    },
+    {
+      "name": "cancelLogout",
+      "line": 738
+    },
+    {
+      "name": "requestLogout",
+      "line": 739
+    },
+    {
+      "name": "saveDraft",
+      "line": 802
+    },
+    {
+      "name": "progress",
+      "line": 803
+    },
+    {
+      "name": "row",
+      "line": 804
+    },
+    {
+      "name": "render",
+      "line": 805
+    },
+    {
+      "name": "applyProfile",
+      "line": 814
+    },
+    {
+      "name": "paintChecklist",
+      "line": 815
+    },
+    {
+      "name": "startDocument",
+      "line": 817
+    },
+    {
+      "name": "updateStats",
+      "line": 859
+    },
+    {
+      "name": "category",
+      "line": 906
+    },
+    {
+      "name": "initials",
+      "line": 907
+    },
+    {
+      "name": "lines",
+      "line": 908
+    },
+    {
+      "name": "nameText",
+      "line": 909
+    },
+    {
+      "name": "symbol",
+      "line": 910
+    },
+    {
+      "name": "gearPath",
+      "line": 965
+    },
+    {
+      "name": "phraseHit",
+      "line": 976
+    },
+    {
+      "name": "makeLogos",
+      "line": 978
+    },
+    {
+      "name": "display",
+      "line": 1000
+    },
+    {
+      "name": "paintResults",
+      "line": 1001
+    },
+    {
+      "name": "apply",
+      "line": 1007
+    },
+    {
+      "name": "sheet",
+      "line": 1041
+    }
+  ],
+  "externalReferenceAssets": [
+    "https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.46.0/dist/tabler-icons.min.css",
+    "https://fonts.googleapis.com",
+    "https://fonts.gstatic.com",
+    "https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap",
+    "https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap"
+  ]
+}

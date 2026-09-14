@@ -1,0 +1,300 @@
+# Interaction inventory
+
+Generated from the exact included frontend. Line numbers refer to `reference/frontend.html`. Static event attributes are indexed below; listeners and dynamically generated markup are included in the full source and function index. This is source inspection, not a claim that every action was browser-tested.
+
+## Screens
+
+vHome, vList, vBuild, vDoc, vCust, vOne, vAna, vSet, vCo, vLogo, vPay, vCat, vTax, vAcc, vLang, vData, vAdm, vHelp
+
+Dynamically created screens: vOnboarding, vSignedOut.
+
+## Navigation targets
+
+vAcc, vAdm, vAna, vBuild, vCat, vCo, vCust, vData, vDoc, vHelp, vHome, vLang, vList, vLogo, vOnboarding, vOne, vPay, vSet, vSignedOut, vTax
+
+## Inline event handlers
+
+- Line 155 · button #logoSlot · Your logo
+  - onclick: `go('vCo')`
+- Line 157 · button
+  - onclick: `net()`
+- Line 158 · button · Log out
+  - onclick: `tos('A confirmation sheet asks first.')`
+- Line 168 · input #sq · Search by customer, number, amount, item…
+  - oninput: `doSearch()`
+- Line 172 · button · Voice
+  - onclick: `ai('voice')`
+- Line 173 · button · Scan
+  - onclick: `ai('scan')`
+- Line 176 · button
+  - onclick: `list('inv')`
+- Line 177 · button
+  - onclick: `list('quo')`
+- Line 178 · button
+  - onclick: `list('rec')`
+- Line 179 · button
+  - onclick: `list('way')`
+- Line 183 · button
+  - onclick: `cur='inv';theme();doc()`
+- Line 184 · button
+  - onclick: `cur='way';theme();doc()`
+- Line 191 · button
+  - onclick: `home()`
+- Line 195 · button · Create
+  - onclick: `mk()`
+- Line 199 · button · Close
+  - onclick: `list(cur)`
+- Line 205 · button #bB
+  - onclick: `pv()`
+- Line 206 · button #bN
+  - onclick: `nx()`
+- Line 210 · button
+  - onclick: `list(cur)`
+- Line 211 · button
+  - onclick: `openAdd('')`
+- Line 212 · button
+  - onclick: `goT('vCust',1)`
+- Line 226 · button · Add expense
+  - onclick: `expSheet()`
+- Line 227 · input · Ask anything about your business…
+  - onkeydown: `if(event.key==='Enter')ansr()`
+- Line 228 · button
+  - onclick: `ansr()`
+- Line 237 · button
+  - onclick: `go('vCo')`
+- Line 238 · button
+  - onclick: `go('vTax')`
+- Line 239 · button
+  - onclick: `go('vPay')`
+- Line 240 · button
+  - onclick: `go('vCat')`
+- Line 241 · button
+  - onclick: `opSig()`
+- Line 245 · button
+  - onclick: `go('vAcc')`
+- Line 246 · button
+  - onclick: `go('vLang')`
+- Line 247 · button · Dark mode
+  - onclick: `flip(this,'Dark mode')`
+- Line 248 · button · Larger text
+  - onclick: `flip(this,'Larger text')`
+- Line 249 · button
+  - onclick: `go('vData')`
+- Line 250 · button
+  - onclick: `go('vAdm')`
+- Line 251 · button
+  - onclick: `go('vHelp')`
+- Line 256 · button
+  - onclick: `go('vSet')`
+- Line 257 · button
+  - onclick: `upl()`
+- Line 257 · button
+  - onclick: `go('vLogo')`
+- Line 268 · button
+  - onclick: `go('vCo')`
+- Line 269 · button #genB
+  - onclick: `gen()`
+- Line 274 · button
+  - onclick: `back('vSet')`
+- Line 277 · button #bcBtn
+  - onclick: `tgBC()`
+- Line 281 · button
+  - onclick: `savePay()`
+- Line 285 · button
+  - onclick: `go('vSet')`
+- Line 291 · button
+  - onclick: `go('vSet')`
+- Line 293 · input #vatS · VAT
+  - oninput: `vnum(this);taxCalc()`
+- Line 294 · input #whtS · WHT
+  - oninput: `vnum(this);taxCalc()`
+- Line 299 · button
+  - onclick: `go('vSet')`
+- Line 301 · input
+  - oninput: `vname(this)`
+- Line 301 · input #em
+  - onblur: `vmail(this)`
+- Line 302 · button
+  - onclick: `tos('Current password, then the new one twice.')`
+- Line 303 · button
+  - onclick: `tos('A confirmation sheet asks first, then back to sign-in.')`
+- Line 306 · button
+  - onclick: `go('vSet')`
+- Line 309 · button
+  - onclick: `go('vSet')`
+- Line 310 · button
+  - onclick: `tos('Already up to date.')`
+- Line 312 · button
+  - onclick: `tos('CSV and JSON, sent to your email.')`
+- Line 312 · button
+  - onclick: `conflict()`
+- Line 316 · button
+  - onclick: `go('vSet')`
+- Line 317 · button
+  - onclick: `tos('Toggle create, delete, see totals — enforced on the server.')`
+- Line 317 · button
+  - onclick: `tos('Invite by email with the permissions you choose.')`
+- Line 319 · button #revB
+  - onclick: `rev()`
+- Line 325 · button
+  - onclick: `go('vSet')`
+- Line 326 · button
+  - onclick: `tos('Opens WhatsApp — usually answered same day.')`
+- Line 335 · button
+  - onclick: `clr()`
+- Line 337 · button
+  - onclick: `okSig()`
+- Line 338 · button
+  - onclick: `cl('ovSig')`
+- Line 343 · button · Home
+  - onclick: `home()`
+- Line 344 · button · Customers
+  - onclick: `goT('vCust',1)`
+- Line 345 · button · Analytics
+  - onclick: `goT('vAna',2)`
+- Line 346 · button · Settings
+  - onclick: `goT('vSet',3)`
+
+## Function index
+
+- `tos` — line 354
+- `cl` — line 355
+- `flip` — line 356
+- `nav` — line 357
+- `showS` — line 358
+- `go` — line 359
+- `goT` — line 360
+- `bad` — line 362
+- `filt` — line 363
+- `vnum` — line 364
+- `vint` — line 367
+- `vtel` — line 368
+- `vname` — line 369
+- `vsort` — line 370
+- `viban` — line 371
+- `vmail` — line 372
+- `back` — line 375
+- `net` — line 377
+- `acctFields` — line 393
+- `paintLogo` — line 398
+- `upl` — line 404
+- `paintStudio` — line 407
+- `gen` — line 410
+- `nameHTML` — line 415
+- `paintN` — line 422
+- `tgBC` — line 427
+- `paintBC` — line 428
+- `foc` — line 433
+- `pkBC` — line 434
+- `pmDesc` — line 437
+- `pmOn` — line 438
+- `paintPM` — line 439
+- `pmAdd` — line 442
+- `pmOff` — line 443
+- `openPM` — line 444
+- `savePay` — line 445
+- `needPay` — line 446
+- `fmt` — line 468
+- `sym` — line 469
+- `mny` — line 470
+- `ini` — line 471
+- `theme` — line 472
+- `home` — line 473
+- `list` — line 476
+- `ST` — line 480
+- `mk` — line 481
+- `card` — line 482
+- `custPick` — line 483
+- `dfield` — line 488
+- `calWrap` — line 489
+- `calH` — line 490
+- `missing` — line 500
+- `rd` — line 501
+- `sugg` — line 532
+- `pickIt` — line 537
+- `addLine` — line 538
+- `del` — line 545
+- `ph` — line 546
+- `tgP` — line 547
+- `pkC` — line 548
+- `pkU` — line 549
+- `kind` — line 550
+- `openAdd` — line 552
+- `addC` — line 554
+- `tgC` — line 558
+- `mvm` — line 559
+- `stD` — line 560
+- `qk` — line 561
+- `cc` — line 562
+- `nx` — line 565
+- `pv` — line 566
+- `L2` — line 572
+- `TT` — line 573
+- `BILL` — line 574
+- `ROWS` — line 576
+- `PAYBOX` — line 580
+- `FOOT` — line 586
+- `bld` — line 590
+- `tglLogo` — line 610
+- `pd` — line 612
+- `selT` — line 616
+- `doc` — line 618
+- `paySheet` — line 632
+- `addPay` — line 634
+- `remind` — line 638
+- `conv` — line 640
+- `drawCust` — line 647
+- `one` — line 648
+- `stmt` — line 655
+- `paintExp` — line 658
+- `expSheet` — line 661
+- `addExp` — line 663
+- `conflict` — line 664
+- `opSig` — line 668
+- `ip` — line 669
+- `clr` — line 675
+- `okSig` — line 676
+- `ai` — line 680
+- `aiT` — line 683
+- `pkT` — line 684
+- `aiGo` — line 685
+- `doSearch` — line 688
+- `ansr` — line 693
+- `taxCalc` — line 695
+- `paintCat` — line 697
+- `rev` — line 700
+- `paintLang` — line 703
+- `fq` — line 706
+- `finishLogout` — line 737
+- `cancelLogout` — line 738
+- `requestLogout` — line 739
+- `saveDraft` — line 802
+- `progress` — line 803
+- `row` — line 804
+- `render` — line 805
+- `applyProfile` — line 814
+- `paintChecklist` — line 815
+- `startDocument` — line 817
+- `updateStats` — line 859
+- `category` — line 906
+- `initials` — line 907
+- `lines` — line 908
+- `nameText` — line 909
+- `symbol` — line 910
+- `gearPath` — line 965
+- `phraseHit` — line 976
+- `makeLogos` — line 978
+- `display` — line 1000
+- `paintResults` — line 1001
+- `apply` — line 1007
+- `sheet` — line 1041
+
+## External preview dependencies
+
+- https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.46.0/dist/tabler-icons.min.css
+- https://fonts.googleapis.com
+- https://fonts.gstatic.com
+- https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap
+- https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap
+
+The exported wrapper also includes its standard preview helper assets. Production must bundle required UI assets; see START-HERE.md.
