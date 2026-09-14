@@ -15,9 +15,23 @@ describe.runIf(process.env.POLICY === '1')('Reporting store-policy readiness', (
     const report = policyReport()
     console.log(reportOf(report))
 
-    // Not an assertion about today's rules — an assertion that nobody has
-    // read them. The day somebody does, this fails and is updated.
+    // Not an assertion about today's rules — an assertion about what is
+    // outstanding. The day somebody confirms the answers, or builds account
+    // deletion, this fails and is updated, which is the whole idea.
     expect(report.verified).toBe(false)
-    expect(report.codeClean, 'the code checks are failing; that is a bug, not a rule').toBe(true)
+
+    // ONE failing check, and it is known: there is no account deletion, which
+    // Apple 5.1.1(v) requires of any app offering account creation. Pinned by
+    // name so a NEW failure is not swallowed by a blanket allowance, and so
+    // that building the flow breaks this test rather than passing quietly.
+    expect(report.checks.filter((check) => !check.passed).map((check) => check.check)).toEqual([
+      'account-deletion',
+    ])
+
+    // Answers exist now, and none is confirmed. §U wants a person at
+    // submission time; a machine that fetched the page is a citation, not a
+    // signature.
+    expect(report.unconfirmed.length).toBeGreaterThan(0)
+    expect(report.blocked.length).toBeGreaterThan(0)
   })
 })

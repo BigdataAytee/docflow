@@ -108,6 +108,24 @@ const HOST_PATTERN = /https?:\/\/([a-z0-9.-]+)/gi
  */
 const TEST_ONLY = ['src/data/supabase/harness.ts']
 
+/**
+ * This directory TALKS ABOUT the app; it is not the app.
+ *
+ * Two things went wrong the moment the questionnaire started citing real
+ * pages, and both are the same mistake from opposite ends. The destination
+ * scan read `developer.apple.com` in a citation as somewhere the app sends
+ * data. And the account-deletion check found the word `deleteAccount` — in
+ * its own regex, one file away — and declared that an owner can delete their
+ * account "in src/marketing/policy/checks.ts".
+ *
+ * A check that can find itself is not a check. Nothing in here is imported by
+ * `src/main.tsx`, and the bundle exemption below is what proves it rather
+ * than this comment.
+ */
+const ABOUT_THE_APP = 'src/marketing/policy/'
+
+const isAboutTheApp = (file: string): boolean => file.startsWith(ABOUT_THE_APP)
+
 /** Hosts that are documentation or markup namespaces, not destinations. */
 const NOT_A_DESTINATION = [
   'schema.org',
@@ -149,14 +167,14 @@ export function checkDestinations(inputs = readDestinationInputs()): CheckResult
       if (NOT_A_DESTINATION.includes(host)) continue
       if (allowed.has(host)) continue
 
-      if (TEST_ONLY.includes(file)) {
+      if (TEST_ONLY.includes(file) || isAboutTheApp(file)) {
         // The exemption, earned against the build rather than asserted.
         if (inputs.bundle === undefined) {
           findings.push({
             check: 'destinations',
             severity: 'blocker',
             detail:
-              `${file} names ${host} and is listed as test-only, but there is no build ` +
+              `${file} names ${host} and is exempt as documentation, but there is no build ` +
               'to check that against — run the build first; an unverified exemption is ' +
               'the same as no check',
           })
@@ -166,7 +184,7 @@ export function checkDestinations(inputs = readDestinationInputs()): CheckResult
         findings.push({
           check: 'destinations',
           severity: 'blocker',
-          detail: `${file} is listed as test-only, but ${host} is in the shipped bundle`,
+          detail: `${file} is exempt as documentation, but ${host} is in the shipped bundle`,
         })
         continue
       }
@@ -292,7 +310,88 @@ export function bundleText(): string | undefined {
     .join('\n')
 }
 
-export const CHECKS = [checkDestinations, checkLocalAi, checkNoTrackers]
+/**
+ * Does the app have the two things a store REQUIRES of it, rather than
+ * forbids?
+ *
+ * Every other check in this file asks whether the repository contains
+ * something it claims not to. These two ask the opposite, and they exist
+ * because reading the rules found the questionnaire describing features that
+ * are not there: "an owner can delete their account in Settings" and "the
+ * ratings prompt fires after a successful share". Neither was ever built.
+ *
+ * Apple 5.1.1(v) makes in-app account deletion mandatory for any app that
+ * offers account creation, so the first of those is a submission blocker and
+ * not a nicety. A questionnaire that describes a feature nobody wrote is
+ * worse than a blank one: it reads as diligence.
+ */
+export function checkAccountDeletion(
+  files = trackedFiles(/^src\/.*\.tsx?$/),
+): CheckResult {
+  const found = files
+    .filter((file) => !isTest(file) && !isAboutTheApp(file))
+    .filter((file) => /deleteAccount|deleteCompany|closeAccount/.test(read(file)))
+
+  return {
+    check: 'account-deletion',
+    passed: found.length > 0,
+    findings:
+      found.length > 0
+        ? []
+        : [
+            {
+              check: 'account-deletion',
+              severity: 'blocker' as const,
+              detail:
+                'no account-deletion flow in src/. Apple 5.1.1(v) requires one in-app for any ' +
+                'app that offers account creation; export alone (Rule #6) does not satisfy it',
+            },
+          ],
+    declares:
+      found.length > 0
+        ? `An owner can delete their account in the app (${found.join(', ')}).`
+        : 'There is NO in-app account deletion. An iOS submission is blocked until there is.',
+  }
+}
+
+export function checkRatingsPrompt(files = trackedFiles(/^src\/.*\.tsx?$/)): CheckResult {
+  const found = files
+    .filter((file) => !isTest(file) && !isAboutTheApp(file))
+    .filter((file) => /requestReview|SKStoreReview|AppStore\.requestReview/.test(read(file)))
+
+  return {
+    check: 'ratings-prompt',
+    passed: true,
+    findings:
+      found.length > 0
+        ? []
+        : [
+            {
+              check: 'ratings-prompt',
+              severity: 'note' as const,
+              detail:
+                'no ratings prompt in src/. §T wants one at a happy moment; there is nothing ' +
+                'to time, and nothing that could breach a store rule about timing either',
+            },
+          ],
+    // Not a blocker: no store requires an app to ASK for ratings. It passes
+    // because an app with no prompt cannot prompt at the wrong moment — but
+    // the declaration says so plainly rather than letting silence imply one
+    // exists.
+    declares:
+      found.length > 0
+        ? `A ratings prompt exists (${found.join(', ')}) and its timing needs checking.`
+        : 'There is no ratings prompt. §T asks for one; nothing is shipped, so nothing is timed wrongly.',
+  }
+}
+
+export const CHECKS = [
+  checkDestinations,
+  checkLocalAi,
+  checkNoTrackers,
+  checkAccountDeletion,
+  checkRatingsPrompt,
+]
 
 export function runChecks(): readonly CheckResult[] {
   return CHECKS.map((check) => check())
