@@ -27,7 +27,7 @@ export function SkeletonList({ rows = 3, label }: { rows?: number; label?: strin
   return (
     <div className="space-y-3" role="status" aria-label={label ?? 'Loading'} aria-busy="true">
       {Array.from({ length: rows }, (_, i) => (
-        <div key={i} className="flex items-center gap-3 rounded-2xl bg-surface/70 p-4">
+        <div key={i} className="glass flex items-center gap-3 rounded-2xl p-4">
           <Skeleton className="h-10 w-10 rounded-full" />
           <div className="flex-1 space-y-2">
             <Skeleton className="h-3.5 w-1/3" />

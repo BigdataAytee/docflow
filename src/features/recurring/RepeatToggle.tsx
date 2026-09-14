@@ -35,7 +35,7 @@ export function RepeatToggle({
   const next = recurrence === null ? null : nextPeriod(recurrence, today)
 
   return (
-    <section className="rounded-2xl bg-surface/70 p-4 backdrop-blur">
+    <section className="glass rounded-2xl p-4">
       <div className="flex items-center justify-between gap-3">
         <div className="min-w-0">
           <p className="text-sm font-semibold">{r.repeat}</p>

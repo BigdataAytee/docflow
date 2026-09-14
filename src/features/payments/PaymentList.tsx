@@ -49,7 +49,7 @@ export function PaymentList({ payments, prefill, onRecord, onReceipt }: PaymentL
           {settled.map((payment) => (
             <li
               key={payment.id}
-              className="flex items-center gap-3 rounded-2xl bg-surface/85 p-3"
+              className="glass-solid flex items-center gap-3 rounded-2xl p-3"
             >
               <span className="min-w-0 flex-1">
                 <span className="block text-sm font-semibold tabular-nums">
@@ -75,13 +75,13 @@ export function PaymentList({ payments, prefill, onRecord, onReceipt }: PaymentL
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="min-h-tap w-full rounded-full bg-brand text-sm font-semibold text-white"
+        className="raised tap-scale min-h-tap w-full rounded-full bg-gradient-to-b from-brand-light to-brand text-sm font-semibold text-white"
       >
         {strings.payments.recordPayment}
       </button>
 
       {open && (
-        <div className="space-y-3 rounded-2xl bg-surface/90 p-4" role="dialog" aria-label={strings.payments.recordPayment}>
+        <div className="glass-solid space-y-3 rounded-2xl p-4" role="dialog" aria-label={strings.payments.recordPayment}>
           <label className="block">
             <span className="mb-1 block text-xs font-medium opacity-70">
               {strings.payments.amount}
@@ -91,7 +91,7 @@ export function PaymentList({ payments, prefill, onRecord, onReceipt }: PaymentL
               value={amount}
               onChange={(event) => setAmount(event.target.value)}
               aria-label={strings.payments.amount}
-              className="min-h-tap w-full rounded-lg bg-page px-3 text-sm shadow-inner"
+              className="sunken min-h-tap w-full rounded-lg px-3 text-sm"
             />
           </label>
           <label className="block">
@@ -102,7 +102,7 @@ export function PaymentList({ payments, prefill, onRecord, onReceipt }: PaymentL
               value={reference}
               onChange={(event) => setReference(event.target.value)}
               aria-label={strings.payments.reference}
-              className="min-h-tap w-full rounded-lg bg-page px-3 text-sm shadow-inner"
+              className="sunken min-h-tap w-full rounded-lg px-3 text-sm"
             />
           </label>
           <p className="text-xs opacity-60">{strings.payments.partPaymentNote}</p>
@@ -118,7 +118,7 @@ export function PaymentList({ payments, prefill, onRecord, onReceipt }: PaymentL
               setMethod('bank_transfer')
               setReference('')
             }}
-            className="min-h-tap w-full rounded-full bg-brand text-sm font-semibold text-white"
+            className="raised tap-scale min-h-tap w-full rounded-full bg-gradient-to-b from-brand-light to-brand text-sm font-semibold text-white"
           >
             {strings.payments.save}
           </button>

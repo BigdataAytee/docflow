@@ -42,6 +42,12 @@ export default {
           tint: themed('brand-tint'),
         },
         navy: '#1d2452',
+        /**
+         * White on a locked accent — a hero's sheen, a step bar's fill, the
+         * logo holder's paper. Fixed in both themes like the accent beneath
+         * it; see the note in `src/index.css`.
+         */
+        'on-accent': themed('on-accent'),
         invoice: { accent: '#2b3fd6', tint: themed('invoice-tint'), deep: '#1e2fae' },
         quotation: { accent: '#534AB7', tint: themed('quotation-tint'), deep: '#3C3489' },
         receipt: { accent: '#0F6E56', tint: themed('receipt-tint'), deep: '#085041' },

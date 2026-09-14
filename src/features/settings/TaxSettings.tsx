@@ -58,7 +58,7 @@ export function TaxSettings({
     <section className="space-y-4 px-4 py-4">
       <h1 className="text-lg font-bold">{strings.settings.tax}</h1>
 
-      <div className="space-y-3 rounded-2xl bg-surface/85 p-4">
+      <div className="glass-solid space-y-3 rounded-2xl p-4">
         <label className="flex items-center justify-between gap-3">
           <span className="text-sm opacity-70">
             {format(strings.settings.taxRate, { label: taxLabel })}
@@ -68,7 +68,7 @@ export function TaxSettings({
             value={String(taxPercent)}
             onChange={(event) => onTaxPercent(Number(event.target.value) || 0)}
             aria-label={format(strings.settings.taxRate, { label: taxLabel })}
-            className="min-h-tap w-20 max-w-[45%] shrink rounded-lg bg-page px-3 text-end text-sm shadow-inner"
+            className="sunken min-h-tap w-20 max-w-[45%] shrink rounded-lg px-3 text-end text-sm"
           />
         </label>
 
@@ -79,7 +79,7 @@ export function TaxSettings({
             value={String(whtPercent)}
             onChange={(event) => onWhtPercent(Number(event.target.value) || 0)}
             aria-label={strings.settings.withholdingRate}
-            className="min-h-tap w-20 max-w-[45%] shrink rounded-lg bg-page px-3 text-end text-sm shadow-inner"
+            className="sunken min-h-tap w-20 max-w-[45%] shrink rounded-lg px-3 text-end text-sm"
           />
         </label>
       </div>

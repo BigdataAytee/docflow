@@ -42,7 +42,7 @@ export interface DetailsStepProps {
 
 function Card({ title, accent, children }: { title: string; accent: string; children: ReactNode }) {
   return (
-    <section className="overflow-hidden rounded-2xl bg-surface/85">
+    <section className="glass-solid overflow-hidden rounded-2xl">
       {/*
         h2, not h3. The only heading above these cards is the builder's h1, so
         an h3 leaves a reader jumping by heading level with nothing at level 2
@@ -80,7 +80,7 @@ function DateField({
         value={value ?? ''}
         onChange={(event) => onChange(event.target.value)}
         aria-label={label}
-        className="min-h-tap w-full rounded-lg bg-page px-3 text-sm shadow-inner"
+        className="sunken min-h-tap w-full rounded-lg px-3 text-sm"
       />
     </label>
   )
@@ -172,7 +172,7 @@ export function DetailsStep({
               value={draft.deliveryAddress ?? ''}
               onChange={(event) => onChange({ deliveryAddress: event.target.value })}
               aria-label={strings.details.deliveryAddress}
-              className="min-h-tap w-full rounded-lg bg-page px-3 text-sm shadow-inner"
+              className="sunken min-h-tap w-full rounded-lg px-3 text-sm"
             />
           </label>
         )}

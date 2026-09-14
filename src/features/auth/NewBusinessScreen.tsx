@@ -108,7 +108,7 @@ export function NewBusinessScreen({
         <button
           type="submit"
           disabled={!canCreate}
-          className="mt-5 min-h-tap w-full rounded-xl bg-brand px-4 text-sm font-semibold text-white disabled:opacity-40"
+          className="raised tap-scale mt-5 min-h-tap w-full rounded-xl bg-gradient-to-b from-brand-light to-brand px-4 text-sm font-semibold text-white disabled:opacity-40"
         >
           {busy ? a.creating : a.createBusiness}
         </button>

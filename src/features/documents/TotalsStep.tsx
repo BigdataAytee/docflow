@@ -54,14 +54,14 @@ export function TotalsStep({
   // is no money branch below it — not a zero total, no totals block at all.
   if (!carriesMoney(draft.type)) {
     return (
-      <div className="space-y-3 rounded-2xl bg-surface/85 p-4">
+      <div className="glass-solid space-y-3 rounded-2xl p-4">
         <label className="block">
           <span className="mb-1 block text-xs font-medium opacity-70">{strings.totals.driver}</span>
           <input
             value={draft.driverName ?? ''}
             onChange={(event) => onChange({ driverName: event.target.value })}
             aria-label={strings.totals.driver}
-            className="min-h-tap w-full rounded-lg bg-page px-3 text-sm shadow-inner"
+            className="sunken min-h-tap w-full rounded-lg px-3 text-sm"
           />
         </label>
         <p className="text-xs opacity-60">{strings.totals.noMoneyOnDelivery}</p>
@@ -80,7 +80,7 @@ export function TotalsStep({
   })
 
   return (
-    <div className="space-y-3 rounded-2xl bg-surface/85 p-4">
+    <div className="glass-solid space-y-3 rounded-2xl p-4">
       <Row label={strings.totals.subtotal} value={formatMoney(totals.subtotal)} />
 
       <label className="flex items-center justify-between gap-3 text-sm">
@@ -90,7 +90,7 @@ export function TotalsStep({
           value={String(discountPercent)}
           onChange={(event) => onRates({ discountPercent: Number(event.target.value) || 0 })}
           aria-label={strings.totals.discount}
-          className="min-h-tap w-20 rounded-lg bg-page px-3 text-end text-sm shadow-inner"
+          className="sunken min-h-tap w-20 rounded-lg px-3 text-end text-sm"
         />
       </label>
       {totals.discount.minor !== 0 && (

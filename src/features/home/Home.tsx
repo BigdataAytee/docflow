@@ -5,10 +5,19 @@
  * three things that want doing. The connectivity pill is truthful: it is
  * driven by real connection plus pending work, never by a simulated toggle.
  *
- * The Voice and Scan controls §G places here are deliberately absent until
- * Phase 6 builds the capability ladder. A control that looks live and does
- * nothing is worse than one that is not there yet, and §N is explicit that an
- * unavailable capability is stated plainly rather than dressed up.
+ * §F's header note is the one thing here that is a judgement rather than a
+ * measurement: "noticeably blue but lighter than the original deep navy,
+ * blending its lower edge into the page". So the gradient stops at the mid
+ * blue instead of running down to `#1a2a9e`, and its last few pixels fade to
+ * the page colour — which is what makes the stat cards read as sitting in the
+ * header's light rather than parked on a band that ends abruptly.
+ *
+ * The Voice and Scan controls §G places here render only when this screen is
+ * given something for them to DO. They are absent by default, and that is a
+ * deliberate deviation from the drawing: §N is explicit that an unavailable
+ * capability is stated plainly rather than dressed up, and a round microphone
+ * that opens nothing is the dressed-up version. The slot is here, in the
+ * place and shape §G draws; Phase 6 supplies the handlers and they appear.
  */
 
 import type { ReactNode } from 'react'
@@ -16,7 +25,7 @@ import type { ReactNode } from 'react'
 import { useCompany } from '../../app/context'
 import { label as typeLabel, pluralLabel } from '../../domain/locale/profile'
 import { format } from '../../domain/locale/data/strings'
-import { ConnectivityPill, StatusBadge, TYPE_PALETTE } from '../../ui'
+import { ConnectivityPill, Icon, StatusBadge, TYPE_PALETTE } from '../../ui'
 import { DOCUMENT_TYPES, type DocumentType } from '../../domain/documents/types'
 import type { CurrencyCode, Money } from '../../domain/money/money'
 import { formatMoney } from '../customers/formatMoney'
@@ -36,6 +45,14 @@ export interface HomeProps {
   readonly onOpenType: (type: DocumentType) => void
   readonly onOpenDocument: (id: string) => void
   readonly onSearch: (query: string) => void
+  /** The company's logo, once there is one. §G's holder is empty until then. */
+  readonly logoUrl?: string
+  /** Where "Tap to add your logo" goes. Absent leaves the holder inert. */
+  readonly onAddLogo?: () => void
+  readonly onLogOut?: () => void
+  /** §G's two round controls. Rendered only when there is something behind them. */
+  readonly onVoice?: () => void
+  readonly onScan?: () => void
   /**
    * §G: "typing replaces the body with results". When this is present the
    * tiles and the attention list step aside for it — the header, the stat
@@ -68,7 +85,7 @@ function StatCard({
       // `min-w-0` because a flex item defaults to `min-width: auto` and will
       // not shrink below its content — so at 200% text these two cards pushed
       // the page 208px wider than the phone. Found by the large-text sweep.
-      className="min-w-0 flex-1 rounded-2xl bg-surface/70 p-4 backdrop-blur"
+      className="glass sheen min-w-0 flex-1 rounded-2xl p-4"
       aria-label={title}
     >
       <p className="text-xs font-medium opacity-70">{title}</p>
@@ -86,6 +103,50 @@ function StatCard({
   )
 }
 
+/**
+ * §G's logo holder: "white rounded square with a thin inner margin; the logo
+ * scales to touch the margin — square nearly fills, wide spans width, tall
+ * runs height — never cropped."
+ *
+ * `object-contain` is the whole of "never cropped", and it is the reason this
+ * is an `<img>` in a padded box rather than a background image: a background
+ * would need `contain` restated at every size, and `cover` is one word away.
+ */
+function LogoHolder({
+  logoUrl,
+  label,
+  onAdd,
+}: {
+  logoUrl?: string
+  label: string
+  onAdd?: () => void
+}) {
+  const inner =
+    logoUrl === undefined ? (
+      <Icon name="photo" size={1.1} className="opacity-45" />
+    ) : (
+      <img src={logoUrl} alt="" className="h-full w-full object-contain" />
+    )
+
+  const box = 'grid h-12 w-12 shrink-0 place-items-center overflow-hidden rounded-xl bg-on-accent p-1.5 text-ink'
+
+  // Inert when there is nowhere to go — and then not a button at all, rather
+  // than a button that does nothing when pressed.
+  if (onAdd === undefined) {
+    return (
+      <span aria-hidden="true" className={box}>
+        {inner}
+      </span>
+    )
+  }
+
+  return (
+    <button type="button" onClick={onAdd} aria-label={label} className={`${box} raised tap-scale`}>
+      {inner}
+    </button>
+  )
+}
+
 export function Home({
   businessName,
   userName,
@@ -100,30 +161,47 @@ export function Home({
   onOpenType,
   onOpenDocument,
   onSearch,
+  logoUrl,
+  onAddLogo,
+  onLogOut,
+  onVoice,
+  onScan,
   searchQuery,
   results,
 }: HomeProps) {
   const { profile, strings } = useCompany()
 
   return (
-    <div className="pb-24">
-      <header className="rounded-b-2xl bg-gradient-to-br from-brand-light via-brand to-brand-deep px-4 pb-6 pt-[max(1rem,env(safe-area-inset-top))] text-white">
+    <div className="pb-28">
+      <header
+        className="sheen-strong relative overflow-hidden rounded-b-3xl px-4 pb-10 pt-[max(1rem,env(safe-area-inset-top))] text-white"
+        // §F: noticeably blue, lighter than the original deep navy. The deep
+        // stop is gone; the darkest point is the mid blue, at the top corner
+        // furthest from the content.
+        style={{ backgroundImage: 'linear-gradient(155deg, #5b70f2 0%, #4a60ee 42%, #2b3fd6 100%)' }}
+      >
         <div className="flex items-center gap-3">
-          {/*
-            `aria-hidden`, not `aria-label`. This is a placeholder square, not
-            a control — nothing happens when it is activated, and a name on a
-            role-less span is dropped by some engines and announced by others.
-            Advertising an action that is not there is the §N failure mode:
-            say plainly what is available, and stay silent about what is not.
-            The logo is set in Settings → Company, which is reachable.
-          */}
-          <span
-            aria-hidden="true"
-            className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-surface/90 text-[9px] font-semibold text-ink"
-          >
-            +
-          </span>
-          <p className="min-w-0 flex-1 truncate text-sm font-semibold">{businessName}</p>
+          <LogoHolder
+            {...(logoUrl === undefined ? {} : { logoUrl })}
+            label={strings.home.addLogo}
+            {...(onAddLogo === undefined ? {} : { onAdd: onAddLogo })}
+          />
+
+          <div className="min-w-0 flex-1">
+            <p className="truncate text-sm font-semibold">{businessName}</p>
+            {/*
+              §G's "Tap to add your logo until one is set". It is a hint for
+              the control beside it, which already carries that same sentence
+              as its name — so this copy is hidden from a reader rather than
+              announced twice.
+            */}
+            {logoUrl === undefined && (
+              <p aria-hidden="true" className="truncate text-[11px] opacity-75">
+                {strings.home.addLogo}
+              </p>
+            )}
+          </div>
+
           <ConnectivityPill
             online={online}
             pendingCount={pendingCount}
@@ -135,6 +213,17 @@ export function Home({
               needs_review: strings.sync.needsReview,
             }}
           />
+
+          {onLogOut !== undefined && (
+            <button
+              type="button"
+              onClick={onLogOut}
+              aria-label={strings.home.logOut}
+              className="tap-scale grid min-h-tap min-w-tap shrink-0 place-items-center rounded-full opacity-85"
+            >
+              <Icon name="logout" size={1.15} />
+            </button>
+          )}
         </div>
 
         {/*
@@ -143,12 +232,23 @@ export function Home({
           jumping by heading could not tell where the page began. The biggest
           line on the screen is now also the biggest line in the outline.
         */}
-        <h1 className="mt-4 text-xl font-bold">
-          {greeting(now, strings)}, {userName}
+        <h1 className="mt-5 text-xl font-bold">
+          {greeting(now, strings)}
+          {userName === '' ? '' : `, ${userName}`}
         </h1>
+        <p className="mt-1 text-sm opacity-80">{strings.home.greetingLine}</p>
+
+        {/*
+          §F's "blending its lower edge into the page". Decorative, and it has
+          to sit above the sheen's stacking context, hence the explicit z.
+        */}
+        <span
+          aria-hidden="true"
+          className="pointer-events-none absolute inset-x-0 bottom-0 z-[1] h-10 bg-gradient-to-b from-transparent to-page opacity-90"
+        />
       </header>
 
-      <div className="-mt-4 flex gap-3 px-4">
+      <div className="relative z-[2] -mt-7 flex gap-3 px-4">
         <StatCard
           title={strings.home.outstanding}
           amounts={outstanding}
@@ -161,18 +261,46 @@ export function Home({
         />
       </div>
 
-      <div className="px-4 pt-4">
-        <label className="block">
+      <div className="flex items-center gap-3 px-4 pt-4">
+        <label className="relative block min-w-0 flex-1">
           <span className="sr-only">{strings.home.searchEverything}</span>
+          <span
+            aria-hidden="true"
+            className="pointer-events-none absolute inset-y-0 start-3 grid place-items-center opacity-45"
+          >
+            <Icon name="search" size={1.05} />
+          </span>
           <input
             type="search"
             value={searchQuery ?? ''}
             onChange={(event) => onSearch(event.target.value)}
             placeholder={strings.home.searchEverything}
             aria-label={strings.home.searchEverything}
-            className="min-h-tap w-full rounded-lg bg-surface/80 px-4 text-sm shadow-inner"
+            className="recessed min-h-tap w-full rounded-full ps-10 pe-4 text-sm"
           />
         </label>
+
+        {/* §G's two round controls, when Phase 6 has given them a job. */}
+        {onVoice !== undefined && (
+          <button
+            type="button"
+            onClick={onVoice}
+            aria-label={strings.common.voice}
+            className="glass raised tap-scale grid h-11 w-11 shrink-0 place-items-center rounded-full text-brand"
+          >
+            <Icon name="microphone" size={1.15} />
+          </button>
+        )}
+        {onScan !== undefined && (
+          <button
+            type="button"
+            onClick={onScan}
+            aria-label={strings.common.scan}
+            className="glass raised tap-scale grid h-11 w-11 shrink-0 place-items-center rounded-full text-brand"
+          >
+            <Icon name="camera" size={1.15} />
+          </button>
+        )}
       </div>
 
       {/* §G: typing replaces the body. The header, the stat cards and the
@@ -191,16 +319,32 @@ export function Home({
                   <button
                     type="button"
                     onClick={() => onOpenType(type)}
-                    // Read aloud, the two spans below run together as
-                    // "Invoice 3", which sounds like a reference number. The
-                    // count line already says it properly in every language.
+                    // Read aloud, the spans below run together as "Invoice 3",
+                    // which sounds like a reference number. The count line
+                    // already says it properly in every language.
                     aria-label={format(strings.lists.countLine, {
                       count: counts[type],
                       label: pluralLabel(profile, type),
                     })}
-                    className="flex w-full min-w-0 flex-col items-start gap-1 rounded-2xl p-4 text-start text-white"
-                    style={{ backgroundColor: palette.accent, boxShadow: `0 8px 20px -8px ${palette.accent}` }}
+                    className="sheen tap-scale flex w-full min-w-0 flex-col items-start gap-2 rounded-2xl p-4 text-start text-white"
+                    style={{
+                      backgroundImage: `linear-gradient(150deg, ${palette.accent}, ${palette.deep})`,
+                      // §F's "coloured shadow" — the tile's own accent at
+                      // depth, plus the contact shadow every raised surface
+                      // gets, so it sits above the page rather than on it.
+                      boxShadow: `0 14px 26px -14px ${palette.accent}, 0 2px 6px -2px rgb(20 28 74 / 0.22), inset 0 1px 0 rgb(255 255 255 / 0.22)`,
+                    }}
                   >
+                    <span className="flex w-full items-start justify-between gap-2">
+                      <Icon name={palette.icon} size={1.5} className="opacity-90" />
+                      {/* §G's count badge. */}
+                      <span
+                        aria-hidden="true"
+                        className="shrink-0 rounded-full bg-on-accent/20 px-2 py-0.5 text-xs font-bold tabular-nums"
+                      >
+                        {counts[type]}
+                      </span>
+                    </span>
                     {/*
                       `overflow-wrap: anywhere`, not `break-words`. The two
                       differ in exactly the case that bit here: `break-word`
@@ -212,9 +356,6 @@ export function Home({
                     <span className="text-sm font-bold leading-tight [overflow-wrap:anywhere]">
                       {typeLabel(profile, type)}
                     </span>
-                    <span className="text-xs font-semibold opacity-80 tabular-nums">
-                      {counts[type]}
-                    </span>
                   </button>
                 </li>
               )
@@ -223,14 +364,17 @@ export function Home({
 
           {attention.length > 0 && (
             <section className="px-4 pt-6" aria-label={strings.home.needsAttention}>
-              <h2 className="text-sm font-bold">{strings.home.needsAttention}</h2>
+              <h2 className="flex items-center gap-2 text-sm font-bold">
+                <Icon name="alert-triangle" size={1} className="text-status-warn" />
+                {strings.home.needsAttention}
+              </h2>
               <ul className="mt-2 space-y-2">
                 {attention.map((item) => (
                   <li key={item.documentId}>
                     <button
                       type="button"
                       onClick={() => onOpenDocument(item.documentId)}
-                      className="flex min-h-tap w-full items-center gap-3 rounded-2xl bg-surface/85 p-3 text-start"
+                      className="glass tap-scale flex min-h-tap w-full items-center gap-3 rounded-2xl p-3 text-start"
                     >
                       <span className="flex-1">
                         <StatusBadge
@@ -244,7 +388,7 @@ export function Home({
                           }
                         />
                       </span>
-                      <span className="shrink-0 rounded-full bg-page px-3 py-1 text-xs font-semibold">
+                      <span className="raised shrink-0 rounded-full bg-page px-3 py-1 text-xs font-semibold">
                         {item.kind === 'overdue' ? strings.home.chase : strings.home.sign}
                       </span>
                     </button>

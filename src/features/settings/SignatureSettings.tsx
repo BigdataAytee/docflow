@@ -36,11 +36,11 @@ export function SignatureSettings({
       <p className="text-xs opacity-70">{strings.settings.signatureHint}</p>
 
       {signatureUrl === undefined ? (
-        <p className="rounded-2xl bg-surface/70 px-4 py-6 text-center text-sm opacity-60">
+        <p className="glass rounded-2xl px-4 py-6 text-center text-sm opacity-60">
           {strings.signature.nothingDrawn}
         </p>
       ) : (
-        <div className="flex items-center justify-center rounded-2xl bg-surface/70 p-4">
+        <div className="glass flex items-center justify-center rounded-2xl p-4">
           <img
             src={signatureUrl}
             alt={strings.settings.defaultSignature}
@@ -62,7 +62,7 @@ export function SignatureSettings({
         <div className="flex gap-2">
           <button
             type="button"
-            className="min-h-tap flex-1 rounded-xl bg-brand px-4 text-sm font-semibold text-white"
+            className="raised tap-scale min-h-tap flex-1 rounded-xl bg-gradient-to-b from-brand-light to-brand px-4 text-sm font-semibold text-white"
             onClick={() => setDrawing(true)}
           >
             {signatureUrl === undefined ? strings.signature.signHere : strings.signature.clear}

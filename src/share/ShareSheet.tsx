@@ -69,7 +69,7 @@ export function ShareSheet({
     <section
       ref={panel}
       tabIndex={-1}
-      className="rounded-2xl bg-surface/85 p-4 outline-none backdrop-blur"
+      className="glass-solid rounded-2xl p-4 outline-none"
       aria-label={s.title}
     >
       <div className="flex items-start justify-between gap-3">
@@ -98,7 +98,7 @@ export function ShareSheet({
         {can.sheet && (
           <button
             type="button"
-            className="min-h-tap w-full rounded-xl bg-brand text-sm font-semibold text-white disabled:opacity-40"
+            className="raised tap-scale min-h-tap w-full rounded-xl bg-gradient-to-b from-brand-light to-brand text-sm font-semibold text-white disabled:opacity-40"
             disabled={busy}
             onClick={run}
           >
@@ -111,7 +111,7 @@ export function ShareSheet({
         {!can.sheet && can.clipboard && (
           <button
             type="button"
-            className="min-h-tap w-full rounded-xl bg-brand text-sm font-semibold text-white disabled:opacity-40"
+            className="raised tap-scale min-h-tap w-full rounded-xl bg-gradient-to-b from-brand-light to-brand text-sm font-semibold text-white disabled:opacity-40"
             disabled={busy}
             onClick={run}
           >

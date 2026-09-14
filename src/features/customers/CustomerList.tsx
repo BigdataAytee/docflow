@@ -79,7 +79,7 @@ export function CustomerList({
           onChange={(event) => setQuery(event.target.value)}
           placeholder={strings.customers.searchPlaceholder}
           aria-label={strings.customers.searchPlaceholder}
-          className="min-h-tap w-full rounded-lg bg-surface/80 px-4 text-sm shadow-inner"
+          className="recessed min-h-tap w-full rounded-lg px-4 text-sm"
         />
       </label>
 
@@ -136,7 +136,7 @@ export function CustomerList({
                 <button
                   type="button"
                   onClick={onAdd}
-                  className="min-h-tap rounded-full bg-brand px-5 text-sm font-semibold text-white"
+                  className="raised tap-scale min-h-tap rounded-full bg-gradient-to-b from-brand-light to-brand px-5 text-sm font-semibold text-white"
                 >
                   {strings.customers.addFirst}
                 </button>
@@ -163,7 +163,7 @@ export function CustomerList({
             type="button"
             onClick={onAdd}
             aria-label={strings.customers.add}
-            className="mb-2 grid h-11 w-11 place-items-center rounded-full bg-brand text-xl font-bold text-white"
+            className="raised tap-scale mb-2 grid h-11 w-11 place-items-center rounded-full bg-gradient-to-b from-brand-light to-brand text-xl font-bold text-white"
           >
             +
           </button>
@@ -210,7 +210,7 @@ function CustomerCard({
     <button
       type="button"
       onClick={() => onOpen?.(customer)}
-      className="flex min-h-tap w-full items-center gap-3 rounded-2xl bg-surface/80 p-3 text-start"
+      className="glass flex min-h-tap w-full items-center gap-3 rounded-2xl p-3 text-start"
     >
       <span
         className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-brand-tint text-sm font-bold text-brand"

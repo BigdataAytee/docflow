@@ -47,7 +47,7 @@ export function ConflictChooser({
       </div>
 
       {expanded && (
-        <dl className="space-y-2 rounded-xl bg-surface/70 p-3 text-xs">
+        <dl className="glass space-y-2 rounded-xl p-3 text-xs">
           {resolution.fields.map((field) => (
             <div key={field} className="space-y-1">
               <dt className="font-semibold opacity-70">{field}</dt>
@@ -69,7 +69,7 @@ export function ConflictChooser({
           <button
             type="button"
             onClick={() => setExpanded(true)}
-            className="min-h-tap rounded-full bg-surface/70 px-4 text-xs font-semibold"
+            className="glass min-h-tap rounded-full px-4 text-xs font-semibold"
           >
             {strings.conflict.seeBoth}
           </button>
@@ -77,14 +77,14 @@ export function ConflictChooser({
         <button
           type="button"
           onClick={() => onChoose('mine')}
-          className="min-h-tap rounded-full bg-surface/70 px-4 text-xs font-semibold"
+          className="glass min-h-tap rounded-full px-4 text-xs font-semibold"
         >
           {strings.conflict.useMine}
         </button>
         <button
           type="button"
           onClick={() => onChoose('theirs')}
-          className="min-h-tap rounded-full bg-surface/70 px-4 text-xs font-semibold"
+          className="glass min-h-tap rounded-full px-4 text-xs font-semibold"
         >
           {strings.conflict.useTheirs}
         </button>

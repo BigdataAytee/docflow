@@ -46,7 +46,7 @@ export function SavedItems({ onRemove }: { onRemove?: (id: string) => void }) {
       )}
 
       {items !== null && items.length > 0 && (
-        <ul className="divide-y divide-ink/10 overflow-hidden rounded-2xl bg-surface/85">
+        <ul className="glass-solid divide-y divide-ink/10 overflow-hidden rounded-2xl">
           {items.map((item) => (
             <li key={item.id} className="flex items-center gap-3 p-3">
               <span className="min-w-0 flex-1">

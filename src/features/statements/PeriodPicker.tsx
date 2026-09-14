@@ -57,7 +57,7 @@ export function PeriodPicker({ period, today, onChange }: PeriodPickerProps) {
   ]
 
   return (
-    <section className="rounded-2xl bg-surface/70 p-4" aria-label={strings.statements.pickPeriod}>
+    <section className="glass rounded-2xl p-4" aria-label={strings.statements.pickPeriod}>
       <h2 className="text-sm font-semibold">{strings.statements.pickPeriod}</h2>
 
       <div className="mt-3 flex flex-wrap gap-2">

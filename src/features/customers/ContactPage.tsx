@@ -104,7 +104,7 @@ export function ContactPage({
       />
 
       <div className="space-y-4 px-4 pt-4">
-        <section className="rounded-2xl bg-surface/70 p-4" aria-label={strings.customers.labels}>
+        <section className="glass rounded-2xl p-4" aria-label={strings.customers.labels}>
           <h2 className="text-sm font-semibold">{strings.customers.labels}</h2>
           {customer.labels.length > 0 && (
             <ul className="mt-2 flex flex-wrap gap-2">
@@ -151,7 +151,7 @@ export function ContactPage({
             />
             <button
               type="submit"
-              className="min-h-tap rounded-xl bg-brand px-4 text-sm font-semibold text-white"
+              className="raised tap-scale min-h-tap rounded-xl bg-gradient-to-b from-brand-light to-brand px-4 text-sm font-semibold text-white"
             >
               {strings.contact.saveLabel}
             </button>
@@ -177,7 +177,7 @@ export function ContactPage({
               </a>
               <a
                 href={`tel:${customer.phone ?? ''}`}
-                className="flex min-h-tap flex-1 items-center justify-center rounded-2xl bg-surface/70 text-sm font-semibold"
+                className="glass flex min-h-tap flex-1 items-center justify-center rounded-2xl text-sm font-semibold"
               >
                 {strings.contact.call}
               </a>
@@ -186,14 +186,14 @@ export function ContactPage({
           <button
             type="button"
             onClick={onStatement}
-            className="min-h-tap flex-1 rounded-2xl bg-surface/70 text-sm font-semibold"
+            className="glass min-h-tap flex-1 rounded-2xl text-sm font-semibold"
           >
             {strings.contact.statement}
           </button>
         </section>
         {!canReach && <p className="px-1 text-xs opacity-70">{strings.contact.noPhone}</p>}
 
-        <section className="rounded-2xl bg-surface/70 p-4" aria-label={strings.contact.balance}>
+        <section className="glass rounded-2xl p-4" aria-label={strings.contact.balance}>
           <h2 className="text-sm font-semibold">{strings.contact.balance}</h2>
 
           {balances.length === 0 ? (
@@ -213,7 +213,7 @@ export function ContactPage({
           )}
         </section>
 
-        <section className="rounded-2xl bg-surface/70 p-4" aria-label={strings.contact.history}>
+        <section className="glass rounded-2xl p-4" aria-label={strings.contact.history}>
           <h2 className="text-sm font-semibold">{strings.contact.history}</h2>
           {history.length === 0 ? (
             <div className="mt-2">
@@ -255,7 +255,7 @@ export function ContactPage({
 
         {/* No aria-label on the section: the heading below already names it,
             and repeating the word would give the textarea a twin. */}
-        <section className="rounded-2xl bg-surface/70 p-4">
+        <section className="glass rounded-2xl p-4">
           <h2 className="text-sm font-semibold">{strings.contact.notes}</h2>
           <p className="mt-0.5 text-xs opacity-70">{strings.contact.notesHint}</p>
           <textarea

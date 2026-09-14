@@ -38,7 +38,7 @@ export function DesignStep({
 
   return (
     <div className="space-y-4">
-      <div className="overflow-hidden rounded-2xl bg-surface/85 p-3">{preview}</div>
+      <div className="glass-solid overflow-hidden rounded-2xl p-3">{preview}</div>
 
       <div className="flex flex-wrap items-center gap-3">
         <span className="rounded-full bg-brand-tint px-3 py-1 text-xs font-semibold text-brand">

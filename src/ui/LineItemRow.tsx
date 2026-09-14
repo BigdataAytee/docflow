@@ -31,7 +31,7 @@ export function LineItemRow({
   removeLabel,
 }: LineItemRowProps) {
   return (
-    <div className="flex items-center gap-3 rounded-2xl bg-surface/80 p-3">
+    <div className="glass flex items-center gap-3 rounded-2xl p-3">
       {photo !== undefined && <div className="h-11 w-11 shrink-0 overflow-hidden rounded-lg">{photo}</div>}
       <div className="min-w-0 flex-1">
         <p className="truncate text-sm font-semibold">{description}</p>

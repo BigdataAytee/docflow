@@ -60,7 +60,7 @@ export function CreditNoteSheet({
     <section
       ref={panel}
       tabIndex={-1}
-      className="rounded-2xl bg-surface/85 p-4 outline-none backdrop-blur"
+      className="glass-solid rounded-2xl p-4 outline-none"
       aria-label={c.sheetTitle}
     >
       <div className="flex items-start justify-between gap-3">
@@ -119,7 +119,7 @@ export function CreditNoteSheet({
 
           <button
             type="button"
-            className="mt-3 min-h-tap w-full rounded-xl bg-brand px-4 text-sm font-semibold text-white disabled:opacity-40"
+            className="raised tap-scale mt-3 min-h-tap w-full rounded-xl bg-gradient-to-b from-brand-light to-brand px-4 text-sm font-semibold text-white disabled:opacity-40"
             disabled={!canIssue}
             onClick={() =>
               onIssue({

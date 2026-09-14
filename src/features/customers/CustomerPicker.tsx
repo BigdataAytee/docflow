@@ -91,7 +91,7 @@ export function CustomerPicker({
       <div className="flex items-center gap-3">
         <button
           type="button"
-          className="flex min-h-tap min-w-0 flex-1 items-center gap-3 rounded-lg bg-page px-3 text-start shadow-inner"
+          className="sunken flex min-h-tap min-w-0 flex-1 items-center gap-3 rounded-lg px-3 text-start"
           aria-expanded={open}
           aria-label={strings.details.chooseCustomer}
           onClick={() => setOpen((was) => !was)}
@@ -119,7 +119,7 @@ export function CustomerPicker({
         <button
           type="button"
           aria-label={strings.customers.add}
-          className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-brand text-lg font-bold text-white"
+          className="raised tap-scale grid h-9 w-9 shrink-0 place-items-center rounded-full bg-gradient-to-b from-brand-light to-brand text-lg font-bold text-white"
           onClick={() => {
             setQuery('')
             setAdding(true)
@@ -137,7 +137,7 @@ export function CustomerPicker({
         <div className="rounded-xl border border-edge/10 bg-surface p-2">
           <input
             type="search"
-            className="min-h-tap w-full rounded-lg bg-page px-3 text-sm shadow-inner"
+            className="sunken min-h-tap w-full rounded-lg px-3 text-sm"
             placeholder={strings.details.searchCustomers}
             aria-label={strings.details.searchCustomers}
             value={query}

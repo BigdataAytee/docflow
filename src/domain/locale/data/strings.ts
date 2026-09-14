@@ -26,6 +26,13 @@ export interface UiStrings {
     readonly saved: string
     readonly savingAutomatically: string
     readonly remove: string
+    /**
+     * §G's two round controls on Home. The names are here rather than in
+     * `home` because the same two capabilities are reached from the builder
+     * as well, and one word for one thing is the whole point of §D.
+     */
+    readonly voice: string
+    readonly scan: string
   }
   /**
    * Signing in, and the first business (§R, §S).
@@ -357,6 +364,12 @@ export interface UiStrings {
     readonly searchEverything: string
     readonly addLogo: string
     readonly logOut: string
+    /**
+     * §G's "one line of copy" under the greeting. It says what the two stat
+     * cards below it are, so the figures are introduced rather than simply
+     * appearing — and it is the same sentence whether they are full or empty.
+     */
+    readonly greetingLine: string
   }
   readonly payments: {
     readonly paidOfTotal: string
@@ -729,6 +742,8 @@ const EN: UiStrings = {
     saved: 'Saved',
     savingAutomatically: 'Draft saved automatically',
     remove: 'Remove',
+    voice: 'Say it out loud',
+    scan: 'Photograph a document',
   },
   account: {
     signInTitle: 'Sign in to DocFlow',
@@ -1024,6 +1039,7 @@ const EN: UiStrings = {
     searchEverything: 'Search everything',
     addLogo: 'Tap to add your logo',
     logOut: 'Log out',
+    greetingLine: 'Here is where your money stands today.',
   },
   payments: {
     paidOfTotal: '{paid} paid of {total}',

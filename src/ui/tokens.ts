@@ -11,13 +11,20 @@
  */
 
 import type { DocumentType } from '../domain/documents/types'
+import type { IconName } from './Icon'
 
 export interface TypePalette {
   readonly accent: string
   readonly tint: string
   readonly deep: string
-  /** Tabler icon name. Fixed to the internal type, like the colour (§F). */
-  readonly icon: string
+  /**
+   * Tabler icon name. Fixed to the internal type, like the colour (§F).
+   *
+   * Typed as `IconName` rather than `string` so §F's four pairings are
+   * checked against what the bundled set can actually draw — a renamed glyph
+   * becomes a type error here instead of an empty square on Home.
+   */
+  readonly icon: IconName
 }
 
 export const TYPE_PALETTE: Readonly<Record<DocumentType, TypePalette>> = {

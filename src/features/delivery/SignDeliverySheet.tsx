@@ -40,7 +40,7 @@ export function SignDeliverySheet({ onSign, onClose, error }: SignDeliverySheetP
     <section
       ref={panel}
       tabIndex={-1}
-      className="rounded-2xl bg-surface/85 p-4 outline-none backdrop-blur"
+      className="glass-solid rounded-2xl p-4 outline-none"
       aria-label={s.confirmDelivery}
     >
       <div className="flex items-start justify-between gap-3">

@@ -13,7 +13,7 @@ import { useMemo, useState } from 'react'
 import { useCompany } from '../../app/context'
 import { label as typeLabel, pluralLabel } from '../../domain/locale/profile'
 import { format } from '../../domain/locale/data/strings'
-import { EmptyState, SkeletonList, StatusBadge, TYPE_PALETTE } from '../../ui'
+import { EmptyState, Icon, SkeletonList, StatusBadge, TYPE_PALETTE } from '../../ui'
 import { carriesMoney, type DocumentType } from '../../domain/documents/types'
 import type { Money } from '../../domain/money/money'
 import { formatMoney } from '../customers/formatMoney'
@@ -64,35 +64,74 @@ export function DocumentList({ type, rows, onOpen, onNew }: DocumentListProps) {
   return (
     <section className="px-4 pb-24 pt-4">
       <div
-        className="relative overflow-hidden rounded-2xl p-5 text-white"
-        style={{ background: `linear-gradient(150deg, ${palette.accent}, ${palette.deep})` }}
+        className="sheen-strong relative overflow-hidden rounded-2xl p-5 text-white"
+        style={{
+          backgroundImage: `linear-gradient(150deg, ${palette.accent}, ${palette.deep})`,
+          // The hero carries its own accent shadow, like the Home tiles (§F).
+          boxShadow: `0 18px 34px -18px ${palette.accent}, 0 2px 6px -2px rgb(20 28 74 / 0.24)`,
+        }}
       >
+        {/*
+          §G's "soft corner circles". Decorative and inert — and drawn with
+          `overflow-hidden` on the parent rather than clipped by hand, so a
+          circle can hang off the edge without widening the page. That last
+          part is not cosmetic: an absolutely-positioned decoration is the
+          classic cause of a sideways scroll on a 360px phone.
+        */}
+        <span
+          aria-hidden="true"
+          className="pointer-events-none absolute -end-10 -top-12 h-36 w-36 rounded-full bg-on-accent/10"
+        />
+        <span
+          aria-hidden="true"
+          className="pointer-events-none absolute -bottom-16 -end-4 h-28 w-28 rounded-full bg-on-accent/5"
+        />
+
         <p className="text-[10.5px] font-bold uppercase tracking-[0.16em] opacity-75">
           {strings.lists.eyebrow}
         </p>
         {/* Wraps rather than clipping — §F tests the longest shipped label. */}
-        <h1 className="mt-1 break-words text-2xl font-black leading-tight">{label}</h1>
+        <h1 className="mt-1 flex items-center gap-2 break-words text-2xl font-black leading-tight">
+          <Icon name={palette.icon} size={1.15} className="shrink-0 opacity-90" />
+          <span className="min-w-0 [overflow-wrap:anywhere]">{label}</span>
+        </h1>
         <p className="mt-0.5 text-sm opacity-85">
           {format(strings.lists.countLine, { count: rows?.length ?? 0, label: plural })}
         </p>
         <button
           type="button"
           onClick={onNew}
-          className="mt-3 min-h-tap rounded-full bg-surface/20 px-4 text-sm font-semibold backdrop-blur"
+          // Inset, not raised: §G calls it a translucent button INSIDE the
+          // hero, and a second raised surface on a card that is already
+          // lifted reads as two cards fighting.
+          className="tap-scale mt-3 inline-flex min-h-tap items-center rounded-full bg-on-accent/20 px-4 text-sm font-semibold shadow-[inset_0_1px_0_rgb(255_255_255/0.28)] backdrop-blur"
         >
-          {format(strings.lists.newDocument, { label })}
+          {/*
+            No plus GLYPH here: the catalogue's own string is "+ New {label}",
+            so an icon beside it renders "+ + New Invoice". The FAB below is
+            the one that needs a symbol, because it has no words at all.
+          */}
+          <span className="[overflow-wrap:anywhere]">
+            {format(strings.lists.newDocument, { label })}
+          </span>
         </button>
       </div>
 
-      <label className="mt-4 block">
+      <label className="relative mt-4 block">
         <span className="sr-only">{format(strings.lists.searchIn, { label: plural })}</span>
+        <span
+          aria-hidden="true"
+          className="pointer-events-none absolute inset-y-0 start-3 grid place-items-center opacity-45"
+        >
+          <Icon name="search" size={1.05} />
+        </span>
         <input
           type="search"
           value={query}
           onChange={(event) => setQuery(event.target.value)}
           placeholder={format(strings.lists.searchIn, { label: plural })}
           aria-label={format(strings.lists.searchIn, { label: plural })}
-          className="min-h-tap w-full rounded-lg bg-surface/80 px-4 text-sm shadow-inner"
+          className="recessed min-h-tap w-full rounded-full ps-10 pe-4 text-sm"
         />
       </label>
 
@@ -107,7 +146,7 @@ export function DocumentList({ type, rows, onOpen, onNew }: DocumentListProps) {
         )}
 
         {visible !== null && visible.length > 0 && (
-          <ul className="overflow-hidden rounded-2xl bg-surface/85">
+          <ul className="glass-solid overflow-hidden rounded-2xl">
             {visible.map((row) => (
               <li key={row.id} className="border-b border-ink/10 last:border-0">
                 <button
@@ -151,10 +190,15 @@ export function DocumentList({ type, rows, onOpen, onNew }: DocumentListProps) {
         type="button"
         onClick={onNew}
         aria-label={format(strings.lists.newDocument, { label })}
-        className="fixed bottom-24 end-5 grid h-14 w-14 place-items-center rounded-full text-2xl font-light text-white shadow-lg"
-        style={{ backgroundColor: palette.accent }}
+        className="raised tap-scale fixed bottom-28 end-5 z-10 grid h-14 w-14 place-items-center rounded-full text-white"
+        style={{
+          backgroundImage: `linear-gradient(150deg, ${palette.accent}, ${palette.deep})`,
+          // Its own colour at depth, so the FAB reads as belonging to this
+          // type's page rather than as a floating grey circle (§F).
+          boxShadow: `0 14px 24px -10px ${palette.accent}, 0 2px 6px -2px rgb(20 28 74 / 0.3), inset 0 1px 0 rgb(255 255 255 / 0.28)`,
+        }}
       >
-        +
+        <Icon name="plus" size={1.5} />
       </button>
     </section>
   )

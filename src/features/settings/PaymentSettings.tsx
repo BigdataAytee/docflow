@@ -60,7 +60,7 @@ export function PaymentSettings({
         </p>
       )}
 
-      <section className="space-y-3 rounded-2xl bg-surface/85 p-4">
+      <section className="glass-solid space-y-3 rounded-2xl p-4">
         <h2 className="text-xs font-bold uppercase tracking-wide opacity-60">
           {strings.settings.bankTransfer}
         </h2>
@@ -78,7 +78,7 @@ export function PaymentSettings({
                 onChange={(event) => onBankValue(field.kind, event.target.value)}
                 aria-label={field.label}
                 aria-invalid={problem !== undefined}
-                className="min-h-tap w-full rounded-lg bg-page px-3 text-sm shadow-inner"
+                className="sunken min-h-tap w-full rounded-lg px-3 text-sm"
               />
               {problem !== undefined && (
                 // Beside the field, input retained — never a shake, never red
@@ -90,7 +90,7 @@ export function PaymentSettings({
         })}
       </section>
 
-      <ul className="divide-y divide-ink/10 overflow-hidden rounded-2xl bg-surface/85">
+      <ul className="glass-solid divide-y divide-ink/10 overflow-hidden rounded-2xl">
         {methods.map((method) => (
           <li key={method.id} className="flex items-center gap-3 p-3">
             <span className="flex-1 text-sm font-medium">{method.name}</span>

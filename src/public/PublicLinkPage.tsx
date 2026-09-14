@@ -120,7 +120,7 @@ export function PublicLinkPage({ kind, transport }: PublicLinkPageProps) {
       {screen.state === 'loading' && <p className="text-center text-sm opacity-60">{s.checking}</p>}
 
       {screen.state === 'refused' && (
-        <section className="rounded-2xl bg-surface/80 p-6 text-center" aria-label={s.wrong}>
+        <section className="glass rounded-2xl p-6 text-center" aria-label={s.wrong}>
           {/* A message, and nothing else. Never a reference, never a name. */}
           <p className="text-sm font-medium">
             {screen.reason === 'expired'
@@ -146,7 +146,7 @@ export function PublicLinkPage({ kind, transport }: PublicLinkPageProps) {
             <p className="text-sm tabular-nums opacity-70">{view.reference}</p>
           </header>
 
-          <section className="mt-4 rounded-2xl bg-surface/80 p-4">
+          <section className="glass mt-4 rounded-2xl p-4">
             <p className="text-xs uppercase tracking-wide opacity-60">{view.partyLabel}</p>
             <p className="text-sm font-semibold">{view.customerName}</p>
             {view.deliveryAddress !== null && (
@@ -212,7 +212,7 @@ export function PublicLinkPage({ kind, transport }: PublicLinkPageProps) {
               <button
                 type="button"
                 disabled={busy}
-                className="min-h-tap w-full rounded-xl bg-brand px-4 text-sm font-semibold text-white disabled:opacity-40"
+                className="raised tap-scale min-h-tap w-full rounded-xl bg-gradient-to-b from-brand-light to-brand px-4 text-sm font-semibold text-white disabled:opacity-40"
                 onClick={() => void submit({ answer: 'accepted' })}
               >
                 {busy ? s.sending : s.accept}

@@ -58,7 +58,7 @@ export function SettingsIndexScreen() {
           <li key={row.id}>
             <NavLink
               to={row.path}
-              className="flex min-h-tap items-center rounded-2xl bg-surface/70 px-4 text-sm font-medium"
+              className="glass flex min-h-tap items-center rounded-2xl px-4 text-sm font-medium"
             >
               {row.label}
             </NavLink>

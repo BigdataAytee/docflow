@@ -27,7 +27,7 @@ export function AskBox({ facts, chipLabels, bucketLabels }: AskBoxProps) {
   const [answer, setAnswer] = useState<AskAnswer | null>(null)
 
   return (
-    <section className="rounded-2xl bg-surface/70 p-4 backdrop-blur" aria-label={strings.analytics.askAnything}>
+    <section className="glass rounded-2xl p-4" aria-label={strings.analytics.askAnything}>
       <h2 className="text-sm font-semibold">{strings.analytics.askAnything}</h2>
 
       <div className="mt-3 flex flex-wrap gap-2">
@@ -57,7 +57,7 @@ export function AskBox({ facts, chipLabels, bucketLabels }: AskBoxProps) {
           value={question}
           onChange={(event) => setQuestion(event.target.value)}
         />
-        <button type="submit" className="rounded-xl bg-brand px-4 py-2 text-sm font-semibold text-white">
+        <button type="submit" className="raised tap-scale rounded-xl bg-gradient-to-b from-brand-light to-brand px-4 py-2 text-sm font-semibold text-white">
           {strings.common.next}
         </button>
       </form>

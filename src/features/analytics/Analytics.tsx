@@ -136,7 +136,7 @@ export function Analytics(props: AnalyticsProps) {
             ))}
 
             {ageing.length > 0 && (
-              <section className="rounded-2xl bg-surface/70 p-4 backdrop-blur">
+              <section className="glass rounded-2xl p-4">
                 <h2 className="text-sm font-semibold">{strings.analytics.howLate}</h2>
                 {ageing.map((row) => (
                   <div key={row.currency} className="mt-3">
@@ -159,7 +159,7 @@ export function Analytics(props: AnalyticsProps) {
             )}
 
             {best.length > 0 && (
-              <section className="rounded-2xl bg-surface/70 p-4 backdrop-blur">
+              <section className="glass rounded-2xl p-4">
                 <h2 className="text-sm font-semibold">{strings.analytics.whatSellsBest}</h2>
                 <ol className="mt-3 space-y-2">
                   {best.map((item) => (
@@ -172,12 +172,12 @@ export function Analytics(props: AnalyticsProps) {
               </section>
             )}
 
-            <section className="rounded-2xl bg-surface/70 p-4 backdrop-blur">
+            <section className="glass rounded-2xl p-4">
               <div className="flex items-center justify-between gap-3">
                 <h2 className="text-sm font-semibold">{strings.expenses.title}</h2>
                 <button
                   type="button"
-                  className="grid h-9 w-9 place-items-center rounded-full bg-brand text-lg font-bold text-white"
+                  className="raised tap-scale grid h-9 w-9 place-items-center rounded-full bg-gradient-to-b from-brand-light to-brand text-lg font-bold text-white"
                   aria-label={strings.expenses.add}
                   aria-expanded={sheetOpen}
                   onClick={() => setSheetOpen((open) => !open)}
@@ -231,7 +231,7 @@ export function Analytics(props: AnalyticsProps) {
 
 function Card({ title, amount, emphasis }: { title: string; amount: Money; emphasis?: boolean }) {
   return (
-    <section className="flex-1 rounded-2xl bg-surface/70 p-3 backdrop-blur" aria-label={title}>
+    <section className="glass flex-1 rounded-2xl p-3" aria-label={title}>
       <p className="text-[11px] font-medium opacity-70">{title}</p>
       <p className={`mt-1 tabular-nums ${emphasis === true ? 'text-lg font-bold' : 'text-base font-semibold'}`}>
         {formatMoney(amount)}
@@ -263,7 +263,7 @@ function Bars({
   const height = (amount: Money) => (tallest === 0 ? 0 : Math.round((amount.minor / tallest) * 100))
 
   return (
-    <figure className="mt-3 rounded-2xl bg-surface/70 p-4 backdrop-blur">
+    <figure className="glass mt-3 rounded-2xl p-4">
       <figcaption className="text-sm font-semibold">{title}</figcaption>
       <div className="mt-3 flex h-28 items-end gap-2">
         {bars.map((bar) => (

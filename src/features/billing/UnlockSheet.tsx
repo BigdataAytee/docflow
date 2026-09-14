@@ -48,7 +48,7 @@ export function UnlockSheet({ offer, featureName, onDismiss, onSeePlan }: Unlock
     <section
       ref={panel}
       tabIndex={-1}
-      className="rounded-2xl bg-surface/85 p-4 outline-none backdrop-blur"
+      className="glass-solid rounded-2xl p-4 outline-none"
       aria-label={format(p.partOfPro, { feature: featureName })}
     >
       <h2 className="text-sm font-semibold">{format(p.partOfPro, { feature: featureName })}</h2>
@@ -92,7 +92,7 @@ export function UnlockSheet({ offer, featureName, onDismiss, onSeePlan }: Unlock
         <button
           type="button"
           onClick={onSeePlan}
-          className="min-h-tap min-w-0 flex-1 rounded-xl bg-brand text-sm font-semibold text-white"
+          className="raised tap-scale min-h-tap min-w-0 flex-1 rounded-xl bg-gradient-to-b from-brand-light to-brand text-sm font-semibold text-white"
         >
           {p.seePlan}
         </button>

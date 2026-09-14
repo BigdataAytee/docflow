@@ -69,7 +69,7 @@ export function ItemsStep({ draft, onChange, onRemember }: ItemsStepProps) {
 
   return (
     <div className="space-y-4">
-      <section className="space-y-3 rounded-2xl bg-surface/85 p-4">
+      <section className="glass-solid space-y-3 rounded-2xl p-4">
         <label className="block">
           <span className="mb-1 block text-xs font-medium opacity-70">
             {strings.items.description}
@@ -79,7 +79,7 @@ export function ItemsStep({ draft, onChange, onRemember }: ItemsStepProps) {
             onChange={(event) => setDescription(event.target.value)}
             aria-label={strings.items.description}
             list="docflow-item-suggestions"
-            className="min-h-tap w-full rounded-lg bg-page px-3 text-sm shadow-inner"
+            className="sunken min-h-tap w-full rounded-lg px-3 text-sm"
           />
         </label>
         <datalist id="docflow-item-suggestions">
@@ -98,7 +98,7 @@ export function ItemsStep({ draft, onChange, onRemember }: ItemsStepProps) {
               value={qty}
               onChange={(event) => setQty(event.target.value)}
               aria-label={strings.items.quantity}
-              className="min-h-tap w-full rounded-lg bg-page px-3 text-sm shadow-inner"
+              className="sunken min-h-tap w-full rounded-lg px-3 text-sm"
             />
           </label>
 
@@ -113,7 +113,7 @@ export function ItemsStep({ draft, onChange, onRemember }: ItemsStepProps) {
                 value={price}
                 onChange={(event) => setPrice(event.target.value)}
                 aria-label={strings.items.unitPrice}
-                className="min-h-tap w-full rounded-lg bg-page px-3 text-sm shadow-inner"
+                className="sunken min-h-tap w-full rounded-lg px-3 text-sm"
               />
             </label>
           )}
@@ -123,7 +123,7 @@ export function ItemsStep({ draft, onChange, onRemember }: ItemsStepProps) {
           type="button"
           onClick={add}
           disabled={!canAdd}
-          className="min-h-tap w-full rounded-full bg-brand text-sm font-semibold text-white disabled:opacity-40"
+          className="raised tap-scale min-h-tap w-full rounded-full bg-gradient-to-b from-brand-light to-brand text-sm font-semibold text-white disabled:opacity-40"
         >
           {strings.items.add}
         </button>

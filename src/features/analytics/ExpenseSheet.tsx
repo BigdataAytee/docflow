@@ -82,7 +82,7 @@ export function ExpenseSheet({
     <section
       ref={panel}
       tabIndex={-1}
-      className="rounded-2xl bg-surface/80 p-4 outline-none backdrop-blur"
+      className="glass rounded-2xl p-4 outline-none"
       aria-label={strings.expenses.add}
     >
       <label className="block text-xs font-medium opacity-70" htmlFor={`${ids}-amount`}>
@@ -163,7 +163,7 @@ export function ExpenseSheet({
         </button>
         <button
           type="button"
-          className="flex-1 rounded-xl bg-brand px-3 py-2.5 text-sm font-semibold text-white disabled:opacity-40"
+          className="raised tap-scale flex-1 rounded-xl bg-gradient-to-b from-brand-light to-brand px-3 py-2.5 text-sm font-semibold text-white disabled:opacity-40"
           disabled={!canSave}
           onClick={save}
         >

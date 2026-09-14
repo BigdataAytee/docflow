@@ -45,7 +45,7 @@ export function CustomerSheet({ initialName = '', onSave, onCancel }: CustomerSh
     <form
       ref={panel}
       tabIndex={-1}
-      className="rounded-2xl bg-surface/80 p-4 outline-none backdrop-blur"
+      className="glass rounded-2xl p-4 outline-none"
       aria-label={strings.customers.newCustomer}
       onSubmit={(event) => {
         event.preventDefault()
@@ -107,7 +107,7 @@ export function CustomerSheet({ initialName = '', onSave, onCancel }: CustomerSh
         </button>
         <button
           type="submit"
-          className="min-h-tap flex-1 rounded-xl bg-brand text-sm font-semibold text-white disabled:opacity-40"
+          className="raised tap-scale min-h-tap flex-1 rounded-xl bg-gradient-to-b from-brand-light to-brand text-sm font-semibold text-white disabled:opacity-40"
           disabled={trimmed === ''}
         >
           {strings.customers.save}

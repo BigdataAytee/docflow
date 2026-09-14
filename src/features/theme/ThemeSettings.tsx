@@ -22,7 +22,7 @@ export function ThemeSettings({ choice, onChoice }: ThemeSettingsProps) {
   }
 
   return (
-    <section className="rounded-2xl bg-surface/70 p-4 backdrop-blur" aria-label={strings.settings.theme}>
+    <section className="glass rounded-2xl p-4" aria-label={strings.settings.theme}>
       <p className="text-sm font-semibold">{strings.settings.theme}</p>
       <p className="mt-0.5 text-xs opacity-70">{strings.settings.themeHint}</p>
 

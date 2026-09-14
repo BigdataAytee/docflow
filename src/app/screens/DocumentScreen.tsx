@@ -243,7 +243,7 @@ export function DocumentScreen({ today = new Date().toISOString().slice(0, 10) }
         {record.status === 'draft' && (
           <button
             type="button"
-            className="min-h-tap w-full rounded-full bg-brand px-4 text-sm font-semibold text-white"
+            className="raised tap-scale min-h-tap w-full rounded-full bg-gradient-to-b from-brand-light to-brand px-4 text-sm font-semibold text-white"
             onClick={() => navigate(editDocumentPath(id))}
           >
             {strings.savedDocument.continueEditing}
@@ -255,7 +255,7 @@ export function DocumentScreen({ today = new Date().toISOString().slice(0, 10) }
         {record.status !== 'draft' && !sharing && (
           <button
             type="button"
-            className="min-h-tap w-full rounded-full bg-brand px-4 text-sm font-semibold text-white"
+            className="raised tap-scale min-h-tap w-full rounded-full bg-gradient-to-b from-brand-light to-brand px-4 text-sm font-semibold text-white"
             onClick={() => setSharing(true)}
           >
             {strings.savedDocument.sharePdf}
@@ -331,7 +331,7 @@ export function DocumentScreen({ today = new Date().toISOString().slice(0, 10) }
           change what the record says happened (§P).
         */}
         {(canAttachPhoto(record) || deliveryPhotoUrl !== undefined) && (
-          <section className="rounded-2xl bg-surface/70 p-4" aria-label={strings.photo.title}>
+          <section className="glass rounded-2xl p-4" aria-label={strings.photo.title}>
             <h2 className="text-sm font-semibold">{strings.photo.title}</h2>
             <p className="mt-0.5 mb-3 text-xs opacity-70">
               {canAttachPhoto(record) ? strings.photo.explain : strings.photo.sealed}
@@ -464,7 +464,7 @@ export function DocumentScreen({ today = new Date().toISOString().slice(0, 10) }
         {revisedFrom !== null && (
           <button
             type="button"
-            className="w-full rounded-2xl bg-surface/70 p-4 text-start text-sm"
+            className="glass w-full rounded-2xl p-4 text-start text-sm"
             onClick={() => navigate(documentPath(revisedFrom.id))}
           >
             {record.type === 'quotation' && (
@@ -550,7 +550,7 @@ export function DocumentScreen({ today = new Date().toISOString().slice(0, 10) }
         */}
         {record.type === 'receipt' &&
           reasonsReissueIsBlocked(record, payments) === 'payment_reversed' && (
-            <p className="rounded-xl bg-surface/70 px-3 py-2.5 text-xs opacity-70">
+            <p className="glass rounded-xl px-3 py-2.5 text-xs opacity-70">
               {strings.reissue.paymentReversed}
             </p>
           )}
@@ -578,7 +578,7 @@ export function DocumentScreen({ today = new Date().toISOString().slice(0, 10) }
           quotation may be converted from — and nothing could reach either.
         */}
         {answers.length > 0 && (
-          <section className="rounded-2xl bg-surface/70 p-4" aria-label={strings.answer.title}>
+          <section className="glass rounded-2xl p-4" aria-label={strings.answer.title}>
             <h2 className="text-sm font-semibold">{strings.answer.title}</h2>
             <p className="mt-0.5 text-xs opacity-70">{strings.answer.explain}</p>
             <div className="mt-3 flex gap-2">
@@ -623,7 +623,7 @@ export function DocumentScreen({ today = new Date().toISOString().slice(0, 10) }
         )}
 
         {recordedAnswer !== null && (
-          <p className="rounded-2xl bg-surface/70 px-4 py-3 text-xs opacity-70">
+          <p className="glass rounded-2xl px-4 py-3 text-xs opacity-70">
             {format(strings.answer.recorded, {
               answer: strings.statuses[recordedAnswer] ?? recordedAnswer,
             })}
@@ -901,7 +901,7 @@ export function DocumentScreen({ today = new Date().toISOString().slice(0, 10) }
         {source !== null && (
           <button
             type="button"
-            className="min-h-tap w-full rounded-2xl bg-surface/70 px-4 text-sm font-medium"
+            className="glass min-h-tap w-full rounded-2xl px-4 text-sm font-medium"
             onClick={() => navigate(documentPath(source.id))}
           >
             {format(strings.convert.madeFrom, {
@@ -997,7 +997,7 @@ export function DocumentScreen({ today = new Date().toISOString().slice(0, 10) }
               }}
             />
 
-            <section className="rounded-2xl bg-surface/70 p-4" aria-label={strings.chase.title}>
+            <section className="glass rounded-2xl p-4" aria-label={strings.chase.title}>
               <h2 className="text-sm font-semibold">{strings.chase.title}</h2>
               {outstanding.minor <= 0 ? (
                 <p className="mt-1 text-xs opacity-70">{strings.chase.nothingToChase}</p>
@@ -1046,7 +1046,7 @@ export function DocumentScreen({ today = new Date().toISOString().slice(0, 10) }
         {customer !== undefined && (
           <button
             type="button"
-            className="min-h-tap w-full rounded-2xl bg-surface/70 px-4 text-sm font-medium"
+            className="glass min-h-tap w-full rounded-2xl px-4 text-sm font-medium"
             onClick={() => navigate(statementPath(customer.id, record.currency))}
           >
             {strings.savedDocument.openStatement}

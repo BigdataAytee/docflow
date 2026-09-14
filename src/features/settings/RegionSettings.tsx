@@ -36,7 +36,7 @@ export function RegionSettings({ settings, onRegion, onOverride }: RegionSetting
     <section className="space-y-4 px-4 py-4">
       <h1 className="text-lg font-bold">{strings.settings.regionAndLanguage}</h1>
 
-      <label className="block rounded-2xl bg-surface/85 p-4">
+      <label className="glass-solid block rounded-2xl p-4">
         <span className="mb-1 block text-xs font-medium opacity-70">
           {strings.settings.businessCountry}
         </span>
@@ -44,7 +44,7 @@ export function RegionSettings({ settings, onRegion, onOverride }: RegionSetting
           value={settings.region}
           onChange={(event) => onRegion(event.target.value)}
           aria-label={strings.settings.businessCountry}
-          className="min-h-tap w-full rounded-lg bg-page px-3 text-sm shadow-inner"
+          className="sunken min-h-tap w-full rounded-lg px-3 text-sm"
         >
           {SUPPORTED_REGIONS.map((region) => (
             <option key={region} value={region}>
@@ -56,7 +56,7 @@ export function RegionSettings({ settings, onRegion, onOverride }: RegionSetting
       </label>
 
       {/* The consequences, beside the cause. */}
-      <dl className="space-y-2 rounded-2xl bg-surface/85 p-4 text-sm">
+      <dl className="glass-solid space-y-2 rounded-2xl p-4 text-sm">
         <div className="flex justify-between gap-3">
           <dt className="opacity-70">{strings.settings.currencyIs}</dt>
           <dd className="font-semibold">{profile.currency}</dd>
@@ -73,7 +73,7 @@ export function RegionSettings({ settings, onRegion, onOverride }: RegionSetting
         </div>
       </dl>
 
-      <section className="space-y-3 rounded-2xl bg-surface/85 p-4">
+      <section className="glass-solid space-y-3 rounded-2xl p-4">
         <h2 className="text-xs font-bold uppercase tracking-wide opacity-60">
           {strings.settings.callThisDocument}
         </h2>
@@ -87,7 +87,7 @@ export function RegionSettings({ settings, onRegion, onOverride }: RegionSetting
                 onOverride(type, event.target.value === '' ? null : event.target.value)
               }
               aria-label={typeLabel(localeProfile, type)}
-              className="min-h-tap w-full rounded-lg bg-page px-3 text-sm shadow-inner"
+              className="sunken min-h-tap w-full rounded-lg px-3 text-sm"
             />
           </label>
         ))}

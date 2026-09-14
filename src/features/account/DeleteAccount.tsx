@@ -62,7 +62,7 @@ export function DeleteAccount({
         <button
           type="button"
           onClick={onCancel}
-          className="min-h-tap w-full rounded-xl bg-brand text-sm font-semibold text-white"
+          className="raised tap-scale min-h-tap w-full rounded-xl bg-gradient-to-b from-brand-light to-brand text-sm font-semibold text-white"
         >
           {d.keep}
         </button>
@@ -85,7 +85,7 @@ export function DeleteAccount({
       <h1 className="text-lg font-bold">{d.title}</h1>
       <p className="text-sm opacity-80">{d.body}</p>
 
-      <ul className="space-y-1 rounded-2xl bg-surface/70 p-3 text-xs">
+      <ul className="glass space-y-1 rounded-2xl p-3 text-xs">
         <li>{d.whatGoes}</li>
         <li>{d.whatStays}</li>
       </ul>

@@ -1844,6 +1844,83 @@ gate itself is deferred with everything else that needs a phone.
       native shell maps the same tree on iOS and Android are all a device pass
       by somebody who uses one. That is D12 below.
 
+- [x] **The glass layer — §F's surface pass, built** (`src/index.css`,
+      `src/ui/Icon.tsx`, `src/ui/Orbs.tsx`, `src/ui/glass.ts`,
+      `src/ui/gloss.test.tsx`). §F is Locked and describes a *surface*
+      treatment the app did not have: "cards, pills, chips and the floating
+      nav are frosted — translucent white with backdrop blur and saturation
+      lift, hairline white inner borders, one soft wide shadow plus one tight
+      contact shadow. Inputs read as recessed; buttons raised with a top
+      highlight." Every screen was structurally correct and visually flat.
+
+      **The treatment is five CSS classes, not forty inline decisions.**
+      `glass`, `glass-solid`, `sheen`, `raised`, `recessed`/`sunken`. Each is
+      five declarations that have to agree across the app, and three of them
+      (shadow colour, inner hairline, blur) flip with the theme — written per
+      component that is five chances per surface to get one wrong and forty
+      surfaces that quietly disagree. 73 card surfaces, 18 inputs and 27
+      primary buttons moved onto them in one sweep.
+
+      **§F's performance fallback is a cascade, not a device check.** "On
+      low-tier devices, where `backdrop-filter` is unsupported, or under
+      reduced-transparency, glass degrades automatically to translucent white
+      without blur — same layout, cheaper paint." Two of those three answer
+      themselves in CSS: an unsupported `backdrop-filter` never matches the
+      `@supports` query, and reduced-transparency has its own media query.
+      Only "low-tier device" needs JavaScript, and it reads §N's own
+      `TIER_B_MIN_RAM_GB` rather than restating 3 — two files agreeing by
+      coincidence stop agreeing the day a spike moves the number. **Silence is
+      read as capable**: `deviceMemory` is Chromium-only, and treating its
+      absence as a weak phone would strip §F's design from every iPhone.
+
+      **Navigation "B", as §F settles it.** A floating glass pill, four
+      unlabelled icon tiles, the active one lifted 4px with a short dark dash
+      beneath, press scaling to 0.9. Unlabelled on screen, never to a reader:
+      each tile carries its localised name in a visually-hidden span, and the
+      dash exists because colour alone is what §V will not accept. The bar
+      spanning the screen takes no taps — only the pill does — or an invisible
+      full-width strip sits over the bottom of every page and eats the FAB.
+
+      **The icon set is inlined, not installed** (§F: "Tabler icon set,
+      bundled"). Seventeen glyphs as ~2KB of path data, because nothing in the
+      installed app may reach a CDN and the app has to open on a 3GB phone.
+      Every icon is `aria-hidden` and names nothing — an icon that names
+      itself names itself in English, which is the bug §D exists to prevent.
+      `TypePalette.icon` is typed `IconName`, so §F's four type pairings are a
+      type error rather than an empty square on Home.
+
+      **Three things the repo's own sweeps caught, and none was loosened:**
+
+      · Seven literal `bg-white/NN` highlights drawn on locked accents. They
+        are genuinely white in both themes, for the same reason `text-white`
+        is — but the sweep is right to refuse literals, because the next white
+        square will be one that should have been `surface` and no scan can
+        tell them apart. Named as a token instead: `--on-accent`, fixed in
+        both themes, with the intention written down where it is reviewable.
+      · A `motion-reduce:transition-none` paired with an unprefixed
+        `transition-transform`. The house rule is the `motion-safe:` prefix,
+        and it is the better one: a guard that must be remembered twice is a
+        guard that will be remembered once.
+      · A frosted 8px progress track. `.glass` carries a card's drop shadow,
+        which under a sliver reads as a floating splinter; §F puts progress
+        INTO the surface, so the track is `recessed`.
+
+      **Two recess classes, not one.** A recess is defined by being darker
+      than what surrounds it, and there is no single colour darker than both
+      of the app's backgrounds — so `recessed` fills with the surface (a field
+      on the page) and `sunken` with the page (a field inside a white card).
+
+      **Deliberate deviation, noted per Rule #1.** §G places two round Voice
+      and Scan controls on Home. They render only when this screen is given
+      handlers for them, and nothing supplies handlers yet. §N is explicit
+      that an unavailable capability is stated plainly rather than dressed up,
+      and a round microphone that opens nothing is the dressed-up version. The
+      slot is built, in §G's place and shape; Phase 6's capture supplies the
+      handlers and the controls appear. The logo holder is the same shape of
+      honesty in the other direction — it is a real control that reaches
+      Settings → Company, and shows the empty state because §E stores a logo
+      as an asset ID and nothing resolves an asset to an `<img>` source yet.
+
 ### Open, buildable, and blocking a submission
 
 - [x] **Account deletion — built** (`src/domain/account/`, `src/features/account/`,

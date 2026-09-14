@@ -42,6 +42,24 @@
     --status-warn-tint: 250 238 218;
     --status-bad: 153 60 29;
     --status-bad-tint: 250 236 231;
+
+    /*
+     * White, for a surface sitting ON a locked accent.
+     *
+     * §F fixes the brand and the four type accents in both themes — "a dark
+     * theme may not restate the brand, it may only change what the brand sits
+     * on" — and the highlights drawn on top of those accents are part of the
+     * same locked pair. A hero's corner circle is white over `#2b3fd6`
+     * whatever the phone's theme is, for exactly the reason `text-white` is.
+     *
+     * It is a TOKEN and not a literal `bg-white` because the dark-mode sweep
+     * is right to refuse literals: the next white square somebody types will
+     * be one that should have been `surface`, and a scan cannot tell the two
+     * apart. Naming the intention is what makes the difference reviewable.
+     *
+     * Identical in both themes, deliberately. That is the whole point of it.
+     */
+    --on-accent: 255 255 255;
   }
 
   .dark {
@@ -82,6 +100,9 @@
     --status-warn-tint: 66 42 10;
     --status-bad: 240 168 141;
     --status-bad-tint: 74 33 20;
+
+    /* Locked, like the accent it sits on. See the note in `:root`. */
+    --on-accent: 255 255 255;
   }
 
   body {
@@ -131,5 +152,259 @@
    */
   .native [data-safe-bottom] {
     padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 0.75rem);
+  }
+}
+
+/*
+ * ===========================================================================
+ * The corporate glass layer (§F).
+ * ===========================================================================
+ *
+ * §F is Locked, and it asks for one thing this app did not have: surfaces
+ * that sit ABOVE the page rather than lying flat on it. "Cards, pills, chips
+ * and the floating nav are frosted — translucent white with backdrop blur and
+ * saturation lift, hairline white inner borders, one soft wide shadow plus
+ * one tight contact shadow. Inputs read as recessed; buttons raised with a
+ * top highlight."
+ *
+ * Why this is CSS and not Tailwind classes sprinkled per component: the
+ * treatment is five declarations that must agree everywhere, and the shadow
+ * colour, the inner hairline and the blur all have to flip with the theme.
+ * Written inline that is five chances per surface to get one of them wrong,
+ * and forty surfaces that quietly disagree. Written here, `className="glass"`
+ * is one word that is correct in both themes and on both tiers of device.
+ *
+ * §F's PERFORMANCE FALLBACK is the reason for the cascade below rather than a
+ * flat block: "on low-tier devices, where `backdrop-filter` is unsupported,
+ * or under reduced-transparency, glass degrades automatically to translucent
+ * white without blur — same layout, cheaper paint." So blur is ADDED by an
+ * `@supports` query and REMOVED again by the two conditions that should not
+ * have it. A phone that cannot paint it never asks for it; nothing detects a
+ * device and branches in JavaScript.
+ */
+@layer components {
+  :root {
+    /*
+     * The shadow is a darker navy rather than black. Black over a blue page
+     * greys it; §F's page is `#eef2fb` and has to stay that colour under a
+     * card, so the shadow is made of the page's own hue at depth.
+     */
+    --shadow-rgb: 20 28 74;
+    --shadow-wide: 0 18px 38px -22px rgb(var(--shadow-rgb) / 0.5);
+    --shadow-contact: 0 2px 6px -2px rgb(var(--shadow-rgb) / 0.18);
+    /* §F's "hairline white inner borders" — a lit top edge, not a stroke. */
+    --glass-inner: inset 0 1px 0 rgb(255 255 255 / 0.5);
+    --glass-alpha: 0.72;
+  }
+
+  .dark {
+    /*
+     * On a dark page a navy shadow is invisible, so depth has to come from
+     * true black — and the inner highlight drops to a hint, because a bright
+     * white edge on a dark card reads as a border rather than as light.
+     */
+    --shadow-rgb: 0 0 0;
+    --shadow-wide: 0 18px 38px -20px rgb(var(--shadow-rgb) / 0.62);
+    --shadow-contact: 0 2px 6px -2px rgb(var(--shadow-rgb) / 0.4);
+    --glass-inner: inset 0 1px 0 rgb(255 255 255 / 0.07);
+    --glass-alpha: 0.66;
+  }
+
+  /*
+   * A frosted surface: card, pill or chip.
+   *
+   * The background is `--surface` at an alpha, so it is the SAME token the
+   * rest of the app uses — a glass card in dark mode is the lighter navy of
+   * `src/index.css` above, not a second palette invented down here.
+   */
+  .glass {
+    background-color: rgb(var(--surface) / var(--glass-alpha));
+    box-shadow: var(--shadow-wide), var(--shadow-contact), var(--glass-inner);
+  }
+
+  /* For a surface that has to carry small text: more opaque, same depth. */
+  .glass-solid {
+    background-color: rgb(var(--surface) / 0.94);
+    box-shadow: var(--shadow-wide), var(--shadow-contact), var(--glass-inner);
+  }
+
+  /*
+   * The blur and the saturation lift, added only where they can be painted.
+   *
+   * The saturation is what makes it read as glass rather than as fog: blur
+   * alone washes the colour out of whatever is behind it, and the four
+   * ambient orbs below are the thing meant to show through.
+   */
+  @supports (backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px)) {
+    .glass,
+    .glass-solid {
+      -webkit-backdrop-filter: blur(14px) saturate(1.5);
+      backdrop-filter: blur(14px) saturate(1.5);
+    }
+  }
+
+  /*
+   * §F's fallback, both halves.
+   *
+   * `prefers-reduced-transparency` is the accessibility setting; `.no-glass`
+   * on the root is the low-tier device, set from the §N tier check at boot.
+   * Both land in the same place: opaque surface, no blur, layout untouched.
+   */
+  @media (prefers-reduced-transparency: reduce) {
+    .glass,
+    .glass-solid {
+      -webkit-backdrop-filter: none;
+      backdrop-filter: none;
+      background-color: rgb(var(--surface));
+    }
+  }
+
+  .no-glass .glass,
+  .no-glass .glass-solid {
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+    background-color: rgb(var(--surface) / 0.96);
+    box-shadow: var(--shadow-contact);
+  }
+
+  /*
+   * The sheen (§F's gloss pass): "a light sheen across the top third".
+   *
+   * Static, not animated — §F allows a sheen and forbids continuous pulsing,
+   * and a highlight that moves on its own is the second thing dressed as the
+   * first. Nothing here needs `prefers-reduced-motion` because nothing here
+   * moves.
+   */
+  .sheen {
+    position: relative;
+    isolation: isolate;
+  }
+
+  .sheen::before {
+    content: '';
+    position: absolute;
+    inset: 0 0 auto 0;
+    height: 34%;
+    z-index: -1;
+    pointer-events: none;
+    border-radius: inherit;
+    background-image: linear-gradient(
+      to bottom,
+      rgb(255 255 255 / 0.22),
+      rgb(255 255 255 / 0)
+    );
+  }
+
+  /* On a coloured hero the sheen carries further and starts brighter. */
+  .sheen-strong::before {
+    height: 52%;
+    background-image: linear-gradient(
+      to bottom,
+      rgb(255 255 255 / 0.3),
+      rgb(255 255 255 / 0)
+    );
+  }
+
+  /*
+   * §F: "buttons raised with a top highlight". The highlight is an inset,
+   * so it survives any background — a brand button, a type-coloured FAB, or
+   * a white chip — without each of them restating it.
+   */
+  .raised {
+    box-shadow:
+      inset 0 1px 0 rgb(255 255 255 / 0.28),
+      0 8px 18px -10px rgb(var(--shadow-rgb) / 0.55),
+      0 1px 2px 0 rgb(var(--shadow-rgb) / 0.2);
+  }
+
+  /* §F: "inputs read as recessed". */
+  .recessed {
+    background-color: rgb(var(--surface) / 0.85);
+    box-shadow:
+      inset 0 2px 4px 0 rgb(var(--shadow-rgb) / 0.13),
+      inset 0 0 0 1px rgb(var(--edge) / 0.06);
+  }
+
+  .recessed::placeholder {
+    color: rgb(var(--ink) / 0.5);
+  }
+
+  /*
+   * The same recess, for an input INSIDE a white card.
+   *
+   * `.recessed` fills with the surface colour, which is what a field needs
+   * when it sits on the page — and is invisible the moment the card behind it
+   * is that same white. A recess is defined by being darker than what
+   * surrounds it, so inside a card the fill has to be the PAGE. Two classes
+   * rather than one because there is no single colour that is darker than
+   * both of the app's two backgrounds.
+   */
+  .sunken {
+    background-color: rgb(var(--page));
+    box-shadow:
+      inset 0 2px 4px 0 rgb(var(--shadow-rgb) / 0.14),
+      inset 0 0 0 1px rgb(var(--edge) / 0.06);
+  }
+
+  .sunken::placeholder {
+    color: rgb(var(--ink) / 0.5);
+  }
+
+  /*
+   * §F: "Soft ambient colour orbs (one per document type) sit behind
+   * content, decorative only, never intercepting taps."
+   *
+   * `fixed` and `pointer-events: none`, so they never scroll into a tap
+   * target and never take one. Hidden entirely on the low tier, where four
+   * large blurred gradients are exactly the paint §F's fallback is avoiding.
+   */
+  .orbs {
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+    overflow: hidden;
+    pointer-events: none;
+  }
+
+  .orb {
+    position: absolute;
+    border-radius: 9999px;
+    opacity: 0.14;
+    filter: blur(72px);
+  }
+
+  .dark .orb {
+    opacity: 0.2;
+  }
+
+  .no-glass .orbs {
+    display: none;
+  }
+
+  @media (prefers-reduced-transparency: reduce) {
+    .orbs {
+      display: none;
+    }
+  }
+
+  /*
+   * The press state §F names for the nav tiles ("press scales to 0.9") and
+   * the lift of the active one. Held here rather than per-component because
+   * both need the same reduced-motion answer, which is: the lift stays (it
+   * is a position, and it is how an unlabelled tile says which one it is),
+   * the TRANSITION goes.
+   */
+  .tap-scale {
+    transition: transform 140ms ease;
+  }
+
+  .tap-scale:active {
+    transform: scale(0.9);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .tap-scale {
+      transition: none;
+    }
   }
 }

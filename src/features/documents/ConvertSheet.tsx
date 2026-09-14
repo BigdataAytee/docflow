@@ -56,7 +56,7 @@ export function ConvertSheet({
     <section
       ref={panel}
       tabIndex={-1}
-      className="rounded-2xl bg-surface/85 p-4 outline-none backdrop-blur"
+      className="glass-solid rounded-2xl p-4 outline-none"
       aria-label={strings.convert.title}
     >
       <div className="flex items-start justify-between gap-3">
@@ -93,7 +93,7 @@ export function ConvertSheet({
                   {made === undefined ? (
                     <button
                       type="button"
-                      className="min-h-tap w-full rounded-xl bg-brand px-4 text-sm font-semibold text-white"
+                      className="raised tap-scale min-h-tap w-full rounded-xl bg-gradient-to-b from-brand-light to-brand px-4 text-sm font-semibold text-white"
                       onClick={() => onConvert(target)}
                     >
                       {format(strings.convert.turnInto, { label: word })}

@@ -25,7 +25,10 @@ export function PaidSoFarBar({ bar }: { bar: PaidSoFar }) {
   // progress bar needs that name as a widget — two elements sharing one
   // accessible name is one too many for anyone navigating by label.
   return (
-    <section className="rounded-2xl bg-invoice-tint p-4">
+    // §F gives the paid bar gradient depth, like the header and the hero
+    // bands. The wash runs from the type tint to the page, so the card
+    // settles into the page at its foot instead of ending on a hard edge.
+    <section className="sheen relative overflow-hidden rounded-2xl bg-invoice-tint p-4 shadow-[inset_0_1px_0_rgb(255_255_255/0.5),0_2px_6px_-2px_rgb(20_28_74/0.16)]">
       <p className="text-sm font-semibold text-invoice-deep">
         {spoken}
         {!bar.isSettled && (
@@ -36,7 +39,9 @@ export function PaidSoFarBar({ bar }: { bar: PaidSoFar }) {
         )}
       </p>
       <div
-        className="mt-2 h-2 overflow-hidden rounded-full bg-surface/70"
+        // Recessed, not frosted: a 8px track with a card's drop shadow under
+        // it reads as a floating sliver. §F puts progress INTO the surface.
+        className="recessed mt-2 h-2 overflow-hidden rounded-full"
         role="progressbar"
         aria-label={spoken}
         aria-valuenow={Math.round(percent)}

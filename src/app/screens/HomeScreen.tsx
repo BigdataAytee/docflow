@@ -88,6 +88,15 @@ export function HomeScreen({ now = new Date() }: { now?: Date }) {
     <Home
       businessName={company?.name ?? ''}
       userName=""
+      // §G's logo holder is a way INTO Settings, not an ornament: "tap to add
+      // your logo" has to be tappable or it is an instruction with nowhere to
+      // follow it.
+      //
+      // No `logoUrl` yet, and deliberately none invented: §E stores a logo as
+      // an ASSET ID, and nothing in the app resolves an asset to something an
+      // `<img>` can load until the local asset store lands. The holder shows
+      // the empty state, which is the truth on every install today.
+      onAddLogo={() => navigate(settingsPath('company'))}
       now={now}
       online={false}
       pendingCount={0}

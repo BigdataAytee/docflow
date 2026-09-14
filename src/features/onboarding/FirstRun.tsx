@@ -27,7 +27,7 @@ export function FirstRun({ suggestedType, onCreate, onViewSample }: FirstRunProp
   const palette = TYPE_PALETTE[suggestedType]
 
   return (
-    <section className="space-y-4 rounded-2xl bg-surface/80 px-6 py-8 text-center">
+    <section className="glass space-y-4 rounded-2xl px-6 py-8 text-center">
       <h2 className="text-base font-bold">{strings.firstRun.title}</h2>
       <p className="mx-auto max-w-sm text-sm opacity-70">{strings.firstRun.body}</p>
 
