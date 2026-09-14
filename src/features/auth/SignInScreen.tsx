@@ -15,6 +15,7 @@
 import { useId, useState } from 'react'
 
 import type { UiStrings } from '../../domain/locale/data/strings'
+import { classifyAuthFailure, refusalMessage } from './refusal'
 
 export interface SignInScreenProps {
   readonly strings: UiStrings
@@ -50,7 +51,9 @@ export function SignInScreen({
     try {
       await action()
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : String(cause))
+      // Never the provider's own words: they are English, they are jargon,
+      // and they describe the machine to whoever is probing it (§P, §S).
+      setError(refusalMessage(classifyAuthFailure(cause), strings))
     } finally {
       setBusy(false)
     }

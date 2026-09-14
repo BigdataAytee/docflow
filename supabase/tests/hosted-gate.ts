@@ -9,7 +9,8 @@
  *   3. an anonymous caller sees nothing
  *   4. the client cannot write billing
  *   5. sessions are configured to survive ≥30 days offline
- *   6. auth refuses a run of sign-in attempts (§P)
+ *   6. auth refuses a run of requests, per endpoint, against the numbers
+ *      declared in `src/domain/auth/limits.ts` (§P)
  *
  * It needs, from the gitignored .env:
  *   VITE_SUPABASE_URL, VITE_SUPABASE_ANON_KEY, SUPABASE_SERVICE_ROLE_KEY
@@ -27,8 +28,18 @@
 
 import { readFileSync, readdirSync } from 'node:fs'
 import { join } from 'node:path'
+import { pathToFileURL } from 'node:url'
 import { Client } from 'pg'
 import { createClient } from '@supabase/supabase-js'
+
+import {
+  APPLIED,
+  AUTH_LIMITS,
+  type AuthLimit,
+  probeAddress,
+  probeable,
+  runProbe,
+} from '../../src/domain/auth/limits.ts'
 
 const MIGRATIONS = join(import.meta.dirname, '..', 'migrations')
 
@@ -163,45 +174,117 @@ async function seedTwoRealUsers() {
 }
 
 /**
- * §P asks for rate limiting on auth as well as on the public endpoints. Auth
- * is GoTrue — code we do not own and cannot wrap — so the only honest check
- * is to ask it: a run of failed sign-ins should stop being answered.
+ * §P asks for rate limiting on auth as well as on the public endpoints, and
+ * §Q Phase 7 calls the whole item "rate-limit verification".
  *
- * Never against a real account. The address is random and belongs to nobody,
- * so nothing that exists can be locked out; GoTrue counts per IP, which is
- * what is being tested. It does spend this project's sign-in budget for a few
- * minutes, which is why this lives in the gate and not in the test suite.
+ * The public endpoints count for themselves (migration 0019). Auth is
+ * GoTrue — not our code, with no seam to put a counter in — so the limiter is
+ * the provider's and the only honest verification is to ASK IT. The numbers
+ * asked about are declared in `src/domain/auth/limits.ts`, with the reasoning
+ * for each one; this walks that list and probes what it is safe to probe.
  *
- * A failure here is a SETTING, not a bug in this repository: Dashboard →
- * Authentication → Rate Limits.
+ * Three rules it will not bend:
+ *
+ *  · It never probes an endpoint that sends mail. A mail-bomb check that
+ *    mail-bombs is not a check, and the address in a reset request is chosen
+ *    by whoever is asking.
+ *  · It signs in as `…@example.com`, reserved by RFC 2606 and therefore
+ *    belonging to nobody. No real account can be locked out by this.
+ *  · It stops at `PROBE_CEILING`, so a wrong number in the declaration can
+ *    never turn the gate into the flood it is checking for.
+ *
+ * It runs LAST, because it deliberately spends the project's auth budget for
+ * a few minutes. A failure here names a SETTING — Dashboard → Authentication
+ * → Rate Limits — not a bug in this repository.
  */
-const AUTH_ATTEMPTS = 40
 
-async function checkAuthRateLimit(url: string, anonKey: string): Promise<void> {
-  const email = `gate-ratelimit-${Date.now().toString(36)}@example.com`
+async function probeOne(
+  url: string,
+  anonKey: string,
+  limit: AuthLimit,
+  unique: string,
+): Promise<void> {
+  const step = `10. auth throttles ${limit.what.toLowerCase()} (§P)`
+  const email = probeAddress(`${unique}${limit.id}`)
 
-  for (let attempt = 1; attempt <= AUTH_ATTEMPTS; attempt += 1) {
-    const response = await fetch(`${url}/auth/v1/token?grant_type=password`, {
+  // The loop, the budget and the refusal to probe a mail-sending endpoint all
+  // live in the declaration module, where they are unit-tested. What is left
+  // here is the one thing a test cannot have: a real request to a real host.
+  const verdict = await runProbe(limit, email, unique, async (request) => {
+    const response = await fetch(`${url}${request.path}`, {
       method: 'POST',
       headers: { apikey: anonKey, 'content-type': 'application/json' },
-      body: JSON.stringify({ email, password: 'not-the-password' }),
+      body: JSON.stringify(request.body),
     })
+    return response.status
+  })
 
-    if (response.status === 429) {
-      record(
-        '10. auth throttles a run of sign-in attempts (§P)',
-        'pass',
-        `refused after ${attempt} attempts`,
-      )
-      return
-    }
+  if (verdict.kind === 'limited') {
+    // Refused at or before the declared allowance is a pass: a project
+    // stricter than the declaration is safe, and calling that a failure would
+    // push somebody to LOOSEN a real limit to satisfy a test.
+    record(
+      step,
+      'pass',
+      `refused after ${verdict.afterRequests} (declared ${limit.allowance} per ${limit.windowSeconds}s)`,
+    )
+    return
   }
 
   record(
-    '10. auth throttles a run of sign-in attempts (§P)',
+    step,
     'fail',
-    `${AUTH_ATTEMPTS} failed sign-ins, none refused — set Dashboard → Authentication → Rate Limits`,
+    `${verdict.requests} requests, none refused — declared ${limit.allowance} per ${limit.windowSeconds}s; set it in Dashboard → Authentication → Rate Limits`,
   )
+}
+
+export interface StepResult {
+  readonly step: string
+  readonly status: 'pass' | 'fail' | 'skip'
+  readonly detail: string
+}
+
+/**
+ * Exported, and it RETURNS what it recorded.
+ *
+ * Decision 158 in PLAN.md is a pentest entry point that was written,
+ * committed, and never called: twenty tests passed over a program that did
+ * nothing. A gate step nothing can drive is the same shape of lie, and this
+ * one cannot be driven by CI — there is no project. So it takes its host as
+ * an argument and reports back, and `hosted-gate.test.ts` runs it against a
+ * stub that answers the way a limiter does.
+ */
+export async function checkAuthRateLimits(url: string, anonKey: string): Promise<StepResult[]> {
+  const before = results.length
+  // Opt-in, because probing sign-up leaves users behind that somebody then
+  // has to delete. GATE_RESET already means "this is a scratch project".
+  const optIn = process.env.GATE_RESET === '1'
+  const unique = Date.now().toString(36)
+
+  for (const limit of probeable(optIn)) {
+    await probeOne(url, anonKey, limit, unique)
+  }
+
+  for (const limit of AUTH_LIMITS.filter((l) => !probeable(optIn).includes(l))) {
+    record(
+      `10. auth throttles ${limit.what.toLowerCase()} (§P)`,
+      'skip',
+      limit.probeCost === 'sends_email'
+        ? 'never probed: it sends mail to whatever address is given'
+        : 'set GATE_RESET=1 to probe this on a scratch project — it creates accounts',
+    )
+  }
+
+  // The declaration itself is an intention until somebody applies it.
+  if (!APPLIED) {
+    record(
+      '10. the declared auth limits have been applied to a project',
+      'skip',
+      'src/domain/auth/limits.ts says APPLIED = false — the numbers above are what the project SHOULD have, not what anybody has set',
+    )
+  }
+
+  return results.slice(before)
 }
 
 async function main(): Promise<void> {
@@ -277,7 +360,7 @@ async function main(): Promise<void> {
 
   // LAST, after the cleanup above: it deliberately exhausts the project's
   // sign-in budget for a few minutes, and nothing that follows should need it.
-  await checkAuthRateLimit(need('VITE_SUPABASE_URL'), need('VITE_SUPABASE_ANON_KEY'))
+  await checkAuthRateLimits(need('VITE_SUPABASE_URL'), need('VITE_SUPABASE_ANON_KEY'))
 
   const failed = results.filter((r) => r.status === 'fail')
   const skipped = results.filter((r) => r.status === 'skip')
@@ -287,7 +370,12 @@ async function main(): Promise<void> {
   if (failed.length > 0) process.exitCode = 1
 }
 
-main().catch((error: unknown) => {
-  console.error(`\ngate aborted: ${error instanceof Error ? error.message : String(error)}`)
-  process.exitCode = 1
-})
+// Only when this file IS the program. Importing it — which is how the auth
+// step above is tested — must not seed users into whatever project the
+// environment happens to point at.
+if (process.argv[1] !== undefined && import.meta.url === pathToFileURL(process.argv[1]).href) {
+  main().catch((error: unknown) => {
+    console.error(`\ngate aborted: ${error instanceof Error ? error.message : String(error)}`)
+    process.exitCode = 1
+  })
+}
