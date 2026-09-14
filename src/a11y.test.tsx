@@ -6,6 +6,12 @@
  *
  * The longest labels in the shipped tables are the French and Spanish delivery
  * documents, which §F names explicitly: "Bon de livraison", "Guía de remisión".
+ *
+ * Two stress cases, not one, because two different words reach the screen.
+ * The builder header and the new-document button carry the SINGULAR label;
+ * the list hero and Home's tiles carry the PLURAL, which is longer by exactly
+ * the letter that makes it the worse case. Testing the hero against the
+ * singular would have been a stress test that never stressed anything.
  */
 
 import { describe, expect, it, vi } from 'vitest'
@@ -33,18 +39,23 @@ const wrap = (node: React.ReactNode, locale: string) => {
 }
 
 /** The longest label across every shipped table, per §F's instruction to test it. */
-const longestLabel = (): { locale: string; label: string } => {
+const longestOf = (
+  pick: (entry: { label: string; pluralLabel: string }) => string,
+): { locale: string; label: string } => {
   let winner = { locale: 'EN-NG', label: '' }
   for (const locale of LAUNCH_LOCALES) {
     const table = TERMINOLOGY_TABLES[locale]
     if (table === undefined) continue
     for (const type of DOCUMENT_TYPES) {
-      const label = table.types[type].label
+      const label = pick(table.types[type])
       if (label.length > winner.label.length) winner = { locale, label }
     }
   }
   return winner
 }
+
+const longestLabel = () => longestOf((entry) => entry.label)
+const longestPlural = () => longestOf((entry) => entry.pluralLabel)
 
 describe('The longest shipped label wraps rather than clipping (§F)', () => {
   it('is one of the labels §F names as the stress case', () => {
@@ -52,15 +63,27 @@ describe('The longest shipped label wraps rather than clipping (§F)', () => {
     expect(['Bon de livraison', 'Guía de remisión', 'Nota de entrega']).toContain(label)
   })
 
+  it('is stressed by the plural too, which is the longer word', () => {
+    expect(longestPlural().label.length).toBeGreaterThanOrEqual(longestLabel().label.length)
+  })
+
   it('renders in full in the list hero, not truncated', () => {
-    const { locale, label } = longestLabel()
+    // The hero says the PLURAL — "4 delivery notes" lives under a heading
+    // that reads "Delivery notes" — so that is the word to stress it with.
+    const { locale, label } = longestPlural()
     wrap(<DocumentList type="waybill" rows={[]} onOpen={vi.fn()} onNew={vi.fn()} />, locale)
 
     const heading = screen.getByRole('heading', { level: 1 })
     expect(heading).toHaveTextContent(label)
-    // break-words lets it wrap; truncate would hide the end of the word.
-    expect(heading.className).toContain('break-words')
-    expect(heading.className).not.toContain('truncate')
+
+    // The wrap rule sits on the label itself rather than the heading, which
+    // also holds the icon. `overflow-wrap: anywhere` rather than
+    // `break-words`: only the former reduces the element's min-content width,
+    // and that width is what held the container open at 200% text.
+    const rendered = screen.getByText(label)
+    expect(rendered.className).toContain('[overflow-wrap:anywhere]')
+    // Truncation anywhere in the heading would hide the end of the word.
+    expect(heading.innerHTML).not.toContain('truncate')
   })
 
   it('renders in full in the builder header', () => {

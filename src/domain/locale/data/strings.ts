@@ -231,6 +231,8 @@ export interface UiStrings {
   }
   readonly details: {
     readonly numberAndDates: string
+    /** The small label above the reference in step 1's first card. */
+    readonly numberLabel: string
     readonly reference: string
     readonly editReference: string
     readonly issueDate: string
@@ -905,6 +907,7 @@ const EN: UiStrings = {
   },
   details: {
     numberAndDates: 'Number & dates',
+    numberLabel: 'Number',
     reference: 'Reference',
     editReference: 'Edit reference',
     issueDate: 'Date',

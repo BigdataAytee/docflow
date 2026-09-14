@@ -59,6 +59,7 @@ export function ListScreen({ today = new Date().toISOString().slice(0, 10) }: { 
       rows={loading ? null : rows}
       onOpen={(id) => navigate(documentPath(id))}
       onNew={() => navigate(newDocumentPath(type))}
+      onBack={() => navigate(HOME)}
     />
   )
 }

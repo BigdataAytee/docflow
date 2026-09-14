@@ -26,6 +26,7 @@ export const FR: TerminologyTable = {
     invoice: {
       label: 'Facture',
       pluralLabel: 'Factures',
+      pluralInSentence: 'factures',
       printedTitle: 'FACTURE',
       partyLabel: 'Facturé à',
       signatureCaption: 'SIGNATURE AUTORISÉE',
@@ -35,6 +36,7 @@ export const FR: TerminologyTable = {
     quotation: {
       label: 'Devis',
       pluralLabel: 'Devis',
+      pluralInSentence: 'devis',
       printedTitle: 'DEVIS',
       partyLabel: 'Établi pour',
       signatureCaption: 'ÉTABLI PAR',
@@ -44,6 +46,7 @@ export const FR: TerminologyTable = {
     receipt: {
       label: 'Reçu',
       pluralLabel: 'Reçus',
+      pluralInSentence: 'reçus',
       printedTitle: 'REÇU',
       partyLabel: 'Reçu de',
       signatureCaption: 'ÉMIS PAR',
@@ -53,6 +56,7 @@ export const FR: TerminologyTable = {
     waybill: {
       label: 'Bon de livraison',
       pluralLabel: 'Bons de livraison',
+      pluralInSentence: 'bons de livraison',
       printedTitle: 'BON DE LIVRAISON',
       partyLabel: 'Livrer à',
       signatureCaption: 'EXPÉDIÉ PAR',
@@ -83,6 +87,7 @@ export const ES: TerminologyTable = {
     invoice: {
       label: 'Factura',
       pluralLabel: 'Facturas',
+      pluralInSentence: 'facturas',
       printedTitle: 'FACTURA',
       partyLabel: 'Facturar a',
       signatureCaption: 'FIRMA AUTORIZADA',
@@ -92,6 +97,7 @@ export const ES: TerminologyTable = {
     quotation: {
       label: 'Cotización',
       pluralLabel: 'Cotizaciones',
+      pluralInSentence: 'cotizaciones',
       printedTitle: 'COTIZACIÓN',
       partyLabel: 'Preparado para',
       signatureCaption: 'PREPARADO POR',
@@ -101,6 +107,7 @@ export const ES: TerminologyTable = {
     receipt: {
       label: 'Recibo',
       pluralLabel: 'Recibos',
+      pluralInSentence: 'recibos',
       printedTitle: 'RECIBO',
       partyLabel: 'Recibido de',
       signatureCaption: 'EMITIDO POR',
@@ -112,6 +119,7 @@ export const ES: TerminologyTable = {
       // per-market call for review, not a machine choice. MX/PE lean guía.
       label: 'Nota de entrega',
       pluralLabel: 'Notas de entrega',
+      pluralInSentence: 'notas de entrega',
       printedTitle: 'NOTA DE ENTREGA',
       partyLabel: 'Entregar a',
       signatureCaption: 'DESPACHADO POR',
@@ -142,6 +150,7 @@ export const AR: TerminologyTable = {
     invoice: {
       label: 'فاتورة',
       pluralLabel: 'فواتير',
+      pluralInSentence: 'فواتير',
       printedTitle: 'فاتورة',
       partyLabel: 'فاتورة إلى',
       signatureCaption: 'التوقيع المعتمد',
@@ -151,6 +160,7 @@ export const AR: TerminologyTable = {
     quotation: {
       label: 'عرض سعر',
       pluralLabel: 'عروض أسعار',
+      pluralInSentence: 'عروض أسعار',
       printedTitle: 'عرض سعر',
       partyLabel: 'مُعد لصالح',
       signatureCaption: 'أعده',
@@ -160,6 +170,7 @@ export const AR: TerminologyTable = {
     receipt: {
       label: 'إيصال',
       pluralLabel: 'إيصالات',
+      pluralInSentence: 'إيصالات',
       printedTitle: 'إيصال',
       partyLabel: 'مستلم من',
       signatureCaption: 'صادر عن',
@@ -169,6 +180,7 @@ export const AR: TerminologyTable = {
     waybill: {
       label: 'بوليصة شحن',
       pluralLabel: 'بوالص شحن',
+      pluralInSentence: 'بوالص شحن',
       printedTitle: 'بوليصة شحن',
       partyLabel: 'التسليم إلى',
       signatureCaption: 'أرسله',

@@ -368,6 +368,11 @@ export function Home({
                     // Read aloud, the plate and the chip run together as
                     // "Invoice 3", which sounds like a reference number. The
                     // count line says it properly in every language.
+                    //
+                    // The STANDALONE plural here, not the sentence form: this
+                    // is the accessible NAME of a control, and a name should
+                    // be the word the tile visibly says. The sentence form
+                    // belongs where the count line is prose — the list hero.
                     aria-label={format(strings.lists.countLine, {
                       count: counts[type],
                       label: pluralLabel(profile, type),

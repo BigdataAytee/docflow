@@ -17,6 +17,7 @@ const DELIVERY_STEPS = ['Deliver to', 'Goods', 'Dispatch', 'Design', 'Review'] a
 const invoice = (over: Partial<TypeTerminology> = {}): TypeTerminology => ({
   label: 'Invoice',
   pluralLabel: 'Invoices',
+  pluralInSentence: 'invoices',
   printedTitle: 'INVOICE',
   partyLabel: 'Bill to',
   signatureCaption: 'AUTHORISED SIGNATURE',
@@ -28,6 +29,7 @@ const invoice = (over: Partial<TypeTerminology> = {}): TypeTerminology => ({
 const receipt = (over: Partial<TypeTerminology> = {}): TypeTerminology => ({
   label: 'Receipt',
   pluralLabel: 'Receipts',
+  pluralInSentence: 'receipts',
   printedTitle: 'RECEIPT',
   partyLabel: 'Received from',
   signatureCaption: 'ISSUED BY',
@@ -60,6 +62,7 @@ export const EN_NG: TerminologyTable = {
     quotation: {
       label: 'Quotation',
       pluralLabel: 'Quotations',
+      pluralInSentence: 'quotations',
       printedTitle: 'QUOTATION',
       partyLabel: 'Prepared for',
       signatureCaption: 'PREPARED BY',
@@ -70,6 +73,7 @@ export const EN_NG: TerminologyTable = {
     waybill: {
       label: 'Waybill',
       pluralLabel: 'Waybills',
+      pluralInSentence: 'waybills',
       printedTitle: 'WAYBILL',
       partyLabel: 'Deliver to',
       signatureCaption: 'DISPATCHED BY',
@@ -93,6 +97,7 @@ export const EN_GB: TerminologyTable = {
     waybill: {
       label: 'Delivery note',
       pluralLabel: 'Delivery notes',
+      pluralInSentence: 'delivery notes',
       printedTitle: 'DELIVERY NOTE',
       partyLabel: 'Deliver to',
       signatureCaption: 'DISPATCHED BY',
@@ -111,6 +116,7 @@ export const EN_US: TerminologyTable = {
     quotation: {
       label: 'Quote',
       pluralLabel: 'Quotes',
+      pluralInSentence: 'quotes',
       // §D: "printed title: Estimate optional per region".
       printedTitle: 'ESTIMATE',
       partyLabel: 'Prepared for',
@@ -121,6 +127,7 @@ export const EN_US: TerminologyTable = {
     waybill: {
       label: 'Packing slip',
       pluralLabel: 'Packing slips',
+      pluralInSentence: 'packing slips',
       printedTitle: 'PACKING SLIP',
       partyLabel: 'Ship to',
       signatureCaption: 'SHIPPED BY',

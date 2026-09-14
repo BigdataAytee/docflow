@@ -15,6 +15,16 @@ import type { IconName } from './Icon'
 
 export interface TypePalette {
   readonly accent: string
+  /**
+   * The light stop, for the three-stop gradients the design uses on heroes,
+   * FABs and primary buttons.
+   *
+   * Not in the F table, which fixes accent/tint/deep. It comes from the
+   * prototype, which is the reference for what F describes without
+   * quantifying — and a gradient needs a lighter end than the accent or it
+   * is a flat fill with extra steps.
+   */
+  readonly light: string
   readonly tint: string
   readonly deep: string
   /**
@@ -28,10 +38,10 @@ export interface TypePalette {
 }
 
 export const TYPE_PALETTE: Readonly<Record<DocumentType, TypePalette>> = {
-  invoice: { accent: '#2b3fd6', tint: '#e6ebff', deep: '#1e2fae', icon: 'file-invoice' },
-  quotation: { accent: '#534AB7', tint: '#EEEDFE', deep: '#3C3489', icon: 'file-check' },
-  receipt: { accent: '#0F6E56', tint: '#E1F5EE', deep: '#085041', icon: 'receipt' },
-  waybill: { accent: '#BA7517', tint: '#FAEEDA', deep: '#854F0B', icon: 'truck-delivery' },
+  invoice: { accent: '#2b3fd6', light: '#4a60ee', tint: '#e6ebff', deep: '#1e2fae', icon: 'file-invoice' },
+  quotation: { accent: '#534AB7', light: '#7b70e2', tint: '#EEEDFE', deep: '#3C3489', icon: 'file-check' },
+  receipt: { accent: '#0F6E56', light: '#26b489', tint: '#E1F5EE', deep: '#085041', icon: 'receipt' },
+  waybill: { accent: '#BA7517', light: '#f0a731', tint: '#FAEEDA', deep: '#854F0B', icon: 'truck-delivery' },
 }
 
 /** The four status tones of §F. Everything a badge can be resolves to one. */

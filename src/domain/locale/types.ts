@@ -23,8 +23,23 @@ export type ReviewStatus = 'draft' | 'in_review' | 'approved'
 export interface TypeTerminology {
   /** The name on tiles, lists, builder titles, share text — one word everywhere. */
   readonly label: string
-  /** Plural, for count lines ("4 invoices" / "3 delivery notes"). */
+  /** Plural, standing on its own — a list hero's heading, a tile. */
   readonly pluralLabel: string
+  /**
+   * Plural, inside a sentence: "4 invoices", "3 bons de livraison".
+   *
+   * A separate field rather than `pluralLabel.toLocaleLowerCase()`, because
+   * CASE IS NOT A TRANSFORM — it is part of the word, and which part depends
+   * on the language. English and French lower a common noun mid-sentence;
+   * Arabic has no case at all, so the two forms are identical; German would
+   * keep every noun capitalised, and lowercasing it there is a spelling
+   * mistake rather than a style choice.
+   *
+   * Lowercasing at the call site gets English right and quietly gets the next
+   * language wrong, in a place nobody looks — which is exactly the failure §D
+   * exists to prevent.
+   */
+  readonly pluralInSentence: string
   /** The heading printed on the PDF. Usually the label; EN-US quotations differ. */
   readonly printedTitle: string
   /** Customer / Client / Deliver to / Received from (§G step 1). */

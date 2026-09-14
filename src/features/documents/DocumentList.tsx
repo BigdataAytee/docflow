@@ -11,7 +11,7 @@
 import { useMemo, useState } from 'react'
 
 import { useCompany } from '../../app/context'
-import { label as typeLabel, pluralLabel } from '../../domain/locale/profile'
+import { label as typeLabel, pluralInSentence, pluralLabel } from '../../domain/locale/profile'
 import { format } from '../../domain/locale/data/strings'
 import { EmptyState, Icon, SkeletonList, StatusBadge, TYPE_PALETTE } from '../../ui'
 import { carriesMoney, type DocumentType } from '../../domain/documents/types'
@@ -39,15 +39,28 @@ export interface DocumentListProps {
   readonly rows: readonly ListRow[] | null
   readonly onOpen: (id: string) => void
   readonly onNew: () => void
+  /**
+   * Back to Home, as the prototype draws it.
+   *
+   * The nav pill also reaches Home, so this is a second route to one place —
+   * which is usually worth removing (Rule #1). It stays because a list is the
+   * one screen reached BY drilling in, and the way back belongs where the eye
+   * already is rather than at the bottom of the screen.
+   */
+  readonly onBack?: () => void
 }
 
-export function DocumentList({ type, rows, onOpen, onNew }: DocumentListProps) {
+export function DocumentList({ type, rows, onOpen, onNew, onBack }: DocumentListProps) {
   const { profile, strings } = useCompany()
   const [query, setQuery] = useState('')
 
   const palette = TYPE_PALETTE[type]
   const label = typeLabel(profile, type)
   const plural = pluralLabel(profile, type)
+  // "3 invoices", not "3 Invoices" — and cased by the table, not by a
+  // `toLowerCase()` here that would be wrong the first time a language that
+  // capitalises its nouns ships (§D).
+  const pluralInline = pluralInSentence(profile, type)
   const showsMoney = carriesMoney(type)
 
   const visible = useMemo(() => {
@@ -62,41 +75,54 @@ export function DocumentList({ type, rows, onOpen, onNew }: DocumentListProps) {
   }, [rows, query])
 
   return (
-    <section className="px-4 pb-24 pt-4">
+    <section className="px-3.5 pb-[118px] pt-3.5">
+      {onBack !== undefined && (
+        <button
+          type="button"
+          onClick={onBack}
+          className="tap-scale mb-2.5 inline-flex min-h-tap items-center gap-1.5 text-[12.5px] font-semibold"
+          style={{ color: palette.accent }}
+        >
+          <Icon name="arrow-left" size={1} className="flip-rtl" />
+          {strings.nav.home}
+        </button>
+      )}
+
+      {/*
+        The hero (§G), to the prototype's measurements: a three-stop gradient
+        across 140deg, a 22px radius, and a shadow made of the TYPE's own
+        accent at 88 — which is what makes an amber page feel amber before a
+        single word is read.
+      */}
       <div
-        className="sheen-strong relative overflow-hidden rounded-2xl p-5 text-white"
+        className="sheen-strong relative overflow-hidden rounded-[22px] p-[15px] text-white"
         style={{
-          backgroundImage: `linear-gradient(150deg, ${palette.accent}, ${palette.deep})`,
-          // The hero carries its own accent shadow, like the Home tiles (§F).
-          boxShadow: `0 18px 34px -18px ${palette.accent}, 0 2px 6px -2px rgb(20 28 74 / 0.24)`,
+          backgroundImage: `linear-gradient(140deg, ${palette.light}, ${palette.accent} 68%, ${palette.deep})`,
+          boxShadow: `0 18px 34px -10px ${palette.accent}88, inset 0 1px 0 rgb(255 255 255 / 0.3)`,
         }}
       >
         {/*
-          §G's "soft corner circles". Decorative and inert — and drawn with
-          `overflow-hidden` on the parent rather than clipped by hand, so a
-          circle can hang off the edge without widening the page. That last
-          part is not cosmetic: an absolutely-positioned decoration is the
-          classic cause of a sideways scroll on a 360px phone.
+          §G's "soft corner circle". Decorative and inert — and clipped by
+          `overflow-hidden` on the parent rather than by hand, so it can hang
+          off the edge without widening the page. That is not cosmetic: an
+          absolutely-positioned decoration is the classic cause of a sideways
+          scroll on a 360px phone.
         */}
         <span
           aria-hidden="true"
-          className="pointer-events-none absolute -end-10 -top-12 h-36 w-36 rounded-full bg-on-accent/10"
-        />
-        <span
-          aria-hidden="true"
-          className="pointer-events-none absolute -bottom-16 -end-4 h-28 w-28 rounded-full bg-on-accent/5"
+          className="pointer-events-none absolute -top-[30px] end-[-25px] h-[118px] w-[118px] rounded-full bg-on-accent/15"
         />
 
-        <p className="text-[10.5px] font-bold uppercase tracking-[0.16em] opacity-75">
+        <p className="relative text-[10px] font-medium uppercase tracking-[1.5px] text-white/75">
           {strings.lists.eyebrow}
         </p>
         {/* Wraps rather than clipping — §F tests the longest shipped label. */}
-        <h1 className="mt-1 flex items-center gap-2 break-words text-2xl font-black leading-tight">
-          <Icon name={palette.icon} size={1.15} className="shrink-0 opacity-90" />
-          <span className="min-w-0 [overflow-wrap:anywhere]">{label}</span>
+        <h1 className="relative mb-0.5 mt-1 flex items-center gap-2 text-[21px] font-semibold leading-tight">
+          <Icon name={palette.icon} size={1.3} className="shrink-0" />
+          <span className="min-w-0 [overflow-wrap:anywhere]">{plural}</span>
         </h1>
-        <p className="mt-0.5 text-sm opacity-85">
-          {format(strings.lists.countLine, { count: rows?.length ?? 0, label: plural })}
+        <p className="relative mb-[11px] text-[11.5px] text-white/80">
+          {format(strings.lists.countLine, { count: rows?.length ?? 0, label: pluralInline })}
         </p>
         <button
           type="button"
@@ -104,7 +130,7 @@ export function DocumentList({ type, rows, onOpen, onNew }: DocumentListProps) {
           // Inset, not raised: §G calls it a translucent button INSIDE the
           // hero, and a second raised surface on a card that is already
           // lifted reads as two cards fighting.
-          className="tap-scale mt-3 inline-flex min-h-tap items-center rounded-full bg-on-accent/20 px-4 text-sm font-semibold shadow-[inset_0_1px_0_rgb(255_255_255/0.28)] backdrop-blur"
+          className="tap-scale relative inline-flex min-h-tap items-center rounded-full border border-on-accent/40 bg-on-accent/25 px-[17px] text-[12.5px] font-semibold shadow-[inset_0_1px_0_rgb(255_255_255/0.4)]"
         >
           {/*
             No plus GLYPH here: the catalogue's own string is "+ New {label}",
@@ -117,25 +143,20 @@ export function DocumentList({ type, rows, onOpen, onNew }: DocumentListProps) {
         </button>
       </div>
 
-      <label className="relative mt-4 block">
+      <label className="glass-pill my-3 flex min-h-tap items-center gap-2 rounded-full px-3.5">
         <span className="sr-only">{format(strings.lists.searchIn, { label: plural })}</span>
-        <span
-          aria-hidden="true"
-          className="pointer-events-none absolute inset-y-0 start-3 grid place-items-center opacity-45"
-        >
-          <Icon name="search" size={1.05} />
-        </span>
+        <Icon name="search" size={0.9} className="shrink-0 opacity-45" />
         <input
           type="search"
           value={query}
           onChange={(event) => setQuery(event.target.value)}
           placeholder={format(strings.lists.searchIn, { label: plural })}
           aria-label={format(strings.lists.searchIn, { label: plural })}
-          className="recessed min-h-tap w-full rounded-full ps-10 pe-4 text-sm"
+          className="w-full min-w-0 border-0 bg-transparent py-2.5 text-[11.5px] outline-none placeholder:text-ink/45"
         />
       </label>
 
-      <div className="mt-4">
+      <div>
         {visible === null && <SkeletonList rows={3} label={strings.common.loading} />}
 
         {visible !== null && visible.length === 0 && (
@@ -146,38 +167,38 @@ export function DocumentList({ type, rows, onOpen, onNew }: DocumentListProps) {
         )}
 
         {visible !== null && visible.length > 0 && (
-          <ul className="glass-solid overflow-hidden rounded-2xl">
+          <ul className="glass overflow-hidden rounded-[18px]">
             {visible.map((row) => (
-              <li key={row.id} className="border-b border-ink/10 last:border-0">
+              <li key={row.id} className="border-b border-brand/[0.07] last:border-0">
                 <button
                   type="button"
                   onClick={() => onOpen(row.id)}
-                  className="flex min-h-tap w-full items-center gap-3 p-3 text-start"
+                  className="flex min-h-tap w-full items-center gap-[11px] px-[13px] py-3 text-start"
                 >
                   <span className="min-w-0 flex-1">
                     <span className="flex items-center gap-2">
-                      <span className="truncate text-sm font-semibold tabular-nums">
+                      <span className="truncate text-[12.5px] font-semibold tabular-nums">
                         {row.reference}
                       </span>
                       <StatusBadge status={row.status} label={row.statusLabel} />
+                      {/* No amount on a delivery document, in any locale (§G). */}
+                      {showsMoney && row.amount !== undefined && (
+                        <span className="ms-auto shrink-0 text-[12.5px] font-semibold tabular-nums">
+                          {formatMoney(row.amount)}
+                        </span>
+                      )}
                     </span>
                     {row.customerName !== undefined && (
-                      <span className="mt-0.5 block truncate text-xs opacity-70">
+                      <span className="mt-0.5 block truncate text-[10px] opacity-60">
                         {row.customerName}
                       </span>
                     )}
                     {row.note !== undefined && (
-                      <span className="mt-0.5 block truncate text-xs font-medium text-status-warn">
+                      <span className="mt-0.5 block truncate text-[10px] font-medium text-status-warn">
                         {row.note}
                       </span>
                     )}
                   </span>
-                  {/* No amount on a delivery document, in any locale (§G). */}
-                  {showsMoney && row.amount !== undefined && (
-                    <span className="shrink-0 text-sm font-semibold tabular-nums">
-                      {formatMoney(row.amount)}
-                    </span>
-                  )}
                 </button>
               </li>
             ))}
@@ -190,15 +211,17 @@ export function DocumentList({ type, rows, onOpen, onNew }: DocumentListProps) {
         type="button"
         onClick={onNew}
         aria-label={format(strings.lists.newDocument, { label })}
-        className="raised tap-scale fixed bottom-28 end-5 z-10 grid h-14 w-14 place-items-center rounded-full text-white"
+        className="tap-scale fixed bottom-[112px] end-4 z-10 grid h-[54px] w-[54px] place-items-center rounded-full text-white"
         style={{
-          backgroundImage: `linear-gradient(150deg, ${palette.accent}, ${palette.deep})`,
-          // Its own colour at depth, so the FAB reads as belonging to this
-          // type's page rather than as a floating grey circle (§F).
-          boxShadow: `0 14px 24px -10px ${palette.accent}, 0 2px 6px -2px rgb(20 28 74 / 0.3), inset 0 1px 0 rgb(255 255 255 / 0.28)`,
+          backgroundImage: `linear-gradient(158deg, ${palette.light}, ${palette.accent} 55%, ${palette.deep})`,
+          // The prototype leaves this shadow blue for every type, which is
+          // the one place its own rule slips: an amber button throwing a blue
+          // glow, directly under a hero that throws an amber one. Taken from
+          // the type, like the hero's — the deviation is noted in PLAN.
+          boxShadow: `0 16px 30px -8px ${palette.accent}99, inset 0 2px 0 rgb(255 255 255 / 0.35)`,
         }}
       >
-        <Icon name="plus" size={1.5} />
+        <Icon name="plus" size={1.6} />
       </button>
     </section>
   )

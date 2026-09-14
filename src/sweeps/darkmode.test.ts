@@ -71,7 +71,14 @@ describe('Every surface goes through a token (§F)', () => {
     const COLOUR_PROPERTY = /(?:backgroundColor|(?<![a-zA-Z])color)\s*:\s*([^,}]+)/g
 
     for (const file of componentFiles()) {
-      for (const style of read(file).matchAll(/style=\{\{[^}]*\}\}/g)) {
+      /*
+       * `[^}]*` stopped at the first `}` — and a template literal in a style
+       * value contains one, in every `${...}`. So a style object whose FIRST
+       * property interpolated anything hid every property after it, and the
+       * step bar's theme-blind grey sat behind exactly that. Allowing one
+       * level of nesting reaches the rest of the object.
+       */
+      for (const style of read(file).matchAll(/style=\{\{(?:[^{}]|\{[^{}]*\})*\}\}/g)) {
         for (const property of style[0].matchAll(COLOUR_PROPERTY)) {
           const value = property[1] ?? ''
           if (/#[0-9a-fA-F]{3,8}/.test(value)) findings.push(`${file}: ${property[0].slice(0, 60)}`)

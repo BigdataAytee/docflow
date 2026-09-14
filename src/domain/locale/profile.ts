@@ -50,16 +50,31 @@ export function resolve(profile: LocaleProfile, type: DocumentType): TypeTermino
 
   // An override renames the document on every surface at once — including the
   // printed title — or it would break Rule #5 the moment it was used.
-  return { ...base, label: override, pluralLabel: override, printedTitle: override.toLocaleUpperCase() }
+  //
+  // The override is used AS TYPED for the sentence form. Case-folding somebody
+  // else's word is the one thing this layer must not do: "BL" is an
+  // abbreviation, not a noun that wants lowering, and there is no rule here
+  // that can tell the two apart.
+  return {
+    ...base,
+    label: override,
+    pluralLabel: override,
+    pluralInSentence: override,
+    printedTitle: override.toLocaleUpperCase(),
+  }
 }
 
 /** The name on a tile, a list hero, a builder header, a chip, the share text. */
 export const label = (profile: LocaleProfile, type: DocumentType): string =>
   resolve(profile, type).label
 
-/** "4 invoices" / "3 delivery notes" — the list hero's count line. */
+/** The plural standing alone — a list hero's heading, a tile. */
 export const pluralLabel = (profile: LocaleProfile, type: DocumentType): string =>
   resolve(profile, type).pluralLabel
+
+/** The plural inside a sentence — "4 invoices". Cased by the locale, not here. */
+export const pluralInSentence = (profile: LocaleProfile, type: DocumentType): string =>
+  resolve(profile, type).pluralInSentence
 
 /** The heading printed on the PDF. */
 export const printedTitle = (profile: LocaleProfile, type: DocumentType): string =>

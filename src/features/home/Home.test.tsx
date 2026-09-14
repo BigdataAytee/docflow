@@ -143,8 +143,12 @@ describe('One page per type, never combined tabs (§G)', () => {
 
   it('heroes the localised type name and count line', () => {
     wrap(<DocumentList type="invoice" rows={rows} onOpen={vi.fn()} onNew={vi.fn()} />)
-    expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('Invoice')
-    expect(screen.getByText('1 Invoices')).toBeInTheDocument()
+    // The heading says the plural standing alone; the count line says it
+    // inside a sentence, and the two are cased differently on purpose — the
+    // catalogue carries both forms because case is part of the word and
+    // which part depends on the language (§D).
+    expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('Invoices')
+    expect(screen.getByText('1 invoices')).toBeInTheDocument()
   })
 
   it('names the search after the type (§G)', () => {
