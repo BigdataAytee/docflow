@@ -152,6 +152,22 @@ describe('The company claim, as Supabase actually issues it (§P)', () => {
   })
 })
 
+/**
+ * Tables nobody signs in to read.
+ *
+ * The rule below exists because a table added after 0006's blanket grant is
+ * unusable in a way that looks perfect from here. `deleted_accounts` is the
+ * deliberate opposite: it is the tombstone left after an account is purged,
+ * and no user token should ever reach it — the company it names no longer
+ * exists, and there is nobody left to be entitled to the row.
+ *
+ * Named rather than skipped by a regex, and EARNED rather than declared: the
+ * test below proves the exempt table really is closed to `authenticated`, has
+ * RLS enabled and forced, and carries no policy that could open it. A second
+ * name on this list has to be argued for in this file.
+ */
+const SERVICE_ROLE_ONLY = ['deleted_accounts']
+
 describe('Every table is reachable at all (§P)', () => {
   /**
    * `grant select, insert, update, delete on all tables in schema public` in
@@ -172,7 +188,35 @@ describe('Every table is reachable at all (§P)', () => {
           and not has_table_privilege('authenticated', c.oid, 'SELECT')
         order by c.relname`,
     )
-    expect(rows.map((r) => r.table)).toEqual([])
+    expect(rows.map((r) => r.table)).toEqual(SERVICE_ROLE_ONLY)
+  })
+
+  it('earns that exemption: the exempt tables are shut, not merely ungranted', async () => {
+    for (const table of SERVICE_ROLE_ONLY) {
+      const { rows } = await db.query<{
+        enabled: boolean
+        forced: boolean
+        policies: string
+        granted: boolean
+      }>(
+        `select c.relrowsecurity as enabled,
+                c.relforcerowsecurity as forced,
+                (select count(*) from pg_policy p where p.polrelid = c.oid) as policies,
+                has_table_privilege('authenticated', c.oid, 'SELECT') as granted
+           from pg_class c join pg_namespace n on n.oid = c.relnamespace
+          where n.nspname = 'public' and c.relname = $1`,
+        [table],
+      )
+      const row = rows[0]
+      expect(row, `${table} does not exist`).toBeDefined()
+      // FORCE as well as ENABLE: without it the table's owner reads straight
+      // past its own policies, which is the §P lesson from 0006.
+      expect(row?.enabled, `${table} has RLS off`).toBe(true)
+      expect(row?.forced, `${table} does not FORCE RLS`).toBe(true)
+      // No policy at all, so there is nothing to widen by accident.
+      expect(Number(row?.policies ?? -1), `${table} carries a policy`).toBe(0)
+      expect(row?.granted, `${table} is granted to authenticated after all`).toBe(false)
+    }
   })
 })
 
