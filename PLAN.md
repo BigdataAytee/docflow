@@ -20,7 +20,7 @@ claims nothing the gates have not proven (§X).
 | 4 | Native polish | installable builds pass all flows on physical Android and iOS | not started |
 | **5** | Web + public links | cross-device visibility; token behaviour per §P; one payment per event | **part built** — 2 of §Q's 4 scope items whole (the public pages, the copy-link note); the repositories are built but nothing is deployed and per-user language is schema-only; webhooks verified for **one provider of three**. Gate NOT passed (0 of 3 clauses, needs the deploy) |
 | **6** | Local AI + logo | the §N six-step gate per tier; the §O definition of done | **part built** — Tier-B extractor and the ladder's logic; gate needs devices |
-| **7** | Admin, hardening, migration, launch | the §V checklist green end to end | **mostly built, gate NOT passed** — admin with server-enforced permissions, the legacy migration, the pen-check roster, the §T discoverability package, the marketing site, the store screenshots and policy questionnaire, backup and export, **all seven sweeps**, account deletion, the ratings prompt, store billing's non-device half, the unlock sheets, the D12 preparation, and the shared-state rate limiter. Everything still open needs a person: devices, store accounts, a deploy, §W's decisions — and the auth half of rate-limit verification, which is step 10 of a gate no project exists to run |
+| **7** | Admin, hardening, migration, launch | the §V checklist green end to end | **mostly built, gate NOT passed** — admin with server-enforced permissions, the legacy migration, the pen-check roster, the §T discoverability package, the marketing site, the store screenshots and policy questionnaire, backup and export, **all seven sweeps**, account deletion, the ratings prompt, store billing's non-device half, the unlock sheets, the D12 preparation, the shared-state rate limiter, and the auth limits — declared, probed by a gate step that is itself tested, and said in the app's own words. Everything still open needs a person: devices, store accounts, a deploy, §W's decisions — and the one act nobody here can perform, which is RUNNING the auth probe against a project |
 
 **The one thing the whole build is waiting on** (2026-09-14): nothing is
 deployed. `supabase db push`; deploy `public-link`, `payment-webhook` and
@@ -2166,13 +2166,49 @@ to `authenticated`, the `Map` put back, the store limiter removed, and a write
 moved above the signature check. All six were caught.
 
 - [x] **A limiter with shared state** on the public endpoints.
-- [ ] **Auth endpoints.** GoTrue is code we do not own and cannot wrap, so the
-      only honest verification is to ask it: step 10 of the hosted gate runs 40
-      failed sign-ins at an address that belongs to nobody and expects a 429. It
-      runs last, because it deliberately spends the project's sign-in budget.
-      **Unrun**, like the rest of that gate, until the project exists — and if
-      it fails it names a setting (Dashboard → Authentication → Rate Limits),
-      not a bug in this repository.
+- [x] **Auth endpoints — declared, probed and said in our own words.** Three
+      pieces, and only the last of them needs a project.
+
+      **The numbers** (`src/domain/auth/limits.ts`). GoTrue is not our code
+      and has no seam to put a counter in — no edge function runs before it,
+      and a limiter in the client is a suggestion to whoever is attacking it.
+      So the limiter is the provider's and what is ours is the numbers, each
+      with the reasoning that produced it: sign-in 30 per 5 minutes (an office
+      shares one address, and ten people signing in twice is twenty); reset 10
+      an hour and OTP 5 an hour, because the address in those requests is
+      attacker-chosen and a generous limit is a mail bomb with our domain on
+      it; sign-up 10 an hour; and **token refresh deliberately left high** —
+      every open tab refreshes on a schedule nobody chose, and a tight limit
+      there signs working people out mid-invoice to stop an attack that gains
+      nothing. `APPLIED` is `false` and the gate says so out loud: these are
+      what a project SHOULD have, not what anybody has set.
+
+      **The probe** (hosted gate step 10). It walks that list rather than
+      hammering one endpoint, and it will not bend three rules: it never
+      requests an endpoint that sends mail (a mail-bomb check that mail-bombs
+      is not a check), it signs in as `…@example.com` — RFC 2606, belongs to
+      nobody, so no real account can be locked out — and it stops at
+      `PROBE_CEILING`, so a wrong number in the declaration can never turn the
+      gate into the flood it is checking for. Account creation is opt-in
+      behind `GATE_RESET=1`. **It is exercised**: the step is exported and
+      `supabase/tests/hosted-gate.test.ts` drives it against a stub that
+      answers the way a limiter does — decision 158's lesson, applied to a
+      step CI can never run for real.
+
+      **The words** (`src/features/auth/refusal.ts`). A refused sign-in used
+      to put GoTrue's own English on the screen — `error.message`, so "Email
+      rate limit exceeded" in a product with seven locales, at the moment a
+      person is least able to guess what it means, describing the machine to
+      whoever is probing it. Failures are classified now — status first, then
+      the provider's code, the prose last and only as a hint — and the screen
+      says one of our sentences, with the wait when the provider gives one.
+      "No such account" and "wrong password" resolve to the SAME sentence.
+
+- [ ] **The one thing left: running it.** A limit nobody has applied is an
+      intention, and this file does not get to call an intention a control.
+      `npm run gate:hosted` decides it, and a failure there names a setting
+      (Dashboard → Authentication → Rate Limits) rather than a bug in this
+      repository.
 
 ### The physical-device remainder — one consolidated list
 
@@ -3260,6 +3296,11 @@ vectors of a few hundred bytes.
 | 271 | The payment webhook is deliberately unlimited; the store webhook is not | The payment webhook's callers are the provider's own addresses and a dropped event is money the ledger never hears about — and every write sits below the signature check, so an unsigned flood buys one indexed lookup. The store endpoint writes a parked row BEFORE any signature, with an id from the body, so distinct ids meant unbounded rows: that one write is bucketed and the verified path is not. | `src/features/webhooks/routing.test.ts` |
 | 272 | A test that depends on where the wall clock stands is a coin flip | The sliding-window test asserted the carry-forward from wherever the minute happened to be — and how much carries over IS where the minute is. It passed locally and CI called it at 2.94 against a limit of 3. It waits for a window boundary now; the window was never wrong. | `supabase/tests/ratelimit.test.ts` |
 | 273 | The status board's numbers are tested, not maintained | The migration count was a word behind within a day, and "113 tests" had drifted until it matched nothing. Correcting a number by hand fixes the sentence and not the habit, so each count names a path and a test re-derives it. Deleting the sentence fails too — an assertion that quietly matches nothing is the failure it exists to prevent. | `src/sweeps/plan.test.ts` |
+| 274 | Auth rate limiting is the provider's, and the numbers are ours | GoTrue has no seam to put a counter in: nothing of ours runs before it, and a limiter in the client is a suggestion to whoever is attacking it. What we can own is the declared allowance, the reasoning behind each one, and a probe that checks the live project against them. | `src/domain/auth/limits.ts` |
+| 275 | Token refresh is deliberately left high | Every open tab refreshes on a schedule nobody chose, and §M says a credential problem never costs somebody their work. A tight refresh limit signs working people out mid-invoice — an outage we caused ourselves — to stop an attack that gains nothing, because a refresh token is already a valid credential. | `src/domain/auth/limits.ts` |
+| 276 | A probe never touches an endpoint that sends mail, and stops at a ceiling | A mail-bomb check that mail-bombs is not a check; the address in a reset request is chosen by whoever is asking. The ceiling is the second lock: a wrong number in the declaration must not be able to turn the gate into the flood it is checking for. | `src/domain/auth/limits.ts` |
+| 277 | The provider's English never reaches the screen | `error.message` put "Email rate limit exceeded" in front of a person in a product with seven locales, in jargon, at the worst possible moment — and told whoever was probing how the system is built. Classified by status first, code next, prose last, and said in our own words. | `src/features/auth/refusal.ts` |
+| 278 | A gate step CI can never run is exported and driven against a stub | Decision 158 is a pentest entry point that was written, committed and never called. A step that needs a project nobody has is the same shape of lie, so the auth step takes its host as an argument and a test points it at a server that answers the way a limiter does. | `supabase/tests/hosted-gate.test.ts` |
 
 ## Deviations from the spec
 

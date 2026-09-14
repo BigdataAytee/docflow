@@ -55,6 +55,20 @@ export interface UiStrings {
     readonly creating: string
     readonly demoTitle: string
     readonly demoBody: string
+    /**
+     * What a refused sign-in says (§P, §S). The provider's own English —
+     * "Email rate limit exceeded", "Invalid login credentials" — used to
+     * reach the screen verbatim: untranslated, jargon, and a description of
+     * how the system is built handed to whoever is probing it.
+     *
+     * `wrongDetails` is deliberately ONE sentence for "no such account" and
+     * "wrong password" both. Telling them apart tells a stranger which
+     * addresses are registered.
+     */
+    readonly tooManyTries: string
+    readonly tooManyTriesIn: string
+    readonly wrongDetails: string
+    readonly signInProblem: string
   }
   readonly nav: {
     /**
@@ -743,6 +757,10 @@ const EN: UiStrings = {
     // §R: "a local demo is never passed off as an account".
     demoBody:
       'This is a demo with sample records on this device only. Nothing is saved to an account, and it is cleared when you close the tab.',
+    tooManyTries: 'Too many tries. Wait a moment and try again.',
+    tooManyTriesIn: 'Too many tries. Try again in {wait}.',
+    wrongDetails: 'That email and password do not match.',
+    signInProblem: 'Something went wrong signing in. Try again.',
   },
   nav: {
     sections: 'Sections',
