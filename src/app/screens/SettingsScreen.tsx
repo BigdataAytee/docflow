@@ -19,6 +19,8 @@ import { useAppData } from '../store'
 import { SETTINGS_PANELS, type SettingsPanel, settingsPath } from '../paths'
 import { settingsDestinations } from '../destinations'
 import { DeleteAccount } from '../../features/account/DeleteAccount'
+import { ProSettings } from '../../features/billing/ProSettings'
+import { standing } from '../../domain/billing/entitlement'
 import type { Lifecycle, Refusal } from '../../domain/account/deletion'
 import { PageHeader, SkeletonList } from '../../ui'
 import { CompanySettings } from '../../features/settings/CompanySettings'
@@ -185,9 +187,31 @@ function SettingsPanelBody() {
 
     case 'data':
       return <DataAndSyncPanel />
+    case 'pro':
+      return <ProPanel />
     case 'delete':
       return <DeleteAccountPanel />
   }
+}
+
+/**
+ * Settings → DocFlow Pro (§U).
+ *
+ * The entitlement comes from the cache the server signed, read through the
+ * domain rules — this panel decides nothing about what was bought, which is
+ * §U's first rule about billing. `billingAvailable` is false because Phase 4
+ * has not wired StoreKit or Play, and the buttons say so rather than
+ * pretending (§N).
+ */
+function ProPanel() {
+  return (
+    <ProSettings
+      standing={standing(null, new Date())}
+      billingAvailable={false}
+      onManage={() => undefined}
+      onRestore={() => undefined}
+    />
+  )
 }
 
 /**

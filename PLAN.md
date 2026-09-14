@@ -1967,6 +1967,57 @@ gate itself is deferred with everything else that needs a phone.
       testing, the two signature verifiers, and §U's contextual unlock sheets
       — which cannot be written before §W says what they would be unlocking.
 
+- [x] **The unlock sheets, the badge and the quiet Settings row** (§U,
+      Rule #1, Rule #6). `src/domain/billing/unlock.ts`,
+      `src/features/billing/`. The mechanism §U describes, built against a
+      line §W has still not drawn — so it is complete, tested, and reachable
+      by nobody.
+
+      §U: "contextual unlock sheets exactly where a gated feature is tapped …
+      each with **the price, the trial, and a no-hard-feelings dismiss**. No
+      modal ambushes, no fake urgency, no feature that silently produces a
+      paywall after work is done — a gated feature announces itself **before**
+      the user invests effort."
+
+      Three rules come out of that, and all three live in the domain rather
+      than in the component, because a rule in a component is one refactor
+      from gone.
+
+      · **A sheet without a price does not open.** "Tap to find out what it
+        costs" is the dark pattern that paragraph describes, told backwards.
+        No price for this market, no offer — and the feature stays USABLE.
+        Every refusal fails towards the person rather than towards the money,
+        which is the direction that matters: a bug that hides a paywall costs
+        money, and a bug that shows one without a price costs trust.
+      · **Nothing is gated without an announcement point.** A Pro feature must
+        name the control somebody meets BEFORE they start work, so the badge
+        can sit on it. `featuresWithNoEntryPoint()` is asserted empty, so the
+        commit that gates a feature with nowhere to announce it fails here
+        rather than shipping a paywall that appears after the work.
+      · **The dismiss is the equal of the purchase** — same size, and FIRST in
+        the DOM, which is also what a keyboard and a screen reader reach
+        first. "Not now", never "I don't want to grow my business".
+
+      A test sweeps the rendered sheet for manufactured urgency — "only
+      today", "last chance", "expires", "hurry", "ends in" — and the four
+      forbidden things are written down as data so the tests read as the rule
+      rather than as somebody's taste.
+
+      **Prices are §W's.** §U wants "regional pricing per store templates so
+      NGN, GHS, INR prices are sane, not naive conversions"; §W still lists
+      price points under decisions requiring evidence. So `PRICES` is empty
+      behind the same `reviewStatus` as the split, and — found by mutation —
+      filling in the numbers without recording the decision still sells
+      nothing. Prices are integer minor units, because Rule #3 does not stop
+      at invoices.
+
+      The sweep from the screen-reader work earned its keep the same day:
+      `UnlockSheet.tsx` was written without `useFocusOnOpen`, and the "wired
+      into every sheet, including ones written later" test failed on the
+      commit that added it. Fixed rather than exempted.
+
+      Ten mutations, ten caught.
+
 ### The physical-device remainder — one consolidated list- [x] **The ratings prompt — built, and it shows nothing yet** (`src/domain/ratings/`,
       `src/features/ratings/`). §T: "ratings prompts appear only at happy
       moments." The store-policy pass found the questionnaire describing this
@@ -2072,6 +2123,57 @@ gate itself is deferred with everything else that needs a phone.
       shell), Restore purchases on a wiped reinstall, sandbox and internal
       testing, the two signature verifiers, and §U's contextual unlock sheets
       — which cannot be written before §W says what they would be unlocking.
+
+- [x] **The unlock sheets, the badge and the quiet Settings row** (§U,
+      Rule #1, Rule #6). `src/domain/billing/unlock.ts`,
+      `src/features/billing/`. The mechanism §U describes, built against a
+      line §W has still not drawn — so it is complete, tested, and reachable
+      by nobody.
+
+      §U: "contextual unlock sheets exactly where a gated feature is tapped …
+      each with **the price, the trial, and a no-hard-feelings dismiss**. No
+      modal ambushes, no fake urgency, no feature that silently produces a
+      paywall after work is done — a gated feature announces itself **before**
+      the user invests effort."
+
+      Three rules come out of that, and all three live in the domain rather
+      than in the component, because a rule in a component is one refactor
+      from gone.
+
+      · **A sheet without a price does not open.** "Tap to find out what it
+        costs" is the dark pattern that paragraph describes, told backwards.
+        No price for this market, no offer — and the feature stays USABLE.
+        Every refusal fails towards the person rather than towards the money,
+        which is the direction that matters: a bug that hides a paywall costs
+        money, and a bug that shows one without a price costs trust.
+      · **Nothing is gated without an announcement point.** A Pro feature must
+        name the control somebody meets BEFORE they start work, so the badge
+        can sit on it. `featuresWithNoEntryPoint()` is asserted empty, so the
+        commit that gates a feature with nowhere to announce it fails here
+        rather than shipping a paywall that appears after the work.
+      · **The dismiss is the equal of the purchase** — same size, and FIRST in
+        the DOM, which is also what a keyboard and a screen reader reach
+        first. "Not now", never "I don't want to grow my business".
+
+      A test sweeps the rendered sheet for manufactured urgency — "only
+      today", "last chance", "expires", "hurry", "ends in" — and the four
+      forbidden things are written down as data so the tests read as the rule
+      rather than as somebody's taste.
+
+      **Prices are §W's.** §U wants "regional pricing per store templates so
+      NGN, GHS, INR prices are sane, not naive conversions"; §W still lists
+      price points under decisions requiring evidence. So `PRICES` is empty
+      behind the same `reviewStatus` as the split, and — found by mutation —
+      filling in the numbers without recording the decision still sells
+      nothing. Prices are integer minor units, because Rule #3 does not stop
+      at invoices.
+
+      The sweep from the screen-reader work earned its keep the same day:
+      `UnlockSheet.tsx` was written without `useFocusOnOpen`, and the "wired
+      into every sheet, including ones written later" test failed on the
+      commit that added it. Fixed rather than exempted.
+
+      Ten mutations, ten caught.
 
 ### The physical-device remainder — one consolidated list
 
@@ -3115,6 +3217,9 @@ vectors of a few hundred bytes.
 | 228 | Two links may share a name if they share a destination | WCAG fails identical names going to DIFFERENT places. The list page's header button and its FAB are the same action and are not a defect, and a rule that flagged them would have been argued with until it was deleted. | `tools/sweeps/screenreader.ts` |
 | 229 | A navigation moves focus to `main` — except on a cold load | It is the one thing that announces an SPA route change. On first paint the reader is already reading from the top, and interrupting to say "main" would cut off the page title. | `src/app/focus.ts` |
 | 230 | An opened panel takes focus; the hand-back is best effort | Six panels replace their own trigger, so there is nothing to hand focus back TO. Doing the right thing where it is possible beats doing nothing everywhere — and the first version of the test could not tell the difference, because it closed the panel from the opener. | `src/ui/focus.ts` |
+| 261 | A sheet that cannot name the price does not open | "Tap to find out what it costs" is the dark pattern §U describes, told backwards. No price for the market, no offer — and the feature stays usable, because a bug that hides a paywall costs money while a bug that shows one without a price costs trust. | `src/domain/billing/unlock.ts` |
+| 262 | A Pro feature must name the control it announces itself on | §U's "announces itself before the user invests effort" is only true if somebody can point at the control. `featuresWithNoEntryPoint()` is asserted empty, so gating a feature with nowhere to announce it fails on that commit. | `src/domain/billing/unlock.ts` |
+| 263 | The dismiss is the same size as the purchase, and first in the DOM | "A no-hard-feelings dismiss" is not a grey link under a bright button — and first in the DOM is first for a keyboard and a screen reader too. | `src/features/billing/UnlockSheet.tsx` |
 | 255 | A cache that is absent, unsigned or nonsense is FREE, never Pro | Guessing Pro hands a paid plan to anybody who corrupts a file; guessing Free costs a feature until the next refresh. Only one of those is the mistake worth making. | `src/domain/billing/entitlement.ts` |
 | 256 | `NEVER_GATED` is checked before the plan is read | Rule #6 sits above the plan rather than beside it, so no later edit to the plan logic can reach viewing, sharing, export, PDF, payments or deletion. | `src/domain/billing/entitlement.ts` |
 | 257 | Store events are ordered by the STORE's clock, never by arrival | A retried `DID_RENEW` landing after the `EXPIRED` that followed it would resurrect a dead subscription and hand out a month nobody paid for. Judging by timestamp makes replay and reordering one problem. | `src/domain/billing/notifications.ts`, `0018_store_billing.sql` |
