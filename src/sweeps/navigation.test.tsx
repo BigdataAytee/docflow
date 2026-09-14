@@ -45,7 +45,7 @@ describe('Every destination is reachable from a keyboard (§V)', () => {
   it('tabs to each one in order, and none is skipped', async () => {
     renderShell()
     const strings = stringsFor('en')
-    const nav = screen.getByRole('navigation', { name: strings.nav.home })
+    const nav = screen.getByRole('navigation', { name: strings.nav.sections })
     const links = within(nav).getAllByRole('link')
 
     // Distinct links, because tabbing past the last one wraps round to the
@@ -65,7 +65,7 @@ describe('Every destination is reachable from a keyboard (§V)', () => {
   it('activates a destination with the keyboard, not only a tap', async () => {
     renderShell()
     const strings = stringsFor('en')
-    const nav = screen.getByRole('navigation', { name: strings.nav.home })
+    const nav = screen.getByRole('navigation', { name: strings.nav.sections })
     const settings = within(nav).getByRole('link', { name: strings.nav.settings })
 
     settings.focus()

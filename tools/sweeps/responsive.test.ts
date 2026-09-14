@@ -39,6 +39,13 @@ export const ROUTES = [
   '/settings/data',
   '/new/invoice',
   '/new/waybill',
+  // The record screens, by the fixture ids `shots/fixtures.ts` mints. Until
+  // the screen-reader sweep went looking, no sweep covered the document page
+  // at all — the screen the app exists for.
+  '/doc/invoice_1',
+  '/doc/waybill_1',
+  '/customers/cu_1',
+  '/customers/cu_1/statement/NGN',
 ]
 
 const TYPES: Record<string, string> = {

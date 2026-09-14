@@ -13,6 +13,7 @@ import { useState } from 'react'
 
 import { useCompany } from '../../app/context'
 import { SignaturePad } from '../signature/SignaturePad'
+import { useFocusOnOpen } from '../../ui'
 
 export interface SignDeliverySheetProps {
   readonly onSign: (input: {
@@ -25,6 +26,8 @@ export interface SignDeliverySheetProps {
 }
 
 export function SignDeliverySheet({ onSign, onClose, error }: SignDeliverySheetProps) {
+  // Opening this panel moves focus into it, and its name is announced.
+  const panel = useFocusOnOpen<HTMLElement>()
   const { strings } = useCompany()
   const s = strings.signature
 
@@ -34,7 +37,12 @@ export function SignDeliverySheet({ onSign, onClose, error }: SignDeliverySheetP
   const named = signerName.trim() !== ''
 
   return (
-    <section className="rounded-2xl bg-surface/85 p-4 backdrop-blur" aria-label={s.confirmDelivery}>
+    <section
+      ref={panel}
+      tabIndex={-1}
+      className="rounded-2xl bg-surface/85 p-4 outline-none backdrop-blur"
+      aria-label={s.confirmDelivery}
+    >
       <div className="flex items-start justify-between gap-3">
         <h2 className="text-sm font-semibold">{s.confirmDelivery}</h2>
         <button

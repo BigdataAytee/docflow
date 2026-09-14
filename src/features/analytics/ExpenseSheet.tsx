@@ -15,6 +15,7 @@ import { useCompany } from '../../app/context'
 import { PhotoButton } from '../photos/PhotoButton'
 import { money, type Money } from '../../domain/money/money'
 import { minorUnitsFor } from '../../domain/locale/bank-fields'
+import { useFocusOnOpen } from '../../ui'
 
 export interface ExpenseSheetProps {
   readonly currency: string
@@ -47,6 +48,8 @@ export function ExpenseSheet({
   onCancel,
   onStorePhoto,
 }: ExpenseSheetProps) {
+  // Opening this panel moves focus into it, and its name is announced.
+  const panel = useFocusOnOpen<HTMLElement>()
   const { strings } = useCompany()
   const ids = useId()
 
@@ -77,7 +80,9 @@ export function ExpenseSheet({
 
   return (
     <section
-      className="rounded-2xl bg-surface/80 p-4 backdrop-blur"
+      ref={panel}
+      tabIndex={-1}
+      className="rounded-2xl bg-surface/80 p-4 outline-none backdrop-blur"
       aria-label={strings.expenses.add}
     >
       <label className="block text-xs font-medium opacity-70" htmlFor={`${ids}-amount`}>

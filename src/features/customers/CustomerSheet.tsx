@@ -15,6 +15,7 @@ import { useId, useState } from 'react'
 
 import { useCompany } from '../../app/context'
 import type { Customer } from '../../data/repositories'
+import { useFocusOnOpen } from '../../ui'
 
 export type NewCustomer = Omit<Customer, 'id' | 'companyId'>
 
@@ -25,6 +26,8 @@ export interface CustomerSheetProps {
 }
 
 export function CustomerSheet({ initialName = '', onSave, onCancel }: CustomerSheetProps) {
+  // Opening this panel moves focus into it, and its name is announced.
+  const panel = useFocusOnOpen<HTMLFormElement>()
   const { strings } = useCompany()
   const ids = useId()
 
@@ -40,7 +43,9 @@ export function CustomerSheet({ initialName = '', onSave, onCancel }: CustomerSh
   // accessible name is one too many for anyone navigating by label.
   return (
     <form
-      className="rounded-2xl bg-surface/80 p-4 backdrop-blur"
+      ref={panel}
+      tabIndex={-1}
+      className="rounded-2xl bg-surface/80 p-4 outline-none backdrop-blur"
       aria-label={strings.customers.newCustomer}
       onSubmit={(event) => {
         event.preventDefault()

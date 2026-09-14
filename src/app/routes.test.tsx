@@ -379,18 +379,18 @@ describe('Home search replaces the body with results (§G, §D.3)', () => {
     renderAt('/', seedBook)
     // The four tiles and the attention list ARE the body until something is
     // typed. The tile's accessible name is its label and its count.
-    expect(await screen.findByRole('button', { name: 'Invoice1' })).toBeInTheDocument()
+    expect(await screen.findByRole('button', { name: /^1 Invoice/ })).toBeInTheDocument()
     expect(screen.getByLabelText('Needs attention')).toBeInTheDocument()
 
     const user = await type('cement')
     await waitFor(() =>
-      expect(screen.queryByRole('button', { name: 'Invoice1' })).not.toBeInTheDocument(),
+      expect(screen.queryByRole('button', { name: /^1 Invoice/ })).not.toBeInTheDocument(),
     )
     expect(screen.queryByLabelText('Needs attention')).not.toBeInTheDocument()
     expect(screen.getByLabelText('Documents')).toBeInTheDocument()
 
     await user.clear(screen.getByRole('searchbox', { name: /Search/i }))
-    expect(await screen.findByRole('button', { name: 'Invoice1' })).toBeInTheDocument()
+    expect(await screen.findByRole('button', { name: /^1 Invoice/ })).toBeInTheDocument()
     await waitFor(() => expect(screen.queryByLabelText('Documents')).not.toBeInTheDocument())
   })
 
@@ -1744,7 +1744,7 @@ describe('Signing (§G, §I, §P)', () => {
       await waitFor(() => expect(state.assets).toHaveLength(1))
 
       await user.click(screen.getByRole('link', { name: 'Home' }))
-      await user.click(await screen.findByRole('button', { name: /^Invoice\s*\d+$/ }))
+      await user.click(await screen.findByRole('button', { name: /^\d+ Invoice/ }))
       await user.click((await screen.findAllByRole('button', { name: /New Invoice/ }))[0]!)
 
       await waitFor(() => expect(state.documents).toHaveLength(1))

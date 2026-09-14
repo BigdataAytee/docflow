@@ -53,7 +53,7 @@ export function AskBox({ facts, chipLabels, bucketLabels }: AskBoxProps) {
         <input
           className="min-w-0 flex-1 rounded-xl border border-edge/10 bg-surface px-3 py-2 text-sm"
           placeholder={strings.analytics.askPlaceholder}
-          aria-label={strings.analytics.askAnything}
+          aria-label={strings.analytics.askField}
           value={question}
           onChange={(event) => setQuestion(event.target.value)}
         />

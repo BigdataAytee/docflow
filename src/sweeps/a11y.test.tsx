@@ -45,7 +45,7 @@ describe('Every control has a name, in the active language (§V)', () => {
     renderShell('en')
     const strings = stringsFor('en')
 
-    const nav = screen.getByRole('navigation', { name: strings.nav.home })
+    const nav = screen.getByRole('navigation', { name: strings.nav.sections })
     for (const label of [
       strings.nav.home,
       strings.nav.customers,
@@ -65,7 +65,7 @@ describe('Every control has a name, in the active language (§V)', () => {
     renderShell('en')
     const strings = stringsFor('en')
 
-    const nav = screen.getByRole('navigation', { name: strings.nav.home })
+    const nav = screen.getByRole('navigation', { name: strings.nav.sections })
     for (const link of within(nav).getAllByRole('link')) {
       const name = link.textContent ?? ''
       expect(name.trim().length, 'a destination is named by its glyph alone').toBeGreaterThan(1)
@@ -88,7 +88,7 @@ describe('Every control has a name, in the active language (§V)', () => {
     // an onClick, which has no role and no tab stop.
     renderShell('en')
     const strings = stringsFor('en')
-    const nav = screen.getByRole('navigation', { name: strings.nav.home })
+    const nav = screen.getByRole('navigation', { name: strings.nav.sections })
 
     for (const link of within(nav).getAllByRole('link')) {
       expect(link.tagName).toBe('A')
@@ -99,7 +99,7 @@ describe('Every control has a name, in the active language (§V)', () => {
   it('meets the 44px tap target §F asks for', () => {
     renderShell('en')
     const strings = stringsFor('en')
-    const nav = screen.getByRole('navigation', { name: strings.nav.home })
+    const nav = screen.getByRole('navigation', { name: strings.nav.sections })
 
     for (const link of within(nav).getAllByRole('link')) {
       // jsdom computes no layout, so the assertion is on the class that sets

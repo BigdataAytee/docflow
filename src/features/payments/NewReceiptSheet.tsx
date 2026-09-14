@@ -23,6 +23,7 @@ import type { Customer } from '../../data/repositories'
 import { formatMoney } from '../customers/formatMoney'
 import type { SettleableInvoice } from './receiptFlow'
 import { settleableInvoices } from './receiptFlow'
+import { useFocusOnOpen } from '../../ui'
 
 export interface NewReceiptSheetProps {
   readonly currency: string
@@ -53,6 +54,8 @@ export function NewReceiptSheet({
   onClose,
   error,
 }: NewReceiptSheetProps) {
+  // Opening this panel moves focus into it, and its name is announced.
+  const panel = useFocusOnOpen<HTMLElement>()
   const { strings } = useCompany()
   const r = strings.newReceipt
   const ids = useId()
@@ -77,7 +80,12 @@ export function NewReceiptSheet({
   const canRecord = minor > 0 && customerId !== ''
 
   return (
-    <section className="rounded-2xl bg-surface/85 p-4 backdrop-blur" aria-label={r.title}>
+    <section
+      ref={panel}
+      tabIndex={-1}
+      className="rounded-2xl bg-surface/85 p-4 outline-none backdrop-blur"
+      aria-label={r.title}
+    >
       <div className="flex items-start justify-between gap-3">
         <h2 className="text-sm font-semibold">{r.title}</h2>
         <button
