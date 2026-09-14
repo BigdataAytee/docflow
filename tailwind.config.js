@@ -71,6 +71,15 @@ export default {
         sans: ['"Plus Jakarta Sans"', 'Inter', 'system-ui', 'sans-serif'],
       },
       borderRadius: { '2xl': '1rem' },
+      keyframes: {
+        // The prototype's slow sheen across the header band. Guarded by
+        // `motion-safe:` at every call site (§F, §V).
+        'header-sheen': {
+          '0%': { transform: 'translateX(-130%) skewX(-18deg)' },
+          '100%': { transform: 'translateX(340%) skewX(-18deg)' },
+        },
+      },
+      animation: { 'header-sheen': 'header-sheen 3.6s linear infinite' },
       minHeight: { tap: '44px' },
       minWidth: { tap: '44px' },
     },

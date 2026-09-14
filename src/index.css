@@ -157,104 +157,161 @@
 
 /*
  * ===========================================================================
- * The corporate glass layer (§F).
+ * The corporate glass layer (§F), transcribed from the prototype.
  * ===========================================================================
  *
- * §F is Locked, and it asks for one thing this app did not have: surfaces
- * that sit ABOVE the page rather than lying flat on it. "Cards, pills, chips
- * and the floating nav are frosted — translucent white with backdrop blur and
- * saturation lift, hairline white inner borders, one soft wide shadow plus
- * one tight contact shadow. Inputs read as recessed; buttons raised with a
- * top highlight."
+ * `docs/design-reference/prototype.html` is the pixel-level authority for
+ * these surfaces; §F stays the authority for tokens and rules. Every number
+ * below — blur radius, saturation, shadow colour and depth, sheen height and
+ * alpha, border alpha — is read off that file's `#glass-corporate`
+ * stylesheet rather than chosen here.
  *
- * Why this is CSS and not Tailwind classes sprinkled per component: the
- * treatment is five declarations that must agree everywhere, and the shadow
- * colour, the inner hairline and the blur all have to flip with the theme.
- * Written inline that is five chances per surface to get one of them wrong,
- * and forty surfaces that quietly disagree. Written here, `className="glass"`
- * is one word that is correct in both themes and on both tiers of device.
+ * Two things in it are easy to miss and are the whole look:
  *
- * §F's PERFORMANCE FALLBACK is the reason for the cascade below rather than a
- * flat block: "on low-tier devices, where `backdrop-filter` is unsupported,
- * or under reduced-transparency, glass degrades automatically to translucent
- * white without blur — same layout, cheaper paint." So blur is ADDED by an
- * `@supports` query and REMOVED again by the two conditions that should not
- * have it. A phone that cannot paint it never asks for it; nothing detects a
- * device and branches in JavaScript.
+ * · **The shadows are BLUE, not black.** `rgba(24,38,120,.28)` for the wide
+ *   one and `rgba(43,63,214,.08)` for the contact. A neutral shadow greys the
+ *   page underneath; §F's page is a blue wash and has to stay that colour
+ *   under a card, so the depth is made of the palette's own hue.
+ * · **A glass pane is a GRADIENT, not a flat tint** — white at 78% falling to
+ *   a pale blue at 42% across 163°. Flat translucency reads as tracing paper;
+ *   the gradient is what makes it read as a pane with a lit edge.
+ *
+ * §F's PERFORMANCE FALLBACK is why blur is added by an `@supports` query and
+ * removed again by the two conditions that should not have it: "on low-tier
+ * devices, where `backdrop-filter` is unsupported, or under
+ * reduced-transparency, glass degrades automatically to translucent white
+ * without blur — same layout, cheaper paint."
+ *
+ * The prototype is light-only. Dark values are DERIVED the way the palette
+ * above is: keep the hue, move the lightness — so a card stays a lift off the
+ * page, and the shadow becomes true black, because a navy shadow on a navy
+ * page is nothing at all.
  */
 @layer components {
   :root {
-    /*
-     * The shadow is a darker navy rather than black. Black over a blue page
-     * greys it; §F's page is `#eef2fb` and has to stay that colour under a
-     * card, so the shadow is made of the page's own hue at depth.
-     */
-    --shadow-rgb: 20 28 74;
-    --shadow-wide: 0 18px 38px -22px rgb(var(--shadow-rgb) / 0.5);
-    --shadow-contact: 0 2px 6px -2px rgb(var(--shadow-rgb) / 0.18);
-    /* §F's "hairline white inner borders" — a lit top edge, not a stroke. */
-    --glass-inner: inset 0 1px 0 rgb(255 255 255 / 0.5);
-    --glass-alpha: 0.72;
+    /* The standard pane. */
+    --glass-image: linear-gradient(163deg, #ffffff 0%, #f4f7ff 55%, #eaf0ff 100%);
+    --glass-border: rgb(255 255 255 / 0.72);
+    --glass-blur: blur(20px) saturate(1.55);
+    --glass-shadow: 0 14px 30px -8px rgb(43 63 214 / 0.28), 0 3px 8px rgb(43 63 214 / 0.1),
+      inset 0 1px 0 #ffffff, inset 0 -1px 0 rgb(43 63 214 / 0.06);
+    /* The flat paint the fallback drops to — same layout, cheaper paint. */
+    --glass-flat: #fbfcff;
+
+    /* The gloss, over the top 38%, at .9 — the strongest value in the file. */
+    --sheen-image: linear-gradient(180deg, rgb(255 255 255 / 0.9), rgb(255 255 255 / 0));
+
+    /* A pill: the search field, and any chip-shaped pane. */
+    --pill-image: linear-gradient(180deg, #ffffff, #f2f5fd);
+    --pill-border: rgb(255 255 255 / 0.9);
+    --pill-blur: blur(16px) saturate(1.45);
+    --pill-shadow: 0 10px 22px -6px rgb(43 63 214 / 0.28), 0 2px 5px rgb(43 63 214 / 0.1),
+      inset 0 1px 0 #ffffff;
+
+    /* The floating nav — lit brighter and thrown further than a card. */
+    --nav-image: linear-gradient(180deg, #ffffff, #f6f7fa 52%, #e7eaf1);
+    --nav-border: rgb(255 255 255 / 0.95);
+    --nav-blur: blur(22px) saturate(1.6);
+    --nav-shadow: 0 26px 40px -12px rgb(13 16 36 / 0.42), inset 0 2px 0 #ffffff;
+    /* The tile inside the pill — lighter than the pill, so it reads as raised. */
+    --nav-tile-a: #ffffff;
+    --nav-tile-b: #f1f3f8;
+    --nav-tile-ink: #9aa0b4;
+    --nav-tile-ink-active: #1d2452;
+    --nav-tile-shadow: 0 4px 10px -3px rgb(13 16 36 / 0.2), inset 0 1px 0 #ffffff;
+    --nav-tile-shadow-active: 0 15px 24px -7px rgb(13 16 36 / 0.42), inset 0 1px 0 #ffffff;
+
+    /* The header, and how its lower edge meets the page. */
+    --header-image: linear-gradient(158deg, #4a60ee 0%, #2b3fd6 52%, #1a2a9e 100%);
+    --header-shadow: 0 14px 34px -10px rgb(30 47 174 / 0.6);
+
+    /* A field, recessed. */
+    --field-image: linear-gradient(180deg, #fdfeff, #f6f9ff);
+    --field-border: #e3e9f8;
+    --field-shadow: inset 0 2px 4px rgb(43 63 214 / 0.05);
+    --field-ring: rgb(43 63 214 / 0.1);
+
+    /* The page is a wash, not one flat colour. */
+    --page-image: linear-gradient(180deg, #eef2fb, #e6ecf9);
   }
 
   .dark {
-    /*
-     * On a dark page a navy shadow is invisible, so depth has to come from
-     * true black — and the inner highlight drops to a hint, because a bright
-     * white edge on a dark card reads as a border rather than as light.
-     */
-    --shadow-rgb: 0 0 0;
-    --shadow-wide: 0 18px 38px -20px rgb(var(--shadow-rgb) / 0.62);
-    --shadow-contact: 0 2px 6px -2px rgb(var(--shadow-rgb) / 0.4);
-    --glass-inner: inset 0 1px 0 rgb(255 255 255 / 0.07);
-    --glass-alpha: 0.66;
+    --glass-image: linear-gradient(163deg, #38426f 0%, #333d69 55%, #2e3761 100%);
+    --glass-border: rgb(255 255 255 / 0.1);
+    --glass-shadow: 0 14px 30px -8px rgb(0 0 0 / 0.55), 0 3px 8px rgb(0 0 0 / 0.35),
+      inset 0 1px 0 rgb(255 255 255 / 0.08), inset 0 -1px 0 rgb(0 0 0 / 0.25);
+    --glass-flat: #333d69;
+
+    /* A gloss is light. On a dark pane it is a hint, or it reads as a border. */
+    --sheen-image: linear-gradient(180deg, rgb(255 255 255 / 0.09), rgb(255 255 255 / 0));
+
+    --pill-image: linear-gradient(180deg, #3a4475, #333d69);
+    --pill-border: rgb(255 255 255 / 0.12);
+    --pill-shadow: 0 10px 22px -6px rgb(0 0 0 / 0.5), 0 2px 5px rgb(0 0 0 / 0.3),
+      inset 0 1px 0 rgb(255 255 255 / 0.1);
+
+    --nav-image: linear-gradient(180deg, #3d4778, #2f3862 52%, #272f55);
+    --nav-border: rgb(255 255 255 / 0.14);
+    --nav-shadow: 0 26px 40px -12px rgb(0 0 0 / 0.66), inset 0 2px 0 rgb(255 255 255 / 0.12);
+    --nav-tile-a: #4a558c;
+    --nav-tile-b: #3b4576;
+    --nav-tile-ink: #9aa0b4;
+    --nav-tile-ink-active: #eef2fb;
+    --nav-tile-shadow: 0 4px 10px -3px rgb(0 0 0 / 0.4), inset 0 1px 0 rgb(255 255 255 / 0.12);
+    --nav-tile-shadow-active: 0 15px 24px -7px rgb(0 0 0 / 0.6),
+      inset 0 1px 0 rgb(255 255 255 / 0.16);
+
+    /* The accent is locked (§F); only the shadow under it moves. */
+    --header-shadow: 0 14px 34px -10px rgb(0 0 0 / 0.6);
+
+    --field-image: linear-gradient(180deg, rgb(28 34 74 / 0.9), rgb(24 30 68 / 0.9));
+    --field-border: rgb(255 255 255 / 0.1);
+    --field-shadow: inset 0 2px 4px rgb(0 0 0 / 0.35);
+    --field-ring: rgb(122 146 255 / 0.28);
+
+    --page-image: linear-gradient(180deg, #141a3a, #11162f);
+  }
+
+  /* The page wash the orbs float in. */
+  body {
+    background-image: var(--page-image);
+    background-attachment: fixed;
+  }
+
+  .glass {
+    background-image: var(--glass-image);
+    border: 1px solid var(--glass-border);
+    box-shadow: var(--glass-shadow);
   }
 
   /*
-   * A frosted surface: card, pill or chip.
-   *
-   * The background is `--surface` at an alpha, so it is the SAME token the
-   * rest of the app uses — a glass card in dark mode is the lighter navy of
-   * `src/index.css` above, not a second palette invented down here.
+   * For a pane that has to carry small text over busy ground. Same depth,
+   * less of what is behind it — the prototype's dropdowns sit here.
    */
-  .glass {
-    background-color: rgb(var(--surface) / var(--glass-alpha));
-    box-shadow: var(--shadow-wide), var(--shadow-contact), var(--glass-inner);
-  }
-
-  /* For a surface that has to carry small text: more opaque, same depth. */
   .glass-solid {
     background-color: rgb(var(--surface) / 0.94);
-    box-shadow: var(--shadow-wide), var(--shadow-contact), var(--glass-inner);
+    background-image: var(--glass-image);
+    border: 1px solid var(--glass-border);
+    box-shadow: var(--glass-shadow);
   }
 
-  /*
-   * The blur and the saturation lift, added only where they can be painted.
-   *
-   * The saturation is what makes it read as glass rather than as fog: blur
-   * alone washes the colour out of whatever is behind it, and the four
-   * ambient orbs below are the thing meant to show through.
-   */
   @supports (backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px)) {
     .glass,
     .glass-solid {
-      -webkit-backdrop-filter: blur(14px) saturate(1.5);
-      backdrop-filter: blur(14px) saturate(1.5);
+      -webkit-backdrop-filter: var(--glass-blur);
+      backdrop-filter: var(--glass-blur);
     }
   }
 
-  /*
-   * §F's fallback, both halves.
-   *
-   * `prefers-reduced-transparency` is the accessibility setting; `.no-glass`
-   * on the root is the low-tier device, set from the §N tier check at boot.
-   * Both land in the same place: opaque surface, no blur, layout untouched.
-   */
+  /* §F's fallback: the accessibility setting, and the low-tier device. */
   @media (prefers-reduced-transparency: reduce) {
     .glass,
-    .glass-solid {
+    .glass-solid,
+    .glass-nav,
+    .glass-pill {
       -webkit-backdrop-filter: none;
       backdrop-filter: none;
+      background-image: none;
       background-color: rgb(var(--surface));
     }
   }
@@ -263,17 +320,192 @@
   .no-glass .glass-solid {
     -webkit-backdrop-filter: none;
     backdrop-filter: none;
-    background-color: rgb(var(--surface) / 0.96);
-    box-shadow: var(--shadow-contact);
+    background-image: none;
+    background-color: var(--glass-flat);
+    box-shadow: 0 2px 6px rgb(43 63 214 / 0.12);
   }
 
   /*
-   * The sheen (§F's gloss pass): "a light sheen across the top third".
+   * Home's four type tiles.
    *
-   * Static, not animated — §F allows a sheen and forbids continuous pulsing,
-   * and a highlight that moves on its own is the second thing dressed as the
-   * first. Nothing here needs `prefers-reduced-motion` because nothing here
-   * moves.
+   * §F fixes colour to the INTERNAL type, so each tile's wash, icon plate,
+   * count chip and ink are keyed by that type and by nothing else — a
+   * Delivery note is amber everywhere a Waybill is.
+   *
+   * They live here rather than as inline styles in `Home.tsx` for one
+   * reason: a tile has five colours and every one of them has to flip with
+   * the theme. Inline, they cannot — which is the exact bug §F's dark-mode
+   * sweep was written to catch, and the one it cannot see, because a hex
+   * reached through a variable is invisible to a source scan.
+   *
+   * Light values are transcribed from the prototype. Dark values are
+   * derived: keep the hue, move the lightness, and let the accent stay put.
+   */
+  .tile {
+    background-image: var(--tile-wash);
+    box-shadow: var(--tile-shadow);
+    border: 1px solid var(--tile-edge);
+  }
+
+  .tile-plate {
+    background-image: var(--tile-plate);
+    box-shadow: 0 4px 10px var(--tile-plate-shadow), inset 0 1px 0 var(--tile-lit);
+  }
+
+  .tile-chip {
+    background-image: var(--tile-chip);
+    box-shadow: inset 0 1px 0 var(--tile-lit);
+  }
+
+  .tile-ink {
+    color: var(--tile-ink);
+  }
+
+  .tile-invoice {
+    --tile-wash: linear-gradient(163deg, #ffffff, #f4f7ff 55%, #eaf0ff);
+    --tile-plate: linear-gradient(180deg, #eef1ff, #d5deff);
+    --tile-chip: linear-gradient(180deg, #eff2ff, #e0e7ff);
+    --tile-plate-shadow: rgb(43 63 214 / 0.2);
+    --tile-shadow: 0 14px 30px -8px rgb(43 63 214 / 0.28), inset 0 1px 0 #ffffff;
+    --tile-edge: rgb(255 255 255 / 0.72);
+    --tile-lit: rgb(255 255 255 / 0.6);
+    --tile-ink: #1d2452;
+  }
+
+  .tile-quotation {
+    --tile-wash: linear-gradient(163deg, #ffffff, #f7f4ff 55%, #f0ecff);
+    --tile-plate: linear-gradient(180deg, #f1eefe, #ddd6fb);
+    --tile-chip: linear-gradient(180deg, #f3f1ff, #e7e3fd);
+    --tile-plate-shadow: rgb(83 74 183 / 0.2);
+    --tile-shadow: 0 14px 30px -8px rgb(83 74 183 / 0.28), inset 0 1px 0 #ffffff;
+    --tile-edge: rgb(255 255 255 / 0.72);
+    --tile-lit: rgb(255 255 255 / 0.6);
+    --tile-ink: #26215c;
+  }
+
+  .tile-receipt {
+    --tile-wash: linear-gradient(163deg, #ffffff, #f1fbf7 55%, #e6f7f0);
+    --tile-plate: linear-gradient(180deg, #e7f7f0, #cdeade);
+    --tile-chip: linear-gradient(180deg, #eafaf4, #d9f2e8);
+    --tile-plate-shadow: rgb(15 110 86 / 0.2);
+    --tile-shadow: 0 14px 30px -8px rgb(15 110 86 / 0.24), inset 0 1px 0 #ffffff;
+    --tile-edge: rgb(255 255 255 / 0.72);
+    --tile-lit: rgb(255 255 255 / 0.6);
+    --tile-ink: #04342c;
+  }
+
+  .tile-waybill {
+    --tile-wash: linear-gradient(163deg, #ffffff, #fdf7ed 55%, #faf0dd);
+    --tile-plate: linear-gradient(180deg, #fbf1de, #f4e0ba);
+    --tile-chip: linear-gradient(180deg, #fdf5e7, #f8e9d1);
+    --tile-plate-shadow: rgb(186 117 23 / 0.22);
+    --tile-shadow: 0 14px 30px -8px rgb(186 117 23 / 0.26), inset 0 1px 0 #ffffff;
+    --tile-edge: rgb(255 255 255 / 0.72);
+    --tile-lit: rgb(255 255 255 / 0.6);
+    --tile-ink: #412402;
+  }
+
+  .dark .tile-invoice {
+    --tile-wash: linear-gradient(163deg, #3a4478, #333d6c 55%, #2e3763);
+    --tile-plate: linear-gradient(180deg, #46528f, #3a4479);
+    --tile-chip: linear-gradient(180deg, #46528f, #3a4479);
+    --tile-plate-shadow: rgb(0 0 0 / 0.35);
+    --tile-shadow: 0 14px 30px -8px rgb(0 0 0 / 0.5), inset 0 1px 0 rgb(255 255 255 / 0.08);
+    --tile-edge: rgb(255 255 255 / 0.1);
+    --tile-lit: rgb(255 255 255 / 0.12);
+    --tile-ink: #dfe4ff;
+  }
+
+  .dark .tile-quotation {
+    --tile-wash: linear-gradient(163deg, #3f3a70, #383265 55%, #322d5c);
+    --tile-plate: linear-gradient(180deg, #4d4589, #403a73);
+    --tile-chip: linear-gradient(180deg, #4d4589, #403a73);
+    --tile-plate-shadow: rgb(0 0 0 / 0.35);
+    --tile-shadow: 0 14px 30px -8px rgb(0 0 0 / 0.5), inset 0 1px 0 rgb(255 255 255 / 0.08);
+    --tile-edge: rgb(255 255 255 / 0.1);
+    --tile-lit: rgb(255 255 255 / 0.12);
+    --tile-ink: #e3dfff;
+  }
+
+  .dark .tile-receipt {
+    --tile-wash: linear-gradient(163deg, #1d4a41, #17423a 55%, #133a33);
+    --tile-plate: linear-gradient(180deg, #235a4e, #1b4a41);
+    --tile-chip: linear-gradient(180deg, #235a4e, #1b4a41);
+    --tile-plate-shadow: rgb(0 0 0 / 0.35);
+    --tile-shadow: 0 14px 30px -8px rgb(0 0 0 / 0.5), inset 0 1px 0 rgb(255 255 255 / 0.08);
+    --tile-edge: rgb(255 255 255 / 0.1);
+    --tile-lit: rgb(255 255 255 / 0.12);
+    --tile-ink: #d6f2e8;
+  }
+
+  .dark .tile-waybill {
+    --tile-wash: linear-gradient(163deg, #533b18, #4a3414 55%, #422e11);
+    --tile-plate: linear-gradient(180deg, #65481d, #543b16);
+    --tile-chip: linear-gradient(180deg, #65481d, #543b16);
+    --tile-plate-shadow: rgb(0 0 0 / 0.35);
+    --tile-shadow: 0 14px 30px -8px rgb(0 0 0 / 0.5), inset 0 1px 0 rgb(255 255 255 / 0.08);
+    --tile-edge: rgb(255 255 255 / 0.1);
+    --tile-lit: rgb(255 255 255 / 0.12);
+    --tile-ink: #f8e6c8;
+  }
+
+  /*
+   * A pill-shaped pane: brighter and less deep than a card, because it is a
+   * control rather than a container. The search field on Home and on every
+   * list page is this.
+   */
+  .glass-pill {
+    background-image: var(--pill-image);
+    border: 1px solid var(--pill-border);
+    box-shadow: var(--pill-shadow);
+  }
+
+  @supports (backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px)) {
+    .glass-pill {
+      -webkit-backdrop-filter: var(--pill-blur);
+      backdrop-filter: var(--pill-blur);
+    }
+  }
+
+  .no-glass .glass-pill {
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+    background-image: none;
+    background-color: var(--glass-flat);
+  }
+
+  /*
+   * The floating nav: lit brighter and thrown further than a card, because it
+   * hovers over everything rather than sitting in the page.
+   */
+  .glass-nav {
+    background-image: var(--nav-image);
+    border: 1px solid var(--nav-border);
+    box-shadow: var(--nav-shadow);
+  }
+
+  @supports (backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px)) {
+    .glass-nav {
+      -webkit-backdrop-filter: var(--nav-blur);
+      backdrop-filter: var(--nav-blur);
+    }
+  }
+
+  .no-glass .glass-nav {
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+    background-image: none;
+    background-color: var(--glass-flat);
+  }
+
+  /*
+   * The gloss (§F's "light sheen across the top third").
+   *
+   * Static. §F allows a sheen and forbids continuous pulsing, and a highlight
+   * that moves on its own is the second thing wearing the first's clothes.
+   * `border-radius: inherit` matters: without it the gloss squares off the
+   * top corners of every rounded card, which is the tell that gives a
+   * hand-rolled glass layer away.
    */
   .sheen {
     position: relative;
@@ -284,79 +516,82 @@
     content: '';
     position: absolute;
     inset: 0 0 auto 0;
-    height: 34%;
+    height: 38%;
     z-index: -1;
     pointer-events: none;
     border-radius: inherit;
-    background-image: linear-gradient(
-      to bottom,
-      rgb(255 255 255 / 0.22),
-      rgb(255 255 255 / 0)
-    );
+    background-image: var(--sheen-image);
   }
 
-  /* On a coloured hero the sheen carries further and starts brighter. */
+  /* On a coloured header the prototype carries it further, at .22. */
   .sheen-strong::before {
     height: 52%;
-    background-image: linear-gradient(
-      to bottom,
-      rgb(255 255 255 / 0.3),
-      rgb(255 255 255 / 0)
-    );
+    background-image: linear-gradient(180deg, rgb(255 255 255 / 0.22), transparent);
+  }
+
+  /* §F's header, and the shadow that is how its lower edge meets the page. */
+  .header-gloss {
+    background-image: var(--header-image);
+    box-shadow: var(--header-shadow);
   }
 
   /*
-   * §F: "buttons raised with a top highlight". The highlight is an inset,
-   * so it survives any background — a brand button, a type-coloured FAB, or
-   * a white chip — without each of them restating it.
+   * §F: "buttons raised with a top highlight". The prototype's primary
+   * button, whose shadow is the accent's own hue at .55 — a primary button
+   * throws a blue shadow, not a grey one.
    */
   .raised {
     box-shadow:
-      inset 0 1px 0 rgb(255 255 255 / 0.28),
-      0 8px 18px -10px rgb(var(--shadow-rgb) / 0.55),
-      0 1px 2px 0 rgb(var(--shadow-rgb) / 0.2);
+      inset 0 1px 0 rgb(255 255 255 / 0.35),
+      0 10px 22px -6px rgb(43 63 214 / 0.55),
+      0 1px 2px rgb(43 63 214 / 0.18);
   }
 
-  /* §F: "inputs read as recessed". */
-  .recessed {
-    background-color: rgb(var(--surface) / 0.85);
+  /* A lighter lift, for a chip or a small tile that is not the primary. */
+  .raised-soft {
     box-shadow:
-      inset 0 2px 4px 0 rgb(var(--shadow-rgb) / 0.13),
-      inset 0 0 0 1px rgb(var(--edge) / 0.06);
-  }
-
-  .recessed::placeholder {
-    color: rgb(var(--ink) / 0.5);
+      inset 0 1px 0 rgb(255 255 255 / 0.9),
+      0 4px 10px rgb(43 63 214 / 0.18);
   }
 
   /*
-   * The same recess, for an input INSIDE a white card.
+   * §F: "inputs read as recessed". The prototype's field — and note it has a
+   * real border as well as the inset shadow, which is what keeps a field
+   * findable on a pane that is itself nearly white.
    *
-   * `.recessed` fills with the surface colour, which is what a field needs
-   * when it sits on the page — and is invisible the moment the card behind it
-   * is that same white. A recess is defined by being darker than what
-   * surrounds it, so inside a card the fill has to be the PAGE. Two classes
-   * rather than one because there is no single colour that is darker than
-   * both of the app's two backgrounds.
+   * Both classes now resolve to the same thing: with a border of its own, a
+   * field no longer needs to be darker than its background to be visible, so
+   * the two-variant split the flat version needed has gone.
    */
+  .recessed,
   .sunken {
-    background-color: rgb(var(--page));
-    box-shadow:
-      inset 0 2px 4px 0 rgb(var(--shadow-rgb) / 0.14),
-      inset 0 0 0 1px rgb(var(--edge) / 0.06);
+    background-image: var(--field-image);
+    border: 1px solid var(--field-border);
+    box-shadow: var(--field-shadow);
   }
 
+  .recessed:focus,
+  .sunken:focus,
+  .recessed:focus-visible,
+  .sunken:focus-visible {
+    outline: none;
+    border-color: #2b3fd6;
+    box-shadow: 0 0 0 3px var(--field-ring), var(--field-shadow);
+  }
+
+  .recessed::placeholder,
   .sunken::placeholder {
-    color: rgb(var(--ink) / 0.5);
+    color: rgb(var(--ink) / 0.45);
   }
 
   /*
-   * §F: "Soft ambient colour orbs (one per document type) sit behind
-   * content, decorative only, never intercepting taps."
+   * §F: "Soft ambient colour orbs (one per document type) sit behind content,
+   * decorative only, never intercepting taps."
    *
-   * `fixed` and `pointer-events: none`, so they never scroll into a tap
-   * target and never take one. Hidden entirely on the low tier, where four
-   * large blurred gradients are exactly the paint §F's fallback is avoiding.
+   * The prototype blurs them at 52px and paints each as a radial gradient
+   * rather than a flat disc, at an alpha PER TYPE — blue .34, violet .26,
+   * green .16, amber .15 — so the two warm ones stay behind the glass instead
+   * of tinting it. Those alphas live with the placements in `Orbs.tsx`.
    */
   .orbs {
     position: fixed;
@@ -368,13 +603,8 @@
 
   .orb {
     position: absolute;
-    border-radius: 9999px;
-    opacity: 0.14;
-    filter: blur(72px);
-  }
-
-  .dark .orb {
-    opacity: 0.2;
+    border-radius: 50%;
+    filter: blur(52px);
   }
 
   .no-glass .orbs {
@@ -388,12 +618,30 @@
   }
 
   /*
-   * The press state §F names for the nav tiles ("press scales to 0.9") and
-   * the lift of the active one. Held here rather than per-component because
-   * both need the same reduced-motion answer, which is: the lift stays (it
-   * is a position, and it is how an unlabelled tile says which one it is),
-   * the TRANSITION goes.
+   * §F's nav tile states — "active tile lifts (`translateY(-4px)`), icon
+   * scales slightly, a short dark dash beneath; press scales to 0.9".
+   *
+   * The prototype's spring, `cubic-bezier(.34,1.56,.64,1)`, overshoots
+   * slightly on the way up, which is what makes the lift read as a lift
+   * rather than as a jump. Under reduced motion the POSITION stays — it is
+   * half of how an unlabelled tile says which one it is — and only the travel
+   * between states goes.
    */
+  .nav-tile {
+    transition:
+      transform 280ms cubic-bezier(0.34, 1.56, 0.64, 1),
+      box-shadow 280ms ease,
+      color 250ms ease;
+  }
+
+  .nav-tile-icon {
+    transition: transform 300ms cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+
+  .nav-tile:active {
+    transform: scale(0.9);
+  }
+
   .tap-scale {
     transition: transform 140ms ease;
   }
@@ -403,6 +651,8 @@
   }
 
   @media (prefers-reduced-motion: reduce) {
+    .nav-tile,
+    .nav-tile-icon,
     .tap-scale {
       transition: none;
     }

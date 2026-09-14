@@ -5,27 +5,37 @@
  * three things that want doing. The connectivity pill is truthful: it is
  * driven by real connection plus pending work, never by a simulated toggle.
  *
- * §F's header note is the one thing here that is a judgement rather than a
- * measurement: "noticeably blue but lighter than the original deep navy,
- * blending its lower edge into the page". So the gradient stops at the mid
- * blue instead of running down to `#1a2a9e`, and its last few pixels fade to
- * the page colour — which is what makes the stat cards read as sitting in the
- * header's light rather than parked on a band that ends abruptly.
+ * Laid out from `docs/design-reference/prototype.html`, which is the
+ * pixel-level authority for these surfaces. Three things in it are not what
+ * a reading of §F alone would produce, and each is deliberate:
+ *
+ * · **The stat cards are INSIDE the header**, not overlapping its lower
+ *   edge — translucent white on the blue, with a lit top border. That is why
+ *   the header can end in a plain rounded edge and a blue shadow: there is
+ *   nothing straddling it that needs the join disguised.
+ * · **The type tiles are LIGHT**, not saturated blocks of the type colour.
+ *   Each is a glass pane washed with its type's tint, carrying a tinted icon
+ *   square, a count chip and dark text. Four solid colour blocks would be
+ *   the loudest thing on the screen; §G wants the two figures above them to
+ *   be.
+ * · **The count is a chip in the corner**, which is also what makes the tile
+ *   legible at 200% text: the number never competes with the label for the
+ *   same line.
  *
  * The Voice and Scan controls §G places here render only when this screen is
  * given something for them to DO. They are absent by default, and that is a
  * deliberate deviation from the drawing: §N is explicit that an unavailable
  * capability is stated plainly rather than dressed up, and a round microphone
  * that opens nothing is the dressed-up version. The slot is here, in the
- * place and shape §G draws; Phase 6 supplies the handlers and they appear.
+ * place and shape the prototype draws; Phase 6 supplies the handlers.
  */
 
-import type { ReactNode } from 'react'
+import type { CSSProperties, ReactNode } from 'react'
 
 import { useCompany } from '../../app/context'
-import { label as typeLabel, pluralLabel } from '../../domain/locale/profile'
+import { pluralLabel } from '../../domain/locale/profile'
 import { format } from '../../domain/locale/data/strings'
-import { ConnectivityPill, Icon, StatusBadge, TYPE_PALETTE } from '../../ui'
+import { ConnectivityPill, Icon, TYPE_PALETTE } from '../../ui'
 import { DOCUMENT_TYPES, type DocumentType } from '../../domain/documents/types'
 import type { CurrencyCode, Money } from '../../domain/money/money'
 import { formatMoney } from '../customers/formatMoney'
@@ -62,6 +72,22 @@ export interface HomeProps {
   readonly results?: ReactNode
 }
 
+/**
+ * The tile class per type, written out in full.
+ *
+ * Not `tile-${type}`. Tailwind scans the SOURCE for class names and drops any
+ * component-layer class it cannot find there, so a name assembled at runtime
+ * is a name that ships as nothing — the tiles rendered white, with every
+ * colour variable undefined. Spelling them out is what makes them survive the
+ * build, and it is also the only form a reader can grep.
+ */
+const TILE_CLASS: Readonly<Record<DocumentType, string>> = {
+  invoice: 'tile-invoice',
+  quotation: 'tile-quotation',
+  receipt: 'tile-receipt',
+  waybill: 'tile-waybill',
+}
+
 function greeting(now: Date, strings: ReturnType<typeof useCompany>['strings']): string {
   const hour = now.getHours()
   if (hour < 12) return strings.home.greetingMorning
@@ -69,6 +95,12 @@ function greeting(now: Date, strings: ReturnType<typeof useCompany>['strings']):
   return strings.home.greetingEvening
 }
 
+/**
+ * One of §G's two figures, on the header's blue.
+ *
+ * Translucent white over the accent rather than a glass pane, because it is
+ * INSIDE the header: a frosted card here would be a pane floating on a pane.
+ */
 function StatCard({
   title,
   amounts,
@@ -85,20 +117,25 @@ function StatCard({
       // `min-w-0` because a flex item defaults to `min-width: auto` and will
       // not shrink below its content — so at 200% text these two cards pushed
       // the page 208px wider than the phone. Found by the large-text sweep.
-      className="glass sheen min-w-0 flex-1 rounded-2xl p-4"
+      className="min-w-0 flex-1 rounded-[14px] border border-on-accent/35 p-2.5 text-center"
+      style={{
+        backgroundImage:
+          'linear-gradient(180deg, rgb(255 255 255 / 0.24), rgb(255 255 255 / 0.1))',
+        boxShadow: 'inset 0 1px 0 rgb(255 255 255 / 0.4)',
+      }}
       aria-label={title}
     >
-      <p className="text-xs font-medium opacity-70">{title}</p>
       {entries.length === 0 ? (
-        <p className="mt-1 text-lg font-bold opacity-50">{emptyLabel}</p>
+        <p className="text-[19px] font-semibold leading-tight opacity-60">{emptyLabel}</p>
       ) : (
         // One line per currency — never a combined figure (§G, §V).
         entries.map(([currency, amount]) => (
-          <p key={currency} className="mt-1 text-lg font-bold tabular-nums">
+          <p key={currency} className="text-[19px] font-semibold leading-tight tabular-nums">
             {formatMoney(amount)}
           </p>
         ))
       )}
+      <p className="mt-0.5 text-[10px] opacity-75">{title}</p>
     </section>
   )
 }
@@ -123,25 +160,29 @@ function LogoHolder({
 }) {
   const inner =
     logoUrl === undefined ? (
-      <Icon name="photo" size={1.1} className="opacity-45" />
+      <Icon name="photo" size={1.05} className="opacity-40" />
     ) : (
       <img src={logoUrl} alt="" className="h-full w-full object-contain" />
     )
 
-  const box = 'grid h-12 w-12 shrink-0 place-items-center overflow-hidden rounded-xl bg-on-accent p-1.5 text-ink'
+  const box =
+    'grid h-[38px] w-[38px] shrink-0 place-items-center overflow-hidden rounded-xl bg-on-accent p-[3px] text-ink'
+  const lift: CSSProperties = {
+    boxShadow: '0 4px 12px rgba(9,15,45,.35), inset 0 1px 0 #fff',
+  }
 
   // Inert when there is nowhere to go — and then not a button at all, rather
   // than a button that does nothing when pressed.
   if (onAdd === undefined) {
     return (
-      <span aria-hidden="true" className={box}>
+      <span aria-hidden="true" className={box} style={lift}>
         {inner}
       </span>
     )
   }
 
   return (
-    <button type="button" onClick={onAdd} aria-label={label} className={`${box} raised tap-scale`}>
+    <button type="button" onClick={onAdd} aria-label={label} className={`${box} tap-scale`} style={lift}>
       {inner}
     </button>
   )
@@ -172,15 +213,28 @@ export function Home({
   const { profile, strings } = useCompany()
 
   return (
-    <div className="pb-28">
-      <header
-        className="sheen-strong relative overflow-hidden rounded-b-3xl px-4 pb-10 pt-[max(1rem,env(safe-area-inset-top))] text-white"
-        // §F: noticeably blue, lighter than the original deep navy. The deep
-        // stop is gone; the darkest point is the mid blue, at the top corner
-        // furthest from the content.
-        style={{ backgroundImage: 'linear-gradient(155deg, #5b70f2 0%, #4a60ee 42%, #2b3fd6 100%)' }}
-      >
-        <div className="flex items-center gap-3">
+    <div className="pb-[118px]">
+      <header className="header-gloss sheen-strong relative overflow-hidden rounded-b-[30px] px-3.5 pb-3.5 pt-[max(0.875rem,env(safe-area-inset-top))] text-white">
+        {/*
+          The prototype's two header decorations: a soft corner circle, and a
+          slow sheen crossing the band. Both decorative, both inert, and the
+          sheen is `motion-safe` — §F allows a sheen and requires it to stop
+          for somebody who has asked their phone to hold still.
+        */}
+        <span
+          aria-hidden="true"
+          className="pointer-events-none absolute -top-8 end-[-20px] h-[120px] w-[120px] rounded-full bg-on-accent/10"
+        />
+        <span
+          aria-hidden="true"
+          className="pointer-events-none absolute inset-y-0 w-14 motion-safe:animate-header-sheen"
+          style={{
+            backgroundImage:
+              'linear-gradient(90deg, transparent, rgb(255 255 255 / 0.16), transparent)',
+          }}
+        />
+
+        <div className="relative flex items-center gap-2.5">
           <LogoHolder
             {...(logoUrl === undefined ? {} : { logoUrl })}
             label={strings.home.addLogo}
@@ -188,7 +242,7 @@ export function Home({
           />
 
           <div className="min-w-0 flex-1">
-            <p className="truncate text-sm font-semibold">{businessName}</p>
+            <p className="truncate text-[11px] font-semibold">{businessName}</p>
             {/*
               §G's "Tap to add your logo until one is set". It is a hint for
               the control beside it, which already carries that same sentence
@@ -196,7 +250,7 @@ export function Home({
               announced twice.
             */}
             {logoUrl === undefined && (
-              <p aria-hidden="true" className="truncate text-[11px] opacity-75">
+              <p aria-hidden="true" className="truncate text-[9.5px] opacity-60">
                 {strings.home.addLogo}
               </p>
             )}
@@ -219,9 +273,9 @@ export function Home({
               type="button"
               onClick={onLogOut}
               aria-label={strings.home.logOut}
-              className="tap-scale grid min-h-tap min-w-tap shrink-0 place-items-center rounded-full opacity-85"
+              className="tap-scale grid h-[26px] w-[26px] shrink-0 place-items-center rounded-[9px] bg-on-accent/15 text-white/70"
             >
-              <Icon name="logout" size={1.15} />
+              <Icon name="logout" size={0.9} />
             </button>
           )}
         </div>
@@ -232,82 +286,74 @@ export function Home({
           jumping by heading could not tell where the page began. The biggest
           line on the screen is now also the biggest line in the outline.
         */}
-        <h1 className="mt-5 text-xl font-bold">
+        <h1 className="relative mb-0.5 mt-3 text-base font-medium">
           {greeting(now, strings)}
           {userName === '' ? '' : `, ${userName}`}
         </h1>
-        <p className="mt-1 text-sm opacity-80">{strings.home.greetingLine}</p>
+        <p className="relative mb-3 text-[11px] opacity-65">{strings.home.greetingLine}</p>
 
-        {/*
-          §F's "blending its lower edge into the page". Decorative, and it has
-          to sit above the sheen's stacking context, hence the explicit z.
-        */}
-        <span
-          aria-hidden="true"
-          className="pointer-events-none absolute inset-x-0 bottom-0 z-[1] h-10 bg-gradient-to-b from-transparent to-page opacity-90"
-        />
+        <div className="relative flex gap-2.5">
+          <StatCard
+            title={strings.home.outstanding}
+            amounts={outstanding}
+            emptyLabel={strings.home.nothingOutstanding}
+          />
+          <StatCard
+            title={strings.home.receivedThisMonth}
+            amounts={received}
+            emptyLabel={strings.home.nothingReceived}
+          />
+        </div>
       </header>
 
-      <div className="relative z-[2] -mt-7 flex gap-3 px-4">
-        <StatCard
-          title={strings.home.outstanding}
-          amounts={outstanding}
-          emptyLabel={strings.home.nothingOutstanding}
-        />
-        <StatCard
-          title={strings.home.receivedThisMonth}
-          amounts={received}
-          emptyLabel={strings.home.nothingReceived}
-        />
-      </div>
-
-      <div className="flex items-center gap-3 px-4 pt-4">
-        <label className="relative block min-w-0 flex-1">
+      <div className="px-3.5 pt-[13px]">
+        <label className="glass-pill flex min-h-tap items-center gap-2 rounded-full px-3.5">
           <span className="sr-only">{strings.home.searchEverything}</span>
-          <span
-            aria-hidden="true"
-            className="pointer-events-none absolute inset-y-0 start-3 grid place-items-center opacity-45"
-          >
-            <Icon name="search" size={1.05} />
-          </span>
+          <Icon name="search" size={0.95} className="shrink-0 opacity-45" />
           <input
             type="search"
             value={searchQuery ?? ''}
             onChange={(event) => onSearch(event.target.value)}
             placeholder={strings.home.searchEverything}
             aria-label={strings.home.searchEverything}
-            className="recessed min-h-tap w-full rounded-full ps-10 pe-4 text-sm"
+            className="w-full min-w-0 border-0 bg-transparent py-2.5 text-sm outline-none placeholder:text-ink/45"
           />
         </label>
-
-        {/* §G's two round controls, when Phase 6 has given them a job. */}
-        {onVoice !== undefined && (
-          <button
-            type="button"
-            onClick={onVoice}
-            aria-label={strings.common.voice}
-            className="glass raised tap-scale grid h-11 w-11 shrink-0 place-items-center rounded-full text-brand"
-          >
-            <Icon name="microphone" size={1.15} />
-          </button>
-        )}
-        {onScan !== undefined && (
-          <button
-            type="button"
-            onClick={onScan}
-            aria-label={strings.common.scan}
-            className="glass raised tap-scale grid h-11 w-11 shrink-0 place-items-center rounded-full text-brand"
-          >
-            <Icon name="camera" size={1.15} />
-          </button>
-        )}
       </div>
 
       {/* §G: typing replaces the body. The header, the stat cards and the
           field above stay put, so there is always a way back. */}
       {results ?? (
-        <>
-          <ul className="grid grid-cols-2 gap-3 px-4 pt-4">
+        <div className="px-3.5">
+          {/* §G's two round controls, when Phase 6 has given them a job. */}
+          {(onVoice !== undefined || onScan !== undefined) && (
+            <div className="flex justify-between pt-3">
+              {onVoice !== undefined && (
+                <button
+                  type="button"
+                  onClick={onVoice}
+                  aria-label={strings.common.voice}
+                  className="raised-soft tap-scale grid h-11 w-11 place-items-center rounded-full border border-on-accent/90 text-brand"
+                  style={{ backgroundImage: 'linear-gradient(180deg,#fff,#e9eeff)' }}
+                >
+                  <Icon name="microphone" size={1.25} />
+                </button>
+              )}
+              {onScan !== undefined && (
+                <button
+                  type="button"
+                  onClick={onScan}
+                  aria-label={strings.common.scan}
+                  className="raised-soft tap-scale grid h-11 w-11 place-items-center rounded-full border border-on-accent/90 text-brand"
+                  style={{ backgroundImage: 'linear-gradient(180deg,#fff,#e9eeff)' }}
+                >
+                  <Icon name="camera" size={1.25} />
+                </button>
+              )}
+            </div>
+          )}
+
+          <ul className="grid grid-cols-2 gap-2.5 pt-3">
             {DOCUMENT_TYPES.map((type) => {
               const palette = TYPE_PALETTE[type]
               return (
@@ -319,32 +365,36 @@ export function Home({
                   <button
                     type="button"
                     onClick={() => onOpenType(type)}
-                    // Read aloud, the spans below run together as "Invoice 3",
-                    // which sounds like a reference number. The count line
-                    // already says it properly in every language.
+                    // Read aloud, the plate and the chip run together as
+                    // "Invoice 3", which sounds like a reference number. The
+                    // count line says it properly in every language.
                     aria-label={format(strings.lists.countLine, {
                       count: counts[type],
                       label: pluralLabel(profile, type),
                     })}
-                    className="sheen tap-scale flex w-full min-w-0 flex-col items-start gap-2 rounded-2xl p-4 text-start text-white"
-                    style={{
-                      backgroundImage: `linear-gradient(150deg, ${palette.accent}, ${palette.deep})`,
-                      // §F's "coloured shadow" — the tile's own accent at
-                      // depth, plus the contact shadow every raised surface
-                      // gets, so it sits above the page rather than on it.
-                      boxShadow: `0 14px 26px -14px ${palette.accent}, 0 2px 6px -2px rgb(20 28 74 / 0.22), inset 0 1px 0 rgb(255 255 255 / 0.22)`,
-                    }}
+                    // The five colours a tile carries are keyed by the
+                    // INTERNAL type in `src/index.css`, so they flip with the
+                    // theme. Inline they could not — and a hex reached
+                    // through a variable is invisible to the dark-mode sweep,
+                    // so this is the one place where the class IS the check.
+                    className={`tile ${TILE_CLASS[type]} sheen tap-scale relative flex w-full min-w-0 flex-col items-start rounded-[18px] p-3 text-start`}
                   >
-                    <span className="flex w-full items-start justify-between gap-2">
-                      <Icon name={palette.icon} size={1.5} className="opacity-90" />
-                      {/* §G's count badge. */}
-                      <span
-                        aria-hidden="true"
-                        className="shrink-0 rounded-full bg-on-accent/20 px-2 py-0.5 text-xs font-bold tabular-nums"
-                      >
-                        {counts[type]}
-                      </span>
+                    {/* The count, out of the label's way (see the file note). */}
+                    <span
+                      aria-hidden="true"
+                      className="tile-chip tile-ink absolute end-2.5 top-2.5 rounded-full px-2 py-0.5 text-[9.5px] font-semibold tabular-nums"
+                    >
+                      {counts[type]}
                     </span>
+
+                    <span
+                      aria-hidden="true"
+                      className="tile-plate grid h-[37px] w-[37px] place-items-center rounded-[13px]"
+                      style={{ color: palette.accent }}
+                    >
+                      <Icon name={palette.icon} size={1.125} />
+                    </span>
+
                     {/*
                       `overflow-wrap: anywhere`, not `break-words`. The two
                       differ in exactly the case that bit here: `break-word`
@@ -353,8 +403,8 @@ export function Home({
                       at 200% text still held the tile 157px wide in a 151px
                       column. `anywhere` does shrink it.
                     */}
-                    <span className="text-sm font-bold leading-tight [overflow-wrap:anywhere]">
-                      {typeLabel(profile, type)}
+                    <span className="tile-ink mt-2 text-xs font-semibold leading-tight [overflow-wrap:anywhere]">
+                      {pluralLabel(profile, type)}
                     </span>
                   </button>
                 </li>
@@ -363,41 +413,85 @@ export function Home({
           </ul>
 
           {attention.length > 0 && (
-            <section className="px-4 pt-6" aria-label={strings.home.needsAttention}>
-              <h2 className="flex items-center gap-2 text-sm font-bold">
-                <Icon name="alert-triangle" size={1} className="text-status-warn" />
-                {strings.home.needsAttention}
-              </h2>
-              <ul className="mt-2 space-y-2">
-                {attention.map((item) => (
-                  <li key={item.documentId}>
-                    <button
-                      type="button"
-                      onClick={() => onOpenDocument(item.documentId)}
-                      className="glass tap-scale flex min-h-tap w-full items-center gap-3 rounded-2xl p-3 text-start"
-                    >
-                      <span className="flex-1">
-                        <StatusBadge
-                          status={item.kind === 'overdue' ? 'overdue' : 'in_transit'}
-                          label={
-                            item.kind === 'overdue'
-                              ? format(strings.home.overdueBy, {
-                                  amount: item.amount === undefined ? '' : formatMoney(item.amount),
-                                })
-                              : strings.home.inTransit
-                          }
-                        />
-                      </span>
-                      <span className="raised shrink-0 rounded-full bg-page px-3 py-1 text-xs font-semibold">
-                        {item.kind === 'overdue' ? strings.home.chase : strings.home.sign}
-                      </span>
-                    </button>
-                  </li>
-                ))}
+            <section className="pt-4" aria-label={strings.home.needsAttention}>
+              <div className="mb-2 flex items-center gap-2 px-0.5">
+                <h2 className="flex-1 text-[12.5px] font-semibold">{strings.home.needsAttention}</h2>
+                <span
+                  aria-hidden="true"
+                  className="rounded-full bg-status-warn-tint px-2 py-0.5 text-[9.5px] font-semibold tabular-nums text-status-warn"
+                >
+                  {attention.length}
+                </span>
+              </div>
+
+              <ul className="glass overflow-hidden rounded-[18px]">
+                {attention.map((item) => {
+                  const overdue = item.kind === 'overdue'
+                  return (
+                    <li key={item.documentId} className="border-b border-edge/5 last:border-0">
+                      <button
+                        type="button"
+                        onClick={() => onOpenDocument(item.documentId)}
+                        className="flex min-h-tap w-full items-center gap-2.5 p-3 text-start"
+                      >
+                        <span
+                          aria-hidden="true"
+                          // Tokens, not the prototype's two literal gradients.
+                          // A hex reached through an inline style is invisible
+                          // to a theme AND to a class scan — which is exactly
+                          // the pair of failures the dark-mode sweep exists
+                          // to catch, and it caught these.
+                          className={`raised-soft grid h-[30px] w-[30px] shrink-0 place-items-center rounded-[10px] ${
+                            overdue
+                              ? 'bg-status-warn-tint text-status-warn'
+                              : 'bg-status-info-tint text-status-info'
+                          }`}
+                        >
+                          <Icon name={overdue ? 'alert-triangle' : 'truck-delivery'} size={0.95} />
+                        </span>
+
+                        <span className="min-w-0 flex-1">
+                          <span className="block truncate text-xs font-semibold">
+                            {item.reference ??
+                              (overdue
+                                ? format(strings.home.overdueBy, {
+                                    amount:
+                                      item.amount === undefined
+                                        ? ''
+                                        : formatMoney(item.amount),
+                                  })
+                                : strings.home.inTransit)}
+                          </span>
+                          {/*
+                            The second line, when the screen has one to give.
+                            A row with only a reference on it says which
+                            record wants attention but not why — and "why" is
+                            the whole point of the list (§G).
+                          */}
+                          {item.detail !== undefined && (
+                            <span className="mt-0.5 block truncate text-[10px] opacity-60">
+                              {item.detail}
+                            </span>
+                          )}
+                        </span>
+
+                        <span
+                          className={`shrink-0 rounded-full px-2.5 py-1 text-[9.5px] font-semibold shadow-[inset_0_1px_0_rgb(255_255_255/0.6)] ${
+                            overdue
+                              ? 'bg-status-warn-tint text-status-warn'
+                              : 'bg-status-info-tint text-status-info'
+                          }`}
+                        >
+                          {overdue ? strings.home.chase : strings.home.sign}
+                        </span>
+                      </button>
+                    </li>
+                  )
+                })}
               </ul>
             </section>
           )}
-        </>
+        </div>
       )}
     </div>
   )

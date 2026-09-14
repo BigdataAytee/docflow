@@ -22,6 +22,7 @@ import { Home } from '../../features/home/Home'
 import { needsAttention, outstandingByCurrency, receivedThisMonth } from '../../features/home/stats'
 import { SearchResults } from '../../features/search/SearchResults'
 import { search, type IndexEntry } from '../../features/search'
+import { format } from '../../domain/locale/data/strings'
 import { useSearchIndex } from '../useSearchIndex'
 import { formatMoney } from '../../features/customers/formatMoney'
 import { SkeletonList } from '../../ui'
@@ -74,6 +75,42 @@ export function HomeScreen({ now = new Date() }: { now?: Date }) {
     return [name, strings.statuses[status] ?? status, amount].filter((part) => part !== undefined).join(' · ')
   }
 
+  /*
+   * The two or three rows that want doing, named.
+   *
+   * `needsAttention` decides WHICH records qualify — dates against a ledger,
+   * and nothing else. Saying what each one is called takes the document list,
+   * the customer names and the active language, which is why it happens here
+   * and not in the pure function (§G).
+   */
+  const attention = useMemo(
+    () =>
+      needsAttention(stats, payments, due, today).map((item) => {
+        const document = documents.find((row) => row.id === item.documentId)
+        if (document === undefined) return item
+
+        const customer =
+          document.customerId === undefined ? undefined : names.get(document.customerId)
+        const amount =
+          item.amount === undefined
+            ? undefined
+            : format(strings.payments.amountLeft, { amount: formatMoney(item.amount) })
+
+        const detail = [customer, amount].filter((part) => part !== undefined).join(' · ')
+
+        return {
+          ...item,
+          // A draft has no issued reference yet, and inventing one here would
+          // put a number on screen that no PDF will ever carry (§M).
+          ...(document.issuedReference === undefined || document.issuedReference === null
+            ? {}
+            : { reference: document.issuedReference }),
+          ...(detail === '' ? {} : { detail }),
+        }
+      }),
+    [stats, payments, due, today, documents, names, strings],
+  )
+
   if (loading) {
     return (
       <div className="px-4 py-6">
@@ -104,7 +141,7 @@ export function HomeScreen({ now = new Date() }: { now?: Date }) {
       outstanding={outstandingByCurrency(stats, payments, creditNotes)}
       received={receivedThisMonth(payments, now.toISOString())}
       counts={counts}
-      attention={needsAttention(stats, payments, due, today)}
+      attention={attention}
       onOpenType={(type) => navigate(listPath(type))}
       onOpenDocument={(id) => navigate(documentPath(id))}
       onSearch={setQuery}

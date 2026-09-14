@@ -139,28 +139,62 @@ export function Shell() {
             Without that, an invisible full-width strip sits over the bottom
             of every page and eats the FAB.
           */
-          className="pointer-events-none fixed inset-x-0 bottom-0 z-20 flex justify-center px-4 pt-2"
-          data-safe-bottom
+          className="pointer-events-none fixed inset-x-0 bottom-0 z-20 flex justify-center px-4 pb-[max(1.125rem,env(safe-area-inset-bottom))] pt-2"
           // NOT `nav.home`: a landmark named after one of its own destinations
           // announces as "Home, navigation" and tells a reader nothing.
           aria-label={strings.nav.sections}
         >
-          <ul className="glass pointer-events-auto flex items-center gap-1 rounded-full p-1.5">
+          {/*
+            §F: the pill sits "above a soft contact shadow", and in the
+            prototype that shadow is a SEPARATE blurred ellipse rather than
+            another `box-shadow` on the pill. It has to be: a box-shadow
+            follows the pill's own rounded-rectangle outline, and what the
+            design wants is the wider, softer pool an object casts on the
+            surface it hovers over. Decorative, and behind the pill.
+          */}
+          <span
+            aria-hidden="true"
+            className="pointer-events-none absolute bottom-3 start-0 end-0 mx-auto h-[17px] w-[72%] rounded-[50%] blur-lg"
+            style={{ backgroundImage: 'radial-gradient(ellipse, rgba(13,16,36,.34), transparent 70%)' }}
+          />
+
+          <ul className="glass-nav pointer-events-auto relative flex items-center gap-[7px] rounded-full px-3 py-[9px]">
             {tabs.map((tab) => (
               <li key={tab.id}>
                 <NavLink
                   to={tab.path}
                   end={tab.path === '/'}
-                  className="tap-scale grid min-h-tap min-w-tap place-items-center rounded-full"
+                  className="flex min-h-tap min-w-tap items-center justify-center rounded-2xl"
                 >
                   {/* NavLink sets aria-current="page" on the active link itself. */}
                   {({ isActive }) => (
                     <span
-                      className={`relative grid place-items-center motion-safe:transition-transform motion-safe:duration-150 ${
-                        isActive ? '-translate-y-1 text-brand' : 'opacity-55'
-                      }`}
+                      /*
+                        Each destination is its own raised TILE inside the
+                        pill — the prototype's 52x46 rounded-16 button with a
+                        lit top edge — not a bare icon on the glass. That is
+                        what gives the active one something to lift out of.
+                      */
+                      className="nav-tile relative grid h-[46px] w-[52px] place-items-center rounded-2xl"
+                      style={{
+                        backgroundImage:
+                          'linear-gradient(180deg, var(--nav-tile-a), var(--nav-tile-b))',
+                        border: '1px solid var(--nav-border)',
+                        color: isActive
+                          ? 'var(--nav-tile-ink-active)'
+                          : 'var(--nav-tile-ink)',
+                        boxShadow: isActive
+                          ? 'var(--nav-tile-shadow-active)'
+                          : 'var(--nav-tile-shadow)',
+                        ...(isActive ? { transform: 'translateY(-4px)' } : {}),
+                      }}
                     >
-                      <Icon name={tab.icon} size={isActive ? 1.45 : 1.3} />
+                      <span
+                        className="nav-tile-icon grid place-items-center"
+                        style={isActive ? { transform: 'scale(1.12)' } : undefined}
+                      >
+                        <Icon name={tab.icon} size={1.375} />
+                      </span>
                       {/*
                         §F's "short dark dash beneath". It is not decoration:
                         with no labels on screen it is half of how the active
@@ -169,9 +203,10 @@ export function Shell() {
                       */}
                       <span
                         aria-hidden="true"
-                        className={`absolute -bottom-2 h-0.5 w-4 rounded-full bg-ink ${
-                          isActive ? 'opacity-70' : 'opacity-0'
+                        className={`absolute bottom-1.5 start-0 end-0 mx-auto h-[3px] w-4 rounded-full ${
+                          isActive ? 'opacity-85' : 'opacity-0'
                         }`}
+                        style={{ backgroundColor: 'var(--nav-tile-ink-active)' }}
                       />
                       {/* Unlabelled on screen, never to a reader (§F). */}
                       <span className="sr-only">{tab.label}</span>

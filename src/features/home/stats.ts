@@ -98,6 +98,18 @@ export interface AttentionItem {
   readonly documentId: string
   readonly kind: 'overdue' | 'in_transit'
   readonly amount?: Money
+  /**
+   * What the row is called, and what is worth knowing about it — the
+   * reference, and a line like "Chidinma Traders · N95,000 left".
+   *
+   * Both optional, and neither is computed here. This function decides WHICH
+   * records want attention, which is arithmetic over dates and a ledger; what
+   * they are called needs the customer list and the locale, and a pure stats
+   * function that reached for those would stop being testable without them.
+   * The screen fills these in.
+   */
+  readonly reference?: string
+  readonly detail?: string
 }
 
 /**
