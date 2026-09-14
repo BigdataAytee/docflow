@@ -281,6 +281,7 @@ export function BuilderScreen({ now = () => new Date().toISOString() }: { now?: 
           ? {}
           : { deliveryAddress: record.deliveryAddress }),
         ...(record.driverName === undefined ? {} : { driverName: record.driverName }),
+        ...(record.vehicleNumber === undefined ? {} : { vehicleNumber: record.vehicleNumber }),
         ...(record.dispatchDate === undefined ? {} : { dispatchDate: record.dispatchDate }),
       },
       dirty: false,
@@ -308,6 +309,7 @@ export function BuilderScreen({ now = () => new Date().toISOString() }: { now?: 
           : { signatureAssetId: draft.signatureAssetId }),
         ...(draft.deliveryAddress === undefined ? {} : { deliveryAddress: draft.deliveryAddress }),
         ...(draft.driverName === undefined ? {} : { driverName: draft.driverName }),
+        ...(draft.vehicleNumber === undefined ? {} : { vehicleNumber: draft.vehicleNumber }),
         ...(draft.dispatchDate === undefined ? {} : { dispatchDate: draft.dispatchDate }),
       })
       // Only now — a commit that threw must not print "Saved" (§C).
@@ -400,6 +402,7 @@ export function BuilderScreen({ now = () => new Date().toISOString() }: { now?: 
         ? {}
         : { whtRate: company.whtRatePpm }),
       ...(draft.driverName === undefined ? {} : { driverName: draft.driverName }),
+      ...(draft.vehicleNumber === undefined ? {} : { vehicleNumber: draft.vehicleNumber }),
       // So the Review step shows the page as it will print, signature and all.
       ...(draft.signatureAssetId === undefined
         ? {}

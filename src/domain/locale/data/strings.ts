@@ -275,6 +275,8 @@ export interface UiStrings {
     readonly quantity: string
     readonly unitPrice: string
     readonly unit: string
+    /** An example unit, shown as the placeholder — "cartons", not a rule. */
+    readonly unitExample: string
     /** The Goods card's title on a delivery — money types say "Add an item". */
     readonly goods: string
     /** The description field's placeholder, which also explains autocomplete. */
@@ -601,11 +603,21 @@ export interface UiStrings {
     readonly chooseDesign: string
   }
   readonly totals: {
+    /** The card's own title on a priced document. */
+    readonly title: string
+    /** The card's title on a delivery, which carries no money at all. */
+    readonly dispatch: string
     readonly subtotal: string
     readonly discount: string
     readonly tax: string
     readonly withholding: string
     readonly payable: string
+    /** A receipt states what arrived; it is not asking for anything (§H). */
+    readonly received: string
+    /** "VAT 7.5%" — the rate beside the word, so no figure is unexplained. */
+    readonly atRate: string
+    /** Where the tax rates come from, said once rather than guessed at (§J). */
+    readonly ratesFromSettings: string
     readonly driver: string
     readonly vehicle: string
     readonly noMoneyOnDelivery: string
@@ -958,6 +970,7 @@ const EN: UiStrings = {
     quantity: 'Qty',
     unitPrice: 'Unit price',
     unit: 'Unit',
+    unitExample: 'cartons, bags, pallets…',
     goods: 'Goods',
     typeAnItem: 'Type an item — saved ones appear',
     add: 'Add',
@@ -1281,11 +1294,16 @@ const EN: UiStrings = {
     chooseDesign: 'Choose a design',
   },
   totals: {
+    title: 'Totals',
+    dispatch: 'Dispatch',
     subtotal: 'Subtotal',
     discount: 'Discount',
     tax: 'Tax',
     withholding: 'Less withholding tax',
     payable: 'Payable',
+    received: 'Received',
+    atRate: '{label} {rate}%',
+    ratesFromSettings: 'Tax rates come from Settings → Tax, and are saved onto the document when you issue it.',
     driver: 'Driver',
     vehicle: 'Vehicle',
     noMoneyOnDelivery: 'Delivery documents carry no prices.',

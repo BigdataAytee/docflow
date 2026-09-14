@@ -171,37 +171,57 @@ export function ItemsStep({ draft, onChange, onRemember, onOpenCatalogue }: Item
           )}
         </div>
 
-        <div className="flex items-center gap-1.5">
-          <input
-            inputMode="decimal"
-            value={qty}
-            onChange={(event) => setQty(event.target.value)}
-            aria-label={strings.items.quantity}
-            className="sunken min-h-tap min-w-0 flex-1 rounded-[10px] px-2 text-center text-[11.5px]"
-          />
+        <div className="flex items-end gap-1.5">
+          {/*
+            BOTH boxes are labelled, visibly.
+            
+            They were bare, on the grounds that the placeholder carried the
+            meaning — and on a delivery that fails completely: the quantity
+            shows "1" so its placeholder never appears, and beside it sits a
+            box a person can easily read as a second number. Typing "10" into
+            the unit gives a line reading "Bolt · 1 10", which is nobody's
+            idea of a delivery note. A label costs fourteen pixels; the
+            ambiguity costs the document.
+          */}
+          <label className="block min-w-0 flex-1">
+            <span className="mb-1 block text-[9.5px] opacity-55">{strings.items.quantity}</span>
+            <input
+              inputMode="decimal"
+              value={qty}
+              onChange={(event) => setQty(event.target.value)}
+              aria-label={strings.items.quantity}
+              className="sunken min-h-tap w-full rounded-[10px] px-2 text-center text-[11.5px]"
+            />
+          </label>
 
           {/*
             A delivery gets the UNIT here; every money type gets the price.
             Never both, and never a disabled price on a delivery (§V).
           */}
-          {showsMoney ? (
-            <input
-              inputMode="decimal"
-              value={price}
-              onChange={(event) => setPrice(event.target.value)}
-              placeholder={strings.items.unitPrice}
-              aria-label={strings.items.unitPrice}
-              className="sunken min-h-tap min-w-0 flex-[1.4] rounded-[10px] px-2.5 text-[11.5px]"
-            />
-          ) : (
-            <input
-              value={unit}
-              onChange={(event) => setUnit(event.target.value)}
-              placeholder={strings.items.unit}
-              aria-label={strings.items.unit}
-              className="sunken min-h-tap min-w-0 flex-[1.4] rounded-[10px] px-2.5 text-[11.5px]"
-            />
-          )}
+          <label className="block min-w-0 flex-[1.4]">
+            <span className="mb-1 block text-[9.5px] opacity-55">
+              {showsMoney ? strings.items.unitPrice : strings.items.unit}
+            </span>
+            {showsMoney ? (
+              <input
+                inputMode="decimal"
+                value={price}
+                onChange={(event) => setPrice(event.target.value)}
+                aria-label={strings.items.unitPrice}
+                className="sunken min-h-tap w-full rounded-[10px] px-2.5 text-[11.5px]"
+              />
+            ) : (
+              <input
+                value={unit}
+                onChange={(event) => setUnit(event.target.value)}
+                // A word, not a number — said by example rather than by a
+                // rule, because units differ by trade and by market.
+                placeholder={strings.items.unitExample}
+                aria-label={strings.items.unit}
+                className="sunken min-h-tap w-full rounded-[10px] px-2.5 text-[11.5px]"
+              />
+            )}
+          </label>
 
           <button
             type="button"

@@ -39,6 +39,14 @@ export interface DocumentDraft {
   /** Delivery documents only. */
   readonly deliveryAddress?: string
   readonly driverName?: string
+  /**
+   * The registration of whatever is carrying the goods (§G, §E).
+   *
+   * The column, the row mappers and the PDF have all carried this since
+   * Phase 2; only the DRAFT was missing it, so §G's "deliveries get driver
+   * and vehicle" was half true and the field could never be filled in.
+   */
+  readonly vehicleNumber?: string
   readonly dispatchDate?: string
 }
 

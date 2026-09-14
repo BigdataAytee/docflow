@@ -47,6 +47,7 @@ export type IconName =
   | 'package'
   | 'list'
   | 'trash'
+  | 'calculator'
   | 'alert-triangle'
 
 /**
@@ -156,6 +157,16 @@ const PATHS: Readonly<Record<IconName, readonly string[]>> = {
     'M14 11l0 6',
     'M5 7l1 12a2 2 0 0 0 2 2h8a2 2 0 0 0 2 -2l1 -12',
     'M9 7v-3a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v3',
+  ],
+  calculator: [
+    'M4 3m0 2a2 2 0 0 1 2 -2h12a2 2 0 0 1 2 2v14a2 2 0 0 1 -2 2h-12a2 2 0 0 1 -2 -2z',
+    'M8 7m0 1a1 1 0 0 1 1 -1h6a1 1 0 0 1 1 1v1a1 1 0 0 1 -1 1h-6a1 1 0 0 1 -1 -1z',
+    'M8 14l0 .01',
+    'M12 14l0 .01',
+    'M16 14l0 .01',
+    'M8 17l0 .01',
+    'M12 17l0 .01',
+    'M16 17l0 .01',
   ],
   calendar: [
     'M4 7a2 2 0 0 1 2 -2h12a2 2 0 0 1 2 2v12a2 2 0 0 1 -2 2h-12a2 2 0 0 1 -2 -2z',

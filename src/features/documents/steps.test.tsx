@@ -225,6 +225,113 @@ describe('Items: a delivery document has no price field at all (§G, §V)', () =
   })
 })
 
+describe('Dispatch: a delivery gets a driver and a vehicle, and no money (§G)', () => {
+  it('offers both fields', () => {
+    wrap(
+      <TotalsStep
+        draft={draftFor('waybill')}
+        discountPercent={0}
+        taxPercent={0}
+        whtPercent={0}
+        taxLabel="VAT"
+        onChange={() => {}}
+        onRates={() => {}}
+      />,
+    )
+    expect(screen.getByLabelText('Driver')).toBeInTheDocument()
+    expect(screen.getByLabelText('Vehicle')).toBeInTheDocument()
+  })
+
+  it('puts the vehicle on the draft, which nothing could do before', async () => {
+    // The column, the row mappers and the PDF have carried `vehicleNumber`
+    // since Phase 2. Only the DRAFT was missing it, so §G's "deliveries get
+    // driver and vehicle" was half true and the field could never be filled.
+    const user = userEvent.setup()
+    const onChange = vi.fn()
+    wrap(
+      <TotalsStep
+        draft={draftFor('waybill')}
+        discountPercent={0}
+        taxPercent={0}
+        whtPercent={0}
+        taxLabel="VAT"
+        onChange={onChange}
+        onRates={() => {}}
+      />,
+    )
+
+    await user.type(screen.getByLabelText('Vehicle'), 'LAG-441-KJA')
+    expect(onChange).toHaveBeenCalled()
+    const patches = onChange.mock.calls.map((call) => call[0] as { vehicleNumber?: string })
+    expect(patches.some((patch) => patch.vehicleNumber !== undefined)).toBe(true)
+  })
+
+  it('shows no money anywhere on the dispatch card (§V)', () => {
+    wrap(
+      <TotalsStep
+        draft={draftFor('waybill', {
+          lineItems: [
+            { id: 'l1', description: 'Cement', quantityMilli: quantity(3), taxable: false },
+          ],
+        })}
+        discountPercent={10}
+        taxPercent={7.5}
+        whtPercent={5}
+        taxLabel="VAT"
+        onChange={() => {}}
+        onRates={() => {}}
+      />,
+    )
+    // Not a zero total, not a disabled field — no totals block at all, even
+    // with rates supplied and lines on the draft.
+    expect(screen.queryByText(/₦/)).not.toBeInTheDocument()
+    expect(screen.queryByText(/Subtotal/i)).not.toBeInTheDocument()
+    expect(screen.queryByText(/Payable/i)).not.toBeInTheDocument()
+  })
+})
+
+describe('The total says what the document IS (§H)', () => {
+  const render = (type: 'invoice' | 'quotation' | 'receipt') =>
+    wrap(
+      <TotalsStep
+        draft={draftFor(type, {
+          lineItems: [
+            {
+              id: 'l1',
+              description: 'Cement',
+              quantityMilli: quantity(1),
+              unitPriceMinor: 100_000,
+              taxable: true,
+            },
+          ],
+        })}
+        discountPercent={0}
+        taxPercent={0}
+        whtPercent={0}
+        taxLabel="VAT"
+        onChange={() => {}}
+        onRates={() => {}}
+      />,
+    )
+
+  it('asks an invoice to be paid', () => {
+    render('invoice')
+    expect(screen.getByText('Payable')).toBeInTheDocument()
+  })
+
+  it('only ESTIMATES on a quotation, because an offer is not a demand', () => {
+    render('quotation')
+    expect(screen.getByText('Estimated total')).toBeInTheDocument()
+    expect(screen.queryByText('Payable')).not.toBeInTheDocument()
+  })
+
+  it('states what a receipt RECEIVED, because the money already arrived', () => {
+    render('receipt')
+    expect(screen.getByText('Received')).toBeInTheDocument()
+    expect(screen.queryByText('Payable')).not.toBeInTheDocument()
+  })
+})
+
 describe('Totals: every figure comes from computeTotals (Rule #4)', () => {
   const priced = draftFor('invoice', {
     lineItems: [
@@ -247,7 +354,9 @@ describe('Totals: every figure comes from computeTotals (Rule #4)', () => {
     )
     // subtotal 40,000 · discount 4,000 · VAT 2,700 · WHT 1,800 · payable 36,900
     expect(screen.getByText('₦40,000.00')).toBeInTheDocument()
-    expect(screen.getByText('VAT')).toBeInTheDocument()
+    // The row now carries the RATE beside the word — "VAT 7.5%" — so no
+    // figure on this card is unexplained. The word is still the locale's.
+    expect(screen.getByText(/^VAT /)).toBeInTheDocument()
     expect(screen.getByText('₦2,700.00')).toBeInTheDocument()
     expect(screen.getByText('₦36,900.00')).toBeInTheDocument()
   })
@@ -264,7 +373,7 @@ describe('Totals: every figure comes from computeTotals (Rule #4)', () => {
         onRates={() => {}}
       />,
     )
-    expect(screen.getByText('TVA')).toBeInTheDocument()
+    expect(screen.getByText(/^TVA /)).toBeInTheDocument()
   })
 
   it('never shows withholding tax on a quotation (§I)', () => {
