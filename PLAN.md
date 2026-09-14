@@ -1906,6 +1906,67 @@ gate itself is deferred with everything else that needs a phone.
       an implementation — the same fault as `checkAccountDeletion` finding
       `deleteAccount` in its own regex, and the same fix, now pinned by a test.
 
+- [x] **Store billing — the half that does not need a device** (`src/domain/billing/`,
+      `supabase/migrations/0018_store_billing.sql`,
+      `supabase/functions/store-notifications/`). §U; §Q Phase 7's "store
+      billing (StoreKit 2 + Play Billing, server notifications, restore,
+      offline grace, sandbox-tested)". D10.
+
+      `subscriptions` and `entitlements` have existed since 0005 and **nothing
+      had ever written to or read from them.** Both halves now exist, and the
+      split between what could be built here and what could not is the point
+      of this entry.
+
+      **Entitlements, offline.** §U: "Pro features check the cache locally —
+      so Pro works in airplane mode — with a built-in offline grace window …
+      Past grace with no successful refresh, the app degrades politely to
+      Free." The rules are pure and the failure directions are chosen: a cache
+      that is absent, unsigned or holds nonsense dates is FREE, never
+      optimistic — guessing Pro hands a paid plan to anybody who corrupts a
+      file, guessing Free costs a feature until the next refresh. And
+      `NEVER_GATED` is checked BEFORE the plan is read, so no later edit to
+      the plan logic can reach the six things Rule #6 protects.
+
+      **Replay and out-of-order, proven against Postgres.** §V's gate:
+      "replayed or out-of-order billing webhooks change nothing." Idempotence
+      by event id is the easy half; ORDER is not, and the failure is
+      expensive — a retried `DID_RENEW` arriving after the `EXPIRED` that
+      followed it resurrects a dead subscription and hands out a month nobody
+      paid for. So nothing is applied because of what it IS: every decision is
+      the event's own timestamp against the newest already applied, which
+      makes replay and reordering one problem solved once. Eight tests in
+      `supabase/tests/billing.test.ts` hold it against a real database,
+      including that a signed-in user cannot call the apply function at all.
+
+      **The door is shut, deliberately.** Apple signs ASSN v2 as a JWS whose
+      `x5c` chain must validate to Apple's root; Google delivers RTDN through
+      Pub/Sub with a Google-signed OIDC token. **Neither can be implemented
+      honestly without something to test it against** — a sandbox notification
+      from a real App Store Connect account, a real Pub/Sub push — and an
+      unexercised verifier standing between a stranger and a paid plan is
+      worse than a closed door. It is the same call the payment webhook made
+      for Flutterwave and PayPal. So every event is PARKED in the ledger with
+      a reason naming exactly what it needs, and nothing reaches a
+      subscription.
+
+      **Nothing is gated, because nobody has drawn the line.** §U: "the exact
+      free/Pro line is a product decision recorded in §W before Phase 5 — the
+      architecture below is indifferent to where the line lands." §W still
+      lists it under decisions requiring evidence. So the split is data, it is
+      empty, and a `reviewStatus` gates it the way native-speaker sign-off
+      gates the terminology tables: fill in `proFeatures` without recording
+      the decision and it still gates nothing. Inventing the line would be
+      inventing product, and the expensive kind — a feature that becomes Pro
+      after people have used it free cannot be taken back without a fight.
+
+      Twelve mutations, twelve caught, three of them against the database.
+
+      **Still D10, and still needs a human with hardware and accounts:** the
+      native purchase flow (StoreKit 2 and Play Billing, which need Phase 4's
+      shell), Restore purchases on a wiped reinstall, sandbox and internal
+      testing, the two signature verifiers, and §U's contextual unlock sheets
+      — which cannot be written before §W says what they would be unlocking.
+
 ### The physical-device remainder — one consolidated list- [x] **The ratings prompt — built, and it shows nothing yet** (`src/domain/ratings/`,
       `src/features/ratings/`). §T: "ratings prompts appear only at happy
       moments." The store-policy pass found the questionnaire describing this
@@ -1951,6 +2012,67 @@ gate itself is deferred with everything else that needs a phone.
       an implementation — the same fault as `checkAccountDeletion` finding
       `deleteAccount` in its own regex, and the same fix, now pinned by a test.
 
+- [x] **Store billing — the half that does not need a device** (`src/domain/billing/`,
+      `supabase/migrations/0018_store_billing.sql`,
+      `supabase/functions/store-notifications/`). §U; §Q Phase 7's "store
+      billing (StoreKit 2 + Play Billing, server notifications, restore,
+      offline grace, sandbox-tested)". D10.
+
+      `subscriptions` and `entitlements` have existed since 0005 and **nothing
+      had ever written to or read from them.** Both halves now exist, and the
+      split between what could be built here and what could not is the point
+      of this entry.
+
+      **Entitlements, offline.** §U: "Pro features check the cache locally —
+      so Pro works in airplane mode — with a built-in offline grace window …
+      Past grace with no successful refresh, the app degrades politely to
+      Free." The rules are pure and the failure directions are chosen: a cache
+      that is absent, unsigned or holds nonsense dates is FREE, never
+      optimistic — guessing Pro hands a paid plan to anybody who corrupts a
+      file, guessing Free costs a feature until the next refresh. And
+      `NEVER_GATED` is checked BEFORE the plan is read, so no later edit to
+      the plan logic can reach the six things Rule #6 protects.
+
+      **Replay and out-of-order, proven against Postgres.** §V's gate:
+      "replayed or out-of-order billing webhooks change nothing." Idempotence
+      by event id is the easy half; ORDER is not, and the failure is
+      expensive — a retried `DID_RENEW` arriving after the `EXPIRED` that
+      followed it resurrects a dead subscription and hands out a month nobody
+      paid for. So nothing is applied because of what it IS: every decision is
+      the event's own timestamp against the newest already applied, which
+      makes replay and reordering one problem solved once. Eight tests in
+      `supabase/tests/billing.test.ts` hold it against a real database,
+      including that a signed-in user cannot call the apply function at all.
+
+      **The door is shut, deliberately.** Apple signs ASSN v2 as a JWS whose
+      `x5c` chain must validate to Apple's root; Google delivers RTDN through
+      Pub/Sub with a Google-signed OIDC token. **Neither can be implemented
+      honestly without something to test it against** — a sandbox notification
+      from a real App Store Connect account, a real Pub/Sub push — and an
+      unexercised verifier standing between a stranger and a paid plan is
+      worse than a closed door. It is the same call the payment webhook made
+      for Flutterwave and PayPal. So every event is PARKED in the ledger with
+      a reason naming exactly what it needs, and nothing reaches a
+      subscription.
+
+      **Nothing is gated, because nobody has drawn the line.** §U: "the exact
+      free/Pro line is a product decision recorded in §W before Phase 5 — the
+      architecture below is indifferent to where the line lands." §W still
+      lists it under decisions requiring evidence. So the split is data, it is
+      empty, and a `reviewStatus` gates it the way native-speaker sign-off
+      gates the terminology tables: fill in `proFeatures` without recording
+      the decision and it still gates nothing. Inventing the line would be
+      inventing product, and the expensive kind — a feature that becomes Pro
+      after people have used it free cannot be taken back without a fight.
+
+      Twelve mutations, twelve caught, three of them against the database.
+
+      **Still D10, and still needs a human with hardware and accounts:** the
+      native purchase flow (StoreKit 2 and Play Billing, which need Phase 4's
+      shell), Restore purchases on a wiped reinstall, sandbox and internal
+      testing, the two signature verifiers, and §U's contextual unlock sheets
+      — which cannot be written before §W says what they would be unlocking.
+
 ### The physical-device remainder — one consolidated list
 
 Everything below needs a phone in a hand. It is gathered here rather than
@@ -1968,7 +2090,7 @@ place, and it grows as new deferrals join it.
 | D7 | The §O logo definition-of-done (download → airplane → 20 concepts → recover) | §Q Phase 6 | Force-kill and recovery on hardware |
 | D8 | Tier thresholds: SoC allowlist and benchmark ceiling | §Q Phase 0 spike | Measurements from target phones |
 | D9 | Generation time, memory and thermal behaviour | §O | Only meaningful on hardware |
-| D10 | Store billing: sandbox, restore, grace, refund | §Q Phase 7, §U | StoreKit / Play Billing |
+| D10 | Store billing: the NATIVE half — purchase, restore, sandbox, and the two signature verifiers | §Q Phase 7, §U | StoreKit / Play Billing, a store account to test a signed notification against. The entitlement rules, the ledger, ordering and the apply path are built and proven against Postgres; see the Phase 7 entry. |
 | D11 | Zero outbound AI bytes, confirmed by traffic inspection | §Q Phase 6 | A device on a watched network |
 | D12 | A VoiceOver and TalkBack pass by somebody who uses one | §Q Phase 7, §V | The accessibility tree is audited in CI; speech, reading order, the rotor and gestures are not the tree |
 
@@ -2993,6 +3115,12 @@ vectors of a few hundred bytes.
 | 228 | Two links may share a name if they share a destination | WCAG fails identical names going to DIFFERENT places. The list page's header button and its FAB are the same action and are not a defect, and a rule that flagged them would have been argued with until it was deleted. | `tools/sweeps/screenreader.ts` |
 | 229 | A navigation moves focus to `main` — except on a cold load | It is the one thing that announces an SPA route change. On first paint the reader is already reading from the top, and interrupting to say "main" would cut off the page title. | `src/app/focus.ts` |
 | 230 | An opened panel takes focus; the hand-back is best effort | Six panels replace their own trigger, so there is nothing to hand focus back TO. Doing the right thing where it is possible beats doing nothing everywhere — and the first version of the test could not tell the difference, because it closed the panel from the opener. | `src/ui/focus.ts` |
+| 255 | A cache that is absent, unsigned or nonsense is FREE, never Pro | Guessing Pro hands a paid plan to anybody who corrupts a file; guessing Free costs a feature until the next refresh. Only one of those is the mistake worth making. | `src/domain/billing/entitlement.ts` |
+| 256 | `NEVER_GATED` is checked before the plan is read | Rule #6 sits above the plan rather than beside it, so no later edit to the plan logic can reach viewing, sharing, export, PDF, payments or deletion. | `src/domain/billing/entitlement.ts` |
+| 257 | Store events are ordered by the STORE's clock, never by arrival | A retried `DID_RENEW` landing after the `EXPIRED` that followed it would resurrect a dead subscription and hand out a month nobody paid for. Judging by timestamp makes replay and reordering one problem. | `src/domain/billing/notifications.ts`, `0018_store_billing.sql` |
+| 258 | A refund ends the period NOW; a cancellation does not | The money went back, so waiting for the date would be a month of Pro paid for by nobody — while §U is explicit that cancelling keeps Pro to the end of the period somebody did pay for. | `src/domain/billing/notifications.ts` |
+| 259 | No signature is verified, and every event parks | Neither Apple's JWS chain nor Google's Pub/Sub OIDC token can be implemented honestly without an account to test against, and an unexercised verifier between a stranger and a paid plan is worse than a closed door — the call the payment webhook already made for Flutterwave and PayPal. | `supabase/functions/store-notifications/rules.ts` |
+| 260 | The Free/Pro line is empty data with a review gate, not a guess | §W has not recorded it. Filling in `proFeatures` without recording the decision still gates nothing, so the two move together and fail free. A feature that becomes Pro after people have used it free cannot be taken back without a fight. | `src/domain/billing/split.ts` |
 | 250 | The ratings prompt counts its own asks, though no store requires it to | The platform already rate-limits the prompt; an app that asks too often burns its allowance in silence. The count exists because a swallowed request is a wasted one, and because the moment is ours to choose even when the showing is not. | `src/domain/ratings/prompt.ts` |
 | 251 | The refusals are ordered, insulting ones first | A device both leaving and short of shares is refused for LEAVING. A log that says "the counter was low" about somebody who is deleting their account is a log that hides the thing worth knowing. | `src/domain/ratings/prompt.ts` |
 | 252 | The port reports no outcome, and there is no pre-prompt | Both platforms report nothing about what the person did, by design, so an app cannot treat rating as a transaction — a field for it could only hold a guess. The "our own dialog first" pattern filters unhappy people out of the listing, which is a thing to do to a rating rather than for a person. | `src/features/ratings/port.ts` |
