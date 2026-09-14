@@ -60,6 +60,21 @@ export async function overflowAt(page: Page, route: string): Promise<Overflow | 
     for (const element of Array.from(document.body.querySelectorAll('*'))) {
       const box = element.getBoundingClientRect()
       if (box.right > edge + 1 || box.left < -1) {
+        // A horizontal SCROLLER is not page overflow. The statement's five
+        // money columns do not fit 320px and scroll inside their own region;
+        // the page itself does not move. Without this, every legitimate
+        // scroller is reported forever and the sweep teaches people to ignore
+        // it -- the same way the scrollWidth comparison would have.
+        //
+        // "auto" and "scroll" only, never "hidden": content inside an
+        // overflow-hidden box does not scroll the page either, but it is not
+        // reachable at all, and that is worth hearing about.
+        let scroller = false
+        for (let up = element.parentElement; up !== null; up = up.parentElement) {
+          const overflow = getComputedStyle(up).overflowX
+          if (overflow === 'auto' || overflow === 'scroll') { scroller = true; break }
+        }
+        if (scroller) continue
         const parent = element.parentElement
         if (parent !== null && parent !== document.body) {
           const parentBox = parent.getBoundingClientRect()

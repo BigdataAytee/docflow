@@ -27,6 +27,7 @@ import type { DocumentType } from '../../domain/documents/types'
 import { carriesMoney } from '../../domain/documents/types'
 import type { ConvertibleDocument } from './convert'
 import { conversionsFor } from './convert'
+import { useFocusOnOpen } from '../../ui'
 
 export interface ConvertSheetProps {
   readonly document: ConvertibleDocument
@@ -46,11 +47,18 @@ export function ConvertSheet({
   onClose,
   error,
 }: ConvertSheetProps) {
+  // Opening this panel moves focus into it, and its name is announced.
+  const panel = useFocusOnOpen<HTMLElement>()
   const { profile, strings } = useCompany()
   const options = conversionsFor(document)
 
   return (
-    <section className="rounded-2xl bg-surface/85 p-4 backdrop-blur" aria-label={strings.convert.title}>
+    <section
+      ref={panel}
+      tabIndex={-1}
+      className="rounded-2xl bg-surface/85 p-4 outline-none backdrop-blur"
+      aria-label={strings.convert.title}
+    >
       <div className="flex items-start justify-between gap-3">
         <h2 className="text-sm font-semibold">{strings.convert.title}</h2>
         <button

@@ -207,7 +207,7 @@ describe('The rest of the page (§G)', () => {
     expect(screen.getByRole('status')).toHaveTextContent('Ade Stores — ₦90,000.00')
     expect(screen.getByText('Answered on this phone, offline.')).toBeInTheDocument()
 
-    await user.type(screen.getByRole('textbox', { name: 'Ask anything about your business' }), 'why?')
+    await user.type(screen.getByRole('textbox', { name: 'Your question' }), 'why?')
     await user.click(screen.getByRole('button', { name: 'Next' }))
     expect(screen.getByRole('status')).toHaveTextContent(/need the offline tools installed/)
   })

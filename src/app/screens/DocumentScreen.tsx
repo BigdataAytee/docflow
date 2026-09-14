@@ -777,10 +777,13 @@ export function DocumentScreen({ today = new Date().toISOString().slice(0, 10) }
 
         {/* §G's fourth invoice action, and the third correction Rule #5 allows. */}
         {canVoidOrCredit && !voiding && !crediting && (
-          <div className="flex gap-2">
+          // `flex-wrap` and `min-w-0`: at 200% text these two labels held the
+          // row 40px wider than a 320px phone and pushed the page sideways.
+          // A flex item will not shrink below its content unless told to.
+          <div className="flex flex-wrap gap-2">
             <button
               type="button"
-              className="min-h-tap flex-1 rounded-full border border-status-bad/30 bg-surface px-4 text-sm font-semibold text-status-bad"
+              className="min-h-tap min-w-0 flex-1 rounded-full border border-status-bad/30 bg-surface px-4 text-sm font-semibold text-status-bad"
               onClick={() => {
                 setVoidProblem(null)
                 setVoiding(true)
@@ -791,7 +794,7 @@ export function DocumentScreen({ today = new Date().toISOString().slice(0, 10) }
             {isInvoice && record.status !== 'void' && (
               <button
                 type="button"
-                className="min-h-tap flex-1 rounded-full border border-brand/30 bg-surface px-4 text-sm font-semibold text-brand"
+                className="min-h-tap min-w-0 flex-1 rounded-full border border-brand/30 bg-surface px-4 text-sm font-semibold text-brand"
                 onClick={() => {
                   setCreditProblem(null)
                   setCrediting(true)

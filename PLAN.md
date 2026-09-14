@@ -1514,7 +1514,7 @@ gate itself is deferred with everything else that needs a phone.
       lists all 33 questions with the page to read for each. `npm run site`,
       `npm run shots` and `npm run policy` name every one of these on every
       run.
-- [x] **The final sweeps — four of seven done, and each one measured**
+- [x] **The final sweeps — six of seven done, and each one measured**
       (`src/sweeps/`, `tools/sweeps/`). §Q Phase 7: "final sweeps —
       accessibility, dark mode, RTL readiness assessment, responsive,
       terminology… onboarding, command palette/sidebar."
@@ -1527,8 +1527,9 @@ gate itself is deferred with everything else that needs a phone.
       nothing and being wrong would have cost a rewrite across forty files the
       day an Arabic build existed. A test keeps them out.
 
-      **Dark mode — NOT implemented, and it no longer pretends otherwise.**
-      `:root` declared `color-scheme: light dark`, which tells the browser the
+      **Dark mode — was NOT implemented when this sweep ran, and stopped
+      pretending otherwise. It has since been built; the entry below records
+      how.** At the time of the sweep, `:root` declared `color-scheme: light dark`, which tells the browser the
       page handles both — so a dark-preferring user got dark scrollbars, dark
       form controls and a dark canvas around an app whose every surface is
       painted white. It now declares `light`. §N: an unavailable capability is
@@ -1540,8 +1541,9 @@ gate itself is deferred with everything else that needs a phone.
       a test now couples the declaration to the implementation so the pair
       cannot drift apart again.
 
-      **Responsive — passes, and the check can fail.** 17 routes driven in
-      Chromium at 320 CSS pixels, with records in them, checked for horizontal
+      **Responsive — passes, and the check can fail.** 21 routes (17 when
+      this first ran; the screen-reader sweep added the four record screens)
+      driven in Chromium at 320 CSS pixels, with records in them, checked for horizontal
       overflow; none scrolls sideways. jsdom cannot find this class of bug at
       all — it computes no layout, so every element is zero by zero and every
       check passes. Proved by planting a 900px element in Home: the sweep
@@ -1655,8 +1657,69 @@ gate itself is deferred with everything else that needs a phone.
       dark at sunset takes the app with it. The choice is per DEVICE and never
       goes near the sync outbox: it is about the screen in somebody's hand.
 
-      **Still open:** screen-reader testing beyond structure, which wants a
-      real reader.
+      **Screen readers — swept, and the app changed because of it**
+      (`tools/sweeps/screenreader.ts`, `src/sweeps/announce.test.tsx`). §V:
+      "Large text, **screen readers**, keyboard navigation and reduced motion
+      work without clipped actions."
+
+      A screen reader does not read the DOM. It reads the ACCESSIBILITY TREE
+      the browser hands the platform API, and that tree is the browser's own
+      computation: names from the full accname algorithm, roles from implicit
+      mappings, whole subtrees gone when something above them is `aria-hidden`.
+      jsdom computes none of it, which is why the existing a11y test — a good
+      test — could pass while the app was unreadable. The sweep pulls
+      Chromium's real tree over CDP and audits that. **86 findings on the
+      first run, across 17 routes.** The rules are pure functions over a
+      captured tree, so they run in `npm test` with no browser; only the
+      capture needs one.
+
+      · **No `main` landmark anywhere in the app.** "Browse by landmark" — the
+        way a reader skips the chrome — found the tab bar and nothing else on
+        every route, and 67 controls answered to no landmark at all. The Shell
+        now wraps its outlet in one; the builder is outside that layout and
+        already had its own, so there is still exactly one per page.
+      · **Home opened at heading level 2.** The first screen of the app had no
+        h1: the greeting, the biggest line on the screen, was a paragraph. A
+        reader jumping by heading could not tell where the page began. The
+        builder had the matching fault one level down, h1 → h3.
+      · **The tab bar was named after one of its own destinations**
+        (`aria-label={nav.home}`), so it announced as "Home, navigation" while
+        holding a link called Home. A new rule, landmark-name-collides, found
+        two more of these — the ask box on Analytics, and the Chat/Call/
+        Statement row named "Statement".
+      · **`aria-label` on bare `<div>`s and `<span>`s**, which ARIA prohibits
+        and engines variously drop or announce. One advertised "Tap to add
+        your logo" on a placeholder square that does nothing — the §N failure
+        mode exactly. Another left each currency block on a contact
+        indistinguishable from the next.
+      · **The type tiles announced as "Invoice 3"**, which is a reference
+        number, not a count. They now use the count line the lists already
+        have.
+
+      **And the half a still page cannot show.** In a single-page app nothing
+      announces a navigation — the URL changes and the reader carries on
+      reading the screen the person has left. Worse, six panels UNMOUNT the
+      button that opened them, so focus fell to `<body>`: the panel was on
+      screen and unreachable without hunting from the top of the page. A
+      navigation now moves focus to the new `main` (never on a cold load,
+      which would cut off the page title), and an opened panel takes focus,
+      announcing its own name — which is its title. Those tests are in
+      `npm test`, not behind the browser: focus is one of the few things jsdom
+      models faithfully, and a regression here is silent.
+
+      **The sweep widened the route list from 17 to 21** — the document page,
+      the contact page and the statement had never been swept by anything, and
+      the responsive and large-text sweeps found four real faults there the
+      moment they could see them. One of those exposed a fault in the
+      responsive sweep ITSELF: content inside a legitimate horizontal scroller
+      is not page overflow, and both sweeps would have reported every scroller
+      forever. Fixed in both.
+
+      **Still open, and it needs a human:** this audits the tree a reader
+      consumes, not the reader. Speech output as heard, reading ORDER,
+      VoiceOver's rotor and TalkBack's gestures, a braille display, and how the
+      native shell maps the same tree on iOS and Android are all a device pass
+      by somebody who uses one. That is D12 below.
 
 ### The physical-device remainder — one consolidated list
 
@@ -1677,6 +1740,7 @@ place, and it grows as new deferrals join it.
 | D9 | Generation time, memory and thermal behaviour | §O | Only meaningful on hardware |
 | D10 | Store billing: sandbox, restore, grace, refund | §Q Phase 7, §U | StoreKit / Play Billing |
 | D11 | Zero outbound AI bytes, confirmed by traffic inspection | §Q Phase 6 | A device on a watched network |
+| D12 | A VoiceOver and TalkBack pass by somebody who uses one | §Q Phase 7, §V | The accessibility tree is audited in CI; speech, reading order, the rotor and gestures are not the tree |
 
 Two further items are deferred but need a SERVER rather than a device, and are
 tracked with the Phase 5 gate instead: the hosted deploy, and Paystack test
@@ -2692,6 +2756,14 @@ vectors of a few hundred bytes.
 | 220 | The theme is provided at the app ROOT, not in the Settings panel | `.dark` belongs to the document. Applied from a panel it went on when Settings opened and came off on the way back to Home — a dark mode that worked only where you chose it. | `src/features/theme/ThemeContext.tsx` |
 | 221 | The PDF stays light in both themes | A printed page is paper. The first pass tokenised it and would have printed a dark invoice; `src/pdf` is excluded from the sweep for the same reason. | `src/pdf/DocumentPage.tsx` |
 | 222 | `system` is the default, and is not a third colour | It is the absence of a choice — what §G's "follows the phone" means. It listens, so a phone that goes dark at sunset takes the app with it; an app that read the preference once at startup would only look like it followed. | `src/features/theme/useTheme.ts` |
+| 224 | The screen-reader rules are pure over a captured AX tree | The browser is needed to COMPUTE the tree, not to judge it. Splitting them put ten rules in `npm test` as blocking, made them mutation-testable against fixtures, and left the browser holding only the capture. | `tools/sweeps/screenreader.ts` |
+| 225 | The audit reads Chromium's tree over CDP, not `accessibility.snapshot()` | The snapshot prunes nodes it considers uninteresting, and this audit exists to find the nodes something else decided were uninteresting. | `tools/sweeps/screenreader.test.ts` |
+| 226 | Document order comes from the tree's parent/child links, never from the array | `getFullAXTree` returns a flat array whose order is not document order — Home interleaves a page's paragraphs with its buttons. A heading rule that trusted the array would call well-formed pages broken. | `tools/sweeps/screenreader.ts` |
+| 227 | `label-on-generic` is a DENY-list of name-prohibited tags, not an allow-list of nameable ones | The allow-list shipped first and flagged `<article aria-label>` — valid markup — as a fault. An audit that cries wolf is an audit somebody turns off. | `tools/sweeps/screenreader.ts` |
+| 228 | Two links may share a name if they share a destination | WCAG fails identical names going to DIFFERENT places. The list page's header button and its FAB are the same action and are not a defect, and a rule that flagged them would have been argued with until it was deleted. | `tools/sweeps/screenreader.ts` |
+| 229 | A navigation moves focus to `main` — except on a cold load | It is the one thing that announces an SPA route change. On first paint the reader is already reading from the top, and interrupting to say "main" would cut off the page title. | `src/app/focus.ts` |
+| 230 | An opened panel takes focus; the hand-back is best effort | Six panels replace their own trigger, so there is nothing to hand focus back TO. Doing the right thing where it is possible beats doing nothing everywhere — and the first version of the test could not tell the difference, because it closed the panel from the opener. | `src/ui/focus.ts` |
+| 231 | Content inside a horizontal scroller is not page overflow | The statement's five money columns do not fit a phone and now scroll inside their own region. Measured naively, every legitimate scroller reports as sideways scroll forever — the same way the `scrollWidth` comparison would have. | `tools/sweeps/responsive.ts` |
 | 223 | The theme choice is per DEVICE and never syncs | It is about the screen in somebody's hand and the light in the room. Two people sharing a company share neither, so it goes nowhere near the outbox. | `src/features/theme/theme.ts` |
 
 ## Deviations from the spec

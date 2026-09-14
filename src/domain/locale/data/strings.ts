@@ -57,6 +57,13 @@ export interface UiStrings {
     readonly demoBody: string
   }
   readonly nav: {
+    /**
+     * The NAME OF THE NAVIGATION LANDMARK, not of a destination in it. It was
+     * `nav.home`, so the tab bar announced as "Home, navigation" while also
+     * containing a link called Home — the screen-reader sweep's
+     * landmark-name-collides rule is the one that noticed.
+     */
+    readonly sections: string
     readonly home: string
     readonly customers: string
     readonly business: string
@@ -515,6 +522,12 @@ export interface UiStrings {
     readonly nothingYetBody: string
     readonly askAnything: string
     readonly askPlaceholder: string
+    /**
+     * The FIELD's name. `askAnything` labels the card, and `askPlaceholder` is
+     * an example question — announcing either as the field's name tells a
+     * reader the card's title twice or reads an example as an instruction.
+     */
+    readonly askField: string
     readonly askOffline: string
     readonly askUnavailable: string
     /** One per `AskChip`. */
@@ -549,6 +562,13 @@ export interface UiStrings {
     readonly date: string
     readonly nothingInPeriod: string
     readonly nothingInPeriodBody: string
+    /**
+     * Names the scrollable table. Five money columns do not fit 320px, so the
+     * table scrolls inside the page rather than dragging the page sideways —
+     * and a region that scrolls has to be reachable by keyboard and named
+     * when it takes focus (WCAG 2.1.1).
+     */
+    readonly rowsRegion: string
     readonly currencyNote: string
     readonly pickPeriod: string
     readonly thisMonth: string
@@ -654,6 +674,7 @@ const EN: UiStrings = {
       'This is a demo with sample records on this device only. Nothing is saved to an account, and it is cleared when you close the tab.',
   },
   nav: {
+    sections: 'Sections',
     home: 'Home',
     customers: 'Customers',
     business: 'Business',
@@ -1116,6 +1137,7 @@ const EN: UiStrings = {
     nothingYetBody: 'Record a payment or an expense and this page fills itself in.',
     askAnything: 'Ask anything about your business',
     askPlaceholder: 'Who owes me the most?',
+    askField: 'Your question',
     askOffline: 'Answered on this phone, offline.',
     askUnavailable: 'Free-form questions need the offline tools installed. The chips above work on any phone.',
     askChips: {
@@ -1152,6 +1174,7 @@ const EN: UiStrings = {
     closingBalance: 'Balance carried forward',
     balance: 'Balance',
     date: 'Date',
+    rowsRegion: 'Statement rows',
     nothingInPeriod: 'Nothing in this period',
     nothingInPeriodBody: 'Pick a wider period, or start from this customer first document.',
     currencyNote: 'All amounts in {currency}.',

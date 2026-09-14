@@ -14,10 +14,12 @@
 import { NavLink, Outlet } from 'react-router-dom'
 
 import { useCompany } from './context'
+import { useAnnouncedRoute } from './focus'
 import { ANALYTICS, CUSTOMERS, HOME, SETTINGS } from './paths'
 
 export function Shell() {
   const { strings } = useCompany()
+  const main = useAnnouncedRoute<HTMLElement>()
 
   const tabs = [
     { to: HOME, label: strings.nav.home, glyph: '⌂' },
@@ -28,11 +30,27 @@ export function Shell() {
 
   return (
     <div className="min-h-screen bg-page text-ink">
-      <Outlet />
+      {/*
+        The main landmark. Without it "browse by landmark" — the way a screen
+        reader user skips the chrome — found the tab bar and nothing else on
+        every route in the app, and every control on the page answered to no
+        landmark at all. The builder is outside this layout and carries its
+        own main, so there is still exactly one per page.
+      */}
+      {/*
+        `tabIndex={-1}` so a navigation can put focus here. Nothing else can:
+        -1 keeps it out of the tab order, so a keyboard user never lands on
+        the container itself while tabbing through the page.
+      */}
+      <main ref={main} tabIndex={-1} className="outline-none">
+        <Outlet />
+      </main>
 
       <nav
         className="fixed inset-x-0 bottom-0 z-10 border-t border-edge/5 bg-surface/90 pb-[env(safe-area-inset-bottom)] backdrop-blur"
-        aria-label={strings.nav.home}
+        // NOT `nav.home`: a landmark named after one of its own destinations
+        // announces as "Home, navigation" and tells a reader nothing.
+        aria-label={strings.nav.sections}
       >
         <ul className="mx-auto flex max-w-2xl">
           {tabs.map((tab) => (

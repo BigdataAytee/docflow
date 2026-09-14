@@ -65,7 +65,8 @@ export function StatementPage({
       </header>
 
       <div className="px-8 pt-6">
-        <div className="flex items-baseline justify-between border-b border-edge/10 pb-2 text-sm">
+        {/* Wraps at large text rather than pushing the page sideways (§V). */}
+        <div className="flex flex-wrap items-baseline justify-between gap-x-3 border-b border-edge/10 pb-2 text-sm">
           <span className="opacity-70">{s.openingBalance}</span>
           <span className="tabular-nums font-medium">{formatMoney(statement.openingBalance)}</span>
         </div>
@@ -76,8 +77,17 @@ export function StatementPage({
             <p className="mt-1 text-xs opacity-70">{s.nothingInPeriodBody}</p>
           </div>
         ) : (
-          <table className="mt-3 w-full text-xs">
-            <thead>
+          <div className="mt-3 overflow-x-auto" role="region" aria-label={s.rowsRegion} tabIndex={0}>
+            {/*
+              The table scrolls, the page does not. Five money columns do not
+              fit a 320px phone — and at 200% text they do not fit anything —
+              so this region takes the horizontal scroll itself. `tabIndex`
+              because a scrollable region has to be reachable from the
+              keyboard (WCAG 2.1.1), and a region that takes focus has to say
+              what it is.
+            */}
+            <table className="w-full min-w-[17rem] text-xs">
+              <thead>
               <tr className="text-start opacity-60">
                 <th scope="col" className="py-1 text-start font-medium">
                   {s.date}
@@ -118,7 +128,8 @@ export function StatementPage({
                 </tr>
               ))}
             </tbody>
-          </table>
+            </table>
+          </div>
         )}
 
         <div className="mt-6 ms-auto w-full max-w-xs space-y-1 text-sm">
@@ -128,7 +139,7 @@ export function StatementPage({
             <Line label={s.credited} value={formatMoney(statement.credited)} />
           )}
           <div
-            className="flex items-baseline justify-between gap-3 border-t-2 pt-1.5 text-base font-bold"
+            className="flex flex-wrap items-baseline justify-between gap-3 border-t-2 pt-1.5 text-base font-bold"
             style={{ borderColor: accent }}
           >
             <span>{s.closingBalance}</span>
@@ -146,7 +157,7 @@ export function StatementPage({
 
 function Line({ label, value }: { label: string; value: string }) {
   return (
-    <div className="flex items-baseline justify-between gap-3">
+    <div className="flex flex-wrap items-baseline justify-between gap-3">
       <span className="opacity-70">{label}</span>
       <span className="tabular-nums">{value}</span>
     </div>

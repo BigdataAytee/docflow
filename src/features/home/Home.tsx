@@ -14,7 +14,7 @@
 import type { ReactNode } from 'react'
 
 import { useCompany } from '../../app/context'
-import { label as typeLabel } from '../../domain/locale/profile'
+import { label as typeLabel, pluralLabel } from '../../domain/locale/profile'
 import { format } from '../../domain/locale/data/strings'
 import { ConnectivityPill, StatusBadge, TYPE_PALETTE } from '../../ui'
 import { DOCUMENT_TYPES, type DocumentType } from '../../domain/documents/types'
@@ -109,9 +109,17 @@ export function Home({
     <div className="pb-24">
       <header className="rounded-b-2xl bg-gradient-to-br from-brand-light via-brand to-brand-deep px-4 pb-6 pt-[max(1rem,env(safe-area-inset-top))] text-white">
         <div className="flex items-center gap-3">
+          {/*
+            `aria-hidden`, not `aria-label`. This is a placeholder square, not
+            a control — nothing happens when it is activated, and a name on a
+            role-less span is dropped by some engines and announced by others.
+            Advertising an action that is not there is the §N failure mode:
+            say plainly what is available, and stay silent about what is not.
+            The logo is set in Settings → Company, which is reachable.
+          */}
           <span
+            aria-hidden="true"
             className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-surface/90 text-[9px] font-semibold text-ink"
-            aria-label={strings.home.addLogo}
           >
             +
           </span>
@@ -129,9 +137,15 @@ export function Home({
           />
         </div>
 
-        <p className="mt-4 text-xl font-bold">
+        {/*
+          The page's h1. It was a paragraph, so Home — the app's first screen —
+          opened with a level-2 heading and nothing above it, and a reader
+          jumping by heading could not tell where the page began. The biggest
+          line on the screen is now also the biggest line in the outline.
+        */}
+        <h1 className="mt-4 text-xl font-bold">
           {greeting(now, strings)}, {userName}
-        </p>
+        </h1>
       </header>
 
       <div className="-mt-4 flex gap-3 px-4">
@@ -177,6 +191,13 @@ export function Home({
                   <button
                     type="button"
                     onClick={() => onOpenType(type)}
+                    // Read aloud, the two spans below run together as
+                    // "Invoice 3", which sounds like a reference number. The
+                    // count line already says it properly in every language.
+                    aria-label={format(strings.lists.countLine, {
+                      count: counts[type],
+                      label: pluralLabel(profile, type),
+                    })}
                     className="flex w-full min-w-0 flex-col items-start gap-1 rounded-2xl p-4 text-start text-white"
                     style={{ backgroundColor: palette.accent, boxShadow: `0 8px 20px -8px ${palette.accent}` }}
                   >

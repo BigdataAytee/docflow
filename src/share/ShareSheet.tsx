@@ -21,6 +21,7 @@ import { useCompany } from '../app/context'
 import { format } from '../domain/locale/data/strings'
 import type { ShareResult, SharePort } from './port'
 import type { ShareText } from './text'
+import { useFocusOnOpen } from '../ui'
 
 export interface ShareSheetProps {
   readonly port: SharePort
@@ -42,6 +43,8 @@ export function ShareSheet({
   sharedCount = 0,
   lastSharedAt,
 }: ShareSheetProps) {
+  // Opening this panel moves focus into it, and its name is announced.
+  const panel = useFocusOnOpen<HTMLElement>()
   const { strings } = useCompany()
   const s = strings.share
 
@@ -63,7 +66,12 @@ export function ShareSheet({
   }
 
   return (
-    <section className="rounded-2xl bg-surface/85 p-4 backdrop-blur" aria-label={s.title}>
+    <section
+      ref={panel}
+      tabIndex={-1}
+      className="rounded-2xl bg-surface/85 p-4 outline-none backdrop-blur"
+      aria-label={s.title}
+    >
       <div className="flex items-start justify-between gap-3">
         <h2 className="text-sm font-semibold">{s.title}</h2>
         <button

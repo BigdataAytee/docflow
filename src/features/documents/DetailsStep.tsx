@@ -43,12 +43,18 @@ export interface DetailsStepProps {
 function Card({ title, accent, children }: { title: string; accent: string; children: ReactNode }) {
   return (
     <section className="overflow-hidden rounded-2xl bg-surface/85">
-      <h3
+      {/*
+        h2, not h3. The only heading above these cards is the builder's h1, so
+        an h3 leaves a reader jumping by heading level with nothing at level 2
+        and no way to tell where the step begins. Found by the screen-reader
+        sweep, which reads Chromium's accessibility tree rather than the DOM.
+      */}
+      <h2
         className="px-4 py-2 text-[10.5px] font-bold uppercase tracking-[0.12em]"
         style={{ backgroundColor: `${accent}1a`, color: accent }}
       >
         {title}
-      </h3>
+      </h2>
       <div className="space-y-3 p-4">{children}</div>
     </section>
   )

@@ -19,6 +19,7 @@ import { minorUnitsFor } from '../../domain/locale/bank-fields'
 import type { CreditNote } from '../../domain/payments/ledger'
 import { formatMoney } from '../customers/formatMoney'
 import { creditableRemaining } from './issue'
+import { useFocusOnOpen } from '../../ui'
 
 export interface CreditNoteSheetProps {
   readonly invoiceId: string
@@ -39,6 +40,8 @@ export function CreditNoteSheet({
   onClose,
   error,
 }: CreditNoteSheetProps) {
+  // Opening this panel moves focus into it, and its name is announced.
+  const panel = useFocusOnOpen<HTMLElement>()
   const { strings } = useCompany()
   const c = strings.credits
 
@@ -54,7 +57,12 @@ export function CreditNoteSheet({
   const canIssue = minor > 0 && minor <= remaining.minor && reason.trim() !== ''
 
   return (
-    <section className="rounded-2xl bg-surface/85 p-4 backdrop-blur" aria-label={c.sheetTitle}>
+    <section
+      ref={panel}
+      tabIndex={-1}
+      className="rounded-2xl bg-surface/85 p-4 outline-none backdrop-blur"
+      aria-label={c.sheetTitle}
+    >
       <div className="flex items-start justify-between gap-3">
         <h2 className="text-sm font-semibold">{c.sheetTitle}</h2>
         <button

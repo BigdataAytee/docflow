@@ -158,7 +158,13 @@ export function ContactPage({
           </form>
         </section>
 
-        <section className="flex gap-2" aria-label={strings.contact.statement}>
+        {/*
+          No aria-label. This row holds Chat, Call and Statement, and naming
+          the row after one of its three buttons made the landmark announce
+          as "Statement" — the screen-reader sweep's landmark-name-collides
+          rule. The buttons name themselves; the row needs no name of its own.
+        */}
+        <section className="flex gap-2">
           {canReach && (
             <>
               {/* Real links, not stubs: both work in a browser today and hand
@@ -223,7 +229,10 @@ export function ContactPage({
                   <button
                     type="button"
                     onClick={() => onOpenDocument(row.id)}
-                    className="flex min-h-tap w-full items-center gap-3 rounded-xl bg-surface px-3 py-2 text-start"
+                    // `flex-wrap`: at 200% text the reference, the badge and
+                    // the amount cannot share a line on a phone, and the
+                    // amount was dragging the page sideways.
+                    className="flex min-h-tap w-full flex-wrap items-center gap-3 rounded-xl bg-surface px-3 py-2 text-start"
                   >
                     <span className="min-w-0 flex-1">
                       <span className="block break-words text-sm font-semibold">{row.reference}</span>
@@ -270,8 +279,11 @@ function BalanceBlock({ balance }: { balance: CurrencyBalance }) {
   const { strings } = useCompany()
   const percent = Math.max(0, Math.min(100, balance.progress * 100))
 
+  // `role="group"` so the currency label is actually announced: aria-label on
+  // a bare div is prohibited by ARIA and silently dropped, which left this
+  // block — one of several, one per currency — with no name at all.
   return (
-    <div className="mt-3" aria-label={balance.currency}>
+    <div className="mt-3" role="group" aria-label={balance.currency}>
       <dl className="space-y-1 text-sm">
         <Row label={strings.customers.billedAllTime} value={formatMoney(balance.billed)} />
         <Row label={strings.customers.paid} value={formatMoney(balance.paid)} />
