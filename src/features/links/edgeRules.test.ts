@@ -10,15 +10,22 @@
  * edge rules were split out of the Deno entry point at all.
  */
 
+import { readFileSync } from 'node:fs'
+import { resolve } from 'node:path'
+
 import { describe, expect, it } from 'vitest'
 import fc from 'fast-check'
 
+import {
+  CALLER_BUCKET,
+  TOKEN_BUCKET,
+  callerKey,
+} from '../../../supabase/functions/_shared/ratelimit'
 import {
   type DocumentRow,
   type TokenRow,
   checkRow,
   hashToken as edgeHash,
-  isRateLimited,
   kindFor as edgeKindFor,
   planFor,
   viewFor,
@@ -277,20 +284,49 @@ describe('What a submitted answer does (§Q)', () => {
   })
 })
 
-describe('Guessing is throttled, per token (§P)', () => {
-  it('allows a normal number of attempts', () => {
-    expect(isRateLimited([], Date.now())).toBe(false)
+describe('Guessing is throttled by a limiter that is actually shared (§P)', () => {
+  it('takes the caller from the first hop, which the client cannot forge ahead of', () => {
+    expect(callerKey('41.58.1.9, 10.0.0.2, 10.0.0.3')).toBe('41.58.1.9')
+    expect(callerKey('  41.58.1.9  ')).toBe('41.58.1.9')
   })
 
-  it('stops a run of guesses', () => {
-    const now = Date.now()
-    const many = Array.from({ length: 20 }, (_, i) => now - i * 100)
-    expect(isRateLimited(many, now)).toBe(true)
+  it('skips the per-caller bucket rather than sharing one "unknown" key', () => {
+    // A shared key would let one script spend the budget every anonymous
+    // caller draws from — a lockout built out of a limiter.
+    expect(callerKey(null)).toBeNull()
+    expect(callerKey('')).toBeNull()
+    expect(callerKey(' , 10.0.0.2')).toBeNull()
   })
 
-  it('forgets attempts once the window has passed', () => {
-    const now = Date.now()
-    const old = Array.from({ length: 50 }, () => now - 120_000)
-    expect(isRateLimited(old, now)).toBe(false)
+  it('gives the two buckets separate names, so they never share a budget', () => {
+    expect(TOKEN_BUCKET.bucket).not.toBe(CALLER_BUCKET.bucket)
+  })
+
+  it('leaves room for a customer reloading their own link', () => {
+    // Whatever the numbers become, a person opening a link a few times must
+    // be nowhere near either ceiling.
+    expect(TOKEN_BUCKET.limit).toBeGreaterThanOrEqual(10)
+    expect(CALLER_BUCKET.limit).toBeGreaterThan(TOKEN_BUCKET.limit)
+  })
+
+  it('counts in Postgres, not in a Map the next instance cannot see', () => {
+    // The old limiter was module-scope state. This asserts against the entry
+    // point itself, because a limiter that is correct in `rules.ts` and
+    // unused in `index.ts` limits nothing.
+    const entry = readFileSync(
+      resolve(process.cwd(), 'supabase/functions/public-link/index.ts'),
+      'utf8',
+    ).replace(/\/\*[\s\S]*?\*\/|\/\/[^\n]*/g, '')
+
+    expect(entry).toMatch(/overLimit\(admin, TOKEN_BUCKET/)
+    expect(entry).toMatch(/from '\.\.\/_shared\/ratelimit\.ts'/)
+    expect(entry).not.toMatch(/new Map\b/)
+
+    // …and the shared module is the one that reaches the shared counter.
+    const shared = readFileSync(
+      resolve(process.cwd(), 'supabase/functions/_shared/ratelimit.ts'),
+      'utf8',
+    ).replace(/\/\*[\s\S]*?\*\/|\/\/[^\n]*/g, '')
+    expect(shared).toContain("rpc('check_rate_limit'")
   })
 })

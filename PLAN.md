@@ -20,7 +20,7 @@ claims nothing the gates have not proven (§X).
 | 4 | Native polish | installable builds pass all flows on physical Android and iOS | not started |
 | **5** | Web + public links | cross-device visibility; token behaviour per §P; one payment per event | **part built** — 4 of 5 scope items done, webhooks part done; gate NOT passed (0 of 3 clauses, needs the deploy) |
 | **6** | Local AI + logo | the §N six-step gate per tier; the §O definition of done | **part built** — Tier-B extractor and the ladder's logic; gate needs devices |
-| **7** | Admin, hardening, migration, launch | the §V checklist green end to end | **mostly built, gate NOT passed** — admin and server-enforced permissions, the legacy migration, the pen-check roster, the §T discoverability package, the marketing site, the store screenshots and policy questionnaire, backup and export, **all seven sweeps**, account deletion, the ratings prompt, store billing's non-device half, the unlock sheets and the D12 preparation. **One scope item has no real implementation: rate-limit verification** (below). The rest of what is left needs a person: devices, store accounts, a deploy, and §W's decisions |
+| **7** | Admin, hardening, migration, launch | the §V checklist green end to end | **mostly built, gate NOT passed** — admin and server-enforced permissions, the legacy migration, the pen-check roster, the §T discoverability package, the marketing site, the store screenshots and policy questionnaire, backup and export, **all seven sweeps**, account deletion, the ratings prompt, store billing's non-device half, the unlock sheets, the D12 preparation and the shared-state rate limiter. What is left needs a person: devices, store accounts, a deploy, and §W's decisions — including the one half of rate-limit verification that only a live project can answer (auth, step 10 of the hosted gate) |
 
 **The one thing the whole build is waiting on** (2026-09-14): nothing is
 deployed. `supabase db push`; deploy `public-link`, `payment-webhook` and
@@ -2086,29 +2086,71 @@ gate itself is deferred with everything else that needs a phone.
       checked as files, so changing the function that writes them changed
       nothing anybody would notice.
 
-### Rate-limit verification — §Q asks for it and it is NOT done
+### Rate-limit verification — done, except the half only a project can answer
 
 §Q's Phase-7 scope names "rate-limit verification"; §P asks for "rate limiting
-on auth and public endpoints". **The plan has never mentioned either, which is
+on auth and public endpoints". **The plan had never mentioned either, which is
 how a scope item goes missing** — found while writing this board, by checking a
 claim instead of making it.
 
-What exists is a fixed-window limiter in `public-link`: twenty attempts per
-token per minute, keyed by token rather than by IP so a customer on a shared
-mobile network cannot be locked out by a stranger. Its rules are unit-tested.
+What existed was not a rate limiter. `public-link` kept `new Map()` in module
+scope — **in memory, per instance** — resetting on every cold start and counting
+nothing across the instances a real deployment runs. Its own comment said so,
+which was the right thing to have done and is not the same as the item being
+complete.
 
-What it is not is a rate limiter. The counter is `new Map()` in module scope —
-**in-memory, per instance** — so it resets on every cold start and counts
-nothing across the instances a real deployment runs. The code says so in its
-own comment rather than pretending, which is the right thing to have done and
-is not the same as the item being complete.
+**The counter now lives in Postgres** (`0019_rate_limits.sql`): a
+`rate_limit_windows` table plus a `check_rate_limit` function, service-role
+only, with RLS enabled and forced and no policy — a counter a caller can read
+is one they can plan around, and one they can write is not a limit. It is a
+**sliding** window, not a fixed one: a fixed window lets twice the limit through
+across a boundary, and shipping that while ticking the box would repeat the
+mistake this work exists to correct. The count happens in the same statement as
+the increment, so two callers racing cannot both read "nineteen" and both be
+allowed — ten racers against a limit of three get exactly three.
 
-- [ ] **A limiter with shared state**, on the public endpoints and on auth.
-      Postgres is already there and a token bucket in a table is honest and
-      cheap; Supabase's own gateway limits are the alternative and need the
-      project to exist. Either way this is verifiable only against a
-      deployment, which is the same thing Phase 5's gate is waiting for.
-- [ ] **Auth endpoints**, which have no limiter of any kind today.
+`public-link` charges two buckets, and needed both:
+
+* **Per token** (20/min) — a run of guesses at one link. Keyed by the token's
+  **hash**: §P's rule that the token never reaches the database outranks a
+  readable key.
+* **Per caller** (120/min) — the run the per-token bucket cannot see at all,
+  because every guess is a different token and so a different key. That was the
+  real hole, and shared state alone would not have closed it. Loose on purpose:
+  an office behind one address shares it, and "must not be locked out by a
+  stranger" covers them too. No `x-forwarded-for`, no per-caller bucket — a
+  shared "unknown" key would be a lockout built out of a limiter.
+
+It **fails open**. A limiter that fails closed takes every customer's link dark
+on a database blip, and Rule 6 says documents are never hostage; failing open
+costs a minute of unthrottled guessing against 32 random bytes.
+
+The two webhooks were decided separately, and differently, because they are
+different:
+
+* **`payment-webhook` is not limited.** Its callers are the provider's own
+  addresses, a day's settlements arrive in a burst, and a dropped event is money
+  the ledger never hears about. What makes that safe is that every write sits
+  below the signature check and the only thing above it is one indexed lookup —
+  asserted in `routing.test.ts`, not merely asserted here.
+* **`store-notifications` is limited**, 60/hour per company, on the unverified
+  path only. The parked ledger row is written before any signature is checked
+  and its id comes out of the body, so distinct ids mean unbounded rows. A
+  verified event is never throttled: dropping one loses a subscription change.
+
+Ten tests against real Postgres (`supabase/tests/ratelimit.test.ts`), and six
+mutations tried against them: a fixed window, a read-then-decide race, a grant
+to `authenticated`, the `Map` put back, the store limiter removed, and a write
+moved above the signature check. All six were caught.
+
+- [x] **A limiter with shared state** on the public endpoints.
+- [ ] **Auth endpoints.** GoTrue is code we do not own and cannot wrap, so the
+      only honest verification is to ask it: step 10 of the hosted gate runs 40
+      failed sign-ins at an address that belongs to nobody and expects a 429. It
+      runs last, because it deliberately spends the project's sign-in budget.
+      **Unrun**, like the rest of that gate, until the project exists — and if
+      it fails it names a setting (Dashboard → Authentication → Rate Limits),
+      not a bug in this repository.
 
 ### The physical-device remainder — one consolidated list
 
