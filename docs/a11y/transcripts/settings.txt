@@ -1,0 +1,21 @@
+RootWebArea: DocFlow — store screenshots
+StaticText: Demo
+StaticText: ·
+StaticText: This is a demo with sample records on this device only. Nothing is saved to an account, and it is cleared when you close the tab.
+main
+heading: Settings
+link: Region & language
+link: Company & logo
+link: Tax
+link: How you get paid
+link: Saved items
+link: Default signature
+link: Dark mode
+link: DocFlow Pro
+link: Data & sync
+link: Delete this business
+navigation: Sections
+link: Home
+link: Customers
+link: Business
+link: Settings

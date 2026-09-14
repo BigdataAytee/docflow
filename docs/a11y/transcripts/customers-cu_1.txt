@@ -1,0 +1,43 @@
+RootWebArea: DocFlow — store screenshots
+StaticText: Demo
+StaticText: ·
+StaticText: This is a demo with sample records on this device only. Nothing is saved to an account, and it is cleared when you close the tab.
+main
+button: All customers
+StaticText: ‹
+heading: Okoro & Sons
+StaticText: Ifo, Ogun State
+region: Labels
+heading: Labels
+textbox: New label
+button: Add
+button: Statement
+StaticText: Add a phone number to chat or call.
+region: Balance
+heading: Balance
+group: NGN
+term: Billed all time
+StaticText: ₦185,000.00
+term: Paid
+StaticText: ₦0.00
+term: Owing now
+StaticText: ₦185,000.00
+progressbar: Paid NGN
+region: History
+heading: History
+button: WAY-001 2026-03-12
+StaticText: Sent out
+button: REC-001 2026-03-12 ₦185,000.00
+StaticText: Issued
+button: QUO-001 2026-03-12 ₦185,000.00
+StaticText: Sent
+button: INV-001 2026-03-12 ₦185,000.00
+StaticText: Not paid
+heading: Notes
+StaticText: Only you see this. It never prints on a document.
+textbox: Notes
+navigation: Sections
+link: Home
+link: Customers
+link: Business
+link: Settings

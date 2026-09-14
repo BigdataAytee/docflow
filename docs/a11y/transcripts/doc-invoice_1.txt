@@ -1,0 +1,33 @@
+RootWebArea: DocFlow — store screenshots
+StaticText: Demo
+StaticText: ·
+StaticText: This is a demo with sample records on this device only. Nothing is saved to an account, and it is cleared when you close the tab.
+main
+StaticText: INV-001
+heading: INVOICE
+StaticText: Okoro & Sons
+StaticText: Not paid
+button: Share the PDF
+button: Turn this into something else
+button: Cancel this document
+button: Credit some of this back
+StaticText: ₦0.00 paid of ₦185,000.00
+StaticText: ·
+StaticText: ₦185,000.00 left
+progressbar: ₦0.00 paid of ₦185,000.00
+StaticText: No payments yet
+StaticText: Record one when the money arrives.
+button: Record a payment
+region: Chase this money
+heading: Chase this money
+button: Softer
+button: Firmer
+StaticText: Repeat
+StaticText: This one is a one-off.
+button: Not repeating
+button: Statement
+navigation: Sections
+link: Home
+link: Customers
+link: Business
+link: Settings

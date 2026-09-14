@@ -12,14 +12,34 @@
  * exactly the nodes something else decided were uninteresting.
  */
 
-import { existsSync } from 'node:fs'
+import { existsSync, mkdirSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 
 import { describe, expect, it } from 'vitest'
 import { chromium } from 'playwright'
 
-import { type AxNode, DOM_AUDIT, type Finding, type Rule, auditTree, reportOf } from './screenreader'
+import {
+  type AxNode,
+  DOM_AUDIT,
+  type Finding,
+  type Rule,
+  auditTree,
+  reportOf,
+  transcriptOf,
+} from './screenreader'
+import {
+  type Inversion,
+  READING_ORDER_SCAN,
+  inversionOf,
+  reportOf as orderReportOf,
+} from './readingorder'
 import { BUILD, ROUTES, serve } from './responsive.test'
+
+/** Where the spoken-order transcripts live, for the D12 pass to read. */
+const TRANSCRIPTS = join(process.cwd(), 'docs', 'a11y', 'transcripts')
+
+const transcriptName = (route: string): string =>
+  `${route === '/' ? 'home' : route.replace(/^\//, '').replace(/\//g, '-')}.txt`
 
 /** Builds a tree the way CDP hands one over: flat, linked by childIds. */
 function tree(...nodes: readonly Partial<AxNode & { role: string; name: string; children: string[] }>[]) {
@@ -248,6 +268,41 @@ describe('The rules a screen reader would stumble on', () => {
     expect(found.filter((f) => f.rule === 'unnamed-control')).toHaveLength(1)
   })
 
+  it('writes a transcript that reads like speech, not like a tree', () => {
+    // The generator had no test of its own: the committed transcripts are
+    // checked as FILES, which only change when the browser regenerates them,
+    // so mutating this function changed nothing anybody would notice.
+    const lines = transcriptOf(
+      tree(
+        { role: 'RootWebArea', name: 'DocFlow', children: ['1'] },
+        { role: 'main', children: ['2', '4'] },
+        { role: 'region', name: 'Outstanding', children: ['3'] },
+        // The same word the region is already called. A reader says it once.
+        { role: 'StaticText', name: 'Outstanding' },
+        { role: 'button', name: '3 Invoices', children: ['5'] },
+        { role: 'InlineTextBox', name: '3 Invoices' },
+      ),
+    )
+
+    expect(lines).toEqual([
+      'RootWebArea: DocFlow',
+      'main',
+      'region: Outstanding',
+      'button: 3 Invoices',
+    ])
+  })
+
+  it('keeps text that is NOT its parent’s name', () => {
+    const lines = transcriptOf(
+      tree(
+        { role: 'RootWebArea', name: 'DocFlow', children: ['1'] },
+        { role: 'region', name: 'Outstanding', children: ['2'] },
+        { role: 'StaticText', name: '₦323,500.00' },
+      ),
+    )
+    expect(lines).toContain('StaticText: ₦323,500.00')
+  })
+
   it('says which rule fired, and where', () => {
     const report = reportOf(
       [{ route: '/settings', rule: 'no-main' as Rule, detail: 'the page has no main landmark' }],
@@ -273,6 +328,7 @@ describe.runIf(process.env.SWEEP === '1')('The real app, through the accessibili
     const { origin, close } = await serve(BUILD)
     const browser = await chromium.launch()
     const findings: Finding[] = []
+    const inversions: Inversion[] = []
 
     try {
       for (const width of WIDTHS) {
@@ -288,6 +344,29 @@ describe.runIf(process.env.SWEEP === '1')('The real app, through the accessibili
           findings.push(...auditTree(where, nodes))
           for (const [rule, detail] of (await page.evaluate(DOM_AUDIT)) as [Rule, string][]) {
             findings.push({ route: where, rule, detail })
+          }
+
+          // Heard against seen. A page where the two disagree has every name
+          // right, every role right, and its sentences in the wrong order.
+          const groups = (await page.evaluate(READING_ORDER_SCAN)) as {
+            parent: string
+            boxes: { index: number; top: number; bottom: number; start: number; label: string }[]
+          }[]
+          for (const group of groups) {
+            const found = inversionOf(where, group.parent, group.boxes)
+            if (found !== null) inversions.push(found)
+          }
+
+          // The transcript, from the phone width only: it is a script for a
+          // person holding a phone, and two copies of it would be two things
+          // to keep in step.
+          if (width === WIDTHS[0]) {
+            mkdirSync(TRANSCRIPTS, { recursive: true })
+            writeFileSync(
+              join(TRANSCRIPTS, transcriptName(route)),
+              `${transcriptOf(nodes).join('\n')}\n`,
+              'utf8',
+            )
           }
         }
         await context.close()
@@ -315,6 +394,8 @@ describe.runIf(process.env.SWEEP === '1')('The real app, through the accessibili
     }
 
     console.log(reportOf(findings, ROUTES.length * WIDTHS.length + 1))
+    console.log(orderReportOf(inversions, ROUTES.length * WIDTHS.length))
     expect(findings, reportOf(findings, ROUTES.length * WIDTHS.length + 1)).toEqual([])
+    expect(inversions, orderReportOf(inversions, ROUTES.length * WIDTHS.length)).toEqual([])
   }, 900_000)
 })

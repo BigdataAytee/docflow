@@ -1,0 +1,13 @@
+RootWebArea: DocFlow — store screenshots
+StaticText: Demo
+StaticText: ·
+StaticText: This is a demo with sample records on this device only. Nothing is saved to an account, and it is cleared when you close the tab.
+main
+heading: Saved items
+StaticText: Nothing saved yet
+StaticText: Items you type into a document are kept here for next time.
+navigation: Sections
+link: Home
+link: Customers
+link: Business
+link: Settings

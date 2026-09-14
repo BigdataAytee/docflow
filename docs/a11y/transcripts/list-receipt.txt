@@ -1,0 +1,23 @@
+RootWebArea: DocFlow — store screenshots
+StaticText: Demo
+StaticText: ·
+StaticText: This is a demo with sample records on this device only. Nothing is saved to an account, and it is cleared when you close the tab.
+main
+StaticText: DOCUMENTS
+heading: Receipt
+StaticText: 3 Receipts
+button: + New Receipt
+StaticText: Search Receipts…
+searchbox: Search Receipts…
+button: REC-001 Okoro & Sons ₦185,000.00
+StaticText: Issued
+button: REC-002 Adeyemi Hardware ₦42,500.00
+StaticText: Issued
+button: REC-003 Chukwu Building Supplies ₦96,000.00
+StaticText: Issued
+button: + New Receipt
+navigation: Sections
+link: Home
+link: Customers
+link: Business
+link: Settings

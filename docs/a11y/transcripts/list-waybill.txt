@@ -1,0 +1,23 @@
+RootWebArea: DocFlow — store screenshots
+StaticText: Demo
+StaticText: ·
+StaticText: This is a demo with sample records on this device only. Nothing is saved to an account, and it is cleared when you close the tab.
+main
+StaticText: DOCUMENTS
+heading: Waybill
+StaticText: 3 Waybills
+button: + New Waybill
+StaticText: Search Waybills…
+searchbox: Search Waybills…
+button: WAY-001 Okoro & Sons
+StaticText: Sent out
+button: WAY-002 Adeyemi Hardware
+StaticText: Sent out
+button: WAY-003 Chukwu Building Supplies
+StaticText: Sent out
+button: + New Waybill
+navigation: Sections
+link: Home
+link: Customers
+link: Business
+link: Settings

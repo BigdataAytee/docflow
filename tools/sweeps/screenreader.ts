@@ -127,6 +127,8 @@ export interface Place {
   readonly landmarked: boolean
   /** The name of the nearest named landmark ancestor, or ''. */
   readonly landmark: string
+  /** The name of the nearest NAMED ancestor of any role, or ''. */
+  readonly named: string
 }
 
 function walk(nodes: readonly AxNode[], visit: (node: AxNode, place: Place) => void): void {
@@ -139,18 +141,22 @@ function walk(nodes: readonly AxNode[], visit: (node: AxNode, place: Place) => v
     if (seen.has(node.nodeId)) return
     seen.add(node.nodeId)
     if (node.ignored !== true) visit(node, place)
+
     const isLandmark = SCOPES.has(roleOf(node))
+    const own = nameOf(node)
     const inside: Place = {
       landmarked: place.landmarked || isLandmark,
-      landmark: isLandmark ? nameOf(node) : place.landmark,
+      landmark: isLandmark ? own : place.landmark,
+      named: own === '' ? place.named : own,
     }
+
     for (const childId of node.childIds ?? []) {
       const child = byId.get(childId)
       if (child !== undefined) descend(child, inside)
     }
   }
 
-  descend(first, { landmarked: false, landmark: '' })
+  descend(first, { landmarked: false, landmark: '', named: '' })
 }
 
 /**
@@ -260,6 +266,37 @@ export const DOM_AUDIT = `(() => {
   }
   return found
 })()`
+
+/**
+ * What a reader would say, in order, as lines.
+ *
+ * Not a transcript of speech — no engine is being driven here — but of the
+ * NODES a reader walks and the name each carries, which is the part that can
+ * be captured without a device. Committed to `docs/a11y/transcripts`, so a
+ * person doing the D12 pass has a script to listen against, and so a change
+ * to what the app says shows up in a diff instead of in somebody's ear.
+ */
+export function transcriptOf(nodes: readonly AxNode[]): string[] {
+  const lines: string[] = []
+  walk(nodes, (node, place) => {
+    const role = roleOf(node)
+    const name = nameOf(node)
+    if (role === '' || role === 'InlineTextBox') return
+
+    // Text a parent has already used as its NAME is not a second
+    // announcement: a reader says "Outstanding, region" once, not "region,
+    // Outstanding, Outstanding". The first transcripts read that way and were
+    // half noise.
+    if (role === 'StaticText' && place.named !== '' && place.named.includes(name)) return
+
+    // Only the stops. A generic wrapper with no name is not something a
+    // reader announces, and printing it would bury the ones that are.
+    if (name === '' && !['heading', 'main', 'navigation', 'banner'].includes(role)) return
+
+    lines.push(name === '' ? role : `${role}: ${name}`)
+  })
+  return lines
+}
 
 export function reportOf(findings: readonly Finding[], routes: number): string {
   if (findings.length === 0) return `  ${routes} routes, nothing a screen reader would stumble on`

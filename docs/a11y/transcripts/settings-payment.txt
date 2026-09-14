@@ -1,0 +1,24 @@
+RootWebArea: DocFlow — store screenshots
+StaticText: Demo
+StaticText: ·
+StaticText: This is a demo with sample records on this device only. Nothing is saved to an account, and it is cleared when you close the tab.
+main
+heading: How you get paid
+StaticText: None switched on yet
+heading: BANK TRANSFER
+StaticText: Bank
+textbox: Bank
+StaticText: Bank is needed.
+StaticText: Account number
+textbox: Account number
+StaticText: Account number is needed.
+StaticText: Account name
+textbox: Account name
+StaticText: Account name is needed.
+StaticText: Bank transfer
+switch: Bank transfer
+navigation: Sections
+link: Home
+link: Customers
+link: Business
+link: Settings

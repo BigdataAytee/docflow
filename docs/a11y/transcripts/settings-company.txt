@@ -1,0 +1,35 @@
+RootWebArea: DocFlow — store screenshots
+StaticText: Demo
+StaticText: ·
+StaticText: This is a demo with sample records on this device only. Nothing is saved to an account, and it is cleared when you close the tab.
+main
+heading: Company & logo
+StaticText: Business name
+textbox: Business name
+StaticText: Dynamic Renaissance Ltd
+group: NAME STYLE
+button: classic
+button: serif
+button: stacked
+button: ruled
+button: monogram
+StaticText: Dynamic Renaissance Ltd
+group: LOGO SIZE
+button: S
+button: M
+button: L
+heading: NUMBERING PREFIXES
+StaticText: Invoice
+textbox: Invoice
+StaticText: Quotation
+textbox: Quotation
+StaticText: Receipt
+textbox: Receipt
+StaticText: Waybill
+textbox: Waybill
+StaticText: Your prefix is always used, whatever the region suggests.
+navigation: Sections
+link: Home
+link: Customers
+link: Business
+link: Settings

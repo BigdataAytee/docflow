@@ -2018,6 +2018,63 @@ gate itself is deferred with everything else that needs a phone.
 
       Ten mutations, ten caught.
 
+- [x] **D12, prepared — the pass itself still needs a person**
+      (`docs/a11y/d12-screen-reader-pass.md`, `docs/a11y/transcripts/`,
+      `tools/sweeps/readingorder.ts`). Nothing here completes D12, and no
+      test in this repository should be read as having done so.
+
+      What it does is three things, and the first is the one that was
+      genuinely still open.
+
+      **Reading order is now machine-checked.** A screen reader announces in
+      DOM order; a sighted person reads in visual order; `order`,
+      `row-reverse`, grid placement and absolute positioning separate the
+      two — and nothing in an accessibility tree reveals it. Every name is
+      right, every role is right, and the sentences arrive in the wrong
+      sequence. The sweep now compares heard against seen, sibling by
+      sibling, across 42 route-widths.
+
+      The first version of that rule **reported four settings screens and both
+      builders as broken, and was wrong**: it compared tops with a tolerance,
+      and a row with `items-center` holding a 20px label beside a 44px button
+      puts the label's top twelve pixels lower. A row is decided by vertical
+      OVERLAP now, which is what a person sees. The app reads in the order it
+      looks, on every route.
+
+      **Every route has a transcript** — the nodes a reader walks and the name
+      each carries, committed. Two reasons: a tester reads the screen before
+      listening to it and the difference is the finding; and a change to what
+      the app SAYS shows up in a diff rather than in somebody's ear six weeks
+      later. The first capture was half noise — "region: Outstanding" followed
+      by "StaticText: Outstanding" — because a name a parent already used is
+      not a second announcement. A CI test refuses to let a route exist
+      without one, which is the only guard CI can offer with no browser.
+
+      **And the protocol**, written the way the Phase-0 spikes are: kill
+      criteria fixed in advance so a bad result is work rather than a
+      negotiation, ten journeys walked with the screen curtain on, empty
+      results tables, and a list of what a machine has already checked so
+      nobody spends the visit on it.
+
+      The most useful part is the list of what a machine CANNOT judge —
+      whether the order makes sense, whether the app is exhausting to listen
+      to, how money and references are spoken, the rotor, gestures, braille,
+      and the second translation layer a native WebView adds. Including one
+      redundancy found while reading the transcripts and deliberately left
+      alone: Home announces "Needs attention" as a region and again as its
+      heading. It is a listening question, and pre-empting the listener is
+      the one thing this preparation must not do.
+
+      **Run it with somebody who uses a screen reader daily, and pay them.**
+      Not a sighted developer switching VoiceOver on for an hour — that finds
+      "the button has no label", which is already machine-checked. It does not
+      find "this is the third time this screen has said my company name".
+
+      Six mutations, six caught — two only after the mutation found that the
+      transcript GENERATOR had no test of its own: the committed files are
+      checked as files, so changing the function that writes them changed
+      nothing anybody would notice.
+
 ### The physical-device remainder — one consolidated list- [x] **The ratings prompt — built, and it shows nothing yet** (`src/domain/ratings/`,
       `src/features/ratings/`). §T: "ratings prompts appear only at happy
       moments." The store-policy pass found the questionnaire describing this
@@ -2175,6 +2232,63 @@ gate itself is deferred with everything else that needs a phone.
 
       Ten mutations, ten caught.
 
+- [x] **D12, prepared — the pass itself still needs a person**
+      (`docs/a11y/d12-screen-reader-pass.md`, `docs/a11y/transcripts/`,
+      `tools/sweeps/readingorder.ts`). Nothing here completes D12, and no
+      test in this repository should be read as having done so.
+
+      What it does is three things, and the first is the one that was
+      genuinely still open.
+
+      **Reading order is now machine-checked.** A screen reader announces in
+      DOM order; a sighted person reads in visual order; `order`,
+      `row-reverse`, grid placement and absolute positioning separate the
+      two — and nothing in an accessibility tree reveals it. Every name is
+      right, every role is right, and the sentences arrive in the wrong
+      sequence. The sweep now compares heard against seen, sibling by
+      sibling, across 42 route-widths.
+
+      The first version of that rule **reported four settings screens and both
+      builders as broken, and was wrong**: it compared tops with a tolerance,
+      and a row with `items-center` holding a 20px label beside a 44px button
+      puts the label's top twelve pixels lower. A row is decided by vertical
+      OVERLAP now, which is what a person sees. The app reads in the order it
+      looks, on every route.
+
+      **Every route has a transcript** — the nodes a reader walks and the name
+      each carries, committed. Two reasons: a tester reads the screen before
+      listening to it and the difference is the finding; and a change to what
+      the app SAYS shows up in a diff rather than in somebody's ear six weeks
+      later. The first capture was half noise — "region: Outstanding" followed
+      by "StaticText: Outstanding" — because a name a parent already used is
+      not a second announcement. A CI test refuses to let a route exist
+      without one, which is the only guard CI can offer with no browser.
+
+      **And the protocol**, written the way the Phase-0 spikes are: kill
+      criteria fixed in advance so a bad result is work rather than a
+      negotiation, ten journeys walked with the screen curtain on, empty
+      results tables, and a list of what a machine has already checked so
+      nobody spends the visit on it.
+
+      The most useful part is the list of what a machine CANNOT judge —
+      whether the order makes sense, whether the app is exhausting to listen
+      to, how money and references are spoken, the rotor, gestures, braille,
+      and the second translation layer a native WebView adds. Including one
+      redundancy found while reading the transcripts and deliberately left
+      alone: Home announces "Needs attention" as a region and again as its
+      heading. It is a listening question, and pre-empting the listener is
+      the one thing this preparation must not do.
+
+      **Run it with somebody who uses a screen reader daily, and pay them.**
+      Not a sighted developer switching VoiceOver on for an hour — that finds
+      "the button has no label", which is already machine-checked. It does not
+      find "this is the third time this screen has said my company name".
+
+      Six mutations, six caught — two only after the mutation found that the
+      transcript GENERATOR had no test of its own: the committed files are
+      checked as files, so changing the function that writes them changed
+      nothing anybody would notice.
+
 ### The physical-device remainder — one consolidated list
 
 Everything below needs a phone in a hand. It is gathered here rather than
@@ -2194,7 +2308,7 @@ place, and it grows as new deferrals join it.
 | D9 | Generation time, memory and thermal behaviour | §O | Only meaningful on hardware |
 | D10 | Store billing: the NATIVE half — purchase, restore, sandbox, and the two signature verifiers | §Q Phase 7, §U | StoreKit / Play Billing, a store account to test a signed notification against. The entitlement rules, the ledger, ordering and the apply path are built and proven against Postgres; see the Phase 7 entry. |
 | D11 | Zero outbound AI bytes, confirmed by traffic inspection | §Q Phase 6 | A device on a watched network |
-| D12 | A VoiceOver and TalkBack pass by somebody who uses one | §Q Phase 7, §V | The accessibility tree is audited in CI; speech, reading order, the rotor and gestures are not the tree |
+| D12 | A VoiceOver and TalkBack pass by somebody who uses one | §Q Phase 7, §V | The protocol, the pre-agreed criteria and the per-route transcripts are written (`docs/a11y/d12-screen-reader-pass.md`); reading order is now machine-checked. What remains is a person listening: whether the order MAKES SENSE, whether it is exhausting, how money and references are spoken, the rotor, gestures and braille |
 
 Two further items are deferred but need a SERVER rather than a device, and are
 tracked with the Phase 5 gate instead: the hosted deploy, and Paystack test
@@ -3217,6 +3331,9 @@ vectors of a few hundred bytes.
 | 228 | Two links may share a name if they share a destination | WCAG fails identical names going to DIFFERENT places. The list page's header button and its FAB are the same action and are not a defect, and a rule that flagged them would have been argued with until it was deleted. | `tools/sweeps/screenreader.ts` |
 | 229 | A navigation moves focus to `main` — except on a cold load | It is the one thing that announces an SPA route change. On first paint the reader is already reading from the top, and interrupting to say "main" would cut off the page title. | `src/app/focus.ts` |
 | 230 | An opened panel takes focus; the hand-back is best effort | Six panels replace their own trigger, so there is nothing to hand focus back TO. Doing the right thing where it is possible beats doing nothing everywhere — and the first version of the test could not tell the difference, because it closed the panel from the opener. | `src/ui/focus.ts` |
+| 264 | A row is decided by vertical OVERLAP, never by comparing tops | The first reading-order rule called four settings screens and both builders broken. A row with `items-center` holding a 20px label beside a 44px button puts the label's top twelve pixels lower; overlap is what a person sees. | `tools/sweeps/readingorder.ts` |
+| 265 | Reading order is compared among SIBLINGS only | Two elements in different formatting contexts cannot be ordered meaningfully — a multi-column layout legitimately puts a later element higher. Children of one parent share a context, which is exactly where the reversing properties live. | `tools/sweeps/readingorder.ts` |
+| 266 | The transcripts are committed, and CI refuses a route without one | A tester reads the screen before listening to it, and a change to what the app says shows up in a diff rather than in somebody's ear. CI has no browser to regenerate them, so refusing an orphan route is the only guard it can offer. | `tools/sweeps/transcripts.test.ts` |
 | 261 | A sheet that cannot name the price does not open | "Tap to find out what it costs" is the dark pattern §U describes, told backwards. No price for the market, no offer — and the feature stays usable, because a bug that hides a paywall costs money while a bug that shows one without a price costs trust. | `src/domain/billing/unlock.ts` |
 | 262 | A Pro feature must name the control it announces itself on | §U's "announces itself before the user invests effort" is only true if somebody can point at the control. `featuresWithNoEntryPoint()` is asserted empty, so gating a feature with nowhere to announce it fails on that commit. | `src/domain/billing/unlock.ts` |
 | 263 | The dismiss is the same size as the purchase, and first in the DOM | "A no-hard-feelings dismiss" is not a grey link under a bright button — and first in the DOM is first for a keyboard and a screen reader too. | `src/features/billing/UnlockSheet.tsx` |

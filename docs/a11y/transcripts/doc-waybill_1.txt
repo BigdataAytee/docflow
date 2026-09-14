@@ -1,0 +1,27 @@
+RootWebArea: DocFlow — store screenshots
+StaticText: Demo
+StaticText: ·
+StaticText: This is a demo with sample records on this device only. Nothing is saved to an account, and it is cleared when you close the tab.
+main
+StaticText: WAY-001
+heading: WAYBILL
+StaticText: Okoro & Sons
+StaticText: Sent out
+button: Share the PDF
+StaticText: On its way. Sign for it when it arrives.
+button: Mark it on the way
+button: Confirm delivery
+region: Proof of delivery
+heading: Proof of delivery
+StaticText: The goods at the gate, the stack, the plate number — whatever settles an argument later.
+button: Choose File
+button: Add a photo
+button: Copy a link for them to sign
+button: Turn this into something else
+button: Cancel this document
+button: Statement
+navigation: Sections
+link: Home
+link: Customers
+link: Business
+link: Settings

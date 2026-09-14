@@ -1,0 +1,57 @@
+RootWebArea: DocFlow — store screenshots
+StaticText: Demo
+StaticText: ·
+StaticText: This is a demo with sample records on this device only. Nothing is saved to an account, and it is cleared when you close the tab.
+banner
+button: Cancel
+StaticText: ✕
+heading: Invoice
+StaticText: Draft saved automatically
+navigation: Step 1 of 5
+button: Details
+button: Items
+button: Totals
+button: Design
+button: Review
+StaticText: Details
+main
+heading: NUMBER & DATES
+StaticText: INV-…
+button: Edit reference
+StaticText: ✎
+StaticText: Date
+Date: Date
+spinbutton: Month Month
+StaticText: mm
+StaticText: /
+spinbutton: Day Day
+StaticText: dd
+StaticText: /
+spinbutton: Year Year
+StaticText: yyyy
+button: Show date picker
+StaticText: Due
+Date: Due
+spinbutton: Month Month
+StaticText: mm
+StaticText: /
+spinbutton: Day Day
+StaticText: dd
+StaticText: /
+spinbutton: Year Year
+StaticText: yyyy
+button: Show date picker
+heading: BILL TO
+button: Choose who this is for
+StaticText: Nobody chosen yet
+button: Add a customer
+StaticText: +
+heading: CURRENCY & PAYMENT
+StaticText: NGN
+button: Set up payment
+heading: SIGNATURE
+button: Tap to sign
+StaticText: Invoice
+button: Back
+button: Next
+StaticText: Before you can issue this

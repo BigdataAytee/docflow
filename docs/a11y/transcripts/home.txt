@@ -1,0 +1,31 @@
+RootWebArea: DocFlow — store screenshots
+StaticText: Demo
+StaticText: ·
+StaticText: This is a demo with sample records on this device only. Nothing is saved to an account, and it is cleared when you close the tab.
+main
+StaticText: Dynamic Renaissance Ltd
+StaticText: Saved on this phone
+heading: Good morning,
+region: Outstanding
+StaticText: ₦323,500.00
+region: Received this month
+StaticText: Nothing yet
+StaticText: Search everything
+searchbox: Search everything
+button: 3 Invoices
+button: 3 Quotations
+button: 3 Receipts
+button: 3 Waybills
+region: Needs attention
+heading: Needs attention
+button: Sign
+StaticText: On its way
+button: Sign
+StaticText: On its way
+button: Sign
+StaticText: On its way
+navigation: Sections
+link: Home
+link: Customers
+link: Business
+link: Settings
