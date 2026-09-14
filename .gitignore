@@ -38,3 +38,22 @@ coverage
 dist-site/
 dist-shots/
 dist-shots-png/
+
+# Capacitor native shells (§Q Phase 4)
+#
+# The PROJECT is committed — the manifest, the gradle files and the resources
+# are ours and reviewable. What is ignored is everything Capacitor regenerates
+# from `dist` on every `cap sync`, plus build output. A committed copy of the
+# web bundle inside `android/` would double every UI diff and go stale between
+# syncs, which is worse than not having it.
+android/app/src/main/assets/public/
+android/app/src/main/assets/capacitor.config.json
+android/app/src/main/assets/capacitor.plugins.json
+android/app/build/
+android/build/
+android/.gradle/
+android/capacitor-cordova-android-plugins/
+android/local.properties
+ios/App/App/public/
+ios/App/build/
+ios/App/Pods/

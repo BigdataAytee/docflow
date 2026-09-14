@@ -30,15 +30,15 @@ import { documentColumns, toDocument, upsert } from './rows'
 const readBack = readBackBy('documents', toDocument)
 
 /** Inside the transaction — the row as it is right now, not as it was read. */
-const require_ = (tx: SqlTransaction, id: string): DocumentRecord => {
-  const row = readBack(tx, id)
+const require_ = async (tx: SqlTransaction, id: string): Promise<DocumentRecord> => {
+  const row = await readBack(tx, id)
   if (row === null) throw new RepositoryError(`No document ${id}.`)
   return row
 }
 
-const write = (tx: SqlTransaction, document: DocumentRecord): DocumentRecord => {
+const write = async (tx: SqlTransaction, document: DocumentRecord): Promise<DocumentRecord> => {
   const { sql, params } = upsert('documents', documentColumns(document))
-  tx.run(sql, params)
+  await tx.run(sql, params)
   return document
 }
 
@@ -66,7 +66,7 @@ export function createDocumentRepository(
       {
         entity: 'document',
         kind,
-        write: (tx) => write(tx, apply(require_(tx, id))),
+        write: async (tx) => write(tx, apply(await require_(tx, id))),
         recordId: (record) => record.id,
       },
       readBack,
@@ -114,7 +114,7 @@ export function createDocumentRepository(
         {
           entity: 'document',
           kind: 'create',
-          write: (tx) =>
+          write: async (tx) =>
             write(tx, {
               ...draft,
               id: deps.newId('doc'),

@@ -63,9 +63,8 @@ const toOperation = (row: SqlRow): QueuedOperation => {
 /**
  * Add an operation to the queue inside a transaction somebody else opened.
  *
- * Synchronous, because `SqlTransaction` is: an `await` here would let another
- * statement interleave into this transaction, which is how a half-committed
- * state gets written. See `SqlDriver.transaction`.
+ * It takes a `SqlTransaction` it did not open and cannot commit: an enqueue is
+ * only ever a participant in somebody else's write, never a write of its own.
  *
  * A replayed idempotency key hits the UNIQUE index and throws, which aborts
  * the caller's whole transaction — record write included. That is the correct
@@ -73,10 +72,10 @@ const toOperation = (row: SqlRow): QueuedOperation => {
  * return the original record without reaching here, so an exception at this
  * point means two DIFFERENT writes claimed one key, and neither should land.
  */
-export function enqueueIn(tx: SqlTransaction, operation: Operation): void {
+export async function enqueueIn(tx: SqlTransaction, operation: Operation): Promise<void> {
   assertWellFormed(operation)
 
-  tx.run(
+  await tx.run(
     `insert into outbox (
        id, entity, record_id, kind, payload, idempotency_key, base_version,
        actor_id, device_id, created_at, depends_on, state, attempts, sequence
@@ -142,8 +141,8 @@ export class SqliteQueue {
   }
 
   async markInFlight(id: string): Promise<void> {
-    await this.driver.transaction((tx) => {
-      tx.run("update outbox set state = 'in_flight' where id = ?", [id])
+    await this.driver.transaction(async (tx) => {
+      await tx.run("update outbox set state = 'in_flight' where id = ?", [id])
     })
   }
 
@@ -156,20 +155,20 @@ export class SqliteQueue {
    * crash, and a deleted row would look like an operation that never happened.
    */
   async markUploaded(id: string): Promise<void> {
-    await this.driver.transaction((tx) => {
-      tx.run("update outbox set state = 'uploaded', last_error = null where id = ?", [id])
+    await this.driver.transaction(async (tx) => {
+      await tx.run("update outbox set state = 'uploaded', last_error = null where id = ?", [id])
     })
   }
 
   /** A failure keeps the operation, with an actionable error and a retry time (§M). */
   async markFailed(id: string, error: string, now: string, random?: () => number): Promise<void> {
-    await this.driver.transaction((tx) => {
-      const row = tx.get('select attempts from outbox where id = ?', [id])
+    await this.driver.transaction(async (tx) => {
+      const row = await tx.get('select attempts from outbox where id = ?', [id])
       const attempts = Number(row?.['attempts'] ?? 0) + 1
       const nextAttemptAt = new Date(
         new Date(now).getTime() + backoffMs(attempts, random),
       ).toISOString()
-      tx.run(
+      await tx.run(
         "update outbox set state = 'failed', attempts = ?, last_error = ?, next_attempt_at = ? where id = ?",
         [attempts, error, nextAttemptAt, id],
       )
@@ -183,13 +182,13 @@ export class SqliteQueue {
   }
 
   /**
-   * Synchronous, and takes a transaction it did not open — for the same reason
-   * `enqueueIn` does. §M: the cursor "advances only after transactional
-   * application", so it must move in the SAME commit as the rows it accounts
-   * for, never in one of its own.
+   * Takes a transaction it did not open, for the same reason `enqueueIn`
+   * does. §M: the cursor "advances only after transactional application", so
+   * it must move in the SAME commit as the rows it accounts for, never in one
+   * of its own.
    */
-  advanceCursor(tx: SqlTransaction, cursor: string): void {
-    tx.run(
+  async advanceCursor(tx: SqlTransaction, cursor: string): Promise<void> {
+    await tx.run(
       "insert into sync_state (key, value) values ('pull_cursor', ?) " +
         'on conflict(key) do update set value = excluded.value',
       [cursor],

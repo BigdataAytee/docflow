@@ -5,7 +5,23 @@ import docflow from './tools/eslint/no-hardcoded-type-name.js'
 
 export default tseslint.config(
   // /legacy is read-only reference (CLAUDE.md). Never linted, never built.
-  { ignores: ['dist', 'dist-site', 'dist-shots', 'dist-shots-png', 'legacy', 'node_modules', 'coverage'] },
+  // `android` is Capacitor's generated native project — a copy of the built
+  // bundle plus Java the plugins own. Linting it reports thousands of problems
+  // in code nobody here writes, which is the fastest way to make a lint run
+  // something people stop reading.
+  {
+    ignores: [
+      'dist',
+      'dist-site',
+      'dist-shots',
+      'dist-shots-png',
+      'legacy',
+      'node_modules',
+      'coverage',
+      'android',
+      'ios',
+    ],
+  },
 
   js.configs.recommended,
   ...tseslint.configs.recommended,
@@ -94,6 +110,19 @@ export default tseslint.config(
   // directory, so a second file cannot quietly join it.
   {
     files: ['src/data/backend.ts'],
+    rules: { 'no-restricted-imports': 'off' },
+  },
+
+  // The native shell, for the same reason and under the same restraint.
+  // Somebody has to open the encrypted database, hand its key to SQLCipher and
+  // run the on-device gate against the driver — and that somebody cannot go
+  // through `src/data/repositories`, because repositories are what it BUILDS.
+  //
+  // Listed as three files rather than `src/native/**`, so a screen dropped into
+  // this directory does not quietly inherit the exemption. What leaves these
+  // files is a `Repositories` — no driver, no passphrase.
+  {
+    files: ['src/native/boot.ts', 'src/native/gate.ts', 'src/native/secure-storage.ts'],
     rules: { 'no-restricted-imports': 'off' },
   },
 

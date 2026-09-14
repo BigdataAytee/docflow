@@ -31,7 +31,7 @@ const COMPANY = 'co_acme'
 const store = async () => {
   const driver = createNodeDriver(':memory:')
   await migrate(driver)
-  await driver.transaction((tx) => {
+  await driver.transaction(async (tx) => {
     tx.run(
       `insert into companies (id, name, locale_region, locale_language, currency)
        values (?, 'Acme', 'NG', 'en', 'NGN')`,
@@ -116,7 +116,7 @@ describe('A failed commit must not show "Saved"', () => {
     // second is a bug or a race, and the UNIQUE index on the outbox is what
     // catches it. The record must not survive its own failed upload.
     await repositories.customers.create(customer, { idempotencyKey: 'k1' })
-    await driver.transaction((tx) => {
+    await driver.transaction(async (tx) => {
       // Forget the key ever happened, keeping the outbox row — the shape a
       // corrupted store takes, and the only way to reach the enqueue guard
       // through the public API.

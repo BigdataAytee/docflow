@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Android 12+ backup and transfer rules (v6 §P).
+
+  Both channels are refused for the same reason: the SQLCipher passphrase is
+  wrapped by a Keystore key that never leaves this device. A copied database
+  without a copyable key is a file nobody can open, and shipping one as a
+  "backup" or a "transfer" would be a promise the app cannot keep.
+
+  Device-to-device transfer is disallowed rather than left to the default for
+  the same reason — a new phone would arrive with records it cannot read, and
+  the owner would believe they had them.
+-->
+<data-extraction-rules>
+    <cloud-backup>
+        <exclude domain="root" />
+        <exclude domain="database" />
+        <exclude domain="sharedpref" />
+        <exclude domain="file" />
+        <exclude domain="external" />
+    </cloud-backup>
+    <device-transfer>
+        <exclude domain="root" />
+        <exclude domain="database" />
+        <exclude domain="sharedpref" />
+        <exclude domain="file" />
+        <exclude domain="external" />
+    </device-transfer>
+</data-extraction-rules>

@@ -10,15 +10,20 @@
  * then proves is the part CI genuinely cannot: that the file is encrypted, that
  * the key came out of secure storage, and that it opens (§Q Phase 1 gate).
  *
- * Everything is `Promise`-shaped even though `node:sqlite` is synchronous,
- * because the Capacitor bridge is not and the repositories above must not know
- * which one they have.
+ * **Everything is async, including inside a transaction**, and that is a
+ * correction rather than a preference. The first draft of this port took a
+ * synchronous transaction body, on the reasoning that an `await` between two
+ * statements lets other work interleave into the transaction. The reasoning
+ * was right and the mechanism was wrong: the Capacitor bridge is one async
+ * call per statement, so a synchronous body is not something a phone can
+ * offer, and a port the device cannot implement is a port that would have been
+ * discovered at the APK rather than at the type.
  *
- * `transaction` is not sugar. CLAUDE.md: "Every mobile mutation = record write
- * + outbox enqueue in ONE SQLite transaction. A failed commit must not show
- * 'Saved'." A driver that could only run statements one at a time could not
- * keep that promise, so the port demands the capability rather than hoping the
- * caller remembers to BEGIN.
+ * The hazard the sync body was aimed at is real, so it is closed where it
+ * actually lives — `transaction` serialises on a queue, so two transactions on
+ * one connection never interleave however many callers race. SQLite has one
+ * write lock per database; this makes the JavaScript side agree with that
+ * instead of discovering it as SQLITE_BUSY halfway through a commit.
  */
 
 /** What SQLite can hold. No dates, no booleans — those are mapped in `rows`. */
@@ -35,9 +40,9 @@ export interface SqlRow {
  * a `SqlTransaction` for another transaction, and SQLite has no nested BEGIN.
  */
 export interface SqlTransaction {
-  run(sql: string, params?: readonly SqlValue[]): void
-  all(sql: string, params?: readonly SqlValue[]): SqlRow[]
-  get(sql: string, params?: readonly SqlValue[]): SqlRow | null
+  run(sql: string, params?: readonly SqlValue[]): Promise<void>
+  all(sql: string, params?: readonly SqlValue[]): Promise<SqlRow[]>
+  get(sql: string, params?: readonly SqlValue[]): Promise<SqlRow | null>
 }
 
 export interface SqlDriver {
@@ -49,15 +54,34 @@ export interface SqlDriver {
    * Runs `body` inside BEGIN/COMMIT. A throw rolls back and re-throws, so a
    * caller that sees a return value knows the bytes are on disk.
    *
-   * The body is SYNCHRONOUS on purpose. An `await` inside a transaction on a
-   * single connection is how half-committed states and lock timeouts happen:
-   * the awaited work can interleave another statement into this transaction.
-   * Making the type refuse it is cheaper than a code review that has to
-   * remember.
+   * Transactions are serialised: a second call waits for the first to finish
+   * rather than interleaving its statements into the first one's transaction.
    */
-  transaction<T>(body: (tx: SqlTransaction) => T): Promise<T>
+  transaction<T>(body: (tx: SqlTransaction) => Promise<T>): Promise<T>
   close(): Promise<void>
 }
 
 /** Raised for anything the database refused. Repositories map it to `RepositoryError`. */
 export class SqlError extends Error {}
+
+/**
+ * A promise queue, one per connection.
+ *
+ * Every transaction chains onto the last, so BEGIN … COMMIT pairs cannot nest
+ * or interleave. Failures do not poison the chain — the next caller runs
+ * whether or not the previous one threw, which matters because a rolled-back
+ * transaction is an ordinary outcome here (a refused edit to an issued
+ * document is a rollback, not a fault).
+ */
+export function createSerialiser(): <T>(body: () => Promise<T>) => Promise<T> {
+  let tail: Promise<unknown> = Promise.resolve()
+
+  return <T>(body: () => Promise<T>): Promise<T> => {
+    const result = tail.then(body, body)
+    tail = result.then(
+      () => undefined,
+      () => undefined,
+    )
+    return result
+  }
+}

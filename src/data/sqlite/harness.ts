@@ -42,9 +42,9 @@ export const sqliteHarness: RepositoryHarness = {
     const driver = createNodeDriver(':memory:')
     await migrate(driver)
 
-    await driver.transaction((tx) => {
+    await driver.transaction(async (tx) => {
       for (const id of companyIds) {
-        tx.run(
+        await tx.run(
           `insert into companies (id, name, locale_region, locale_language, currency)
            values (?, ?, 'NG', 'en', 'NGN')`,
           [id, id],

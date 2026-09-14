@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  DocFlow's Android manifest (v6 §P, §Q Phase 4).
+
+  Two departures from Capacitor's template, both deliberate:
+
+  · allowBackup="false". The local store is SQLCipher, and its passphrase
+    lives in EncryptedSharedPreferences wrapped by a Keystore key that by
+    design never leaves this device. Android's auto-backup would copy the
+    database to Google and could not copy the key, so a restore would hand
+    somebody a file nothing can open — a backup that looks like insurance and
+    is not. §Q Phase 7 owns the real backup schedule, and Rule #6 already
+    guarantees the escape hatch: export is free forever.
+
+  · Permissions are declared only where a feature needs one, and every one of
+    them is optional at runtime. §Q Phase 4's gate includes "permission
+    refusal", so refusing the camera has to leave a working app rather than a
+    dead screen.
+-->
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <application
+        android:allowBackup="false"
+        android:fullBackupContent="false"
+        android:dataExtractionRules="@xml/data_extraction_rules"
+        android:icon="@mipmap/ic_launcher"
+        android:label="@string/app_name"
+        android:roundIcon="@mipmap/ic_launcher_round"
+        android:supportsRtl="true"
+        android:theme="@style/AppTheme">
+
+        <activity
+            android:configChanges="orientation|keyboardHidden|keyboard|screenSize|locale|smallestScreenSize|screenLayout|uiMode|navigation|density"
+            android:name=".MainActivity"
+            android:label="@string/title_activity_main"
+            android:theme="@style/AppTheme.NoActionBarLaunch"
+            android:launchMode="singleTask"
+            android:exported="true">
+
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+
+        </activity>
+
+        <provider
+            android:name="androidx.core.content.FileProvider"
+            android:authorities="${applicationId}.fileprovider"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/file_paths"></meta-data>
+        </provider>
+    </application>
+
+    <!-- Permissions -->
+
+    <!--
+      Sync and sign-in only. Nothing needed to open, render, PDF or share a
+      saved document touches the network (§M), so a device with this permission
+      revoked still passes every core journey.
+    -->
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+
+    <!-- A delivery photo, an expense receipt (§G). Refusable; the file picker
+         and the three-field sheet remain. -->
+    <uses-permission android:name="android.permission.CAMERA" />
+    <uses-feature android:name="android.hardware.camera" android:required="false" />
+
+    <!-- Customer import (§Q Phase 4). Refusable; CSV import and typing remain. -->
+    <uses-permission android:name="android.permission.READ_CONTACTS" />
+
+    <!-- The optional app lock, default OFF (§Q Phase 4). -->
+    <uses-permission android:name="android.permission.USE_BIOMETRIC" />
+
+</manifest>

@@ -88,3 +88,48 @@
     @apply bg-page text-ink font-sans antialiased;
   }
 }
+
+/*
+ * Safe areas (§Q Phase 4).
+ *
+ * `viewport-fit=cover` has been in index.html since Phase 2, so the insets are
+ * already readable; what was missing is anything reading them at the TOP. The
+ * shell draws behind the status bar on purpose — §F's header gradient should
+ * reach the physical top edge rather than stopping at a grey band — and that
+ * is only a design decision rather than a bug if the content inside it is
+ * pushed clear.
+ *
+ * Scoped to `.native`, set by `src/native/boot.ts`, because the web build has
+ * no overlaid status bar and would get a stripe of dead space.
+ *
+ * `env()` with a 0px fallback everywhere: a device with no notch reports
+ * nothing, and an unresolved `env()` in a calc makes the whole declaration
+ * invalid — which is how "safe area support" turns into a broken layout on the
+ * cheapest phones rather than on the expensive one it was tested on.
+ */
+@layer base {
+  .native body {
+    /* The bottom nav pads itself; padding the body too would double it. */
+    padding-top: env(safe-area-inset-top, 0px);
+  }
+
+  /*
+   * Landscape, and the front-facing camera cut-outs that sit in a side edge.
+   * Ignoring these is what puts a Back button under a rounded corner.
+   */
+  .native main,
+  .native [data-safe-inline] {
+    padding-inline-start: env(safe-area-inset-left, 0px);
+    padding-inline-end: env(safe-area-inset-right, 0px);
+  }
+
+  /*
+   * Anything pinned to the bottom clears the gesture bar. The bottom nav
+   * already did this itself; sheets, toasts and the builder's action bar did
+   * not, and a primary action under the gesture bar is a button that cannot be
+   * pressed without dismissing the app.
+   */
+  .native [data-safe-bottom] {
+    padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 0.75rem);
+  }
+}

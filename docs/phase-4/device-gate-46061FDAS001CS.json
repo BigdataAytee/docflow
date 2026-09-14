@@ -1,0 +1,52 @@
+{
+  "model": "Pixel 9 Pro XL",
+  "release": "17",
+  "serial": "46061FDAS001CS",
+  "ranAt": "2026-09-14T16:29:34.921Z",
+  "results": [
+    {
+      "name": "Encrypted SQLite opens on device (§Q Phase 1 gate)",
+      "state": "passed",
+      "evidence": "opened; sqlite 3.53.3"
+    },
+    {
+      "name": "The database file on disk is actually encrypted (§P)",
+      "state": "passed",
+      "evidence": "no plaintext header; first bytes 01 1b 9c 9c cc 75 cd c5"
+    },
+    {
+      "name": "Opening and migrating the encrypted store (part of §Q Phase 4 cold start)",
+      "state": "passed",
+      "evidence": "1365ms to open, migrate and seed (chunksLoaded @6ms, storeOpen @1305ms, companyRead @1316ms, seeded @1365ms)"
+    },
+    {
+      "name": "The §E schema and its Rule #5 triggers migrated on device",
+      "state": "passed",
+      "evidence": "15 tables, 3 triggers, user_version 2"
+    },
+    {
+      "name": "An issued reference cannot be rewritten, on device (Rule #5)",
+      "state": "passed",
+      "evidence": "the update was refused; the reference is still GATE-0001"
+    },
+    {
+      "name": "A record write and its outbox enqueue commit together (CLAUDE.md)",
+      "state": "passed",
+      "evidence": "the failed enqueue rolled the record back — no orphan \"Saved\""
+    },
+    {
+      "name": "First launch after install (one-time; no §Q budget)",
+      "state": "passed",
+      "evidence": "2130ms, including creating the database and running every migration"
+    },
+    {
+      "name": "Cold start to an interactive dashboard from SQLite (§Q Phase 4)",
+      "state": "passed",
+      "evidence": "1829ms from launch to a usable dashboard, off the device clock",
+      "budget": "< 2000ms"
+    }
+  ],
+  "passed": 8,
+  "failed": 0,
+  "skipped": 0
+}

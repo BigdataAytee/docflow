@@ -34,7 +34,7 @@ export interface MutationPlan<T> {
   readonly entity: Entity
   readonly kind: OperationKind
   /** Runs inside the transaction. Returns the record as it now stands. */
-  readonly write: (tx: SqlTransaction) => T
+  readonly write: (tx: SqlTransaction) => Promise<T>
   /** The record's id, for the outbox row and the idempotency log. */
   readonly recordId: (record: T) => string
   /** The version this change was made against — not a timestamp (§M). */
@@ -63,22 +63,22 @@ export async function mutate<T>(
   deps: MutationDeps,
   ctx: MutationContext,
   plan: MutationPlan<T>,
-  readBack: (tx: SqlTransaction, id: string) => T | null,
+  readBack: (tx: SqlTransaction, id: string) => Promise<T | null>,
 ): Promise<T> {
   if (ctx.idempotencyKey.trim() === '') {
     throw new RepositoryError('Every mutation carries an idempotency key (v6 §M).')
   }
 
   try {
-    return await deps.driver.transaction((tx) => {
+    return await deps.driver.transaction(async (tx) => {
       // A replay returns what the first attempt produced. Inside the
       // transaction, so a concurrent replay cannot slip between the check and
       // the write.
-      const seen = tx.get('select record_id from mutation_log where idempotency_key = ?', [
+      const seen = await tx.get('select record_id from mutation_log where idempotency_key = ?', [
         ctx.idempotencyKey,
       ])
       if (seen !== null) {
-        const existing = readBack(tx, String(seen['record_id']))
+        const existing = await readBack(tx, String(seen['record_id']))
         if (existing !== null) return existing
         // The log says this key produced a record and the record is gone.
         // That is a corrupt store, not a retry: writing again would give the
@@ -89,10 +89,10 @@ export async function mutate<T>(
         )
       }
 
-      const record = plan.write(tx)
+      const record = await plan.write(tx)
       const id = plan.recordId(record)
 
-      tx.run(
+      await tx.run(
         'insert into mutation_log (idempotency_key, entity, record_id) values (?, ?, ?)',
         [ctx.idempotencyKey, plan.entity, id],
       )
@@ -113,7 +113,7 @@ export async function mutate<T>(
 
       // If this throws, the record write above rolls back with it. That is the
       // whole contract: "A failed commit must not show Saved."
-      enqueueIn(tx, operation)
+      await enqueueIn(tx, operation)
 
       return record
     })
@@ -128,7 +128,7 @@ export async function mutate<T>(
 /** `select * from <table> where id = ?`, mapped — the common read-back. */
 export const readBackBy =
   <T>(table: string, map: (row: SqlRow) => T) =>
-  (tx: SqlTransaction, id: string): T | null => {
-    const row = tx.get(`select * from ${table} where id = ?`, [id])
+  async (tx: SqlTransaction, id: string): Promise<T | null> => {
+    const row = await tx.get(`select * from ${table} where id = ?`, [id])
     return row === null ? null : map(row)
   }

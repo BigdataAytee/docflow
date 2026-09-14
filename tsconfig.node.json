@@ -30,7 +30,21 @@
     // The SQLite layer, because `src/data/repositories` now runs its contract
     // suite against it too (§Q Phase 4) — and because `node.ts` imports
     // `node:sqlite`, which only this project has the types for.
-    "src/data/sqlite",
+    //
+    // Listed as FILES rather than the directory, for the same reason the lines
+    // above are: `capacitor.ts` and `open.ts` reach the native plugins and the
+    // DOM, and belong to the app project. What is here is the part CI runs.
+    "src/data/sqlite/driver.ts",
+    "src/data/sqlite/schema.ts",
+    "src/data/sqlite/migrate.ts",
+    "src/data/sqlite/node.ts",
+    "src/data/sqlite/rows.ts",
+    "src/data/sqlite/queue.ts",
+    "src/data/sqlite/mutation.ts",
+    "src/data/sqlite/documents.ts",
+    "src/data/sqlite/repositories.ts",
+    "src/data/sqlite/harness.ts",
+    "src/data/sqlite/key.ts",
     "src/sync/operations.ts",
     // The screenshot PLAN — not its entry point, which is a .tsx needing the
     // DOM lib this project does not have and belongs to the app project.

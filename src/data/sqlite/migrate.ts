@@ -42,19 +42,19 @@ export async function migrate(driver: SqlDriver): Promise<number> {
 
   if (current === SCHEMA_VERSION) return current
 
-  await driver.transaction((tx) => {
+  await driver.transaction(async (tx) => {
     for (let step = current; step < SCHEMA_VERSION; step += 1) {
       const statement = MIGRATIONS[step]
       if (statement === undefined) {
         throw new SqlError(`Migration ${step} is missing. The schema cannot be trusted.`)
       }
-      // One `exec`-shaped call per migration: each string holds several
-      // statements, and SQLite runs them in order within this transaction.
-      for (const single of splitStatements(statement)) tx.run(single)
+      // One statement at a time: each migration string holds several, and
+      // SQLite runs them in order within this transaction.
+      for (const single of splitStatements(statement)) await tx.run(single)
     }
     // A literal, because PRAGMA does not take a bound parameter. The value is
     // a module constant, never user input.
-    tx.run(`pragma user_version = ${SCHEMA_VERSION}`)
+    await tx.run(`pragma user_version = ${SCHEMA_VERSION}`)
   })
 
   return SCHEMA_VERSION

@@ -114,12 +114,12 @@ export function createSqliteRepositories(
         {
           entity: 'company',
           kind: 'update',
-          write: (tx) => {
-            const current = companyBack(tx, companyId)
+          write: async (tx) => {
+            const current = await companyBack(tx, companyId)
             if (current === null) throw new RepositoryError(`No company ${companyId}.`)
             const updated: Company = { ...current, ...patch, id: current.id }
             const { sql, params } = upsert('companies', companyColumns(updated))
-            tx.run(sql, params)
+            await tx.run(sql, params)
             return updated
           },
           recordId: (record) => record.id,
@@ -167,10 +167,10 @@ export function createSqliteRepositories(
         {
           entity: 'customer',
           kind: 'create',
-          write: (tx) => {
+          write: async (tx) => {
             const created = { ...customer, id: deps.newId('cus') }
             const { sql, params } = upsert('customers', customerColumns(created))
-            tx.run(sql, params)
+            await tx.run(sql, params)
             return created
           },
           recordId: (record) => record.id,
@@ -184,12 +184,12 @@ export function createSqliteRepositories(
         {
           entity: 'customer',
           kind: 'update',
-          write: (tx) => {
-            const current = customerBack(tx, id)
+          write: async (tx) => {
+            const current = await customerBack(tx, id)
             if (current === null) throw new RepositoryError(`No customer ${id}.`)
             const updated = { ...current, ...patch, id: current.id }
             const { sql, params } = upsert('customers', customerColumns(updated))
-            tx.run(sql, params)
+            await tx.run(sql, params)
             return updated
           },
           recordId: (record) => record.id,
@@ -209,12 +209,15 @@ export function createSqliteRepositories(
    * §K's rule — balances are computed, never stored — means that wrong number
    * would propagate everywhere rather than sit in one stale column.
    */
-  const paymentBack = (tx: SqlTransaction, id: string) => {
-    const row = tx.get('select * from payments where id = ?', [id])
+  const paymentBack = async (tx: SqlTransaction, id: string) => {
+    const row = await tx.get('select * from payments where id = ?', [id])
     if (row === null) return null
-    const allocations = tx
-      .all('select * from payment_allocations where payment_id = ? order by position asc', [id])
-      .map(toAllocation)
+    const allocations = (
+      await tx.all(
+        'select * from payment_allocations where payment_id = ? order by position asc',
+        [id],
+      )
+    ).map(toAllocation)
     return toPayment(row, allocations)
   }
 
@@ -262,7 +265,7 @@ export function createSqliteRepositories(
         {
           entity: 'payment',
           kind: 'create',
-          write: (tx) => {
+          write: async (tx) => {
             const id = deps.newId('pay')
             // The allocations arrive built against the caller's local handle;
             // the real id is minted here, so they are re-stamped here too.
@@ -278,11 +281,11 @@ export function createSqliteRepositories(
               })),
             }
             const row = upsert('payments', paymentColumns(created))
-            tx.run(row.sql, row.params)
-            created.allocations.forEach((allocation, position) => {
+            await tx.run(row.sql, row.params)
+            for (const [position, allocation] of created.allocations.entries()) {
               const child = upsert('payment_allocations', allocationColumns(allocation, position))
-              tx.run(child.sql, child.params)
-            })
+              await tx.run(child.sql, child.params)
+            }
             return created
           },
           recordId: (record) => record.id,
@@ -296,19 +299,19 @@ export function createSqliteRepositories(
         {
           entity: 'payment',
           kind: 'create',
-          write: (tx) => {
-            const original = paymentBack(tx, paymentId)
+          write: async (tx) => {
+            const original = await paymentBack(tx, paymentId)
             if (original === null) throw new RepositoryError(`No payment ${paymentId}.`)
             // An amendment is reversal + replacement, never an edit (§E). The
             // domain builds the reversal so the pair nets to zero by the same
             // rule the money tests check.
             const reversal = reversalOf(original, deps.newId('pay'), deps.now())
             const row = upsert('payments', paymentColumns(reversal))
-            tx.run(row.sql, row.params)
-            reversal.allocations.forEach((allocation, position) => {
+            await tx.run(row.sql, row.params)
+            for (const [position, allocation] of reversal.allocations.entries()) {
               const child = upsert('payment_allocations', allocationColumns(allocation, position))
-              tx.run(child.sql, child.params)
-            })
+              await tx.run(child.sql, child.params)
+            }
             return reversal
           },
           recordId: (record) => record.id,
@@ -344,11 +347,11 @@ export function createSqliteRepositories(
         {
           entity: 'item',
           kind: 'update',
-          write: (tx) => {
+          write: async (tx) => {
             // The catalogue builds itself from what gets typed (§L2): the same
             // name typed again is the same item, used once more — never a
             // second row the owner has to tidy up.
-            const existing = tx.get(
+            const existing = await tx.get(
               'select * from items where company_id = ? and lower(name) = ? limit 1',
               [item.companyId, item.name.toLocaleLowerCase()],
             )
@@ -357,7 +360,7 @@ export function createSqliteRepositories(
                 ? { ...item, id: deps.newId('itm'), timesUsed: 1 }
                 : { ...toItem(existing), ...item, id: String(existing['id']), timesUsed: Number(existing['times_used']) + 1 }
             const { sql, params } = upsert('items', itemColumns(saved))
-            tx.run(sql, params)
+            await tx.run(sql, params)
             return saved
           },
           recordId: (record) => record.id,
@@ -385,10 +388,10 @@ export function createSqliteRepositories(
         {
           entity: 'expense',
           kind: 'create',
-          write: (tx) => {
+          write: async (tx) => {
             const created = { ...expense, id: deps.newId('exp') }
             const { sql, params } = upsert('expenses', expenseColumns(created))
-            tx.run(sql, params)
+            await tx.run(sql, params)
             return created
           },
           recordId: (record) => record.id,
@@ -425,10 +428,10 @@ export function createSqliteRepositories(
         {
           entity: 'share_event',
           kind: 'create',
-          write: (tx) => {
+          write: async (tx) => {
             const created = { ...event, id: deps.newId('shr') }
             const { sql, params } = upsert('share_events', shareEventColumns(created))
-            tx.run(sql, params)
+            await tx.run(sql, params)
             return created
           },
           recordId: (record) => record.id,
@@ -465,10 +468,10 @@ export function createSqliteRepositories(
         {
           entity: 'credit_note',
           kind: 'create',
-          write: (tx) => {
+          write: async (tx) => {
             const created = { ...note, id: deps.newId('crn') }
             const { sql, params } = upsert('credit_notes', creditNoteColumns(created))
-            tx.run(sql, params)
+            await tx.run(sql, params)
             return created
           },
           recordId: (record) => record.id,
@@ -502,10 +505,10 @@ export function createSqliteRepositories(
         {
           entity: 'asset',
           kind: 'create',
-          write: (tx) => {
+          write: async (tx) => {
             const created = { ...asset, id: deps.newId('ast') }
             const { sql, params } = upsert('assets', assetColumns(created))
-            tx.run(sql, params)
+            await tx.run(sql, params)
             return created
           },
           recordId: (record) => record.id,
@@ -534,20 +537,20 @@ export function createSqliteRepositories(
         {
           entity: 'document',
           kind: 'update',
-          write: (tx) => {
+          write: async (tx) => {
             const created = { ...token }
             const { sql, params } = upsert(
               'link_tokens',
               linkTokenColumns(created),
               'document_id',
             )
-            tx.run(sql, params)
+            await tx.run(sql, params)
             return created
           },
           recordId: (record) => record.documentId,
         },
-        (tx, documentId) => {
-          const row = tx.get('select * from link_tokens where document_id = ?', [documentId])
+        async (tx, documentId) => {
+          const row = await tx.get('select * from link_tokens where document_id = ?', [documentId])
           return row === null ? null : toLinkToken(row)
         },
       )
@@ -580,8 +583,8 @@ export function createSqliteRepositories(
         now: new Date(),
       })
       if (outcome.ok) {
-        await driver.transaction((tx) => {
-          tx.run(
+        await driver.transaction(async (tx) => {
+          await tx.run(
             'insert into account_deletion (company_id, request) values (?, ?) ' +
               'on conflict(company_id) do update set request = excluded.request',
             [input.companyId, JSON.stringify(outcome.value)],
@@ -593,8 +596,8 @@ export function createSqliteRepositories(
     async cancel(companyId, role) {
       const outcome = cancelDeletion(await account.lifecycle(companyId), role)
       if (outcome.ok) {
-        await driver.transaction((tx) => {
-          tx.run('delete from account_deletion where company_id = ?', [companyId])
+        await driver.transaction(async (tx) => {
+          await tx.run('delete from account_deletion where company_id = ?', [companyId])
         })
       }
       return outcome

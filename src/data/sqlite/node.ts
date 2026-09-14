@@ -12,7 +12,7 @@
  * `capacitor.ts`. Keeping the two drivers apart is what stops a green CI run
  * being mistaken for that evidence.
  *
- * Never bundled: `src/data/sqlite/index.ts` chooses the Capacitor driver on a
+ * Never bundled: `src/data/sqlite/open.ts` chooses the Capacitor driver on a
  * device, and `node:sqlite` is imported only from here, only under Node.
  */
 
@@ -24,6 +24,7 @@ import {
   type SqlTransaction,
   type SqlValue,
   SqlError,
+  createSerialiser,
 } from './driver'
 import { PRAGMAS } from './schema'
 
@@ -35,6 +36,7 @@ const asRows = (rows: unknown[]): SqlRow[] => rows as SqlRow[]
 
 export function createNodeDriver(filename = ':memory:'): SqlDriver {
   let db: DatabaseSync | null = new DatabaseSync(filename)
+  const serialise = createSerialiser()
 
   const open = (): DatabaseSync => {
     if (db === null) throw new SqlError('The database is closed.')
@@ -61,39 +63,44 @@ export function createNodeDriver(filename = ':memory:'): SqlDriver {
   }
 
   const tx: SqlTransaction = {
-    run: (sql, params = []) =>
+    run: async (sql, params = []) =>
       wrap(() => {
-        open().prepare(sql).run(...(params as SqlValue[]))
+        open()
+          .prepare(sql)
+          .run(...(params as SqlValue[]))
       }),
-    all: (sql, params = []) => wrap(() => asRows(open().prepare(sql).all(...(params as SqlValue[])))),
-    get: (sql, params = []) =>
+    all: async (sql, params = []) =>
+      wrap(() => asRows(open().prepare(sql).all(...(params as SqlValue[])))),
+    get: async (sql, params = []) =>
       wrap(() => (open().prepare(sql).get(...(params as SqlValue[])) as SqlRow | undefined) ?? null),
   }
 
   return {
     execute: async (sql) => wrap(() => open().exec(sql)),
-    all: async (sql, params = []) => tx.all(sql, params),
-    get: async (sql, params = []) => tx.get(sql, params),
+    all: (sql, params = []) => tx.all(sql, params),
+    get: (sql, params = []) => tx.get(sql, params),
 
-    async transaction<T>(body: (handle: SqlTransaction) => T): Promise<T> {
-      // IMMEDIATE, not DEFERRED: the write lock is taken at BEGIN rather than
-      // at the first write, so two concurrent transactions fail fast instead
-      // of one discovering SQLITE_BUSY halfway through and rolling back work
-      // it had already reported as saved.
-      wrap(() => open().exec('begin immediate'))
-      try {
-        const result = body(tx)
-        wrap(() => open().exec('commit'))
-        return result
-      } catch (cause) {
+    transaction<T>(body: (handle: SqlTransaction) => Promise<T>): Promise<T> {
+      return serialise(async () => {
+        // IMMEDIATE, not DEFERRED: the write lock is taken at BEGIN rather
+        // than at the first write, so two transactions fail fast instead of
+        // one discovering SQLITE_BUSY halfway through and rolling back work it
+        // had already reported as saved.
+        wrap(() => open().exec('begin immediate'))
         try {
-          open().exec('rollback')
-        } catch {
-          // Already rolled back by the engine (a constraint abort does this).
-          // The original failure is what the caller needs, not this one.
+          const result = await body(tx)
+          wrap(() => open().exec('commit'))
+          return result
+        } catch (cause) {
+          try {
+            open().exec('rollback')
+          } catch {
+            // Already rolled back by the engine (a constraint abort does
+            // this). The original failure is what the caller needs.
+          }
+          throw cause
         }
-        throw cause
-      }
+      })
     },
 
     async close() {

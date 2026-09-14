@@ -10,7 +10,7 @@
 
 import { describe, expect, it } from 'vitest'
 
-import { SqlError } from './driver'
+import { SqlError, type SqlTransaction } from './driver'
 import { migrate } from './migrate'
 import { createNodeDriver } from './node'
 import { SCHEMA_VERSION } from './schema'
@@ -21,10 +21,10 @@ const fresh = async () => {
   return driver
 }
 
-const insertDocument = (
-  tx: { run: (sql: string, params?: readonly (string | number | null)[]) => void },
+const insertDocument = async (
+  tx: SqlTransaction,
   overrides: Record<string, string | number | null> = {},
-) => {
+): Promise<void> => {
   const row: Record<string, string | number | null> = {
     id: 'doc_1',
     company_id: 'co_acme',
@@ -39,7 +39,7 @@ const insertDocument = (
     ...overrides,
   }
   const columns = Object.keys(row)
-  tx.run(
+  await tx.run(
     `insert into documents (${columns.join(', ')}) values (${columns.map(() => '?').join(', ')})`,
     columns.map((column) => row[column] as string | number | null),
   )
@@ -85,8 +85,8 @@ describe('The schema enforces Rule #5 beneath the repositories', () => {
     await driver.transaction((tx) => insertDocument(tx, { issued_reference: 'INV-0001' }))
 
     await expect(
-      driver.transaction((tx) =>
-        tx.run('update documents set issued_reference = ? where id = ?', ['INV-0002', 'doc_1']),
+      driver.transaction(async (tx) =>
+        await tx.run('update documents set issued_reference = ? where id = ?', ['INV-0002', 'doc_1']),
       ),
     ).rejects.toThrow(/frozen at issue/)
 
@@ -100,8 +100,8 @@ describe('The schema enforces Rule #5 beneath the repositories', () => {
     await driver.transaction((tx) => insertDocument(tx, { frozen_labels: '{"typeName":"Invoice"}' }))
 
     await expect(
-      driver.transaction((tx) =>
-        tx.run('update documents set frozen_labels = ? where id = ?', ['{"typeName":"Waybill"}', 'doc_1']),
+      driver.transaction(async (tx) =>
+        await tx.run('update documents set frozen_labels = ? where id = ?', ['{"typeName":"Waybill"}', 'doc_1']),
       ),
     ).rejects.toThrow(/fixed at issue/)
     await driver.close()
@@ -110,8 +110,8 @@ describe('The schema enforces Rule #5 beneath the repositories', () => {
   it('allows the FIRST write of a reference — freezing is not forbidding', async () => {
     const driver = await fresh()
     await driver.transaction((tx) => insertDocument(tx))
-    await driver.transaction((tx) =>
-      tx.run('update documents set issued_reference = ? where id = ?', ['INV-0001', 'doc_1']),
+    await driver.transaction(async (tx) =>
+      await tx.run('update documents set issued_reference = ? where id = ?', ['INV-0001', 'doc_1']),
     )
     const after = await driver.get('select issued_reference from documents where id = ?', ['doc_1'])
     expect(after?.['issued_reference']).toBe('INV-0001')
@@ -120,7 +120,7 @@ describe('The schema enforces Rule #5 beneath the repositories', () => {
 
   it('seals delivery evidence once signed', async () => {
     const driver = await fresh()
-    await driver.transaction((tx) =>
+    await driver.transaction(async (tx) =>
       insertDocument(tx, {
         type: 'delivery',
         signer_name: 'Bisi Adeyemi',
@@ -129,8 +129,8 @@ describe('The schema enforces Rule #5 beneath the repositories', () => {
     )
 
     await expect(
-      driver.transaction((tx) =>
-        tx.run('update documents set signer_name = ? where id = ?', ['Someone Else', 'doc_1']),
+      driver.transaction(async (tx) =>
+        await tx.run('update documents set signer_name = ? where id = ?', ['Someone Else', 'doc_1']),
       ),
     ).rejects.toThrow(/sealed once signed/)
     await driver.close()
@@ -152,10 +152,10 @@ describe('A transaction is all or nothing', () => {
     const driver = await fresh()
 
     await expect(
-      driver.transaction((tx) => {
-        insertDocument(tx)
+      driver.transaction(async (tx) => {
+        await insertDocument(tx)
         // A NOT NULL column left out: the enqueue half fails.
-        tx.run('insert into outbox (id) values (?)', ['op_1'])
+        await tx.run('insert into outbox (id) values (?)', ['op_1'])
       }),
     ).rejects.toThrow()
 
@@ -168,8 +168,8 @@ describe('A transaction is all or nothing', () => {
   it('refuses a second operation carrying a key already queued', async () => {
     const driver = await fresh()
     const enqueue = (id: string, key: string) =>
-      driver.transaction((tx) =>
-        tx.run(
+      driver.transaction(async (tx) =>
+        await tx.run(
           `insert into outbox (id, entity, record_id, kind, payload, idempotency_key,
              base_version, actor_id, device_id, created_at, sequence)
            values (?, 'document', 'doc_1', 'create', '{}', ?, 0, 'user', 'dev', '2026-09-14T00:00:00Z', 1)`,

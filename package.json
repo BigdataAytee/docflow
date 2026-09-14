@@ -9,6 +9,8 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc -b --noEmit && vite build",
+    "build:gate": "VITE_DEVICE_GATE=1 vite build",
+    "gate:device": "npm run build:gate && npx cap sync android && node --experimental-strip-types tools/device/gate.ts",
     "preview": "vite preview",
     "typecheck": "tsc -b --noEmit",
     "lint": "eslint .",
