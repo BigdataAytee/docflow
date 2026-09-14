@@ -1,0 +1,18 @@
+RootWebArea: DocFlow — store screenshots
+StaticText: Demo
+StaticText: ·
+StaticText: This is a demo with sample records on this device only. Nothing is saved to an account, and it is cleared when you close the tab.
+main
+region: Data & sync
+StaticText: Upload state
+StaticText: Uploaded
+button: Export all my data
+StaticText: Your documents and export are never locked, on any plan.
+StaticText: See what happens when two phones edit at once
+StaticText: A worked example. Nothing on this phone changes.
+button: Show me
+navigation: Sections
+link: Home
+link: Customers
+link: Business
+link: Settings

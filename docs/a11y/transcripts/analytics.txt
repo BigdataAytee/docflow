@@ -1,0 +1,34 @@
+RootWebArea: DocFlow — store screenshots
+StaticText: Demo
+StaticText: ·
+StaticText: This is a demo with sample records on this device only. Nothing is saved to an account, and it is cleared when you close the tab.
+main
+StaticText: THIS MONTH
+heading: Your business
+heading: How late the money is
+term: Not due yet
+StaticText: ₦323,500.00
+term: 1-30 days late
+StaticText: ₦0.00
+term: 31-60 days late
+StaticText: ₦0.00
+term: Over 60 days late
+StaticText: ₦0.00
+StaticText: Nothing is late.
+heading: Expenses
+button: Add an expense
+StaticText: +
+StaticText: Add what you spend and "Kept" starts telling you the truth.
+region: Ask anything about your business
+heading: Ask anything about your business
+button: Who owes me the most?
+button: What sells best?
+button: What did I keep this month?
+button: How late is my money?
+textbox: Your question
+button: Next
+navigation: Sections
+link: Home
+link: Customers
+link: Business
+link: Settings

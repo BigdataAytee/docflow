@@ -1,0 +1,23 @@
+RootWebArea: DocFlow — store screenshots
+StaticText: Demo
+StaticText: ·
+StaticText: This is a demo with sample records on this device only. Nothing is saved to an account, and it is cleared when you close the tab.
+main
+StaticText: DOCUMENTS
+heading: Quotation
+StaticText: 3 Quotations
+button: + New Quotation
+StaticText: Search Quotations…
+searchbox: Search Quotations…
+button: QUO-001 Okoro & Sons ₦185,000.00
+StaticText: Sent
+button: QUO-002 Adeyemi Hardware ₦42,500.00
+StaticText: Sent
+button: QUO-003 Chukwu Building Supplies ₦96,000.00
+StaticText: Sent
+button: + New Quotation
+navigation: Sections
+link: Home
+link: Customers
+link: Business
+link: Settings

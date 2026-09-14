@@ -1,0 +1,23 @@
+RootWebArea: DocFlow — store screenshots
+StaticText: Demo
+StaticText: ·
+StaticText: This is a demo with sample records on this device only. Nothing is saved to an account, and it is cleared when you close the tab.
+main
+StaticText: DOCUMENTS
+heading: Invoice
+StaticText: 3 Invoices
+button: + New Invoice
+StaticText: Search Invoices…
+searchbox: Search Invoices…
+button: INV-001 Okoro & Sons ₦185,000.00
+StaticText: Not paid
+button: INV-002 Adeyemi Hardware ₦42,500.00
+StaticText: Not paid
+button: INV-003 Chukwu Building Supplies ₦96,000.00
+StaticText: Not paid
+button: + New Invoice
+navigation: Sections
+link: Home
+link: Customers
+link: Business
+link: Settings

@@ -1,0 +1,44 @@
+RootWebArea: DocFlow — store screenshots
+StaticText: Demo
+StaticText: ·
+StaticText: This is a demo with sample records on this device only. Nothing is saved to an account, and it is cleared when you close the tab.
+main
+heading: Region & language
+StaticText: Business country
+combobox: Business country
+option: NG
+option: GH
+option: GB
+option: IE
+option: ZA
+option: IN
+option: US
+option: CA
+option: FR
+option: CI
+option: ES
+option: MX
+option: AE
+option: EG
+StaticText: Sets what your documents are called, your currency, your bank fields and your tax wording.
+term: Currency
+StaticText: NGN
+term: Tax is called
+StaticText: VAT
+term: Bank details
+StaticText: Bank · Account number · Account name
+heading: CALL THIS DOCUMENT
+StaticText: Invoice
+textbox: Invoice
+StaticText: Quotation
+textbox: Quotation
+StaticText: Receipt
+textbox: Receipt
+StaticText: Waybill
+textbox: Waybill
+StaticText: Changes apply everywhere straight away, with or without internet.
+navigation: Sections
+link: Home
+link: Customers
+link: Business
+link: Settings

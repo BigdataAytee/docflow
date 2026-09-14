@@ -1,0 +1,18 @@
+RootWebArea: DocFlow — store screenshots
+StaticText: Demo
+StaticText: ·
+StaticText: This is a demo with sample records on this device only. Nothing is saved to an account, and it is cleared when you close the tab.
+main
+heading: Tax
+StaticText: VAT rate
+textbox: VAT rate
+StaticText: 0
+StaticText: Withholding tax rate
+textbox: Withholding tax rate
+StaticText: 0
+StaticText: On ₦10,000.00 you would charge ₦0.00 and withhold ₦0.00, leaving ₦10,000.00.
+navigation: Sections
+link: Home
+link: Customers
+link: Business
+link: Settings

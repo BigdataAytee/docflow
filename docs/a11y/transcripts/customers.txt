@@ -1,0 +1,20 @@
+RootWebArea: DocFlow — store screenshots
+StaticText: Demo
+StaticText: ·
+StaticText: This is a demo with sample records on this device only. Nothing is saved to an account, and it is cleared when you close the tab.
+main
+StaticText: Search customers…
+searchbox: Search customers…
+button: Add a customer
+StaticText: +
+button: Okoro & Sons Ifo, Ogun State
+StaticText: Owes ₦185,000.00
+button: Adeyemi Hardware Ikeja, Lagos
+StaticText: Owes ₦42,500.00
+button: Chukwu Building Supplies Abeokuta
+StaticText: Owes ₦96,000.00
+navigation: Sections
+link: Home
+link: Customers
+link: Business
+link: Settings
