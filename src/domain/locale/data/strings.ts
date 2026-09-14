@@ -601,6 +601,8 @@ export interface UiStrings {
     readonly logoOffHint: string
     readonly newTag: string
     readonly chooseDesign: string
+    /** The row of brand-colour swatches above the strip (§H). */
+    readonly brandColour: string
   }
   readonly totals: {
     /** The card's own title on a priced document. */
@@ -1292,6 +1294,7 @@ const EN: UiStrings = {
     logoOffHint: 'Logo hidden — only your business name prints',
     newTag: 'NEW',
     chooseDesign: 'Choose a design',
+    brandColour: 'Brand colour',
   },
   totals: {
     title: 'Totals',

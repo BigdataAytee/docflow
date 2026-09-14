@@ -104,6 +104,9 @@ export function StepBody(props: StepBodyProps) {
     case 3:
       return (
         <DesignStep
+          // The pill and the chosen card take the DOCUMENT's colour, so the
+          // design strip belongs to the thing being built (§F).
+          type={props.draft.type}
           selected={props.templateId}
           showLogo={props.showLogo}
           brandColours={BRAND_COLOURS}

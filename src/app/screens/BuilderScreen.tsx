@@ -38,6 +38,7 @@ import {
   validateForIssue,
 } from '../../features/documents/builder'
 import { BuilderShell } from '../../features/documents/BuilderShell'
+import { LivePreview } from '../../features/documents/LivePreview'
 import { IssueError, issueDocument } from '../../features/documents/issue'
 import { revisionNumberOf } from '../../features/documents/revision'
 import { NewReceiptSheet } from '../../features/payments/NewReceiptSheet'
@@ -587,7 +588,17 @@ export function BuilderScreen({ now = () => new Date().toISOString() }: { now?: 
               : { lastPrice: { currency: state.draft.currency, minor: item.unitPriceMinor } }),
           })
         }}
-        preview={null}
+        // §H's live preview. It was `null` since this screen was written,
+        // so sixteen designs were chosen blind and the first sight of the
+        // choice came a step later, on Review.
+        preview={
+          <LivePreview
+            document={composable}
+            templateId={templateId}
+            composeOptions={composeOptions}
+            brandColour={brandColour}
+          />
+        }
       />
       {signing && (
         <div className="mt-3">
