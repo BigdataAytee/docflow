@@ -34,7 +34,8 @@
   "include": [
     "src",
     "supabase/functions/public-link/rules.ts",
-    "supabase/functions/payment-webhook/rules.ts"
+    "supabase/functions/payment-webhook/rules.ts",
+    "supabase/functions/store-notifications/rules.ts"
   ],
   "exclude": ["legacy"]
 }
