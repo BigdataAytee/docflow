@@ -86,6 +86,7 @@ export function settingsDestinations(strings: UiStrings): Destination[] {
     items: strings.settings.savedItems,
     signature: strings.settings.defaultSignature,
     appearance: strings.settings.theme,
+    pro: strings.pro.settingsRow,
     data: strings.dataSync.title,
     delete: strings.deleteAccount.rowLabel,
   }

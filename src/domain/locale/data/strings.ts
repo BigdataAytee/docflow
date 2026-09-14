@@ -102,6 +102,31 @@ export interface UiStrings {
     readonly whatGoes: string
     readonly whatStays: string
   }
+  /**
+   * DocFlow Pro, said quietly (§U).
+   *
+   * §U asks for "no modal ambushes, no fake urgency" — so there is no "only
+   * today", no "don't miss out", and the dismiss is a plain word rather than
+   * a guilt trip ("No thanks", never "I don't want to grow my business").
+   */
+  readonly pro: {
+    readonly name: string
+    /** The plan somebody is on when they are not on Pro. §U's "honest core". */
+    readonly free: string
+    readonly settingsRow: string
+    readonly partOfPro: string
+    readonly perMonth: string
+    readonly perYear: string
+    readonly freeTrial: string
+    readonly notNow: string
+    readonly seePlan: string
+    readonly managePlan: string
+    readonly restore: string
+    readonly badge: string
+    readonly freeForever: string
+    readonly graceNotice: string
+    readonly lapsedNotice: string
+  }
   readonly palette: {
     readonly title: string
     readonly placeholder: string
@@ -751,6 +776,24 @@ const EN: UiStrings = {
     keep: 'Keep it',
     whatGoes: 'Deleted: every document, customer, payment, photo and signature, and the sign-in itself.',
     whatStays: 'Kept: the date it was deleted, and nothing else about it.',
+  },
+  pro: {
+    name: 'DocFlow Pro',
+    free: 'Free',
+    settingsRow: 'DocFlow Pro',
+    partOfPro: '{feature} is part of Pro',
+    perMonth: '{price} a month',
+    perYear: '{price} a year',
+    freeTrial: '{days} days free first',
+    notNow: 'Not now',
+    seePlan: 'See the plan',
+    managePlan: 'Manage plan',
+    restore: 'Restore purchases',
+    badge: 'Pro',
+    // Rule #6, said where somebody can read it rather than only in a spec.
+    freeForever: 'Your documents stay yours either way — viewing, sharing and export are always free.',
+    graceNotice: 'We could not check your plan. Pro keeps working until {date}.',
+    lapsedNotice: 'Pro has ended. Nothing is locked, and everything comes back when it renews.',
   },
   palette: {
     title: 'Go anywhere',

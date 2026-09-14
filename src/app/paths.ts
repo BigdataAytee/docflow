@@ -32,6 +32,7 @@ export const SETTINGS_PANELS = [
   'items',
   'signature',
   'appearance',
+  'pro',
   'data',
   'delete',
 ] as const
