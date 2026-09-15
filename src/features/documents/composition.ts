@@ -94,6 +94,7 @@ export function draftOf(record: DocumentRecord): DocumentDraft {
     ...(record.driverName === undefined ? {} : { driverName: record.driverName }),
     ...(record.vehicleNumber === undefined ? {} : { vehicleNumber: record.vehicleNumber }),
     ...(record.dispatchDate === undefined ? {} : { dispatchDate: record.dispatchDate }),
+    ...(record.expectedDate === undefined ? {} : { expectedDate: record.expectedDate }),
   }
 }
 

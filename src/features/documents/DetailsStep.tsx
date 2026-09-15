@@ -109,18 +109,46 @@ function DateField({
   )
 }
 
+type DateKey = 'issueDate' | 'dueDate' | 'validUntil' | 'dispatchDate' | 'expectedDate'
+
+/**
+ * The FIRST date field, which is not the same question on every type.
+ *
+ * A money document asks when it was raised. A DELIVERY asks when the goods
+ * go out — §E's `dispatch_date`, and the reference's own branch:
+ * `cur==='way' ? dfield(0,'Dispatch') : dfield(0,'Issue date')`.
+ *
+ * A delivery's `issueDate` still exists; it is set at creation and never
+ * shown, because a customer's history sorts on it and a record without one
+ * sinks to the bottom of that list whatever the date really was.
+ */
+function firstDateFor(
+  type: DocumentType,
+  strings: ReturnType<typeof useCompany>['strings'],
+): { key: DateKey; label: string } {
+  switch (type) {
+    case 'waybill':
+      return { key: 'dispatchDate', label: strings.details.dispatch }
+    case 'receipt':
+      return { key: 'issueDate', label: strings.details.datePaid }
+    default:
+      return { key: 'issueDate', label: strings.details.issueDate }
+  }
+}
+
 /** The second date field, which differs per type — and is absent on a receipt. */
 function secondDateFor(
   type: DocumentType,
   strings: ReturnType<typeof useCompany>['strings'],
-): { key: 'dueDate' | 'validUntil' | 'dispatchDate'; label: string } | null {
+): { key: DateKey; label: string } | null {
   switch (type) {
     case 'invoice':
       return { key: 'dueDate', label: strings.details.dueDate }
     case 'quotation':
       return { key: 'validUntil', label: strings.details.validUntil }
     case 'waybill':
-      return { key: 'dispatchDate', label: strings.details.dispatchDate }
+      // When it should ARRIVE. Dispatch is the first slot now (§E).
+      return { key: 'expectedDate', label: strings.details.expected }
     case 'receipt':
       // §G: "receipts show date paid … no due date".
       return null
@@ -144,6 +172,7 @@ export function DetailsStep({
   const { profile, strings } = useCompany()
   const { accent, tint } = TYPE_PALETTE[draft.type]
   const [openCalendar, setOpenCalendar] = useState<DateSlot | null>(null)
+  const first = firstDateFor(draft.type, strings)
   const second = secondDateFor(draft.type, strings)
   const showsMoney = carriesMoney(draft.type)
 
@@ -177,9 +206,9 @@ export function DetailsStep({
         </div>
         <div className="flex gap-2.5">
           <DateField
-            label={draft.type === 'receipt' ? strings.details.datePaid : strings.details.issueDate}
+            label={first.label}
             emptyLabel={strings.details.chooseDate}
-            value={draft.issueDate}
+            value={draft[first.key]}
             locale={profile.locale}
             accent={accent}
             open={openCalendar === 'first'}
@@ -207,14 +236,17 @@ export function DetailsStep({
           <InlineCalendar
             type={draft.type}
             slot={openCalendar}
-            value={(openCalendar === 'first' ? draft.issueDate : draft[second?.key ?? 'issueDate']) ?? ''}
-            firstDate={draft.issueDate ?? ''}
+            value={(openCalendar === 'first' ? draft[first.key] : draft[second?.key ?? first.key]) ?? ''}
+            // What the second slot's chips count FROM — a due date is "7 days
+            // after the date above", and on a delivery an expected arrival is
+            // counted from the dispatch. Whatever the first slot holds.
+            firstDate={draft[first.key] ?? ''}
             today={today}
             accent={accent}
             onPick={(picked) => {
               onChange(
                 openCalendar === 'first' || second === null
-                  ? { issueDate: picked }
+                  ? { [first.key]: picked }
                   : { [second.key]: picked },
               )
               setOpenCalendar(null)

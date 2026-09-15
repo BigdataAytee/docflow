@@ -1374,6 +1374,41 @@ describe('The Repeat toggle keeps its answer (§L4)', () => {
   })
 })
 
+describe('A delivery still has a creation date nobody typed (§E, §G)', () => {
+  /**
+   * The consequence of moving slot 0 from `issueDate` to `dispatchDate`.
+   *
+   * A delivery no longer SHOWS an issue date — its two dates are Dispatch and
+   * Expected. But the record still needs one: a customer's history sorts on
+   * `issueDate`, and a document without one sinks to the bottom of that list
+   * however recently it happened. So it is set at creation and never asked
+   * for, which is what "nothing downstream depends on a user having set it"
+   * has to mean in practice.
+   */
+  it('sets it when the draft is created, without asking', async () => {
+    const state = renderAt('/list/waybill')
+    const user = userEvent.setup()
+
+    const [create] = await screen.findAllByRole('button', { name: '+ New waybill' })
+    await user.click(create!)
+    await waitFor(() => expect(state.documents).toHaveLength(1))
+
+    expect(state.documents[0]?.issueDate).toMatch(/^\d{4}-\d{2}-\d{2}$/)
+  })
+
+  /** And it is not something the delivery's own step ever asks about. */
+  it('never shows that date on the delivery itself', async () => {
+    renderAt('/list/waybill')
+    const user = userEvent.setup()
+
+    const [create] = await screen.findAllByRole('button', { name: '+ New waybill' })
+    await user.click(create!)
+
+    expect(await screen.findByRole('button', { name: /^Dispatch:/ })).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /^Date:/ })).not.toBeInTheDocument()
+  })
+})
+
 describe('A saved delivery asserts no payment relationship (§V, §G)', () => {
   /**
    * Why this is not cosmetic.

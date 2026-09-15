@@ -126,6 +126,19 @@ export interface DocumentRecord {
   readonly vehicleNumber?: string
   readonly dispatchDate?: string
   /**
+   * When the goods are expected to ARRIVE (§E `expected_delivery_date`).
+   *
+   * Specified at every layer except the two that face a person: §E lists it
+   * in the waybill field group and `0002_customers_documents.sql` has carried
+   * the column since Phase 1 — but no draft held it and no screen asked, so
+   * the one date a recipient actually cares about could never be set. The
+   * same gap `vehicleNumber` had.
+   *
+   * DISPATCH is when it leaves and EXPECTED is when it should land; the two
+   * are not the same date and a delivery needs both.
+   */
+  readonly expectedDate?: string
+  /**
    * Who took delivery, and when (§E `signer_name`, `signer_role`, `signed_at`).
    * Written once, with the transition to delivered, and sealed after —
    * `isEvidenceSealed` refuses any later edit (§P).

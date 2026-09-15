@@ -48,6 +48,8 @@ export interface DocumentDraft {
    */
   readonly vehicleNumber?: string
   readonly dispatchDate?: string
+  /** §E `expected_delivery_date` — when the goods should arrive. */
+  readonly expectedDate?: string
 }
 
 export interface IssueContext {

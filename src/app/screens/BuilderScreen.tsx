@@ -307,6 +307,7 @@ export function BuilderScreen({ now = () => new Date().toISOString() }: { now?: 
         ...(draft.driverName === undefined ? {} : { driverName: draft.driverName }),
         ...(draft.vehicleNumber === undefined ? {} : { vehicleNumber: draft.vehicleNumber }),
         ...(draft.dispatchDate === undefined ? {} : { dispatchDate: draft.dispatchDate }),
+        ...(draft.expectedDate === undefined ? {} : { expectedDate: draft.expectedDate }),
         // The design travels with the document (§H). Four scalars, so the
         // saved record can draw itself without this screen being open.
         templateId: design.templateId,

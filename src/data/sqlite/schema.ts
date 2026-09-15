@@ -30,7 +30,7 @@
  * it — it saves a b-tree per table on a phone with 3GB of RAM.
  */
 
-export const SCHEMA_VERSION = 4
+export const SCHEMA_VERSION = 5
 
 /**
  * Applied in order, inside one transaction, by `migrate`.
@@ -328,6 +328,16 @@ export const MIGRATIONS: readonly string[] = [
   -- every document somebody made themselves without colliding with itself.
   create unique index if not exists documents_recurrence_key_idx
     on documents (recurrence_key) where recurrence_key is not null;
+  `,
+
+  `
+  -- When the goods should ARRIVE (§E expected_delivery_date).
+  --
+  -- The hosted schema has had this since 0002 and §E lists it in the waybill
+  -- field group; only the on-device store, the draft and the screen were
+  -- missing it, so the date a recipient cares about most could not be set.
+  -- Dispatch is when it leaves; this is when it should land.
+  alter table documents add column expected_date text;
   `,
 ]
 

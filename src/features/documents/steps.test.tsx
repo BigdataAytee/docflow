@@ -59,6 +59,49 @@ const details = (type: DocumentType, methods = 1, over: Partial<DocumentDraft> =
     />,
   )
 
+describe('A delivery is dated by dispatch and arrival (§E, §G)', () => {
+  /**
+   * §E's waybill field group lists `expected_delivery_date`, and
+   * `0002_customers_documents.sql` has carried the column since Phase 1. Only
+   * the draft and the screen were missing it — the same gap `vehicleNumber`
+   * had — so the one date a recipient actually cares about could not be set.
+   *
+   * The reference's own branch is explicit:
+   *   cur==='way' ? dfield(0,'Dispatch') + dfield(1,'Expected')
+   */
+  it('asks for Dispatch first and Expected second', async () => {
+    details('waybill')
+
+    expect(await screen.findByRole('button', { name: /^Dispatch/ })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /^Expected/ })).toBeInTheDocument()
+  })
+
+  /** Neither of a money document's date words appears on a delivery. */
+  it('shows no issue date and no due date on a delivery', () => {
+    details('waybill')
+
+    expect(screen.queryByRole('button', { name: /Due:/ })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /Valid until/ })).not.toBeInTheDocument()
+  })
+
+  /**
+   * And the other direction, with the field SET rather than absent.
+   *
+   * A fixture that omits `expectedDate` would pass whatever the screen did.
+   * This one carries a real value, so the assertion is about the type and not
+   * about an empty draft.
+   */
+  it.each(['invoice', 'quotation', 'receipt'] as const)(
+    'never shows an expected arrival on a %s, even when one is set',
+    (type) => {
+      details(type, 1, { expectedDate: '2026-09-30' })
+
+      expect(screen.queryByRole('button', { name: /^Expected/ })).not.toBeInTheDocument()
+      expect(screen.queryByText('2026-09-30')).not.toBeInTheDocument()
+    },
+  )
+})
+
 describe('Details: the per-type differences §G spells out', () => {
   it('gives an invoice a due date', () => {
     details('invoice')

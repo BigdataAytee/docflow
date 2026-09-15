@@ -44,6 +44,7 @@ import type {
 } from '../data/repositories'
 import { DOCUMENT_TYPES, type DocumentType } from '../domain/documents/types'
 import { type CaughtUp, runCatchUp } from '../features/recurring/run'
+import { todayIso } from '../domain/dates/calendar'
 import { startRepeating } from '../features/recurring/schedule'
 import { type LinkKind, linkFor, mintToken } from '../features/links/token'
 import type { FrozenLabels } from '../domain/documents/types'
@@ -305,6 +306,20 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
               currency,
               lineItems: [],
               totalMinor: 0,
+              /*
+               * The record's own date, set at creation and not by anybody.
+               *
+               * A money document lets the owner change it on step 1; a
+               * DELIVERY does not show it at all — its two dates are Dispatch
+               * and Expected (§E, and the reference's own `dfield` branch).
+               * But it still has to EXIST: a customer's history sorts on it,
+               * and a delivery without one sinks to the bottom of that list
+               * regardless of when it actually happened.
+               *
+               * `todayIso`, never a sliced instant: a calendar day is the
+               * company's own, and slicing dates a document in UTC (§V).
+               */
+              issueDate: todayIso(),
               ...(signatureAssetId === undefined ? {} : { signatureAssetId }),
             },
             key('document.create'),

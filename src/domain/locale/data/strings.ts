@@ -260,6 +260,9 @@ export interface UiStrings {
     readonly validUntil: string
     readonly datePaid: string
     readonly dispatchDate: string
+    /** A delivery's two dates: when it leaves, and when it should land. */
+    readonly dispatch: string
+    readonly expected: string
     readonly expectedDelivery: string
     readonly today: string
     readonly tomorrow: string
@@ -1094,6 +1097,8 @@ const EN: UiStrings = {
     validUntil: 'Valid until',
     datePaid: 'Date paid',
     dispatchDate: 'Dispatch date',
+    dispatch: 'Dispatch',
+    expected: 'Expected',
     expectedDelivery: 'Expected delivery',
     today: 'Today',
     tomorrow: 'Tomorrow',
