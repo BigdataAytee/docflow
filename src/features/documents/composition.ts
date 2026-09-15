@@ -194,6 +194,8 @@ export function composeOptionsOf(input: ComposeOptionsInput): Omit<ComposeOption
     },
     columnLabels: {
       description: strings.items.description,
+      // A delivery's table lists what was handed over, not what was charged.
+      goods: strings.items.goods,
       quantity: strings.items.quantity,
       amount: strings.totals.payable,
       unit: strings.items.unit,

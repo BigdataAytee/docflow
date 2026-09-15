@@ -268,6 +268,65 @@ describe('Items: a delivery document has no price field at all (§G, §V)', () =
   })
 })
 
+describe('Dispatch REPLACES Totals, whatever the rates say (§G, §V)', () => {
+  /**
+   * The existing cases below pass zeros for every rate, so they would pass
+   * unchanged if a calculator appeared under another heading — nothing to
+   * compute means nothing to show.
+   *
+   * This one hands the step a priced, taxable line and live discount, VAT and
+   * withholding percentages: every input the money branch needs. §G says
+   * Dispatch replaces Totals entirely, so all of it must still produce
+   * nothing.
+   */
+  const withEveryRate = () =>
+    wrap(
+      <TotalsStep
+        draft={draftFor('waybill', {
+          lineItems: [
+            {
+              id: 'l1',
+              description: 'Cement 50kg',
+              quantityMilli: quantity(10),
+              unitPriceMinor: 25_000_00,
+              unit: 'cartons',
+              taxable: true,
+            },
+          ],
+        })}
+        discountPercent={7.5}
+        taxPercent={7.5}
+        whtPercent={5}
+        taxLabel="VAT"
+        onChange={() => {}}
+        onRates={() => {}}
+      />,
+    )
+
+  it('shows no calculator under any heading', () => {
+    withEveryRate()
+
+    for (const word of [/subtotal/i, /payable/i, /VAT/, /withholding/i, /discount/i, /total/i]) {
+      expect(screen.queryByText(word)).not.toBeInTheDocument()
+    }
+  })
+
+  it('shows no currency and no amount at all', () => {
+    withEveryRate()
+    expect(screen.queryByText(/₦/)).not.toBeInTheDocument()
+    // The line's own price, had anything decided to print it.
+    expect(screen.queryByText(/25,000/)).not.toBeInTheDocument()
+    expect(screen.queryByText(/250,000/)).not.toBeInTheDocument()
+  })
+
+  /** What it does show instead — absence of money, not of the step. */
+  it('shows the dispatch card and its two fields', () => {
+    withEveryRate()
+    expect(screen.getByLabelText('Driver')).toBeInTheDocument()
+    expect(screen.getByLabelText('Vehicle')).toBeInTheDocument()
+  })
+})
+
 describe('Dispatch: a delivery gets a driver and a vehicle, and no money (§G)', () => {
   it('offers both fields', () => {
     wrap(

@@ -162,8 +162,24 @@ export interface PageModel {
 export interface ComposeOptions {
   readonly profile: LocaleProfile
   readonly branding: CompanyBranding
-  /** Column headings, already in the active language. */
-  readonly columnLabels: Readonly<Record<TableColumn['key'], string>>
+  /**
+   * Column headings, already in the active language.
+   *
+   * `goods` is not a column KEY — a delivery's first column is still
+   * `description` — it is what that column is CALLED when the table lists
+   * things handed over rather than things charged for. §G heads the
+   * delivery's own step GOODS and the reference heads the printed table the
+   * same way; the page had been using "Description" for both.
+   *
+   * OPTIONAL, and falling back to `description`, so that a caller which has
+   * no delivery to draw is not made to supply a word it never prints. The
+   * app's own composition always passes it — `composition.test.ts` asserts
+   * the delivery table is headed GOODS through that path, so the fallback
+   * cannot quietly become what ships.
+   */
+  readonly columnLabels: Readonly<Record<TableColumn['key'], string>> & {
+    readonly goods?: string
+  }
   /** The saved bank details, keyed by §J field kind. */
   readonly bankValues?: Readonly<Record<string, string>>
   /** Other enabled methods, by display name (§I dashed divider). */
@@ -198,7 +214,11 @@ export function composeDocument(
       ]
     : // §I: "deliveries swap amount for unit and drop every money column".
       [
-        { key: 'description', label: options.columnLabels.description, align: 'left' },
+        {
+          key: 'description',
+          label: options.columnLabels.goods ?? options.columnLabels.description,
+          align: 'left',
+        },
         { key: 'quantity', label: options.columnLabels.quantity, align: 'right' },
         { key: 'unit', label: options.columnLabels.unit, align: 'right' },
       ]

@@ -184,6 +184,81 @@ describe('The composed page', () => {
   })
 })
 
+describe('A delivery table is headed GOODS (§G, §I)', () => {
+  const waybillModel = () => {
+    const row = record({
+      type: 'waybill',
+      totalMinor: 0,
+      lineItems: [
+        {
+          id: 'l1',
+          description: 'Cement 50kg',
+          quantityMilli: quantity(10),
+          unit: 'cartons',
+          taxable: false,
+        },
+      ],
+      frozenLabels: freezeLabels(profile, 'waybill'),
+    })
+    const design = designOf(row, company)
+    return composeDocument(
+      composableOf({
+        draft: draftOf(row),
+        design,
+        company,
+        customer,
+        profile,
+        reference: row.issuedReference,
+        status: row.status,
+        frozenLabels: row.frozenLabels,
+        replaces: null,
+        today: '2026-09-15',
+      }),
+      { ...composeOptionsOf({ company, design, strings, assets: [] }), profile },
+    )
+  }
+
+  /**
+   * Through the APP'S OWN composition, not a hand-built options object.
+   *
+   * `columnLabels.goods` falls back to `description` for callers that never
+   * draw a delivery, and a test that supplied its own labels would prove
+   * nothing about what ships. This goes through `composeOptionsOf`, which is
+   * the path every screen and the PDF writer use.
+   */
+  it('heads the first column with the delivery word, not the money one', () => {
+    const columns = waybillModel().columns
+    expect(columns[0]?.label).toBe(strings.items.goods)
+    expect(columns[0]?.label).not.toBe(strings.items.description)
+  })
+
+  it('keeps QTY and UNIT beside it, and no amount column', () => {
+    const keys = waybillModel().columns.map((column) => column.key)
+    expect(keys).toEqual(['description', 'quantity', 'unit'])
+  })
+
+  /** A money document is unaffected — its table still lists descriptions. */
+  it('leaves an invoice headed with the money word', () => {
+    const design = designOf(record(), company)
+    const model = composeDocument(
+      composableOf({
+        draft: draftOf(record()),
+        design,
+        company,
+        customer,
+        profile,
+        reference: 'INV-0042',
+        status: 'issued',
+        frozenLabels: freezeLabels(profile, 'invoice'),
+        replaces: null,
+        today: '2026-09-15',
+      }),
+      { ...composeOptionsOf({ company, design, strings, assets: [] }), profile },
+    )
+    expect(model.columns[0]?.label).toBe(strings.items.description)
+  })
+})
+
 describe('What a document replaces', () => {
   const replaced = record({ id: 'q0', type: 'quotation', issuedReference: 'QUO-0001' })
   const revision = record({ id: 'q1', type: 'quotation', supersedesId: 'q0' })

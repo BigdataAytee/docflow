@@ -275,6 +275,18 @@ describe('Every design is a design (§H)', () => {
       )
       const page = within(view.container.querySelector('article')!)
       // No currency anywhere, under any design.
+      // The two rules a delivery ends with, per design — presence drifts the
+      // same way absence does, and a delivery with no RECEIVED BY line is one
+      // nobody can sign at a gate (§I).
+      expect(
+        page.getByText(waybill.receivedByRule!),
+        `${template.name} lost the received-by rule`,
+      ).toBeInTheDocument()
+      expect(
+        page.getByText(waybill.signature.caption),
+        `${template.name} lost the dispatched-by caption`,
+      ).toBeInTheDocument()
+
       expect(screen.queryByText(/₦/), `${template.name} printed money on a delivery`).toBeNull()
       // And none of the rows a total is built from.
       for (const word of [/subtotal/i, /payable/i, /VAT/, /withholding/i, /discount/i]) {
