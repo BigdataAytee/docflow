@@ -14,6 +14,8 @@ import { emptyState } from './repositories'
 const demo = async () => ({
   companyId: 'co_demo',
   repositories: createMemoryRepositories(emptyState()),
+  // In memory, like a browser tab: closing it clears everything.
+  durable: false,
 })
 
 // A JWT-shaped anon key. `createBrowserClient` refuses a service-role one, and
@@ -28,6 +30,20 @@ describe('Configuration, and only configuration, chooses the backend', () => {
   it('runs the demo when no project is configured', async () => {
     const backend = await createBackend({}, demo)
     expect(backend.kind).toBe('demo')
+  })
+
+  /**
+   * "Demo" means NO ACCOUNT, and says nothing about whether records are kept
+   * — the store decides that. The two were conflated, so an installed app
+   * warned that work was "cleared when you close the tab" while the encrypted
+   * SQLite store underneath it kept everything.
+   */
+  it('carries the store’s own answer about whether records are kept', async () => {
+    const ephemeral = await createBackend({}, demo)
+    expect(ephemeral.kind === 'demo' && ephemeral.durable).toBe(false)
+
+    const kept = await createBackend({}, async () => ({ ...(await demo()), durable: true }))
+    expect(kept.kind === 'demo' && kept.durable).toBe(true)
   })
 
   it('runs on the account when one is', async () => {

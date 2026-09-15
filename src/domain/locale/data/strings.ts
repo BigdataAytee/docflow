@@ -71,7 +71,15 @@ export interface UiStrings {
     readonly createBusiness: string
     readonly creating: string
     readonly demoTitle: string
+    /**
+     * Two answers, because "no account" and "nothing is kept" are different
+     * facts and the banner was stating the second on a build where only the
+     * first was true. §R's requirement is that a local demo is never passed
+     * off as an account — both sentences keep that, and only the one about
+     * where the records go differs.
+     */
     readonly demoBody: string
+    readonly demoBodyKept: string
     /**
      * What a refused sign-in says (§P, §S). The provider's own English —
      * "Email rate limit exceeded", "Invalid login credentials" — used to
@@ -929,6 +937,8 @@ const EN: UiStrings = {
     // §R: "a local demo is never passed off as an account".
     demoBody:
       'This is a demo with sample records on this device only. Nothing is saved to an account, and it is cleared when you close the tab.',
+    demoBodyKept:
+      'Sample records on this phone only. Nothing is saved to an account, so nothing appears on another device.',
     tooManyTries: 'Too many tries. Wait a moment and try again.',
     tooManyTriesIn: 'Too many tries. Try again in {wait}.',
     wrongDetails: 'That email and password do not match.',

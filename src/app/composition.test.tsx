@@ -31,7 +31,12 @@ function demoBackend(): Backend {
     bankFields: {},
     enabledPaymentMethods: [],
   })
-  return { kind: 'demo', companyId: COMPANY, repositories: createMemoryRepositories(state) }
+  return {
+    kind: 'demo',
+    companyId: COMPANY,
+    repositories: createMemoryRepositories(state),
+    durable: false,
+  }
 }
 
 const signedOut: SessionService = {

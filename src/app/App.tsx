@@ -97,7 +97,7 @@ function mounted(backend: Backend) {
   }
   return (
     <>
-      <DemoBanner />
+      <DemoBanner durable={backend.durable} />
       <ProfileGate companyId={backend.companyId} repositories={backend.repositories} isDemo>
         <AppRoutes />
       </ProfileGate>

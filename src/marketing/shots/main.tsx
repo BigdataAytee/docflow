@@ -30,6 +30,9 @@ const loadBackend = async () =>
     kind: 'demo' as const,
     companyId: SHOT_COMPANY_ID,
     repositories: createMemoryRepositories(shotState(region, SHOT_COMPANY_ID)),
+    // A browser tab, and the frames carry the banner that says so — §T notes
+    // them as drafts until the app can be shot signed in to a real project.
+    durable: false,
   })
 
 createRoot(root).render(

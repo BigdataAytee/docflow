@@ -49,6 +49,18 @@ export type Backend =
       readonly kind: 'demo'
       readonly companyId: string
       readonly repositories: Repositories
+      /**
+       * Whether these records survive closing the app.
+       *
+       * "Demo" here means NO ACCOUNT, not "nothing is kept" — and the two had
+       * been conflated. On a phone this branch opens the encrypted SQLite
+       * store and everything persists across restarts; in a browser tab it is
+       * the in-memory store and nothing does. The banner said the browser's
+       * answer on both, so an installed app warned that work would be lost
+       * when it would not, four pixels above Home saying "Saved on this
+       * phone".
+       */
+      readonly durable: boolean
     }
 
 /** True when a Supabase project is configured for this build. */
@@ -61,6 +73,8 @@ export function isConfigured(env: Record<string, string | undefined>): boolean {
 export interface DemoSeed {
   readonly companyId: string
   readonly repositories: Repositories
+  /** See `Backend`'s `durable` — the store decides, not the backend. */
+  readonly durable: boolean
 }
 
 export async function createBackend(
@@ -69,7 +83,12 @@ export async function createBackend(
 ): Promise<Backend> {
   if (!isConfigured(env)) {
     const seeded = await loadDemo()
-    return { kind: 'demo', companyId: seeded.companyId, repositories: seeded.repositories }
+    return {
+      kind: 'demo',
+      companyId: seeded.companyId,
+      repositories: seeded.repositories,
+      durable: seeded.durable,
+    }
   }
 
   // One import, so the client, the repositories and the session land in a

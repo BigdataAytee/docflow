@@ -50,7 +50,9 @@ const loadLocalStore = async () => {
     // After the backend resolves, never before: the splash and the status bar
     // are not on the cold-start path (§Q Phase 4's < 2s budget).
     void settleShell()
-    return { companyId: native.companyId, repositories: native.repositories }
+    // Encrypted SQLite: this survives closing the app, and the banner has to
+    // say so rather than repeating the browser's answer.
+    return { companyId: native.companyId, repositories: native.repositories, durable: true }
   }
 
   const [{ DEV_COMPANY_ID, devState }, { createMemoryRepositories }] = await Promise.all([
@@ -60,6 +62,8 @@ const loadLocalStore = async () => {
   return {
     companyId: DEV_COMPANY_ID,
     repositories: createMemoryRepositories(devState(DEV_COMPANY_ID)),
+    // In memory, in a tab: closing it really does clear everything.
+    durable: false,
   }
 }
 
