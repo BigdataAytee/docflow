@@ -334,6 +334,7 @@ export interface UiStrings {
     readonly businessCountry: string
     readonly countryHint: string
     readonly appLanguage: string
+    readonly oneLanguageOnly: string
     readonly callThisDocument: string
     readonly useRegionalName: string
     readonly currencyIs: string
@@ -370,6 +371,8 @@ export interface UiStrings {
     readonly withholdingRate: string
     readonly workedExample: string
     readonly savedItems: string
+    readonly savedItemsHint: string
+    readonly perUnit: string
     /** The two groups the settings index is divided into. */
     readonly groupBusiness: string
     readonly groupYou: string
@@ -925,6 +928,10 @@ export interface UiStrings {
   readonly dataSync: {
     readonly title: string
     readonly uploadState: string
+    readonly noAccountToSyncTo: string
+    readonly storageTitle: string
+    readonly storageDocuments: string
+    readonly storageImages: string
     readonly exportAll: string
     readonly exportAlwaysFree: string
     /** After a successful export. Names the file, so it can be found again. */
@@ -1222,6 +1229,7 @@ const EN: UiStrings = {
     businessCountry: 'Business country',
     countryHint: 'Sets what your documents are called, your currency, your bank fields and your tax wording.',
     appLanguage: 'App language',
+    oneLanguageOnly: 'More languages appear here as each one is finished. DocFlow never ships a half-translated screen.',
     callThisDocument: 'Call this document',
     useRegionalName: 'Use the usual name',
     currencyIs: 'Currency',
@@ -1257,6 +1265,8 @@ const EN: UiStrings = {
     withholdingRate: 'Withholding tax rate',
     workedExample: 'On {subtotal} you would charge {tax} and withhold {wht}, leaving {payable}.',
     savedItems: 'Saved items',
+    savedItemsHint: 'Built from what you type. Change a price on a document and it applies next time.',
+    perUnit: 'per {unit}',
     groupBusiness: 'Your business',
     groupYou: 'You & your data',
     notSetUpYet: 'Not set up yet',
@@ -1748,6 +1758,10 @@ const EN: UiStrings = {
   dataSync: {
     title: 'Data & sync',
     uploadState: 'Upload state',
+    noAccountToSyncTo: 'There is no account on this device, so nothing is uploaded anywhere.',
+    storageTitle: 'Storage on this phone',
+    storageDocuments: 'Documents',
+    storageImages: 'Photos, logos, signatures',
     exportAll: 'Export all my data',
     exportAlwaysFree: 'Your documents and export are never locked, on any plan.',
     exportDone: 'Exported everything as',
@@ -1814,6 +1828,42 @@ export function stringsFor(language: string): UiStrings {
 }
 
 export const hasStringsFor = (language: string): boolean => language in CATALOGUES
+
+/**
+ * The languages a person may actually choose (§S).
+ *
+ * DERIVED FROM THE CATALOGUES, never a list written beside them. §S says no
+ * non-working language toggle ever ships, and a hand-kept list is exactly how
+ * one does: somebody adds "Français" to the picker, the catalogue is not
+ * there, and `stringsFor` throws on the next render.
+ *
+ * So the picker offers what exists. Today that is English alone; the day a
+ * complete FR catalogue is added to `CATALOGUES`, the row appears with no
+ * screen changed.
+ *
+ * The names are the language's OWN — a person looking for Yorùbá is not
+ * looking for "Yoruba", and someone who cannot read the current language
+ * needs their own name to find their way out.
+ */
+const LANGUAGE_NAMES: Readonly<Record<string, string>> = {
+  en: 'English',
+  fr: 'Français',
+  es: 'Español',
+  ar: 'العربية',
+}
+
+export interface AvailableLanguage {
+  readonly code: string
+  /** In the language itself. */
+  readonly name: string
+}
+
+export function availableLanguages(): AvailableLanguage[] {
+  return Object.keys(CATALOGUES).map((code) => ({
+    code,
+    name: LANGUAGE_NAMES[code] ?? code.toLocaleUpperCase(),
+  }))
+}
 
 /** `format('Owes {amount}', { amount: '₦95,000' })`. Unknown keys stay literal. */
 export function format(template: string, values: Readonly<Record<string, string | number>>): string {

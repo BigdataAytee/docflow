@@ -31,6 +31,7 @@ import { SignatureSettings } from '../../features/settings/SignatureSettings'
 import { TaxSettings } from '../../features/settings/TaxSettings'
 import { AccountSettings } from '../../features/settings/AccountSettings'
 import { DataAndSync } from '../../features/settings/DataAndSync'
+import { dataUrlBytes } from '../../features/settings/storage'
 import { HelpSettings } from '../../features/settings/HelpSettings'
 import { SignOutSheet } from '../../features/auth/SignOutSheet'
 import { useSessionActions } from '../session-context'
@@ -203,6 +204,12 @@ function SettingsPanelBody() {
               localeRegion: settings.region,
               currency: profile.currency,
             })
+          }}
+          onLanguage={(next) => {
+            // §D.4: the language moves on its own. Region drives terminology,
+            // currency and bank fields; this drives the surrounding words,
+            // and App re-reads the catalogue from the company record.
+            void actions.updateCompany({ localeLanguage: next })
           }}
           onOverride={(type, label) => {
             const settings = applyLabelOverride(
@@ -434,12 +441,19 @@ function AppearancePanel() {
  */
 function DataAndSyncPanel() {
   const { companyId, repositories } = useCompany()
+  const { documents, assets } = useAppData()
   const port = useMemo(() => createWebSharePort(), [])
+
+  // §G's "storage used", counted from what the company actually holds. Every
+  // asset is a data URL, so the bytes are in hand rather than estimated.
+  const assetBytes = assets.reduce((total, asset) => total + dataUrlBytes(asset.dataUrl), 0)
 
   return (
     <DataAndSync
       pendingCount={0}
       failedCount={0}
+      documentCount={documents.length}
+      assetBytes={assetBytes}
       onExport={() => runExport(repositories, companyId, port)}
     />
   )

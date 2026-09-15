@@ -524,6 +524,7 @@ export function BuilderScreen({ now = () => new Date().toISOString() }: { now?: 
             ...(item.unitPriceMinor === undefined
               ? {}
               : { lastPrice: { currency: state.draft.currency, minor: item.unitPriceMinor } }),
+            ...(item.unit === undefined ? {} : { unit: item.unit }),
           })
         }}
         // §H's live preview. It was `null` since this screen was written,

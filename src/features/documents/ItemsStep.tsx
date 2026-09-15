@@ -33,7 +33,7 @@ export interface ItemsStepProps {
   readonly draft: DocumentDraft
   readonly onChange: (patch: Partial<DocumentDraft>) => void
   /** Called when a typed item should join the catalogue (§L2). */
-  readonly onRemember?: (item: { name: string; unitPriceMinor?: number }) => void
+  readonly onRemember?: (item: { name: string; unitPriceMinor?: number; unit?: string }) => void
   /** §G: "a list icon jumps to Settings → Saved items". */
   readonly onOpenCatalogue?: () => void
 }
@@ -77,7 +77,15 @@ export function ItemsStep({ draft, onChange, onRemember, onOpenCatalogue }: Item
       ...(unit.trim() === '' ? {} : { unit: unit.trim() }),
     }
     onChange({ lineItems: [...draft.lineItems, line] })
-    onRemember?.({ name: line.description, ...(minor === undefined ? {} : { unitPriceMinor: minor }) })
+    // THE UNIT GOES WITH IT. §E gives the catalogue a `unit` column and the
+    // line above has just set one; dropping it here is why every saved item
+    // had a price and no unit, and why the catalogue could never say
+    // "per carton" the way §L2 intends it to.
+    onRemember?.({
+      name: line.description,
+      ...(minor === undefined ? {} : { unitPriceMinor: minor }),
+      ...(line.unit === undefined ? {} : { unit: line.unit }),
+    })
     setDescription('')
     setQty('1')
     setPrice('')

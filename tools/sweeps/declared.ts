@@ -55,6 +55,19 @@
  * different and much harder question; a heuristic version would produce false
  * positives, and a guard that cries wolf is a guard people learn to ignore.
  *
+ * A SECOND SHAPE THAT READS AS A WRITE, found the same way: an argument
+ * object.  is the line
+ * that PRINTS a unit, and it is indistinguishable from one that fills a unit —
+ * so the read counted as a write, from the very line proving it was a read.
+ *  survived on that alone.
+ *
+ * A SECOND SHAPE THAT READS AS A WRITE, found the same way and worth naming
+ * separately: an ARGUMENT OBJECT. The line that prints a saved item's unit is
+ * `format(strings.settings.perUnit, { unit: item.unit })`, and that is
+ * indistinguishable from a line that fills one — so the read counts as a
+ * write, from the very line that proves it is a read. `SavedItem.unit`
+ * survived on that alone.
+ *
  * Smaller limits, for completeness: a write in dead code counts as a write,
  * and the scan sees shapes rather than meaning, so it does not prove a write
  * and a read lie on the same path.
@@ -88,8 +101,22 @@ export interface Declaration {
    * asymmetry that produced a wrong label: `TableRow.photoAssetId` is touched
    * by nothing in the pdf layer at all, and got reported as "read but never
    * written" because an EXPENSE's photo is read elsewhere.
+   *
+   * SEVERAL PREFIXES where a shape's two halves live in different trees. The
+   * catalogue is the case that forced it: a `SavedItem` is filled by the
+   * builder in `src/app/` and read by Settings in `src/features/settings/`,
+   * and unscoped it was worthless — `unit` is also written onto a LINE ITEM
+   * in `convert.ts`, which made `SavedItem.unit` read as filled for the whole
+   * time nothing ever put one there.
    */
-  readonly scope?: string
+  readonly scope?: string | readonly string[]
+}
+
+/** Is this file inside the declaration's layer? Unscoped means everywhere. */
+function inScope(path: string, scope: Declaration['scope']): boolean {
+  if (scope === undefined) return true
+  if (typeof scope === 'string') return path.startsWith(scope)
+  return scope.some((prefix) => path.startsWith(prefix))
 }
 
 export interface HalfWired {
@@ -111,6 +138,8 @@ export interface HalfWired {
 export const EXEMPT: Readonly<Record<string, string>> = {
   id: 'written by object spread in every repository mapper',
   companyId: 'written by object spread in every repository mapper',
+  timesUsed:
+    'counted by the items repository on every remember, never by a screen — the same class as id',
 }
 
 const PROPERTY = /^\s{2,}(?:readonly\s+)?([a-zA-Z][a-zA-Z0-9_]*)\??\s*:/
@@ -205,7 +234,7 @@ export function halfWired(
 
       // A scoped declaration is only honoured inside its own layer. Both
       // halves are bounded, or the label is wrong — see `scope`.
-      if (declaration.scope !== undefined && !path.startsWith(declaration.scope)) continue
+      if (!inScope(path, declaration.scope)) continue
 
       for (const line of source.split('\n')) {
         if (!read && readsOn(line, declaration.name)) read = true

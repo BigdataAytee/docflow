@@ -20,6 +20,7 @@ import { useState } from 'react'
 
 import { useCompany } from '../../app/context'
 import type { UiStrings } from '../../domain/locale/data/strings'
+import { formatBytes } from './storage'
 import type { ExportOutcome } from '../export/action'
 import { ConflictChooser } from '../../sync/ConflictChooser'
 import type { ConflictChoice, Resolution } from '../../sync/conflicts'
@@ -35,6 +36,17 @@ const DEMO: Extract<Resolution, { kind: 'conflict' }> = {
 export interface DataAndSyncProps {
   readonly pendingCount: number
   readonly failedCount: number
+  /**
+   * §G: "storage used". The document count and the bytes behind every asset
+   * the company owns — photos, logos and signatures, which is where a phone
+   * actually fills up.
+   *
+   * Passed in rather than read here, because a component that reaches for a
+   * repository is a component that cannot be rendered in a test or a
+   * screenshot without one.
+   */
+  readonly documentCount?: number
+  readonly assetBytes?: number
   /**
    * Runs the export. Optional only so the component can be rendered in a test
    * without one — every real caller passes it, and a test asserts that the
@@ -67,10 +79,12 @@ function exportMessage(outcome: ExportOutcome, strings: UiStrings): string {
 export function DataAndSync({
   pendingCount,
   failedCount,
+  documentCount,
+  assetBytes,
   onExport,
   demoPersonName = 'Sola',
 }: DataAndSyncProps) {
-  const { strings } = useCompany()
+  const { strings, isDemo } = useCompany()
   const [demoOpen, setDemoOpen] = useState(false)
   const [demoChoice, setDemoChoice] = useState<ConflictChoice | null>(null)
   const [exporting, setExporting] = useState(false)
@@ -90,8 +104,20 @@ export function DataAndSync({
     }
   }
 
-  const uploadState =
-    failedCount > 0
+  /*
+   * WHAT IS TRUE ABOUT THIS BUILD, not a count of an outbox that is not
+   * running.
+   *
+   * "Uploaded" was shown whenever `pendingCount` was zero, and on the demo
+   * backend it is always zero because there is nothing to upload TO. So an
+   * owner with no account was told their records were uploaded, four pixels
+   * under a banner saying they were on this device only. §R's rule that a
+   * local demo is never passed off as an account applies to a status line as
+   * much as to a banner.
+   */
+  const uploadState = isDemo
+    ? strings.sync.savedLocal
+    : failedCount > 0
       ? strings.sync.needsReview
       : pendingCount > 0
         ? strings.sync.waiting
@@ -104,7 +130,37 @@ export function DataAndSync({
           <span className="opacity-70">{strings.dataSync.uploadState}</span>
           <span className="font-medium">{uploadState}</span>
         </div>
+        {isDemo && (
+          <p className="mt-1 text-xs opacity-70">{strings.dataSync.noAccountToSyncTo}</p>
+        )}
       </div>
+
+      {/* §G's "storage used", and the reference's split (see `storage.ts`). */}
+      {(documentCount !== undefined || assetBytes !== undefined) && (
+        <div className="glass rounded-2xl p-4">
+          <p className="text-sm font-semibold">{strings.dataSync.storageTitle}</p>
+          <dl className="mt-2 space-y-1 text-xs">
+            {documentCount !== undefined && (
+              <div className="flex items-baseline justify-between gap-3">
+                {/*
+                  The reference prints "Documents (23) · 1.2 MB". The count
+                  is here and the size is not, deliberately: an image's bytes
+                  are in hand, and a row's are not — reporting a made-up
+                  figure beside a measured one would make both untrustworthy.
+                */}
+                <dt className="opacity-70">{strings.dataSync.storageDocuments}</dt>
+                <dd className="font-medium tabular-nums">{documentCount}</dd>
+              </div>
+            )}
+            {assetBytes !== undefined && (
+              <div className="flex items-baseline justify-between gap-3">
+                <dt className="opacity-70">{strings.dataSync.storageImages}</dt>
+                <dd className="font-medium tabular-nums">{formatBytes(assetBytes)}</dd>
+              </div>
+            )}
+          </dl>
+        </div>
+      )}
 
       <div className="glass rounded-2xl p-4">
         <button

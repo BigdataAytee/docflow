@@ -80,7 +80,10 @@ export function HelpSettings() {
               </span>
               <span
                 aria-hidden="true"
-                className={`mt-0.5 shrink-0 opacity-35 transition-transform ${
+                // `motion-safe`, because §V means it: somebody who asked for
+                // no motion gets the chevron in its new position without the
+                // turn. The repo's own sweep caught this one.
+                className={`mt-0.5 shrink-0 opacity-35 motion-safe:transition-transform ${
                   open === index ? 'rotate-90' : ''
                 }`}
               >

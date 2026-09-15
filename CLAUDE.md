@@ -92,6 +92,13 @@ produced `vehicleNumber` and `expectedDate`, and both were found by eye.
 Answering it properly needs reachability analysis; a heuristic would produce
 false positives, and a guard that cries wolf is one people learn to ignore.
 
+**A text scan cannot tell a fill from an argument object.**
+`format(strings.settings.perUnit, { unit: item.unit })` is the line that
+PRINTS a unit, and it is the same shape as a line that fills one — so a read
+counts as a write, from the very line proving it is a read. `SavedItem.unit`
+survived on that alone. Two things now read as writes without being one: a
+mapper assignment, and an argument object.
+
 **Assert consumption, not declaration.** `expect(keys).toContain('unit')` was
 true for as long as the column printed nothing. Assert the row, the rendered
 value, the thing a person would see.

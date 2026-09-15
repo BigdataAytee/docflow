@@ -13,7 +13,7 @@
 import { useEffect, useState } from 'react'
 
 import { useCompany } from '../../app/context'
-import { EmptyState, SkeletonList } from '../../ui'
+import { EmptyState, Icon, SkeletonList } from '../../ui'
 import { format } from '../../domain/locale/data/strings'
 import type { SavedItem } from '../../data/repositories'
 import { formatMoney } from '../customers/formatMoney'
@@ -34,7 +34,13 @@ export function SavedItems({ onRemove }: { onRemove?: (id: string) => void }) {
 
   return (
     <section className="space-y-4 px-4 py-4">
-      <h1 className="text-lg font-bold">{strings.settings.savedItems}</h1>
+      <header>
+        <h1 className="text-lg font-bold">{strings.settings.savedItems}</h1>
+        {/* The reference's line, and it is the whole explanation of §L2. */}
+        <p className="mt-0.5 text-xs leading-relaxed opacity-65">
+          {strings.settings.savedItemsHint}
+        </p>
+      </header>
 
       {items === null && <SkeletonList rows={3} label={strings.common.loading} />}
 
@@ -49,10 +55,26 @@ export function SavedItems({ onRemove }: { onRemove?: (id: string) => void }) {
         <ul className="glass-solid divide-y divide-ink/10 overflow-hidden rounded-2xl">
           {items.map((item) => (
             <li key={item.id} className="flex items-center gap-3 p-3">
+              <span
+                aria-hidden="true"
+                className="grid size-9 shrink-0 place-items-center rounded-xl bg-brand-tint text-brand"
+              >
+                <Icon name="package" size={0.85} />
+              </span>
               <span className="min-w-0 flex-1">
                 <span className="block truncate text-sm font-semibold">{item.name}</span>
-                <span className="block text-xs opacity-70">
-                  {format(strings.settings.usedTimes, { count: item.timesUsed })}
+                {/*
+                  THE UNIT, where there is one. §E gives the catalogue a
+                  `unit` column, the items step has always had a field for it,
+                  and nothing carried it from one to the other — so every
+                  saved item had a price and no unit and this row could only
+                  ever say how often it had been used. "per carton" is what a
+                  person is actually checking when they open this list.
+                */}
+                <span className="block truncate text-xs opacity-70">
+                  {item.unit === undefined
+                    ? format(strings.settings.usedTimes, { count: item.timesUsed })
+                    : format(strings.settings.perUnit, { unit: item.unit })}
                 </span>
               </span>
               {item.lastPrice !== undefined && (

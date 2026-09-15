@@ -137,7 +137,7 @@ describe('Nothing is declared and then left unread (§E, §I, §D)', () => {
       layer: string
       file: string
       interfaceName: string
-      scope?: string
+      scope?: string | readonly string[]
     }[] = [
       { layer: '§E document', file: 'src/data/repositories/types.ts', interfaceName: 'DocumentRecord' },
       /*
@@ -156,6 +156,37 @@ describe('Nothing is declared and then left unread (§E, §I, §D)', () => {
        */
       { layer: '§E company', file: 'src/data/repositories/types.ts', interfaceName: 'Company' },
       { layer: '§E line', file: 'src/domain/documents/types.ts', interfaceName: 'LineItem' },
+      /*
+       * The catalogue, added after `SavedItem.unit` turned out to be the
+       * seventh instance: §E gives the items table a `unit`, the builder has
+       * always had a field for one, and the line that remembered an item
+       * dropped it — so every saved item had a price and no unit, and the
+       * list could never say "per carton".
+       *
+       * AND THE SWEEP DOES NOT CATCH THIS ONE EITHER. Measured: deleting the
+       * write leaves the scan green, for a reason worth recording because it
+       * is new. The screen that READS the field formats it —
+       * `format(strings.settings.perUnit, { unit: item.unit })` — and a
+       * format argument object is syntactically identical to a fill. So the
+       * read counts as a write, from the very line that proves it is a read.
+       *
+       * Widening the scope to `src/data/` does not help either: the row
+       * mappers assign `unit` too, which is the reachability limit the
+       * header already names.
+       *
+       * The block earns its place on the other fields, which are covered
+       * tightly by this narrow scope.
+       */
+      {
+        layer: '§E item',
+        file: 'src/data/repositories/types.ts',
+        interfaceName: 'SavedItem',
+        // TWO TREES, because a catalogue entry is filled by the builder and
+        // read by Settings. Unscoped this block was worthless: `unit` is also
+        // written onto a line item in `convert.ts`, which made
+        // `SavedItem.unit` read as filled the whole time nothing filled it.
+        scope: ['src/app/', 'src/features/settings/'],
+      },
       // SCOPED: a draft is edited by the builder's own steps, and names like
       // `unit` and `dispatchDate` belong to other shapes elsewhere.
       {

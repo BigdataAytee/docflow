@@ -14,7 +14,10 @@ import { createMemoryRepositories, emptyState } from '../../data/repositories'
 import type { ExportOutcome } from '../export/action'
 import { DataAndSync } from './DataAndSync'
 
-function renderPanel(over: Partial<React.ComponentProps<typeof DataAndSync>> = {}) {
+function renderPanel(
+  over: Partial<React.ComponentProps<typeof DataAndSync>> = {},
+  { isDemo = false }: { isDemo?: boolean } = {},
+) {
   const props: React.ComponentProps<typeof DataAndSync> = {
     pendingCount: 0,
     failedCount: 0,
@@ -26,6 +29,7 @@ function renderPanel(over: Partial<React.ComponentProps<typeof DataAndSync>> = {
       repositories={createMemoryRepositories(emptyState())}
       profile={{ locale: 'EN-NG' }}
       language="en"
+      isDemo={isDemo}
     >
       <DataAndSync {...props} />
     </CompanyProvider>,
@@ -162,5 +166,36 @@ describe('The export button does something (Rule #6)', () => {
     })
     await screen.findByRole('status')
     expect(button).not.toBeDisabled()
+  })
+})
+
+describe('Storage on this phone is measured, and upload state is true (§G, §R)', () => {
+  it('shows the document count and the bytes behind the images', () => {
+    renderPanel({ documentCount: 23, assetBytes: 3_565_158 })
+    expect(screen.getByText('Storage on this phone')).toBeInTheDocument()
+    expect(screen.getByText('23')).toBeInTheDocument()
+    expect(screen.getByText('3.4 MB')).toBeInTheDocument()
+  })
+
+  it('leaves the card out entirely when there is nothing to report', () => {
+    renderPanel()
+    expect(screen.queryByText('Storage on this phone')).not.toBeInTheDocument()
+  })
+
+  /**
+   * §R: a local demo is never passed off as an account — and that applies to
+   * a status line as much as to a banner. "Uploaded" showed whenever the
+   * pending count was zero, which on a build with no account it always is.
+   */
+  it('never claims records are uploaded when there is no account', () => {
+    renderPanel({}, { isDemo: true })
+    expect(screen.queryByText('Uploaded')).not.toBeInTheDocument()
+    expect(screen.getByText('Saved on this phone')).toBeInTheDocument()
+    expect(screen.getByText(/no account on this device/i)).toBeInTheDocument()
+  })
+
+  it('reports the real upload state where there is an account', () => {
+    renderPanel({ pendingCount: 3 })
+    expect(screen.getByText('Waiting to upload')).toBeInTheDocument()
   })
 })

@@ -35,7 +35,8 @@ const wrap = (node: React.ReactNode, s: CompanyLocaleSettings = settings) => {
 
 describe('The consequences sit beside the cause (§D)', () => {
   it('shows what the country settles: currency, tax wording, bank fields', () => {
-    wrap(<RegionSettings settings={settings} onRegion={vi.fn()} onOverride={vi.fn()} />)
+    wrap(<RegionSettings settings={settings} onRegion={vi.fn()}
+        onLanguage={vi.fn()} onOverride={vi.fn()} />)
     expect(screen.getByText('NGN')).toBeInTheDocument()
     expect(screen.getByText('VAT')).toBeInTheDocument()
     expect(screen.getByText('Bank · Account number · Account name')).toBeInTheDocument()
@@ -43,7 +44,8 @@ describe('The consequences sit beside the cause (§D)', () => {
 
   it('shows the UK consequences when the country is the UK', () => {
     wrap(
-      <RegionSettings settings={{ ...settings, region: 'GB' }} onRegion={vi.fn()} onOverride={vi.fn()} />,
+      <RegionSettings settings={{ ...settings, region: 'GB' }} onRegion={vi.fn()}
+        onLanguage={vi.fn()} onOverride={vi.fn()} />,
       { ...settings, region: 'GB' },
     )
     expect(screen.getByText('GBP')).toBeInTheDocument()
@@ -51,14 +53,16 @@ describe('The consequences sit beside the cause (§D)', () => {
   })
 
   it('says the change applies offline and immediately (§D.6)', () => {
-    wrap(<RegionSettings settings={settings} onRegion={vi.fn()} onOverride={vi.fn()} />)
+    wrap(<RegionSettings settings={settings} onRegion={vi.fn()}
+        onLanguage={vi.fn()} onOverride={vi.fn()} />)
     expect(screen.getByText(/with or without internet/i)).toBeInTheDocument()
   })
 
   it('reports the chosen country back', async () => {
     const user = userEvent.setup()
     const onRegion = vi.fn()
-    wrap(<RegionSettings settings={settings} onRegion={onRegion} onOverride={vi.fn()} />)
+    wrap(<RegionSettings settings={settings} onRegion={onRegion}
+        onLanguage={vi.fn()} onOverride={vi.fn()} />)
     await user.selectOptions(screen.getByLabelText('Business country'), 'GB')
     expect(onRegion).toHaveBeenCalledWith('GB')
   })
@@ -124,5 +128,50 @@ describe('Switching region changes every surface at once (§V)', () => {
     const custom = { ...settings, labelOverrides: { waybill: 'Dispatch docket' } }
     wrap(<DocumentList type="waybill" rows={[]} onOpen={vi.fn()} onNew={vi.fn()} />, custom)
     expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('Dispatch docket')
+  })
+})
+
+describe('The app language is a choice, and only where it works (§S, §D.4)', () => {
+  /**
+   * The company's stored language drove the whole string catalogue from the
+   * app root, and no screen could set it — four language slots in the design,
+   * and the app fixed to one. §G puts the control on this screen.
+   */
+  it('reports the chosen language back', async () => {
+    const onLanguage = vi.fn()
+    wrap(
+      <RegionSettings
+        settings={settings}
+        onRegion={vi.fn()}
+        onLanguage={onLanguage}
+        onOverride={vi.fn()}
+      />,
+    )
+
+    await userEvent.click(screen.getByRole('button', { name: 'English' }))
+    expect(onLanguage).toHaveBeenCalledWith('en')
+  })
+
+  /**
+   * §S: "no non-working language toggle ever ships." The list comes from the
+   * catalogues, so a language cannot be offered before its strings exist —
+   * which is what a hand-kept list beside them would eventually do.
+   */
+  it('offers only languages that have a complete catalogue', () => {
+    wrap(
+      <RegionSettings
+        settings={settings}
+        onRegion={vi.fn()}
+        onLanguage={vi.fn()}
+        onOverride={vi.fn()}
+      />,
+    )
+
+    expect(screen.getByRole('button', { name: 'English' })).toHaveAttribute('aria-pressed', 'true')
+    for (const absent of ['Français', 'Español', 'العربية']) {
+      expect(screen.queryByText(absent)).not.toBeInTheDocument()
+    }
+    // And it says why there is one, rather than looking broken.
+    expect(screen.getByText(/never ships a half-translated screen/i)).toBeInTheDocument()
   })
 })

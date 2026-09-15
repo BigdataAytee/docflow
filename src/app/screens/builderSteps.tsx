@@ -54,7 +54,7 @@ export interface StepBodyProps {
   readonly onSetUpPayment: () => void
   readonly onSign: () => void
   readonly signatureUrl?: string
-  readonly onRememberItem: (item: { name: string; unitPriceMinor?: number }) => void
+  readonly onRememberItem: (item: { name: string; unitPriceMinor?: number; unit?: string }) => void
   /** §G: "a list icon jumps to Settings → Saved items". */
   readonly onOpenCatalogue: () => void
   readonly preview: ReactNode

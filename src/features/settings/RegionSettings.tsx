@@ -11,6 +11,8 @@
  */
 
 import { useCompany } from '../../app/context'
+import { Icon } from '../../ui'
+import { availableLanguages } from '../../domain/locale/data/strings'
 import { DOCUMENT_TYPES } from '../../domain/documents/types'
 import { label as typeLabel } from '../../domain/locale/profile'
 import { fieldsFor } from '../../domain/locale/bank-fields'
@@ -24,13 +26,21 @@ import {
 export interface RegionSettingsProps {
   readonly settings: CompanyLocaleSettings
   readonly onRegion: (region: string) => void
+  /** §D.4: the language is chosen independently of the region. */
+  readonly onLanguage: (language: string) => void
   readonly onOverride: (type: (typeof DOCUMENT_TYPES)[number], label: string | null) => void
 }
 
-export function RegionSettings({ settings, onRegion, onOverride }: RegionSettingsProps) {
+export function RegionSettings({
+  settings,
+  onRegion,
+  onLanguage,
+  onOverride,
+}: RegionSettingsProps) {
   const { strings } = useCompany()
   const profile = regionProfile(settings.region)
   const localeProfile = localeProfileOf(settings)
+  const languages = availableLanguages()
 
   return (
     <section className="space-y-4 px-4 py-4">
@@ -72,6 +82,58 @@ export function RegionSettings({ settings, onRegion, onOverride }: RegionSetting
           </dd>
         </div>
       </dl>
+
+      {/*
+        APP LANGUAGE (§G, §S, §D.4).
+        §G puts it on this screen — "business country ...; app language;
+        per-type label override" — and the string for it has been in the
+        catalogue since the screen was written with nothing rendering it.
+        `Company.localeLanguage` drove the whole string catalogue from
+        `App.tsx` and NO screen could set it: four language slots in the
+        design, and the app fixed to one.
+
+        The list is whatever has a complete catalogue, derived rather than
+        written down, because §S's "no non-working language toggle ever ships"
+        is broken precisely by a hand-kept list. Today that is English alone,
+        and the screen says so rather than pretending to offer a choice.
+      */}
+      <section className="glass-solid rounded-2xl p-4">
+        <h2 className="text-xs font-bold uppercase tracking-wide opacity-60">
+          {strings.settings.appLanguage}
+        </h2>
+        <ul className="mt-2 divide-y divide-ink/10">
+          {languages.map((language) => (
+            <li key={language.code}>
+              <button
+                type="button"
+                aria-pressed={language.code === settings.language}
+                onClick={() => onLanguage(language.code)}
+                className="flex min-h-tap w-full items-center gap-3 py-2 text-start"
+              >
+                <span
+                  aria-hidden="true"
+                  className="grid size-8 shrink-0 place-items-center rounded-xl bg-brand-tint text-[11px] font-bold uppercase text-brand"
+                >
+                  {language.code}
+                </span>
+                <span className="min-w-0 flex-1 truncate text-sm font-medium">
+                  {language.name}
+                </span>
+                {language.code === settings.language && (
+                  <span aria-hidden="true" className="shrink-0 text-status-good">
+                    <Icon name="check" size={0.9} />
+                  </span>
+                )}
+              </button>
+            </li>
+          ))}
+        </ul>
+        {languages.length === 1 && (
+          <p className="mt-1 text-xs leading-relaxed opacity-60">
+            {strings.settings.oneLanguageOnly}
+          </p>
+        )}
+      </section>
 
       <section className="glass-solid space-y-3 rounded-2xl p-4">
         <h2 className="text-xs font-bold uppercase tracking-wide opacity-60">
