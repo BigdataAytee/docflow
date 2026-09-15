@@ -8,6 +8,93 @@ claims nothing the gates have not proven (§X).
 
 ---
 
+## Handoff — start here (2026-09-15, `48284e7`)
+
+**The buildable list is done.** Every screen in the exact-screen reference has
+been walked and corrected against it; `npm run verify` is green at 2244 tests.
+What remains needs a deploy, a device, or a model — nothing remaining is
+blocked on more code being written here.
+
+The line-by-line pass over the reference's own manual walkthrough is
+`docs/phase-4/walkthrough-verification.md`. Read it before touching a screen:
+it says, per item, whether the thing is built or **absent by decision**, and
+which section decides it.
+
+### Verified here (browser + suite)
+
+* Every Settings panel against `SETTINGS-EXACT.md`, including three that did
+  not exist: **Your account**, **Help & support**, and an app-language picker.
+* The four builders, all sixteen designs, the public recipient page, onboarding,
+  sign-out, recurrence, export and the conflict chooser.
+* Nine instances of one bug species — a field declared in one layer and never
+  honoured in the layer below — found and closed. `tools/sweeps/declared.ts`
+  now scans 123 declared fields on eight shapes. **Read its header before
+  trusting it**: it catches *declared and never consumed*, and it does NOT
+  catch *declared and never reachably filled*. Two things read as writes
+  without being one — a mapper assignment, and an argument object — and both
+  are measured, not assumed.
+* All seven repo sweeps (dark mode, motion, RTL, a11y, screen reader, reading
+  order, declared fields) run inside `npm test`. Two of them caught mistakes
+  made in this very pass.
+
+### Absent by decision — do not "finish" these
+
+Each was considered and left out because shipping it would mean shipping a
+control that cannot do what it says (§N):
+
+| Thing | Why | Where it lands |
+| --- | --- | --- |
+| **Logo wizard** | §N calls the prototype's picker "a demonstration only". Company & logo carries the Create control disabled with the reason beside it, and a working Upload next to it. | Phase 6 |
+| **Admin** | §O needs server-enforced permissions. No row promises a screen. | Phase 7 |
+| **Home's connection demo** | §F names simulated toggling as demo-only. | needs real sync |
+| **"Your name" field** | §E's `users` row has `display_name`; nothing in this build reads that row. An input with nowhere to save is the species above. | needs a users repository |
+| **FR / ES / AR** | §S: no non-working language toggle ever ships. The picker lists what has a complete catalogue, derived rather than hand-kept. | needs catalogues |
+
+### Waiting on the Supabase deploy
+
+**This is the single largest blocker and it has not moved.** Twenty migrations
+and three edge functions are written and unrun. S1–S10 under "The server
+remainder" queue behind it. Two additions from this pass:
+
+* `0020_company_address.sql` — the business address (§F's Sikky box, §R's setup).
+* Extending `PublicView` with brand assets would make the unauthenticated
+  endpoint serve those assets to anyone holding a link. **Decide that
+  deliberately at deploy time**; do not inherit it from a layout preference.
+
+Phase 5's gate stays 0 of 3, and Phase 7's §V checklist cannot go green while
+Phase 5's is not.
+
+### Waiting on a device
+
+* **Phase 2's gate** — the airplane-mode walk: create → invoice → sixteen
+  designs → issue → PDF → share → part payment → receipt → signed delivery →
+  region switch → force-kill → recover. `src/native/journey.ts` walks it
+  against the real encrypted store; it cannot press a button or see a
+  skeleton, so the screenshots in `docs/phase-4/` are the other half.
+* Phase 1's two unverifiable clauses, Phase 4 entirely, and the §Q tier table.
+* Everything the walkthrough's last paragraph lists: restart and recovery,
+  idempotent reconnect, cross-account isolation, two-device conflicts, real
+  PDF export.
+
+### Waiting on models
+
+* §N's six-step gate per tier, §12's offline AI, §17's image model, and the
+  Phase 6 logo engine at its spike-determined rung. Tier-B's deterministic
+  extractor and the ladder's logic are built; the gate needs devices *and*
+  the installs.
+
+### The two loose threads a next session should know about
+
+1. **`src/native/journey.ts`, `boot.ts` and `tools/device/gate.ts` are
+   uncommitted** — Phase 2 gate work in progress, deliberately kept out of the
+   Settings commits rather than mixed into them.
+2. **The issue gate now refuses an enabled-but-unusable payment method.** Any
+   fixture that switches bank transfer on must also give it an account, or it
+   is modelling a state the app exists to prevent. Two route fixtures were
+   corrected for exactly this.
+
+---
+
 ## Status board
 
 | Phase | Scope | Gate | State |
