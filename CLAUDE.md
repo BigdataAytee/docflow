@@ -66,7 +66,19 @@ npm run lint        # includes docflow/no-hardcoded-type-name (Rule 4)
 npm test            # money property tests + lifecycle tests (blocking)
 npm run build       # must stay green on every commit
 npm run verify      # all four, in the order CI runs them
+npm run test:tail   # the suite, last 30 lines, EXIT CODE INTACT
 ```
+
+**Never pipe a test or build command through `tail`, `head`, or `grep.`** A
+shell pipeline reports the status of its LAST command, and those always
+succeed — so a suite with fifteen failures exits 0 and every check downstream
+is told it passed. This is not hypothetical: it happened here, and a broken
+suite was read as green and reported as green.
+
+Use `npm run test:tail` (which does the trimming in-process, after the child
+has exited, and re-raises the child's status), or capture the code before the
+pipe: `npx vitest run > out.txt 2>&1; echo $?`. If a pipeline is genuinely
+unavoidable, `set -o pipefail` first.
 
 ## Where things live
 

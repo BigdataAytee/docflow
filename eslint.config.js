@@ -16,6 +16,14 @@ export default tseslint.config(
       'dist-shots',
       'dist-shots-png',
       'legacy',
+      // The accepted design reference, for the same reason as `legacy`: it is
+      // READ-ONLY reference, never imported, and not ours to fix. Its
+      // `behaviour.js` is a browser script with no module scope, so linting it
+      // reported 97 errors about globals like `document` — enough to make
+      // `npm run lint` red from the moment the handoff was committed, and
+      // therefore `npm run verify` too. A check nobody can pass is a check
+      // nobody reads.
+      'docs/design-reference',
       'node_modules',
       'coverage',
       'android',

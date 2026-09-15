@@ -289,7 +289,23 @@ export function DocumentScreen({ today = todayIso() }: { today?: string }) {
             paper: strings.design.paper,
           })}
         </p>
-        <div className="a4-sheet">
+        {/*
+          Hidden from assistive tech HERE, and only here.
+
+          This screen already presents everything the page contains, in a
+          better order and with the controls attached: the header names the
+          document, the status badge says where it is, the money cards carry
+          the totals. Exposing the page as well means a reader hears the whole
+          document a second time as a flat table, after having been told it.
+
+          The same component stays exposed on the builder's Review step,
+          because there the page IS the content — it is the last look before
+          issue, and there is nothing else on that screen saying what it says.
+
+          Safe to hide: the page has no focusable element in it, so nothing is
+          being taken out of the tab order along with the words (§F).
+        */}
+        <div className="a4-sheet" aria-hidden="true">
           <LivePreview
             document={composable}
             templateId={design.templateId}

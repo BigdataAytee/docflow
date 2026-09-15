@@ -17,6 +17,7 @@
     "lint:fix": "eslint . --fix",
     "test": "vitest run",
     "test:watch": "vitest",
+    "test:tail": "node --experimental-strip-types tools/tail.ts 30 -- npx vitest run",
     "verify": "npm run typecheck && npm run lint && npm run build && npm run test",
     "test:rls": "vitest run --config vitest.rls.config.ts",
     "gate:hosted": "node --experimental-strip-types supabase/tests/hosted-gate.ts",
