@@ -423,6 +423,38 @@ Needing a device or a later phase, and therefore NOT claimed:
 - [ ] **A physical device** for the §Q Phase 2 gate, which is explicitly
       "airplane mode, fresh install, physical device". Everything up to that
       point is buildable and testable here.
+- [ ] **The `recurrences` table, its RLS policy and its client repository —
+      all three together, by somebody who can run `npm run test:rls`.**
+
+      §L4's monthly repeats are built and working ON DEVICE: schema 4 holds
+      `recurrences` and `documents.recurrence_key`, and the catch-up runs at
+      launch. The server half is deliberately absent, and the reason matters
+      more than the absence.
+
+      `supabase/tests/rls.test.ts` asserts RLS enabled AND forced on every
+      table, so it would catch a table shipped with NO policy, or a malformed
+      one. It cannot catch a policy that is present, well formed and subtly
+      wrong — that passes every assertion and leaks across companies. So the
+      policy must be written where the suite can be run against a real
+      Postgres, which means Docker or CI, not a machine without either.
+
+      The client half is `recurrencesNotDeployed()` in
+      `src/data/supabase/repositories.ts`: every method throws a message
+      naming this line. That is honest, but it is a landmine if the deploy
+      adds the table and forgets the client, so all three land together:
+
+      1. a migration creating `recurrences` (primary key `source_document_id`,
+         `company_id`, `day_of_month`, `started_on`, `ended_on`) plus
+         `documents.recurrence_key` with a UNIQUE index — that index is what
+         makes catch-up idempotent, and it is not optional;
+      2. `enable row level security` AND `force row level security`, with the
+         same company policy every other table carries;
+      3. the real repository, replacing `recurrencesNotDeployed`, shaped like
+         its siblings in `catalogue.ts`.
+
+      `npm run test:rls` must pass before any of it merges. It runs in CI on
+      every branch against a `postgres:16` service, so the check exists; it
+      simply has to be watched.
 - [ ] **Deploy the public-link function**, which is the last thing standing
       between the accept and sign pages and a working link:
 
