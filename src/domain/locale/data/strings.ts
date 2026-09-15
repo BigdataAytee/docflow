@@ -55,6 +55,15 @@ export interface UiStrings {
     readonly continueWithGoogle: string
     readonly needsConnection: string
     readonly signOut: string
+    /**
+     * Confirming it (§P). What the copy promises is only what is true:
+     * records are on the device and export is free forever (Rule #6), so
+     * signing out never takes a document away.
+     */
+    readonly signOutTitle: string
+    readonly signOutBody: string
+    readonly signOutConfirm: string
+    readonly signOutCancel: string
     readonly businessTitle: string
     readonly businessBody: string
     readonly businessName: string
@@ -904,6 +913,11 @@ const EN: UiStrings = {
     // attempt, rather than as an error afterwards (§N).
     needsConnection: 'Signing in needs an internet connection. Everything after this works offline.',
     signOut: 'Sign out',
+    signOutTitle: 'Sign out of DocFlow?',
+    signOutBody:
+      'You’ll need your email and password to get back in. Your documents stay on this phone either way.',
+    signOutConfirm: 'Sign out',
+    signOutCancel: 'Stay signed in',
     businessTitle: 'Name your business',
     businessBody:
       'This goes at the top of every document you send. Your country sets the words, the currency and the payment details — you can change all of it later.',

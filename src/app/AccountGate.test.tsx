@@ -10,6 +10,7 @@ import userEvent from '@testing-library/user-event'
 import { describe, expect, it, vi } from 'vitest'
 
 import { AccountGate } from './AccountGate'
+import { useSessionActions } from './session-context'
 import type { SessionService, SessionStage } from '../data/session'
 
 function session(overrides: Partial<SessionService> & { stage?: SessionStage }): SessionService {
@@ -171,3 +172,49 @@ describe('Signing in needs a connection, and says so first (§R, §N)', () => {
     expect(sent).toHaveBeenCalledWith('stranger@example.test', expect.any(String))
   })
 })
+
+describe('A signed-in person can sign out (§P)', () => {
+  /**
+   * The wire that did not exist.
+   *
+   * `Home` has taken an `onLogOut` prop since it was written and nothing
+   * could supply one: this component owned the session and handed its
+   * children a company id and nothing else. So the installed app had no way
+   * out of an account at all — both halves built, no join.
+   *
+   * Asserted HERE rather than on Home, because the join is the part that was
+   * missing. A test of the button alone would have passed the whole time.
+   */
+  it('hands the session down, so a screen can offer it', async () => {
+    const signOut = vi.fn(async () => {})
+    render(
+      <AccountGate session={session({ stage: { kind: 'ready', companyId: 'co_1' }, signOut })}>
+        {() => <SignOutProbe />}
+      </AccountGate>,
+    )
+
+    await userEvent.click(await screen.findByRole('button', { name: 'probe sign out' }))
+    expect(signOut).toHaveBeenCalledOnce()
+  })
+
+  /**
+   * And the other half of the contract: no account, no offer. The demo
+   * backend has no session, and a control offering to sign out of nothing
+   * would be a lie rather than a no-op.
+   */
+  it('offers nothing when there is no session behind the app', () => {
+    render(<SignOutProbe />)
+    expect(screen.getByText('no session')).toBeInTheDocument()
+  })
+})
+
+/** Stands in for Home: reads the context the way a screen does. */
+function SignOutProbe() {
+  const actions = useSessionActions()
+  if (actions === null) return <p>no session</p>
+  return (
+    <button type="button" onClick={() => void actions.signOut()}>
+      probe sign out
+    </button>
+  )
+}

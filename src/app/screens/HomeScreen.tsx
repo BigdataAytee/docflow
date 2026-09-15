@@ -13,6 +13,9 @@
  */
 
 import { useDeferredValue, useMemo, useState } from 'react'
+
+import { useSessionActions } from '../session-context'
+import { SignOutSheet } from '../../features/auth/SignOutSheet'
 import { useNavigate } from 'react-router-dom'
 
 import { useCompany } from '../context'
@@ -60,6 +63,8 @@ export function HomeScreen({ now = new Date() }: { now?: Date }) {
   )
   /** §N's line, shown only once a capture control has actually been pressed. */
   const [captureNotice, setCaptureNotice] = useState<string | undefined>(undefined)
+  const [signingOut, setSigningOut] = useState(false)
+  const session = useSessionActions()
   // Typing stays responsive on a large account: the field updates now, the
   // results catch up (§L10 — performance is invisible).
   const deferredQuery = useDeferredValue(query)
@@ -178,7 +183,8 @@ export function HomeScreen({ now = new Date() }: { now?: Date }) {
   }
 
   return (
-    <Home
+    <>
+      <Home
       businessName={company?.name ?? ''}
       userName=""
       // §G's logo holder is a way INTO Settings, not an ornament: "tap to add
@@ -192,6 +198,13 @@ export function HomeScreen({ now = new Date() }: { now?: Date }) {
       onAddLogo={() => navigate(settingsPath('company'))}
       // §N: a capability that is not installed says so. Never a toast
       // claiming work that did not happen.
+      /*
+        Offered only when there is an account to leave.
+        `useSessionActions` is null on the demo backend, which has no session
+        — a control offering to sign out of nothing would be a lie, and the
+        spread is how the prop stays absent rather than being a no-op.
+      */
+      {...(session === null ? {} : { onLogOut: () => setSigningOut(true) })}
       onVoice={() => setCaptureNotice(strings.common.offlineToolsNeeded)}
       onScan={() => setCaptureNotice(strings.common.offlineToolsNeeded)}
       {...(captureNotice === undefined ? {} : { captureNotice })}
@@ -235,6 +248,20 @@ export function HomeScreen({ now = new Date() }: { now?: Date }) {
             ),
           }
         : {})}
-    />
+      />
+
+      {signingOut && session !== null && (
+        <SignOutSheet
+          onConfirm={() => {
+            // The sheet closes either way: `AccountGate` swaps the whole tree
+            // for the sign-in screen when the session goes, and a sheet left
+            // open behind that would be a modal over a page nobody is on.
+            setSigningOut(false)
+            void session.signOut()
+          }}
+          onCancel={() => setSigningOut(false)}
+        />
+      )}
+    </>
   )
 }

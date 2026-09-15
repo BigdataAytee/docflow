@@ -21,6 +21,7 @@
 import { useCallback, useEffect, useState, type ReactNode } from 'react'
 
 import type { SessionService, SessionStage } from '../data/session'
+import { SessionActionsProvider } from './session-context'
 import { SignInScreen } from '../features/auth/SignInScreen'
 import { NewBusinessScreen, regionFromBrowser } from '../features/auth/NewBusinessScreen'
 import { stringsFor } from '../domain/locale/data/strings'
@@ -108,5 +109,15 @@ export function AccountGate({ session, children }: AccountGateProps) {
     )
   }
 
-  return <>{children(stage.companyId)}</>
+  /*
+   * The session reaches the app from here and nowhere else. `Home` has
+   * accepted an `onLogOut` prop since it was written and nothing could supply
+   * one, because this component hands its children a company id and stops —
+   * so the installed app had no way to sign out at all.
+   */
+  return (
+    <SessionActionsProvider signOut={() => session.signOut()}>
+      {children(stage.companyId)}
+    </SessionActionsProvider>
+  )
 }
