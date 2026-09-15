@@ -78,15 +78,15 @@ function Cell({ row, column, formatAmount, currency }: {
   const style: CSSProperties = { textAlign: column.align }
   switch (column.key) {
     case 'description':
-      return <td style={style} className="py-1.5 pe-2">{row.description}</td>
+      return <td style={style} className="py-[6px] pe-[8px]">{row.description}</td>
     case 'quantity':
-      return <td style={style} className="py-1.5 tabular-nums">{row.quantity}</td>
+      return <td style={style} className="py-[6px] tabular-nums">{row.quantity}</td>
     case 'unit':
-      return <td style={style} className="py-1.5">{row.unit ?? ''}</td>
+      return <td style={style} className="py-[6px]">{row.unit ?? ''}</td>
     case 'amount':
       // Absent on a delivery document — composeDocument never emits the column.
       return (
-        <td style={style} className="py-1.5 tabular-nums">
+        <td style={style} className="py-[6px] tabular-nums">
           {row.amount === undefined ? '' : formatAmount(row.amount.minor, currency)}
         </td>
       )
@@ -111,6 +111,24 @@ export function DocumentPage({
       className="relative mx-auto w-full overflow-hidden"
       style={{
         aspectRatio: String(A4_ASPECT),
+        /*
+         * THE PAGE IS A PICTURE OF PAPER, so it sets its own base and every
+         * size inside it is absolute.
+         *
+         * Everything here used to be Tailwind's rem scale, which resolves
+         * against the ROOT font size — so at the 200% text setting every
+         * accessibility guide asks for, the type and the spacing doubled
+         * while the A4 box did not, and the invoice clipped its own table.
+         * The large-text sweep caught it; one more clause in that sweep's
+         * decoration exemption would have silenced it instead, since the
+         * preview is aria-hidden on the document screen.
+         *
+         * A printed page does not reflow because a phone's text setting
+         * changed — the PDF is the same PDF — and the screen around this one
+         * still scales normally, which is where a person reads. The document
+         * screen presents everything this page says in accessible form.
+         */
+        fontSize: '16px',
         backgroundColor: template.paper,
         color: template.ink,
         fontFamily: FONT_STACK[template.fontFamily],
@@ -142,7 +160,7 @@ export function DocumentPage({
 
         {/* Compact's strip already carries these — see `headerCarriesParty`. */}
         {!headerCarriesParty(template) && (
-        <section className="mt-4 flex justify-between gap-6 text-xs">
+        <section className="mt-[16px] flex justify-between gap-[24px] text-[12px]">
           <div className="min-w-0">
             <p className="font-bold uppercase tracking-wide opacity-60">{model.partyLabel}</p>
             <p className="font-semibold">{model.party.name}</p>
@@ -155,12 +173,12 @@ export function DocumentPage({
         </section>
         )}
 
-        <table className="mt-4 w-full border-collapse text-xs">
+        <table className="mt-[16px] w-full border-collapse text-[12px]">
           {/* Repeated on every page (§I). */}
           <thead>
             <tr style={{ borderBottom: `1px solid ${ink}` }}>
               {model.columns.map((column) => (
-                <th key={column.key} style={{ textAlign: column.align }} className="pb-1 font-bold uppercase tracking-wide">
+                <th key={column.key} style={{ textAlign: column.align }} className="pb-[4px] font-bold uppercase tracking-wide">
                   {column.label}
                 </th>
               ))}
@@ -184,14 +202,14 @@ export function DocumentPage({
         </table>
 
         {page.continued && continuedLabel !== undefined && (
-          <p className="mt-2 text-[10px] italic opacity-60">{continuedLabel}</p>
+          <p className="mt-[8px] text-[10px] italic opacity-60">{continuedLabel}</p>
         )}
 
         {page.showsFooter && (
           <>
             {model.totals !== null && (
               <section
-                className="mt-3 self-end text-xs"
+                className="mt-[12px] self-end text-[12px]"
                 style={{ width: `${model.totalsWidthPercent}%` }}
               >
                 <Line label="" value={formatAmount(model.totals.subtotal.minor, currency)} />
@@ -201,8 +219,8 @@ export function DocumentPage({
                 {model.totals.wht.minor !== 0 && (
                   <Line label="" value={`−${formatAmount(model.totals.wht.minor, currency)}`} />
                 )}
-                <div className="mt-1 border-t-2 pt-1" style={{ borderColor: ink }}>
-                  <div className="flex justify-between text-sm font-black" style={{ color: ink }}>
+                <div className="mt-[4px] border-t-2 pt-[4px]" style={{ borderColor: ink }}>
+                  <div className="flex justify-between text-[14px] font-black" style={{ color: ink }}>
                     <span>{model.totalsLabel ?? ''}</span>
                     <span className="tabular-nums">
                       {formatAmount(model.totals.payable.minor, currency)}
@@ -212,7 +230,7 @@ export function DocumentPage({
               </section>
             )}
 
-            <footer className="mt-auto flex items-end justify-between gap-6 pt-4 text-[10px]">
+            <footer className="mt-auto flex items-end justify-between gap-[24px] pt-[16px] text-[10px]">
               {/* §I: the payment box is inline beside the signature, never a
                   full-width band — and a delivery document has none at all. */}
               {model.paymentBox !== null && (
@@ -220,10 +238,10 @@ export function DocumentPage({
                   <p className="font-bold uppercase tracking-wide" style={{ color: ink }}>
                     {model.paymentBox.heading}
                   </p>
-                  <dl className="mt-1">
+                  <dl className="mt-[4px]">
                     {model.paymentBox.rows.map((row) => (
-                      <div key={row.label} className="flex gap-2">
-                        <dt className="w-24 shrink-0 opacity-60">{row.label}</dt>
+                      <div key={row.label} className="flex gap-[8px]">
+                        <dt className="w-[96px] shrink-0 opacity-60">{row.label}</dt>
                         <dd className="font-medium">{row.value}</dd>
                       </div>
                     ))}
@@ -233,8 +251,8 @@ export function DocumentPage({
 
               {model.receivedByRule !== null && (
                 <div className="flex-1">
-                  <div className="mt-6 w-40 border-t" style={{ borderColor: ink }} />
-                  <p className="mt-1 font-bold uppercase tracking-wide">{model.receivedByRule}</p>
+                  <div className="mt-[24px] w-[160px] border-t" style={{ borderColor: ink }} />
+                  <p className="mt-[4px] font-bold uppercase tracking-wide">{model.receivedByRule}</p>
                 </div>
               )}
 
@@ -247,16 +265,16 @@ export function DocumentPage({
                   to meet the same line.
                 */}
                 {model.signature.imageUrl !== undefined && (
-                  <div className="flex h-10 items-end justify-end">
+                  <div className="flex h-[40px] items-end justify-end">
                     <img
                       src={model.signature.imageUrl}
                       alt={model.signature.caption}
-                      className="ms-auto max-h-10 w-auto max-w-[140px] object-contain object-bottom"
+                      className="ms-auto max-h-[40px] w-auto max-w-[140px] object-contain object-bottom"
                     />
                   </div>
                 )}
                 <div className="ms-auto w-[76px] border-t" style={{ borderColor: ink }} />
-                <p className="mt-1 font-bold uppercase tracking-wide">{model.signature.caption}</p>
+                <p className="mt-[4px] font-bold uppercase tracking-wide">{model.signature.caption}</p>
                 {model.signature.signerName !== undefined && (
                   <p className="opacity-70">{model.signature.signerName}</p>
                 )}
@@ -266,7 +284,7 @@ export function DocumentPage({
         )}
 
         {totalPages > 1 && (
-          <p className="mt-2 text-center text-[10px] tabular-nums opacity-50">
+          <p className="mt-[8px] text-center text-[10px] tabular-nums opacity-50">
             {page.pageNumber} / {totalPages}
           </p>
         )}

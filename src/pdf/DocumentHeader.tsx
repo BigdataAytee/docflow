@@ -41,7 +41,7 @@ export interface DocumentHeaderProps {
 /* ------------------------------------------------------------- the pieces */
 
 const Name = ({ model, className = '' }: { model: PageModel; className?: string }) => (
-  <p className={`break-words text-lg font-bold leading-tight ${className}`}>
+  <p className={`break-words text-[18px] font-bold leading-tight ${className}`}>
     {model.branding.name}
   </p>
 )
@@ -56,7 +56,7 @@ const Title = ({
   className?: string
 }) => (
   <h2
-    className={`break-words text-2xl font-black uppercase tracking-tight ${className}`}
+    className={`break-words text-[24px] font-black uppercase tracking-tight ${className}`}
     style={{ color: ink }}
   >
     {model.title}
@@ -72,9 +72,9 @@ const Title = ({
  */
 const Ref = ({ model, className = '' }: { model: PageModel; className?: string }) => (
   <>
-    <p className={`text-xs tabular-nums opacity-70 ${className}`}>{model.reference}</p>
+    <p className={`text-[12px] tabular-nums opacity-70 ${className}`}>{model.reference}</p>
     {model.replacesLine !== null && (
-      <p className={`text-xs font-semibold opacity-80 ${className}`}>{model.replacesLine}</p>
+      <p className={`text-[12px] font-semibold opacity-80 ${className}`}>{model.replacesLine}</p>
     )}
   </>
 )
@@ -83,7 +83,7 @@ const Ref = ({ model, className = '' }: { model: PageModel; className?: string }
 
 const Rule = ({ ink, opacity = 1, height = 3 }: { ink: string; opacity?: number; height?: number }) => (
   <div
-    className="mt-4 w-full"
+    className="mt-[16px] w-full"
     style={{ backgroundColor: ink, opacity, height: `${height}px` }}
   />
 )
@@ -98,11 +98,11 @@ export function DocumentHeader({ model, template, ink, logo }: DocumentHeaderPro
     case 'rule':
       return (
         <>
-          <header className="flex items-start gap-4">
+          <header className="flex items-start gap-[16px]">
             {logo}
             <div className="min-w-0 flex-1">
               <Name model={model} />
-              <Title model={model} ink={ink} className="mt-1" />
+              <Title model={model} ink={ink} className="mt-[4px]" />
               <Ref model={model} />
             </div>
           </header>
@@ -118,7 +118,7 @@ export function DocumentHeader({ model, template, ink, logo }: DocumentHeaderPro
     case 'band':
       return (
         <>
-          <header className="flex items-start gap-4">
+          <header className="flex items-start gap-[16px]">
             {logo}
             <div className="min-w-0 flex-1">
               <Name model={model} />
@@ -127,11 +127,11 @@ export function DocumentHeader({ model, template, ink, logo }: DocumentHeaderPro
           </header>
           <Rule ink={ink} height={2} />
           <div
-            className="mt-2 flex items-baseline justify-between gap-4 px-3 py-2"
+            className="mt-[8px] flex items-baseline justify-between gap-[16px] px-[12px] py-[8px]"
             style={{ backgroundColor: `${ink}1a` }}
           >
             <Title model={model} ink={ink} />
-            <p className="text-xs tabular-nums opacity-70">{model.issueDate}</p>
+            <p className="text-[12px] tabular-nums opacity-70">{model.issueDate}</p>
           </div>
         </>
       )
@@ -140,11 +140,11 @@ export function DocumentHeader({ model, template, ink, logo }: DocumentHeaderPro
     case 'hairline':
       return (
         <>
-          <header className="flex items-start gap-4">
+          <header className="flex items-start gap-[16px]">
             {logo}
             <div className="min-w-0 flex-1">
-              <Name model={model} className="text-base font-semibold opacity-80" />
-              <Title model={model} ink={ink} className="mt-1 text-xl font-medium tracking-normal" />
+              <Name model={model} className="text-[16px] font-semibold opacity-80" />
+              <Title model={model} ink={ink} className="mt-[4px] text-[20px] font-medium tracking-normal" />
               <Ref model={model} />
             </div>
           </header>
@@ -159,9 +159,9 @@ export function DocumentHeader({ model, template, ink, logo }: DocumentHeaderPro
     case 'split':
       return (
         <>
-          <header className="flex items-stretch gap-3">
+          <header className="flex items-stretch gap-[12px]">
             <div
-              className="flex min-w-0 flex-1 items-center gap-3 px-3 py-2"
+              className="flex min-w-0 flex-1 items-center gap-[12px] px-[12px] py-[8px]"
               style={{ backgroundColor: `${template.ink}1f` }}
             >
               {logo}
@@ -171,7 +171,7 @@ export function DocumentHeader({ model, template, ink, logo }: DocumentHeaderPro
               </div>
             </div>
             <div
-              className="flex shrink-0 items-center px-4"
+              className="flex shrink-0 items-center px-[16px]"
               style={{ backgroundColor: ink }}
             >
               {/* Reversed out, so the title reads on the block (§F). */}
@@ -188,14 +188,14 @@ export function DocumentHeader({ model, template, ink, logo }: DocumentHeaderPro
         <>
           <header className="flex flex-col items-center text-center">
             {logo}
-            <Name model={model} className="mt-2" />
-            <Title model={model} ink={ink} className="mt-1" />
+            <Name model={model} className="mt-[8px]" />
+            <Title model={model} ink={ink} className="mt-[4px]" />
             <Ref model={model} className="text-center" />
           </header>
-          <div className="mt-4 flex items-center gap-2 px-[10%]">
+          <div className="mt-[16px] flex items-center gap-[8px] px-[10%]">
             <div className="h-px flex-1" style={{ backgroundColor: ink }} />
             <div
-              className="h-2 w-2 rotate-45"
+              className="h-[8px] w-[8px] rotate-45"
               style={{ backgroundColor: ink }}
               aria-hidden="true"
             />
@@ -212,20 +212,20 @@ export function DocumentHeader({ model, template, ink, logo }: DocumentHeaderPro
     case 'badge':
       return (
         <>
-          <header className="relative flex items-start gap-4">
+          <header className="relative flex items-start gap-[16px]">
             <span
               aria-hidden="true"
-              className="pointer-events-none absolute -top-[40%] end-[-8%] h-32 w-32 rounded-full"
+              className="pointer-events-none absolute -top-[40%] end-[-8%] h-[128px] w-[128px] rounded-full"
               style={{ backgroundColor: ink, opacity: 0.14 }}
             />
             {logo}
             <div className="relative min-w-0 flex-1">
               <Name model={model} />
               <span
-                className="mt-1 inline-block rounded px-2 py-1"
+                className="mt-[4px] inline-block rounded px-[8px] py-[4px]"
                 style={{ backgroundColor: ink }}
               >
-                <Title model={model} ink={template.paper} className="text-xl" />
+                <Title model={model} ink={template.paper} className="text-[20px]" />
               </span>
               <Ref model={model} />
             </div>
@@ -238,12 +238,12 @@ export function DocumentHeader({ model, template, ink, logo }: DocumentHeaderPro
     case 'condensed':
       return (
         <>
-          <header className="flex items-baseline justify-between gap-4">
-            <Name model={model} className="text-base" />
-            <Title model={model} ink={ink} className="text-xl" />
+          <header className="flex items-baseline justify-between gap-[16px]">
+            <Name model={model} className="text-[16px]" />
+            <Title model={model} ink={ink} className="text-[20px]" />
           </header>
           <Rule ink={ink} opacity={0.75} height={2} />
-          <div className="mt-2 grid grid-cols-3 gap-2 text-[10px]">
+          <div className="mt-[8px] grid grid-cols-3 gap-[8px] text-[10px]">
             {[
               [model.partyLabel, model.party.name],
               ['', model.reference],
@@ -251,7 +251,7 @@ export function DocumentHeader({ model, template, ink, logo }: DocumentHeaderPro
             ].map(([label, value], cell) => (
               <div
                 key={cell}
-                className="px-2 py-1"
+                className="px-[8px] py-[4px]"
                 style={{ backgroundColor: `${template.ink}14` }}
               >
                 {label !== '' && <p className="font-bold uppercase opacity-60">{label}</p>}
@@ -266,13 +266,13 @@ export function DocumentHeader({ model, template, ink, logo }: DocumentHeaderPro
     case 'gradient':
       return (
         <header
-          className="-mx-[6%] -mt-[6%] mb-4 flex items-start gap-4 px-[6%] pb-5 pt-[6%]"
+          className="-mx-[6%] -mt-[6%] mb-[16px] flex items-start gap-[16px] px-[6%] pb-[20px] pt-[6%]"
           style={{ backgroundImage: `linear-gradient(120deg, ${ink}, ${ink}55)` }}
         >
           {logo}
           <div className="min-w-0 flex-1" style={{ color: template.paper }}>
             <Name model={model} />
-            <Title model={model} ink={template.paper} className="mt-1" />
+            <Title model={model} ink={template.paper} className="mt-[4px]" />
             <Ref model={model} />
           </div>
         </header>
@@ -282,16 +282,16 @@ export function DocumentHeader({ model, template, ink, logo }: DocumentHeaderPro
     case 'double-rule':
       return (
         <>
-          <header className="flex items-start gap-4">
+          <header className="flex items-start gap-[16px]">
             {logo}
             <div className="min-w-0 flex-1">
               <Name model={model} />
-              <Title model={model} ink={ink} className="mt-1" />
+              <Title model={model} ink={ink} className="mt-[4px]" />
               <Ref model={model} />
             </div>
           </header>
           <Rule ink={ink} height={2} />
-          <div className="mt-1 w-full" style={{ backgroundColor: ink, height: '2px' }} />
+          <div className="mt-[4px] w-full" style={{ backgroundColor: ink, height: '2px' }} />
         </>
       )
 
@@ -302,7 +302,7 @@ export function DocumentHeader({ model, template, ink, logo }: DocumentHeaderPro
           <header className="relative flex flex-col items-center text-center">
             <span
               aria-hidden="true"
-              className="pointer-events-none absolute end-0 top-0 h-14 w-20"
+              className="pointer-events-none absolute end-0 top-0 h-14 w-[80px]"
               style={{
                 border: `1px solid ${ink}`,
                 borderRadius: '0 60% 0 60%',
@@ -310,12 +310,12 @@ export function DocumentHeader({ model, template, ink, logo }: DocumentHeaderPro
               }}
             />
             {logo}
-            <Name model={model} className="mt-2" />
-            <Title model={model} ink={ink} className="mt-1" />
+            <Name model={model} className="mt-[8px]" />
+            <Title model={model} ink={ink} className="mt-[4px]" />
             <Ref model={model} className="text-center" />
           </header>
           <div
-            className="mx-[8%] mt-4"
+            className="mx-[8%] mt-[16px]"
             style={{ backgroundColor: ink, opacity: 0.6, height: '1px' }}
           />
         </>
@@ -325,7 +325,7 @@ export function DocumentHeader({ model, template, ink, logo }: DocumentHeaderPro
     case 'diagonal':
       return (
         <header
-          className="-mx-[6%] -mt-[6%] mb-4 flex items-start gap-4 px-[6%] pb-10 pt-[6%]"
+          className="-mx-[6%] -mt-[6%] mb-[16px] flex items-start gap-[16px] px-[6%] pb-[40px] pt-[6%]"
           style={{
             backgroundColor: ink,
             clipPath: 'polygon(0 0, 100% 0, 100% 72%, 0 100%)',
@@ -334,7 +334,7 @@ export function DocumentHeader({ model, template, ink, logo }: DocumentHeaderPro
           {logo}
           <div className="min-w-0 flex-1" style={{ color: template.paper }}>
             <Name model={model} />
-            <Title model={model} ink={template.paper} className="mt-1" />
+            <Title model={model} ink={template.paper} className="mt-[4px]" />
             <Ref model={model} />
           </div>
         </header>
@@ -344,10 +344,10 @@ export function DocumentHeader({ model, template, ink, logo }: DocumentHeaderPro
     case 'arch':
       return (
         <>
-          <header className="relative flex flex-col items-center pt-2 text-center">
+          <header className="relative flex flex-col items-center pt-[8px] text-center">
             <span
               aria-hidden="true"
-              className="pointer-events-none absolute inset-x-[8%] top-0 h-24"
+              className="pointer-events-none absolute inset-x-[8%] top-0 h-[96px]"
               style={{
                 border: `1px solid ${ink}`,
                 borderBottom: 'none',
@@ -356,11 +356,11 @@ export function DocumentHeader({ model, template, ink, logo }: DocumentHeaderPro
               }}
             />
             {logo}
-            <Name model={model} className="mt-2" />
-            <Title model={model} ink={ink} className="mt-1" />
+            <Name model={model} className="mt-[8px]" />
+            <Title model={model} ink={ink} className="mt-[4px]" />
             <Ref model={model} className="text-center" />
           </header>
-          <div className="mx-[28%] mt-4" style={{ backgroundColor: ink, opacity: 0.7, height: '2px' }} />
+          <div className="mx-[28%] mt-[16px]" style={{ backgroundColor: ink, opacity: 0.7, height: '2px' }} />
         </>
       )
 
@@ -375,14 +375,14 @@ export function DocumentHeader({ model, template, ink, logo }: DocumentHeaderPro
     case 'wave':
       return (
         <>
-          <header className="flex items-start gap-4">
+          <header className="flex items-start gap-[16px]">
             {logo}
             <div className="min-w-0 flex-1">
               <Name model={model} className={style === 'frame' ? 'text-center' : ''} />
               <Title
                 model={model}
                 ink={ink}
-                className={`mt-1 ${style === 'frame' ? 'text-center' : ''}`}
+                className={`mt-[4px] ${style === 'frame' ? 'text-center' : ''}`}
               />
               <Ref model={model} className={style === 'frame' ? 'text-center' : ''} />
             </div>
