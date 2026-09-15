@@ -145,7 +145,15 @@ export function DocumentList({ type, rows, onOpen, onNew, onBack }: DocumentList
       </div>
 
       <label className="glass-pill my-3 flex min-h-tap items-center gap-2 rounded-full px-3.5">
-        <span className="sr-only">{format(strings.lists.searchIn, { label: plural })}</span>
+        {/*
+          No `sr-only` label here: the input carries `aria-label` with the
+          same words, and a wrapping `<label>` whose text content repeats it
+          names the field TWICE — a reader announces "the label, the label, search
+          box". The reading-order sweep is what found it: the span is
+          clipped off-screen, so it is heard before the input and seen after
+          it, and an inversion is what a duplicate label looks like from the
+          outside.
+        */}
         <Icon name="search" size={0.9} className="shrink-0 opacity-45" />
         <input
           type="search"

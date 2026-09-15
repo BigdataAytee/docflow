@@ -337,7 +337,15 @@ export function Home({
 
       <div className="px-3.5 pt-[13px]">
         <label className="glass-pill flex min-h-tap items-center gap-2 rounded-full px-3.5">
-          <span className="sr-only">{strings.home.searchEverything}</span>
+          {/*
+            No `sr-only` label here: the input carries `aria-label` with the
+            same words, and a wrapping `<label>` whose text content repeats it
+            names the field TWICE — a reader announces "the label, the label, search
+            box". The reading-order sweep is what found it: the span is
+            clipped off-screen, so it is heard before the input and seen after
+            it, and an inversion is what a duplicate label looks like from the
+            outside.
+          */}
           <Icon name="search" size={0.95} className="shrink-0 opacity-45" />
           <input
             type="search"

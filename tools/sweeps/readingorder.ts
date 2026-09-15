@@ -106,6 +106,22 @@ export const READING_ORDER_SCAN = `(() => {
     if (element.closest('[aria-hidden="true"]') !== null) return false
     const box = element.getBoundingClientRect()
     if (box.width === 0 && box.height === 0) return false
+    /*
+     * A VISUALLY HIDDEN element has no place in a visual order.
+     *
+     * A screen-reader-only class clips its element to a 1px box pinned
+     * wherever the layout happens to leave it, so comparing where it is SEEN
+     * against where it is HEARD compares a real position with a meaningless
+     * one. The builder's status band — a live region, correctly placed last
+     * in the DOM because position is irrelevant to one — read as an inversion
+     * on four routes for exactly that reason.
+     *
+     * This is not an exemption for hidden CONTENT: an element with zero size
+     * is already out above, and anything a reader can hear and a person can
+     * SEE still has both orders compared. It only declines to rank something
+     * that has no visual rank to have.
+     */
+    if (box.width <= 1 || box.height <= 1) return false
     if (element.getAttribute('aria-label')) return true
     if (['a', 'button', 'input', 'select', 'textarea', 'h1', 'h2', 'h3', 'h4'].includes(tag)) return true
     // Its own text, not a descendant's: a wrapper is not a stop.

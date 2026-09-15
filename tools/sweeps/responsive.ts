@@ -75,6 +75,35 @@ export async function overflowAt(page: Page, route: string): Promise<Overflow | 
           if (overflow === 'auto' || overflow === 'scroll') { scroller = true; break }
         }
         if (scroller) continue
+
+        // A CLIPPED DECORATION is not lost content.
+        //
+        // §F's ambient orbs are radial gradients placed deliberately past the
+        // edge inside an overflow-hidden page; the header's corner circle is
+        // the same idea. They carry no text, they are aria-hidden, and the
+        // clip is the design. Reporting them made this sweep fail on all
+        // nineteen routes, every run, since the glass layer shipped — which
+        // is how a check becomes one nobody reads.
+        //
+        // Narrow on purpose, all three conditions together: hidden from
+        // assistive tech, no text to lose, AND actually inside something that
+        // clips. Real content clipped away still reports, which is the case
+        // the overflow-hidden rule above was written for.
+        //
+        // Matched on an ANCESTOR, not the element's own attribute: §F marks
+        // the orbs CONTAINER aria-hidden and the four spans inherit that
+        // hiding, so testing each span found nothing and the exemption never
+        // fired.
+        const empty = (element.textContent || '').trim() === ''
+        const decorative = element.closest('[aria-hidden="true"]') !== null && empty
+        if (decorative) {
+          let clipped = false
+          for (let up = element.parentElement; up !== null; up = up.parentElement) {
+            if (getComputedStyle(up).overflowX === 'hidden') { clipped = true; break }
+          }
+          if (clipped) continue
+        }
+
         const parent = element.parentElement
         if (parent !== null && parent !== document.body) {
           const parentBox = parent.getBoundingClientRect()

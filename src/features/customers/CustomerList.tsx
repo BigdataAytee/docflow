@@ -72,7 +72,15 @@ export function CustomerList({
   return (
     <section className="px-4 py-4">
       <label className="block">
-        <span className="sr-only">{strings.customers.searchPlaceholder}</span>
+        {/*
+          No `sr-only` label here: the input carries `aria-label` with the
+          same words, and a wrapping `<label>` whose text content repeats it
+          names the field TWICE — a reader announces "the label, the label, search
+          box". The reading-order sweep is what found it: the span is
+          clipped off-screen, so it is heard before the input and seen after
+          it, and an inversion is what a duplicate label looks like from the
+          outside.
+        */}
         <input
           type="search"
           value={query}

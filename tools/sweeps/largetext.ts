@@ -80,6 +80,26 @@ export async function clippedAt(page: Page, route: string): Promise<readonly Cli
           if (overflow === 'auto' || overflow === 'scroll') { scroller = true; break }
         }
         if (scroller) continue
+
+        // A CLIPPED DECORATION is not lost content — the same exemption as
+        // the responsive sweep, and here for the same reason: §F's ambient
+        // orbs are placed deliberately past the edge inside an
+        // overflow-hidden page, carry no text, and are hidden from assistive
+        // tech by their container. Reporting them failed all nineteen routes
+        // on every run, which teaches people to ignore the sweep.
+        //
+        // All three conditions together, so real content clipped away still
+        // reports: hidden from assistive tech, nothing to lose, and actually
+        // inside something that clips.
+        const empty = (element.textContent || '').trim() === ''
+        if (empty && element.closest('[aria-hidden="true"]') !== null) {
+          let clipped = false
+          for (let up = element.parentElement; up !== null; up = up.parentElement) {
+            if (getComputedStyle(up).overflowX === 'hidden') { clipped = true; break }
+          }
+          if (clipped) continue
+        }
+
         const parent = element.parentElement
         // The OUTERMOST offender only: a wide row makes every child wide.
         if (parent !== null && parent !== document.body) {
