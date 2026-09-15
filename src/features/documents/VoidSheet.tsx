@@ -12,8 +12,6 @@
  *    the refusal names the two real routes out rather than dead-ending.
  */
 
-import { useState } from 'react'
-
 import { useCompany } from '../../app/context'
 import { EmptyState, useFocusOnOpen } from '../../ui'
 import type { VoidableDocument } from './void'
@@ -24,7 +22,7 @@ export interface VoidSheetProps {
   readonly document: VoidableDocument
   readonly payments: readonly Payment[]
   readonly creditNotes?: readonly CreditNote[]
-  readonly onVoid: (reason: string) => void
+  readonly onVoid: () => void
   readonly onCreditInstead: () => void
   readonly onClose: () => void
   readonly error?: string
@@ -43,8 +41,6 @@ export function VoidSheet({
   const panel = useFocusOnOpen<HTMLElement>()
   const { strings } = useCompany()
   const v = strings.voidIt
-
-  const [reason, setReason] = useState('')
 
   const blockers = reasonsVoidIsBlocked(document, payments)
   const alternatives = alternativesFor(document, payments, creditNotes)
@@ -111,21 +107,16 @@ export function VoidSheet({
             {document.type === 'receipt' ? v.receiptPaymentStays : v.paymentsStay}
           </p>
 
-          <label className="mt-3 block">
-            <span className="mb-1 block text-xs font-medium opacity-70">{v.why}</span>
-            <input
-              className="min-h-tap w-full rounded-xl border border-edge/10 bg-surface px-3 text-sm"
-              aria-label={v.why}
-              value={reason}
-              onChange={(event) => setReason(event.target.value)}
-            />
-          </label>
-
+          {/*
+            No "why?" field. It used to sit here, required, and the text was
+            discarded the moment it was typed — nothing stores a void reason,
+            v6 never asks for one, and Rule #1 says no new required fields.
+            The warning above is what this sheet is for.
+          */}
           <button
             type="button"
-            className="mt-4 min-h-tap w-full rounded-xl bg-status-bad px-4 text-sm font-semibold text-white disabled:opacity-40"
-            disabled={reason.trim() === ''}
-            onClick={() => onVoid(reason.trim())}
+            className="mt-4 min-h-tap w-full rounded-xl bg-status-bad px-4 text-sm font-semibold text-white"
+            onClick={onVoid}
           >
             {v.confirm}
           </button>

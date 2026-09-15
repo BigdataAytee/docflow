@@ -76,14 +76,28 @@ describe('It says what cancelling is, before the tap', () => {
     ).toBeInTheDocument()
   })
 
-  it('asks why, and will not proceed without it', async () => {
+  /**
+   * The warning IS the confirmation.
+   *
+   * This used to disable the button until a reason was typed, and the text
+   * went nowhere — no column, no write, nothing on the document. A required
+   * field that is discarded is Rule #1 broken for no gain, so the sheet now
+   * explains and asks once.
+   */
+  it('cancels on one tap, with nothing to type first', async () => {
     const user = userEvent.setup()
     const props = renderSheet()
-    expect(screen.getByRole('button', { name: 'Cancel it' })).toBeDisabled()
 
-    await user.type(screen.getByLabelText('Why?'), 'Raised twice')
-    await user.click(screen.getByRole('button', { name: 'Cancel it' }))
-    expect(props.onVoid).toHaveBeenCalledWith('Raised twice')
+    const confirm = screen.getByRole('button', { name: 'Cancel it' })
+    expect(confirm).toBeEnabled()
+    await user.click(confirm)
+    expect(props.onVoid).toHaveBeenCalledOnce()
+  })
+
+  /** And the explanation it exists to give is still given. */
+  it('says what cancelling is not, before the tap', () => {
+    renderSheet()
+    expect(screen.getByText(/Nothing is deleted/i)).toBeInTheDocument()
   })
 })
 

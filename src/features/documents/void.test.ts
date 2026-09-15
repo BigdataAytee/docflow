@@ -114,7 +114,6 @@ describe('An invoice with money against it is never cancelled', () => {
       voidDocument({
         document: doc({ type: 'invoice', status: 'issued' }),
         payments: [allocated(50_000_00)],
-        reason: 'Customer changed their mind',
         at: '2026-09-12T10:00:00Z',
       }),
     ).toThrow(VoidError)
@@ -171,7 +170,6 @@ describe('Cancelling a receipt never un-receives the money (§V)', () => {
     const decision = voidDocument({
       document: doc({ type: 'receipt', status: 'issued' }),
       payments: [standalone(50_000_00)],
-      reason: 'Wrong customer',
       at: '2026-09-12T10:00:00Z',
     })
     expect(decision.leavesPaymentsAlone).toBe(true)
@@ -183,7 +181,6 @@ describe('Cancelling a receipt never un-receives the money (§V)', () => {
     voidDocument({
       document: doc({ type: 'receipt', status: 'issued' }),
       payments,
-      reason: 'Wrong customer',
       at: '2026-09-12T10:00:00Z',
     })
     // Nothing in `voidDocument` can touch the ledger: it returns a decision
@@ -193,25 +190,47 @@ describe('Cancelling a receipt never un-receives the money (§V)', () => {
 })
 
 describe('The decision itself', () => {
-  it('asks why', () => {
+  /**
+   * It used to demand a reason and then discard it: nothing stores a void
+   * reason, §E has no column for one, and the call site persists the status
+   * alone. A required field that exists only to be thrown away is Rule #1's
+   * "no new required fields" broken for nothing, so the demand is gone and
+   * this is the case that keeps it gone.
+   */
+  it('cancels without asking for a justification (Rule #1)', () => {
     expect(() =>
       voidDocument({
         document: doc({ type: 'invoice', status: 'issued' }),
         payments: [],
-        reason: '   ',
         at: '2026-09-12T10:00:00Z',
       }),
-    ).toThrow(/why/)
+    ).not.toThrow()
+  })
+
+  /**
+   * What actually protects the document is unchanged, and it is the real
+   * reason this sheet exists: money that has arrived blocks the cancel
+   * outright, whatever anybody types.
+   */
+  it('still refuses when money has come in (Rule #3)', () => {
+    expect(() =>
+      voidDocument({
+        document: doc({ type: 'invoice', status: 'issued' }),
+        payments: [allocated(50_000_00)],
+        at: '2026-09-12T10:00:00Z',
+      }),
+    ).toThrow(VoidError)
   })
 
   it('moves only the status, and is frozen', () => {
     const decision = voidDocument({
       document: doc({ type: 'invoice', status: 'issued' }),
       payments: [],
-      reason: 'Raised twice by mistake',
       at: '2026-09-12T10:00:00Z',
     })
-    expect(decision).toMatchObject({ documentId: 'doc_1', to: 'void', reason: 'Raised twice by mistake' })
+    expect(decision).toMatchObject({ documentId: 'doc_1', to: 'void' })
+    // And no reason: nothing stores one, so the decision does not carry one.
+    expect(decision).not.toHaveProperty('reason')
     // No reference, no labels, no totals: a void is not an edit (§M).
     expect(decision).not.toHaveProperty('issuedReference')
     expect(decision).not.toHaveProperty('frozenLabels')

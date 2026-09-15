@@ -1417,7 +1417,8 @@ describe('Cancelling and crediting (Rule #5, §G)', () => {
     const state = renderAt('/doc/doc_inv', (seed) => invoiced(seed))
 
     await user.click(await screen.findByRole('button', { name: 'Cancel this document' }))
-    await user.type(screen.getByLabelText('Why?'), 'Raised twice by mistake')
+    // Nothing to type: the required reason was a new required field that got
+    // discarded, so the warning is the confirmation now (Rule #1).
     await user.click(screen.getByRole('button', { name: 'Cancel it' }))
 
     await waitFor(() => expect(state.documents[0]?.status).toBe('void'))

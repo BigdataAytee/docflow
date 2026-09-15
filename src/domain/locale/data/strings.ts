@@ -607,6 +607,9 @@ export interface UiStrings {
     readonly signHere: string
     readonly whoAreYou: string
     readonly yourRole: string
+    /** The goods table on the recipient's own page (§P, §V). */
+    readonly goodsHeading: string
+    readonly expected: string
     readonly signedThanks: string
     readonly optionalSignature: string
     readonly deliverTo: string
@@ -614,6 +617,17 @@ export interface UiStrings {
     readonly failed: string
     readonly copyAccept: string
     readonly copySign: string
+    /**
+     * The sheet the link appears in (§G). `{label}` is the document's own
+     * name through the terminology catalogue, never the word "waybill"
+     * written here (Rule #4).
+     */
+    readonly signingLinkTitle: string
+    readonly signingLinkBody: string
+    readonly sendLink: string
+    readonly copyLink: string
+    readonly copiedShort: string
+    readonly backTo: string
     readonly copied: string
     readonly expiresIn: string
     readonly needsInternet: string
@@ -690,7 +704,6 @@ export interface UiStrings {
   readonly voidIt: {
     readonly title: string
     readonly explain: string
-    readonly why: string
     readonly confirm: string
     readonly done: string
     readonly alreadyVoid: string
@@ -1387,6 +1400,8 @@ const EN: UiStrings = {
     signHere: 'Sign to confirm you received these goods',
     whoAreYou: 'Your name',
     yourRole: 'Your role (optional)',
+    goodsHeading: 'Goods received',
+    expected: 'Expected: {quantity}',
     signedThanks: 'Thank you. {business} has been told this arrived.',
     optionalSignature: 'Add your signature (optional)',
     deliverTo: 'Delivered to',
@@ -1394,6 +1409,13 @@ const EN: UiStrings = {
     failed: 'That did not go through. Check your connection and try again.',
     copyAccept: 'Copy a link for them to accept',
     copySign: 'Copy a link for them to sign',
+    signingLinkTitle: '{label} signing link',
+    signingLinkBody:
+      'A private link for the recipient to check the goods and sign for them. It works once, for 14 days.',
+    sendLink: 'Send it',
+    copyLink: 'Copy the link',
+    copiedShort: 'Copied',
+    backTo: 'Back to the {label}',
     copied: 'Copied. It works for 14 days, once.',
     expiresIn: 'A link is already out. Copying again replaces it.',
     // §Q: "Copy-link actions disabled with a 'needs internet' note until
@@ -1474,7 +1496,6 @@ const EN: UiStrings = {
   voidIt: {
     title: 'Cancel this document',
     explain: 'It stays on your records, marked cancelled. Nothing is deleted.',
-    why: 'Why?',
     confirm: 'Cancel it',
     done: 'Cancelled.',
     alreadyVoid: 'Already cancelled.',

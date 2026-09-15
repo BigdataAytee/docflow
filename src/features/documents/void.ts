@@ -69,14 +69,12 @@ export const canVoid = (document: VoidableDocument, payments: readonly Payment[]
 export interface VoidRequest {
   readonly document: VoidableDocument
   readonly payments: readonly Payment[]
-  readonly reason: string
   readonly at: string
 }
 
 export interface VoidDecision {
   readonly documentId: string
   readonly to: 'void'
-  readonly reason: string
   readonly at: string
   /**
    * What voiding this does NOT do, stated rather than assumed. A receipt's
@@ -91,15 +89,25 @@ export function voidDocument(request: VoidRequest): VoidDecision {
     throw new VoidError(`This cannot be cancelled: ${blockers.join(', ')}.`)
   }
 
-  const reason = request.reason.trim()
-  if (reason === '') {
-    throw new VoidError('Say why — a cancelled document with no reason is unexplainable later.')
-  }
-
+  /*
+   * NO REASON IS ASKED FOR, and the one this used to demand was a Rule #1
+   * violation with nothing to show for it.
+   *
+   * It blocked the button until something was typed, then threw the text
+   * away: there is no `void_reason` column in §E, nothing writes one, and the
+   * call site persists the STATUS alone. v6 never asks for a reason and
+   * neither does the reference. So it was a required field that existed only
+   * to be discarded — "No new required fields, ever" (Rule #1), and this was
+   * a new one.
+   *
+   * What the sheet is actually for survives: saying that cancelling is not a
+   * delete, that it never touches money already recorded, and refusing
+   * outright when money HAS arrived. That refusal is the protection; a
+   * sentence nobody stores was never adding to it.
+   */
   return Object.freeze({
     documentId: request.document.id,
     to: 'void' as const,
-    reason,
     at: request.at,
     leavesPaymentsAlone: true,
   })

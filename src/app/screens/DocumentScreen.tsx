@@ -85,6 +85,8 @@ import { displayLabels } from '../../domain/locale/profile'
 import { formatMoney } from '../../features/customers/formatMoney'
 import { format } from '../../domain/locale/data/strings'
 import { ShareSheet } from '../../share/ShareSheet'
+import { SigningLinkSheet } from '../../features/links/SigningLinkSheet'
+import type { SharePort } from '../../share/port'
 import { useReview } from '../ReviewHost'
 import { createWebSharePort } from '../../share/web'
 import { todayIso } from '../../domain/dates/calendar'
@@ -447,7 +449,27 @@ export function DocumentScreen({ today = todayIso() }: { today?: string }) {
           </section>
         )}
 
-        {canSign(record) && !signing && <CopyLinkRow documentId={record.id} kind="sign" />}
+        {canSign(record) && !signing && <CopyLinkRow documentId={record.id} kind="sign"
+            typeLabel={labels.printedTitle}
+            reference={record.issuedReference ?? record.id}
+            recipient={customer?.name ?? ''}
+            port={port}
+            onSent={() => {
+              // A handed-off signing link is a handoff like any other (§M).
+              const event = shareEventFor({
+                id: `pending:${record.id}`,
+                companyId: record.companyId,
+                documentId: record.id,
+                at: new Date().toISOString(),
+                result: { outcome: 'handed_off', channel: 'sheet' },
+                deviceId: deviceId(),
+              })
+              if (event !== null) {
+                const { id: _id, companyId: _companyId, ...rest } = event
+                void actions.recordShare(rest)
+              }
+            }}
+          />}
 
         {signing && (
           <SignDeliverySheet
@@ -706,7 +728,27 @@ export function DocumentScreen({ today = todayIso() }: { today?: string }) {
                 </button>
               ))}
             </div>
-            <CopyLinkRow documentId={record.id} kind="accept" />
+            <CopyLinkRow documentId={record.id} kind="accept"
+            typeLabel={labels.printedTitle}
+            reference={record.issuedReference ?? record.id}
+            recipient={customer?.name ?? ''}
+            port={port}
+            onSent={() => {
+              // A handed-off signing link is a handoff like any other (§M).
+              const event = shareEventFor({
+                id: `pending:${record.id}`,
+                companyId: record.companyId,
+                documentId: record.id,
+                at: new Date().toISOString(),
+                result: { outcome: 'handed_off', channel: 'sheet' },
+                deviceId: deviceId(),
+              })
+              if (event !== null) {
+                const { id: _id, companyId: _companyId, ...rest } = event
+                void actions.recordShare(rest)
+              }
+            }}
+          />
           </section>
         )}
 
@@ -908,13 +950,12 @@ export function DocumentScreen({ today = todayIso() }: { today?: string }) {
               setCreditProblem(null)
               setCrediting(true)
             }}
-            onVoid={(reason) => {
+            onVoid={() => {
               let decision
               try {
                 decision = voidDocument({
                   document: voidable,
                   payments,
-                  reason,
                   at: new Date().toISOString(),
                 })
               } catch (cause) {
@@ -1176,7 +1217,23 @@ export function DocumentScreen({ today = todayIso() }: { today?: string }) {
  * link and kills the old one, which is also how an owner revokes one sent to
  * the wrong number.
  */
-function CopyLinkRow({ documentId, kind }: { documentId: string; kind: 'accept' | 'sign' }) {
+function CopyLinkRow({
+  documentId,
+  kind,
+  typeLabel,
+  reference,
+  recipient,
+  port,
+  onSent,
+}: {
+  documentId: string
+  kind: 'accept' | 'sign'
+  typeLabel: string
+  reference: string
+  recipient: string
+  port: SharePort
+  onSent: () => void
+}) {
   const { strings } = useCompany()
   const { actions } = useAppData()
   const [copied, setCopied] = useState<string | null>(null)
@@ -1214,15 +1271,23 @@ function CopyLinkRow({ documentId, kind }: { documentId: string; kind: 'accept' 
         {kind === 'accept' ? strings.publicLink.copyAccept : strings.publicLink.copySign}
       </button>
 
+      {/*
+        The link opens a SHEET rather than printing as a bare line under the
+        button. It used to be minted, copied and shown as a URL with nothing
+        saying what it was — and with no way to SEND it, when sending is the
+        whole point and copying is the fallback for a platform with no share
+        sheet.
+      */}
       {copied !== null && (
-        <>
-          <p className="text-center text-[11px] opacity-60">{strings.publicLink.copied}</p>
-          {/* Shown as well as copied: a clipboard write can be refused, and
-              an owner who cannot see the link has nothing to send. */}
-          <p className="break-all rounded-lg bg-surface/70 px-2 py-1 text-center text-[11px] tabular-nums">
-            {copied}
-          </p>
-        </>
+        <SigningLinkSheet
+          typeLabel={typeLabel}
+          reference={reference}
+          recipient={recipient}
+          url={copied}
+          port={port}
+          onSent={onSent}
+          onClose={() => setCopied(null)}
+        />
       )}
 
       {problem !== null && (
