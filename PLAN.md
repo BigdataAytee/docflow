@@ -133,7 +133,37 @@ produced one yet**. Until it does, Phase 5 stays **0 of 3 proven** — deployed
 and unverified is a different state from working, and §X does not let this
 file call it the latter.
 
-**The gate is blocked on TLS interception, not on credentials** (2026-09-15).
+**The API half has now been run** (2026-09-15, `npm run gate:hosted:api`):
+**9 passed, 1 failed, 3 skipped.** The isolation boundary is proven against
+the real project with real JWTs — two users signed in, A reads only its own
+rows, A cannot read or write B (refused by name by the policy), an anonymous
+caller sees nothing, the client cannot upgrade its own plan, sessions carry a
+refresh token. That is §Q Phase 1's cross-company clause, on the host, and it
+closes S4.
+
+**The one failure is a project SETTING, not code**: the password-reset
+endpoint accepted fifteen requests without refusing one, against a declared
+ten per hour. It matters more than its size suggests — the address in a reset
+request is attacker-chosen, so an ungoverned reset endpoint is a mail bomb
+with our domain on it. Dashboard → Authentication → Rate Limits.
+
+Three were skipped by design: sign-up creates accounts (`GATE_RESET=1` on a
+scratch project), magic links send mail to whatever address is given, and
+`APPLIED` in `src/domain/auth/limits.ts` is still false — two limits are now
+verified in force and one verified absent, which is not the same as all five
+applied, so the flag stays false.
+
+One honest caveat on a pass: the token-refresh probe sends an INVALID refresh
+token, so its 429 proves GoTrue throttles bad tokens rather than that the
+declared 1800/hour for legitimate refreshes is in force. Correct behaviour,
+weaker evidence than the tick implies — and not a thing to "fix" by hammering
+real refresh tokens.
+
+The run leaves fixture rows behind: two companies
+(`11111111-…`, `22222222-…`) and a customer each. The auth users it creates
+are deleted; those rows are not.
+
+**The DB half is blocked on TLS interception, not on credentials** (2026-09-15).
 The direct Postgres connection aborts with `self-signed certificate in
 certificate chain` on both pooler ports, because something on that Windows
 machine is terminating TLS. Three things were fixed rather than worked
@@ -2525,7 +2555,7 @@ still unproven, which is a different thing from finished.
 | S1 | The deploy: twenty migrations, three edge functions with `--no-verify-jwt`, both keys rotated | §Q Phase 5 | **Done 2026-09-15.** 0021 is the one still to push |
 | S2 | Paystack test-mode credentials, and the webhook path end to end | §Q Phase 5 | A merchant account nobody here can open |
 | S3 | `npm run pentest` against a live instance | §Q Phase 7 | Written, proved adversarial against a permissive fake, never run for real. The secrets half does run today, in CI |
-| S4 | The two-company denial suite against the HOSTED project | §Q Phase 1 *(self-imposed)* | It passes against local Postgres in CI; the clause asks about the host |
+| S4 | The two-company denial suite against the HOSTED project | §Q Phase 1 *(self-imposed)* | **Done 2026-09-15**, `gate:hosted:api`: two real users, A cannot read or write B, anonymous sees nothing, the client cannot upgrade its own plan. Real JWTs against the real project |
 | S5 | The auth rate-limit probe — gate step 10 | §Q Phase 7 | The numbers are declared and the probe is driven against a stub in CI. Only the real project can answer |
 | S6 | Login / register / Google / reset working against real auth | §Q Phase 1 | Code complete, no reachable instance. (D2 is the separate question of how many taps it takes) |
 | S7 | The public-link journeys — accept, reject, sign — through a deployed function | §Q Phase 5 | The pages, the token rules and the RPC are built and tested; nothing has ever served one |
