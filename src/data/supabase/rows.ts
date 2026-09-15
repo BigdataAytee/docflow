@@ -34,6 +34,7 @@ import type {
   DocumentRecord,
   Expense,
   LinkTokenRecord,
+  RecurrenceRecord,
   Payment,
   PaymentAllocation,
   SavedItem,
@@ -533,4 +534,33 @@ export function fromCreditNote(patch: Partial<CreditNoteRecord>): Row {
     }
   }
   return row
+}
+
+// -------------------------------------------------------------- recurrences
+
+/**
+ * A monthly repeat (§L4).
+ *
+ * Dates go both ways as calendar days — `date` columns, never `timestamptz`.
+ * A schedule that started "at 23:40 UTC" belongs to a different day in Lagos,
+ * and §L4's periods are local.
+ */
+export function toRecurrence(row: Row): RecurrenceRecord {
+  return {
+    companyId: String(row['company_id']),
+    sourceDocumentId: String(row['source_document_id']),
+    dayOfMonth: minor(row['day_of_month']),
+    startedOn: String(row['started_on']),
+    ...omitNull({ endedOn: text(row['ended_on']) }),
+  }
+}
+
+export function fromRecurrence(patch: Partial<RecurrenceRecord>): Row {
+  return omitNull({
+    source_document_id: patch.sourceDocumentId,
+    company_id: patch.companyId,
+    day_of_month: patch.dayOfMonth,
+    started_on: patch.startedOn,
+    ended_on: patch.endedOn,
+  })
 }

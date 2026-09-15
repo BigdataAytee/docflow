@@ -72,14 +72,17 @@ const testsIn = (...paths: string[]): number => {
 }
 
 describe('The status board counts what is actually here (§X)', () => {
-  it('knows how many migrations are written and unrun', () => {
-    const word = claimed(/All ([a-z-]+) migrations and all [a-z-]+ edge functions are written and unrun/)
+  it('knows how many migrations are written', () => {
+    // The sentence changed shape when the deploy happened — "written and
+    // unrun" stopped being true of all of them — and the count is still the
+    // thing that goes stale, so it is still re-derived from the directory.
+    const word = claimed(/\*\*([A-Za-z-]+) migrations\*\* are written/)
     const actual = readdirSync(root('supabase/migrations')).filter((f) => f.endsWith('.sql')).length
     expect(asNumber(word), `"${word}" is not a number this test knows`).toBe(actual)
   })
 
   it('knows how many edge functions there are', () => {
-    const word = claimed(/All [a-z-]+ migrations and all ([a-z-]+) edge functions are written and unrun/)
+    const word = claimed(/deploy: [a-z-]+ migrations, ([a-z-]+) edge functions with/)
     // `_shared` is a module both functions import, not an endpoint anybody deploys.
     const actual = readdirSync(root('supabase/functions'), { withFileTypes: true }).filter(
       (entry) => entry.isDirectory() && !entry.name.startsWith('_'),
@@ -96,7 +99,7 @@ describe('The two remainder lists are counted, not estimated (§X)', () => {
   it('says how many things are waiting on the deploy, and means it', () => {
     // The sentence this checks replaced a prose list that had been patched
     // from "two" to "a third now joins them" and was silently at ten.
-    const word = claimed(/\*\*([A-Za-z-]+) separate items now queue behind that one act\*\*/)
+    const word = claimed(/\*\*([A-Za-z-]+) separate items sat behind that one act\*\*/)
     expect(asNumber(word), `"${word}" is not a number this test knows`).toBe(idsIn('S').length)
   })
 

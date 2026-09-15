@@ -32,7 +32,6 @@ import {
   type CompanyRepository,
   type Customer,
   type CustomerRepository,
-  type RecurrenceRepository,
   type Repositories,
   RepositoryError,
 } from '../repositories'
@@ -40,6 +39,7 @@ import { type Row, fromCompany, fromCustomer, toCompany, toCustomer } from './ro
 import { currentRow, insertOnce, orThrow } from './mutate'
 import { anyColumnLike, searchable } from './search'
 import { createDocumentRepository } from './documents'
+import { createRecurrenceRepository } from './recurrences'
 import { createPaymentRepository } from './payments'
 import { accountRepository } from './accountDeletion'
 import {
@@ -144,34 +144,13 @@ export function createCustomerRepository(db: SupabaseClient): CustomerRepository
  * cleanly into the app, and lost money the first time someone recorded a
  * payment — "not written yet" belonged in the compiler, not in a comment.
  *
- * What this still does NOT mean: nothing is wired to it. `src/app/store.tsx`
- * builds the in-memory store, and pointing the app at a project needs the
- * secrets and a deploy. None of this has spoken to PostgREST.
+ * Repeats were the last contract to arrive, and they arrived with their own
+ * migration rather than before it: `recurrencesNotDeployed` used to refuse
+ * here because `recurrences` had no table and no policy, and a policy that is
+ * present, well formed and subtly wrong passes every assertion the RLS suite
+ * makes while leaking across companies. Both halves ship in one change now,
+ * proved by `npm run test:rls` against a real Postgres.
  */
-/**
- * Monthly repeats (§L4) — DELIBERATELY NOT IMPLEMENTED HERE.
- *
- * `recurrences` has no table in `supabase/migrations`, and its RLS policy is
- * not written, because it cannot be executed from where it would be written.
- * `supabase/tests/rls.test.ts` asserts enable + force on every table and would
- * catch an ABSENT or malformed policy — but a present, well-formed, subtly
- * wrong one passes exactly those assertions and leaks across companies. A
- * policy belongs with somebody who can run the suite against a real Postgres.
- *
- * So this refuses rather than querying a table that is not there. A PostgREST
- * call against a missing relation fails with a message about schema cache
- * reloads; this says what is actually true. It goes away in Phase 5, replaced
- * by the real thing alongside its migration.
- */
-function recurrencesNotDeployed(): RecurrenceRepository {
-  const refuse = (): never => {
-    throw new RepositoryError(
-      'Repeats are not available on the hosted project yet: the recurrences table and its ' +
-        'row-level security policy ship with the Phase 5 deploy (v6 §L4, §P).',
-    )
-  }
-  return { list: refuse, start: refuse, stop: refuse }
-}
 
 export function createSupabaseRepositories(db: SupabaseClient): Repositories {
   return {
@@ -179,7 +158,7 @@ export function createSupabaseRepositories(db: SupabaseClient): Repositories {
     companies: createCompanyRepository(db),
     customers: createCustomerRepository(db),
     documents: createDocumentRepository(db),
-    recurrences: recurrencesNotDeployed(),
+    recurrences: createRecurrenceRepository(db),
     payments: createPaymentRepository(db),
     items: createItemRepository(db),
     expenses: createExpenseRepository(db),

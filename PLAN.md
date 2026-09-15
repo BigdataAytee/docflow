@@ -50,19 +50,26 @@ control that cannot do what it says (§N):
 | **"Your name" field** | §E's `users` row has `display_name`; nothing in this build reads that row. An input with nowhere to save is the species above. | needs a users repository |
 | **FR / ES / AR** | §S: no non-working language toggle ever ships. The picker lists what has a complete catalogue, derived rather than hand-kept. | needs catalogues |
 
-### Waiting on the Supabase deploy
+### The deploy (done 2026-09-15) and what it did not settle
 
-**This is the single largest blocker and it has not moved.** Twenty migrations
-and three edge functions are written and unrun. S1–S10 under "The server
-remainder" queue behind it. Two additions from this pass:
+Migrations 0001–0020 are applied, the three edge functions are deployed and
+both keys are rotated. **Phase 5 is still 0 of 3 proven**: `gate:hosted` has
+not been run — it needs the three credentials in a gitignored `.env` that does
+not exist on this machine. Deployed and unverified is not working.
 
-* `0020_company_address.sql` — the business address (§F's Sikky box, §R's setup).
+`0021_recurrences.sql` is written and NOT pushed; it ships with the client
+repository and its RLS suite. Two things still to decide or watch:
+
+* `0021` needs `supabase db push`. The RLS suite proving its policy runs in CI
+  against a `postgres:16` service, not here — there is no Docker and no local
+  Postgres on this machine, so `npm run test:rls` could not be run before the
+  push. **Watch that CI run**; it is the proof, and it is the whole reason the
+  table waited this long.
 * Extending `PublicView` with brand assets would make the unauthenticated
   endpoint serve those assets to anyone holding a link. **Decide that
-  deliberately at deploy time**; do not inherit it from a layout preference.
+  deliberately**; do not inherit it from a layout preference. Still open.
 
-Phase 5's gate stays 0 of 3, and Phase 7's §V checklist cannot go green while
-Phase 5's is not.
+Phase 7's §V checklist cannot go green while Phase 5's gate is unproven.
 
 ### Waiting on a device
 
@@ -109,15 +116,28 @@ Phase 5's is not.
 | **6** | Local AI + logo | the §N six-step gate per tier; the §O definition of done | **part built** — Tier-B extractor and the ladder's logic; gate needs devices |
 | **7** | Admin, hardening, migration, launch | the §V checklist green end to end | **mostly built, gate NOT passed** — admin with server-enforced permissions, the legacy migration, the pen-check roster, the §T discoverability package, the marketing site, the store screenshots and policy questionnaire, backup and export, **all seven sweeps**, account deletion, the ratings prompt, store billing's non-device half, the unlock sheets, the D12 preparation, the shared-state rate limiter, and the auth limits — declared, probed by a gate step that is itself tested, and said in the app's own words. Everything still open needs a person: devices, store accounts, a deploy, §W's decisions — and the one act nobody here can perform, which is RUNNING the auth probe against a project |
 
-**The one thing the whole build is waiting on** (2026-09-14): nothing is
-deployed. `supabase db push`; deploy `public-link`, `payment-webhook` and
-`store-notifications` with `--no-verify-jwt`; rotate both Supabase keys;
-open a Paystack test-mode merchant account. Phase 5's gate is **0 of 3**
-until then, and Phase 7's §V checklist cannot be green while Phase 5's is
-not. All twenty migrations and all three edge functions are written and unrun.
-**Ten separate items now queue behind that one act** — they are listed as S1–S10
-under "The server remainder" below, so the cost of not deploying is countable
-rather than scattered.
+**The deploy has happened** (2026-09-15). Migrations 0001–0020 pushed;
+`public-link`, `payment-webhook` and `store-notifications` deployed with
+`--no-verify-jwt`; both Supabase keys rotated; a Paystack test merchant open
+with its secret set as a function secret and the webhook registered. S1 is
+done, and S2–S10 are unblocked rather than finished.
+
+**What that does NOT yet mean.** Phase 5's gate is three clauses —
+cross-device visibility, token behaviour per §P, one payment per event — and
+a deploy is the precondition for testing them, not the test. `npm run
+gate:hosted` is what turns the deploy into a gate result, and it has **not
+been run from this machine**: it needs `VITE_SUPABASE_URL`,
+`VITE_SUPABASE_ANON_KEY` and `SUPABASE_SERVICE_ROLE_KEY` in the gitignored
+`.env`, and there is no `.env` here. Until that run, Phase 5 stays **0 of 3
+proven** — deployed and unverified is a different state from working, and §X
+does not let this file call it the latter.
+
+**Twenty-one migrations** are written; the twenty-first — `0021_recurrences`
+— ships with the client half and is the one still to push.
+
+**Ten separate items sat behind that one act** — S1–S10 under "The server
+remainder" below. S1 is now done and the other nine are unblocked, so the
+list stops being a cost and starts being a to-do.
 
 ---
 
@@ -510,38 +530,40 @@ Needing a device or a later phase, and therefore NOT claimed:
 - [ ] **A physical device** for the §Q Phase 2 gate, which is explicitly
       "airplane mode, fresh install, physical device". Everything up to that
       point is buildable and testable here.
-- [ ] **The `recurrences` table, its RLS policy and its client repository —
-      all three together, by somebody who can run `npm run test:rls`.**
+- [x] **The `recurrences` table, its RLS policy and its client repository —
+      all three together (2026-09-15, `0021_recurrences.sql`).**
 
-      §L4's monthly repeats are built and working ON DEVICE: schema 4 holds
-      `recurrences` and `documents.recurrence_key`, and the catch-up runs at
-      launch. The server half is deliberately absent, and the reason matters
-      more than the absence.
+      Written together, as the item insisted. `npm run test:rls` could NOT be
+      run here — no Docker, no local Postgres — so CI’s `postgres:16` service
+      is the proof, and the migration is unpushed until that run is green.
+      `supabase/tests/recurrences.test.ts` carries the denials the generic
+      suite cannot reach, including the one RLS does not close on its own: a
+      row stamped with YOUR company id pointing at somebody ELSE’S document
+      satisfies the policy exactly, and a trigger refuses it.
 
-      `supabase/tests/rls.test.ts` asserts RLS enabled AND forced on every
-      table, so it would catch a table shipped with NO policy, or a malformed
-      one. It cannot catch a policy that is present, well formed and subtly
-      wrong — that passes every assertion and leaks across companies. So the
-      policy must be written where the suite can be run against a real
-      Postgres, which means Docker or CI, not a machine without either.
 
-      The client half is `recurrencesNotDeployed()` in
-      `src/data/supabase/repositories.ts`: every method throws a message
-      naming this line. That is honest, but it is a landmine if the deploy
-      adds the table and forgets the client, so all three land together:
+      All three landed as one change, which is what the item was for: a table
+      without its client is a landmine, and a client without its table is a
+      crash.
 
-      1. a migration creating `recurrences` (primary key `source_document_id`,
-         `company_id`, `day_of_month`, `started_on`, `ended_on`) plus
-         `documents.recurrence_key` with a UNIQUE index — that index is what
-         makes catch-up idempotent, and it is not optional;
-      2. `enable row level security` AND `force row level security`, with the
-         same company policy every other table carries;
-      3. the real repository, replacing `recurrencesNotDeployed`, shaped like
-         its siblings in `catalogue.ts`.
+      1. `0021_recurrences.sql` — the table (primary key `source_document_id`,
+         so one document has one schedule by arithmetic rather than by
+         bookkeeping), plus `documents.recurrence_key` with a PARTIAL unique
+         index. That index is what makes catch-up idempotent across a crash,
+         and partial because every hand-made document carries a null key.
+      2. `enable` AND `force` row level security with the company policy every
+         other table carries — and a trigger for the case the policy cannot
+         see: a row carrying your own company id that points at another
+         company’s document satisfies `using` and `with check` exactly. RLS
+         answers "may I write this row"; it does not answer "is this row
+         internally consistent".
+      3. `src/data/supabase/recurrences.ts`, replacing `recurrencesNotDeployed`.
+         No idempotency key and none needed: the primary key is the identity.
 
-      `npm run test:rls` must pass before any of it merges. It runs in CI on
-      every branch against a `postgres:16` service, so the check exists; it
-      simply has to be watched.
+      **`npm run test:rls` was not run here** — no Docker, no local Postgres.
+      CI runs it on every branch against a `postgres:16` service, and that run
+      is the proof this item always said it needed. Watch it before pushing
+      0021 to the project.
 - [ ] **Decide what the anonymous link endpoint returns.**
 
       The recipient's page now draws the document at A4 proportions from the
@@ -2465,12 +2487,13 @@ joins them", patched each time something else queued up behind the deploy.
 It had reached ten, which is not a sentence any more. The device list gets a
 table; so does this one.
 
-Nothing here needs a phone. Every row needs the same one thing — a reachable
-Supabase project — and each is **written and unrun**, never half-built.
+Nothing here needs a phone. Every row needed the same one thing — a reachable
+Supabase project — and it exists now. S1 is done; the rest are unblocked and
+still unproven, which is a different thing from finished.
 
 | # | What | Which gate | What it is waiting for |
 | --- | --- | --- | --- |
-| S1 | The deploy itself: twenty migrations, three edge functions with `--no-verify-jwt`, both keys rotated | §Q Phase 5 | Somebody to run it. Every row below is downstream of this one |
+| S1 | The deploy: twenty migrations, three edge functions with `--no-verify-jwt`, both keys rotated | §Q Phase 5 | **Done 2026-09-15.** 0021 is the one still to push |
 | S2 | Paystack test-mode credentials, and the webhook path end to end | §Q Phase 5 | A merchant account nobody here can open |
 | S3 | `npm run pentest` against a live instance | §Q Phase 7 | Written, proved adversarial against a permissive fake, never run for real. The secrets half does run today, in CI |
 | S4 | The two-company denial suite against the HOSTED project | §Q Phase 1 *(self-imposed)* | It passes against local Postgres in CI; the clause asks about the host |

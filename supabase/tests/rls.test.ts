@@ -82,7 +82,7 @@ describe('RLS is enabled AND forced on every table (§P)', () => {
       'payment_allocations', 'credit_notes', 'expenses', 'assets', 'items',
       'logo_projects', 'logo_concepts', 'subscriptions', 'entitlements',
       'audit_log', 'counters', 'numbering_reservations',
-      'document_signing_tokens',
+      'document_signing_tokens', 'recurrences',
     ]) {
       expect(tables, `missing table ${expected}`).toContain(expected)
     }
