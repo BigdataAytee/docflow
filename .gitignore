@@ -57,3 +57,7 @@ android/local.properties
 ios/App/App/public/
 ios/App/build/
 ios/App/Pods/
+
+# Supabase CLI scratch state: machine-local, churns on every command, and
+# the kind of directory a future CLI version could start writing a token to.
+supabase/.temp/
