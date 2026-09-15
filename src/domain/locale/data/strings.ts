@@ -335,6 +335,79 @@ export interface UiStrings {
     readonly mine: string
     readonly theirs: string
   }
+  /**
+   * The four-page welcome (§R). Every one of these is a whole sentence in the
+   * catalogue rather than a fragment assembled at the call site — a language
+   * that orders a clause differently cannot be served by concatenation (§S).
+   */
+  readonly welcome: {
+    readonly brand: string
+    readonly headline: string
+    readonly body: string
+    readonly step1: string
+    readonly step1Body: string
+    readonly step2: string
+    readonly step2Body: string
+    readonly step3: string
+    readonly step3Body: string
+    readonly getStarted: string
+    readonly explore: string
+    readonly offlineNote: string
+    /** The progress bar's three names. */
+    readonly progressLabel: string
+    readonly stepBusiness: string
+    readonly stepTask: string
+    readonly stepReady: string
+    readonly back: string
+    readonly setupTitle: string
+    /** Page 1 — the two answers §R requires, country pre-filled. */
+    readonly businessTitle: string
+    readonly businessBody: string
+    readonly nameLabel: string
+    readonly namePlaceholder: string
+    readonly nameHelp: string
+    readonly countryLabel: string
+    readonly countryHelp: string
+    readonly saveContinue: string
+    readonly skipBusiness: string
+    /** Page 2 — which document, explained by what it is for. */
+    readonly taskTitle: string
+    readonly taskBody: string
+    /**
+     * What each document is FOR, in one line.
+     *
+     * Descriptions, not names — the names come from the terminology catalogue
+     * through `label()` (Rule #4). A hint may say "invoice" in prose; the
+     * heading beside it is whatever this region calls one.
+     *
+     * Keys spelled out rather than `Record<DocumentType, string>`: this file
+     * imports nothing, and it is the leaf on purpose — the words must not
+     * depend on the domain that uses them.
+     */
+    readonly hints: {
+      readonly invoice: string
+      readonly quotation: string
+      readonly receipt: string
+      readonly waybill: string
+    }
+    readonly continueOn: string
+    /** Page 3 — what happens next, and where things live. */
+    readonly readyTitle: string
+    readonly readyBody: string
+    readonly ready1: string
+    readonly ready1Body: string
+    readonly ready2: string
+    readonly ready2Body: string
+    readonly ready3: string
+    readonly ready3Body: string
+    readonly findYourWay: string
+    readonly whereHome: string
+    readonly whereCustomers: string
+    readonly whereAnalytics: string
+    readonly whereSettings: string
+    readonly startMine: string
+    readonly homeFirst: string
+  }
   readonly firstRun: {
     readonly title: string
     readonly body: string
@@ -1072,6 +1145,60 @@ const EN: UiStrings = {
     bothSaved: 'Both versions are saved until you choose.',
     mine: 'Yours',
     theirs: 'Theirs',
+  },
+  welcome: {
+    brand: 'DocFlow',
+    headline: 'Your paperwork. One clear place.',
+    body: 'Create invoices, quotations, receipts and waybills. Keep customers and payments together.',
+    step1: '1. Set up your business',
+    step1Body: 'Add a business name and choose your country. You can finish the rest later.',
+    step2: '2. Choose your first task',
+    step2Body: 'We’ll explain which document fits what you need.',
+    step3: '3. Follow your next steps',
+    step3Body: 'A short checklist stays on Home while you get started.',
+    getStarted: 'Get started',
+    explore: 'Look around first',
+    offlineNote: 'Everything works without a signal. Your records stay on this phone.',
+    progressLabel: 'Setup progress',
+    stepBusiness: '1. Your business',
+    stepTask: '2. Your first task',
+    stepReady: '3. Ready',
+    back: '← Back',
+    setupTitle: 'DocFlow setup',
+    businessTitle: 'First, your business.',
+    businessBody:
+      'Start with the basics. You can add your logo, payment details and address in Settings later.',
+    nameLabel: 'Business name',
+    namePlaceholder: 'e.g. Chidinma Building Supplies',
+    nameHelp: 'This prints at the top of every document you make.',
+    countryLabel: 'Business country',
+    countryHelp: 'Sets your currency, document names, bank fields and tax wording.',
+    saveContinue: 'Save and continue',
+    skipBusiness: 'Skip for now',
+    taskTitle: 'What do you need to do?',
+    taskBody: 'Pick one to start. All four are always available on Home.',
+    hints: {
+      invoice: 'Ask a customer to pay you.',
+      quotation: 'Send a price before work begins.',
+      receipt: 'Confirm a payment you received.',
+      waybill: 'Record goods being delivered.',
+    },
+    continueOn: 'Continue',
+    readyTitle: 'You’re ready to begin.',
+    readyBody: 'Your first {label} follows a guided process. Review the details before you finish.',
+    ready1: 'Choose a customer',
+    ready1Body: 'Pick someone you have saved, or add a contact as you go.',
+    ready2: 'Add the details',
+    ready2Body: 'Items, quantities and prices — or goods and delivery details.',
+    ready3: 'Review your document',
+    ready3Body: 'Choose a design, check everything, then share it.',
+    findYourWay: 'Find your way around',
+    whereHome: 'Home: documents and next steps',
+    whereCustomers: 'Customers: contacts and history',
+    whereAnalytics: 'Analytics: money and activity',
+    whereSettings: 'Settings: company, payments and preferences',
+    startMine: 'Start my {label}',
+    homeFirst: 'Go to Home first',
   },
   firstRun: {
     title: 'Make your first document',

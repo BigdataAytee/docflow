@@ -7,19 +7,19 @@ StaticText: INV-001
 heading: INVOICE
 StaticText: Okoro & Sons
 StaticText: Not paid
+StaticText: INVOICE · Classic · A4 portrait
 button: Share the PDF
 button: Turn this into something else
 button: Cancel this document
 button: Credit some of this back
 StaticText: ₦0.00 paid of ₦185,000.00
-StaticText: ·
 StaticText: ₦185,000.00 left
 progressbar: ₦0.00 paid of ₦185,000.00
+heading: PAYMENTS
 StaticText: No payments yet
 StaticText: Record one when the money arrives.
 button: Record a payment
-region: Chase this money
-heading: Chase this money
+heading: CHASE THIS MONEY
 button: Softer
 button: Firmer
 StaticText: Repeat

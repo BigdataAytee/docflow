@@ -3,11 +3,11 @@ StaticText: Demo
 StaticText: ·
 StaticText: This is a demo with sample records on this device only. Nothing is saved to an account, and it is cleared when you close the tab.
 main
+button: Home
 StaticText: DOCUMENTS
-heading: Waybill
-StaticText: 3 Waybills
-button: + New Waybill
-StaticText: Search Waybills…
+heading: Waybills
+StaticText: 3 waybills
+button: + New waybill
 searchbox: Search Waybills…
 button: WAY-001 Okoro & Sons
 StaticText: Sent out
@@ -15,7 +15,7 @@ button: WAY-002 Adeyemi Hardware
 StaticText: Sent out
 button: WAY-003 Chukwu Building Supplies
 StaticText: Sent out
-button: + New Waybill
+button: + New waybill
 navigation: Sections
 link: Home
 link: Customers

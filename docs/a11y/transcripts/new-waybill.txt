@@ -4,8 +4,7 @@ StaticText: ·
 StaticText: This is a demo with sample records on this device only. Nothing is saved to an account, and it is cleared when you close the tab.
 banner
 button: Cancel
-StaticText: ✕
-heading: Waybill
+heading: New waybill
 StaticText: Draft saved automatically
 navigation: Step 1 of 5
 button: Deliver to
@@ -13,34 +12,15 @@ button: Goods
 button: Dispatch
 button: Design
 button: Review
-StaticText: Deliver to
 main
 heading: NUMBER & DATES
+StaticText: Number
 StaticText: WAY-…
 button: Edit reference
-StaticText: ✎
 StaticText: Date
-Date: Date
-spinbutton: Month Month
-StaticText: mm
-StaticText: /
-spinbutton: Day Day
-StaticText: dd
-StaticText: /
-spinbutton: Year Year
-StaticText: yyyy
-button: Show date picker
+button: Date: Choose a date
 StaticText: Dispatch date
-Date: Dispatch date
-spinbutton: Month Month
-StaticText: mm
-StaticText: /
-spinbutton: Day Day
-StaticText: dd
-StaticText: /
-spinbutton: Year Year
-StaticText: yyyy
-button: Show date picker
+button: Dispatch date: Choose a date
 heading: DELIVER TO
 button: Choose who this is for
 StaticText: Nobody chosen yet
@@ -48,7 +28,7 @@ button: Add a customer
 StaticText: +
 StaticText: Delivery address
 textbox: Delivery address
-heading: SIGNATURE
+heading: DISPATCHED BY
 button: Tap to sign
 StaticText: Waybill
 button: Back

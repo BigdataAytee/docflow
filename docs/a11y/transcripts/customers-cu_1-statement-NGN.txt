@@ -15,22 +15,22 @@ button: Last 12 months
 button: Everything
 StaticText: From
 Date: From
-spinbutton: Month Month
-StaticText: 10
-StaticText: /
 spinbutton: Day Day
 StaticText: 01
+StaticText: /
+spinbutton: Month Month
+StaticText: 10
 StaticText: /
 spinbutton: Year Year
 StaticText: 2025
 button: Show date picker
 StaticText: To
 Date: To
-spinbutton: Month Month
-StaticText: 10
-StaticText: /
 spinbutton: Day Day
 StaticText: 01
+StaticText: /
+spinbutton: Month Month
+StaticText: 10
 StaticText: /
 spinbutton: Year Year
 StaticText: 2026

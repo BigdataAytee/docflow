@@ -15,6 +15,8 @@ export const CUSTOMERS = '/customers'
 export const ANALYTICS = '/analytics'
 export const SETTINGS = '/settings'
 export const WELCOME = '/welcome'
+/** §R's four-page welcome, which a first run is sent to. */
+export const ONBOARDING = '/start'
 
 export const listPath = (type: DocumentType): string => `/list/${type}`
 export const newDocumentPath = (type: DocumentType): string => `/new/${type}`

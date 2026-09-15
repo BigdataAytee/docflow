@@ -3,7 +3,6 @@ StaticText: Demo
 StaticText: ·
 StaticText: This is a demo with sample records on this device only. Nothing is saved to an account, and it is cleared when you close the tab.
 main
-StaticText: Search customers…
 searchbox: Search customers…
 button: Add a customer
 StaticText: +

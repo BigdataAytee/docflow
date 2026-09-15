@@ -28,7 +28,7 @@ import { PaletteProvider } from './PaletteHost'
 import { AccountNotice } from './AccountNotice'
 import { ReviewProvider } from './ReviewHost'
 import { Shell } from './Shell'
-import { HOME, SETTINGS_PANELS } from './paths'
+import { HOME, ONBOARDING, SETTINGS_PANELS } from './paths'
 import { DEV_COMPANY_ID } from './seed'
 import { ThemeProvider } from '../features/theme/ThemeContext'
 import type { Repositories } from '../data/repositories'
@@ -44,6 +44,9 @@ import { ContactScreen, CustomersScreen, StatementScreen } from './screens/Custo
 import { AnalyticsScreen } from './screens/AnalyticsScreen'
 import { SettingsIndexScreen, SettingsPanelScreen } from './screens/SettingsScreen'
 import { WelcomeScreen } from './screens/WelcomeScreen'
+import { OnboardingScreen } from './screens/OnboardingScreen'
+import { shouldOnboard } from '../features/onboarding/flow'
+import { onboardingDismissed } from '../features/onboarding/dismissed'
 import { PublicLinkPage } from '../public/PublicLinkPage'
 import { AccountGate } from './AccountGate'
 import { BackendBoundary } from './BackendBoundary'
@@ -271,16 +274,49 @@ function LoadError({ message }: { message: string }) {
   )
 }
 
+/**
+ * Sends a first run to the welcome (§R).
+ *
+ * `/welcome` has existed as a route since Phase 2 with nothing navigating to
+ * it — a screen that cannot be reached is a screen that does not exist, which
+ * is the same failure as a toggle wired to nothing. This is the piece that
+ * was missing, and it wraps the SHELL routes only: the builder and the
+ * welcome itself must stay reachable, or "start my first invoice" would bounce
+ * straight back here.
+ *
+ * Waits for the load. A company reads as null until the repositories answer,
+ * and a null company looks exactly like an unnamed one — redirecting on that
+ * would send somebody with a perfectly good business to the welcome for the
+ * length of a read, every launch.
+ */
+function FirstRunGate({ children }: { children: ReactNode }) {
+  const { company, documents, loading } = useAppData()
+  if (loading) return children
+  const onboard = shouldOnboard({
+    companyName: company?.name,
+    dismissed: onboardingDismissed(),
+    documentCount: documents.length,
+  })
+  return onboard ? <Navigate to={ONBOARDING} replace /> : children
+}
+
 export function AppRoutes() {
   return (
     <Routes>
       {/* The builder and the welcome page are full-screen: no tab bar under a
           five-step flow, which §G gives its own ✕ and footer. */}
       <Route path="/welcome" element={<WelcomeScreen />} />
+      <Route path={ONBOARDING} element={<OnboardingScreen />} />
       <Route path="/new/:type" element={<NewDocumentScreen />} />
       <Route path="/edit/:id" element={<BuilderScreen />} />
 
-      <Route element={<Shell />}>
+      <Route
+        element={
+          <FirstRunGate>
+            <Shell />
+          </FirstRunGate>
+        }
+      >
         <Route path={HOME} element={<HomeScreen />} />
         <Route path="/list/:type" element={<ListScreen />} />
         <Route path="/doc/:id" element={<DocumentScreen />} />

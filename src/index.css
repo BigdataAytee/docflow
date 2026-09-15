@@ -253,6 +253,10 @@
      * (#147258) is its own value rather than `--status-good`, which is a
      * shade darker and tuned for a badge rather than a 23px number.
      */
+    --ob-secondary-ink: #52638f;
+    --ob-chosen: #2b3fd6;
+    --ob-step-pending: #dbe2f4;
+    --glass-tint: #f4f7ff;
     --money-in: #147258;
     --money-owed: #2b3fd6;
 
@@ -321,6 +325,12 @@
     --stat-shadow: 0 6px 16px -12px rgb(0 0 0 / 0.5), inset 0 1px 0 rgb(255 255 255 / 0.1);
     --stat-label: rgb(231 236 255 / 0.62);
     /* Lightened to stay legible on a dark card; the hues are unchanged. */
+    /* The welcome, inverted: the ink lightens, the chosen ring keeps §F's
+       blue, and the pending rule darkens rather than glowing. */
+    --ob-secondary-ink: rgb(231 236 255 / 0.78);
+    --ob-chosen: #4a60ee;
+    --ob-step-pending: rgb(231 236 255 / 0.18);
+    --glass-tint: #333d69;
     --money-in: #5fc8a3;
     --money-owed: #8ba0ff;
 
@@ -583,6 +593,64 @@
   .sheen-strong::before {
     height: 52%;
     background-image: linear-gradient(180deg, rgb(255 255 255 / 0.22), transparent);
+  }
+
+  /*
+   * The welcome (§R, the reference's `.ob-*`).
+   *
+   * The header is the one surface in the app that keeps §F's FULL blue — Home
+   * softened its own band, but this screen has no content above it and no
+   * status bar to sit under; the reference draws it at full strength and it
+   * is the first thing anybody sees.
+   *
+   * Written as classes rather than utilities because the shapes repeat across
+   * four pages, and because the values are the reference's own — a gradient
+   * at 145deg, a 28px bottom radius — rather than anything derivable.
+   */
+  .ob-head {
+    background-image: linear-gradient(145deg, #4a60ee, #2b3fd6 62%, #1a2a9e);
+    border-radius: 0 0 28px 28px;
+    color: #fff;
+  }
+
+  /* Locked, like every accent: white on §F blue in either theme. */
+  .ob-head-body {
+    color: #dce3ff;
+  }
+
+  .ob-primary {
+    background-image: linear-gradient(155deg, #4a60ee, #2b3fd6);
+    color: #fff;
+    box-shadow: 0 10px 21px -9px rgb(43 63 214 / 0.44);
+  }
+
+  .ob-secondary {
+    background-image: var(--pill-image);
+    color: var(--ob-secondary-ink);
+    box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.9);
+  }
+
+  .ob-row + .ob-row {
+    border-top: 1px solid rgb(var(--edge) / 0.08);
+  }
+
+  /* The four type choices. The pressed state is a ring, never colour alone. */
+  .ob-choice {
+    background-image: linear-gradient(155deg, rgb(var(--surface)), var(--glass-tint));
+    box-shadow: inset 0 0 0 1px rgb(var(--edge) / 0.09);
+  }
+
+  .ob-choice[aria-pressed='true'] {
+    box-shadow: inset 0 0 0 2px var(--ob-chosen);
+  }
+
+  /* A step the reader has reached, in the progress bar. */
+  .ob-step {
+    border-top: 3px solid var(--ob-step-pending);
+  }
+
+  .ob-step[data-current='true'] {
+    border-top-color: var(--ob-chosen);
   }
 
   /*

@@ -32,8 +32,19 @@ import { stringsFor } from '../domain/locale/data/strings'
 
 const strings = stringsFor('en')
 
+/**
+ * A company with a NAME, because these render an app in use.
+ *
+ * `devState` seeds `name: ''` on purpose — that is what a fresh install looks
+ * like, and §R sends a fresh install to the welcome. So a fixture that leaves
+ * it empty is asking for the welcome screen and then asserting about Home.
+ * Naming the business is how a test says "this app has been set up", which is
+ * the state all of these are actually about.
+ */
 function renderAt(path: string) {
   const state = devState()
+  const company = state.companies[0]
+  if (company !== undefined) state.companies[0] = { ...company, name: 'Sola Ventures' }
   render(
     <App
       repositories={createMemoryRepositories(state)}

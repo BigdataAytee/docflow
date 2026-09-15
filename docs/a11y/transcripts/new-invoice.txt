@@ -4,8 +4,7 @@ StaticText: ·
 StaticText: This is a demo with sample records on this device only. Nothing is saved to an account, and it is cleared when you close the tab.
 banner
 button: Cancel
-StaticText: ✕
-heading: Invoice
+heading: New invoice
 StaticText: Draft saved automatically
 navigation: Step 1 of 5
 button: Details
@@ -13,34 +12,15 @@ button: Items
 button: Totals
 button: Design
 button: Review
-StaticText: Details
 main
 heading: NUMBER & DATES
+StaticText: Number
 StaticText: INV-…
 button: Edit reference
-StaticText: ✎
 StaticText: Date
-Date: Date
-spinbutton: Month Month
-StaticText: mm
-StaticText: /
-spinbutton: Day Day
-StaticText: dd
-StaticText: /
-spinbutton: Year Year
-StaticText: yyyy
-button: Show date picker
+button: Date: Choose a date
 StaticText: Due
-Date: Due
-spinbutton: Month Month
-StaticText: mm
-StaticText: /
-spinbutton: Day Day
-StaticText: dd
-StaticText: /
-spinbutton: Year Year
-StaticText: yyyy
-button: Show date picker
+button: Due: Choose a date
 heading: BILL TO
 button: Choose who this is for
 StaticText: Nobody chosen yet
@@ -49,7 +29,7 @@ StaticText: +
 heading: CURRENCY & PAYMENT
 StaticText: NGN
 button: Set up payment
-heading: SIGNATURE
+heading: AUTHORISED SIGNATURE
 button: Tap to sign
 StaticText: Invoice
 button: Back

@@ -3,19 +3,19 @@ StaticText: Demo
 StaticText: ·
 StaticText: This is a demo with sample records on this device only. Nothing is saved to an account, and it is cleared when you close the tab.
 main
+button: Home
 StaticText: DOCUMENTS
-heading: Quotation
-StaticText: 3 Quotations
-button: + New Quotation
-StaticText: Search Quotations…
+heading: Quotations
+StaticText: 3 quotations
+button: + New quotation
 searchbox: Search Quotations…
-button: QUO-001 Okoro & Sons ₦185,000.00
+button: QUO-001 ₦185,000.00 Okoro & Sons
 StaticText: Sent
-button: QUO-002 Adeyemi Hardware ₦42,500.00
+button: QUO-002 ₦42,500.00 Adeyemi Hardware
 StaticText: Sent
-button: QUO-003 Chukwu Building Supplies ₦96,000.00
+button: QUO-003 ₦96,000.00 Chukwu Building Supplies
 StaticText: Sent
-button: + New Quotation
+button: + New quotation
 navigation: Sections
 link: Home
 link: Customers

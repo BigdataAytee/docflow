@@ -11,7 +11,7 @@
  */
 
 import { StrictMode } from 'react'
-import { afterEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 
@@ -23,8 +23,19 @@ import { quantity } from '../domain/documents/types'
 
 const NGN = (m: number) => money('NGN', m)
 
+/**
+ * A company with a NAME, because these render an app in use.
+ *
+ * `devState` seeds `name: ''` on purpose — that is what a fresh install looks
+ * like, and §R sends a fresh install to the welcome. So a fixture that leaves
+ * it empty is asking for the welcome screen and then asserting about Home.
+ * Naming the business is how a test says "this app has been set up", which is
+ * the state all of these are actually about.
+ */
 function seeded(over: (state: MemoryState) => void = () => undefined) {
   const state = devState()
+  const company = state.companies[0]
+  if (company !== undefined) state.companies[0] = { ...company, name: 'Sola Ventures' }
   over(state)
   return { state, repositories: createMemoryRepositories(state) }
 }
@@ -1225,6 +1236,81 @@ describe('Converting a document (§G, §M)', () => {
     const back = await screen.findByRole('button', { name: 'Made from QUO-0009' })
     await user.click(back)
     expect(within(await pageHeader()).getByText('QUO-0009')).toBeInTheDocument()
+  })
+})
+
+describe('A first run is sent to the welcome (§R)', () => {
+  /*
+   * The dismissal lives in `localStorage`, which outlives a render — so
+   * without this, the first test here to leave the welcome switches it off
+   * for every test after it, and they pass by accident.
+   */
+  beforeEach(() => {
+    globalThis.localStorage?.removeItem('docflow.onboarded')
+  })
+
+  /** A company with no name: what a fresh install actually looks like. */
+  const freshInstall = (state: MemoryState) => {
+    const company = state.companies[0]
+    if (company !== undefined) state.companies[0] = { ...company, name: '' }
+  }
+
+  /**
+   * The assertion whose absence let `/welcome` sit unreachable since Phase 2.
+   *
+   * Every other test in this file now seeds a NAMED company so it can get at
+   * the screen it is about — which would leave nothing at all checking that
+   * the gate still fires. That is precisely how a route becomes unreachable
+   * without a single test going red.
+   */
+  it('opens the welcome instead of Home when no business has been named', async () => {
+    renderAt('/', freshInstall)
+    expect(await screen.findByText('Your paperwork. One clear place.')).toBeInTheDocument()
+  })
+
+  it('offers a way past it without naming anything (Rule #1)', async () => {
+    renderAt('/', freshInstall)
+    const user = userEvent.setup()
+    await user.click(await screen.findByRole('button', { name: 'Look around first' }))
+    expect(await screen.findByLabelText('Outstanding')).toBeInTheDocument()
+  })
+
+  /** Somebody already working is never interrupted to be introduced. */
+  it('leaves somebody with documents alone', async () => {
+    renderAt('/', (state) => {
+      freshInstall(state)
+      state.customers.push(customer())
+      state.documents.push({
+        id: 'doc_inv',
+        companyId: DEV_COMPANY_ID,
+        type: 'invoice',
+        status: 'issued',
+        customerId: 'cus_1',
+        currency: 'NGN',
+        lineItems: [],
+        issueDate: '2026-09-01',
+        issuedReference: 'INV-0042',
+        frozenLabels: {
+          printedTitle: 'INVOICE',
+          partyLabel: 'Bill to',
+          signatureCaption: 'Authorised signature',
+          language: 'en',
+        },
+        totalMinor: 100_000_00,
+      })
+    })
+    expect(await screen.findByLabelText('Outstanding')).toBeInTheDocument()
+  })
+
+  /**
+   * The second launch. Stated as the STORED FACT rather than by walking the
+   * welcome twice, because that is what the next launch actually reads — and
+   * a test that re-walks it would prove the walk, not the memory.
+   */
+  it('does not ask again once the welcome has been left', async () => {
+    globalThis.localStorage?.setItem('docflow.onboarded', '1')
+    renderAt('/', freshInstall)
+    expect(await screen.findByLabelText('Outstanding')).toBeInTheDocument()
   })
 })
 

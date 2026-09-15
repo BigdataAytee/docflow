@@ -7,6 +7,7 @@ StaticText: WAY-001
 heading: WAYBILL
 StaticText: Okoro & Sons
 StaticText: Sent out
+StaticText: WAYBILL · Classic · A4 portrait
 button: Share the PDF
 StaticText: On its way. Sign for it when it arrives.
 button: Mark it on the way

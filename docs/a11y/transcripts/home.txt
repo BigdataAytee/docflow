@@ -3,27 +3,37 @@ StaticText: Demo
 StaticText: ·
 StaticText: This is a demo with sample records on this device only. Nothing is saved to an account, and it is cleared when you close the tab.
 main
+button: Tap to add your logo
 StaticText: Dynamic Renaissance Ltd
 StaticText: Saved on this phone
-heading: Good morning,
+heading: Good morning
+StaticText: Here is where your money stands today.
 region: Outstanding
 StaticText: ₦323,500.00
 region: Received this month
 StaticText: Nothing yet
-StaticText: Search everything
 searchbox: Search everything
+region: Your next steps
+heading: Your next steps
+StaticText: 2 of 4 complete
+StaticText: Use your own details, or explore with the sample data.
+button: Set up your business
+button: Add your logo Start →
+button: Set up how you get paid Start →
+button: Complete your first document
+button: View guide
+button: Hide checklist
+button: Say it out loud
+button: Photograph a document
 button: 3 Invoices
 button: 3 Quotations
 button: 3 Receipts
 button: 3 Waybills
 region: Needs attention
 heading: Needs attention
-button: Sign
-StaticText: On its way
-button: Sign
-StaticText: On its way
-button: Sign
-StaticText: On its way
+button: WAY-001 Okoro & Sons Sign
+button: WAY-002 Adeyemi Hardware Sign
+button: WAY-003 Chukwu Building Supplies Sign
 navigation: Sections
 link: Home
 link: Customers
