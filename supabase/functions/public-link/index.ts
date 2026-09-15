@@ -47,10 +47,31 @@ const admin = createClient(
   { auth: { persistSession: false } },
 )
 
+/**
+ * Wide open BY DESIGN, and only this function.
+ *
+ * The recipient of a link has no account and may open it from anywhere — an
+ * email client, a WhatsApp webview, a desktop browser — so an origin
+ * allowlist here would have to be a list of every place a customer might be.
+ * What protects this endpoint is the token and the rules in `rules.ts`, never
+ * the caller's origin.
+ *
+ * The three below are not about CORS. They are headers any response should
+ * carry, and this one especially: it is the single surface a stranger can
+ * reach, so a MIME sniff or a leaked token costs more here than anywhere else
+ * in the product.
+ */
 const CORS = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'content-type',
   'Access-Control-Allow-Methods': 'GET,POST,OPTIONS',
+  // Never let a browser decide this JSON is something executable.
+  'x-content-type-options': 'nosniff',
+  // The link token is in the URL. It must not travel in a Referer.
+  'referrer-policy': 'no-referrer',
+  // Nothing here is worth keeping: a token's answer changes when it is used,
+  // and a cached "ok" is a revoked link still working.
+  'cache-control': 'no-store',
 }
 
 /**

@@ -52,7 +52,7 @@ const admin = createClient(
 const ok = (reason: string): Response =>
   new Response(JSON.stringify({ reason }), {
     status: 200,
-    headers: { 'content-type': 'application/json' },
+    headers: { 'content-type': 'application/json', 'x-content-type-options': 'nosniff' },
   })
 
 /** The status each kind implies, kept beside the domain module it mirrors. */

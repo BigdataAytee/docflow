@@ -1,11 +1,29 @@
-import { defineConfig } from 'vitest/config'
+import { defineConfig, type Plugin } from 'vitest/config'
 import react from '@vitejs/plugin-react'
 import { fileURLToPath, URL } from 'node:url'
+
+import { securityMetaTags } from './src/web/csp'
+
+/**
+ * The security meta tags, injected into the BUILT index.html only.
+ *
+ * Build only because Vite's dev server serves an inline module preamble and
+ * an HMR client, and `script-src 'self'` would refuse both — a policy that
+ * breaks `npm run dev` is a policy somebody deletes. The built document is
+ * what ships to a host and into the Capacitor APK, and `src/web/csp.test.ts`
+ * asserts the tags are in it rather than trusting this to have run.
+ */
+const securityHeaders = (): Plugin => ({
+  name: 'docflow-security-meta',
+  apply: 'build',
+  transformIndexHtml: (html) => html.replace('</head>', `  ${securityMetaTags()}
+  </head>`),
+})
 
 // The web client is online-only (§B) but `npm run dev` boots against the
 // in-memory repositories so the UI can be built before Supabase exists.
 export default defineConfig({
-  plugins: [react()],
+  plugins: [react(), securityHeaders()],
   resolve: {
     alias: { '@': fileURLToPath(new URL('./src', import.meta.url)) },
   },

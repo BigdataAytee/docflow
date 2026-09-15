@@ -57,7 +57,7 @@ const admin = createClient(
 const done = (status: string, detail?: string) =>
   new Response(JSON.stringify({ status, ...(detail === undefined ? {} : { detail }) }), {
     status: 200,
-    headers: { 'content-type': 'application/json' },
+    headers: { 'content-type': 'application/json', 'x-content-type-options': 'nosniff' },
   })
 
 export default async function handler(request: Request): Promise<Response> {
@@ -137,7 +137,7 @@ export default async function handler(request: Request): Promise<Response> {
     // does not answer 200.
     return new Response(JSON.stringify({ status: 'error' }), {
       status: 500,
-      headers: { 'content-type': 'application/json' },
+      headers: { 'content-type': 'application/json', 'x-content-type-options': 'nosniff' },
     })
   }
 

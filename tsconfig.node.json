@@ -49,6 +49,8 @@
     // The screenshot PLAN — not its entry point, which is a .tsx needing the
     // DOM lib this project does not have and belongs to the app project.
     // The containment check both file-writing generators share.
+    // The build-time policy: read by vite.config.ts, asserted by its own test.
+    "src/web/csp.ts",
     "src/marketing/outputPath.ts",
     "src/marketing/shots/spec.ts",
     "src/marketing/shots/plan.ts",
