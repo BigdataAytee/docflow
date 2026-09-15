@@ -13,6 +13,7 @@ import type { PageModel, TableRow } from './compose'
 import type { PrintPage } from './paginate'
 import type { TemplateDefinition } from './templates'
 import { LOGO_SCALE, fitLogo } from './logo'
+import { DocumentHeader, PageChrome, contentInset, headerCarriesParty } from './DocumentHeader'
 
 /** A4 portrait: 210 × 297 mm. */
 export const A4_ASPECT = 210 / 297
@@ -107,7 +108,7 @@ export function DocumentPage({
 
   return (
     <article
-      className="mx-auto w-full overflow-hidden"
+      className="relative mx-auto w-full overflow-hidden"
       style={{
         aspectRatio: String(A4_ASPECT),
         backgroundColor: template.paper,
@@ -116,36 +117,31 @@ export function DocumentPage({
       }}
       aria-label={`${model.title} ${model.reference}`}
     >
-      <div className="flex h-full flex-col p-[6%]">
-        <header className="flex items-start gap-4">
-          {model.branding.showLogo && (
-            <LogoHolder size={model.branding.logoSize} natural={logoNaturalSize} />
-          )}
-          <div className="min-w-0 flex-1">
-            <p className="break-words text-lg font-bold leading-tight">{model.branding.name}</p>
-            <h2
-              className="mt-1 break-words text-2xl font-black uppercase tracking-tight"
-              style={{ color: ink }}
-            >
-              {model.title}
-            </h2>
-            <p className="text-xs tabular-nums opacity-70">{model.reference}</p>
-            {/*
-              What this replaces — §G's Rev 2, or a reissued receipt. Beside
-              the reference, because that is where a customer looks to tell
-              one document from another.
-            */}
-            {model.replacesLine !== null && (
-              <p className="text-xs font-semibold opacity-80">{model.replacesLine}</p>
-            )}
-          </div>
-        </header>
+      {/*
+        The chrome sits BEHIND the content — a column, a spine, a wave, a
+        frame — and the content stands clear of it by `contentInset`. Both
+        come from the template definition, so a design is one entry in
+        `templates.ts` and never a branch here (§H).
+      */}
+      <PageChrome template={template} ink={ink} />
 
-        <div
-          className="mt-4 h-[3px] w-full"
-          style={{ backgroundColor: ink, opacity: template.headerStyle === 'hairline' ? 0.25 : 1 }}
+      <div
+        className="relative flex h-full flex-col p-[6%]"
+        style={contentInset(template)}
+      >
+        <DocumentHeader
+          model={model}
+          template={template}
+          ink={ink}
+          logo={
+            model.branding.showLogo ? (
+              <LogoHolder size={model.branding.logoSize} natural={logoNaturalSize} />
+            ) : null
+          }
         />
 
+        {/* Compact's strip already carries these — see `headerCarriesParty`. */}
+        {!headerCarriesParty(template) && (
         <section className="mt-4 flex justify-between gap-6 text-xs">
           <div className="min-w-0">
             <p className="font-bold uppercase tracking-wide opacity-60">{model.partyLabel}</p>
@@ -157,6 +153,7 @@ export function DocumentPage({
             {model.dueDate !== undefined && <p className="tabular-nums opacity-70">{model.dueDate}</p>}
           </div>
         </section>
+        )}
 
         <table className="mt-4 w-full border-collapse text-xs">
           {/* Repeated on every page (§I). */}

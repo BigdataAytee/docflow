@@ -1,0 +1,203 @@
+/**
+ * The sixteen designs are sixteen layouts (§H).
+ *
+ * This file exists because of what its absence allowed. `TemplateThumb` drew
+ * sixteen distinct schematics and `DocumentPage` branched on `headerStyle`
+ * exactly once — to halve one rule's opacity — so every design printed the
+ * same page with a different typeface. Every test passed throughout: nothing
+ * anywhere asserted that choosing a design changed anything.
+ *
+ * So the assertions here are deliberately about DIFFERENCE, not about pixels.
+ * Pinning exact markup would freeze the designs and break on every tweak; what
+ * has to stay true is that a person picking Prism does not get Classic.
+ *
+ * And the words must survive all sixteen: an arrangement that loses the title,
+ * the reference or the party has rearranged the document into a lie, however
+ * good it looks (Rule #5, §D.2).
+ */
+
+import { describe, expect, it } from 'vitest'
+import { render, screen, within } from '@testing-library/react'
+
+import { DocumentPage } from './DocumentPage'
+import { HEADER_STYLES } from './DocumentHeader'
+import { TEMPLATES, templateById } from './templates'
+import { composeDocument } from './compose'
+import { paginate } from './paginate'
+import { quantity } from '../domain/documents/types'
+import { freezeLabels } from '../domain/locale/profile'
+import { stringsFor } from '../domain/locale/data/strings'
+
+const PROFILE = { locale: 'EN-NG' } as const
+const strings = stringsFor('en')
+
+const model = composeDocument(
+  {
+    type: 'invoice',
+    status: 'issued',
+    currency: 'NGN',
+    reference: 'INV-0042',
+    issueDate: '2026-09-15',
+    lineItems: [
+      {
+        id: 'l1',
+        description: 'Galvanised roofing sheet',
+        quantityMilli: quantity(24),
+        unitPriceMinor: 18_500_00,
+        taxable: true,
+      },
+    ],
+    party: { name: 'Adeola Hardware', address: '14 Ogunlana Drive' },
+    frozenLabels: freezeLabels(PROFILE, 'invoice'),
+  },
+  {
+    profile: PROFILE,
+    branding: { name: 'Sola Ventures', nameStyle: 'classic', logoSize: 'M', showLogo: true },
+    columnLabels: {
+      description: strings.items.description,
+      quantity: strings.items.quantity,
+      amount: strings.totals.payable,
+      unit: strings.items.unit,
+    },
+    assetUrls: {},
+    replacesLabel: () => '',
+  },
+)
+
+const pages = paginate(model, { rowsPerPage: 18, footerRowCost: 4 })
+
+const draw = (templateId: string) => {
+  const view = render(
+    <DocumentPage
+      model={model}
+      template={templateById(templateId)}
+      page={pages[0]!}
+      totalPages={pages.length}
+      formatAmount={(minor) => `₦${(minor / 100).toFixed(2)}`}
+      currency="NGN"
+      accent="#2b3fd6"
+    />,
+  )
+  const article = view.container.querySelector('article')
+  if (article === null) throw new Error('No page rendered.')
+  return { view, article }
+}
+
+describe('Every design is a design (§H)', () => {
+  /**
+   * The guard whose absence let sixteen designs become one. If a new design
+   * is added with a header style nothing draws, this is what says so — before
+   * the strip starts advertising a shape the page cannot produce.
+   */
+  it('draws every header style the templates declare', () => {
+    for (const template of TEMPLATES) {
+      expect(HEADER_STYLES, `${template.name} declares an undrawn header style`).toContain(
+        template.headerStyle,
+      )
+    }
+  })
+
+  it('declares no header style that no template uses', () => {
+    const used = new Set(TEMPLATES.map((template) => template.headerStyle))
+    for (const style of HEADER_STYLES) {
+      expect(used, `${style} is drawn but no design asks for it`).toContain(style)
+    }
+  })
+
+  /**
+   * The assertion that would have caught the original bug. Sixteen designs
+   * that render identical markup are one design wearing sixteen names.
+   */
+  it('renders sixteen structurally different pages', () => {
+    const shapes = new Map<string, string>()
+
+    for (const template of TEMPLATES) {
+      const { view, article } = draw(template.id)
+      // Structure alone: the words are identical across all sixteen by
+      // design, so comparing text would find no difference at all.
+      const shape = article.innerHTML.replace(/>[^<]*</g, '><')
+      shapes.set(template.name, shape)
+      view.unmount()
+    }
+
+    expect(shapes.size).toBe(16)
+    expect(new Set(shapes.values()).size, 'two designs render the same page').toBe(16)
+  })
+
+  /**
+   * An arrangement is free to move the title anywhere it likes; it is not
+   * free to lose it. A design that drops the reference has turned a document
+   * into something a customer cannot identify.
+   */
+  it('keeps the title, the reference and the party in all sixteen', () => {
+    for (const template of TEMPLATES) {
+      const { view, article } = draw(template.id)
+      const page = within(article)
+
+      expect(page.getByText('INVOICE'), `${template.name} lost the title`).toBeInTheDocument()
+      expect(page.getByText('INV-0042'), `${template.name} lost the reference`).toBeInTheDocument()
+      expect(
+        page.getByText('Adeola Hardware'),
+        `${template.name} lost the party`,
+      ).toBeInTheDocument()
+      expect(
+        page.getByText('Sola Ventures'),
+        `${template.name} lost the business name`,
+      ).toBeInTheDocument()
+
+      view.unmount()
+    }
+  })
+
+  /**
+   * §V, checked per design rather than once: a delivery carries no money
+   * under ANY arrangement. A header that drew a total would be the one place
+   * the rule could be broken by decoration.
+   */
+  it('puts no money on a delivery document, whichever design is chosen', () => {
+    const waybill = composeDocument(
+      {
+        type: 'waybill',
+        status: 'issued',
+        currency: 'NGN',
+        reference: 'WB-0007',
+        issueDate: '2026-09-15',
+        // No price and not taxable: a delivery carries no money at all (§V).
+        lineItems: [
+          { id: 'l1', description: 'Cartons', quantityMilli: quantity(3), taxable: false },
+        ],
+        party: { name: 'Adeola Hardware' },
+        frozenLabels: freezeLabels(PROFILE, 'waybill'),
+      },
+      {
+        profile: PROFILE,
+        branding: { name: 'Sola Ventures', nameStyle: 'classic', logoSize: 'M', showLogo: true },
+        columnLabels: {
+          description: strings.items.description,
+          quantity: strings.items.quantity,
+          amount: strings.totals.payable,
+          unit: strings.items.unit,
+        },
+        assetUrls: {},
+        replacesLabel: () => '',
+      },
+    )
+    const waybillPages = paginate(waybill, { rowsPerPage: 18, footerRowCost: 4 })
+
+    for (const template of TEMPLATES) {
+      const view = render(
+        <DocumentPage
+          model={waybill}
+          template={template}
+          page={waybillPages[0]!}
+          totalPages={1}
+          formatAmount={(minor) => `₦${(minor / 100).toFixed(2)}`}
+          currency="NGN"
+          accent="#2b3fd6"
+        />,
+      )
+      expect(screen.queryByText(/₦/), `${template.name} printed money on a delivery`).toBeNull()
+      view.unmount()
+    }
+  })
+})
