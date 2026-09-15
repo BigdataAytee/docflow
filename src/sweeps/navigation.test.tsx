@@ -87,7 +87,7 @@ describe('What is NOT built, recorded rather than ticked off', () => {
     // is currently served by four tabs and a settings index. Seven panels,
     // all routed, which is what makes the palette an improvement rather than
     // a missing capability.
-    expect(SETTINGS_PANELS.length).toBe(10)
+    expect(SETTINGS_PANELS.length).toBe(12)
   })
 })
 

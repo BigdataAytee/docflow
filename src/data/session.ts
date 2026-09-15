@@ -16,7 +16,21 @@ export type SessionStage =
   | { readonly kind: 'signed_out' }
   /** Signed in, but no company yet — a fresh sign-up (§R). */
   | { readonly kind: 'needs_company' }
-  | { readonly kind: 'ready'; readonly companyId: string }
+  | {
+      readonly kind: 'ready'
+      readonly companyId: string
+      /**
+       * The signed-in address, when there is an account behind this build.
+       *
+       * Settings → Your account shows it and sends the password reset to it,
+       * and both need it to come from the SESSION rather than from a record:
+       * the email that signs in is the auth provider's, and a copy kept
+       * anywhere else would be the one that goes stale.
+       *
+       * Absent on the demo backend, which has no account at all.
+       */
+      readonly email?: string
+    }
 
 export interface NewBusiness {
   readonly name: string

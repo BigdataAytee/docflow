@@ -116,7 +116,17 @@ export function AccountGate({ session, children }: AccountGateProps) {
    * so the installed app had no way to sign out at all.
    */
   return (
-    <SessionActionsProvider signOut={() => session.signOut()}>
+    <SessionActionsProvider
+      {...(stage.email === undefined ? {} : { email: stage.email })}
+      signOut={() => session.signOut()}
+      sendPasswordReset={async (redirectTo) => {
+        // The address comes from the SESSION, so a reset can only ever be
+        // sent to the account that asked for it — never to something typed
+        // into a box on a screen somebody else might be holding (§P).
+        if (stage.email === undefined) return
+        await session.sendPasswordReset(stage.email, redirectTo)
+      }}
+    >
       {children(stage.companyId)}
     </SessionActionsProvider>
   )

@@ -10,6 +10,8 @@
  * the notice is a first-class piece of the screen rather than a silent swap.
  */
 
+import { useState } from 'react'
+
 import { useCompany } from '../../app/context'
 import { type UiStrings, format } from '../../domain/locale/data/strings'
 import { fieldsFor, validateBankDetails } from '../../domain/locale/bank-fields'
@@ -71,6 +73,34 @@ export function PaymentSettings({
   const problems = validateBankDetails({ currency, values: bankValues })
   const enabledCount = methods.filter((method) => method.enabled).length
 
+  /*
+   * WHEN A MISSING FIELD BECOMES A PROBLEM (§K).
+   *
+   * This screen used to greet a new owner with "Bank is needed. Account
+   * number is needed. Account name is needed." before they had typed
+   * anything — three red lines for the offence of having just arrived. An
+   * untouched settings screen is EMPTY, not invalid; nothing is wrong yet
+   * because nothing has been claimed yet.
+   *
+   * Two things turn an empty field into a real problem, and both are the
+   * owner saying something:
+   *
+   *  · THEY TOUCHED IT and left it empty — they went at the field and it
+   *    still has nothing in it.
+   *  · THEY SWITCHED BANK TRANSFER ON — which tells customers to pay into an
+   *    account. An enabled method with no details is a promise with nothing
+   *    behind it, and that is worth saying at once rather than discovering
+   *    on an invoice already sent.
+   *
+   * §K is unchanged either way: the message sits beside the field and
+   * nothing typed is ever cleared. What changes is only WHEN it appears.
+   */
+  const [touched, setTouched] = useState<ReadonlySet<string>>(() => new Set())
+  const bankTransferOn = methods.some(
+    (method) => method.id === 'bank_transfer' && method.enabled,
+  )
+  const showsProblem = (kind: string) => bankTransferOn || touched.has(kind)
+
   return (
     <section className="space-y-4 px-4 py-4">
       <header>
@@ -94,7 +124,8 @@ export function PaymentSettings({
         </h2>
         {/* Rendered from the §J definition — never a hand-written form. */}
         {fields.map((field) => {
-          const problem = problems.find((p) => p.kind === field.kind)
+          const found = problems.find((p) => p.kind === field.kind)
+          const problem = found !== undefined && showsProblem(field.kind) ? found : undefined
           return (
             <label key={field.kind} className="block">
               <span className="mb-1 block text-xs font-medium opacity-70">{field.label}</span>
@@ -104,6 +135,11 @@ export function PaymentSettings({
                 inputMode="text"
                 value={bankValues[field.kind] ?? ''}
                 onChange={(event) => onBankValue(field.kind, event.target.value)}
+                // On BLUR rather than on the first keystroke: a field is not
+                // wrong while it is still being filled in.
+                onBlur={() =>
+                  setTouched((previous) => new Set(previous).add(field.kind))
+                }
                 aria-label={field.label}
                 aria-invalid={problem !== undefined}
                 className="sunken min-h-tap w-full rounded-lg px-3 text-sm"

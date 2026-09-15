@@ -29,7 +29,11 @@ import { RegionSettings } from '../../features/settings/RegionSettings'
 import { SavedItems } from '../../features/settings/SavedItems'
 import { SignatureSettings } from '../../features/settings/SignatureSettings'
 import { TaxSettings } from '../../features/settings/TaxSettings'
+import { AccountSettings } from '../../features/settings/AccountSettings'
 import { DataAndSync } from '../../features/settings/DataAndSync'
+import { HelpSettings } from '../../features/settings/HelpSettings'
+import { SignOutSheet } from '../../features/auth/SignOutSheet'
+import { useSessionActions } from '../session-context'
 import { ThemeSettings } from '../../features/theme/ThemeSettings'
 import { useThemeChoice } from '../../features/theme/ThemeContext'
 import { runExport } from '../../features/export/action'
@@ -53,12 +57,17 @@ const PANEL_ICONS: Readonly<Record<SettingsPanel, IconName>> = {
   appearance: 'moon',
   data: 'refresh',
   pro: 'shield',
-  delete: 'user',
+  account: 'user',
+  help: 'help',
+  delete: 'trash',
 }
 
 export function SettingsIndexScreen() {
   const { strings } = useCompany()
   const { company, items, documents } = useAppData()
+  // Null where this build has no account behind it, which is the row's
+  // sublabel rather than a reason to hide it: Your account still says so.
+  const session = useSessionActions()
 
   // One list, shared with the command palette. Two copies of this drifted
   // apart the moment a panel was added — which is exactly what happened to
@@ -88,6 +97,8 @@ export function SettingsIndexScreen() {
         return company?.defaultSignatureAssetId == null ? strings.settings.notSet : undefined
       case 'region':
         return company?.localeRegion
+      case 'account':
+        return session?.email ?? strings.account.noSession
       default:
         return undefined
     }
@@ -277,9 +288,46 @@ function SettingsPanelBody() {
       return <DataAndSyncPanel />
     case 'pro':
       return <ProPanel />
+    case 'account':
+      return <AccountPanel />
+
+    case 'help':
+      return <HelpSettings />
+
     case 'delete':
       return <DeleteAccountPanel />
   }
+}
+
+/**
+ * Settings → Your account (§P).
+ *
+ * The sheet is the SAME one Home opens, not a second confirmation written to
+ * look like it. Two dialogs asking the same question drift, and the one that
+ * drifts is always the one nobody is looking at.
+ */
+function AccountPanel() {
+  const session = useSessionActions()
+  const [signingOut, setSigningOut] = useState(false)
+
+  return (
+    <>
+      <AccountSettings
+        {...(session?.email === undefined ? {} : { email: session.email })}
+        onSignOut={() => setSigningOut(true)}
+        onChangePassword={async () => {
+          if (session === null) throw new Error('No session to reset a password for.')
+          await session.sendPasswordReset(window.location.origin)
+        }}
+      />
+      {signingOut && session !== null && (
+        <SignOutSheet
+          onConfirm={() => void session.signOut()}
+          onCancel={() => setSigningOut(false)}
+        />
+      )}
+    </>
+  )
 }
 
 /**

@@ -41,7 +41,29 @@ export interface UiStrings {
    * Every word here goes through the catalogue like every other word: an
    * account screen is not exempt from §S because it happens before the app.
    */
+  /**
+   * Settings → Help & support (§G: "WhatsApp + FAQ").
+   *
+   * Every answer describes a rule this build actually enforces. A FAQ that
+   * describes behaviour the app does not have creates the support calls it
+   * was written to prevent.
+   */
+  readonly help: {
+    readonly title: string
+    readonly chatWithSupport: string
+    readonly onWhatsApp: string
+    readonly faq: readonly { readonly question: string; readonly answer: string }[]
+  }
   readonly account: {
+    /** Settings → Your account (§P, and the reference's account screen). */
+    readonly title: string
+    readonly signedIn: string
+    readonly noSession: string
+    readonly noSessionBody: string
+    readonly changePassword: string
+    readonly changePasswordHint: string
+    readonly resetSentToYou: string
+    readonly resetFailed: string
     readonly signInTitle: string
     readonly signInBody: string
     readonly email: string
@@ -942,7 +964,42 @@ const EN: UiStrings = {
     /** §N: a missing model says so plainly — never "needs internet". */
     offlineToolsNeeded: 'These work on this phone once the offline tools are installed. Download them when you are connected.',
   },
+  help: {
+    title: 'Help & support',
+    chatWithSupport: 'Chat with support',
+    onWhatsApp: 'On WhatsApp',
+    faq: [
+      {
+        question: 'How do I work without internet?',
+        answer:
+          'Everything saves on this phone first. Creating, viewing, sharing and recording a payment all work with the radios off; uploading happens by itself when you are back online.',
+      },
+      {
+        question: 'When does an invoice become overdue?',
+        answer:
+          'On its own, the day after the due date. Nothing needs to be marked — the status is worked out from the date and what has been paid, every time you look.',
+      },
+      {
+        question: 'Can I change a document I already sent?',
+        answer:
+          'No, and that is deliberate: the copy your customer is holding must keep saying what it said. Void it and issue a replacement, or add a credit note. The new one names the one it replaces.',
+      },
+      {
+        question: 'What happens to my documents if I stop paying?',
+        answer:
+          'Nothing. Viewing, sharing and exporting everything you have already made stay free forever. A lapsed subscription never locks a record you made.',
+      },
+    ],
+  },
   account: {
+    title: 'Your account',
+    signedIn: 'Signed in on this device.',
+    noSession: 'No account on this device',
+    noSessionBody: 'Everything here is kept on the phone. There is nothing to sign out of.',
+    changePassword: 'Change password',
+    changePasswordHint: 'We send a reset link to your email.',
+    resetSentToYou: 'A reset link is on its way to your email. It expires after an hour.',
+    resetFailed: 'That needs an internet connection. Nothing was sent — try again when you are online.',
     signInTitle: 'Sign in to DocFlow',
     signInBody: 'Your records sync to your account, so they are on every device you use.',
     email: 'Email',

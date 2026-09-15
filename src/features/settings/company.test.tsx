@@ -23,6 +23,7 @@ import userEvent from '@testing-library/user-event'
 import { CompanyProvider } from '../../app/context'
 import { createMemoryRepositories, emptyState } from '../../data/repositories'
 import { CompanySettings } from './CompanySettings'
+import { PaymentSettings } from './PaymentSettings'
 
 const wrap = (node: React.ReactNode) =>
   render(
@@ -162,5 +163,88 @@ describe('The name preview is the chosen style (§F)', () => {
     wrap(<CompanySettings {...props} nameStyle="ruled" />)
     const preview = screen.getByTestId('name-preview')
     expect(within(preview.parentElement!).getByText('Dynamic Renaissance')).toBeInTheDocument()
+  })
+})
+
+describe('An untouched settings screen reads empty, not invalid (§K)', () => {
+  const methods = (bankOn: boolean) => [
+    { id: 'bank_transfer', name: 'Bank transfer', enabled: bankOn },
+    { id: 'cash_on_delivery', name: 'Cash on delivery', enabled: false },
+  ]
+
+  /**
+   * The screen used to open with "Bank is needed. Account number is needed.
+   * Account name is needed." — three red lines for the offence of having just
+   * arrived. Nothing is wrong yet, because nothing has been claimed yet.
+   */
+  it('says nothing about a field nobody has been near', () => {
+    wrap(
+      <PaymentSettings
+        currency="NGN"
+        bankValues={{}}
+        methods={methods(false)}
+        onBankValue={vi.fn()}
+        onToggleMethod={vi.fn()}
+      />,
+    )
+    expect(screen.queryByText('Bank is needed.')).not.toBeInTheDocument()
+    expect(screen.getByLabelText('Bank')).not.toHaveAttribute('aria-invalid', 'true')
+  })
+
+  it('says so once the owner has been at the field and left it empty', async () => {
+    wrap(
+      <PaymentSettings
+        currency="NGN"
+        bankValues={{}}
+        methods={methods(false)}
+        onBankValue={vi.fn()}
+        onToggleMethod={vi.fn()}
+      />,
+    )
+
+    const bank = screen.getByLabelText('Bank')
+    await userEvent.click(bank)
+    await userEvent.tab()
+
+    expect(screen.getByText('Bank is needed.')).toBeInTheDocument()
+    expect(bank).toHaveAttribute('aria-invalid', 'true')
+    // And only that one. Touching a field says nothing about its neighbours.
+    expect(screen.queryByText('Account name is needed.')).not.toBeInTheDocument()
+  })
+
+  /**
+   * Switching the method on tells customers to pay into an account. An
+   * enabled method with no details behind it is a promise with nothing behind
+   * it, and §J has the row showing the live account for the same reason.
+   */
+  it('says so about every field the moment bank transfer is switched on', () => {
+    wrap(
+      <PaymentSettings
+        currency="NGN"
+        bankValues={{}}
+        methods={methods(true)}
+        onBankValue={vi.fn()}
+        onToggleMethod={vi.fn()}
+      />,
+    )
+    expect(screen.getByText('Bank is needed.')).toBeInTheDocument()
+    expect(screen.getByText('Account number is needed.')).toBeInTheDocument()
+    expect(screen.getByText('Account name is needed.')).toBeInTheDocument()
+  })
+
+  /** §K: nothing typed is ever cleared, whenever the message appears. */
+  it('keeps what was typed when a different field complains', async () => {
+    wrap(
+      <PaymentSettings
+        currency="NGN"
+        bankValues={{ bank_name: 'Guaranty Trust Bank' }}
+        methods={methods(true)}
+        onBankValue={vi.fn()}
+        onToggleMethod={vi.fn()}
+      />,
+    )
+    expect(screen.getByLabelText('Bank')).toHaveValue('Guaranty Trust Bank')
+    expect(screen.queryByText('Bank is needed.')).not.toBeInTheDocument()
+    expect(screen.getByText('Account number is needed.')).toBeInTheDocument()
   })
 })

@@ -21,19 +21,40 @@
 import { createContext, useContext, useMemo, type ReactNode } from 'react'
 
 export interface SessionActions {
+  /** The signed-in address. Absent where the provider did not give one. */
+  readonly email?: string
   readonly signOut: () => Promise<void>
+  /**
+   * Changing a password is a reset sent to the address that signs in (§P).
+   *
+   * There is no "type the old one, then the new one twice" here and there
+   * will not be: the provider owns the credential, the reset link is what it
+   * issues, and a form that collected three passwords in the app would be a
+   * second place for one to be typed, logged or got wrong.
+   *
+   * NEEDS A CONNECTION, and says so when it does not have one — §N's rule
+   * rather than a queued promise nobody can see the state of.
+   */
+  readonly sendPasswordReset: (redirectTo: string) => Promise<void>
 }
 
 const SessionActionsContext = createContext<SessionActions | null>(null)
 
 export function SessionActionsProvider({
+  email,
   signOut,
+  sendPasswordReset,
   children,
 }: {
+  email?: string | undefined
   signOut: () => Promise<void>
+  sendPasswordReset: (redirectTo: string) => Promise<void>
   children: ReactNode
 }) {
-  const value = useMemo<SessionActions>(() => ({ signOut }), [signOut])
+  const value = useMemo<SessionActions>(
+    () => ({ signOut, sendPasswordReset, ...(email === undefined ? {} : { email }) }),
+    [email, signOut, sendPasswordReset],
+  )
   return <SessionActionsContext.Provider value={value}>{children}</SessionActionsContext.Provider>
 }
 

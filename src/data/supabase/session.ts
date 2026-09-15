@@ -24,9 +24,16 @@ export function createSupabaseSession(client: SupabaseClient): SessionService {
       // sync, they never lock someone out), so only `signed_out` sends anyone
       // back to the sign-in screen.
       const account = await accountState(client)
-      return account.kind === 'ready'
-        ? { kind: 'ready', companyId: account.companyId }
-        : { kind: 'needs_company' }
+      if (account.kind !== 'ready') return { kind: 'needs_company' }
+
+      // From the session, never from a row: this is the address that signs
+      // in, and a copy kept elsewhere is the one that goes stale.
+      const email = state.kind === 'authenticated' ? state.user.email : undefined
+      return {
+        kind: 'ready',
+        companyId: account.companyId,
+        ...(email === undefined || email === '' ? {} : { email }),
+      }
     },
 
     onChange: (listener) => auth.onChange(() => listener()),
