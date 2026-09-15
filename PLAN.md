@@ -53,9 +53,12 @@ control that cannot do what it says (§N):
 ### The deploy (done 2026-09-15) and what it did not settle
 
 Migrations 0001–0020 are applied, the three edge functions are deployed and
-both keys are rotated. **Phase 5 is still 0 of 3 proven**: `gate:hosted` has
-not been run — it needs the three credentials in a gitignored `.env` that does
-not exist on this machine. Deployed and unverified is not working.
+both keys are rotated. **Phase 5 is still 0 of 3 proven.** The gate is blocked
+on TLS interception on the developer machine, not on credentials — the direct
+Postgres connection refuses a chain it cannot verify, and rightly. Run the DDL
+half in CI (`Phase 1 gate (hosted)` → part `db`) and the API half locally; the
+detail is under the deploy paragraph above. Deployed and unverified is not
+working.
 
 `0021_recurrences.sql` is written and NOT pushed; it ships with the client
 repository and its RLS suite. Two things still to decide or watch:
@@ -126,11 +129,37 @@ done, and S2–S10 are unblocked rather than finished.
 cross-device visibility, token behaviour per §P, one payment per event — and
 a deploy is the precondition for testing them, not the test. `npm run
 gate:hosted` is what turns the deploy into a gate result, and it has **not
-been run from this machine**: it needs `VITE_SUPABASE_URL`,
-`VITE_SUPABASE_ANON_KEY` and `SUPABASE_SERVICE_ROLE_KEY` in the gitignored
-`.env`, and there is no `.env` here. Until that run, Phase 5 stays **0 of 3
-proven** — deployed and unverified is a different state from working, and §X
-does not let this file call it the latter.
+produced one yet**. Until it does, Phase 5 stays **0 of 3 proven** — deployed
+and unverified is a different state from working, and §X does not let this
+file call it the latter.
+
+**The gate is blocked on TLS interception, not on credentials** (2026-09-15).
+The direct Postgres connection aborts with `self-signed certificate in
+certificate chain` on both pooler ports, because something on that Windows
+machine is terminating TLS. Three things were fixed rather than worked
+around:
+
+* **It no longer aborts the whole run.** `main` called the migration step
+  unguarded, so a refusal on the Postgres connection killed clauses 3–10 —
+  which go over HTTPS through a different client entirely and were never the
+  problem. It records a failure and carries on.
+* **`GATE_PART=db|api` splits the halves**, so each runs where its chain is
+  trustworthy: the DDL clauses in CI (`Phase 1 gate (hosted)` → part `db`),
+  the PostgREST clauses anywhere. Two runs in two places is a complete gate
+  result.
+* **`SUPABASE_CA_CERT` pins Supabase's own CA**, and the connection string's
+  `?sslmode=verify-full&sslrootcert=…` is honoured now that the code stops
+  overriding `ssl`. Neither makes an intercepted connection succeed — a proxy
+  presents its own certificate, so pinning turns a vague error into a correct
+  refusal. **There is no way to disable verification and a test enforces
+  that**: the connection carries the service-role key, and anything able to
+  re-sign it can read the key.
+
+**And the instruction that was wrong.** `gate:hosted` never read `.env` — only
+the separate `gate:hosted:local` did, so "put them in .env and run
+gate:hosted" silently did nothing. One script now, with
+`--env-file-if-exists=.env`: exported shell variables and a gitignored `.env`
+both work, and `gate:hosted:local` is gone.
 
 **Twenty-one migrations** are written; the twenty-first — `0021_recurrences`
 — ships with the client half and is the one still to push.

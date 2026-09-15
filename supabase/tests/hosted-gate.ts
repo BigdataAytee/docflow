@@ -12,7 +12,13 @@
  *   6. auth refuses a run of requests, per endpoint, against the numbers
  *      declared in `src/domain/auth/limits.ts` (§P)
  *
- * It needs, from the gitignored .env:
+ * CREDENTIALS. This file reads `process.env` and nothing else — it has never
+ * parsed a .env itself. `npm run gate:hosted` loads one with node's
+ * `--env-file-if-exists=.env`, so BOTH work: exported shell variables, or a
+ * gitignored .env, or a mixture. It used to be `gate:hosted` for the first and
+ * a separate `gate:hosted:local` for the second, which meant the documented
+ * instruction ("put them in .env and run gate:hosted") silently did nothing.
+ *
  *   VITE_SUPABASE_URL, VITE_SUPABASE_ANON_KEY, SUPABASE_SERVICE_ROLE_KEY
  *   SUPABASE_DB_URL  — the direct Postgres connection string, ONLY for the
  *                      migration apply. PostgREST cannot run DDL, so the anon
@@ -22,6 +28,10 @@
  *                      Management API token. Set it and step 1 runs; leave it
  *                      unset and step 1 is reported as skipped rather than
  *                      silently assumed.
+ *   SUPABASE_CA_CERT — optional path to Supabase's CA bundle, to verify that
+ *                      connection against a pinned root instead of the
+ *                      machine's certificate store. See `dbSsl`.
+ *   GATE_PART        — `db`, `api`, or unset for both. See `part`.
  *
  * Nothing here prints a key. Failures name the check, not the credential.
  */
@@ -65,6 +75,57 @@ const record = (step: string, status: 'pass' | 'fail' | 'skip', detail: string) 
 const COMPANY_A = '11111111-1111-1111-1111-111111111111'
 const COMPANY_B = '22222222-2222-2222-2222-222222222222'
 
+/**
+ * The TLS settings for the direct Postgres connection.
+ *
+ * `undefined` means "whatever the connection string said", which is the point.
+ * This used to hardcode `{ rejectUnauthorized: true }`, and while that is the
+ * safe default it also made `?sslmode=verify-full&sslrootcert=…` look like it
+ * did nothing — the caller could pin a CA in the URL and never find out
+ * whether it had been honoured.
+ *
+ * `SUPABASE_CA_CERT` is the explicit form: a path to Supabase's own CA bundle
+ * (dashboard → Settings → Database → SSL configuration). Pinning it stops this
+ * connection trusting the machine's certificate store, which on a Windows box
+ * running interception software is not a store this key should be trusting.
+ *
+ * WHAT PINNING DOES NOT DO: make an intercepted connection work. A proxy in
+ * the middle presents its OWN certificate, so pinning Supabase's CA turns a
+ * vague "self-signed certificate in certificate chain" into a precise refusal.
+ * That is the correct outcome. The connection only succeeds again once the
+ * interception stops — and trusting the interceptor's root instead would mean
+ * handing it the service-role key in plaintext.
+ *
+ * There is deliberately no way to turn verification off. Every mode except
+ * `disable` and `no-verify` verifies fully in pg 8; this never passes either.
+ */
+export function dbSsl(): { ca: string; rejectUnauthorized: true } | undefined {
+  const caPath = process.env.SUPABASE_CA_CERT
+  if (caPath === undefined || caPath === '') return undefined
+  return { ca: readFileSync(caPath, 'utf8'), rejectUnauthorized: true }
+}
+
+/** Node's names for "somebody is sitting in the middle of this connection". */
+const INTERCEPTION = new Set([
+  'SELF_SIGNED_CERT_IN_CHAIN',
+  'DEPTH_ZERO_SELF_SIGNED_CERT',
+  'UNABLE_TO_VERIFY_LEAF_SIGNATURE',
+  'ERR_TLS_CERT_ALTNAME_INVALID',
+])
+
+export function tlsAdvice(error: unknown): string | null {
+  const code = (error as { code?: string } | null)?.code
+  if (code === undefined || !INTERCEPTION.has(code)) return null
+  return (
+    `${code} — the certificate presented is not Supabase's. Something on this ` +
+    'machine is terminating TLS (antivirus or a corporate proxy). Do not work ' +
+    'around it: that connection carries the service-role key, and anything ' +
+    'able to re-sign it can read the key. Either exempt the host from ' +
+    'interception, or run this clause where the chain is clean — ' +
+    'GATE_PART=db in CI. The PostgREST clauses below do not use this connection.'
+  )
+}
+
 async function applyMigrationsToHost(): Promise<boolean> {
   const dbUrl = process.env.SUPABASE_DB_URL
   if (dbUrl === undefined || dbUrl === '') {
@@ -76,8 +137,27 @@ async function applyMigrationsToHost(): Promise<boolean> {
     return false
   }
 
-  const db = new Client({ connectionString: dbUrl, ssl: { rejectUnauthorized: true } })
-  await db.connect()
+  const ssl = dbSsl()
+  const db = new Client({ connectionString: dbUrl, ...(ssl === undefined ? {} : { ssl }) })
+  try {
+    await db.connect()
+  } catch (error: unknown) {
+    /*
+     * A FAILURE, NOT AN ABORT, and that distinction is the bug this catch
+     * fixes. `main` called this unguarded, so a TLS refusal on the direct
+     * Postgres connection killed the whole run — and clauses 3–10 never
+     * executed even though they go over HTTPS through a completely different
+     * client. Two of Phase 5's three gate clauses were being reported as
+     * nothing at all because of a connection they do not use.
+     */
+    const advice = tlsAdvice(error)
+    record(
+      '1. migrations applied to the hosted instance',
+      'fail',
+      advice ?? (error instanceof Error ? error.message : String(error)),
+    )
+    return false
+  }
   try {
     const { rows: existing } = await db.query<{ present: boolean }>(
       `select exists (
@@ -287,10 +367,43 @@ export async function checkAuthRateLimits(url: string, anonKey: string): Promise
   return results.slice(before)
 }
 
-async function main(): Promise<void> {
-  console.log('DocFlow — Phase 1 gate against the hosted project\n')
+/**
+ * Which half to run (§Q Phase 1, Phase 5).
+ *
+ * The gate reaches the project two ways, and they fail independently:
+ *
+ *  · `db`  — a DIRECT Postgres connection for the DDL clauses, which needs the
+ *            database password and a TLS chain nothing has rewritten.
+ *  · `api` — PostgREST and GoTrue over HTTPS with the anon and service keys,
+ *            which is what the app itself speaks.
+ *
+ * Splitting them is not a convenience. On a machine where interception breaks
+ * the Postgres connection, the API clauses are still perfectly testable, and
+ * the DDL clauses are still perfectly testable in CI where the chain is clean.
+ * Running the halves in different places and reporting both is a complete gate
+ * result; refusing to run either because one host is compromised is not.
+ */
+export type Part = 'db' | 'api' | 'both'
 
-  await applyMigrationsToHost()
+export function part(): Part {
+  const value = process.env.GATE_PART
+  if (value === 'db' || value === 'api') return value
+  return 'both'
+}
+
+async function main(): Promise<void> {
+  const which = part()
+  console.log(
+    `DocFlow — Phase 1 gate against the hosted project${which === 'both' ? '' : ` (${which} only)`}\n`,
+  )
+
+  if (which !== 'api') await applyMigrationsToHost()
+  if (which === 'db') {
+    const failedDb = results.filter((r) => r.status === 'fail')
+    console.log(`\n${results.length - failedDb.length} passed, ${failedDb.length} failed`)
+    if (failedDb.length > 0) process.exitCode = 1
+    return
+  }
 
   const { admin, users } = await seedTwoRealUsers()
   const [acme, rival] = users

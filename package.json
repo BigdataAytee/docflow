@@ -20,8 +20,7 @@
     "test:tail": "node --experimental-strip-types tools/tail.ts 30 -- npx vitest run",
     "verify": "npm run typecheck && npm run lint && npm run build && npm run policy:check && npm run test",
     "test:rls": "vitest run --config vitest.rls.config.ts",
-    "gate:hosted": "node --experimental-strip-types supabase/tests/hosted-gate.ts",
-    "gate:hosted:local": "node --env-file=.env --experimental-strip-types supabase/tests/hosted-gate.ts",
+    "gate:hosted": "node --env-file-if-exists=.env --experimental-strip-types supabase/tests/hosted-gate.ts",
     "pentest": "node --experimental-strip-types tools/pentest/run.ts",
     "discoverability": "cross-env UPDATE_DISCOVERABILITY=1 vitest run src/marketing/sheet.test.ts",
     "site": "cross-env EMIT_SITE=1 vitest run src/marketing/emit.test.ts",
@@ -31,7 +30,9 @@
     "policy:check": "cross-env POLICY=1 vitest run src/marketing/policy/run.test.ts",
     "sweep:responsive": "npm run shots:build && cross-env SWEEP=1 vitest run tools/sweeps/responsive.test.ts",
     "sweep:largetext": "npm run shots:build && cross-env SWEEP=1 vitest run tools/sweeps/largetext.test.ts",
-    "sweep:screenreader": "npm run shots:build && cross-env SWEEP=1 vitest run tools/sweeps/screenreader.test.ts"
+    "sweep:screenreader": "npm run shots:build && cross-env SWEEP=1 vitest run tools/sweeps/screenreader.test.ts",
+    "gate:hosted:db": "cross-env GATE_PART=db npm run gate:hosted",
+    "gate:hosted:api": "cross-env GATE_PART=api npm run gate:hosted"
   },
   "dependencies": {
     "@aparajita/capacitor-biometric-auth": "^10.0.0",

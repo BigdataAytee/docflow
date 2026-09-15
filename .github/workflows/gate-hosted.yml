@@ -4,12 +4,24 @@
 # GitHub runners have unrestricted egress, and the project credentials belong
 # in repository secrets rather than on a developer machine.
 #
+# AND FOR A SECOND REASON NOW: a clean certificate chain. The gate reaches the
+# project two ways — a direct Postgres connection for the DDL clauses, and
+# HTTPS for everything the app itself speaks — and TLS interception on a
+# developer machine breaks the first while leaving the second perfectly
+# testable. `part` lets each half run where its chain is trustworthy, and two
+# runs in two places is a complete gate result.
+#
 # Manual dispatch only — it writes to a real project.
 name: Phase 1 gate (hosted)
 
 on:
   workflow_dispatch:
     inputs:
+      part:
+        description: 'Which half: db (direct Postgres, DDL clauses), api (PostgREST + GoTrue), or both'
+        type: choice
+        options: [both, db, api]
+        default: both
       reset:
         description: 'Drop and recreate the public schema first (SCRATCH PROJECTS ONLY — deletes every row)'
         type: boolean
@@ -37,13 +49,22 @@ jobs:
       # run then tells us exactly what to add rather than failing opaquely.
       - name: Check required secrets are present
         env:
+          PART: ${{ inputs.part }}
           VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
           VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
           SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
         run: |
+          # Only what the chosen half actually uses. The db half needs the
+          # database password and nothing else; the api half needs the keys and
+          # never opens a Postgres connection.
+          case "$PART" in
+            db)  names="SUPABASE_DB_URL" ;;
+            api) names="VITE_SUPABASE_URL VITE_SUPABASE_ANON_KEY SUPABASE_SERVICE_ROLE_KEY" ;;
+            *)   names="VITE_SUPABASE_URL VITE_SUPABASE_ANON_KEY SUPABASE_SERVICE_ROLE_KEY SUPABASE_DB_URL" ;;
+          esac
           missing=()
-          for name in VITE_SUPABASE_URL VITE_SUPABASE_ANON_KEY SUPABASE_SERVICE_ROLE_KEY SUPABASE_DB_URL; do
+          for name in $names; do
             if [ -z "${!name}" ]; then missing+=("$name"); else echo "present: $name"; fi
           done
           if [ ${#missing[@]} -ne 0 ]; then
@@ -59,4 +80,8 @@ jobs:
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
           SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
           GATE_RESET: ${{ inputs.reset && '1' || '0' }}
+          # The runner's chain is the real one — no antivirus, no corporate
+          # root. This is why the DDL clauses can run here when a developer
+          # machine cannot reach Postgres over a chain it is willing to trust.
+          GATE_PART: ${{ inputs.part }}
         run: npm run gate:hosted

@@ -14,10 +14,13 @@
  */
 
 import { createServer, type Server } from 'node:http'
+import { readFileSync, rmSync, writeFileSync } from 'node:fs'
+import { tmpdir } from 'node:os'
+import { join } from 'node:path'
 import { type AddressInfo } from 'node:net'
 import { afterEach, describe, expect, it } from 'vitest'
 
-import { type StepResult, checkAuthRateLimits } from './hosted-gate.ts'
+import { type StepResult, checkAuthRateLimits, dbSsl, part, tlsAdvice } from './hosted-gate.ts'
 import { PROBE_CEILING } from '../../src/domain/auth/limits.ts'
 
 let server: Server | undefined
@@ -105,5 +108,87 @@ describe('A project with no limiter at all is a failure, not a silence', () => {
     for (const path of new Set(seen)) {
       expect(seen.filter((p) => p === path).length).toBeLessThanOrEqual(PROBE_CEILING)
     }
+  })
+})
+
+describe('TLS on the direct Postgres connection (§P)', () => {
+  const saved = { ...process.env }
+  afterEach(() => {
+    process.env = { ...saved }
+  })
+
+  /**
+   * The connection carries the service-role key. Anything able to re-sign it
+   * can read the key, so there is no route through this file that turns
+   * verification off — not a flag, not an env var, not a fallback.
+   */
+  it('offers no way to disable certificate verification', () => {
+    const source = readFileSync(new URL('./hosted-gate.ts', import.meta.url), 'utf8')
+    expect(source).not.toMatch(/rejectUnauthorized:\s*false/)
+    expect(source).not.toMatch(/NODE_TLS_REJECT_UNAUTHORIZED/)
+    expect(source).not.toMatch(/sslmode=(no-verify|disable)/)
+  })
+
+  it('leaves the connection string in charge when no CA is pinned', () => {
+    delete process.env.SUPABASE_CA_CERT
+    // `undefined`, not `{ rejectUnauthorized: true }` — the hardcoded object
+    // silently outranked nothing, but it made `?sslrootcert=` look inert.
+    expect(dbSsl()).toBeUndefined()
+  })
+
+  it('pins the CA when one is given, and still verifies', () => {
+    const path = join(tmpdir(), `docflow-ca-${Date.now()}.crt`)
+    writeFileSync(path, '-----BEGIN CERTIFICATE-----\nnot a real one\n-----END CERTIFICATE-----\n')
+    process.env.SUPABASE_CA_CERT = path
+
+    const ssl = dbSsl()
+    expect(ssl?.ca).toContain('BEGIN CERTIFICATE')
+    expect(ssl?.rejectUnauthorized).toBe(true)
+    rmSync(path, { force: true })
+  })
+
+  /**
+   * An intercepted chain must produce the actionable message, not a bare
+   * OpenSSL code — and must NOT be mistaken for an ordinary outage, because
+   * the two have completely different answers.
+   */
+  it.each([
+    'SELF_SIGNED_CERT_IN_CHAIN',
+    'DEPTH_ZERO_SELF_SIGNED_CERT',
+    'UNABLE_TO_VERIFY_LEAF_SIGNATURE',
+    'ERR_TLS_CERT_ALTNAME_INVALID',
+  ])('names interception for %s, and says not to work around it', (code) => {
+    const advice = tlsAdvice(Object.assign(new Error('x'), { code }))
+    expect(advice).toContain(code)
+    expect(advice).toMatch(/service-role key/)
+    expect(advice).toMatch(/GATE_PART=db/)
+  })
+
+  it('says nothing about interception for an ordinary failure', () => {
+    expect(tlsAdvice(Object.assign(new Error('down'), { code: 'ECONNREFUSED' }))).toBeNull()
+    expect(tlsAdvice(new Error('no code at all'))).toBeNull()
+  })
+})
+
+describe('The gate runs in halves (§Q Phase 1, Phase 5)', () => {
+  const saved = { ...process.env }
+  afterEach(() => {
+    process.env = { ...saved }
+  })
+
+  it('runs both by default', () => {
+    delete process.env.GATE_PART
+    expect(part()).toBe('both')
+  })
+
+  it.each(['db', 'api'])('runs only the %s half when asked', (value) => {
+    process.env.GATE_PART = value
+    expect(part()).toBe(value)
+  })
+
+  /** An unknown value must not quietly skip clauses nobody meant to skip. */
+  it('treats anything else as both rather than as nothing', () => {
+    process.env.GATE_PART = 'DB'
+    expect(part()).toBe('both')
   })
 })
