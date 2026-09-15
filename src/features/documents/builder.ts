@@ -55,6 +55,20 @@ export interface DocumentDraft {
 export interface IssueContext {
   /** How many payment methods the company has switched on (§J). */
   readonly enabledPaymentMethodCount: number
+  /**
+   * How many of those a customer could ACTUALLY pay through (§J, §G step 5).
+   *
+   * Presence was the whole test, and presence is not enough: bank transfer
+   * switched on with its three §J fields empty is one enabled method and
+   * zero usable ones, and the invoice it issues prints no payment box at all.
+   * `unusableMethods` decides this; the count arrives here so the rule stays
+   * a pure function of its context.
+   *
+   * Defaults to the enabled count where a caller has not computed it, so an
+   * un-updated caller behaves exactly as before rather than blocking issue on
+   * a value it never supplied.
+   */
+  readonly usablePaymentMethodCount?: number
   /** Whether `draft.paymentId` names a payment that actually exists (§K). */
   readonly paymentIsRecorded: boolean
   /** Company setting; §G validates "the signature requirement" at issue. */
@@ -65,9 +79,23 @@ export interface IssueContext {
 export interface IssueProblem {
   readonly step: StepIndex
   readonly field: string
+  /**
+   * Where this one is actually fixed, when it is not at a step.
+   *
+   * §J puts payment setup in Settings, so "each item links to its step" has
+   * nowhere useful to send somebody for these two — and it had been sending
+   * them to the Totals step, which cannot fix either. A token rather than a
+   * route: this module knows nothing about paths (Rule #4's habit applied to
+   * navigation).
+   */
+  readonly fixIn?: 'payment_settings'
 }
 
-const problem = (step: StepIndex, field: string): IssueProblem => ({ step, field })
+const problem = (step: StepIndex, field: string, fixIn?: IssueProblem['fixIn']): IssueProblem => ({
+  step,
+  field,
+  ...(fixIn === undefined ? {} : { fixIn }),
+})
 
 /**
  * What still stands between this draft and issue (§G step 5).
@@ -105,9 +133,26 @@ export function validateForIssue(
   }
 
   switch (draft.type) {
+    /*
+     * §J: payment setup is enforced ONLY at final invoice issuance — never on
+     * a quotation, never on a delivery document, and never on a draft save.
+     * Both branches below are inside `case 'invoice'` for that reason.
+     *
+     * Two different failures, because they have two different fixes:
+     *
+     *  · NOTHING SWITCHED ON — the owner has not chosen how they get paid.
+     *  · SOMETHING SWITCHED ON THAT CANNOT BE USED — bank transfer with its
+     *    §J fields empty. The invoice would print no payment box at all, so
+     *    this blocks too, and says which of the two it is.
+     */
     case 'invoice':
-      // §J: payment setup is enforced only at final invoice issuance.
-      if (context.enabledPaymentMethodCount === 0) problems.push(problem(2, 'payment_method'))
+      if (context.enabledPaymentMethodCount === 0) {
+        problems.push(problem(2, 'payment_method', 'payment_settings'))
+      } else if (
+        (context.usablePaymentMethodCount ?? context.enabledPaymentMethodCount) === 0
+      ) {
+        problems.push(problem(2, 'payment_details', 'payment_settings'))
+      }
       break
 
     case 'receipt':

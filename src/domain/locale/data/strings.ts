@@ -299,6 +299,9 @@ export interface UiStrings {
     readonly paymentReady: string
     readonly paymentNotSet: string
     readonly setUpPayment: string
+    /** §G: the blue return band over a Settings panel reached from a draft. */
+    readonly settingUpPayment: string
+    readonly backToDraft: string
     readonly signature: string
     readonly tapToSign: string
     readonly deliveryAddress: string
@@ -1197,6 +1200,8 @@ const EN: UiStrings = {
     paymentReady: '{count} payment method ready',
     paymentNotSet: 'No payment method yet',
     setUpPayment: 'Set up payment',
+    settingUpPayment: 'Setting up payment for your document',
+    backToDraft: 'Back to draft',
     signature: 'Signature',
     tapToSign: 'Tap to sign',
     deliveryAddress: 'Delivery address',
@@ -1802,6 +1807,8 @@ const EN: UiStrings = {
     line_price: 'Give every item a price.',
     delivery_carries_no_money: 'A delivery document cannot carry prices.',
     payment_method: 'Set up how you get paid.',
+    // Named so the fix is obvious: the method is on, the details are not.
+    payment_details: 'Finish your bank details — the method is on, but the account is empty.',
     recorded_payment: 'Record the payment first.',
     delivery_address: 'Add the delivery address.',
     dispatch_date: 'Add the dispatch date.',

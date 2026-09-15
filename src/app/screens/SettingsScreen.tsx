@@ -12,7 +12,7 @@
  */
 
 import { useEffect, useMemo, useState } from 'react'
-import { Navigate, NavLink, useParams } from 'react-router-dom'
+import { Navigate, NavLink, useLocation, useNavigate, useParams } from 'react-router-dom'
 
 import { useCompany } from '../context'
 import { useAppData } from '../store'
@@ -31,6 +31,7 @@ import { SignatureSettings } from '../../features/settings/SignatureSettings'
 import { TaxSettings } from '../../features/settings/TaxSettings'
 import { AccountSettings } from '../../features/settings/AccountSettings'
 import { DataAndSync } from '../../features/settings/DataAndSync'
+import { ReturnBand } from '../../features/settings/ReturnBand'
 import { dataUrlBytes } from '../../features/settings/storage'
 import { HelpSettings } from '../../features/settings/HelpSettings'
 import { SignOutSheet } from '../../features/auth/SignOutSheet'
@@ -166,8 +167,23 @@ export function SettingsIndexScreen() {
  * so a panel cannot forget.
  */
 export function SettingsPanelScreen() {
+  const location = useLocation()
+  const navigate = useNavigate()
+  const { strings } = useCompany()
+
+  // §G's detour: a panel reached from a draft says so, and offers the way
+  // back. Carried in the navigation rather than stored — the draft itself is
+  // already on the device, so there is no state here worth persisting.
+  const errand = location.state as { returnTo?: string; errand?: string } | null
+
   return (
     <div className="pb-28">
+      {errand?.returnTo !== undefined && errand.errand === 'payment' && (
+        <ReturnBand
+          errand={strings.details.settingUpPayment}
+          onBack={() => navigate(errand.returnTo!)}
+        />
+      )}
       <SettingsPanelBody />
     </div>
   )

@@ -14,9 +14,18 @@ import type { IssueProblem } from './builder'
 export interface ReviewBandProps {
   readonly problems: readonly IssueProblem[]
   readonly onGoToStep: (step: number) => void
+  /**
+   * Where a payment problem is fixed (§J).
+   *
+   * Payment setup lives in Settings, so "each item links to its step" has no
+   * useful answer for those two — and the band had been sending people to the
+   * Totals step, which cannot fix either of them. Optional so the band can
+   * still be rendered without a router; the button falls back to the step.
+   */
+  readonly onSetUpPayment?: () => void
 }
 
-export function ReviewBand({ problems, onGoToStep }: ReviewBandProps) {
+export function ReviewBand({ problems, onGoToStep, onSetUpPayment }: ReviewBandProps) {
   const { strings } = useCompany()
   if (problems.length === 0) return null
 
@@ -37,10 +46,16 @@ export function ReviewBand({ problems, onGoToStep }: ReviewBandProps) {
             </span>
             <button
               type="button"
-              onClick={() => onGoToStep(problem.step)}
+              onClick={() =>
+                problem.fixIn === 'payment_settings' && onSetUpPayment !== undefined
+                  ? onSetUpPayment()
+                  : onGoToStep(problem.step)
+              }
               className="min-h-tap shrink-0 rounded-full px-3 text-xs font-semibold underline"
             >
-              {strings.builder.fixThis}
+              {problem.fixIn === 'payment_settings' && onSetUpPayment !== undefined
+                ? strings.details.setUpPayment
+                : strings.builder.fixThis}
             </button>
           </li>
         ))}

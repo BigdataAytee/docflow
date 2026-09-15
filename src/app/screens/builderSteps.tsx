@@ -124,6 +124,7 @@ export function StepBody(props: StepBodyProps) {
           templateId={props.templateId}
           problems={props.problems}
           onGoToStep={props.onGoToStep}
+          onSetUpPayment={props.onSetUpPayment}
           brandColour={props.brandColour}
           composeOptions={props.composeOptions}
         />

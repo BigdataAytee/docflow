@@ -61,6 +61,7 @@ import { SkeletonList } from '../../ui'
 import { StepBody } from './builderSteps'
 import { billedInvoices, documentsOf, totalOf } from '../derive'
 import { localDay, todayIso } from '../../domain/dates/calendar'
+import { usableMethodCount } from '../../features/payments/readiness'
 
 const isDocumentType = (value: string | undefined): value is DocumentType =>
   value !== undefined && (DOCUMENT_TYPES as readonly string[]).includes(value)
@@ -248,6 +249,21 @@ export function BuilderScreen({ now = () => new Date().toISOString() }: { now?: 
   const { company, customers, documents, payments, assets, loading, actions } = useAppData()
   const navigate = useNavigate()
 
+  /*
+   * §G's payment detour, with the way back attached.
+   *
+   * The builder used to navigate to the panel and leave the person there —
+   * no statement of why they had moved and no route home but the system back
+   * gesture, which mid-task is the one thing people will not risk. The draft
+   * is already autosaved before this fires (§G), so carrying the route is the
+   * whole of what the return band needs.
+   */
+  const goToPaymentSettings = () => {
+    navigate(settingsPath('payment'), {
+      state: { returnTo: location.pathname, errand: 'payment' },
+    })
+  }
+
   const record = documents.find((document) => document.id === id)
 
   const [state, setState] = useState<BuilderState | null>(null)
@@ -321,16 +337,35 @@ export function BuilderScreen({ now = () => new Date().toISOString() }: { now?: 
     [id, actions, now, design],
   )
 
+  /*
+   * The payment half of the issue context, computed ONCE (§J).
+   *
+   * The band on Review and the attempt to issue both read it, and two copies
+   * of this arithmetic would eventually disagree — which would mean a Review
+   * screen saying everything is fine over a button that refuses.
+   */
+  const paymentContext = useMemo(() => {
+    const enabled = company?.enabledPaymentMethods ?? []
+    return {
+      enabledPaymentMethodCount: enabled.length,
+      usablePaymentMethodCount: usableMethodCount({
+        currency: company?.currency ?? state?.draft.currency ?? '',
+        enabled,
+        bankValues: company?.bankFields ?? {},
+      }),
+    }
+  }, [company, state])
+
   const problems = useMemo(() => {
     if (state === null) return []
     return validateForIssue(state.draft, {
-      enabledPaymentMethodCount: company?.enabledPaymentMethods.length ?? 0,
+      ...paymentContext,
       paymentIsRecorded:
         state.draft.paymentId !== undefined &&
         payments.some((payment) => payment.id === state.draft.paymentId),
       signatureRequired: company?.signatureRequired === true,
     })
-  }, [state, company, payments])
+  }, [state, paymentContext, payments, company])
 
   const customer = customers.find((row) => row.id === state?.draft.customerId)
 
@@ -414,7 +449,7 @@ export function BuilderScreen({ now = () => new Date().toISOString() }: { now?: 
         draft: state.draft,
         currentStatus: record.status,
         context: {
-          enabledPaymentMethodCount: company?.enabledPaymentMethods.length ?? 0,
+          ...paymentContext,
           paymentIsRecorded:
             state.draft.paymentId !== undefined &&
             payments.some((payment) => payment.id === state.draft.paymentId),
@@ -511,7 +546,7 @@ export function BuilderScreen({ now = () => new Date().toISOString() }: { now?: 
         onToggleLogo={(showLogo) => changeDesign({ showLogo })}
         onBrandColour={(brandColour) => changeDesign({ brandColour })}
         onGoToStep={(target) => setState(goToStep(state, clampStep(target)))}
-        onSetUpPayment={() => navigate(settingsPath('payment'))}
+        onSetUpPayment={() => goToPaymentSettings()}
         onSign={() => {
           setSignProblem(null)
           setSigning(true)

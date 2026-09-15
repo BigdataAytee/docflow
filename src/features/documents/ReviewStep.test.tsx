@@ -13,6 +13,7 @@ import { freezeLabels, type LocaleProfile } from '../../domain/locale/profile'
 import type { ComposableDocument } from '../../pdf/compose'
 import type { IssueProblem } from './builder'
 import { ReviewStep } from './ReviewStep'
+import { ReviewBand } from './ReviewBand'
 
 const composeOptions = {
   branding: {
@@ -44,6 +45,7 @@ function setup(
   profile: LocaleProfile = { locale: 'EN-NG' },
 ) {
   const onGoToStep = vi.fn()
+  const onSetUpPayment = vi.fn()
   const repositories = createMemoryRepositories(emptyState())
   render(
     <CompanyProvider companyId="co_1" repositories={repositories} profile={profile} language="en">
@@ -52,11 +54,12 @@ function setup(
         templateId="classic"
         problems={problems}
         onGoToStep={onGoToStep}
+        onSetUpPayment={onSetUpPayment}
         composeOptions={composeOptions}
       />
     </CompanyProvider>,
   )
-  return onGoToStep
+  return { onGoToStep, onSetUpPayment }
 }
 
 describe('The page and the band are both readable (§G step 5)', () => {
@@ -78,7 +81,45 @@ describe('The page and the band are both readable (§G step 5)', () => {
 
   it('links each missing item back to its step', async () => {
     const user = userEvent.setup()
-    const onGoToStep = setup(invoice, [{ step: 2, field: 'payment_method' }])
+    const { onGoToStep } = setup(invoice, [{ step: 1, field: 'line_price' }])
+    await user.click(screen.getByRole('button', { name: /fix this/i }))
+    expect(onGoToStep).toHaveBeenCalledWith(1)
+  })
+
+  /**
+   * §J puts payment setup in Settings, so "each item links to its step" has
+   * no useful answer for these two — and the band had been sending people to
+   * the Totals step, which cannot fix either of them.
+   */
+  it('sends a payment problem to the panel that can fix it, not to a step', async () => {
+    const user = userEvent.setup()
+    const { onGoToStep, onSetUpPayment } = setup(invoice, [
+      { step: 2, field: 'payment_details', fixIn: 'payment_settings' },
+    ])
+
+    expect(screen.getByText(/the method is on, but the account is empty/i)).toBeInTheDocument()
+    await user.click(screen.getByRole('button', { name: /set up payment/i }))
+    expect(onSetUpPayment).toHaveBeenCalledOnce()
+    expect(onGoToStep).not.toHaveBeenCalled()
+  })
+
+  /** Without a router to detour through, the step is still better than nothing. */
+  it('falls back to the step when there is nowhere to send them', async () => {
+    const user = userEvent.setup()
+    const onGoToStep = vi.fn()
+    render(
+      <CompanyProvider
+        companyId="co_1"
+        repositories={createMemoryRepositories(emptyState())}
+        profile={{ locale: 'EN-NG' }}
+        language="en"
+      >
+        <ReviewBand
+          problems={[{ step: 2, field: 'payment_details', fixIn: 'payment_settings' }]}
+          onGoToStep={onGoToStep}
+        />
+      </CompanyProvider>,
+    )
     await user.click(screen.getByRole('button', { name: /fix this/i }))
     expect(onGoToStep).toHaveBeenCalledWith(2)
   })

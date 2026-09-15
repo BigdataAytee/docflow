@@ -25,6 +25,8 @@ export interface ReviewStepProps {
   readonly templateId: TemplateId
   readonly problems: readonly IssueProblem[]
   readonly onGoToStep: (step: number) => void
+  /** §J: a payment problem is fixed in Settings, not at a step. */
+  readonly onSetUpPayment?: () => void
   readonly brandColour?: string
   readonly composeOptions: Omit<ComposeOptions, 'profile'>
 }
@@ -38,6 +40,7 @@ export function ReviewStep({
   templateId,
   problems,
   onGoToStep,
+  onSetUpPayment,
   brandColour,
   composeOptions,
 }: ReviewStepProps) {
@@ -51,7 +54,11 @@ export function ReviewStep({
   return (
     <div className="space-y-4">
       {/* Above the page, never over it — both must be readable at once (§G). */}
-      <ReviewBand problems={problems} onGoToStep={onGoToStep} />
+      <ReviewBand
+        problems={problems}
+        onGoToStep={onGoToStep}
+        {...(onSetUpPayment === undefined ? {} : { onSetUpPayment })}
+      />
 
       <div className="space-y-4">
         {pages.map((page) => (

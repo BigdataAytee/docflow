@@ -228,3 +228,71 @@ describe('Step navigation and autosave state', () => {
     expect(saved.lastSavedAt).toBe('2026-09-11T12:00:00Z')
   })
 })
+
+describe('An enabled method that cannot be used is not payment setup (§J, §G step 5)', () => {
+  /**
+   * The gate asked whether a method was PRESENT. Bank transfer switched on
+   * with its three §J fields empty passed — and the invoice it issued printed
+   * no HOW TO PAY box at all, because `buildPaymentBox` filters empty rows
+   * and finds none. The customer got a bill with no way to pay it.
+   *
+   * The person is blocked either way. The only question is whether they find
+   * out here or through their customer a week later.
+   */
+  const enabledButEmpty = ctx({ enabledPaymentMethodCount: 1, usablePaymentMethodCount: 0 })
+
+  it('blocks the invoice, and names the fix rather than the absence', () => {
+    const problems = validateForIssue(draftFor('invoice'), enabledButEmpty)
+    const fields = problems.map((p) => p.field)
+
+    expect(fields).toContain('payment_details')
+    // NOT the other one: "set up how you get paid" is wrong and unhelpful
+    // when a method is already on. The account is what is empty.
+    expect(fields).not.toContain('payment_method')
+    expect(canIssue(draftFor('invoice'), enabledButEmpty)).toBe(false)
+  })
+
+  it('sends the fix to Settings rather than to a step that cannot fix it', () => {
+    const problems = validateForIssue(draftFor('invoice'), enabledButEmpty)
+    expect(problems.find((p) => p.field === 'payment_details')?.fixIn).toBe('payment_settings')
+    // The older one had the same wrong destination, and now says so too.
+    const none = validateForIssue(draftFor('invoice'), ctx({ enabledPaymentMethodCount: 0 }))
+    expect(none.find((p) => p.field === 'payment_method')?.fixIn).toBe('payment_settings')
+  })
+
+  /** THE OTHER DIRECTION. A complete account issues with no friction at all. */
+  it('lets a complete one through without comment', () => {
+    const ready = ctx({ enabledPaymentMethodCount: 1, usablePaymentMethodCount: 1 })
+    expect(validateForIssue(draftFor('invoice'), ready)).toEqual([])
+    expect(canIssue(draftFor('invoice'), ready)).toBe(true)
+  })
+
+  /** §J: payment setup is enforced on invoices and nothing else, ever. */
+  it('leaves quotations and delivery documents alone', () => {
+    expect(canIssue(draftFor('quotation'), enabledButEmpty)).toBe(true)
+    expect(
+      canIssue(
+        draftFor('waybill', { deliveryAddress: '12 Balogun St', dispatchDate: '2026-09-11' }),
+        enabledButEmpty,
+      ),
+    ).toBe(true)
+  })
+
+  /** §G: "Draft saving is always allowed." The gate is issue and only issue. */
+  it('never stands between anybody and a saved draft', () => {
+    expect(canSaveDraft()).toBe(true)
+  })
+
+  /**
+   * A caller that has not been taught to compute usability behaves exactly as
+   * it did — the gate must never tighten on a value nobody supplied.
+   */
+  it('falls back to the enabled count when usability was not computed', () => {
+    const old: IssueContext = {
+      enabledPaymentMethodCount: 1,
+      paymentIsRecorded: true,
+      signatureRequired: false,
+    }
+    expect(canIssue(draftFor('invoice'), old)).toBe(true)
+  })
+})

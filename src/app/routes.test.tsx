@@ -51,6 +51,23 @@ const withCompanyName = (name: string) => (state: MemoryState) => {
   if (company !== undefined) state.companies[0] = { ...company, name }
 }
 
+/**
+ * An account a customer could actually pay into (§J).
+ *
+ * The two go together or neither is true: bank transfer switched on with no
+ * account behind it is a method that prints nothing, and §G's issue gate now
+ * refuses it. Fixtures that enabled the method and left the fields empty were
+ * modelling a state the app is supposed to prevent.
+ */
+const PAID_BY_TRANSFER = {
+  enabledPaymentMethods: ['bank_transfer'],
+  bankFields: {
+    bank_name: 'Guaranty Trust Bank',
+    account_number: '0123456789',
+    account_name: 'Sola Ventures',
+  },
+}
+
 const customer = (id = 'cus_1', name = 'Ade Stores') => ({
   id,
   companyId: DEV_COMPANY_ID,
@@ -231,7 +248,7 @@ describe('Create, fill, issue — through the repositories (§G, §M)', () => {
         seed.companies[0] = {
           ...company,
           name: 'Sola Ventures',
-          enabledPaymentMethods: ['bank_transfer'],
+          ...PAID_BY_TRANSFER,
           numberingPrefixes: { invoice: 'INV' },
         }
       }
@@ -1064,7 +1081,7 @@ describe('Pressing Save when a document is not ready (§G, §M)', () => {
       })
       const company = seed.companies[0]
       if (company !== undefined) {
-        seed.companies[0] = { ...company, enabledPaymentMethods: ['bank_transfer'] }
+        seed.companies[0] = { ...company, ...PAID_BY_TRANSFER }
       }
     })
 
@@ -3153,5 +3170,54 @@ describe('The photo on a delivery (§G, §E, §P)', () => {
     await user.click(screen.getByRole('button', { name: 'Add it' }))
     await waitFor(() => expect(state.expenses).toHaveLength(1))
     expect(state.expenses[0]?.photoAssetId).toBe(state.assets[0]?.id)
+  })
+})
+
+describe('The payment detour goes somewhere and comes back (§G, §J)', () => {
+  /**
+   * §G: an amber "Set up payment" that "carries into Settings under a blue
+   * return band — 'Setting up payment for your document · Back to draft' —
+   * and returns with the draft intact."
+   *
+   * The band was the half that never got built. The builder navigated to the
+   * panel and left the person there, with no statement of why they had moved
+   * and no route home but the system back gesture — which mid-task is the one
+   * thing people will not risk.
+   */
+  const bankTransferOnly = (state: MemoryState) => {
+    const company = state.companies[0]
+    if (company !== undefined) {
+      state.companies[0] = {
+        ...company,
+        name: 'Sola Ventures',
+        enabledPaymentMethods: [],
+        bankFields: {},
+      }
+    }
+  }
+
+  it('carries into the panel under the band, and back to the same draft', async () => {
+    const user = userEvent.setup()
+    renderAt('/new/invoice', bankTransferOnly)
+
+    await user.click(await screen.findByRole('button', { name: /set up payment/i }))
+
+    // There, and saying why.
+    expect(await screen.findByText('Setting up payment for your document')).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'How you get paid' })).toBeInTheDocument()
+
+    // And back, to the builder rather than to the list.
+    await user.click(screen.getByRole('button', { name: 'Back to draft' }))
+    await waitFor(() => {
+      expect(screen.queryByText('Setting up payment for your document')).not.toBeInTheDocument()
+    })
+    expect(await screen.findByRole('button', { name: /set up payment/i })).toBeInTheDocument()
+  })
+
+  /** A panel reached the ordinary way carries no band at all. */
+  it('shows no band when Settings was opened directly', async () => {
+    renderAt('/settings/payment', bankTransferOnly)
+    expect(await screen.findByRole('heading', { name: 'How you get paid' })).toBeInTheDocument()
+    expect(screen.queryByText('Setting up payment for your document')).not.toBeInTheDocument()
   })
 })
