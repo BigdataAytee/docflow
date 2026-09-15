@@ -218,6 +218,103 @@ describe('What comes across, and what does not (§G, §I)', () => {
   })
 })
 
+describe('Money does not cross the boundary in either direction (§V, Rule #3)', () => {
+  /**
+   * Conversion is where a money document and a moneyless one actually meet,
+   * so it is the likeliest remaining place for money to leak onto a delivery
+   * — and for a delivery to acquire money nobody entered.
+   *
+   * Both fixtures carry a real price, so the assertions are about the TYPE
+   * rather than about an empty line.
+   */
+  const invoiceWithMoney = () =>
+    doc({
+      type: 'invoice',
+      status: 'issued',
+      lineItems: [
+        { ...priced('Cement 50kg', 10, 25_000_00), unit: 'cartons' },
+        priced('Ridge cap', 6, 7_200_00),
+      ],
+    })
+
+  /** The control: those same lines keep their prices going to an invoice. */
+  it('carries prices where money belongs', () => {
+    const { draft } = convertDocument(doc({ type: 'quotation', status: 'issued', lineItems: [priced('Cement 50kg', 10, 25_000_00)] }), { to: 'invoice', on: '2026-09-15' })
+    expect(draft.lineItems[0]?.unitPriceMinor).toBe(25_000_00)
+  })
+
+  /**
+   * INVOICE → DELIVERY drops every price rather than carrying a zero.
+   *
+   * A zero is a claim: it says these goods are worth nothing. Absence says
+   * the document does not deal in money, which is the truth about a delivery.
+   */
+  it('drops prices entirely rather than zeroing them', () => {
+    const { draft } = convertDocument(invoiceWithMoney(), { to: 'waybill', on: '2026-09-15' })
+
+    for (const line of draft.lineItems) {
+      expect(line.unitPriceMinor).toBeUndefined()
+      expect(line).not.toHaveProperty('unitPriceMinor')
+    }
+  })
+
+  /** Nor does any rate or total come across onto a delivery. */
+  it('carries no discount, tax or total onto a delivery', () => {
+    const { draft } = convertDocument(invoiceWithMoney(), { to: 'waybill', on: '2026-09-15' })
+
+    expect(draft).not.toHaveProperty('discountRatePpm')
+    expect(draft).not.toHaveProperty('taxRate')
+    expect(draft).not.toHaveProperty('whtRate')
+    expect(draft).not.toHaveProperty('totalMinor')
+  })
+
+  /**
+   * DELIVERY → INVOICE asks rather than inventing.
+   *
+   * §G: "delivery → invoice (asks for prices, since deliveries carry no
+   * money)". The dangerous failure is not an error — it is a silent zero,
+   * which produces an invoice for nothing that looks complete.
+   */
+  it('asks for prices and assigns none', () => {
+    const { draft, needsPrices } = convertDocument(
+      doc({
+        type: 'waybill',
+        status: 'delivered',
+        lineItems: [{ ...unpriced('Cement 50kg', 10), unit: 'cartons' }],
+      }),
+      { to: 'invoice', on: '2026-09-15' },
+    )
+
+    expect(needsPrices).toBe(true)
+    // Not zero, not absent-but-defaulted: absent, so the builder must ask.
+    expect(draft.lineItems[0]?.unitPriceMinor).toBeUndefined()
+    expect(draft.lineItems[0]).not.toHaveProperty('unitPriceMinor')
+  })
+
+  /**
+   * The unit crosses BOTH ways, and it was crossing neither.
+   *
+   * An invoice converted to a delivery arrived with a blank unit column —
+   * "10" with no way to know ten of what, on the document somebody signs at a
+   * gate. Going the other way, an invoice made from a delivery is about the
+   * same cartons.
+   */
+  it('keeps the unit in both directions', () => {
+    const toDelivery = convertDocument(invoiceWithMoney(), { to: 'waybill', on: '2026-09-15' })
+    expect(toDelivery.draft.lineItems[0]?.unit).toBe('cartons')
+
+    const toInvoice = convertDocument(
+      doc({
+        type: 'waybill',
+        status: 'delivered',
+        lineItems: [{ ...unpriced('Cement 50kg', 10), unit: 'cartons' }],
+      }),
+      { to: 'invoice', on: '2026-09-15' },
+    )
+    expect(toInvoice.draft.lineItems[0]?.unit).toBe('cartons')
+  })
+})
+
 describe('The original is never altered; links persist (§G)', () => {
   it('puts the link on the NEW document', () => {
     const converted = convertDocument(doc({ type: 'quotation', status: 'accepted' }), {

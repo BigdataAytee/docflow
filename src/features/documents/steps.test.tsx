@@ -12,7 +12,7 @@ import userEvent from '@testing-library/user-event'
 import { CompanyProvider } from '../../app/context'
 import { type MemoryState, createMemoryRepositories, emptyState } from '../../data/repositories'
 import { DOCUMENT_TYPES, type DocumentType, quantity } from '../../domain/documents/types'
-import { MoneyError } from '../../domain/money/money'
+import { MoneyError, money } from '../../domain/money/money'
 import { computeTotals } from '../../domain/money/totals'
 import type { LocaleProfile } from '../../domain/locale/profile'
 import { DetailsStep } from './DetailsStep'
@@ -58,6 +58,76 @@ const details = (type: DocumentType, methods = 1, over: Partial<DocumentDraft> =
       onSign={() => {}}
     />,
   )
+
+describe('A delivery never shows what the customer owes (§V, §G)', () => {
+  /**
+   * "Owes ₦95,000" beside a delivery address is a money surface on a
+   * moneyless document — and one a driver hands to a recipient at a gate.
+   *
+   * The reference calls the balance chips in the shared picker a prototype
+   * inconsistency and says production should omit financial balance
+   * information while keeping the selector geometry.
+   *
+   * The customer here genuinely OWES: an issued invoice with nothing paid
+   * against it. A fixture with no debt would pass whatever the picker did.
+   */
+  const owingCustomer = {
+    id: 'cus_1',
+    companyId: 'co_1',
+    kind: 'company' as const,
+    name: 'Okoro & Sons',
+    labels: [] as string[],
+  }
+
+  const unpaidInvoice = [
+    {
+      id: 'doc_inv',
+      customerId: 'cus_1',
+      status: 'issued',
+      total: money('NGN', 95_000_00),
+      issueDate: '2026-09-01',
+    },
+  ]
+
+  const withDebt = (type: DocumentType) =>
+    wrap(
+      <DetailsStep
+        draft={draftFor(type, { customerId: 'cus_1' })}
+        reference="WB-0007"
+        enabledPaymentMethodCount={1}
+        customers={[owingCustomer]}
+        invoices={unpaidInvoice}
+        payments={[]}
+        onChange={() => {}}
+        onAddCustomer={() => {}}
+        onSetUpPayment={() => {}}
+        onSign={() => {}}
+      />,
+    )
+
+  /** The control: the debt is real and an invoice does show it. */
+  it('shows the balance on an invoice, so the fixture is live', () => {
+    withDebt('invoice')
+    expect(screen.getByText(/Owes/)).toBeInTheDocument()
+    expect(screen.getByText(/95,000/)).toBeInTheDocument()
+  })
+
+  it('shows no balance, no amount and no settled chip on a delivery', () => {
+    withDebt('waybill')
+
+    expect(screen.queryByText(/Owes/)).not.toBeInTheDocument()
+    expect(screen.queryByText(/95,000/)).not.toBeInTheDocument()
+    expect(screen.queryByText(/₦/)).not.toBeInTheDocument()
+    // "Settled" is a money statement too — silence about money, not good news.
+    expect(screen.queryByText(/settled/i)).not.toBeInTheDocument()
+  })
+
+  /** The selector geometry stays: it is the money that goes, not the picker. */
+  it('still shows the recipient', () => {
+    withDebt('waybill')
+    expect(screen.getByText('Okoro & Sons')).toBeInTheDocument()
+  })
+})
 
 describe('A delivery is dated by dispatch and arrival (§E, §G)', () => {
   /**

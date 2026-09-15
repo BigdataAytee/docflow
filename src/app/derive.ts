@@ -11,7 +11,7 @@
  */
 
 import type { DocumentRecord, Customer, Payment } from '../data/repositories'
-import type { DocumentType } from '../domain/documents/types'
+import { type DocumentType, QUANTITY_SCALE } from '../domain/documents/types'
 import { deriveInvoiceState, deriveQuotationState } from '../domain/documents/lifecycle'
 import { type CurrencyCode, type Money, money } from '../domain/money/money'
 import { type CreditNote, invoiceOutstanding } from '../domain/payments/ledger'
@@ -148,6 +148,39 @@ export function displayStatus(
   return document.status
 }
 
+/**
+ * A delivery's row summary — "10 cartons", where an invoice shows its total.
+ *
+ * The quantity and the unit are the only summary a moneyless document has,
+ * and the reference asks for exactly this rather than an empty space. One
+ * line is named; several are counted, because a row cannot list them and a
+ * number without a noun tells nobody anything.
+ *
+ * Null when there is nothing to say: an empty draft, or goods entered with
+ * no unit yet. The row then simply shows no summary, which is honest —
+ * inventing "10" with no noun would be the bug this exists to avoid.
+ */
+export function goodsSummary(document: DocumentRecord): string | null {
+  const lines = document.lineItems
+  if (lines.length === 0) return null
+
+  if (lines.length === 1) {
+    const line = lines[0]!
+    if (line.unit === undefined) return null
+    return `${line.quantityMilli / QUANTITY_SCALE} ${line.unit}`
+  }
+
+  /*
+   * More than one kind of thing: NO summary rather than a number.
+   *
+   * Quantities in different units cannot be added — 3 pallets and 10 cartons
+   * are not 13 of anything — and a bare "2" sitting where an amount goes
+   * reads as a quantity rather than as a line count. An empty space says
+   * less and claims nothing, which is the better of the two.
+   */
+  return null
+}
+
 export interface ListRowOptions {
   readonly payments: readonly Payment[]
   readonly customers: readonly Customer[]
@@ -198,8 +231,12 @@ export function listRows(
       status,
       statusLabel: options.statusWords[status] ?? status,
       ...(name === undefined ? {} : { customerName: name }),
-      // A delivery document has no money column at all (§G, §I, §V).
-      ...(document.type === 'waybill' ? {} : { amount: totalOf(document) }),
+      // A delivery document has no money column at all (§G, §I, §V) — it
+      // summarises its GOODS in that place instead, because "no amount" on
+      // its own tells nobody which delivery this is.
+      ...(document.type === 'waybill'
+        ? { ...(goodsSummary(document) === null ? {} : { goodsSummary: goodsSummary(document)! }) }
+        : { amount: totalOf(document) }),
       ...(note === undefined ? {} : { note }),
     }
   })

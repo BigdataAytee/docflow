@@ -27,6 +27,15 @@ export interface ListRow {
   /** Absent on a delivery document — the column does not exist there (§G). */
   readonly amount?: Money
   /**
+   * What a DELIVERY shows where an amount would be — "10 cartons".
+   *
+   * The reference is explicit that a delivery row summarises its GOODS rather
+   * than simply omitting the money. An absence tells a person nothing about
+   * which delivery this is; the quantity and unit are the only summary a
+   * moneyless document has.
+   */
+  readonly goodsSummary?: string
+  /**
    * "Replaced by Rev 2", when a newer offer exists (§G). Without it a list of
    * two sent quotations cannot say which one is live — which is the exact
    * question making a Rev 2 creates.
@@ -194,6 +203,12 @@ export function DocumentList({ type, rows, onOpen, onNew, onBack }: DocumentList
                       {showsMoney && row.amount !== undefined && (
                         <span className="ms-auto shrink-0 text-[12.5px] font-semibold tabular-nums">
                           {formatMoney(row.amount)}
+                        </span>
+                      )}
+                      {/* Its goods instead, in the same place the money sits. */}
+                      {!showsMoney && row.goodsSummary !== undefined && (
+                        <span className="ms-auto shrink-0 text-[12.5px] font-semibold tabular-nums">
+                          {row.goodsSummary}
                         </span>
                       )}
                     </span>

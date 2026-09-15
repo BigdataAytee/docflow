@@ -1374,6 +1374,88 @@ describe('The Repeat toggle keeps its answer (§L4)', () => {
   })
 })
 
+describe('A delivery list row summarises goods, not money (§G, §V)', () => {
+  /**
+   * The last surface on a delivery where an amount could appear.
+   *
+   * The reference says the row summary reads "10 cartons" — a POSITIVE
+   * summary in the place an invoice shows its total, not an empty space. An
+   * absence tells nobody which delivery this is.
+   *
+   * Seeded with a priced, taxable line and company rates, so a total exists
+   * to leak if anything is confused about the type.
+   */
+  const deliveries = (state: MemoryState) => {
+    state.customers.push(customer())
+    const company = state.companies[0]
+    if (company !== undefined) {
+      state.companies[0] = { ...company, name: 'Sola Ventures', taxRatePpm: 75_000, whtRatePpm: 50_000 }
+    }
+    state.documents.push({
+      id: 'doc_way',
+      companyId: DEV_COMPANY_ID,
+      type: 'waybill',
+      status: 'in_transit',
+      customerId: 'cus_1',
+      currency: 'NGN',
+      lineItems: [
+        {
+          id: 'l1',
+          description: 'Cement 50kg',
+          quantityMilli: quantity(10),
+          unitPriceMinor: 25_000_00,
+          unit: 'cartons',
+          taxable: true,
+        },
+      ],
+      discountRatePpm: 75_000,
+      issueDate: '2026-09-05',
+      issuedReference: 'WB-0007',
+      frozenLabels: {
+        printedTitle: 'WAYBILL',
+        partyLabel: 'Deliver to',
+        signatureCaption: 'Dispatched by',
+        language: 'en',
+      },
+      totalMinor: 250_000_00,
+    })
+  }
+
+  it('shows the goods and the unit where an amount would be', async () => {
+    renderAt('/list/waybill', deliveries)
+    expect(await screen.findByText('10 cartons')).toBeInTheDocument()
+  })
+
+  it('shows no currency or total anywhere on the page, though both exist', async () => {
+    renderAt('/list/waybill', deliveries)
+    await screen.findByText('WB-0007')
+
+    expect(screen.queryByText(/₦/)).not.toBeInTheDocument()
+    expect(screen.queryByText(/250,000/)).not.toBeInTheDocument()
+  })
+
+  /** The control: an invoice with the same line does show its money. */
+  it('still shows an amount on an invoice row', async () => {
+    renderAt('/list/invoice', (state) => {
+      deliveries(state)
+      state.documents.push({
+        ...state.documents[0]!,
+        id: 'doc_inv',
+        type: 'invoice',
+        status: 'issued',
+        issuedReference: 'INV-0042',
+        frozenLabels: {
+          printedTitle: 'INVOICE',
+          partyLabel: 'Bill to',
+          signatureCaption: 'Authorised signature',
+          language: 'en',
+        },
+      })
+    })
+    expect(await screen.findByText(/₦/)).toBeInTheDocument()
+  })
+})
+
 describe('A delivery still has a creation date nobody typed (§E, §G)', () => {
   /**
    * The consequence of moving slot 0 from `issueDate` to `dispatchDate`.

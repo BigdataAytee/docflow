@@ -130,6 +130,16 @@ export function convertDocument(
     description: line.description,
     quantityMilli: line.quantityMilli,
     taxable: line.taxable,
+    /*
+     * The unit crosses in BOTH directions, and it was crossing in neither.
+     *
+     * A delivery's content is what was handed over, and "10" without
+     * "cartons" is not something anybody can sign for — so an invoice
+     * converted to a delivery arrived with a blank unit column. Going the
+     * other way it matters too: an invoice made from a delivery is about the
+     * same cartons, and losing the word turns a priced line into a guess.
+     */
+    ...(line.unit === undefined ? {} : { unit: line.unit }),
     // Prices go where money goes and nowhere else. A delivery drops them; an
     // invoice made from a delivery has none to inherit and must be told.
     ...(targetCarriesMoney && line.unitPriceMinor !== undefined
