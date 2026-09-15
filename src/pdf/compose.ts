@@ -97,7 +97,6 @@ export interface TableRow {
   readonly unit?: string
   /** Absent on a delivery document — the column does not exist there (§I). */
   readonly amount?: Money
-  readonly photoAssetId?: string
 }
 
 export interface PaymentBoxRow {
@@ -113,10 +112,26 @@ export interface PaymentBox {
   readonly maxWidthPercent: number
 }
 
+/**
+ * What makes a receipt a receipt (§I, §K).
+ *
+ * §E: "receipts show date paid, linked invoice, method + reference". It takes
+ * the footer slot an invoice gives to HOW TO PAY and a delivery gives to
+ * RECEIVED BY — the reference sends every non-delivery type through that same
+ * slot — because a receipt says what was already paid rather than how to pay.
+ *
+ * Carries its own HEADING and LABELS, resolved at compose time like every
+ * other printed word (Rule #4): the page renders a model and never reaches
+ * for the locale layer itself.
+ */
 export interface ReceiptEvidence {
+  readonly heading: string
   readonly amount: Money
   readonly paidAt: string
-  readonly method: string
+  readonly datePaidLabel: string
+  /** Absent when no method was recorded — never an empty row. */
+  readonly method?: string
+  readonly methodLabel: string
 }
 
 export interface PageModel {
@@ -275,7 +290,7 @@ export function composeDocument(
     paymentBox: buildPaymentBox(document, options, terms),
     // §I: deliveries replace the payment box with the localised RECEIVED BY.
     receivedByRule: showsMoney ? null : terms.receivedBy,
-    receiptEvidence: buildReceiptEvidence(document),
+    receiptEvidence: buildReceiptEvidence(document, terms),
     signature: {
       ...(document.signatureAssetId === undefined ? {} : { assetId: document.signatureAssetId }),
       ...(document.signatureAssetId === undefined ||
@@ -322,12 +337,22 @@ function buildPaymentBox(
   }
 }
 
-function buildReceiptEvidence(document: ComposableDocument): ReceiptEvidence | null {
+function buildReceiptEvidence(
+  document: ComposableDocument,
+  terms: ReturnType<typeof sharedTerms>,
+): ReceiptEvidence | null {
   if (document.type !== 'receipt') return null
   if (document.paidAmount === undefined || document.paidAt === undefined) return null
   return {
+    heading: terms.paymentReceived,
     amount: document.paidAmount,
     paidAt: document.paidAt,
-    method: document.paidMethod ?? '',
+    datePaidLabel: terms.datePaid,
+    // Omitted rather than blank: a row reading "Paid by —" says less than no
+    // row at all, and claims a field was recorded when it was not.
+    ...(document.paidMethod === undefined || document.paidMethod === ''
+      ? {}
+      : { method: document.paidMethod }),
+    methodLabel: terms.paidBy,
   }
 }

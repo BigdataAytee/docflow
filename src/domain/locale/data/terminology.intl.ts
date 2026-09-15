@@ -72,6 +72,9 @@ export const FR: TerminologyTable = {
     howToPay: 'COMMENT PAYER',
     receivedBy: 'REÇU PAR',
     estimatedTotal: 'Total estimé',
+    paymentReceived: 'Paiement reçu',
+    datePaid: 'Date de paiement',
+    paidBy: 'Payé par',
   },
   synonyms: {
     invoice: ['facture', 'note'],
@@ -139,6 +142,9 @@ export const ES: TerminologyTable = {
     howToPay: 'CÓMO PAGAR',
     receivedBy: 'RECIBIDO POR',
     estimatedTotal: 'Total estimado',
+    paymentReceived: 'Pago recibido',
+    datePaid: 'Fecha de pago',
+    paidBy: 'Pagado por',
   },
   synonyms: {
     invoice: ['factura'],
@@ -204,6 +210,9 @@ export const AR: TerminologyTable = {
     howToPay: 'طريقة الدفع',
     receivedBy: 'استلمه',
     estimatedTotal: 'الإجمالي التقديري',
+    paymentReceived: 'تم استلام الدفعة',
+    datePaid: 'تاريخ الدفع',
+    paidBy: 'طريقة الدفع',
   },
   synonyms: {
     invoice: ['فاتورة'],

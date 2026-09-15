@@ -69,6 +69,33 @@ npm run verify      # all four, in the order CI runs them
 npm run test:tail   # the suite, last 30 lines, EXIT CODE INTACT
 ```
 
+### Guards
+
+**A fixture proves the rule detects a shape; only the mutation proves it
+detects the bug.** Any new guard is unproven until the defect it was written
+for has been reintroduced and the guard has gone red. Three versions of the
+declared-field sweep passed their fixtures and still missed the real bug —
+each failure was visible only by reverting the actual fix.
+
+**A production guard must exclude test files.** A fixture writing a field
+makes it read as filled while the column prints blank: `compose.test.ts`
+assigned `unit: 'cartons'`, and that alone kept the sweep green over a
+genuinely empty UNIT column. A test filling a shape proves the shape can be
+filled, never that anything fills it.
+
+**Know which shape a guard catches.** `tools/sweeps/declared.ts` catches
+*declared and never consumed*. It does NOT catch *declared and never
+reachably filled*: a field assigned by a mapper reads as written even when
+nothing a user can reach ever fills it, so removing the step where a person
+enters a value leaves the field looking filled. That second shape is what
+produced `vehicleNumber` and `expectedDate`, and both were found by eye.
+Answering it properly needs reachability analysis; a heuristic would produce
+false positives, and a guard that cries wolf is one people learn to ignore.
+
+**Assert consumption, not declaration.** `expect(keys).toContain('unit')` was
+true for as long as the column printed nothing. Assert the row, the rendered
+value, the thing a person would see.
+
 **Never pipe a test or build command through `tail`, `head`, or `grep.`** A
 shell pipeline reports the status of its LAST command, and those always
 succeed — so a suite with fifteen failures exits 0 and every check downstream

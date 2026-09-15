@@ -83,6 +83,145 @@ const draw = (templateId: string) => {
   return { view, article }
 }
 
+describe('A receipt carries its evidence, and nothing else does (§I, §K)', () => {
+  /**
+   * §E line 190: "receipts show date paid, linked invoice, method +
+   * reference". Those are the three facts that make a receipt a receipt, and
+   * `compose` built them into a `receiptEvidence` that NO PAGE EVER READ — so
+   * every printed receipt was missing all of them.
+   *
+   * Found by the declared-field sweep rather than by anybody looking.
+   */
+  const receiptModel = () =>
+    composeDocument(
+      {
+        type: 'receipt',
+        status: 'issued',
+        currency: 'NGN',
+        reference: 'RCP-0003',
+        issueDate: '2026-09-11',
+        paidAmount: { currency: 'NGN', minor: 50_000_00 },
+        paidAt: '2026-09-11',
+        paidMethod: 'Bank transfer',
+        lineItems: [
+          {
+            id: 'l1',
+            description: 'Part payment',
+            quantityMilli: quantity(1),
+            unitPriceMinor: 50_000_00,
+            taxable: false,
+          },
+        ],
+        party: { name: 'Adeola Hardware' },
+        frozenLabels: freezeLabels(PROFILE, 'receipt'),
+      },
+      {
+        profile: PROFILE,
+        branding: { name: 'Sola Ventures', nameStyle: 'classic', logoSize: 'M', showLogo: true },
+        columnLabels: {
+          description: strings.items.description,
+          quantity: strings.items.quantity,
+          amount: strings.totals.payable,
+          unit: strings.items.unit,
+        },
+        assetUrls: {},
+        replacesLabel: () => '',
+      },
+    )
+
+  it('prints the amount, the date paid and the method, in every design', () => {
+    const model = receiptModel()
+    const pages = paginate(model, { rowsPerPage: 18, footerRowCost: 4 })
+
+    for (const template of TEMPLATES) {
+      const view = render(
+        <DocumentPage
+          model={model}
+          template={template}
+          page={pages[0]!}
+          totalPages={1}
+          formatAmount={(minor) => `₦${(minor / 100).toFixed(2)}`}
+          currency="NGN"
+          accent="#2b3fd6"
+        />,
+      )
+      const page = within(view.container.querySelector('article')!)
+
+      // Scoped to the block: the amount is legitimately on the line row too,
+      // and an unscoped query would pass on the row alone — which is the
+      // document without its evidence, the very thing being tested for.
+      const heading = page.getByText('Payment received')
+      const block = within(heading.parentElement!)
+
+      expect(block.getByText('₦50000.00'), `${template.name} lost the amount`).toBeInTheDocument()
+      expect(block.getByText('2026-09-11'), `${template.name} lost the date paid`).toBeInTheDocument()
+      expect(block.getByText('Bank transfer'), `${template.name} lost the method`).toBeInTheDocument()
+
+      view.unmount()
+    }
+  })
+
+  /** And it is a receipt's block alone — never on anything that is not one. */
+  it.each(['invoice', 'quotation', 'waybill'] as const)(
+    'never puts a payment-received block on a %s',
+    (type) => {
+      const model = composeDocument(
+        {
+          type,
+          status: 'issued',
+          currency: 'NGN',
+          reference: 'REF-1',
+          issueDate: '2026-09-11',
+          // SET, not omitted: a document that carries payment facts must
+          // still not print a receipt's block unless it is a receipt.
+          paidAmount: { currency: 'NGN', minor: 50_000_00 },
+          paidAt: '2026-09-11',
+          paidMethod: 'Bank transfer',
+          lineItems: [
+            {
+              id: 'l1',
+              description: 'Cement',
+              quantityMilli: quantity(1),
+              unitPriceMinor: 50_000_00,
+              taxable: true,
+            },
+          ],
+          party: { name: 'Adeola Hardware' },
+          frozenLabels: freezeLabels(PROFILE, type),
+        },
+        {
+          profile: PROFILE,
+          branding: { name: 'Sola Ventures', nameStyle: 'classic', logoSize: 'M', showLogo: true },
+          columnLabels: {
+            description: strings.items.description,
+            quantity: strings.items.quantity,
+            amount: strings.totals.payable,
+            unit: strings.items.unit,
+          },
+          assetUrls: {},
+          replacesLabel: () => '',
+        },
+      )
+
+      expect(model.receiptEvidence).toBeNull()
+
+      const pages = paginate(model, { rowsPerPage: 18, footerRowCost: 4 })
+      render(
+        <DocumentPage
+          model={model}
+          template={templateById('classic')}
+          page={pages[0]!}
+          totalPages={1}
+          formatAmount={(minor) => `₦${(minor / 100).toFixed(2)}`}
+          currency="NGN"
+          accent="#2b3fd6"
+        />,
+      )
+      expect(screen.queryByText('Payment received')).not.toBeInTheDocument()
+    },
+  )
+})
+
 describe('Every design is a design (§H)', () => {
   /**
    * The guard whose absence let sixteen designs become one. If a new design

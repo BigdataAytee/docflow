@@ -138,11 +138,15 @@ describe('The payment box (§I, §J)', () => {
     })
     const page = composeDocument(receipt, options())
     expect(page.paymentBox).toBeNull()
-    expect(page.receiptEvidence).toEqual({
+    // Its own heading and labels, resolved at compose time like every other
+    // printed word — the page renders a model and never reaches for the
+    // locale layer itself (Rule #4).
+    expect(page.receiptEvidence).toMatchObject({
       amount: money('NGN', 50_000_00),
       paidAt: '2026-09-11',
       method: 'Bank transfer',
     })
+    expect(page.receiptEvidence?.heading).toBe('Payment received')
   })
 })
 

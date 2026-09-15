@@ -44,6 +44,9 @@ const SHARED = {
   howToPay: 'HOW TO PAY',
   receivedBy: 'RECEIVED BY',
   estimatedTotal: 'Estimated total',
+  paymentReceived: 'Payment received',
+  datePaid: 'Date paid',
+  paidBy: 'Paid by',
 } as const
 
 const SYNONYMS_BASE = {

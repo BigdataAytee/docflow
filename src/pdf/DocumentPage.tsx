@@ -249,6 +249,49 @@ export function DocumentPage({
                 </div>
               )}
 
+              {/*
+                A RECEIPT'S EVIDENCE, in the slot an invoice gives to HOW TO
+                PAY (§I, §K).
+
+                The reference sends every non-delivery type through that one
+                footer slot — `cur==='way' ? RECEIVED BY : PAYBOX()` — so this
+                takes it rather than inventing a position. §E line 190 is what
+                it must say: "receipts show date paid, linked invoice, method
+                + reference".
+
+                It was BUILT and never drawn. `compose` has returned a
+                `receiptEvidence` since it was written and no page ever read
+                one, so every printed receipt was missing the three facts that
+                make it a receipt. Found by the declared-field sweep, which
+                exists because this kept happening.
+              */}
+              {model.receiptEvidence !== null && (
+                <div style={{ maxWidth: '60%' }}>
+                  <p className="font-bold uppercase tracking-wide" style={{ color: ink }}>
+                    {model.receiptEvidence.heading}
+                  </p>
+                  <p className="mt-[4px] text-[14px] font-black tabular-nums">
+                    {formatAmount(model.receiptEvidence.amount.minor, model.receiptEvidence.amount.currency)}
+                  </p>
+                  <dl className="mt-[4px]">
+                    <div className="flex gap-[8px]">
+                      <dt className="w-[96px] shrink-0 opacity-60">
+                        {model.receiptEvidence.datePaidLabel}
+                      </dt>
+                      <dd className="font-medium tabular-nums">{model.receiptEvidence.paidAt}</dd>
+                    </div>
+                    {model.receiptEvidence.method !== undefined && (
+                      <div className="flex gap-[8px]">
+                        <dt className="w-[96px] shrink-0 opacity-60">
+                          {model.receiptEvidence.methodLabel}
+                        </dt>
+                        <dd className="font-medium">{model.receiptEvidence.method}</dd>
+                      </div>
+                    )}
+                  </dl>
+                </div>
+              )}
+
               {model.receivedByRule !== null && (
                 <div className="flex-1">
                   <div className="mt-[24px] w-[160px] border-t" style={{ borderColor: ink }} />

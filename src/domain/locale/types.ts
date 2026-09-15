@@ -68,6 +68,17 @@ export interface SharedTerminology {
   readonly receivedBy: string
   /** The quotation's total line (§H). */
   readonly estimatedTotal: string
+  /**
+   * A receipt's evidence block (§I, §K).
+   *
+   * §E line 190: "receipts show date paid, linked invoice, method +
+   * reference". A receipt takes the footer slot an invoice gives to HOW TO
+   * PAY — it says what was already paid rather than how to pay — and these
+   * are its three words.
+   */
+  readonly paymentReceived: string
+  readonly datePaid: string
+  readonly paidBy: string
 }
 
 export interface TerminologyTable {
