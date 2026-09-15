@@ -51,6 +51,22 @@ jobs:
       - name: Build
         run: npm run build
 
+      # §T's store-policy and destination scan, which reads the bundle the
+      # step above just built.
+      #
+      # It was written as a real gate — it fails on any failing check — and
+      # then never wired to anything: `POLICY=1` is set only by `npm run
+      # policy`, which no workflow invoked. A gate nothing runs is a file,
+      # and that is exactly how the key scan and the fixture-isolation check
+      # came to be silently passing on no build at all.
+      #
+      # `policy:check` rather than `policy` so this reuses the build above
+      # instead of making a second one — and so CI and a developer are
+      # running the SAME command, which is the habit that let `eslint src`
+      # hide a red `eslint .` for several commits.
+      - name: Store policy and destination scan (§T)
+        run: npm run policy:check
+
       # Blocking before merge: money property tests (fast-check), lifecycle
       # transition tests, and — since Phase 3 — the sync chaos suite
       # (CLAUDE.md: "Sync work additionally requires the chaos suite

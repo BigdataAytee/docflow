@@ -42,7 +42,16 @@ describe('The screenshot fixtures are not in the app people install', () => {
   })
 
   it('finds none of them in dist/assets', () => {
-    if (!existsSync(DIST)) return // `npm test` runs before `npm run build` in CI.
+    /*
+     * FAILS without a build rather than returning quietly.
+     *
+     * The comment here used to read "`npm test` runs before `npm run build`
+     * in CI", which is backwards — ci.yml puts Build first precisely so this
+     * check has something to read, and says so. So the early return was
+     * skipping on the strength of a condition that had stopped being true,
+     * and this assertion was silently doing nothing.
+     */
+    expect(existsSync(DIST), 'No build to scan — run `npm run build` first.').toBe(true)
 
     for (const file of readdirSync(DIST).filter((name) => name.endsWith('.js'))) {
       const contents = readFileSync(join(DIST, file), 'utf8')
