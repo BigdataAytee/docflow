@@ -35,16 +35,23 @@ export function ReturnBand({ errand, onBack }: ReturnBandProps) {
       // `status`, not `alert`: nothing has gone wrong. It is a note about
       // where they are, and it must not interrupt a screen reader mid-word.
       role="status"
-      className="flex items-center gap-2.5 bg-gradient-to-b from-brand-light to-brand px-4 py-2.5 text-white"
+      className="flex items-center gap-2.5 bg-gradient-to-b from-brand-light to-brand px-4 py-2.5 text-on-accent"
     >
       <span aria-hidden="true" className="shrink-0 opacity-90">
         <Icon name="arrow-left" size={0.85} />
       </span>
       <span className="min-w-0 flex-1 text-[11px] font-medium leading-snug">{errand}</span>
+      {/*
+        `on-accent`, not a literal white. That token is exactly this case —
+        "white on a locked accent ... fixed in both themes like the accent
+        beneath it" — so the band and the chip that lifts off it make one
+        decision rather than two that could disagree. The dark-mode sweep
+        caught the literal.
+      */}
       <button
         type="button"
         onClick={onBack}
-        className="min-h-tap shrink-0 rounded-full bg-white/20 px-3 text-[11px] font-semibold"
+        className="min-h-tap shrink-0 rounded-full bg-on-accent/20 px-3 text-[11px] font-semibold"
       >
         {strings.details.backToDraft}
       </button>

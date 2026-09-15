@@ -27,7 +27,12 @@ import { useCompany } from '../../app/context'
 import { Icon } from '../../ui'
 import { supportWhatsApp, whatsAppLink } from '../support/contact'
 
-export function HelpSettings() {
+export interface HelpSettingsProps {
+  /** Reopens §R’s welcome. Absent where there is nowhere to send them. */
+  readonly onGettingStarted?: () => void
+}
+
+export function HelpSettings({ onGettingStarted }: HelpSettingsProps) {
   const { strings } = useCompany()
   const h = strings.help
 
@@ -59,6 +64,37 @@ export function HelpSettings() {
             <Icon name="chevron-right" size={0.9} />
           </span>
         </a>
+      )}
+
+      {/*
+        GETTING STARTED, which the walkthrough asks for by name: "Help: FAQ
+        expand/collapse and Getting started. Getting started opens the
+        complete onboarding flow."
+        §R's welcome exists and was reachable exactly once — on a first run,
+        before anybody knew what they were looking at. Somebody who tapped
+        past it had no way back to the explanation of the four document types,
+        which is precisely the person who needs it.
+      */}
+      {onGettingStarted !== undefined && (
+        <button
+          type="button"
+          onClick={onGettingStarted}
+          className="glass-solid flex min-h-tap w-full items-center gap-3 rounded-2xl p-3.5 text-start"
+        >
+          <span
+            aria-hidden="true"
+            className="grid size-9 shrink-0 place-items-center rounded-xl bg-brand-tint text-brand"
+          >
+            <Icon name="help" size={0.95} />
+          </span>
+          <span className="min-w-0 flex-1">
+            <span className="block text-[12.5px] font-semibold">{h.gettingStarted}</span>
+            <span className="mt-0.5 block text-[10px] opacity-55">{h.gettingStartedHint}</span>
+          </span>
+          <span aria-hidden="true" className="shrink-0 opacity-35">
+            <Icon name="chevron-right" size={0.9} />
+          </span>
+        </button>
       )}
 
       <ul className="glass-solid divide-y divide-ink/10 overflow-hidden rounded-2xl">

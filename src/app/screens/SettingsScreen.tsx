@@ -16,7 +16,7 @@ import { Navigate, NavLink, useLocation, useNavigate, useParams } from 'react-ro
 
 import { useCompany } from '../context'
 import { useAppData } from '../store'
-import { SETTINGS_PANELS, type SettingsPanel, settingsPath } from '../paths'
+import { ONBOARDING, SETTINGS_PANELS, type SettingsPanel, settingsPath } from '../paths'
 import { settingsDestinations, settingsGroups } from '../destinations'
 import { DeleteAccount } from '../../features/account/DeleteAccount'
 import { ProSettings } from '../../features/billing/ProSettings'
@@ -315,11 +315,23 @@ function SettingsPanelBody() {
       return <AccountPanel />
 
     case 'help':
-      return <HelpSettings />
+      return <HelpPanel />
 
     case 'delete':
       return <DeleteAccountPanel />
   }
+}
+
+/**
+ * Settings → Help & support (§G, §R).
+ *
+ * Its own component only for the route: §R's welcome was reachable exactly
+ * once, on a first run, and somebody who tapped past it had no way back to
+ * the explanation of what the four document types are.
+ */
+function HelpPanel() {
+  const navigate = useNavigate()
+  return <HelpSettings onGettingStarted={() => navigate(ONBOARDING)} />
 }
 
 /**

@@ -10,6 +10,7 @@
  */
 
 import { useCompany } from '../../app/context'
+import { format } from '../../domain/locale/data/strings'
 import { composeDocument, type ComposableDocument, type ComposeOptions } from '../../pdf/compose'
 import { paginate } from '../../pdf/paginate'
 import { DocumentPage } from '../../pdf/DocumentPage'
@@ -59,6 +60,20 @@ export function ReviewStep({
         onGoToStep={onGoToStep}
         {...(onSetUpPayment === undefined ? {} : { onSetUpPayment })}
       />
+
+      {/*
+        WHAT YOU ARE LOOKING AT, which the reference prints above the page and
+        this screen did not: "Classic · A4 portrait."
+
+        It answers the question somebody actually has on Review. Sixteen
+        designs were chosen a step earlier and they differ in arrangement
+        rather than in words, so "is this the one I picked?" is genuinely hard
+        to answer from the page alone — and the shape being A4 is the other
+        half of what the preview is claiming.
+      */}
+      <p className="text-xs opacity-65">
+        {format(strings.builder.designAndSize, { design: template.name })}
+      </p>
 
       <div className="space-y-4">
         {pages.map((page) => (

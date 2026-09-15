@@ -171,3 +171,38 @@ describe('The preview is the real document (§H shared state)', () => {
     expect(screen.getAllByRole('article').length).toBeGreaterThan(1)
   })
 })
+
+describe('Review says which of the sixteen you are looking at (§G, §H)', () => {
+  /**
+   * The reference prints "Classic · A4 portrait." above the page and this
+   * screen printed nothing. Sixteen designs differ in arrangement rather than
+   * in words, so "is this the one I picked?" is genuinely hard to answer from
+   * the page alone.
+   */
+  it('names the chosen design and the shape it prints at', () => {
+    setup(invoice)
+    expect(screen.getByText('Classic · A4 portrait')).toBeInTheDocument()
+  })
+
+  it('follows the design that was actually chosen', () => {
+    const onGoToStep = vi.fn()
+    render(
+      <CompanyProvider
+        companyId="co_1"
+        repositories={createMemoryRepositories(emptyState())}
+        profile={{ locale: 'EN-NG' }}
+        language="en"
+      >
+        <ReviewStep
+          document={invoice}
+          templateId="sikky"
+          problems={[]}
+          onGoToStep={onGoToStep}
+          composeOptions={composeOptions}
+        />
+      </CompanyProvider>,
+    )
+    expect(screen.getByText('Sikky · A4 portrait')).toBeInTheDocument()
+    expect(screen.queryByText('Classic · A4 portrait')).not.toBeInTheDocument()
+  })
+})

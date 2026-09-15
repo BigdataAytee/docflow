@@ -52,6 +52,8 @@ export interface UiStrings {
     readonly title: string
     readonly chatWithSupport: string
     readonly onWhatsApp: string
+    readonly gettingStarted: string
+    readonly gettingStartedHint: string
     readonly faq: readonly { readonly question: string; readonly answer: string }[]
   }
   readonly account: {
@@ -264,6 +266,8 @@ export interface UiStrings {
   readonly builder: {
     readonly stepOf: string
     readonly saveDocument: string
+    /** §G step 5: which design, and the shape it prints at. */
+    readonly designAndSize: string
     /** The header when the builder is CREATING — "New invoice". */
     readonly newDocument: string
     readonly missingTitle: string
@@ -978,6 +982,8 @@ const EN: UiStrings = {
     title: 'Help & support',
     chatWithSupport: 'Chat with support',
     onWhatsApp: 'On WhatsApp',
+    gettingStarted: 'Getting started',
+    gettingStartedHint: 'The four document types, explained again',
     faq: [
       {
         question: 'How do I work without internet?',
@@ -1169,6 +1175,7 @@ const EN: UiStrings = {
   builder: {
     stepOf: 'Step {current} of {total}',
     saveDocument: 'Save {label}',
+    designAndSize: '{design} · A4 portrait',
     newDocument: 'New {label}',
     missingTitle: 'Before you can issue this',
     notReadyYet: 'Not quite ready — the amber band above says what is missing.',

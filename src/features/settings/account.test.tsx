@@ -159,3 +159,25 @@ describe('Help answers questions about this app (§G)', () => {
     expect(screen.queryByText('Chat with support')).not.toBeInTheDocument()
   })
 })
+
+describe('Getting started reopens the welcome (§R, walkthrough)', () => {
+  /**
+   * §R's welcome was reachable exactly once — on a first run, before anybody
+   * knew what they were looking at. Somebody who tapped past it had no way
+   * back to the explanation of what the four document types are, and that is
+   * precisely the person who needs it.
+   */
+  it('offers the way back into it', async () => {
+    const onGettingStarted = vi.fn()
+    wrap(<HelpSettings onGettingStarted={onGettingStarted} />)
+
+    await userEvent.click(screen.getByRole('button', { name: /getting started/i }))
+    expect(onGettingStarted).toHaveBeenCalledOnce()
+  })
+
+  /** No route to send them down, no row promising one. */
+  it('shows no row where there is nowhere to go', () => {
+    wrap(<HelpSettings />)
+    expect(screen.queryByText('Getting started')).not.toBeInTheDocument()
+  })
+})
