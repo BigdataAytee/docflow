@@ -135,22 +135,49 @@ export async function openNativeBackend(region = 'NG'): Promise<NativeBackend> {
   return backend
 }
 
+/**
+ * Where the mid-draft document is remembered across the force-kill.
+ *
+ * §Q Phase 2's gate ends "force-kill mid-draft → reopen and recover", and that
+ * cannot be checked inside one process — the app has to actually die. So the
+ * journey runs in two halves across two launches, and the handle to the draft
+ * has to survive in the one place that survives: the encrypted database.
+ *
+ * `sync_state` rather than `localStorage`, deliberately. WebView storage is
+ * cleared by "clear cache" in Android's settings, so a recovery test resting on
+ * it could pass while the records it claims to have recovered were gone.
+ */
+const JOURNEY_KEY = 'gate_journey_draft'
+
 async function reportGate(
   driver: Awaited<ReturnType<typeof openLocalStoreType>>['driver'],
   backend: NativeBackend,
 ): Promise<void> {
   try {
     const { runDeviceGate, reportLine } = await import('./gate')
+    const { journeyAfterKill } = await import('./journey')
+
     const report = await runDeviceGate({
       driver,
       storeOpenMs: backend.storeOpenMs,
       marks: backend.marks,
       claimedEncrypted: backend.encrypted,
     })
-    // One JSON line, which `adb logcat` captures. No server, nothing to
-    // deploy, and it works with every radio off — which several of the checks
-    // require.
-    console.log(reportLine(report))
+
+    // Is this the launch AFTER the kill? The database says so, not a flag the
+    // runner passed in — the point of the clause is that the phone remembers.
+    const pending = await driver.get('select value from sync_state where key = ?', [JOURNEY_KEY])
+
+    const journey =
+      pending === null
+        ? await runFirstHalf(driver, backend)
+        : await journeyAfterKill(
+            backend.repositories,
+            backend.companyId,
+            { documentId: String(pending['value']) },
+          )
+
+    console.log(reportLine({ ...report, results: [...report.results, ...journey] }))
   } catch (cause) {
     console.log(
       `DOCFLOW_GATE {"error":${JSON.stringify(
@@ -158,6 +185,30 @@ async function reportGate(
       )}}`,
     )
   }
+}
+
+async function runFirstHalf(
+  driver: Awaited<ReturnType<typeof openLocalStoreType>>['driver'],
+  backend: NativeBackend,
+): Promise<Awaited<ReturnType<typeof import('./gate').runDeviceGate>>['results']> {
+  const { journeyBeforeKill } = await import('./journey')
+  const { results, draft } = await journeyBeforeKill({
+    repositories: backend.repositories,
+    companyId: backend.companyId,
+    run: 'a',
+  })
+
+  if (draft !== null) {
+    await driver.transaction(async (tx) => {
+      await tx.run(
+        'insert into sync_state (key, value) values (?, ?) ' +
+          'on conflict(key) do update set value = excluded.value',
+        [JOURNEY_KEY, draft.documentId],
+      )
+    })
+  }
+
+  return results
 }
 
 /**

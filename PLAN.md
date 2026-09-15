@@ -74,6 +74,25 @@ repository and its RLS suite. Two things still to decide or watch:
 
 Phase 7's §V checklist cannot go green while Phase 5's gate is unproven.
 
+### Waiting on a dashboard or a host (external, and small)
+
+Three things nobody in this repository can do, each one setting:
+
+1. **The password-reset rate limit.** `gate:hosted:api` found the endpoint
+   accepting fifteen requests without refusing one, against a declared ten per
+   hour. Dashboard → Authentication → Rate Limits. The address in a reset
+   request is attacker-chosen, so an ungoverned reset endpoint is a mail bomb
+   with our domain on it.
+2. **`frame-ancestors` on the web host.** The app carries its own content
+   security policy in the built document (`src/web/csp.ts`), because the same
+   bundle is served by a host AND by Capacitor from the app's own assets — a
+   host header can never cover the second. A `<meta>` policy cannot carry
+   `frame-ancestors`, so clickjacking protection needs a real response header
+   from whatever serves `dist/`. Send `Content-Security-Policy:
+   frame-ancestors 'none'` and `Strict-Transport-Security` there; everything
+   else in the policy already travels with the document.
+3. **Push `0021_recurrences.sql`**, once CI's RLS run is green.
+
 ### Waiting on a device
 
 * **Phase 2's gate** — the airplane-mode walk: create → invoice → sixteen
@@ -95,9 +114,11 @@ Phase 7's §V checklist cannot go green while Phase 5's gate is unproven.
 
 ### The two loose threads a next session should know about
 
-1. **`src/native/journey.ts`, `boot.ts` and `tools/device/gate.ts` are
-   uncommitted** — Phase 2 gate work in progress, deliberately kept out of the
-   Settings commits rather than mixed into them.
+1. **The Phase 2 gate journey is committed and unrun.** `src/native/journey.ts`
+   walks §Q Phase 2 against the real encrypted store, in two halves across a
+   force-kill, and `tools/device/gate.ts` refuses to grade a run whose radios
+   were on. It compiles and lints; it cannot execute without a phone, which is
+   the clause it exists for.
 2. **The issue gate now refuses an enabled-but-unusable payment method.** Any
    fixture that switches bank transfer on must also give it an account, or it
    is modelling a state the app exists to prevent. Two route fixtures were

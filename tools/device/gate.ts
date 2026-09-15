@@ -181,11 +181,31 @@ function awaitReport(serial: string): Promise<Captured> {
   })
 }
 
+/**
+ * Is the phone actually offline?
+ *
+ * §Q Phase 2's gate is "airplane mode, fresh install, physical device", and a
+ * journey that quietly ran with wifi up would prove nothing about the clause it
+ * claims to close. Asserted, not assumed — and reported in the results, so the
+ * evidence travels with them.
+ */
+function radiosOff(serial: string): { off: boolean; evidence: string } {
+  const airplane = adb('-s', serial, 'shell', 'settings', 'get', 'global', 'airplane_mode_on').trim()
+  const wifi = adb('-s', serial, 'shell', 'settings', 'get', 'global', 'wifi_on').trim()
+  return {
+    off: airplane === '1' && wifi !== '1',
+    evidence: `airplane_mode_on=${airplane}, wifi_on=${wifi}`,
+  }
+}
+
 async function main(): Promise<void> {
   const serial = oneDevice()
   const model = adb('-s', serial, 'shell', 'getprop', 'ro.product.model').trim()
   const release = adb('-s', serial, 'shell', 'getprop', 'ro.build.version.release').trim()
   console.log(`Device: ${model} (Android ${release}, ${serial})`)
+
+  const radios = radiosOff(serial)
+  console.log(`Radios: ${radios.evidence}`)
 
   const apk = 'android/app/build/outputs/apk/debug/app-debug.apk'
   console.log('Installing…')
@@ -201,12 +221,21 @@ async function main(): Promise<void> {
   const { report: raw, coldStartMs: firstRunMs } = await firstWaiting
 
   // Then the everyday case: the app killed, the database left where it is.
-  // This is the launch §Q's budget is about, and the one an owner repeats.
-  console.log('Force-stopping and relaunching over the existing database…')
+  //
+  // This one launch answers two clauses at once, and that is not a shortcut —
+  // they are the same event. §Q Phase 4 wants the cold start over an existing
+  // database, and §Q Phase 2 ends "force-kill mid-draft → reopen and recover".
+  // `am force-stop` IS the force-kill: the process is destroyed outright, with
+  // no lifecycle callbacks and no chance to flush anything.
+  console.log('Force-killing and relaunching over the existing database…')
   adb('-s', serial, 'shell', 'am', 'force-stop', PACKAGE)
   const secondWaiting = awaitReport(serial)
   adb('-s', serial, 'shell', 'am', 'start', '-n', ACTIVITY)
-  const { coldStartMs } = await secondWaiting
+  const { report: secondRaw, coldStartMs } = await secondWaiting
+  const secondReport = JSON.parse(secondRaw) as { results?: GateCheck[]; error?: string }
+  if (secondReport.error !== undefined) {
+    throw new Error(`The gate could not run after the kill: ${secondReport.error}`)
+  }
   const report = JSON.parse(raw) as {
     ranAt?: string
     results?: GateCheck[]
@@ -220,7 +249,22 @@ async function main(): Promise<void> {
   // §Q Phase 4's cold-start clause, measured where both ends are visible.
   // Reported as a FAILURE when it cannot be measured, never quietly omitted:
   // an unmeasured budget is an unmet one as far as a gate is concerned.
-  const results: GateCheck[] = [...(report.results ?? [])]
+  // The second launch repeats the device checks — they are cheap and a
+  // regression between two launches would be worth seeing — so only what is
+  // NEW to it is taken: the recovery clause, which has no counterpart in the
+  // first run.
+  const recovery = (secondReport.results ?? []).filter((result) =>
+    result.name.startsWith('Force-kill'),
+  )
+
+  const results: GateCheck[] = [...(report.results ?? []), ...recovery]
+  results.push({
+    name: 'The journey ran with the radios off (§Q Phase 2)',
+    state: radios.off ? 'passed' : 'failed',
+    evidence: radios.off
+      ? `${radios.evidence} — nothing in the journey could have reached a network`
+      : `${radios.evidence} — the phone was ONLINE, so this run proves nothing about offline`,
+  })
   results.push({
     name: FIRST_RUN_NAME,
     // Reported, never graded. It has no §Q budget to pass or fail against.
