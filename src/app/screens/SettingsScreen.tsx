@@ -17,12 +17,12 @@ import { Navigate, NavLink, useParams } from 'react-router-dom'
 import { useCompany } from '../context'
 import { useAppData } from '../store'
 import { SETTINGS_PANELS, type SettingsPanel, settingsPath } from '../paths'
-import { settingsDestinations } from '../destinations'
+import { settingsDestinations, settingsGroups } from '../destinations'
 import { DeleteAccount } from '../../features/account/DeleteAccount'
 import { ProSettings } from '../../features/billing/ProSettings'
 import { standing } from '../../domain/billing/entitlement'
 import type { Lifecycle, Refusal } from '../../domain/account/deletion'
-import { PageHeader, SkeletonList } from '../../ui'
+import { Icon, type IconName, PageHeader, SkeletonList } from '../../ui'
 import { CompanySettings } from '../../features/settings/CompanySettings'
 import { PaymentSettings } from '../../features/settings/PaymentSettings'
 import { RegionSettings } from '../../features/settings/RegionSettings'
@@ -42,29 +42,106 @@ import { ALWAYS_AVAILABLE, methodName } from '../../features/payments/methods'
 const isPanel = (value: string | undefined): value is SettingsPanel =>
   value !== undefined && (SETTINGS_PANELS as readonly string[]).includes(value)
 
+/** Fixed to the row, like every other icon pairing in the app (§F). */
+const PANEL_ICONS: Readonly<Record<SettingsPanel, IconName>> = {
+  company: 'building',
+  tax: 'percentage',
+  payment: 'credit-card',
+  items: 'package',
+  signature: 'signature',
+  region: 'language',
+  appearance: 'moon',
+  data: 'refresh',
+  pro: 'shield',
+  delete: 'user',
+}
+
 export function SettingsIndexScreen() {
   const { strings } = useCompany()
+  const { company, items, documents } = useAppData()
 
   // One list, shared with the command palette. Two copies of this drifted
   // apart the moment a panel was added — which is exactly what happened to
   // `appearance` before the palette existed to notice.
   const rows = settingsDestinations(strings)
+  const byPanel = new Map(rows.map((row) => [row.id.replace('settings:', ''), row]))
+
+  /**
+   * What each row says UNDER its name: the current value, not a restatement.
+   *
+   * Derived every render from the thing it describes, like the Home
+   * checklist — so a row cannot claim a logo is set after one is removed.
+   * Absent where there is nothing true to say; a row with no sublabel is
+   * quieter than one with a guess.
+   */
+  const sublabelFor = (panel: SettingsPanel): string | undefined => {
+    switch (panel) {
+      case 'company':
+        return company?.logoAssetId === undefined ? strings.settings.notSet : undefined
+      case 'payment':
+        return (company?.enabledPaymentMethods.length ?? 0) === 0
+          ? strings.settings.notSetUpYet
+          : undefined
+      case 'items':
+        return format(strings.settings.itemCount, { count: items.length })
+      case 'signature':
+        return company?.defaultSignatureAssetId == null ? strings.settings.notSet : undefined
+      case 'region':
+        return company?.localeRegion
+      default:
+        return undefined
+    }
+  }
 
   return (
     <div className="pb-28">
       <PageHeader title={strings.nav.settings} />
-      <ul className="mt-4 space-y-2 px-4">
-        {rows.map((row) => (
-          <li key={row.id}>
-            <NavLink
-              to={row.path}
-              className="glass flex min-h-tap items-center rounded-2xl px-4 text-sm font-medium"
-            >
-              {row.label}
-            </NavLink>
-          </li>
-        ))}
-      </ul>
+
+      {settingsGroups(strings).map((group) => (
+        <section key={group.id} className="mt-4 px-4">
+          <h2 className="mb-2 px-1 text-[10px] font-semibold uppercase tracking-[0.14em] opacity-50">
+            {group.title}
+          </h2>
+          {/* One card per group, its rows divided — not a row per card (§F). */}
+          <ul className="glass overflow-hidden rounded-[18px]">
+            {group.panels.map((panel) => {
+              const row = byPanel.get(panel)
+              if (row === undefined) return null
+              const sublabel = sublabelFor(panel)
+              return (
+                <li key={panel} className="border-b border-edge/[0.07] last:border-0">
+                  <NavLink
+                    to={row.path}
+                    className="flex min-h-tap items-center gap-3 px-3.5 py-3 text-start"
+                  >
+                    <span
+                      aria-hidden="true"
+                      className="grid h-[26px] w-[26px] shrink-0 place-items-center rounded-[9px] bg-brand-tint text-brand"
+                    >
+                      <Icon name={PANEL_ICONS[panel]} size={0.85} />
+                    </span>
+                    <span className="min-w-0 flex-1">
+                      <span className="block truncate text-[12.5px] font-medium">{row.label}</span>
+                      {sublabel !== undefined && (
+                        <span className="mt-0.5 block truncate text-[10px] opacity-55">
+                          {sublabel}
+                        </span>
+                      )}
+                    </span>
+                    <span aria-hidden="true" className="shrink-0 opacity-35">
+                      <Icon name="chevron-right" size={0.9} />
+                    </span>
+                  </NavLink>
+                </li>
+              )
+            })}
+          </ul>
+        </section>
+      ))}
+
+      {/* Documents are counted nowhere else on this screen; §R's checklist
+          reads the same list, so this stays a read rather than a store. */}
+      <p className="sr-only">{documents.length}</p>
     </div>
   )
 }

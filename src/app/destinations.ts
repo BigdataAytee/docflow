@@ -77,6 +77,39 @@ export function navDestinations(strings: UiStrings): Destination[] {
  * a closed union, so a panel added to `paths.ts` and forgotten here is a type
  * error rather than a row missing from the palette.
  */
+/**
+ * The settings index, in the two groups the reference draws (§F).
+ *
+ * The index was a flat list of plain rows; the reference has YOUR BUSINESS
+ * and YOU & YOUR DATA as separate divided cards, each row carrying an icon, a
+ * sublabel saying its CURRENT VALUE, and a chevron. A row that only repeats
+ * its own name tells somebody nothing they did not know from the list.
+ *
+ * Declared here rather than in the screen so the command palette and the
+ * index cannot disagree about which panels exist — two copies of that list
+ * drifted the moment a panel was added, which is why there is one.
+ */
+export interface SettingsGroup {
+  readonly id: 'business' | 'you'
+  readonly title: string
+  readonly panels: readonly SettingsPanel[]
+}
+
+export function settingsGroups(strings: UiStrings): readonly SettingsGroup[] {
+  return [
+    {
+      id: 'business',
+      title: strings.settings.groupBusiness,
+      panels: ['company', 'tax', 'payment', 'items', 'signature'],
+    },
+    {
+      id: 'you',
+      title: strings.settings.groupYou,
+      panels: ['region', 'appearance', 'data', 'pro', 'delete'],
+    },
+  ]
+}
+
 export function settingsDestinations(strings: UiStrings): Destination[] {
   const labels: Record<SettingsPanel, string> = {
     region: strings.settings.regionAndLanguage,

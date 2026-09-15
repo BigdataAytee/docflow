@@ -334,6 +334,13 @@ export interface UiStrings {
     readonly withholdingRate: string
     readonly workedExample: string
     readonly savedItems: string
+    /** The two groups the settings index is divided into. */
+    readonly groupBusiness: string
+    readonly groupYou: string
+    /** Row sublabels, which say the current value rather than repeating the row. */
+    readonly notSetUpYet: string
+    readonly notSet: string
+    readonly itemCount: string
     readonly noSavedItems: string
     readonly noSavedItemsBody: string
     readonly usedTimes: string
@@ -1166,6 +1173,11 @@ const EN: UiStrings = {
     withholdingRate: 'Withholding tax rate',
     workedExample: 'On {subtotal} you would charge {tax} and withhold {wht}, leaving {payable}.',
     savedItems: 'Saved items',
+    groupBusiness: 'Your business',
+    groupYou: 'You & your data',
+    notSetUpYet: 'Not set up yet',
+    notSet: 'Not set',
+    itemCount: '{count} items',
     noSavedItems: 'Nothing saved yet',
     noSavedItemsBody: 'Items you type into a document are kept here for next time.',
     usedTimes: 'used {count}×',
