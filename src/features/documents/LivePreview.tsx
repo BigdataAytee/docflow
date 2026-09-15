@@ -30,7 +30,6 @@ export interface LivePreviewProps {
   readonly templateId: TemplateId
   readonly composeOptions: Omit<ComposeOptions, 'profile'>
   readonly brandColour?: string
-  readonly logoNaturalSize?: { width: number; height: number }
 }
 
 /** Matches Review, so the preview breaks where the printed page breaks. */
@@ -42,7 +41,6 @@ export function LivePreview({
   templateId,
   composeOptions,
   brandColour,
-  logoNaturalSize,
 }: LivePreviewProps) {
   const { profile, strings } = useCompany()
 
@@ -60,7 +58,6 @@ export function LivePreview({
       formatAmount={(minor, currency) => formatMoney(money(currency, minor))}
       currency={document.currency}
       accent={brandColour ?? TYPE_PALETTE[document.type].accent}
-      {...(logoNaturalSize === undefined ? {} : { logoNaturalSize })}
       continuedLabel={strings.common.next}
     />
   )

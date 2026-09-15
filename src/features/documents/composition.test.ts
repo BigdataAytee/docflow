@@ -319,3 +319,57 @@ describe('The draft a saved record reads as', () => {
     expect(Object.keys(draftOf(record()))).not.toContain('driverName')
   })
 })
+
+describe('What is switched on reaches the printed page (§I, §J)', () => {
+  const design = {
+    templateId: 'classic' as const,
+    showLogo: true,
+    brandColour: '#2b3fd6',
+    discountPercent: 0,
+  }
+
+  /**
+   * §J: "everything switched on prints in invoice payment instructions".
+   * `otherPaymentMethods` was on `ComposeOptions` with no caller supplying
+   * one, so switching a method on in Settings changed nothing on a document.
+   */
+  it('passes every enabled method except bank transfer, which is the box itself', () => {
+    const options = composeOptionsOf({
+      company: { ...company, enabledPaymentMethods: ['bank_transfer', 'cash_on_delivery'] },
+      design,
+      strings,
+      assets: [],
+    })
+    expect(options.otherPaymentMethods).toEqual(['Cash on delivery'])
+  })
+
+  it('names them in words, never as the stored token (§S)', () => {
+    const options = composeOptionsOf({
+      company: { ...company, enabledPaymentMethods: ['cash_on_delivery'] },
+      design,
+      strings,
+      assets: [],
+    })
+    expect(options.otherPaymentMethods?.[0]).not.toContain('_')
+  })
+
+  it('passes none when only bank transfer is on', () => {
+    const options = composeOptionsOf({ company, design, strings, assets: [] })
+    expect(options.otherPaymentMethods).toEqual([])
+  })
+
+  /** The logo is named by the branding and resolved from the assets it owns. */
+  it('carries the business address and the logo id into the branding', () => {
+    const options = composeOptionsOf({
+      company: { ...company, address: '14 Ogunlana Drive', logoAssetId: 'as_1' },
+      design,
+      strings,
+      assets: [
+        { id: 'as_1', companyId: 'co', kind: 'logo', dataUrl: 'data:image/png;base64,x', createdAt: '2026-09-15' },
+      ],
+    })
+    expect(options.branding.address).toBe('14 Ogunlana Drive')
+    expect(options.branding.logoAssetId).toBe('as_1')
+    expect(options.assetUrls?.['as_1']).toBe('data:image/png;base64,x')
+  })
+})

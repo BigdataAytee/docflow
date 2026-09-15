@@ -104,6 +104,34 @@ describe('An invoice prints its payment box (§I, §J)', () => {
     expect(screen.getByText('0123456789')).toBeInTheDocument()
   })
 
+  /**
+   * §I: "online methods under a dashed divider labelled 'Other payment
+   * methods', cash listed separately"; §J: "everything switched on prints in
+   * invoice payment instructions".
+   *
+   * `otherMethods` reached the composed box and no page drew it, while no
+   * caller supplied one either — so a method switched on in Settings printed
+   * nowhere at all. Both halves are asserted here, because fixing one and
+   * not the other leaves the owner exactly where they were.
+   */
+  it('lists the other methods under a divider, beneath the account', () => {
+    draw(invoice, 'classic', 20, { otherPaymentMethods: ['Cash on delivery'] }).render()
+    expect(screen.getByText('Other payment methods')).toBeInTheDocument()
+    expect(screen.getByText('Cash on delivery')).toBeInTheDocument()
+  })
+
+  it('prints no divider when nothing else is switched on', () => {
+    draw(invoice).render()
+    expect(screen.queryByText('Other payment methods')).not.toBeInTheDocument()
+  })
+
+  /** A delivery has no payment box to hang them off (§V). */
+  it('never lists them on a delivery document', () => {
+    draw(delivery, 'classic', 20, { otherPaymentMethods: ['Cash on delivery'] }).render()
+    expect(screen.queryByText('Other payment methods')).not.toBeInTheDocument()
+    expect(screen.queryByText('Cash on delivery')).not.toBeInTheDocument()
+  })
+
   it('prints the revision beside the reference (§G)', () => {
     draw(
       { ...invoice, type: 'quotation', replaces: { reference: 'QUO-0009', revisionNumber: 2 } },

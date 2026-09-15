@@ -34,10 +34,16 @@ describe('The picker never empties (Rule #1)', () => {
 
   it('still offers a way to record money when everything is off', () => {
     // Money already in the till cannot be blocked by a settings screen.
-    expect(availableMethods([], EN)).toHaveLength(1)
+    expect(availableMethods([], EN).map((m) => m.id)).toEqual([
+      'bank_transfer',
+      'cash_on_delivery',
+    ])
   })
 
   it('ignores a method this build does not support', () => {
-    expect(availableMethods(['card', 'wallet'], EN).map((m) => m.id)).toEqual(['bank_transfer'])
+    expect(availableMethods(['card', 'wallet'], EN).map((m) => m.id)).toEqual([
+      'bank_transfer',
+      'cash_on_delivery',
+    ])
   })
 })

@@ -164,12 +164,13 @@ export function SettingsPanelScreen() {
 function SettingsPanelBody() {
   const { panel } = useParams<{ panel: string }>()
   const { strings } = useCompany()
-  const { company, loading, actions } = useAppData()
+  const { company, assets, loading, actions } = useAppData()
 
   if (!isPanel(panel)) return <Navigate to={settingsPath('region')} replace />
   if (loading || company === null) return <SkeletonList rows={4} label={strings.common.loading} />
 
   const region = company.localeRegion
+  const logoUrl = assets.find((asset) => asset.id === company.logoAssetId)?.dataUrl
 
   switch (panel) {
     case 'region':
@@ -207,10 +208,20 @@ function SettingsPanelBody() {
       return (
         <CompanySettings
           businessName={company.name}
+          businessAddress={company.address ?? ''}
           nameStyle={company.nameStyle ?? 'classic'}
           logoSize={company.logoSize ?? 'M'}
           prefixes={company.numberingPrefixes}
+          {...(logoUrl === undefined ? {} : { logoUrl })}
           onBusinessName={(value) => void actions.updateCompany({ name: value })}
+          onBusinessAddress={(value) => void actions.updateCompany({ address: value })}
+          onLogo={async (dataUrl) => {
+            // Stored first, then referenced: the company may only name an
+            // asset the repository accepted — the same order a delivery
+            // photo and a signature follow (§P).
+            const asset = await actions.storeAsset('logo', dataUrl)
+            await actions.updateCompany({ logoAssetId: asset.id })
+          }}
           onNameStyle={(style) => void actions.updateCompany({ nameStyle: style })}
           onLogoSize={(size) => void actions.updateCompany({ logoSize: size })}
           onPrefix={(type, value) =>

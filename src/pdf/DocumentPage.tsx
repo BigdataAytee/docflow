@@ -7,7 +7,7 @@
  * here without this file containing a single branch about it.
  */
 
-import { type CSSProperties } from 'react'
+import { type CSSProperties, useEffect, useState } from 'react'
 
 import type { PageModel, TableRow } from './compose'
 import type { PrintPage } from './paginate'
@@ -33,25 +33,39 @@ export interface DocumentPageProps {
   readonly formatAmount: (minor: number, currency: string) => string
   readonly currency: string
   readonly accent: string
-  readonly logoNaturalSize?: { width: number; height: number }
   readonly continuedLabel?: string
 }
 
+/**
+ * The logo, in its white square (§F, §I).
+ *
+ * "White rounded square with a thin inner margin; the logo scales to touch
+ * the margin — square nearly fills, wide spans width, tall runs height —
+ * NEVER CROPPED." `fitLogo` is that rule, property-tested; this draws what it
+ * returns.
+ *
+ * THE NATURAL SIZE IS MEASURED HERE rather than passed in. It used to be a
+ * prop — `logoNaturalSize`, threaded through LivePreview and ReviewStep — and
+ * no caller ever supplied one, so the branch that drew the mark could not be
+ * reached and every header printed an empty square. Measuring where the
+ * drawing happens leaves nothing to forget.
+ *
+ * The holder is drawn BEFORE the image resolves, and before a logo exists at
+ * all, so the header does not jump when one is added.
+ */
 function LogoHolder({
   size,
-  natural,
+  url,
 }: {
   size: PageModel['branding']['logoSize']
-  natural?: { width: number; height: number } | undefined
+  url?: string | undefined
 }) {
   const holderSide = 96 * LOGO_SCALE[size]
   const holder = { width: holderSide, height: holderSide }
   const margin = holderSide * 0.06
+  const natural = useImageSize(url)
 
-  // §G: the holder is drawn even before a logo exists, so the header does not
-  // jump when one is added.
-  const fit =
-    natural === undefined ? null : fitLogo(natural, holder, margin)
+  const fit = natural === null ? null : fitLogo(natural, holder, margin)
 
   return (
     <div
@@ -59,14 +73,47 @@ function LogoHolder({
       style={{ width: holderSide, height: holderSide }}
       aria-hidden="true"
     >
-      {fit !== null && (
-        <div
-          className="absolute bg-navy/10"
+      {fit !== null && url !== undefined && (
+        <img
+          src={url}
+          alt=""
+          className="absolute"
           style={{ left: fit.left, top: fit.top, width: fit.width, height: fit.height }}
         />
       )}
     </div>
   )
+}
+
+/**
+ * A data URL's own pixel dimensions.
+ *
+ * `fitLogo` needs them and nothing else does. Null until the image decodes,
+ * and null again if it cannot be decoded — a logo that will not load leaves
+ * an empty holder rather than a broken-image glyph on a document somebody is
+ * about to send to a customer.
+ */
+function useImageSize(url: string | undefined): { width: number; height: number } | null {
+  const [size, setSize] = useState<{ width: number; height: number } | null>(null)
+
+  useEffect(() => {
+    setSize(null)
+    if (url === undefined || typeof Image === 'undefined') return undefined
+
+    let live = true
+    const image = new Image()
+    image.onload = () => {
+      if (live && image.naturalWidth > 0 && image.naturalHeight > 0) {
+        setSize({ width: image.naturalWidth, height: image.naturalHeight })
+      }
+    }
+    image.src = url
+    return () => {
+      live = false
+    }
+  }, [url])
+
+  return size
 }
 
 function Cell({ row, column, formatAmount, currency }: {
@@ -101,7 +148,6 @@ export function DocumentPage({
   formatAmount,
   currency,
   accent,
-  logoNaturalSize,
   continuedLabel,
 }: DocumentPageProps) {
   const ink = template.usesBrandAccent ? accent : template.ink
@@ -153,7 +199,10 @@ export function DocumentPage({
           ink={ink}
           logo={
             model.branding.showLogo ? (
-              <LogoHolder size={model.branding.logoSize} natural={logoNaturalSize} />
+              <LogoHolder
+                size={model.branding.logoSize}
+                url={model.branding.logoUrl}
+              />
             ) : null
           }
         />
@@ -246,6 +295,25 @@ export function DocumentPage({
                       </div>
                     ))}
                   </dl>
+                  {/*
+                    §I: "online methods under a DASHED DIVIDER labelled 'Other
+                    payment methods', cash listed separately".
+
+                    Built and never drawn, like the receipt's evidence before
+                    it: `otherMethods` has been on the composed box since it
+                    was written, nothing supplied one and nothing read one, so
+                    an owner could switch a method on in Settings and it
+                    printed nowhere. Turning something on and seeing no change
+                    on the document is the toggle that lies.
+                  */}
+                  {model.paymentBox.otherMethods.length > 0 && (
+                    <div className="mt-[6px] pt-[6px]" style={{ borderTop: `1px dashed ${ink}` }}>
+                      <p className="font-bold uppercase tracking-wide opacity-60">
+                        {model.paymentBox.otherMethodsLabel}
+                      </p>
+                      <p className="font-medium">{model.paymentBox.otherMethods.join(' · ')}</p>
+                    </div>
+                  )}
                 </div>
               )}
 

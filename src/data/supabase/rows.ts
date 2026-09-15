@@ -126,6 +126,7 @@ export function toCompany(row: Row): Company {
     bankFields: json(row['bank_fields'], {}),
     enabledPaymentMethods: json<string[]>(row['enabled_payment_methods'], []),
     ...omitNull({
+      address: text(row['address']),
       brandColour: text(row['brand_colour']),
       nameStyle: text(row['name_style']) as Company['nameStyle'],
       logoSize: text(row['logo_size']) as Company['logoSize'],
@@ -153,6 +154,7 @@ export function fromCompany(patch: Partial<Company>): Row {
       numbering_prefixes: patch.numberingPrefixes,
       bank_fields: patch.bankFields,
       enabled_payment_methods: patch.enabledPaymentMethods,
+      address: patch.address,
       brand_colour: patch.brandColour,
       name_style: patch.nameStyle,
       logo_size: patch.logoSize,

@@ -27,7 +27,6 @@ export interface ReviewStepProps {
   readonly onGoToStep: (step: number) => void
   readonly brandColour?: string
   readonly composeOptions: Omit<ComposeOptions, 'profile'>
-  readonly logoNaturalSize?: { width: number; height: number }
 }
 
 /** Rows that fit a page of the preview. Tuned per design in Phase 4 on device. */
@@ -41,7 +40,6 @@ export function ReviewStep({
   onGoToStep,
   brandColour,
   composeOptions,
-  logoNaturalSize,
 }: ReviewStepProps) {
   const { profile, strings } = useCompany()
 
@@ -66,7 +64,6 @@ export function ReviewStep({
             formatAmount={(minor, currency) => formatMoney(money(currency, minor))}
             currency={document.currency}
             accent={accent}
-            {...(logoNaturalSize === undefined ? {} : { logoNaturalSize })}
             continuedLabel={strings.common.next}
           />
         ))}

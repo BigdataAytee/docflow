@@ -34,7 +34,18 @@ import { fieldsFor } from '../domain/locale/bank-fields'
 
 export interface CompanyBranding {
   readonly name: string
+  /** The business address, where a template has somewhere to put one (§F). */
+  readonly address?: string
   readonly logoAssetId?: string
+  /**
+   * The bytes behind that id, resolved by `composeDocument` from
+   * `assetUrls` — the same way a signature gets its `imageUrl`.
+   *
+   * A caller never supplies this. The page names an asset; compose is what
+   * turns a name into something that can be drawn, so a logo cannot be shown
+   * that the repository did not hand over.
+   */
+  readonly logoUrl?: string
   readonly nameStyle: 'classic' | 'serif' | 'stacked' | 'ruled' | 'monogram'
   readonly logoSize: 'S' | 'M' | 'L'
   readonly showLogo: boolean
@@ -108,6 +119,8 @@ export interface PaymentBox {
   readonly heading: string
   readonly rows: readonly PaymentBoxRow[]
   readonly otherMethods: readonly string[]
+  /** §I: the label on the dashed divider above them. */
+  readonly otherMethodsLabel: string
   /** §I: "inline at ≤ ~60% width beside the signature, never a full-width band." */
   readonly maxWidthPercent: number
 }
@@ -268,10 +281,13 @@ export function composeDocument(
       })
     : null
 
+  const logoUrl =
+    branding.logoAssetId === undefined ? undefined : options.assetUrls?.[branding.logoAssetId]
+
   return {
     type: document.type,
     language: labels.language,
-    branding,
+    branding: { ...branding, ...(logoUrl === undefined ? {} : { logoUrl }) },
     // Frozen at issue, so a shared PDF never changes language later (§D.2).
     title: document.frozenLabels?.printedTitle ?? printedTitle(profile, document.type),
     reference: document.reference,
@@ -333,6 +349,7 @@ function buildPaymentBox(
     heading: terms.howToPay,
     rows,
     otherMethods: options.otherPaymentMethods ?? [],
+    otherMethodsLabel: terms.otherPaymentMethods,
     maxWidthPercent: 60,
   }
 }

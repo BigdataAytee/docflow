@@ -38,6 +38,16 @@ export interface Company {
   readonly localeRegion: string
   readonly localeLanguage: string
   readonly labelOverrides: Partial<Record<DocumentType, string>>
+  /**
+   * The business's own address, printed where a template has a place for one
+   * (§F's Sikky carries a boxed office address) and asked for by §R's setup,
+   * which requires the same fields and validation as Settings.
+   *
+   * OPTIONAL, and never becomes otherwise. Rule #1 is that there is no new
+   * required field, ever; an owner who skips it gets a document with a name
+   * and no address rather than a form that will not let them past.
+   */
+  readonly address?: string
   readonly currency: string
   readonly numberingPrefixes: Partial<Record<DocumentType, string>>
   readonly bankFields: Record<string, string>
@@ -380,7 +390,7 @@ export interface ShareEventRepository {
 }
 
 /**
- * A stored image — today a drawn signature, later a logo or a delivery photo
+ * A stored image — a drawn signature, an uploaded logo, a delivery photo
  * (§E's "asset id" columns).
  *
  * **Immutable once written.** There is no update and no delete, and that is
@@ -396,8 +406,8 @@ export interface ShareEventRepository {
 export interface AssetRecord {
   readonly id: string
   readonly companyId: string
-  /** What this image is. A delivery photo and a signature seal alike (§P). */
-  readonly kind: 'signature' | 'delivery_photo' | 'expense_photo'
+  /** What this image is. A logo, a delivery photo and a signature seal alike (§P). */
+  readonly kind: 'signature' | 'delivery_photo' | 'expense_photo' | 'logo'
   /** A `data:` URL. Never a remote one — §M: nothing needed to open a saved document touches a CDN. */
   readonly dataUrl: string
   readonly createdAt: string

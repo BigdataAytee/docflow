@@ -140,6 +140,21 @@ describe('Nothing is declared and then left unread (§E, §I, §D)', () => {
       scope?: string
     }[] = [
       { layer: '§E document', file: 'src/data/repositories/types.ts', interfaceName: 'DocumentRecord' },
+      /*
+       * Added after `logoAssetId` turned out to be the fifth instance of the
+       * species: on this shape in both schemas, read by Home's setup
+       * checklist and by the page composer, and writable by nothing — so the
+       * checklist carried a step that could never be ticked and every
+       * document printed an empty white square.
+       *
+       * AND THIS SWEEP WOULD NOT HAVE CAUGHT IT. Measured, not assumed:
+       * deleting the write that fixes it leaves the scan green, because
+       * `logoAssetId: text(row['logo_asset_id'])` in the Supabase mapper
+       * reads as a write. That is the reachability limit the header names,
+       * and it is worth having the shape scanned anyway — the fields that
+       * nothing maps are still covered.
+       */
+      { layer: '§E company', file: 'src/data/repositories/types.ts', interfaceName: 'Company' },
       { layer: '§E line', file: 'src/domain/documents/types.ts', interfaceName: 'LineItem' },
       // SCOPED: a draft is edited by the builder's own steps, and names like
       // `unit` and `dispatchDate` belong to other shapes elsewhere.
@@ -160,6 +175,29 @@ describe('Nothing is declared and then left unread (§E, §I, §D)', () => {
         scope: 'src/pdf/',
       },
       { layer: 'page model', file: 'src/pdf/compose.ts', interfaceName: 'PageModel' },
+      /*
+       * THE NESTED SHAPES, added because the sweep walked PageModel's own
+       * properties and stopped there — so `paymentBox` counted as read the
+       * moment the page read its heading, and `otherMethods` inside it was
+       * neither supplied by any caller nor drawn by any page. §I asks for
+       * 'online methods under a dashed divider'; an owner could switch a
+       * method on in Settings and it printed nowhere.
+       *
+       * Scoped to the pdf layer: `rows` and `heading` are names half the
+       * repository uses.
+       */
+      {
+        layer: 'payment box',
+        file: 'src/pdf/compose.ts',
+        interfaceName: 'PaymentBox',
+        scope: 'src/pdf/',
+      },
+      {
+        layer: 'receipt evidence',
+        file: 'src/pdf/compose.ts',
+        interfaceName: 'ReceiptEvidence',
+        scope: 'src/pdf/',
+      },
       { layer: 'public view', file: 'supabase/functions/public-link/rules.ts', interfaceName: 'PublicView' },
     ]
 
@@ -184,7 +222,6 @@ describe('Nothing is declared and then left unread (§E, §I, §D)', () => {
     }
 
     const found = halfWired(declarations, files)
-    // eslint-disable-next-line no-console
     console.log(reportOf(found, declarations.length))
     expect(found, reportOf(found, declarations.length)).toEqual([])
   })

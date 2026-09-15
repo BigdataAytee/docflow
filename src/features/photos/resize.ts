@@ -92,3 +92,46 @@ export async function shrinkImage(file: Blob, maxEdge: number = MAX_EDGE): Promi
 
   return canvas.toDataURL('image/jpeg', QUALITY)
 }
+
+/* ------------------------------------------------------------------ logos */
+
+/**
+ * A chosen logo as a stored-ready data URL (§F, §G).
+ *
+ * Two differences from a photograph, both of which matter on a document:
+ *
+ *  · **PNG, not JPEG.** A logo is usually transparent, and JPEG has no alpha
+ *    — a mark re-encoded as JPEG arrives with a hard white rectangle behind
+ *    it, which is invisible on the printed page's white holder and obvious on
+ *    Home's blue header. Transparency is part of the artwork.
+ *  · **512px, not 1600.** The largest a logo is ever drawn is the printed
+ *    holder at `LOGO_SCALE.L`, well under 200px. A delivery photo is evidence
+ *    and wants detail; a logo is a mark and wants to be small, because it is
+ *    carried by every document and every sync.
+ */
+export const LOGO_MAX_EDGE = 512
+
+export async function shrinkLogo(file: Blob): Promise<string> {
+  if (!isImage(file.type)) throw new PhotoError('not_an_image')
+
+  let bitmap: ImageBitmap
+  try {
+    bitmap = await createImageBitmap(file, { imageOrientation: 'from-image' })
+  } catch {
+    throw new PhotoError('unreadable')
+  }
+
+  const size = targetSize({ width: bitmap.width, height: bitmap.height }, LOGO_MAX_EDGE)
+  const canvas = document.createElement('canvas')
+  canvas.width = size.width
+  canvas.height = size.height
+  const context = canvas.getContext('2d')
+  if (context === null) {
+    bitmap.close()
+    throw new PhotoError('no_canvas')
+  }
+  context.drawImage(bitmap, 0, 0, size.width, size.height)
+  bitmap.close()
+
+  return canvas.toDataURL('image/png')
+}

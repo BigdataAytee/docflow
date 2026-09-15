@@ -79,6 +79,8 @@ export interface SharedTerminology {
   readonly paymentReceived: string
   readonly datePaid: string
   readonly paidBy: string
+  /** §I: online methods print under a dashed divider carrying this label. */
+  readonly otherPaymentMethods: string
 }
 
 export interface TerminologyTable {

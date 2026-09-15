@@ -30,7 +30,7 @@
  * it — it saves a b-tree per table on a phone with 3GB of RAM.
  */
 
-export const SCHEMA_VERSION = 5
+export const SCHEMA_VERSION = 6
 
 /**
  * Applied in order, inside one transaction, by `migrate`.
@@ -338,6 +338,16 @@ export const MIGRATIONS: readonly string[] = [
   -- missing it, so the date a recipient cares about most could not be set.
   -- Dispatch is when it leaves; this is when it should land.
   alter table documents add column expected_date text;
+  `,
+
+  `
+  -- The business's own address (§F, §R).
+  --
+  -- Not a new required field (Rule #1): a null address prints nothing and
+  -- blocks nothing. It exists because the Company panel has asked for one
+  -- since the prototype and had nowhere to put it, and because §R sets it up
+  -- with "the same fields and validation as Settings".
+  alter table companies add column address text;
   `,
 ]
 

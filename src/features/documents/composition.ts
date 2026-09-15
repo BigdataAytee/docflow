@@ -23,6 +23,7 @@ import { percentToPpm, ppmToPercent } from '../../domain/money/money'
 import type { ComposableDocument, ComposeOptions } from '../../pdf/compose'
 import { DEFAULT_TEMPLATE, type TemplateId, templateById } from '../../pdf/templates'
 import type { DocumentDraft } from './builder'
+import { methodName } from '../payments/methods'
 import { revisionNumberOf } from './revision'
 
 /** What this document replaces: §G's numbered Rev chain, or a reissue. */
@@ -190,6 +191,7 @@ export function composeOptionsOf(input: ComposeOptionsInput): Omit<ComposeOption
       nameStyle: company?.nameStyle ?? 'classic',
       logoSize: company?.logoSize ?? 'M',
       showLogo: design.showLogo,
+      ...(company?.address === undefined ? {} : { address: company.address }),
       ...(company?.logoAssetId === undefined ? {} : { logoAssetId: company.logoAssetId }),
     },
     columnLabels: {
@@ -201,6 +203,19 @@ export function composeOptionsOf(input: ComposeOptionsInput): Omit<ComposeOption
       unit: strings.items.unit,
     },
     ...(company?.bankFields === undefined ? {} : { bankValues: company.bankFields }),
+    /*
+     * §I: "online methods under a dashed divider labelled 'Other payment
+     * methods', cash listed separately" — so everything switched on EXCEPT
+     * bank transfer, whose account rows are the box itself.
+     *
+     * `otherPaymentMethods` had been on `ComposeOptions` from the start with
+     * no caller supplying one, which meant switching a method on in Settings
+     * changed nothing a customer ever saw. §J is explicit that "everything
+     * switched on prints in invoice payment instructions".
+     */
+    otherPaymentMethods: (company?.enabledPaymentMethods ?? [])
+      .filter((id) => id !== 'bank_transfer')
+      .map((id) => methodName(strings, id)),
     // The page prints the mark it names, so it needs the bytes behind the id.
     // Every signature the company owns, not just this one's: the preview
     // follows the pad without a reload (§I).

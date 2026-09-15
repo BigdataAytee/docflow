@@ -18,13 +18,29 @@ export interface PaymentMethod {
   readonly name: string
 }
 
-/** Bank transfer is the one §J ships; cards and wallets arrive with §U. */
-export const ALWAYS_AVAILABLE = ['bank_transfer'] as const
+/**
+ * The methods that need nothing installed to be true (§J, §N).
+ *
+ * §J lists five — "Bank transfer, Paystack, Flutterwave, cash on delivery,
+ * PayPal". Two of them are arrangements between the owner and their customer
+ * and work the moment they are switched on; the other three are provider
+ * integrations that arrive with §U in Phase 5, and a row offering one before
+ * the provider exists would be a promise the build cannot keep.
+ *
+ * CASH ON DELIVERY had been left out with them, and it does not belong with
+ * them: it needs no provider, §I prints it ("cash listed separately"), and it
+ * is how a large share of Nigerian deliveries are actually paid for. It was
+ * absent because the list was written around bank fields, not because
+ * anything was missing to support it.
+ */
+export const ALWAYS_AVAILABLE = ['bank_transfer', 'cash_on_delivery'] as const
 
 export function methodName(strings: UiStrings, id: string): string {
   switch (id) {
     case 'bank_transfer':
       return strings.settings.bankTransfer
+    case 'cash_on_delivery':
+      return strings.settings.cashOnDelivery
     default:
       return id
   }

@@ -27,7 +27,7 @@ deployed. `supabase db push`; deploy `public-link`, `payment-webhook` and
 `store-notifications` with `--no-verify-jwt`; rotate both Supabase keys;
 open a Paystack test-mode merchant account. Phase 5's gate is **0 of 3**
 until then, and Phase 7's §V checklist cannot be green while Phase 5's is
-not. All nineteen migrations and all three edge functions are written and unrun.
+not. All twenty migrations and all three edge functions are written and unrun.
 **Ten separate items now queue behind that one act** — they are listed as S1–S10
 under "The server remainder" below, so the cost of not deploying is countable
 rather than scattered.
@@ -2383,7 +2383,7 @@ Supabase project — and each is **written and unrun**, never half-built.
 
 | # | What | Which gate | What it is waiting for |
 | --- | --- | --- | --- |
-| S1 | The deploy itself: nineteen migrations, three edge functions with `--no-verify-jwt`, both keys rotated | §Q Phase 5 | Somebody to run it. Every row below is downstream of this one |
+| S1 | The deploy itself: twenty migrations, three edge functions with `--no-verify-jwt`, both keys rotated | §Q Phase 5 | Somebody to run it. Every row below is downstream of this one |
 | S2 | Paystack test-mode credentials, and the webhook path end to end | §Q Phase 5 | A merchant account nobody here can open |
 | S3 | `npm run pentest` against a live instance | §Q Phase 7 | Written, proved adversarial against a permissive fake, never run for real. The secrets half does run today, in CI |
 | S4 | The two-company denial suite against the HOSTED project | §Q Phase 1 *(self-imposed)* | It passes against local Postgres in CI; the clause asks about the host |

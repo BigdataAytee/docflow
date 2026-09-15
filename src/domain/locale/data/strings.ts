@@ -322,9 +322,23 @@ export interface UiStrings {
     readonly methodsOn: string
     readonly noMethodsYet: string
     readonly bankTransfer: string
+    readonly paymentMethods: string
+    readonly cashOnDelivery: string
+    readonly cashOnDeliveryHint: string
+    readonly methodOn: string
+    readonly methodAdd: string
+    readonly noAccountYet: string
     readonly currencyChanged: string
     readonly company: string
     readonly businessName: string
+    readonly businessAddress: string
+    /** The logo holder and the two ways to fill it (§F, §Q). */
+    readonly noLogoYet: string
+    readonly uploadLogo: string
+    readonly replaceLogo: string
+    readonly createLogo: string
+    readonly createLogoLater: string
+    readonly logoUnreadable: string
     readonly nameStyle: string
     readonly logoSize: string
     readonly numberingPrefixes: string
@@ -1161,9 +1175,22 @@ const EN: UiStrings = {
     methodsOn: '{count} switched on',
     noMethodsYet: 'None switched on yet',
     bankTransfer: 'Bank transfer',
+    paymentMethods: 'Payment methods',
+    cashOnDelivery: 'Cash on delivery',
+    cashOnDeliveryHint: 'Pay the driver',
+    methodOn: 'On',
+    methodAdd: 'Add',
+    noAccountYet: 'No account details yet',
     currencyChanged: 'Your currency changed, so these fields changed too.',
     company: 'Company & logo',
     businessName: 'Business name',
+    businessAddress: 'Address',
+    noLogoYet: 'No logo yet',
+    uploadLogo: 'Upload',
+    replaceLogo: 'Replace',
+    createLogo: 'Create with AI',
+    createLogoLater: 'Making a logo on the phone arrives with the offline model. Upload one meanwhile.',
+    logoUnreadable: 'That file could not be read as an image.',
     nameStyle: 'Name style',
     logoSize: 'Logo size',
     numberingPrefixes: 'Numbering prefixes',

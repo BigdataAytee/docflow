@@ -238,8 +238,15 @@ export function DocumentHeader({ model, template, ink, logo }: DocumentHeaderPro
     case 'condensed':
       return (
         <>
-          <header className="flex items-baseline justify-between gap-[16px]">
-            <Name model={model} className="text-[16px]" />
+          {/*
+            The logo belongs on this one too. It had been left off, which made
+            §F's own hint line — "your logo prints at the top of every design"
+            — false for one of the sixteen, and the reference's compact header
+            opens with the holder exactly like the rest.
+          */}
+          <header className="flex items-center justify-between gap-[16px]">
+            {logo}
+            <Name model={model} className="min-w-0 flex-1 text-[16px]" />
             <Title model={model} ink={ink} className="text-[20px]" />
           </header>
           <Rule ink={ink} opacity={0.75} height={2} />
@@ -365,12 +372,48 @@ export function DocumentHeader({ model, template, ink, logo }: DocumentHeaderPro
       )
 
     /*
-     * Sidebar, Sikky and Aria put their mark on the whole page rather than on
+     * Sidebar, Wave and Aria put their mark on the whole page rather than on
      * the header, so the mark is drawn by `PageChrome` and the identity here
      * is the quiet arrangement that sits beside it.
      */
-    case 'sidebar':
+    /*
+     * Sikky — §F: "coloured spine, BOXED OFFICE ADDRESS, centred underlined
+     * title, Georgia". The spine and the face are drawn by `PageChrome`; the
+     * box is here, because it belongs to the identity block.
+     *
+     * The box is drawn only when there is an address to put in it. An empty
+     * bordered rectangle at the top of a customer's invoice reads as a
+     * mistake, and Rule #1 means the address may always be missing.
+     */
     case 'spine':
+      return (
+        <>
+          <header className="flex items-start gap-[16px]">
+            {logo}
+            <div className="min-w-0 flex-1">
+              <Name model={model} />
+              {model.branding.address !== undefined && (
+                <p
+                  className="mt-[6px] inline-block break-words px-[8px] py-[4px] text-[11px] leading-snug opacity-80"
+                  style={{ border: `1px solid ${ink}` }}
+                >
+                  {model.branding.address}
+                </p>
+              )}
+            </div>
+          </header>
+          <h2
+            className="mt-[12px] break-words text-center text-[24px] font-black uppercase tracking-tight"
+            style={{ color: ink, textDecoration: 'underline', textUnderlineOffset: '4px' }}
+          >
+            {model.title}
+          </h2>
+          <Ref model={model} className="text-center" />
+          <Rule ink={ink} />
+        </>
+      )
+
+    case 'sidebar':
     case 'frame':
     case 'wave':
       return (

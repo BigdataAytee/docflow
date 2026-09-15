@@ -129,8 +129,12 @@ describe('One definition drives the form and the printed box (§J)', () => {
         onToggleMethod={onToggleMethod}
       />,
     )
-    expect(screen.getByRole('switch', { name: 'Paystack' })).toHaveAttribute('aria-checked', 'false')
-    await user.click(screen.getByRole('switch', { name: 'Paystack' }))
+    // The chip says what tapping it will do: Add when off, On when on (§J).
+    const paystack = screen.getByRole('button', { name: 'Paystack' })
+    expect(paystack).toHaveAttribute('aria-pressed', 'false')
+    expect(paystack).toHaveTextContent('Add')
+    expect(screen.getByRole('button', { name: 'Bank transfer' })).toHaveTextContent('On')
+    await user.click(paystack)
     expect(onToggleMethod).toHaveBeenCalledWith('paystack', true)
   })
 })
@@ -176,7 +180,10 @@ describe('The user’s numbering prefix always wins (§D)', () => {
         nameStyle="classic"
         logoSize="M"
         prefixes={{}}
+        businessAddress=""
         onBusinessName={vi.fn()}
+        onBusinessAddress={vi.fn()}
+        onLogo={vi.fn()}
         onNameStyle={vi.fn()}
         onLogoSize={vi.fn()}
         onPrefix={vi.fn()}
@@ -194,7 +201,10 @@ describe('The user’s numbering prefix always wins (§D)', () => {
         nameStyle="classic"
         logoSize="M"
         prefixes={{ waybill: 'DR' }}
+        businessAddress=""
         onBusinessName={vi.fn()}
+        onBusinessAddress={vi.fn()}
+        onLogo={vi.fn()}
         onNameStyle={vi.fn()}
         onLogoSize={vi.fn()}
         onPrefix={vi.fn()}
@@ -210,7 +220,10 @@ describe('The user’s numbering prefix always wins (§D)', () => {
         nameStyle="classic"
         logoSize="M"
         prefixes={{}}
+        businessAddress=""
         onBusinessName={vi.fn()}
+        onBusinessAddress={vi.fn()}
+        onLogo={vi.fn()}
         onNameStyle={vi.fn()}
         onLogoSize={vi.fn()}
         onPrefix={vi.fn()}
@@ -225,7 +238,10 @@ describe('The user’s numbering prefix always wins (§D)', () => {
         nameStyle="monogram"
         logoSize="M"
         prefixes={{}}
+        businessAddress=""
         onBusinessName={vi.fn()}
+        onBusinessAddress={vi.fn()}
+        onLogo={vi.fn()}
         onNameStyle={vi.fn()}
         onLogoSize={vi.fn()}
         onPrefix={vi.fn()}

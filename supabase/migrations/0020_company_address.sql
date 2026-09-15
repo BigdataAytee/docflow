@@ -1,0 +1,11 @@
+-- The business's own address (§F, §R).
+--
+-- §E's companies row did not list it and the prototype's Company panel has
+-- carried the field since the beginning with nowhere to send it — an input
+-- whose value no handler ever read. It is real here: §F's Sikky template
+-- prints "a boxed office address", and §R's business setup collects logo,
+-- address, payment details and signature with "the same fields and validation
+-- as Settings".
+--
+-- Nullable, and it stays nullable. Rule #1: no new required field, ever.
+alter table public.companies add column if not exists address text;

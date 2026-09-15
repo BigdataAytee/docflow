@@ -11,8 +11,36 @@
  */
 
 import { useCompany } from '../../app/context'
-import { format } from '../../domain/locale/data/strings'
+import { type UiStrings, format } from '../../domain/locale/data/strings'
 import { fieldsFor, validateBankDetails } from '../../domain/locale/bank-fields'
+import type { BankField } from '../../domain/locale/data/currencies'
+import { Icon, type IconName } from '../../ui'
+
+/** Fixed to the method, like every other icon pairing in the app (§F). */
+const METHOD_ICONS: Readonly<Record<string, IconName>> = {
+  bank_transfer: 'building',
+  cash_on_delivery: 'cash',
+}
+
+/**
+ * What a row says under the method's name.
+ *
+ * Bank transfer shows the live account (§J); anything else shows the one line
+ * that explains what it means for the customer. Never a status word — the
+ * chip on the right already says whether it is on, and a row that says "On"
+ * twice has spent its second line saying nothing.
+ */
+function sublabelFor(
+  id: string,
+  fields: readonly BankField[],
+  values: Readonly<Record<string, string>>,
+  strings: UiStrings,
+): string {
+  if (id !== 'bank_transfer') return strings.settings.cashOnDeliveryHint
+
+  const filled = fields.map((field) => values[field.kind]?.trim()).filter((value) => value)
+  return filled.length === 0 ? strings.settings.noAccountYet : filled.join(' · ')
+}
 
 export interface PaymentMethodState {
   readonly id: string
@@ -90,21 +118,46 @@ export function PaymentSettings({
         })}
       </section>
 
+      <p className="px-1 text-xs font-bold uppercase tracking-wide opacity-60">
+        {strings.settings.paymentMethods}
+      </p>
       <ul className="glass-solid divide-y divide-ink/10 overflow-hidden rounded-2xl">
         {methods.map((method) => (
           <li key={method.id} className="flex items-center gap-3 p-3">
-            <span className="flex-1 text-sm font-medium">{method.name}</span>
+            <span className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-brand/10 text-brand">
+              <Icon name={METHOD_ICONS[method.id] ?? 'credit-card'} className="size-[18px]" />
+            </span>
+            <span className="min-w-0 flex-1">
+              <span className="block text-sm font-medium">{method.name}</span>
+              {/*
+                §J: "the bank-transfer row shows the live account details".
+                The row says what a customer will actually be told to pay
+                into, so a stale or empty account is visible here rather than
+                discovered on a sent invoice.
+              */}
+              <span className="block truncate text-xs opacity-65">
+                {sublabelFor(method.id, fields, bankValues, strings)}
+              </span>
+            </span>
+            {/*
+              A toggle BUTTON rather than a switch, because the reference's
+              two states say different things: "On" is a state you can end,
+              "Add" is an invitation. `aria-pressed` keeps it a toggle for a
+              screen reader, and the accessible name stays the method rather
+              than the word on the chip.
+            */}
             <button
               type="button"
-              role="switch"
-              aria-checked={method.enabled}
+              aria-pressed={method.enabled}
               aria-label={method.name}
               onClick={() => onToggleMethod(method.id, !method.enabled)}
-              className={`flex h-6 w-11 shrink-0 items-center rounded-full p-0.5 ${
-                method.enabled ? 'justify-end bg-status-good' : 'justify-start bg-ink/25'
+              className={`min-h-tap shrink-0 rounded-full px-3 text-xs font-semibold ${
+                method.enabled
+                  ? 'bg-status-good-tint text-status-good'
+                  : 'glass-pill text-brand'
               }`}
             >
-              <span className="h-5 w-5 rounded-full bg-surface" />
+              {method.enabled ? strings.settings.methodOn : strings.settings.methodAdd}
             </button>
           </li>
         ))}
