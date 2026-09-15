@@ -75,6 +75,7 @@ export interface DocumentRow {
   readonly line_items: readonly {
     description: string
     quantityMilli: number
+    unit?: string
     unitPriceMinor?: number
   }[]
   readonly issue_date: string | null
@@ -100,6 +101,15 @@ export interface PublicView {
   readonly lines: readonly {
     description: string
     quantityMilli: number
+    /**
+     * What the quantity is counted IN — "cartons", "bags" (§E, §V).
+     *
+     * The recipient is being asked to confirm what arrived, and "10" alone is
+     * not something anyone can confirm: 10 bags and 10 pallets are different
+     * deliveries. It was absent here, so the one page whose whole purpose is
+     * agreeing on quantities could not show the units they were in.
+     */
+    unit?: string
     unitPriceMinor?: number
   }[]
   /** Absent on a delivery: §V, a delivery document shows no money anywhere. */
@@ -142,6 +152,7 @@ export function viewFor(document: DocumentRow): PublicView | Refusal {
     lines: document.line_items.map((line) => ({
       description: line.description,
       quantityMilli: line.quantityMilli,
+      ...(line.unit === undefined ? {} : { unit: line.unit }),
       ...(carriesMoney && line.unitPriceMinor !== undefined
         ? { unitPriceMinor: line.unitPriceMinor }
         : {}),

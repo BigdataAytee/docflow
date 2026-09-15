@@ -28,10 +28,8 @@ import { useParams } from 'react-router-dom'
 
 import { type LinkTransport, type PublicView, type Refusal, createLinkTransport } from './client'
 import { SignaturePad } from '../features/signature/SignaturePad'
+import { PublicDocumentPage } from './PublicDocumentPage'
 import { type UiStrings, format, stringsFor } from '../domain/locale/data/strings'
-import { formatMoney } from '../features/customers/formatMoney'
-import { money } from '../domain/money/money'
-import { QUANTITY_SCALE } from '../domain/documents/types'
 
 export interface PublicLinkPageProps {
   readonly kind: 'accept' | 'sign'
@@ -136,49 +134,24 @@ export function PublicLinkPage({ kind, transport }: PublicLinkPageProps) {
         </section>
       )}
 
+      {/*
+        THE DOCUMENT FIRST, then what to do about it.
+
+        This was a heading, a card and a row per line — a long scroll in which
+        the thing being signed for never actually appeared as a document. The
+        page is the page now, at A4 proportions, and the controls sit under
+        it. What the page can show is bounded by what the link carries: see
+        `PublicDocumentPage`.
+      */}
       {view !== null && (
         <>
-          <header className="text-center">
+          <header className="mb-3 text-center">
             <p className="text-xs uppercase tracking-wide opacity-60">
               {format(s.from, { business: view.businessName })}
             </p>
-            <h1 className="mt-1 text-lg font-bold">{view.title}</h1>
-            <p className="text-sm tabular-nums opacity-70">{view.reference}</p>
           </header>
 
-          <section className="glass mt-4 rounded-2xl p-4">
-            <p className="text-xs uppercase tracking-wide opacity-60">{view.partyLabel}</p>
-            <p className="text-sm font-semibold">{view.customerName}</p>
-            {view.deliveryAddress !== null && (
-              <p className="mt-1 text-xs opacity-70">{view.deliveryAddress}</p>
-            )}
-            {view.issueDate !== null && (
-              <p className="mt-1 text-xs tabular-nums opacity-60">{view.issueDate}</p>
-            )}
-
-            <ul className="mt-3 space-y-2 border-t border-edge/5 pt-3">
-              {view.lines.map((line, i) => (
-                <li key={i} className="flex justify-between gap-3 text-sm">
-                  <span className="min-w-0 flex-1">{line.description}</span>
-                  <span className="shrink-0 tabular-nums opacity-70">
-                    {line.quantityMilli / QUANTITY_SCALE}
-                  </span>
-                  {/* No money column at all on a delivery (§V). */}
-                  {line.unitPriceMinor !== undefined && view.total !== undefined && (
-                    <span className="shrink-0 tabular-nums">
-                      {formatMoney(money(view.total.currency, line.unitPriceMinor))}
-                    </span>
-                  )}
-                </li>
-              ))}
-            </ul>
-
-            {view.total !== undefined && (
-              <p className="mt-3 border-t border-edge/10 pt-3 text-end text-base font-bold tabular-nums">
-                {formatMoney(money(view.total.currency, view.total.minor))}
-              </p>
-            )}
-          </section>
+          <PublicDocumentPage view={view} strings={strings} />
         </>
       )}
 

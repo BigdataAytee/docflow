@@ -455,6 +455,24 @@ Needing a device or a later phase, and therefore NOT claimed:
       `npm run test:rls` must pass before any of it merges. It runs in CI on
       every branch against a `postgres:16` service, so the check exists; it
       simply has to be watched.
+- [ ] **Decide what the anonymous link endpoint returns.**
+
+      The recipient's page now draws the document at A4 proportions from the
+      link's own payload — content and geometry, not the chosen template.
+      Making it identical to the printed page means adding the template,
+      the brand colour, the logo asset and the frozen signature captions to
+      `PublicView`.
+
+      That is worth doing, and it is a SECURITY decision rather than a layout
+      one: extending `PublicView` means the unauthenticated endpoint starts
+      serving brand assets to anyone holding a link. Probably acceptable —
+      the same branding is on the PDF that recipient already received — but
+      it widens what an anonymous endpoint returns and should be decided
+      deliberately here, at deploy time, not inherited from a preference
+      about how a page looks.
+
+      Until then the page shows what the link carries and says so in its own
+      comment, rather than pretending it is the template.
 - [ ] **Deploy the public-link function**, which is the last thing standing
       between the accept and sign pages and a working link:
 
