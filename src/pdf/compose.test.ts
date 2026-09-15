@@ -50,7 +50,9 @@ const doc = (type: DocumentType, over: Partial<ComposableDocument> = {}): Compos
 describe('A delivery document carries no money, under any design (§I, §V)', () => {
   const delivery = doc('waybill', {
     reference: 'WAY-0001',
-    lineItems: [{ id: 'l1', description: 'Cement', quantityMilli: quantity(3), taxable: false }],
+    lineItems: [
+      { id: 'l1', description: 'Cement', quantityMilli: quantity(3), unit: 'cartons', taxable: false },
+    ],
   })
 
   it('has no totals block at all', () => {
@@ -69,6 +71,20 @@ describe('A delivery document carries no money, under any design (§I, §V)', ()
     expect(keys).toContain('unit')
     expect(keys).not.toContain('amount')
     expect(page.rows.every((r) => r.amount === undefined)).toBe(true)
+  })
+
+  /**
+   * The column existed and NOTHING EVER FILLED IT.
+   *
+   * The case above asserted the header — `unit` among the column keys — and
+   * the rows were built without one, so every printed waybill carried a UNIT
+   * column with empty cells under it. Asserting a header is not asserting a
+   * table: "10" against "10 cartons" is the difference between a document
+   * somebody can sign for and a number.
+   */
+  it('puts the unit in the row, not only in the header', () => {
+    const page = composeDocument(delivery, options())
+    expect(page.rows[0]?.unit).toBe('cartons')
   })
 
   it('replaces the payment box with the localised received-by rule (§I)', () => {

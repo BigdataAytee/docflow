@@ -1374,6 +1374,88 @@ describe('The Repeat toggle keeps its answer (§L4)', () => {
   })
 })
 
+describe('A saved delivery asserts no payment relationship (§V, §G)', () => {
+  /**
+   * Why this is not cosmetic.
+   *
+   * A paid-so-far bar or a chase section on a delivery is the app claiming a
+   * payment relationship the document does not have. A driver handing that
+   * over at a gate is handing over something that reads as a demand — and the
+   * recipient has no way to know the app added it.
+   *
+   * Seeded so that money COULD appear if anything were confused about the
+   * type: a priced, taxable line, a discount on the record, and company VAT
+   * and withholding rates set. If the absence survives all of that, it is a
+   * property of the type rather than of an empty fixture.
+   */
+  const deliveredWithEveryRate = (state: MemoryState) => {
+    state.customers.push(customer())
+    const company = state.companies[0]
+    if (company !== undefined) {
+      state.companies[0] = { ...company, name: 'Sola Ventures', taxRatePpm: 75_000, whtRatePpm: 50_000 }
+    }
+    state.documents.push({
+      id: 'doc_way',
+      companyId: DEV_COMPANY_ID,
+      type: 'waybill',
+      status: 'in_transit',
+      customerId: 'cus_1',
+      currency: 'NGN',
+      lineItems: [
+        {
+          id: 'l1',
+          description: 'Cement 50kg',
+          quantityMilli: quantity(10),
+          unitPriceMinor: 25_000_00,
+          unit: 'cartons',
+          taxable: true,
+        },
+      ],
+      discountRatePpm: 75_000,
+      issueDate: '2026-09-05',
+      issuedReference: 'WB-0007',
+      frozenLabels: {
+        printedTitle: 'WAYBILL',
+        partyLabel: 'Deliver to',
+        signatureCaption: 'Dispatched by',
+        language: 'en',
+      },
+      totalMinor: 0,
+    })
+  }
+
+  it('shows no paid bar, payment list, chase or repeat', async () => {
+    renderAt('/doc/doc_way', deliveredWithEveryRate)
+    // Twice by design: the header names the record, the page prints it.
+    await screen.findAllByText('WB-0007')
+
+    expect(screen.queryByRole('progressbar')).not.toBeInTheDocument()
+    expect(screen.queryByText(/paid of/i)).not.toBeInTheDocument()
+    expect(screen.queryByText('Payments')).not.toBeInTheDocument()
+    expect(screen.queryByText(/chase/i)).not.toBeInTheDocument()
+    expect(screen.queryByText('Repeat')).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /record a payment/i })).not.toBeInTheDocument()
+  })
+
+  it('prints no currency, subtotal or payable anywhere on the screen', async () => {
+    renderAt('/doc/doc_way', deliveredWithEveryRate)
+    // Twice by design: the header names the record, the page prints it.
+    await screen.findAllByText('WB-0007')
+
+    expect(screen.queryByText(/₦/)).not.toBeInTheDocument()
+    for (const word of [/subtotal/i, /payable/i, /VAT/, /withholding/i]) {
+      expect(screen.queryByText(word)).not.toBeInTheDocument()
+    }
+  })
+
+  /** And the goods are still legible — absence of money, not of content. */
+  it('still shows the goods, the quantity and the unit', async () => {
+    renderAt('/doc/doc_way', deliveredWithEveryRate)
+    expect(await screen.findAllByText(/Cement 50kg/)).not.toHaveLength(0)
+    expect(screen.getAllByText(/cartons/).length).toBeGreaterThan(0)
+  })
+})
+
 describe('Cancelling and crediting (Rule #5, §G)', () => {
   const invoiced = (state: MemoryState, totalMinor = 145_000_00) => {
     state.customers.push(customer())

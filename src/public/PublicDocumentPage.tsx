@@ -29,9 +29,24 @@ import type { UiStrings } from '../domain/locale/data/strings'
 import { QUANTITY_SCALE } from '../domain/documents/types'
 import { formatMoney } from '../features/customers/formatMoney'
 import { money } from '../domain/money/money'
+import { DEFAULT_TEMPLATE, templateById } from '../pdf/templates'
 
 /** 210 × 297, the one ratio every document in this app prints at (§I). */
 const A4_ASPECT = 210 / 297
+
+/**
+ * Paper and ink from the TEMPLATE DEFINITION, not written here.
+ *
+ * A literal white and a literal navy are what the dark-mode sweep exists to
+ * refuse, and rightly: every surface in this app goes through a token. A
+ * printed page is the exception that proves it — paper is white in either
+ * theme — but the exception already has a home, in `templates.ts`, where the
+ * app's own preview reads the same two values.
+ *
+ * The link carries no template, so this is the default one. That is the same
+ * limitation the file header names, said once more in the place it bites.
+ */
+const PAPER = templateById(DEFAULT_TEMPLATE)
 
 export function PublicDocumentPage({
   view,
@@ -45,13 +60,14 @@ export function PublicDocumentPage({
   return (
     <article
       aria-hidden="true"
-      className="a4-sheet mx-auto w-full overflow-hidden bg-white"
+      className="a4-sheet mx-auto w-full overflow-hidden"
       style={{
         aspectRatio: String(A4_ASPECT),
         // The page sets its own scale, so a phone's text setting cannot make
         // it clip — the same rule as the app's own preview (§V).
         fontSize: '16px',
-        color: '#1d2452',
+        backgroundColor: PAPER.paper,
+        color: PAPER.ink,
       }}
     >
       <div className="flex h-full flex-col p-[6%]">
@@ -83,14 +99,14 @@ export function PublicDocumentPage({
         <table className="mt-[16px] w-full border-collapse text-[12px]">
           <thead>
             <tr className="border-b border-current">
-              <th className="pb-[4px] text-left font-bold uppercase tracking-wide">
+              <th className="pb-[4px] text-start font-bold uppercase tracking-wide">
                 {carriesMoney ? strings.items.description : strings.items.goods}
               </th>
-              <th className="pb-[4px] text-right font-bold uppercase tracking-wide">
+              <th className="pb-[4px] text-end font-bold uppercase tracking-wide">
                 {strings.items.quantity}
               </th>
               {/* UNIT on a delivery, AMOUNT where there is money — never both. */}
-              <th className="pb-[4px] text-right font-bold uppercase tracking-wide">
+              <th className="pb-[4px] text-end font-bold uppercase tracking-wide">
                 {carriesMoney ? strings.totals.payable : strings.items.unit}
               </th>
             </tr>
@@ -99,10 +115,10 @@ export function PublicDocumentPage({
             {view.lines.map((line, index) => (
               <tr key={`${line.description}-${index}`} className="border-b border-current/10">
                 <td className="py-[6px]">{line.description}</td>
-                <td className="py-[6px] text-right tabular-nums">
+                <td className="py-[6px] text-end tabular-nums">
                   {line.quantityMilli / QUANTITY_SCALE}
                 </td>
-                <td className="py-[6px] text-right tabular-nums">
+                <td className="py-[6px] text-end tabular-nums">
                   {carriesMoney && line.unitPriceMinor !== undefined && view.total !== undefined
                     ? formatMoney(money(view.total.currency, line.unitPriceMinor))
                     : (line.unit ?? '')}

@@ -154,6 +154,72 @@ describe('Every design is a design (§H)', () => {
    * under ANY arrangement. A header that drew a total would be the one place
    * the rule could be broken by decoration.
    */
+  /**
+   * The control for the case below it.
+   *
+   * An absence test is worth exactly as much as the inputs' ability to
+   * produce the thing being denied. So the SAME line, discount, VAT and
+   * withholding go onto an invoice first: if money does not appear here, the
+   * delivery proving it has none proves nothing at all.
+   */
+  it('prints money for those very inputs on an invoice', () => {
+    const priced = composeDocument(
+      {
+        type: 'invoice',
+        status: 'issued',
+        currency: 'NGN',
+        reference: 'INV-0042',
+        issueDate: '2026-09-15',
+        lineItems: [
+          {
+            id: 'l1',
+            description: 'Cartons',
+            quantityMilli: quantity(3),
+            unitPriceMinor: 25_000_00,
+            taxable: true,
+          },
+        ],
+        discountRate: 75_000,
+        taxRate: 75_000,
+        whtRate: 50_000,
+        party: { name: 'Adeola Hardware' },
+        frozenLabels: freezeLabels(PROFILE, 'invoice'),
+      },
+      {
+        profile: PROFILE,
+        branding: { name: 'Sola Ventures', nameStyle: 'classic', logoSize: 'M', showLogo: true },
+        columnLabels: {
+          description: strings.items.description,
+          quantity: strings.items.quantity,
+          amount: strings.totals.payable,
+          unit: strings.items.unit,
+        },
+        assetUrls: {},
+        replacesLabel: () => '',
+      },
+    )
+
+    // Every rate reached the model, so the delivery case below is a real test.
+    expect(priced.totals).not.toBeNull()
+    expect(priced.totals?.discount?.minor).toBeGreaterThan(0)
+    expect(priced.totals?.tax.minor).toBeGreaterThan(0)
+    expect(priced.totals?.wht.minor).toBeGreaterThan(0)
+    expect(priced.totals?.payable.minor).toBeGreaterThan(0)
+  })
+
+  /**
+   * ABSENCE, PROVED AGAINST EVERY RATE THAT COULD PRODUCE A NUMBER.
+   *
+   * A delivery with no rates set proves very little — nothing had a total to
+   * print. So this one arrives carrying a priced line, a discount, VAT and
+   * withholding: every input the money layer needs to produce a subtotal, a
+   * tax row and a payable. If §V's "a delivery carries no money" is a
+   * property of the TYPE rather than of the inputs, all sixteen designs still
+   * show nothing.
+   *
+   * Per design rather than once, because "no money anywhere" drifts back one
+   * component at a time, and a header is exactly where it would.
+   */
   it('puts no money on a delivery document, whichever design is chosen', () => {
     const waybill = composeDocument(
       {
@@ -162,10 +228,21 @@ describe('Every design is a design (§H)', () => {
         currency: 'NGN',
         reference: 'WB-0007',
         issueDate: '2026-09-15',
-        // No price and not taxable: a delivery carries no money at all (§V).
+        // A PRICED, TAXABLE line, on purpose: if a delivery ever printed
+        // money, this is the row that would make it do so.
         lineItems: [
-          { id: 'l1', description: 'Cartons', quantityMilli: quantity(3), taxable: false },
+          {
+            id: 'l1',
+            description: 'Cartons',
+            quantityMilli: quantity(3),
+            unitPriceMinor: 25_000_00,
+            taxable: true,
+          },
         ],
+        // And every rate that turns a line into a total.
+        discountRate: 75_000,
+        taxRate: 75_000,
+        whtRate: 50_000,
         party: { name: 'Adeola Hardware' },
         frozenLabels: freezeLabels(PROFILE, 'waybill'),
       },
@@ -196,7 +273,13 @@ describe('Every design is a design (§H)', () => {
           accent="#2b3fd6"
         />,
       )
+      const page = within(view.container.querySelector('article')!)
+      // No currency anywhere, under any design.
       expect(screen.queryByText(/₦/), `${template.name} printed money on a delivery`).toBeNull()
+      // And none of the rows a total is built from.
+      for (const word of [/subtotal/i, /payable/i, /VAT/, /withholding/i, /discount/i]) {
+        expect(page.queryByText(word), `${template.name} printed ${word} on a delivery`).toBeNull()
+      }
       view.unmount()
     }
   })

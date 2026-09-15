@@ -206,6 +206,17 @@ export function composeDocument(
   const rows: TableRow[] = document.lineItems.map((line) => ({
     description: line.description,
     quantity: String(line.quantityMilli / QUANTITY_SCALE),
+    /*
+     * The UNIT, which the column above has asked for since it was written
+     * and no row ever supplied.
+     *
+     * §I swaps amount for unit on a delivery, and the header did exactly
+     * that — so every printed waybill has had a UNIT column with nothing
+     * under it. "10" against "10 cartons" is the difference between a
+     * document somebody can sign for and a number, and this is the column
+     * that was meant to say which.
+     */
+    ...(line.unit === undefined ? {} : { unit: line.unit }),
     ...(showsMoney ? { amount: lineTotal(document.currency, line) } : {}),
   }))
 
