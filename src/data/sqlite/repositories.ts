@@ -26,6 +26,8 @@ import {
   type PaymentRepository,
   type Repositories,
   type SavedItem,
+  type RecurrenceRecord,
+  type RecurrenceRepository,
   type ShareEventRepository,
   RepositoryError,
 } from '../repositories/types'
@@ -58,7 +60,9 @@ import {
   toItem,
   toLinkToken,
   toPayment,
+  toRecurrence,
   toShareEvent,
+  recurrenceColumns,
   upsert,
 } from './rows'
 
@@ -401,6 +405,61 @@ export function createSqliteRepositories(
     },
   }
 
+  /* ---------------------------------------------------------- recurrences */
+
+  const recurrenceBack = readBackBy('recurrences', toRecurrence, 'source_document_id')
+
+  const recurrences: RecurrenceRepository = {
+    async list(companyId) {
+      const rows = await driver.all(
+        'select * from recurrences where company_id = ? order by source_document_id asc',
+        [companyId],
+      )
+      return rows.map(toRecurrence)
+    },
+    async start(recurrence, ctx) {
+      return run<RecurrenceRecord>(
+        ctx,
+        {
+          entity: 'recurrence',
+          recordId: (record) => record.sourceDocumentId,
+          kind: 'create',
+          write: async (tx) => {
+            // An upsert, because switching Repeat on for a document that
+            // already has a schedule is the SAME schedule — and re-starting a
+            // stopped one has to clear `endedOn`, or the row would say it
+            // ended while the toggle said it was on.
+            const { sql, params } = upsert('recurrences', recurrenceColumns(recurrence), 'source_document_id')
+            await tx.run(sql, params)
+            return recurrence
+          },
+        },
+        (tx) => recurrenceBack(tx, recurrence.sourceDocumentId),
+      )
+    },
+    async stop(companyId, sourceDocumentId, on, ctx) {
+      return run<RecurrenceRecord>(
+        ctx,
+        {
+          entity: 'recurrence',
+          recordId: (record) => record.sourceDocumentId,
+          kind: 'update',
+          write: async (tx) => {
+            const current = await recurrenceBack(tx, sourceDocumentId)
+            if (current === null || current.companyId !== companyId) {
+              throw new RepositoryError(`No repeat on document ${sourceDocumentId}.`)
+            }
+            const stopped: RecurrenceRecord = { ...current, endedOn: on }
+            const { sql, params } = upsert('recurrences', recurrenceColumns(stopped), 'source_document_id')
+            await tx.run(sql, params)
+            return stopped
+          },
+        },
+        (tx) => recurrenceBack(tx, sourceDocumentId),
+      )
+    },
+  }
+
   /* --------------------------------------------------------------- shares */
 
   const shareBack = readBackBy('share_events', toShareEvent)
@@ -609,6 +668,7 @@ export function createSqliteRepositories(
     companies,
     customers,
     documents: createDocumentRepository(driver, deps),
+    recurrences,
     payments,
     items,
     expenses,

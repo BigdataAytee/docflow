@@ -1228,6 +1228,66 @@ describe('Converting a document (§G, §M)', () => {
   })
 })
 
+describe('The Repeat toggle keeps its answer (§L4)', () => {
+  const repeatable = (state: MemoryState) => {
+    state.customers.push(customer())
+    state.documents.push({
+      id: 'doc_inv',
+      companyId: DEV_COMPANY_ID,
+      type: 'invoice',
+      status: 'issued',
+      customerId: 'cus_1',
+      currency: 'NGN',
+      lineItems: [],
+      issueDate: '2026-09-01',
+      issuedReference: 'INV-0042',
+      frozenLabels: {
+        printedTitle: 'INVOICE',
+        partyLabel: 'Bill to',
+        signatureCaption: 'Authorised signature',
+        language: 'en',
+      },
+      totalMinor: 100_000_00,
+    })
+  }
+
+  /**
+   * The bug this whole feature exists to close.
+   *
+   * The toggle wrote to a `useState` on the document screen and to nothing
+   * else, so switching Repeat on and leaving the screen switched it back off
+   * — a control that showed a state it was not keeping. Leaving and returning
+   * is therefore the assertion; checking the toggle immediately after the tap
+   * would have passed against the broken version too.
+   */
+  it('is still on after leaving the document and coming back', async () => {
+    renderAt('/doc/doc_inv', repeatable)
+    const user = userEvent.setup()
+
+    await user.click(await screen.findByRole('button', { name: 'Not repeating' }))
+    expect(await screen.findByRole('button', { name: 'Repeating' })).toBeInTheDocument()
+
+    // Away, and back — the screen unmounts and its state goes with it. Search
+    // rather than the tiles, because this is about the schedule surviving the
+    // round trip, not about how you get there.
+    await user.click(screen.getByRole('link', { name: 'Home' }))
+    await user.type(await screen.findByRole('searchbox', { name: /Search/i }), 'INV-0042')
+    await user.click(await screen.findByText('INV-0042'))
+
+    expect(await screen.findByRole('button', { name: 'Repeating' })).toBeInTheDocument()
+  })
+
+  it('is off again after Repeat is switched off, and stays off', async () => {
+    renderAt('/doc/doc_inv', repeatable)
+    const user = userEvent.setup()
+
+    await user.click(await screen.findByRole('button', { name: 'Not repeating' }))
+    await user.click(await screen.findByRole('button', { name: 'Repeating' }))
+
+    expect(await screen.findByRole('button', { name: 'Not repeating' })).toBeInTheDocument()
+  })
+})
+
 describe('Cancelling and crediting (Rule #5, §G)', () => {
   const invoiced = (state: MemoryState, totalMinor = 145_000_00) => {
     state.customers.push(customer())

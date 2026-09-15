@@ -192,6 +192,69 @@ describe('Issued documents are immutable (Rule #5, §C)', () => {
   })
 })
 
+describe('A repeat is a schedule, not a screen (§L4)', () => {
+  const schedule = (over: Partial<Parameters<typeof repos.recurrences.start>[0]> = {}) => ({
+    companyId: ACME,
+    sourceDocumentId: 'doc_inv',
+    dayOfMonth: 10,
+    startedOn: '2026-01-10',
+    ...over,
+  })
+
+  it('stores a schedule and reads it back', async () => {
+    await repos.recurrences.start(schedule(), ctx('r1'))
+    expect(await repos.recurrences.list(ACME)).toEqual([schedule()])
+  })
+
+  /**
+   * One schedule per document. Switching Repeat on for a document that
+   * already repeats is the SAME schedule — two rows would mean two catch-ups
+   * for one invoice, which is a duplicate with extra steps.
+   */
+  it('replaces rather than adds when Repeat is switched on twice', async () => {
+    await repos.recurrences.start(schedule(), ctx('r2a'))
+    await repos.recurrences.start(schedule({ dayOfMonth: 25 }), ctx('r2b'))
+
+    const stored = await repos.recurrences.list(ACME)
+    expect(stored).toHaveLength(1)
+    expect(stored[0]?.dayOfMonth).toBe(25)
+  })
+
+  it('ends a schedule rather than deleting it, so the drafts keep their reason', async () => {
+    await repos.recurrences.start(schedule(), ctx('r3'))
+    const stopped = await repos.recurrences.stop(ACME, 'doc_inv', '2026-04-01', ctx('r3-stop'))
+
+    expect(stopped.endedOn).toBe('2026-04-01')
+    expect(await repos.recurrences.list(ACME)).toHaveLength(1)
+  })
+
+  /**
+   * A stopped schedule that is switched back on must lose its end date, or
+   * `catchUp` reads it as still ended and silently produces nothing — a
+   * toggle that says ON while doing nothing, which is the bug this whole
+   * feature exists to fix.
+   */
+  it('clears the end date when a stopped repeat is started again', async () => {
+    await repos.recurrences.start(schedule(), ctx('r4'))
+    await repos.recurrences.stop(ACME, 'doc_inv', '2026-04-01', ctx('r4-stop'))
+    await repos.recurrences.start(schedule({ startedOn: '2026-05-10' }), ctx('r4-again'))
+
+    expect((await repos.recurrences.list(ACME))[0]?.endedOn).toBeUndefined()
+  })
+
+  it('refuses to stop a repeat that another company owns', async () => {
+    await repos.recurrences.start(schedule(), ctx('r5'))
+    await expect(
+      repos.recurrences.stop(RIVAL, 'doc_inv', '2026-04-01', ctx('r5-stop')),
+    ).rejects.toThrow(RepositoryError)
+  })
+
+  it('never lists the schedules of another company', async () => {
+    await repos.recurrences.start(schedule(), ctx('r6'))
+    expect(await repos.recurrences.list(RIVAL)).toEqual([])
+  })
+})
+
 describe('A document remembers how it looks (§H, Rule #3)', () => {
   /**
    * The four design choices used to live in the builder's component state,

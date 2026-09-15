@@ -72,7 +72,6 @@ import {
   convertedFrom,
   conversionsOf,
 } from '../../features/documents/convert'
-import { type Recurrence, startRepeating, stopRepeating } from '../../features/recurring/schedule'
 import { paidSoFar, prefillAmount, recordPayment } from '../../features/payments/record'
 import {
   receiptForPayment,
@@ -101,11 +100,20 @@ export function DocumentScreen({ today = todayIso() }: { today?: string }) {
   const { id } = useParams<{ id: string }>()
   const { profile, strings } = useCompany()
   const review = useReview()
-  const { company, customers, documents, payments, shares, creditNotes, assets, loading, actions } =
-    useAppData()
+  const {
+    company,
+    customers,
+    documents,
+    payments,
+    shares,
+    creditNotes,
+    assets,
+    recurrences,
+    loading,
+    actions,
+  } = useAppData()
   const navigate = useNavigate()
 
-  const [recurrence, setRecurrence] = useState<Recurrence | null>(null)
   const [tone, setTone] = useState<'softer' | 'firmer' | null>(null)
   const [sharing, setSharing] = useState(false)
   const [converting, setConverting] = useState(false)
@@ -125,6 +133,10 @@ export function DocumentScreen({ today = todayIso() }: { today?: string }) {
   const port = useMemo(() => createWebSharePort(), [])
 
   const record = documents.find((document) => document.id === id)
+  // Derived, never stored on the screen — the same rule as every other piece
+  // of truth here (§C: derived states are computed at read time).
+  const recurrence =
+    recurrences.find((row) => row.sourceDocumentId === id) ?? null
   const customer = customers.find((row) => row.id === record?.customerId)
 
   const mine = useMemo(
@@ -1116,15 +1128,23 @@ export function DocumentScreen({ today = todayIso() }: { today?: string }) {
               )}
             </BuilderCard>
 
+            {/*
+              The schedule comes from the STORE, not from this screen.
+
+              It lived in a `useState` here, written nowhere: switching Repeat
+              on and navigating away switched it off again, and §L4's whole
+              catch-up engine — idempotent keys, bounded missed periods —
+              was reachable from nothing.
+            */}
             <RepeatToggle
               recurrence={recurrence}
               today={today}
-              onStart={() =>
-                setRecurrence(startRepeating(record.id, record.issueDate ?? today))
-              }
-              onStop={() =>
-                setRecurrence((current) => (current === null ? null : stopRepeating(current, today)))
-              }
+              onStart={() => {
+                void actions.startRepeat(record.id, record.issueDate ?? today)
+              }}
+              onStop={() => {
+                void actions.stopRepeat(record.id, today)
+              }}
             />
           </>
         )}

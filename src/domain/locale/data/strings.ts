@@ -368,6 +368,14 @@ export interface UiStrings {
     readonly receivedThisMonth: string
     readonly nothingOutstanding: string
     readonly nothingReceived: string
+    /**
+     * §L4: a long gap's missed months, said out loud.
+     *
+     * The catch-up creates the recent ones and bounds itself; the older ones
+     * are named rather than dropped, so an owner is told rather than counting
+     * backwards and finding eleven invoices absent.
+     */
+    readonly repeatsSkipped: string
     readonly needsAttention: string
     readonly overdueBy: string
     readonly inTransit: string
@@ -1098,6 +1106,8 @@ const EN: UiStrings = {
     receivedThisMonth: 'Received this month',
     nothingOutstanding: 'Nothing owed',
     nothingReceived: 'Nothing yet',
+    repeatsSkipped:
+      'Repeats: {count} older months were not created because the gap was too long ({months}). Everything since is here.',
     needsAttention: 'Needs attention',
     overdueBy: 'Overdue · {amount}',
     inTransit: 'On its way',

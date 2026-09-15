@@ -35,12 +35,16 @@ import type {
   Expense,
   MutationContext,
   Payment,
+  RecurrenceRecord,
+  Repositories,
   SavedItem,
   ShareEvent,
   CreditNoteRecord,
   AssetRecord,
 } from '../data/repositories'
 import { DOCUMENT_TYPES, type DocumentType } from '../domain/documents/types'
+import { type CaughtUp, runCatchUp } from '../features/recurring/run'
+import { startRepeating } from '../features/recurring/schedule'
 import { type LinkKind, linkFor, mintToken } from '../features/links/token'
 import type { FrozenLabels } from '../domain/documents/types'
 
@@ -54,6 +58,15 @@ export interface AppData {
   readonly shares: readonly ShareEvent[]
   readonly creditNotes: readonly CreditNoteRecord[]
   readonly assets: readonly AssetRecord[]
+  /** Monthly repeats (§L4), so a screen can show a toggle that is really on. */
+  readonly recurrences: readonly RecurrenceRecord[]
+  /**
+   * Months the launch catch-up owed but did not create, because the gap was
+   * longer than the bound. Never silently zero when months were dropped — §L4
+   * asks for it out loud, and an owner should not discover eleven missing
+   * invoices by counting.
+   */
+  readonly caughtUpSkipped: readonly string[]
   /** True until the first load settles. Screens show skeletons, never spinners. */
   readonly loading: boolean
   readonly error: string | null
@@ -113,6 +126,16 @@ export interface AppActions {
   reversePayment(paymentId: string): Promise<void>
   rememberItem(item: Omit<SavedItem, 'id' | 'companyId' | 'timesUsed'>): Promise<void>
   addExpense(expense: Omit<Expense, 'id' | 'companyId'>): Promise<void>
+  /**
+   * §L4's Repeat toggle, switched on from the document being looked at.
+   *
+   * The schedule is stored, not held on the screen — which is the whole point
+   * of it existing: the toggle used to write to component state and nothing
+   * else, so switching Repeat on and walking away switched it back off.
+   */
+  startRepeat(documentId: string, issueDate: string): Promise<void>
+  /** Switching Repeat off. Past drafts stand; nothing new is produced. */
+  stopRepeat(documentId: string, on: string): Promise<void>
   /** §M: a handoff is recorded; delivery never is. */
   recordShare(event: Omit<ShareEvent, 'id' | 'companyId'>): Promise<void>
   /**
@@ -151,8 +174,35 @@ const EMPTY: AppData = {
   shares: [],
   creditNotes: [],
   assets: [],
+  recurrences: [],
+  caughtUpSkipped: [],
   loading: true,
   error: null,
+}
+
+/**
+ * The launch catch-up, which must never be the reason the app will not open.
+ *
+ * §L4 wants the missed months created on next launch. Rule #6 is stronger:
+ * documents are never hostage, and a schedule that cannot be read — a source
+ * deleted mid-write, a half-applied migration — must not hold the records
+ * somebody already has. So a failure here is swallowed into "nothing was
+ * caught up" and the app loads; the schedule is still on the device and the
+ * next launch tries again.
+ *
+ * Deliberately NOT swallowed anywhere else: a catch-up that half-wrote still
+ * threw, and `runCatchUp` is safe to re-run precisely because it asks the
+ * documents what it already did.
+ */
+async function catchUpSafely(
+  repositories: Repositories,
+  companyId: string,
+): Promise<CaughtUp> {
+  try {
+    return await runCatchUp({ repositories, companyId })
+  } catch {
+    return { created: [], skipped: [] }
+  }
 }
 
 export function AppDataProvider({ children }: { children: ReactNode }) {
@@ -166,6 +216,12 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
   const load = useCallback(async () => {
     const mine = (generation.current += 1)
     try {
+      // The catch-up runs BEFORE the read, not after: §L4's drafts are part
+      // of what the app has, so the first render should already show them
+      // rather than the list growing a moment later. A failure here must not
+      // stop the app loading — see below.
+      const caughtUp = await catchUpSafely(repositories, companyId)
+
       const [company, customers, payments, items, expenses, shares, creditNotes, assets, ...byType] =
         await Promise.all([
           repositories.companies.get(companyId),
@@ -178,6 +234,7 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
           repositories.assets.list(companyId),
           ...DOCUMENT_TYPES.map((type) => repositories.documents.listByType(companyId, type)),
         ])
+      const recurrences = await repositories.recurrences.list(companyId)
       if (generation.current !== mine) return
       setData({
         company,
@@ -189,6 +246,8 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
         shares,
         creditNotes,
         assets,
+        recurrences,
+        caughtUpSkipped: caughtUp.skipped,
         loading: false,
         error: null,
       })
@@ -299,6 +358,26 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
       },
       async addExpense(expense) {
         await repositories.expenses.create({ ...expense, companyId }, key('expense.create'))
+        await load()
+      },
+      async startRepeat(documentId, issueDate) {
+        // The domain decides what a schedule IS — the day of month, the start
+        // day, and `localDay` on the way in so an instant cannot date it in
+        // UTC. This only stores what it returns.
+        const schedule = startRepeating(documentId, issueDate)
+        await repositories.recurrences.start(
+          { ...schedule, companyId },
+          key(`recurrence.start:${documentId}`),
+        )
+        await load()
+      },
+      async stopRepeat(documentId, on) {
+        await repositories.recurrences.stop(
+          companyId,
+          documentId,
+          on,
+          key(`recurrence.stop:${documentId}`),
+        )
         await load()
       },
       async recordShare(event) {

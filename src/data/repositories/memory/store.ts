@@ -25,6 +25,8 @@ import {
   type MutationContext,
   type Payment,
   type PaymentRepository,
+  type RecurrenceRecord,
+  type RecurrenceRepository,
   type Repositories,
   type CreditNoteRecord,
   type CreditNoteRepository,
@@ -72,6 +74,7 @@ export interface MemoryState {
   credits: CreditNoteRecord[]
   assets: AssetRecord[]
   linkTokens: LinkTokenRecord[]
+  recurrences: RecurrenceRecord[]
   /** Absent until somebody asks to leave. */
   deletion?: DeletionRequest
 }
@@ -87,6 +90,7 @@ export const emptyState = (): MemoryState => ({
   credits: [],
   assets: [],
   linkTokens: [],
+  recurrences: [],
 })
 
 export function createMemoryRepositories(state: MemoryState = emptyState()): Repositories {
@@ -357,6 +361,41 @@ export function createMemoryRepositories(state: MemoryState = emptyState()): Rep
     },
   }
 
+  const recurrences: RecurrenceRepository = {
+    async list(companyId) {
+      return scoped(state.recurrences, companyId)
+    },
+    async start(recurrence, ctx) {
+      return log.once(ctx, () => {
+        // One schedule per document: switching Repeat on for one that already
+        // has a schedule REPLACES it rather than adding a second, and
+        // re-starting a stopped one drops `endedOn` — a row that still said it
+        // ended while the toggle said it was on would be read by `catchUp` as
+        // ended, and quietly produce nothing.
+        const index = state.recurrences.findIndex(
+          (row) => row.sourceDocumentId === recurrence.sourceDocumentId,
+        )
+        if (index === -1) state.recurrences.push(recurrence)
+        else state.recurrences[index] = recurrence
+        return recurrence
+      })
+    },
+    async stop(companyId, sourceDocumentId, on, ctx) {
+      return log.once(ctx, () => {
+        const index = state.recurrences.findIndex(
+          (row) => row.sourceDocumentId === sourceDocumentId && row.companyId === companyId,
+        )
+        const current = state.recurrences[index]
+        if (current === undefined) {
+          throw new RepositoryError(`No repeat on document ${sourceDocumentId}.`)
+        }
+        const stopped: RecurrenceRecord = { ...current, endedOn: on }
+        state.recurrences[index] = stopped
+        return stopped
+      })
+    },
+  }
+
   const shares: ShareEventRepository = {
     async list(companyId) {
       return scoped(state.shares, companyId)
@@ -469,6 +508,7 @@ export function createMemoryRepositories(state: MemoryState = emptyState()): Rep
     companies,
     customers,
     documents,
+    recurrences,
     payments,
     items,
     expenses,

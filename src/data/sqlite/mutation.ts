@@ -127,8 +127,9 @@ export async function mutate<T>(
 
 /** `select * from <table> where id = ?`, mapped — the common read-back. */
 export const readBackBy =
-  <T>(table: string, map: (row: SqlRow) => T) =>
+  <T>(table: string, map: (row: SqlRow) => T, key = 'id') =>
   async (tx: SqlTransaction, id: string): Promise<T | null> => {
-    const row = await tx.get(`select * from ${table} where id = ?`, [id])
+    // `table` and `key` are module constants at every call site, never input.
+    const row = await tx.get(`select * from ${table} where ${key} = ?`, [id])
     return row === null ? null : map(row)
   }

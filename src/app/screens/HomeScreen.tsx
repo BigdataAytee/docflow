@@ -44,7 +44,8 @@ import { todayIso } from '../../domain/dates/calendar'
 
 export function HomeScreen({ now = new Date() }: { now?: Date }) {
   const { strings } = useCompany()
-  const { company, customers, documents, payments, creditNotes, loading } = useAppData()
+  const { company, customers, documents, payments, creditNotes, caughtUpSkipped, loading } =
+    useAppData()
   const navigate = useNavigate()
 
   const [query, setQuery] = useState('')
@@ -194,6 +195,7 @@ export function HomeScreen({ now = new Date() }: { now?: Date }) {
       onVoice={() => setCaptureNotice(strings.common.offlineToolsNeeded)}
       onScan={() => setCaptureNotice(strings.common.offlineToolsNeeded)}
       {...(captureNotice === undefined ? {} : { captureNotice })}
+      {...(caughtUpSkipped.length === 0 ? {} : { repeatsSkipped: caughtUpSkipped })}
       {...(shouldShowChecklist(setupState)
         ? {
             setup: {

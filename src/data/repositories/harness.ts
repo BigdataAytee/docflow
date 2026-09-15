@@ -25,6 +25,8 @@
  */
 
 import type { Repositories } from './types'
+import { memoryHarness } from './memory/harness'
+import { sqliteHarness } from '../sqlite/harness'
 
 /** The tables the contract suite needs to count. Named, not free-form SQL. */
 export type CountableTable = 'payments' | 'linkTokens' | 'assets' | 'documents'
@@ -47,3 +49,17 @@ export interface RepositoryHarness {
     readonly dispose: () => Promise<void>
   }>
 }
+
+/**
+ * Both implementations, from the one import the architecture rule allows.
+ *
+ * A suite that wants to run against SQLite as well as memory has to name
+ * SQLite — and `src/data/sqlite/*` is closed to everything outside the data
+ * layer, rightly: that pattern is what stops a screen reaching for a driver.
+ * A contract suite is not an exception to that rule so much as the reason the
+ * seam exists, so the seam exports the pair rather than every caller being
+ * given a licence to bypass it.
+ *
+ * This file is inside `src/data`, where naming an implementation is its job.
+ */
+export const HARNESSES: readonly RepositoryHarness[] = [memoryHarness, sqliteHarness]

@@ -20,6 +20,13 @@ export type Entity =
    * `asset` would have put a handoff in the asset stream on the server.
    */
   | 'share_event'
+  /**
+   * A monthly repeat (§L4). The SCHEDULE, not the drafts it produces — those
+   * are ordinary documents and sync as documents. Without its own entity a
+   * schedule would have to travel as one, and a server reading the document
+   * stream would find a row with no line items and no total.
+   */
+  | 'recurrence'
 
 export type OperationKind = 'create' | 'update' | 'delete'
 

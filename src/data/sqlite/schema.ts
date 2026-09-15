@@ -30,7 +30,7 @@
  * it — it saves a b-tree per table on a phone with 3GB of RAM.
  */
 
-export const SCHEMA_VERSION = 3
+export const SCHEMA_VERSION = 4
 
 /**
  * Applied in order, inside one transaction, by `migrate`.
@@ -296,6 +296,38 @@ export const MIGRATIONS: readonly string[] = [
   alter table documents add column show_logo integer;
   alter table documents add column brand_colour text;
   alter table documents add column discount_rate_ppm integer;
+  `,
+
+  `
+  -- Monthly repeats (§L4).
+  --
+  -- Keyed by the document it repeats, because one invoice has one schedule:
+  -- switching Repeat on twice is the same schedule, not two, and a primary
+  -- key says so at the level where it cannot be got wrong.
+  --
+  -- An end DATE rather than a delete: the drafts already made stand, and a
+  -- row that vanishes makes "why did this stop?" unanswerable.
+  create table if not exists recurrences (
+    source_document_id text primary key,
+    company_id text not null,
+    day_of_month integer not null,
+    started_on text not null,
+    ended_on text
+  ) strict, without rowid;
+
+  create index if not exists recurrences_company_idx on recurrences (company_id);
+
+  -- Which period a draft was created FOR. This is what makes catch-up
+  -- idempotent across a crash: the keys already on the device are read off
+  -- the documents themselves, so a run that died halfway finds its own
+  -- earlier drafts and creates only what is still missing.
+  alter table documents add column recurrence_key text;
+
+  -- One draft per period, enforced by the database rather than by the code
+  -- that remembers to check. A partial index, so the column stays null on
+  -- every document somebody made themselves without colliding with itself.
+  create unique index if not exists documents_recurrence_key_idx
+    on documents (recurrence_key) where recurrence_key is not null;
   `,
 ]
 

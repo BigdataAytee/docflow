@@ -164,10 +164,45 @@ export interface DocumentRecord {
   readonly brandColour?: string
   /** Parts per million, like every other rate (§V). Never a float. */
   readonly discountRatePpm?: number
+  /**
+   * The recurrence period this draft was created FOR (§L4, §M).
+   *
+   * `rec:<sourceDocumentId>:<YYYY-MM>` — derived, never generated, so the
+   * same month asked for twice yields the same key. This column is what makes
+   * catch-up idempotent across a crash: the set of keys already on the device
+   * is read straight off the documents, so a run that died halfway through
+   * finds its own earlier drafts and creates only what is still missing.
+   *
+   * Absent on every document a person made themselves, which is most of them.
+   */
+  readonly recurrenceKey?: string
   /** Both null until issue, then frozen forever (§M). */
   readonly issuedReference: string | null
   readonly frozenLabels: FrozenLabels | null
   readonly totalMinor: number
+}
+
+/**
+ * A monthly repeat, as stored (§L4).
+ *
+ * The SCHEDULE, not the drafts it produces — those are ordinary documents
+ * carrying a `recurrenceKey`. Switching Repeat off sets `endedOn` rather than
+ * deleting the row: the drafts already made stand, and a deleted schedule
+ * would make "why did this stop?" unanswerable.
+ *
+ * One per source document, which is why `sourceDocumentId` is the identity
+ * here and there is no separate id. Turning Repeat on twice for the same
+ * invoice is the same schedule, not two.
+ */
+export interface RecurrenceRecord {
+  readonly companyId: string
+  readonly sourceDocumentId: string
+  /** 1-31. A month too short for it uses its own last day. */
+  readonly dayOfMonth: number
+  /** The calendar day Repeat was switched on — never an instant. */
+  readonly startedOn: string
+  /** Set when Repeat is switched off; periods after it are never created. */
+  readonly endedOn?: string
 }
 
 export interface SavedItem {
@@ -204,6 +239,23 @@ export interface MutationContext {
 export interface CompanyRepository {
   get(companyId: string): Promise<Company | null>
   update(companyId: string, patch: Partial<Company>, ctx: MutationContext): Promise<Company>
+}
+
+/**
+ * Schedules (§L4). No `create`/`update` pair: switching Repeat on for a
+ * document that already has a schedule is the same schedule, so one `start`
+ * covers both and re-starting a stopped one clears `endedOn`.
+ */
+export interface RecurrenceRepository {
+  list(companyId: string): Promise<RecurrenceRecord[]>
+  start(recurrence: RecurrenceRecord, ctx: MutationContext): Promise<RecurrenceRecord>
+  /** Switching Repeat off. Past drafts stand; nothing new is produced. */
+  stop(
+    companyId: string,
+    sourceDocumentId: string,
+    on: string,
+    ctx: MutationContext,
+  ): Promise<RecurrenceRecord>
 }
 
 export interface CustomerRepository {
@@ -400,6 +452,7 @@ export interface Repositories {
   readonly companies: CompanyRepository
   readonly customers: CustomerRepository
   readonly documents: DocumentRepository
+  readonly recurrences: RecurrenceRepository
   readonly payments: PaymentRepository
   readonly items: ItemRepository
   readonly expenses: ExpenseRepository

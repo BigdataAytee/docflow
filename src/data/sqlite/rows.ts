@@ -41,6 +41,7 @@ import type {
   Money,
   Payment,
   PaymentAllocation,
+  RecurrenceRecord,
   SavedItem,
   ShareEvent,
 } from '../repositories/types'
@@ -203,6 +204,25 @@ export const toDocument = (row: SqlRow): DocumentRecord => ({
   ...optional('showLogo', bool(row['show_logo'])),
   ...optional('brandColour', text(row['brand_colour'])),
   ...optional('discountRatePpm', int(row['discount_rate_ppm'])),
+  ...optional('recurrenceKey', text(row['recurrence_key'])),
+})
+
+/* ------------------------------------------------------------ recurrences */
+
+export const toRecurrence = (row: SqlRow): RecurrenceRecord => ({
+  companyId: requiredText(row['company_id'], 'company_id'),
+  sourceDocumentId: requiredText(row['source_document_id'], 'source_document_id'),
+  dayOfMonth: requiredInt(row['day_of_month'], 'day_of_month'),
+  startedOn: requiredText(row['started_on'], 'started_on'),
+  ...optional('endedOn', text(row['ended_on'])),
+})
+
+export const recurrenceColumns = (recurrence: RecurrenceRecord): Record<string, SqlValue> => ({
+  source_document_id: recurrence.sourceDocumentId,
+  company_id: recurrence.companyId,
+  day_of_month: recurrence.dayOfMonth,
+  started_on: recurrence.startedOn,
+  ended_on: recurrence.endedOn ?? null,
 })
 
 export const documentColumns = (document: DocumentRecord): Record<string, SqlValue> => ({
@@ -235,6 +255,7 @@ export const documentColumns = (document: DocumentRecord): Record<string, SqlVal
   show_logo: fromBool(document.showLogo),
   brand_colour: document.brandColour ?? null,
   discount_rate_ppm: document.discountRatePpm ?? null,
+  recurrence_key: document.recurrenceKey ?? null,
   issued_reference: document.issuedReference,
   frozen_labels: document.frozenLabels === null ? null : json(document.frozenLabels),
   total_minor: document.totalMinor,

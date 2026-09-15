@@ -157,16 +157,27 @@ export function stopRepeating(recurrence: Recurrence, on: string): Recurrence {
   return { ...recurrence, endedOn: localDay(on) }
 }
 
-/** Switching Repeat on, from the document being looked at. */
-export function startRepeating(
-  sourceDocumentId: string,
-  issueDate: string,
-): Recurrence {
-  const month = issueDate.slice(0, 7)
+/**
+ * Switching Repeat on, from the document being looked at.
+ *
+ * `localDay` first, the same as its twin `stopRepeating` — and not for
+ * symmetry's sake. Slicing an INSTANT to ten characters reads it in UTC, so
+ * an owner west of Greenwich switching Repeat on at nine in the evening on
+ * the 31st would start a schedule dated the 1st of the next month: a day of
+ * month the following month may not have, and a start that has already
+ * consumed the period the source document was meant to cover.
+ *
+ * The keys themselves never touch a `Date` — `monthIndex` reads `YYYY-MM`
+ * straight off the string, so a period is a calendar month and nothing else.
+ * This is the only door an instant could come through.
+ */
+export function startRepeating(sourceDocumentId: string, issueDate: string): Recurrence {
+  const day = localDay(issueDate)
+  const month = day.slice(0, 7)
   if (!MONTH.test(month)) throw new RecurrenceError(`Not an ISO date: ${issueDate}`)
   return {
     sourceDocumentId,
-    dayOfMonth: Number(issueDate.slice(8, 10)),
-    startedOn: issueDate.slice(0, 10),
+    dayOfMonth: Number(day.slice(8, 10)),
+    startedOn: day,
   }
 }

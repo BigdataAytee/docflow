@@ -32,6 +32,7 @@ import {
   type CompanyRepository,
   type Customer,
   type CustomerRepository,
+  type RecurrenceRepository,
   type Repositories,
   RepositoryError,
 } from '../repositories'
@@ -147,12 +148,38 @@ export function createCustomerRepository(db: SupabaseClient): CustomerRepository
  * builds the in-memory store, and pointing the app at a project needs the
  * secrets and a deploy. None of this has spoken to PostgREST.
  */
+/**
+ * Monthly repeats (§L4) — DELIBERATELY NOT IMPLEMENTED HERE.
+ *
+ * `recurrences` has no table in `supabase/migrations`, and its RLS policy is
+ * not written, because it cannot be executed from where it would be written.
+ * `supabase/tests/rls.test.ts` asserts enable + force on every table and would
+ * catch an ABSENT or malformed policy — but a present, well-formed, subtly
+ * wrong one passes exactly those assertions and leaks across companies. A
+ * policy belongs with somebody who can run the suite against a real Postgres.
+ *
+ * So this refuses rather than querying a table that is not there. A PostgREST
+ * call against a missing relation fails with a message about schema cache
+ * reloads; this says what is actually true. It goes away in Phase 5, replaced
+ * by the real thing alongside its migration.
+ */
+function recurrencesNotDeployed(): RecurrenceRepository {
+  const refuse = (): never => {
+    throw new RepositoryError(
+      'Repeats are not available on the hosted project yet: the recurrences table and its ' +
+        'row-level security policy ship with the Phase 5 deploy (v6 §L4, §P).',
+    )
+  }
+  return { list: refuse, start: refuse, stop: refuse }
+}
+
 export function createSupabaseRepositories(db: SupabaseClient): Repositories {
   return {
     account: accountRepository(db),
     companies: createCompanyRepository(db),
     customers: createCustomerRepository(db),
     documents: createDocumentRepository(db),
+    recurrences: recurrencesNotDeployed(),
     payments: createPaymentRepository(db),
     items: createItemRepository(db),
     expenses: createExpenseRepository(db),

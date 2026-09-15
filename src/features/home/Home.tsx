@@ -71,6 +71,12 @@ export interface HomeProps {
   readonly onScan?: () => void
   /** §N's honest line, shown under the controls once one is pressed. */
   readonly captureNotice?: string
+  /**
+   * §L4's bounded catch-up, said out loud. Absent when nothing was dropped —
+   * and never an empty string, so "no months skipped" cannot render as a
+   * blank notice claiming something happened.
+   */
+  readonly repeatsSkipped?: readonly string[]
   /** §18's "Your next steps". Absent once finished or dismissed. */
   readonly setup?: {
     readonly items: readonly ChecklistItem[]
@@ -237,6 +243,7 @@ export function Home({
   onVoice,
   onScan,
   captureNotice,
+  repeatsSkipped,
   setup,
   searchQuery,
   results,
@@ -384,6 +391,24 @@ export function Home({
               <Icon name="camera" size={1.25} />
             </button>
           </div>
+
+          {/*
+            The months a long offline gap dropped. §L4 bounds the catch-up
+            rather than dumping five years of drafts into the list, and
+            requires the ones it skipped to be NAMED — an owner should be
+            told, not left to count backwards and find eleven missing.
+          */}
+          {repeatsSkipped !== undefined && repeatsSkipped.length > 0 && (
+            <p
+              role="status"
+              className="mb-3 rounded-xl bg-status-warn-tint px-3 py-2 text-[10.5px] leading-relaxed text-status-warn"
+            >
+              {format(strings.home.repeatsSkipped, {
+                count: repeatsSkipped.length,
+                months: repeatsSkipped.join(', '),
+              })}
+            </p>
+          )}
 
           {captureNotice !== undefined && (
             <p

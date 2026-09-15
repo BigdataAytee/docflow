@@ -94,7 +94,7 @@ describe('What each backend hands over', () => {
     expect('companyId' in backend).toBe(false)
   })
 
-  it('hands over all eleven repositories either way', async () => {
+  it('hands over all twelve repositories either way', async () => {
     for (const backend of [
       await createBackend({}, demo),
       await createBackend(
@@ -113,6 +113,7 @@ describe('What each backend hands over', () => {
         'items',
         'linkTokens',
         'payments',
+        'recurrences',
         'shares',
       ])
     }

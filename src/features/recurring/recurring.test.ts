@@ -37,6 +37,40 @@ describe('The Repeat toggle (§L4)', () => {
     expect(recurrence).toEqual({ sourceDocumentId: 'doc_88', dayOfMonth: 5, startedOn: '2026-06-05' })
   })
 
+  /**
+   * The gap its twin already guarded and it did not.
+   *
+   * `stopRepeating` ran `localDay` on the way in; `startRepeating` sliced the
+   * string. Handed an INSTANT rather than a calendar day, the slice reads it
+   * in UTC — so an owner west of Greenwich switching Repeat on at nine in the
+   * evening on the 31st would have started a schedule dated the 1st of the
+   * next month: a day-of-month the following month may not even have, and a
+   * start that has already consumed the period the source document covers.
+   *
+   * Pinned to a real zone rather than the machine's, because a test that
+   * agrees with whatever the runner is set to proves nothing about the bug.
+   */
+  it('reads an instant as the local day, not the UTC one', () => {
+    const before = process.env.TZ
+    try {
+      // Lagos is UTC+1, so 23:30Z on the 30th is already the 31st there.
+      process.env.TZ = 'Africa/Lagos'
+      expect(startRepeating('doc_88', '2026-06-30T23:30:00Z').startedOn).toBe('2026-07-01')
+
+      // And west of Greenwich the same instant is still the 30th.
+      process.env.TZ = 'EST5EDT'
+      expect(startRepeating('doc_88', '2026-06-30T23:30:00Z').startedOn).toBe('2026-06-30')
+    } finally {
+      process.env.TZ = before
+    }
+  })
+
+  /** A plain calendar day passes through untouched — no zone can move it. */
+  it('leaves a calendar day exactly as it was given', () => {
+    expect(startRepeating('doc_88', '2026-06-30').startedOn).toBe('2026-06-30')
+    expect(startRepeating('doc_88', '2026-06-30').dayOfMonth).toBe(30)
+  })
+
   it('does not repeat the month the source document already covers', () => {
     const result = catchUp(every(), '2026-06-20', new Set())
     expect(result.due).toEqual([])
