@@ -142,6 +142,26 @@ describe('The tab bar (§G)', () => {
   })
 })
 
+/**
+ * The page header of whichever screen is showing.
+ *
+ * A saved document now draws its own A4 page below the header, and that page
+ * prints the reference and the "replaces" line as well — so a bare
+ * `findByText` for either finds two: the screen NAMING the record, and the
+ * record naming ITSELF. Every assertion that scopes through here means the
+ * first, which is what "we landed on this document" has always meant.
+ *
+ * `querySelector` rather than a role: a `<header>` inside `<main>` is not a
+ * banner landmark, so there is no role to query it by.
+ */
+async function pageHeader(): Promise<HTMLElement> {
+  // Awaited first, so this settles for the same reason `findByText` did.
+  await screen.findByRole('heading', { level: 1 })
+  const header = document.querySelector('header')
+  if (header === null) throw new Error('No page header is rendered.')
+  return header
+}
+
 describe('Create, fill, issue — through the repositories (§G, §M)', () => {
   it('creates exactly one draft for one visit to /new/:type', async () => {
     const state = renderAt('/new/invoice')
@@ -240,7 +260,7 @@ describe('Create, fill, issue — through the repositories (§G, §M)', () => {
       })
     })
 
-    expect(await screen.findByText('INV-0001')).toBeInTheDocument()
+    expect(within(await pageHeader()).getByText('INV-0001')).toBeInTheDocument()
     expect(screen.queryByRole('button', { name: 'Carry on editing' })).not.toBeInTheDocument()
     // §L3's bar and the payments list are here, which is what this screen is for.
     expect(screen.getByRole('progressbar')).toBeInTheDocument()
@@ -1105,7 +1125,7 @@ describe('Converting a document (§G, §M)', () => {
         totalMinor: 50_000_00,
       })
     })
-    expect(await screen.findByText('REC-0003')).toBeInTheDocument()
+    expect(within(await pageHeader()).getByText('REC-0003')).toBeInTheDocument()
     expect(
       screen.queryByRole('button', { name: 'Turn this into something else' }),
     ).not.toBeInTheDocument()
@@ -1204,7 +1224,7 @@ describe('Converting a document (§G, §M)', () => {
 
     const back = await screen.findByRole('button', { name: 'Made from QUO-0009' })
     await user.click(back)
-    expect(await screen.findByText('QUO-0009')).toBeInTheDocument()
+    expect(within(await pageHeader()).getByText('QUO-0009')).toBeInTheDocument()
   })
 })
 
@@ -1374,7 +1394,7 @@ describe('Cancelling and crediting (Rule #5, §G)', () => {
         totalMinor: 0,
       })
     })
-    expect(await screen.findByText('WB-0007')).toBeInTheDocument()
+    expect(within(await pageHeader()).getByText('WB-0007')).toBeInTheDocument()
     expect(
       screen.queryByRole('button', { name: 'Cancel this document' }),
     ).not.toBeInTheDocument()
@@ -1630,7 +1650,7 @@ describe('A receipt is evidence of a payment (§G, §K, §V)', () => {
 
       // The issued one, on its own page — and nothing new written: the two
       // seeded documents are still the only two.
-      expect(await screen.findByText('REC-0003')).toBeInTheDocument()
+      expect(within(await pageHeader()).getByText('REC-0003')).toBeInTheDocument()
       expect(state.documents).toHaveLength(2)
     })
   })
@@ -1927,7 +1947,7 @@ describe('Signing (§G, §I, §P)', () => {
           totalMinor: 145_000_00,
         })
       })
-      expect(await screen.findByText('INV-0042')).toBeInTheDocument()
+      expect(within(await pageHeader()).getByText('INV-0042')).toBeInTheDocument()
       expect(screen.queryByRole('button', { name: 'Confirm delivery' })).not.toBeInTheDocument()
     })
   })
@@ -2002,7 +2022,7 @@ describe('Duplicate as Rev 2 (§G, Rule #5, §M)', () => {
         totalMinor: 145_000_00,
       })
     })
-    expect(await screen.findByText('INV-0042')).toBeInTheDocument()
+    expect(within(await pageHeader()).getByText('INV-0042')).toBeInTheDocument()
     expect(screen.queryByRole('button', { name: /Make Rev/ })).not.toBeInTheDocument()
   })
 
@@ -2073,7 +2093,7 @@ describe('Duplicate as Rev 2 (§G, Rule #5, §M)', () => {
 
     await user.click(await screen.findByRole('button', { name: /Replaced by Rev 2/ }))
 
-    expect(await screen.findByText('QUO-0014')).toBeInTheDocument()
+    expect(within(await pageHeader()).getByText('QUO-0014')).toBeInTheDocument()
     expect(state.documents).toHaveLength(2)
   })
 
@@ -2281,12 +2301,12 @@ describe('Void and reissue a receipt (§G, Rule #5, §V)', () => {
     const user = userEvent.setup()
     renderAt('/doc/doc_rct', withReceipt())
     await user.click(await screen.findByRole('button', { name: 'Open what it paid for' }))
-    expect(await screen.findByText('INV-0042')).toBeInTheDocument()
+    expect(within(await pageHeader()).getByText('INV-0042')).toBeInTheDocument()
   })
 
   it('offers neither on an invoice, whose corrections are void or credit', async () => {
     renderAt('/doc/doc_inv', paid)
-    expect(await screen.findByText('INV-0042')).toBeInTheDocument()
+    expect(within(await pageHeader()).getByText('INV-0042')).toBeInTheDocument()
     expect(
       screen.queryByRole('button', { name: 'Cancel and draw a new one' }),
     ).not.toBeInTheDocument()
@@ -2354,7 +2374,7 @@ describe('Void and reissue a receipt (§G, Rule #5, §V)', () => {
 
   it('offers nothing on one already cancelled', async () => {
     renderAt('/doc/doc_rct', withReceipt({ status: 'void' }))
-    expect(await screen.findByText('REC-0003')).toBeInTheDocument()
+    expect(within(await pageHeader()).getByText('REC-0003')).toBeInTheDocument()
     expect(
       screen.queryByRole('button', { name: 'Cancel and draw a new one' }),
     ).not.toBeInTheDocument()
@@ -2392,7 +2412,11 @@ describe('Void and reissue a receipt (§G, Rule #5, §V)', () => {
     expect(screen.queryByText(/Rev \d/)).not.toBeInTheDocument()
 
     await user.click(screen.getByText('Cancelled — a newer one replaces this'))
-    expect(await screen.findByText('Replaces REC-0003')).toBeInTheDocument()
+    // The link BACK, not the line the page prints — the A4 preview says the
+    // same words, and only one of the two can be followed.
+    expect(
+      await screen.findByRole('button', { name: /Replaces REC-0003/ }),
+    ).toBeInTheDocument()
   })
 
   it('marks the cancelled one in the LIST, without calling it a revision', async () => {
@@ -2562,7 +2586,7 @@ describe('Recording the customer’s answer (§G, §P)', () => {
         totalMinor: 145_000_00,
       })
     })
-    expect(await screen.findByText('INV-0042')).toBeInTheDocument()
+    expect(within(await pageHeader()).getByText('INV-0042')).toBeInTheDocument()
     expect(screen.queryByRole('button', { name: 'They accepted' })).not.toBeInTheDocument()
   })
 
@@ -2747,7 +2771,7 @@ describe('The photo on a delivery (§G, §E, §P)', () => {
         totalMinor: 145_000_00,
       })
     })
-    expect(await screen.findByText('INV-0042')).toBeInTheDocument()
+    expect(within(await pageHeader()).getByText('INV-0042')).toBeInTheDocument()
     expect(screen.queryByLabelText('Proof of delivery')).not.toBeInTheDocument()
   })
 

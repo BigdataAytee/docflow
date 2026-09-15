@@ -138,6 +138,32 @@ export interface DocumentRecord {
    * evidence as the signature, so it seals when the delivery does (§P).
    */
   readonly deliveryPhotoAssetId?: string
+  /**
+   * How this document LOOKS — the four choices the design step collects.
+   *
+   * They belong on the record for the same reason the line items do: the
+   * saved document has to be able to show itself. Until this was added the
+   * builder held all four in component state, so closing the screen threw
+   * away the design that had just been chosen, and no other screen could
+   * render the document the owner actually designed.
+   *
+   * `discountRate` is the one that mattered most. It is applied at issue and
+   * baked into `totalMinor`, so the stored total was always right — but the
+   * BREAKDOWN behind it could not be reproduced, and a page recomposed from
+   * the record would print a subtotal that disagreed with its own total.
+   * Rule #3 is that money is never inferred; this is where it was being
+   * inferred.
+   *
+   * All four freeze at issue like everything else, because `updateDraft` is
+   * the only way in and it refuses an issued document (Rule #5). Absent on
+   * records saved before this existed: the readers fall back to the default
+   * template, a shown logo, the company's colour and no discount.
+   */
+  readonly templateId?: string
+  readonly showLogo?: boolean
+  readonly brandColour?: string
+  /** Parts per million, like every other rate (§V). Never a float. */
+  readonly discountRatePpm?: number
   /** Both null until issue, then frozen forever (§M). */
   readonly issuedReference: string | null
   readonly frozenLabels: FrozenLabels | null

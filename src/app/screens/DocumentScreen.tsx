@@ -23,6 +23,16 @@ import { useCompany } from '../context'
 import { useAppData } from '../store'
 import { HOME, documentPath, editDocumentPath, statementPath } from '../paths'
 import { PageHeader, SkeletonList, StatusBadge } from '../../ui'
+import { BuilderCard } from '../../features/documents/BuilderCard'
+import { LivePreview } from '../../features/documents/LivePreview'
+import {
+  composableOf,
+  composeOptionsOf,
+  designOf,
+  draftOf,
+  replacesOf,
+} from '../../features/documents/composition'
+import { templateById } from '../../pdf/templates'
 import { PaidSoFarBar } from '../../features/payments/PaidSoFarBar'
 import { PaymentList } from '../../features/payments/PaymentList'
 import { RepeatToggle } from '../../features/recurring/RepeatToggle'
@@ -131,6 +141,24 @@ export function DocumentScreen({ today = todayIso() }: { today?: string }) {
   if (record === undefined || id === undefined) return <Navigate to={HOME} replace />
 
   const labels = displayLabels(profile, record.type, record.frozenLabels)
+  const design = designOf(record, company)
+  const template = templateById(design.templateId)
+  const composable = composableOf({
+    draft: draftOf(record),
+    design,
+    company,
+    customer,
+    profile,
+    reference: record.issuedReference,
+    status: record.status,
+    frozenLabels: record.frozenLabels,
+    replaces: replacesOf(documents, record),
+    // The screen's own `today`, not a fresh clock read — the prop exists so
+    // a test can pin the day. Only ever reached by a draft with no issue date
+    // of its own; an issued document froze its date at issue (§M).
+    today,
+  })
+  const composeOptions = composeOptionsOf({ company, design, strings, assets })
   const total = totalOf(record)
   const isInvoice = record.type === 'invoice'
   // Real credit notes, not an empty list: a credited invoice owes less, and
@@ -241,7 +269,37 @@ export function DocumentScreen({ today = todayIso() }: { today?: string }) {
         trailing={<StatusBadge status={status} label={strings.statuses[status] ?? status} />}
       />
 
-      <div className="space-y-4 px-4 pt-4">
+      {/*
+        The document itself (§4): what it is, which design, on what paper —
+        then the page.
+
+        Composed through the SHARED composition, the same functions the
+        builder's preview and the PDF writer use. A second composition here
+        would be free to disagree with the one that prints, which is the drift
+        Rule #5 exists to stop.
+      */}
+      <section className="px-4 pt-4">
+        {/* `opacity`, not a colour: the ink token is what inverts in dark. */}
+        <p className="mb-2 text-[10.5px] opacity-55">
+          {format(strings.design.caption, {
+            // The printed title, so an issued document uses its FROZEN word
+            // (§D.2) and the design its own un-localised name (§H).
+            type: labels.printedTitle,
+            design: template.name,
+            paper: strings.design.paper,
+          })}
+        </p>
+        <div className="a4-sheet">
+          <LivePreview
+            document={composable}
+            templateId={design.templateId}
+            composeOptions={composeOptions}
+            brandColour={design.brandColour}
+          />
+        </div>
+      </section>
+
+      <div className="doc-actions px-4 pb-2 pt-4">
         {record.status === 'draft' && (
           <button
             type="button"
@@ -257,7 +315,7 @@ export function DocumentScreen({ today = todayIso() }: { today?: string }) {
         {record.status !== 'draft' && !sharing && (
           <button
             type="button"
-            className="raised tap-scale min-h-tap w-full rounded-full bg-gradient-to-b from-brand-light to-brand px-4 text-sm font-semibold text-white"
+            className="doc-action raised tap-scale min-h-tap rounded-full bg-gradient-to-b from-brand-light to-brand px-3 text-[12.5px] font-semibold text-white"
             onClick={() => setSharing(true)}
           >
             {strings.savedDocument.sharePdf}
@@ -272,7 +330,7 @@ export function DocumentScreen({ today = todayIso() }: { today?: string }) {
         {nextDeliveryStep(record) !== null && (
           <button
             type="button"
-            className="min-h-tap w-full rounded-full border border-brand/30 bg-surface px-4 text-sm font-semibold text-brand"
+            className="doc-action min-h-tap rounded-full border-brand/30 px-3 text-[12.5px] font-semibold text-brand"
             onClick={() => {
               // An issued delivery cannot jump to delivered — it has to go
               // out first. Without this the sign action below would be
@@ -315,7 +373,7 @@ export function DocumentScreen({ today = todayIso() }: { today?: string }) {
         {canSign(record) && !signing && (
           <button
             type="button"
-            className="min-h-tap w-full rounded-full border border-brand/30 bg-surface px-4 text-sm font-semibold text-brand"
+            className="doc-action min-h-tap rounded-full border-brand/30 px-3 text-[12.5px] font-semibold text-brand"
             onClick={() => {
               setSignProblem(null)
               setSigning(true)
@@ -490,7 +548,7 @@ export function DocumentScreen({ today = todayIso() }: { today?: string }) {
         {linkedInvoice !== null && (
           <button
             type="button"
-            className="min-h-tap w-full rounded-full border border-brand/30 bg-surface px-4 text-sm font-semibold text-brand"
+            className="doc-action min-h-tap rounded-full border-brand/30 px-3 text-[12.5px] font-semibold text-brand"
             onClick={() => navigate(documentPath(linkedInvoice.id))}
           >
             {strings.reissue.openInvoice}
@@ -506,7 +564,7 @@ export function DocumentScreen({ today = todayIso() }: { today?: string }) {
         {canReissue(record, payments) && newerRevision === null && (
           <button
             type="button"
-            className="min-h-tap w-full rounded-full border border-brand/30 bg-surface px-4 text-sm font-semibold text-brand"
+            className="doc-action min-h-tap rounded-full border-brand/30 px-3 text-[12.5px] font-semibold text-brand"
             onClick={() => {
               setReissueProblem(null)
               let plan
@@ -650,7 +708,7 @@ export function DocumentScreen({ today = todayIso() }: { today?: string }) {
         {canRevise(record) && newerRevision === null && (
           <button
             type="button"
-            className="min-h-tap w-full rounded-full border border-brand/30 bg-surface px-4 text-sm font-semibold text-brand"
+            className="doc-action min-h-tap rounded-full border-brand/30 px-3 text-[12.5px] font-semibold text-brand"
             onClick={() => {
               setRevisionProblem(null)
               let revised
@@ -712,7 +770,7 @@ export function DocumentScreen({ today = todayIso() }: { today?: string }) {
         {conversionsFor(convertible).length > 0 && !converting && (
           <button
             type="button"
-            className="min-h-tap w-full rounded-full border border-brand/30 bg-surface px-4 text-sm font-semibold text-brand"
+            className="doc-action min-h-tap rounded-full border-brand/30 px-3 text-[12.5px] font-semibold text-brand"
             onClick={() => {
               setConvertProblem(null)
               setConverting(true)
@@ -781,13 +839,13 @@ export function DocumentScreen({ today = todayIso() }: { today?: string }) {
 
         {/* §G's fourth invoice action, and the third correction Rule #5 allows. */}
         {canVoidOrCredit && !voiding && !crediting && (
-          // `flex-wrap` and `min-w-0`: at 200% text these two labels held the
-          // row 40px wider than a 320px phone and pushed the page sideways.
-          // A flex item will not shrink below its content unless told to.
-          <div className="flex flex-wrap gap-2">
+          // A fragment, not a flex row: the grid pairs these two itself now,
+          // and a nested row inside a grid cell was what held the page 40px
+          // wider than a 320px phone at 200% text.
+          <>
             <button
               type="button"
-              className="min-h-tap min-w-0 flex-1 rounded-full border border-status-bad/30 bg-surface px-4 text-sm font-semibold text-status-bad"
+              className="doc-action min-h-tap rounded-full border-status-bad/30 px-3 text-[12.5px] font-semibold text-status-bad"
               onClick={() => {
                 setVoidProblem(null)
                 setVoiding(true)
@@ -798,7 +856,7 @@ export function DocumentScreen({ today = todayIso() }: { today?: string }) {
             {isInvoice && record.status !== 'void' && (
               <button
                 type="button"
-                className="min-h-tap min-w-0 flex-1 rounded-full border border-brand/30 bg-surface px-4 text-sm font-semibold text-brand"
+                className="doc-action min-h-tap rounded-full border-brand/30 px-3 text-[12.5px] font-semibold text-brand"
                 onClick={() => {
                   setCreditProblem(null)
                   setCrediting(true)
@@ -807,7 +865,7 @@ export function DocumentScreen({ today = todayIso() }: { today?: string }) {
                 {strings.credits.sheetTitle}
               </button>
             )}
-          </div>
+          </>
         )}
 
         {voiding && (
@@ -952,6 +1010,11 @@ export function DocumentScreen({ today = todayIso() }: { today?: string }) {
           <>
             <PaidSoFarBar bar={paidSoFar(record.id, total, payments, mineCredits)} />
 
+            <BuilderCard
+              title={strings.payments.title}
+              icon="cash"
+              accent={TYPE_PALETTE[record.type].accent}
+            >
             <PaymentList
               payments={mine}
               prefill={prefillAmount(record.id, total, payments, mineCredits)}
@@ -999,8 +1062,13 @@ export function DocumentScreen({ today = todayIso() }: { today?: string }) {
               }}
             />
 
-            <section className="glass rounded-2xl p-4" aria-label={strings.chase.title}>
-              <h2 className="text-sm font-semibold">{strings.chase.title}</h2>
+            </BuilderCard>
+
+            <BuilderCard
+              title={strings.chase.title}
+              icon="bell"
+              accent={TYPE_PALETTE[record.type].accent}
+            >
               {outstanding.minor <= 0 ? (
                 <p className="mt-1 text-xs opacity-70">{strings.chase.nothingToChase}</p>
               ) : (
@@ -1030,7 +1098,7 @@ export function DocumentScreen({ today = todayIso() }: { today?: string }) {
                   )}
                 </>
               )}
-            </section>
+            </BuilderCard>
 
             <RepeatToggle
               recurrence={recurrence}

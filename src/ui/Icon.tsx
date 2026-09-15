@@ -48,6 +48,11 @@ export type IconName =
   | 'list'
   | 'trash'
   | 'calculator'
+  | 'cash'
+  | 'bell'
+  | 'repeat'
+  | 'check'
+  | 'brand-whatsapp'
   | 'alert-triangle'
 
 /**
@@ -157,6 +162,21 @@ const PATHS: Readonly<Record<IconName, readonly string[]>> = {
     'M14 11l0 6',
     'M5 7l1 12a2 2 0 0 0 2 2h8a2 2 0 0 0 2 -2l1 -12',
     'M9 7v-3a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v3',
+  ],
+  cash: [
+    'M7 9m0 2a2 2 0 0 1 2 -2h10a2 2 0 0 1 2 2v6a2 2 0 0 1 -2 2h-10a2 2 0 0 1 -2 -2z',
+    'M14 14m-2 0a2 2 0 1 0 4 0a2 2 0 1 0 -4 0',
+    'M17 9v-2a2 2 0 0 0 -2 -2h-10a2 2 0 0 0 -2 2v6a2 2 0 0 0 2 2h2',
+  ],
+  bell: [
+    'M10 5a2 2 0 1 1 4 0a7 7 0 0 1 4 6v3a4 4 0 0 0 2 3h-16a4 4 0 0 0 2 -3v-3a7 7 0 0 1 4 -6',
+    'M9 17v1a3 3 0 0 0 6 0v-1',
+  ],
+  repeat: ['M4 12v-3a3 3 0 0 1 3 -3h13m-3 -3l3 3l-3 3', 'M20 12v3a3 3 0 0 1 -3 3h-13m3 3l-3 -3l3 -3'],
+  check: ['M5 12l5 5l10 -10'],
+  'brand-whatsapp': [
+    'M3 21l1.65 -3.8a9 9 0 1 1 3.4 2.9l-5.05 .9',
+    'M9 10a.5 .5 0 0 0 1 0v-1a.5 .5 0 0 0 -1 0v1a5 5 0 0 0 5 5h1a.5 .5 0 0 0 0 -1h-1a.5 .5 0 0 0 0 1',
   ],
   calculator: [
     'M4 3m0 2a2 2 0 0 1 2 -2h12a2 2 0 0 1 2 2v14a2 2 0 0 1 -2 2h-12a2 2 0 0 1 -2 -2z',

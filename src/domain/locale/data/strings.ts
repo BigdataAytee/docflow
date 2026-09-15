@@ -405,6 +405,8 @@ export interface UiStrings {
     readonly firstDocument: string
   }
   readonly payments: {
+    /** The card's own heading on a saved invoice (§G — the saved document). */
+    readonly title: string
     readonly paidOfTotal: string
     readonly amountLeft: string
     readonly settled: string
@@ -622,6 +624,19 @@ export interface UiStrings {
     readonly chooseDesign: string
     /** The row of brand-colour swatches above the strip (§H). */
     readonly brandColour: string
+    /**
+     * The page size every document prints at (§I: "A4 portrait, always").
+     * A sentence in the catalogue rather than a literal at the call site, so
+     * a region that prints Letter says so in one place.
+     */
+    readonly paper: string
+    /**
+     * The line above a saved document's page: what it is, which design, on
+     * what paper. `{design}` is the design's OWN name and is never localised
+     * (§H); `{type}` is the printed title, which for an issued document is
+     * the frozen one (§D.2).
+     */
+    readonly caption: string
   }
   readonly totals: {
     /** The card's own title on a priced document. */
@@ -1109,6 +1124,7 @@ const EN: UiStrings = {
     firstDocument: 'Complete your first document',
   },
   payments: {
+    title: 'Payments',
     paidOfTotal: '{paid} paid of {total}',
     amountLeft: '{amount} left',
     settled: 'Settled in full',
@@ -1328,6 +1344,8 @@ const EN: UiStrings = {
     newTag: 'NEW',
     chooseDesign: 'Choose a design',
     brandColour: 'Brand colour',
+    paper: 'A4 portrait',
+    caption: '{type} · {design} · {paper}',
   },
   totals: {
     title: 'Totals',

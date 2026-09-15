@@ -150,3 +150,14 @@ export function percentToPpm(percent: number): RatePpm {
   }
   return rounded
 }
+
+/**
+ * The exact inverse of `percentToPpm`, for showing a stored rate back.
+ *
+ * Presentation only — it is what a slider set to 7.5% reads as when the
+ * document is opened again. No amount is ever multiplied by this; `applyRate`
+ * takes the ppm integer, so the division here can never reach the money.
+ */
+export function ppmToPercent(ppm: RatePpm): number {
+  return ppm / 10_000
+}

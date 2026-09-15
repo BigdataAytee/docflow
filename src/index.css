@@ -585,6 +585,58 @@
     background-image: linear-gradient(180deg, rgb(255 255 255 / 0.22), transparent);
   }
 
+  /*
+   * A sheet of paper, on screen (§4's `.a4`).
+   *
+   * The reference's shadow is deliberately heavier than the app's glass —
+   * this is the only surface that is meant to read as a physical object
+   * lifted off the page rather than as a card in the interface. The page
+   * itself (aspect ratio, paper colour, ink) comes from `DocumentPage`, which
+   * is the same component the PDF writer draws, so nothing about the document
+   * is decided here.
+   */
+  .a4-sheet {
+    border-radius: 5px;
+    overflow: hidden;
+    box-shadow:
+      0 18px 34px -8px rgb(13 16 36 / 0.3),
+      0 3px 8px rgb(13 16 36 / 0.14);
+  }
+
+  /*
+   * The saved document's actions (§G, §4).
+   *
+   * §4 asks for four actions per type, in a grid. The reference draws
+   * exactly four static pills — but it is a demo where every button is a
+   * toast, so it never has to model the DELIVERY LIFECYCLE: something that
+   * never left cannot have arrived (§M), so "send it on its way" has to
+   * happen before "confirm delivery" can, and the signing link cannot exist
+   * until the goods have actually gone.
+   *
+   * So the sequence keeps its own full-width steps, and only the TERMINAL
+   * actions pair off into the grid. Done in CSS rather than by rebuilding the
+   * screen's JSX: every child spans both columns by default, and the ones
+   * marked `doc-action` take a single cell. Sheets, notices and the money
+   * cards are unaffected, and adding an action later is one class.
+   */
+  .doc-actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.5rem;
+    align-items: start;
+  }
+
+  .doc-actions > *:not(.doc-action) {
+    grid-column: 1 / -1;
+  }
+
+  /* The reference's pill: a raised control, not a filled one. */
+  .doc-action {
+    background-image: var(--pill-image);
+    border: 1px solid var(--pill-border);
+    box-shadow: var(--pill-shadow);
+  }
+
   /* Home's softened band — see the note in `:root`. */
   .header-soft {
     background-image: var(--header-image-soft);

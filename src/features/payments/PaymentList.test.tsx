@@ -39,11 +39,18 @@ const part = recordPayment({
 })
 
 describe('The paid-so-far bar reads as §G writes it', () => {
-  it('says "₦50,000.00 paid of ₦145,000.00 · ₦95,000.00 left"', () => {
+  /**
+   * §G writes one sentence — "₦50,000 paid of ₦145,000 · ₦95,000 left" — and
+   * the accepted reference LAYS IT OUT at the two ends of the filled card,
+   * where the middle dot has nothing left to separate. So this asserts the
+   * sentence's content on the line that carries it, rather than the
+   * punctuation a one-line rendering needed.
+   */
+  it('says how much is paid, of how much, and how much is left', () => {
     wrap(<PaidSoFarBar bar={paidSoFar(INVOICE, TOTAL, [part])} />)
-    expect(
-      screen.getByText(/₦50,000\.00 paid of ₦145,000\.00 · ₦95,000\.00 left/),
-    ).toBeInTheDocument()
+    const line = screen.getByText(/paid of/).closest('p')
+    expect(line).toHaveTextContent('₦50,000.00 paid of ₦145,000.00')
+    expect(line).toHaveTextContent('₦95,000.00 left')
   })
 
   it('exposes the progress to assistive tech, not colour alone (§K)', () => {

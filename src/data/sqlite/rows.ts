@@ -196,6 +196,13 @@ export const toDocument = (row: SqlRow): DocumentRecord => ({
   ...optional('signerRole', text(row['signer_role'])),
   ...optional('signedAt', text(row['signed_at'])),
   ...optional('deliveryPhotoAssetId', text(row['delivery_photo_asset_id'])),
+  // The design, kept with the document (§H). Null on every row saved before
+  // these columns existed, which reads as "the app's defaults" — the same
+  // thing those rows have always meant.
+  ...optional('templateId', text(row['template_id'])),
+  ...optional('showLogo', bool(row['show_logo'])),
+  ...optional('brandColour', text(row['brand_colour'])),
+  ...optional('discountRatePpm', int(row['discount_rate_ppm'])),
 })
 
 export const documentColumns = (document: DocumentRecord): Record<string, SqlValue> => ({
@@ -222,6 +229,12 @@ export const documentColumns = (document: DocumentRecord): Record<string, SqlVal
   signer_role: document.signerRole ?? null,
   signed_at: document.signedAt ?? null,
   delivery_photo_asset_id: document.deliveryPhotoAssetId ?? null,
+  template_id: document.templateId ?? null,
+  // `fromBool`, not `?? null`: the latter turns `false` into null and loses a
+  // logo that was deliberately switched OFF.
+  show_logo: fromBool(document.showLogo),
+  brand_colour: document.brandColour ?? null,
+  discount_rate_ppm: document.discountRatePpm ?? null,
   issued_reference: document.issuedReference,
   frozen_labels: document.frozenLabels === null ? null : json(document.frozenLabels),
   total_minor: document.totalMinor,

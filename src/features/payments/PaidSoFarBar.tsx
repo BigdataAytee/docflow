@@ -9,6 +9,10 @@ import { useCompany } from '../../app/context'
 import { format } from '../../domain/locale/data/strings'
 import { formatMoney } from '../customers/formatMoney'
 import type { PaidSoFar } from './record'
+import { TYPE_PALETTE } from '../../ui'
+
+/** The bar is invoice-only, so its colour is the invoice's (§F). */
+const invoice = TYPE_PALETTE.invoice
 
 export function PaidSoFarBar({ bar }: { bar: PaidSoFar }) {
   const { strings } = useCompany()
@@ -25,40 +29,57 @@ export function PaidSoFarBar({ bar }: { bar: PaidSoFar }) {
   // progress bar needs that name as a widget — two elements sharing one
   // accessible name is one too many for anyone navigating by label.
   return (
-    // §F gives the paid bar gradient depth, like the header and the hero
-    // bands. The wash runs from the type tint to the page, so the card
-    // settles into the page at its foot instead of ending on a hard edge.
-    <section className="sheen relative overflow-hidden rounded-2xl bg-invoice-tint p-4 shadow-[inset_0_1px_0_rgb(255_255_255/0.5),0_2px_6px_-2px_rgb(20_28_74/0.16)]">
-      <p className="text-sm font-semibold text-invoice-deep">
-        {spoken}
+    /*
+     * §G's "blue paid-so-far bar over green progress", and the reference
+     * makes it a filled CARD rather than a tinted panel — the invoice's own
+     * three stops, white text, and its accent thrown as the shadow.
+     *
+     * Green for the fill is the one colour here that is not the type's: money
+     * that has arrived is green everywhere in this app (§F), and a blue bar
+     * filling with blue would say nothing at a glance.
+     */
+    <section
+      className="relative overflow-hidden rounded-[18px] p-[13px] text-white"
+      style={{
+        backgroundImage: `linear-gradient(140deg, ${invoice.light}, ${invoice.accent} 68%, ${invoice.deep})`,
+        boxShadow: `0 16px 30px -10px ${invoice.accent}99, inset 0 1px 0 rgb(255 255 255 / 0.3)`,
+      }}
+    >
+      <p className="mb-1.5 flex items-baseline justify-between gap-2 text-[10.5px]">
+        <span className="text-white/90">{spoken}</span>
         {!bar.isSettled && (
-          <>
-            {' · '}
+          <b className="shrink-0 tabular-nums">
             {format(strings.payments.amountLeft, { amount: formatMoney(bar.left) })}
-          </>
+          </b>
         )}
       </p>
+
       <div
-        // Recessed, not frosted: a 8px track with a card's drop shadow under
-        // it reads as a floating sliver. §F puts progress INTO the surface.
-        className="recessed mt-2 h-2 overflow-hidden rounded-full"
+        className="h-[9px] overflow-hidden rounded-full bg-on-accent/25 shadow-[inset_0_1px_3px_rgb(0_0_0/0.12)]"
         role="progressbar"
         aria-label={spoken}
         aria-valuenow={Math.round(percent)}
         aria-valuemin={0}
         aria-valuemax={100}
       >
-        <div className="h-full rounded-full bg-status-good" style={{ width: `${percent}%` }} />
+        <div
+          className="h-full rounded-full shadow-[inset_0_1px_0_rgb(255_255_255/0.5)]"
+          style={{
+            width: `${percent}%`,
+            backgroundImage: 'linear-gradient(180deg, #7ee0bb, #43bf94)',
+          }}
+        />
       </div>
+
       {bar.credited.minor !== 0 && (
         // Its own line, never folded into "paid": a credit is money written
         // off, not money received (Rule #3, §V).
-        <p className="mt-1.5 text-xs text-invoice-deep/80">
+        <p className="mt-1.5 text-[10px] text-white/80">
           {format(strings.payments.creditedLine, { amount: formatMoney(bar.credited) })}
         </p>
       )}
       {bar.isSettled && (
-        <p className="mt-1.5 text-xs font-medium text-status-good">{strings.payments.settled}</p>
+        <p className="mt-1.5 text-[10px] font-medium text-white/90">{strings.payments.settled}</p>
       )}
     </section>
   )

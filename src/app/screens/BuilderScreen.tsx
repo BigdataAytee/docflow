@@ -29,7 +29,6 @@ import { invoiceOutstanding } from '../../domain/payments/ledger'
 import { regionProfile } from '../../features/settings/region'
 import {
   type BuilderState,
-  type DocumentDraft,
   clampStep,
   committed,
   edit,
@@ -40,7 +39,14 @@ import {
 import { BuilderShell } from '../../features/documents/BuilderShell'
 import { LivePreview } from '../../features/documents/LivePreview'
 import { IssueError, issueDocument } from '../../features/documents/issue'
-import { revisionNumberOf } from '../../features/documents/revision'
+import {
+  type Design,
+  composableOf,
+  composeOptionsOf,
+  designOf,
+  draftOf,
+  replacesOf,
+} from '../../features/documents/composition'
 import { NewReceiptSheet } from '../../features/payments/NewReceiptSheet'
 import { SignaturePad } from '../../features/signature/SignaturePad'
 import { availableMethods } from '../../features/payments/methods'
@@ -50,10 +56,9 @@ import {
   receiptRecordFor,
   startReceipt,
 } from '../../features/payments/receiptFlow'
-import { DEFAULT_TEMPLATE, type TemplateId } from '../../pdf/templates'
-import type { ComposableDocument, ComposeOptions } from '../../pdf/compose'
+import type { ComposableDocument } from '../../pdf/compose'
 import { SkeletonList } from '../../ui'
-import { BRAND_COLOURS, StepBody } from './builderSteps'
+import { StepBody } from './builderSteps'
 import { billedInvoices, documentsOf, totalOf } from '../derive'
 import { localDay, todayIso } from '../../domain/dates/calendar'
 
@@ -246,10 +251,9 @@ export function BuilderScreen({ now = () => new Date().toISOString() }: { now?: 
   const record = documents.find((document) => document.id === id)
 
   const [state, setState] = useState<BuilderState | null>(null)
-  const [templateId, setTemplateId] = useState<TemplateId>(DEFAULT_TEMPLATE)
-  const [showLogo, setShowLogo] = useState(true)
-  const [brandColour, setBrandColour] = useState<string>(BRAND_COLOURS[0])
-  const [discountPercent, setDiscountPercent] = useState(0)
+  // The four design choices, together — they are stored together, they are
+  // seeded together, and they freeze together at issue (§H, Rule #5).
+  const [design, setDesign] = useState<Design>(() => designOf(undefined, null))
   const [issueProblem, setIssueProblem] = useState<string | null>(null)
   const [signing, setSigning] = useState(false)
   const [signProblem, setSignProblem] = useState<string | null>(null)
@@ -260,35 +264,26 @@ export function BuilderScreen({ now = () => new Date().toISOString() }: { now?: 
     if (state !== null || record === undefined) return
     setState({
       step: 0,
-      draft: {
-        type: record.type,
-        currency: record.currency,
-        lineItems: record.lineItems,
-        ...(record.customerId === undefined ? {} : { customerId: record.customerId }),
-        ...(record.issueDate === undefined ? {} : { issueDate: record.issueDate }),
-        ...(record.dueDate === undefined ? {} : { dueDate: record.dueDate }),
-        ...(record.validUntil === undefined ? {} : { validUntil: record.validUntil }),
-        // A receipt's link to its payment has to reach the draft, or §K's
-        // "reject a receipt without an effective payment" rejects every
-        // receipt — the record carries it and the validator reads it here.
-        ...(record.paymentId === undefined ? {} : { paymentId: record.paymentId }),
-        ...(record.linkedInvoiceId === undefined
-          ? {}
-          : { linkedInvoiceId: record.linkedInvoiceId }),
-        ...(record.signatureAssetId === undefined
-          ? {}
-          : { signatureAssetId: record.signatureAssetId }),
-        ...(record.deliveryAddress === undefined
-          ? {}
-          : { deliveryAddress: record.deliveryAddress }),
-        ...(record.driverName === undefined ? {} : { driverName: record.driverName }),
-        ...(record.vehicleNumber === undefined ? {} : { vehicleNumber: record.vehicleNumber }),
-        ...(record.dispatchDate === undefined ? {} : { dispatchDate: record.dispatchDate }),
-      },
+      draft: draftOf(record),
       dirty: false,
     })
-    setBrandColour(company?.brandColour ?? BRAND_COLOURS[0])
+    // The design the document was SAVED with, not a fresh default — closing
+    // this screen used to throw the choice away, so reopening a document
+    // showed somebody else's design back to them.
+    setDesign(designOf(record, company))
   }, [state, record, company])
+
+  /**
+   * A design change is a change to the document, so it marks the draft dirty.
+   *
+   * Without that, `commit` returns early on an otherwise-untouched draft and
+   * the choice is never written — which is how all four of these managed to
+   * be collected, previewed and then silently discarded.
+   */
+  const changeDesign = useCallback((patch: Partial<Design>) => {
+    setDesign((current) => ({ ...current, ...patch }))
+    setState((latest) => (latest === null ? latest : edit(latest, {})))
+  }, [])
 
   const commit = useCallback(
     async (current: BuilderState) => {
@@ -312,11 +307,17 @@ export function BuilderScreen({ now = () => new Date().toISOString() }: { now?: 
         ...(draft.driverName === undefined ? {} : { driverName: draft.driverName }),
         ...(draft.vehicleNumber === undefined ? {} : { vehicleNumber: draft.vehicleNumber }),
         ...(draft.dispatchDate === undefined ? {} : { dispatchDate: draft.dispatchDate }),
+        // The design travels with the document (§H). Four scalars, so the
+        // saved record can draw itself without this screen being open.
+        templateId: design.templateId,
+        showLogo: design.showLogo,
+        brandColour: design.brandColour,
+        discountRatePpm: percentToPpm(design.discountPercent),
       })
       // Only now — a commit that threw must not print "Saved" (§C).
       setState((latest) => (latest === null ? latest : committed(latest, now())))
     },
-    [id, actions, now],
+    [id, actions, now, design],
   )
 
   const problems = useMemo(() => {
@@ -358,98 +359,32 @@ export function BuilderScreen({ now = () => new Date().toISOString() }: { now?: 
     }
   }, [company, strings])
 
-  /**
-   * What this draft replaces, if anything. Derived from the documents;
-   * nothing was written back onto the document it replaces (§G, Rule #5).
-   *
-   * Only a quotation carries a revision NUMBER — its chain is numbered, and
-   * §G calls those Rev 2, Rev 3. A reissued receipt replaces exactly one
-   * cancelled receipt and says only that.
-   */
-  const replaces = useMemo(() => {
-    if (record?.supersedesId === undefined) return null
-    const replaced = documents.find((row) => row.id === record.supersedesId)
-    if (replaced === undefined) return null
-    return {
-      reference: replaced.issuedReference ?? '',
-      ...(record.type === 'quotation'
-        ? { revisionNumber: revisionNumberOf(documents, record) }
-        : {}),
-    }
-  }, [record, documents])
+  // All three derived through the shared composition (§H, Rule #5): the
+  // saved-document screen draws the same page from the same functions, so the
+  // preview and the print cannot disagree about a discount or a label.
+  const replaces = useMemo(() => replacesOf(documents, record), [documents, record])
 
-  const composable = useMemo<ComposableDocument>(() => {
-    const draft: DocumentDraft = state?.draft ?? { type: 'invoice', currency: 'NGN', lineItems: [] }
-    return {
-      type: draft.type,
-      status: record?.status ?? 'draft',
-      currency: draft.currency,
-      reference: record?.issuedReference ?? provisional(draft.type),
-      // `now()` is an INSTANT; an issue date is a DAY. Slicing the instant
-      // dated a document in UTC, which west of Greenwich is tomorrow for the
-      // last hours of every evening.
-      issueDate: draft.issueDate ?? localDay(now()),
-      ...(draft.dueDate === undefined ? {} : { dueDate: draft.dueDate }),
-      lineItems: draft.lineItems,
-      party: {
-        name: customer?.name ?? '',
-        ...(customer?.address === undefined ? {} : { address: customer.address }),
-        ...(customer?.phone === undefined ? {} : { phone: customer.phone }),
-      },
-      frozenLabels: record?.frozenLabels ?? null,
-      ...(discountPercent === 0 ? {} : { discountRate: percentToPpm(discountPercent) }),
-      ...(company?.taxRatePpm === undefined ? {} : { taxRate: company.taxRatePpm }),
-      ...(company?.whtRatePpm === undefined || draft.type !== 'invoice'
-        ? {}
-        : { whtRate: company.whtRatePpm }),
-      ...(draft.driverName === undefined ? {} : { driverName: draft.driverName }),
-      ...(draft.vehicleNumber === undefined ? {} : { vehicleNumber: draft.vehicleNumber }),
-      // So the Review step shows the page as it will print, signature and all.
-      ...(draft.signatureAssetId === undefined
-        ? {}
-        : { signatureAssetId: draft.signatureAssetId }),
-      // Read by the same function the saved document uses — one source, so
-      // the preview and the printed page agree.
-      ...(replaces === null ? {} : { replaces }),
-    }
-    function provisional(type: DocumentType): string {
-      return `${company?.numberingPrefixes?.[type] ?? numberingPrefix(profile, type)}-…`
-    }
-  }, [state, record, customer, company, discountPercent, profile, now, replaces])
+  const composable = useMemo<ComposableDocument>(
+    () =>
+      composableOf({
+        draft: state?.draft ?? { type: 'invoice', currency: 'NGN', lineItems: [] },
+        design,
+        company,
+        customer,
+        profile,
+        reference: record?.issuedReference ?? null,
+        status: record?.status ?? 'draft',
+        frozenLabels: record?.frozenLabels ?? null,
+        replaces,
+        // `now()` is an INSTANT; an issue date is a DAY.
+        today: localDay(now()),
+      }),
+    [state, record, customer, company, design, profile, now, replaces],
+  )
 
-  const composeOptions = useMemo<Omit<ComposeOptions, 'profile'>>(
-    () => ({
-      branding: {
-        name: company?.name ?? '',
-        nameStyle: company?.nameStyle ?? 'classic',
-        logoSize: company?.logoSize ?? 'M',
-        showLogo,
-        ...(company?.logoAssetId === undefined ? {} : { logoAssetId: company.logoAssetId }),
-      },
-      columnLabels: {
-        description: strings.items.description,
-        quantity: strings.items.quantity,
-        amount: strings.totals.payable,
-        unit: strings.items.unit,
-      },
-      ...(company?.bankFields === undefined ? {} : { bankValues: company.bankFields }),
-      // The page prints the mark it names, so it needs the bytes behind the
-      // id. Every signature the company owns, not just this draft's: the
-      // preview follows the pad without a reload (§I).
-      assetUrls: Object.fromEntries(assets.map((asset) => [asset.id, asset.dataUrl])),
-      // The words live in the catalogue (§S), so the page is handed the
-      // sentence rather than the pieces. A numbered chain says which revision
-      // it is; a reissued receipt only says what it replaces.
-      replacesLabel: (replaces: { reference: string; revisionNumber?: number }) => {
-        const replacesWhat = format(strings.revision.supersedes, {
-          reference: replaces.reference,
-        })
-        return replaces.revisionNumber === undefined
-          ? replacesWhat
-          : `${format(strings.revision.badge, { number: String(replaces.revisionNumber) })} · ${replacesWhat}`
-      },
-    }),
-    [company, showLogo, strings, assets],
+  const composeOptions = useMemo(
+    () => composeOptionsOf({ company, design, strings, assets }),
+    [company, design, strings, assets],
   )
 
   if (loading) return <SkeletonList rows={4} label={strings.common.loading} />
@@ -493,7 +428,9 @@ export function BuilderScreen({ now = () => new Date().toISOString() }: { now?: 
         fromReservedBlock: false,
         deviceId: deviceId(),
         issuedAt: now(),
-        ...(discountPercent === 0 ? {} : { discountRate: percentToPpm(discountPercent) }),
+        ...(design.discountPercent === 0
+          ? {}
+          : { discountRate: percentToPpm(design.discountPercent) }),
         ...(company?.taxRatePpm === undefined ? {} : { taxRate: company.taxRatePpm }),
         ...(company?.whtRatePpm === undefined ? {} : { whtRate: company.whtRatePpm }),
       })
@@ -549,10 +486,10 @@ export function BuilderScreen({ now = () => new Date().toISOString() }: { now?: 
         invoices={invoices}
         payments={payments}
         reference={composable.reference}
-        templateId={templateId}
-        showLogo={showLogo}
-        brandColour={brandColour}
-        discountPercent={discountPercent}
+        templateId={design.templateId}
+        showLogo={design.showLogo}
+        brandColour={design.brandColour}
+        discountPercent={design.discountPercent}
         taxLabel={taxLabel}
         problems={problems}
         composable={composable}
@@ -568,10 +505,10 @@ export function BuilderScreen({ now = () => new Date().toISOString() }: { now?: 
             )
           })
         }}
-        onDiscount={setDiscountPercent}
-        onTemplate={setTemplateId}
-        onToggleLogo={setShowLogo}
-        onBrandColour={setBrandColour}
+        onDiscount={(discountPercent) => changeDesign({ discountPercent })}
+        onTemplate={(templateId) => changeDesign({ templateId })}
+        onToggleLogo={(showLogo) => changeDesign({ showLogo })}
+        onBrandColour={(brandColour) => changeDesign({ brandColour })}
         onGoToStep={(target) => setState(goToStep(state, clampStep(target)))}
         onSetUpPayment={() => navigate(settingsPath('payment'))}
         onSign={() => {
@@ -594,9 +531,9 @@ export function BuilderScreen({ now = () => new Date().toISOString() }: { now?: 
         preview={
           <LivePreview
             document={composable}
-            templateId={templateId}
+            templateId={design.templateId}
             composeOptions={composeOptions}
-            brandColour={brandColour}
+            brandColour={design.brandColour}
           />
         }
       />

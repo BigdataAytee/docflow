@@ -192,6 +192,64 @@ describe('Issued documents are immutable (Rule #5, §C)', () => {
   })
 })
 
+describe('A document remembers how it looks (§H, Rule #3)', () => {
+  /**
+   * The four design choices used to live in the builder's component state,
+   * so closing the screen threw them away. The discount was the serious one:
+   * it is applied at issue and baked into `totalMinor`, so the stored total
+   * was right while the breakdown behind it could not be reproduced — a page
+   * recomposed from the record printed a subtotal that disagreed with its own
+   * payable. Rule #3 says money is never inferred; that was inference.
+   */
+  it('stores the design, the colour and the discount rate', async () => {
+    const created = await repos.documents.createDraft(draft(), ctx('g1'))
+    await repos.documents.updateDraft(
+      created.id,
+      {
+        templateId: 'aurora',
+        showLogo: false,
+        brandColour: '#0F6E56',
+        discountRatePpm: 75_000,
+      },
+      ctx('g1-design'),
+    )
+
+    const reloaded = await repos.documents.get(ACME, created.id)
+    expect(reloaded?.templateId).toBe('aurora')
+    expect(reloaded?.brandColour).toBe('#0F6E56')
+    expect(reloaded?.discountRatePpm).toBe(75_000)
+  })
+
+  /**
+   * SQLite has no boolean, and `?? null` on the way in would turn a logo that
+   * was deliberately switched OFF into "never chosen" — which reads back as
+   * the default, which is ON. The one value in this set that can be lost by
+   * being falsy, so it gets its own case.
+   */
+  it('keeps a logo that was switched off switched off', async () => {
+    const created = await repos.documents.createDraft(draft(), ctx('g2'))
+    await repos.documents.updateDraft(created.id, { showLogo: false }, ctx('g2-off'))
+    expect((await repos.documents.get(ACME, created.id))?.showLogo).toBe(false)
+  })
+
+  /** Freezes with everything else: the only way in refuses an issued document. */
+  it('will not restyle a document after it is issued', async () => {
+    const created = await repos.documents.createDraft(draft(), ctx('g3'))
+    await repos.documents.issue(
+      created.id,
+      {
+        reference: 'INV-0003',
+        frozenLabels: freezeLabels({ locale: 'EN-NG' }, 'invoice'),
+        totalMinor: 1_500_000,
+      },
+      ctx('g3-issue'),
+    )
+    await expect(
+      repos.documents.updateDraft(created.id, { templateId: 'bold' }, ctx('g3-restyle')),
+    ).rejects.toThrow(RepositoryError)
+  })
+})
+
 describe('Delivery evidence is one write, and captured once (§P)', () => {
   const dispatched = async () => {
     const created = await repos.documents.createDraft(

@@ -30,7 +30,7 @@
  * it — it saves a b-tree per table on a phone with 3GB of RAM.
  */
 
-export const SCHEMA_VERSION = 2
+export const SCHEMA_VERSION = 3
 
 /**
  * Applied in order, inside one transaction, by `migrate`.
@@ -281,6 +281,21 @@ export const MIGRATIONS: readonly string[] = [
   begin
     select raise(abort, 'Delivery evidence is sealed once signed (v6 P).');
   end;
+  `,
+
+  `
+  -- How a document looks, kept WITH the document (§H).
+  --
+  -- Four columns rather than one JSON blob: each is a scalar the page reads
+  -- directly, and a blob would need parsing before anything could be trusted
+  -- to be a template id. Adding a column is the one alteration SQLite
+  -- performs without rewriting the table, and a null in any of them
+  -- means "whatever the app defaults to" — which is what every existing row
+  -- already meant.
+  alter table documents add column template_id text;
+  alter table documents add column show_logo integer;
+  alter table documents add column brand_colour text;
+  alter table documents add column discount_rate_ppm integer;
   `,
 ]
 
