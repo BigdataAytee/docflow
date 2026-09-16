@@ -144,3 +144,50 @@ export const PAYMENT_WEBHOOK_BUCKET: RateBucket = {
   limit: 300,
   windowSeconds: 3600,
 }
+
+/**
+ * The largest body these functions will read (§P).
+ *
+ * Every one of them reads the whole request into memory before it can judge
+ * it — a webhook has to, because the signature covers the bytes. Without a
+ * ceiling that is an unauthenticated route allocating whatever a caller sends,
+ * which costs compute and memory before a single check has run.
+ *
+ * TWO CEILINGS, because the two bodies are not the same kind of thing:
+ *
+ *  · A PROVIDER EVENT is JSON. A Paystack charge is a couple of KB and an
+ *    Apple notification a little more, so 256 KB is two orders of magnitude
+ *    above anything real.
+ *  · A SIGNING REQUEST carries the mark the recipient just drew, as a data
+ *    URL. That is the whole point of the endpoint, and sizing it like a
+ *    webhook would refuse the signature it exists to accept — a cap that
+ *    breaks the feature is worse than no cap, because somebody removes it.
+ */
+export const MAX_EVENT_BYTES = 256 * 1024
+export const MAX_SIGNATURE_BYTES = 1024 * 1024
+
+/**
+ * Whether the caller declared a body too large to be worth reading.
+ *
+ * `content-length` is a claim, not a fact — a chunked request can lie or omit
+ * it — so this is the cheap first gate, not the only one. It costs nothing and
+ * it stops the honest-but-oversized case before anything is allocated.
+ */
+export function bodyTooLarge(headers: Headers, limit: number): boolean {
+  const declared = Number(headers.get('content-length') ?? '0')
+  return Number.isFinite(declared) && declared > limit
+}
+
+/**
+ * Read a body, refusing one that turns out to be oversized.
+ *
+ * The second half of the gate: a caller that omitted `content-length`, or lied
+ * about it, is caught here by measuring what actually arrived. Returns null
+ * rather than throwing, so each caller answers in its own idiom — 200 with a
+ * reason for the webhooks, a refusal for the public link.
+ */
+export async function readBounded(request: Request, limit: number): Promise<string | null> {
+  if (bodyTooLarge(request.headers, limit)) return null
+  const text = await request.text()
+  return new TextEncoder().encode(text).length > limit ? null : text
+}

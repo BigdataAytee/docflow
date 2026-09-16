@@ -34,7 +34,7 @@
 // @ts-expect-error — Deno resolves this at deploy time; the app never builds it.
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
-import { PAYMENT_WEBHOOK_BUCKET, overLimit } from '../_shared/ratelimit.ts'
+import { PAYMENT_WEBHOOK_BUCKET, overLimit, readBounded, MAX_EVENT_BYTES } from '../_shared/ratelimit.ts'
 import { type Credentials, normalise, routeOf, verify } from './rules.ts'
 
 declare const Deno: { env: { get(name: string): string | undefined } }
@@ -99,7 +99,10 @@ export default async function handler(request: Request): Promise<Response> {
 
   // The RAW text, read once and never re-serialised: Paystack signs the bytes,
   // and JSON.parse followed by JSON.stringify is not the same bytes.
-  const rawBody = await request.text()
+  const rawBody = await readBounded(request, MAX_EVENT_BYTES)
+  // Bounded before anything is allocated on it. A body this size is not a
+  // provider event, so refusing it costs a real webhook nothing.
+  if (rawBody === null) return done('ignored', 'body too large')
 
   const { data: credentialRow } = await admin
     .from('payment_provider_credentials')

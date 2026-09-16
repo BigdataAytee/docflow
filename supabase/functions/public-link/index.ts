@@ -27,7 +27,14 @@
 // @ts-expect-error — Deno resolves this at deploy time; the app never builds it.
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
-import { CALLER_BUCKET, TOKEN_BUCKET, callerKey, overLimit } from '../_shared/ratelimit.ts'
+import {
+  CALLER_BUCKET,
+  TOKEN_BUCKET,
+  callerKey,
+  overLimit,
+  readBounded,
+  MAX_SIGNATURE_BYTES,
+} from '../_shared/ratelimit.ts'
 import {
   type DocumentRow,
   type Refusal,
@@ -154,7 +161,13 @@ Deno.serve?.(async (request: Request): Promise<Response> => {
 
   if (request.method !== 'POST') return refuse('wrong')
 
-  const body = (await request.json().catch(() => ({}))) as WriteRequest
+  // Bounded, but on the SIGNATURE ceiling rather than the webhook one: this
+  // body carries the mark the recipient just drew, as a data URL. Sizing it
+  // like a provider event would refuse the signature this endpoint exists to
+  // accept.
+  const raw = await readBounded(request, MAX_SIGNATURE_BYTES)
+  if (raw === null) return refuse('wrong')
+  const body = (JSON.parse(raw) as WriteRequest | null) ?? ({} as WriteRequest)
   const plan = planFor(document, body, now.toISOString())
   if (typeof plan === 'string') return refuse(plan)
 

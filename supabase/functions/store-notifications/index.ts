@@ -23,7 +23,7 @@
 // @ts-expect-error — Deno resolves this at deploy time; the app never builds it.
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
-import { STORE_PARK_BUCKET, overLimit } from '../_shared/ratelimit.ts'
+import { STORE_PARK_BUCKET, overLimit, readBounded, MAX_EVENT_BYTES } from '../_shared/ratelimit.ts'
 import {
   type StoreEvent,
   UNVERIFIED_REASON,
@@ -75,7 +75,8 @@ export default async function handler(request: Request): Promise<Response> {
   const route = routeOf(new URL(request.url).pathname)
   if (route === null) return ok('route')
 
-  const raw = await request.text()
+  const raw = await readBounded(request, MAX_EVENT_BYTES)
+  if (raw === null) return ok('ignored')
   let body: Record<string, unknown>
   try {
     body = JSON.parse(raw) as Record<string, unknown>

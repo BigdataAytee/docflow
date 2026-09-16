@@ -67,8 +67,29 @@ export default {
         },
       },
       fontFamily: {
-        // Bundled locally — no CDN in the installed app (§F).
-        sans: ['"Plus Jakarta Sans"', 'Inter', 'system-ui', 'sans-serif'],
+        /*
+         * WHAT THE APP ACTUALLY RENDERS IN, which is not what this line used
+         * to say.
+         *
+         * §F asks for "Plus Jakarta Sans, bundled and loaded locally;
+         * Inter/system as fallback", and this named both — while the repository
+         * shipped neither font file and declared no `@font-face`. So every
+         * screen has silently fallen back to the system UI font since the
+         * design system was written, and the config described a product that
+         * did not exist.
+         *
+         * Naming only what ships is the honest half of the fix. THE OTHER HALF
+         * IS AN ASSET TASK, not a code one: Plus Jakarta Sans is OFL-licensed,
+         * so bundling it means shipping the font files AND the licence notice
+         * that OFL requires to travel with them. `src/web/fonts.test.ts` fails
+         * the moment a family is named without a file behind it, so this
+         * cannot quietly revert — and it will pass again the day the files and
+         * the notice land together.
+         *
+         * §V's rule holds either way: no CDN, ever. A webfont link would be
+         * the same bug wearing different clothes.
+         */
+        sans: ['system-ui', '-apple-system', '"Segoe UI"', 'Roboto', 'sans-serif'],
       },
       borderRadius: { '2xl': '1rem' },
       keyframes: {
