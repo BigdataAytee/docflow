@@ -136,12 +136,18 @@ export function tlsAdvice(error: unknown): string | null {
   const code = (error as { code?: string } | null)?.code
   if (code === undefined || !INTERCEPTION.has(code)) return null
   return (
-    `${code} — the certificate presented is not Supabase's. Something on this ` +
-    'machine is terminating TLS (antivirus or a corporate proxy). Do not work ' +
-    'around it: that connection carries the service-role key, and anything ' +
-    'able to re-sign it can read the key. Either exempt the host from ' +
-    'interception, or run this clause where the chain is clean — ' +
-    'GATE_PART=db in CI. The PostgREST clauses below do not use this connection.'
+    `${code} — the certificate offered does not chain to a root this machine ` +
+    'trusts. Two causes, and they are told apart by WHERE it happens.\n' +
+    "    · Supabase's POOLER presents a certificate signed by Supabase's own " +
+    'CA, which is not in any default trust store. This is the usual cause on ' +
+    'a `*.pooler.supabase.com` host, and it fails everywhere — including on a ' +
+    'clean CI runner. Download the CA from Settings → Database → SSL ' +
+    'Configuration and point SUPABASE_CA_CERT at it.\n' +
+    '    · Something local terminating TLS — antivirus, a corporate proxy. ' +
+    'Suspect this only when a clean runner succeeds and one machine does not.\n' +
+    '    Either way, do not work around it by turning verification off: this ' +
+    'connection carries the database password, and anything able to re-sign ' +
+    'it can read it.'
   )
 }
 

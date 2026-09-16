@@ -207,8 +207,8 @@ describe('TLS on the direct Postgres connection (§P)', () => {
   ])('names interception for %s, and says not to work around it', (code) => {
     const advice = tlsAdvice(Object.assign(new Error('x'), { code }))
     expect(advice).toContain(code)
-    expect(advice).toMatch(/service-role key/)
-    expect(advice).toMatch(/GATE_PART=db/)
+    expect(advice).toMatch(/database password/)
+    expect(advice).toMatch(/SUPABASE_CA_CERT/)
   })
 
   it('says nothing about interception for an ordinary failure', () => {
