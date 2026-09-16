@@ -35,7 +35,17 @@ export default defineConfig({
     // `tools` is in here too: the migration is not app code, but it converts
     // somebody's money and its rehearsal has to block a release exactly as the
     // money tests do (§Q Phase 7).
-    include: ['src/**/*.test.ts', 'src/**/*.test.tsx', 'tools/**/*.test.ts'],
+    include: [
+      'src/**/*.test.ts',
+      'src/**/*.test.tsx',
+      'tools/**/*.test.ts',
+      // The gate's OWN tests need no database — they drive it against an
+      // HTTP stub — so they belong in the suite that gates every commit.
+      // They were only in the RLS config, which needs Postgres and so does
+      // not run here; three of them sat broken for two commits because
+      // `npm run verify` never opened the file.
+      'supabase/tests/hosted-gate.test.ts',
+    ],
     // Vitest's default is 5s per test, which is a statement about the machine
     // rather than about the code. On a slow laptop — or a CI box running the
     // suite beside a build — standing up jsdom for 148 files eats most of

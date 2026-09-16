@@ -99,10 +99,29 @@ const COMPANY_B = '22222222-2222-2222-2222-222222222222'
  * There is deliberately no way to turn verification off. Every mode except
  * `disable` and `no-verify` verifies fully in pg 8; this never passes either.
  */
-export function dbSsl(): { ca: string; rejectUnauthorized: true } | undefined {
+export function dbSsl(
+  connectionString: string,
+): { ca: string; rejectUnauthorized: true } | { rejectUnauthorized: true } | undefined {
   const caPath = process.env.SUPABASE_CA_CERT
-  if (caPath === undefined || caPath === '') return undefined
-  return { ca: readFileSync(caPath, 'utf8'), rejectUnauthorized: true }
+  if (caPath !== undefined && caPath !== '') {
+    return { ca: readFileSync(caPath, 'utf8'), rejectUnauthorized: true }
+  }
+
+  /*
+   * THE STRING GOVERNS ONLY IF IT SAYS SOMETHING, and this branch is a fix
+   * for a regression introduced when the hardcoded `ssl` object was removed
+   * so that `?sslmode=…&sslrootcert=…` could be honoured.
+   *
+   * `pg` defaults `ssl` to FALSE. A connection string with no `sslmode` —
+   * which is exactly what Supabase's dashboard hands you — therefore
+   * connected in PLAINTEXT, carrying the database password. The old
+   * hardcoded object was hiding that default, and removing it uncovered it.
+   *
+   * So TLS is the floor. Omitting `sslmode` now means "verify normally",
+   * never "do not encrypt", and the only way to say anything else is to say
+   * it deliberately in the string.
+   */
+  return /[?&]sslmode=/i.test(connectionString) ? undefined : { rejectUnauthorized: true }
 }
 
 /** Node's names for "somebody is sitting in the middle of this connection". */
@@ -137,7 +156,7 @@ async function applyMigrationsToHost(): Promise<boolean> {
     return false
   }
 
-  const ssl = dbSsl()
+  const ssl = dbSsl(dbUrl)
   const db = new Client({ connectionString: dbUrl, ...(ssl === undefined ? {} : { ssl }) })
   try {
     await db.connect()

@@ -21,7 +21,7 @@ import { type AddressInfo } from 'node:net'
 import { afterEach, describe, expect, it } from 'vitest'
 
 import { type StepResult, checkAuthRateLimits, dbSsl, part, tlsAdvice } from './hosted-gate.ts'
-import { PROBE_CEILING } from '../../src/domain/auth/limits.ts'
+import { PROBE_CEILING, probeBudget, probeable } from '../../src/domain/auth/limits.ts'
 
 let server: Server | undefined
 
@@ -58,7 +58,12 @@ describe('The auth step verifies a limiter that answers', () => {
     const signIn = find(results, 'signing in')
     expect(signIn?.status).toBe('pass')
     expect(signIn?.detail).toMatch(/refused after \d+/)
-    expect(find(results, 'password-reset')?.status).toBe('pass')
+    // Reset is NOT probed any more: with live SMTP it sends real mail, and
+    // against a fake address it proves nothing because Supabase does not
+    // send for an account that does not exist. It skips with its own reason.
+    const reset = find(results, 'password-reset')
+    expect(reset?.status).toBe('skip')
+    expect(reset?.detail).toContain('proves nothing')
   })
 
   it('NEVER sends a request to an endpoint that mails whoever is named', async () => {
@@ -78,13 +83,15 @@ describe('The auth step verifies a limiter that answers', () => {
     expect(find(results, 'creating an account')?.status).toBe('skip')
   })
 
-  it('says out loud that the numbers have not been applied anywhere', async () => {
+  it('stops saying the numbers are unapplied once they have been applied', async () => {
     const { url } = await stub(3)
     const results = await checkAuthRateLimits(url, 'anon-key')
 
-    const applied = find(results, 'have been applied')
-    expect(applied?.status).toBe('skip')
-    expect(applied?.detail).toContain('APPLIED = false')
+    // The row existed only to say the declaration was an intention. They were
+    // applied on 2026-09-16, so it is gone — and its ABSENCE is the assertion,
+    // because a gate still announcing "not applied" afterwards would be the
+    // same untruth pointing the other way.
+    expect(find(results, 'have been applied')).toBeUndefined()
   })
 })
 
@@ -103,8 +110,16 @@ describe('A project with no limiter at all is a failure, not a silence', () => {
     const { url, seen } = await stub(null)
     await checkAuthRateLimits(url, 'anon-key')
 
-    // Every probeable endpoint, worst case, against a host that never refuses.
-    expect(seen.length).toBeLessThanOrEqual(PROBE_CEILING * 3)
+    /*
+     * DERIVED, not a magic multiplier. This used to say `PROBE_CEILING * 3`,
+     * meaning "three probeable endpoints" — so adding a fourth limit to the
+     * declaration broke a test that was really about the flood ceiling, and
+     * the number to change was not obvious from the failure. Summing the real
+     * budgets keeps the assertion true as the declaration grows, and still
+     * fails the moment a probe stops bounding itself.
+     */
+    const worstCase = probeable(false).reduce((total, limit) => total + probeBudget(limit), 0)
+    expect(seen.length).toBeLessThanOrEqual(worstCase)
     for (const path of new Set(seen)) {
       expect(seen.filter((p) => p === path).length).toBeLessThanOrEqual(PROBE_CEILING)
     }
@@ -123,17 +138,46 @@ describe('TLS on the direct Postgres connection (§P)', () => {
    * verification off — not a flag, not an env var, not a fallback.
    */
   it('offers no way to disable certificate verification', () => {
-    const source = readFileSync(new URL('./hosted-gate.ts', import.meta.url), 'utf8')
+    // From the working directory, not from `import.meta.url`: this file now
+    // runs under BOTH configs, and Vite's serves modules over http — so a
+    // URL-relative read throws "must be of scheme file" in the very suite
+    // this was moved into to be watched by.
+    const source = readFileSync(join(process.cwd(), 'supabase', 'tests', 'hosted-gate.ts'), 'utf8')
     expect(source).not.toMatch(/rejectUnauthorized:\s*false/)
     expect(source).not.toMatch(/NODE_TLS_REJECT_UNAUTHORIZED/)
     expect(source).not.toMatch(/sslmode=(no-verify|disable)/)
   })
 
-  it('leaves the connection string in charge when no CA is pinned', () => {
+  it('leaves the connection string in charge when it declares a mode', () => {
     delete process.env.SUPABASE_CA_CERT
-    // `undefined`, not `{ rejectUnauthorized: true }` — the hardcoded object
-    // silently outranked nothing, but it made `?sslrootcert=` look inert.
-    expect(dbSsl()).toBeUndefined()
+    // `undefined` means "do not override" — so `?sslrootcert=` is honoured
+    // rather than being silently outranked by a hardcoded object.
+    expect(dbSsl('postgresql://u:p@h:5432/postgres?sslmode=verify-full')).toBeUndefined()
+    expect(dbSsl('postgresql://u:p@h:5432/postgres?ssl=true&sslmode=require')).toBeUndefined()
+  })
+
+  /**
+   * THE REGRESSION THIS EXISTS FOR. `pg` defaults `ssl` to FALSE, and the
+   * connection string Supabase's dashboard hands you carries no `sslmode` —
+   * so removing the hardcoded object to honour `sslrootcert` uncovered a
+   * PLAINTEXT connection carrying the database password. TLS is the floor:
+   * saying nothing means verify, never means do not encrypt.
+   */
+  it('requires TLS when the string says nothing at all', () => {
+    delete process.env.SUPABASE_CA_CERT
+    const ssl = dbSsl('postgresql://u:p@aws-1-eu-west-1.pooler.supabase.com:6543/postgres')
+    expect(ssl).toEqual({ rejectUnauthorized: true })
+  })
+
+  it('never resolves to a connection with TLS off', () => {
+    delete process.env.SUPABASE_CA_CERT
+    for (const url of [
+      'postgresql://u:p@h:6543/postgres',
+      'postgresql://u:p@h:5432/postgres?application_name=gate',
+    ]) {
+      expect(dbSsl(url), url).not.toBe(false)
+      expect(dbSsl(url), url).toBeTruthy()
+    }
   })
 
   it('pins the CA when one is given, and still verifies', () => {
@@ -141,8 +185,11 @@ describe('TLS on the direct Postgres connection (§P)', () => {
     writeFileSync(path, '-----BEGIN CERTIFICATE-----\nnot a real one\n-----END CERTIFICATE-----\n')
     process.env.SUPABASE_CA_CERT = path
 
-    const ssl = dbSsl()
-    expect(ssl?.ca).toContain('BEGIN CERTIFICATE')
+    // A pinned CA outranks whatever the string says, including a string that
+    // declares its own mode: the operator chose this root deliberately.
+    const ssl = dbSsl('postgresql://u:p@h:6543/postgres?sslmode=require')
+    expect(ssl).toHaveProperty('ca')
+    expect((ssl as { ca: string }).ca).toContain('BEGIN CERTIFICATE')
     expect(ssl?.rejectUnauthorized).toBe(true)
     rmSync(path, { force: true })
   })

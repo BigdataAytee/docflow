@@ -307,6 +307,24 @@ export function probeRequest(limit: AuthLimit, email: string, unique: string): P
         path: '/auth/v1/token?grant_type=refresh_token',
         body: { refresh_token: 'not-a-real-refresh-token' },
       }
+    case 'token_verification':
+      /*
+       * ITS OWN ENDPOINT, and this case is a bug fix rather than a tidy-up.
+       *
+       * `token_verification` was added to the declaration without a case
+       * here, so it fell through to `default` and probed the SIGN-IN endpoint
+       * two hundred times under the name of a different clause. The gate then
+       * reported "auth throttles redeeming a link or code — refused after 42"
+       * about an endpoint it had never touched.
+       *
+       * Caught by the flood-ceiling test, which counts requests per path and
+       * saw one path take 235 when no single budget allows more than 200 —
+       * a limit the check was written for, catching something else entirely.
+       */
+      return {
+        path: '/auth/v1/verify',
+        body: { type: 'recovery', token: `gate-${unique}-not-a-real-token`, email },
+      }
     default:
       return {
         path: '/auth/v1/token?grant_type=password',
