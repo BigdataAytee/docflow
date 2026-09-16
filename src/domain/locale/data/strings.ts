@@ -70,6 +70,7 @@ export interface UiStrings {
     readonly signInBody: string
     readonly email: string
     readonly password: string
+    readonly passwordRule: string
     readonly signIn: string
     readonly createAccount: string
     readonly haveAccount: string
@@ -1022,6 +1023,7 @@ const EN: UiStrings = {
     signInBody: 'Your records sync to your account, so they are on every device you use.',
     email: 'Email',
     password: 'Password',
+    passwordRule: 'At least {count} characters.',
     signIn: 'Sign in',
     createAccount: 'Create an account',
     haveAccount: 'Already have an account? Sign in',

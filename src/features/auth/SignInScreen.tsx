@@ -14,8 +14,9 @@
 
 import { useId, useState } from 'react'
 
-import type { UiStrings } from '../../domain/locale/data/strings'
+import { type UiStrings, format } from '../../domain/locale/data/strings'
 import { classifyAuthFailure, refusalMessage } from './refusal'
+import { PASSWORD_MIN_LENGTH, passwordProblem } from './password'
 
 export interface SignInScreenProps {
   readonly strings: UiStrings
@@ -42,7 +43,14 @@ export function SignInScreen({
   const [error, setError] = useState<string | null>(null)
   const [notice, setNotice] = useState<string | null>(null)
 
-  const canSubmit = email.trim() !== '' && password !== '' && !busy
+  /*
+   * Checked only when CREATING an account. On sign-in the rule belongs to
+   * whatever password the person already has — refusing a short one here
+   * would lock out anybody who registered before the minimum was raised,
+   * and tell a stranger the rule at the same time.
+   */
+  const tooShort = mode === 'up' && password !== '' && passwordProblem(password) === 'too_short'
+  const canSubmit = email.trim() !== '' && password !== '' && !tooShort && !busy
 
   const run = async (action: () => Promise<void>) => {
     setBusy(true)
@@ -96,7 +104,24 @@ export function SignInScreen({
           className="mt-1 min-h-tap w-full rounded-xl border border-edge/10 bg-surface px-3 text-sm"
           value={password}
           onChange={(event) => setPassword(event.target.value)}
+          aria-invalid={tooShort}
+          aria-describedby={mode === 'up' ? `${ids}-password-rule` : undefined}
         />
+
+        {/*
+          Said while they are still in the field, in our words. The server
+          refuses a short one with its own English, which §S does not show
+          anybody — so without this the only feedback would be a round trip
+          ending in a message nobody wrote for a person.
+        */}
+        {mode === 'up' && (
+          <p
+            id={`${ids}-password-rule`}
+            className={`mt-1 text-xs ${tooShort ? 'text-status-warn' : 'opacity-60'}`}
+          >
+            {format(a.passwordRule, { count: PASSWORD_MIN_LENGTH })}
+          </p>
+        )}
 
         <button
           type="submit"

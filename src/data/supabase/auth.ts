@@ -12,6 +12,13 @@
 
 import type { Session, SupabaseClient, User } from '@supabase/supabase-js'
 
+import {
+  type ReadStorage,
+  browserStorage,
+  refusedByServer,
+  storedRefreshToken,
+} from './persisted'
+
 export type AuthState =
   /** A usable session. Sync may run. */
   | { readonly kind: 'authenticated'; readonly user: User; readonly session: Session }
@@ -43,11 +50,51 @@ export interface AuthService {
 
 export class AuthError extends Error {}
 
-export function createAuthService(client: SupabaseClient): AuthService {
+export function createAuthService(
+  client: SupabaseClient,
+  /** Injectable so the storage rule can be tested without a browser. */
+  readStorage: ReadStorage = browserStorage,
+  storageKey = 'docflow.auth',
+): AuthService {
   const toState = (session: Session | null): AuthState =>
     session === null || session.user === null
       ? { kind: 'signed_out' }
       : { kind: 'authenticated', user: session.user, session }
+
+  /**
+   * The last word before anybody is shown a sign-in screen.
+   *
+   * Three outcomes, and only one of them ends the session — see
+   * `persisted.ts` for why the middle one is the case that matters.
+   */
+  const fromStoredSession = async (): Promise<AuthState> => {
+    const refreshToken = storedRefreshToken(readStorage, storageKey)
+    // Nobody has ever signed in here, or they signed out and it was cleared.
+    if (refreshToken === null) return { kind: 'signed_out' }
+
+    try {
+      const { data, error } = await client.auth.refreshSession({ refresh_token: refreshToken })
+      if (error === null && data.session !== null) return toState(data.session)
+
+      // Refused: revoked, deleted, or the password changed elsewhere. This is
+      // the one case where losing the session is the right answer.
+      if (refusedByServer(error)) return { kind: 'signed_out' }
+    } catch (cause: unknown) {
+      if (refusedByServer(cause)) return { kind: 'signed_out' }
+    }
+
+    /*
+     * Could not ask. A session exists and this device simply has no way to
+     * prove it right now — §M: a credential problem never costs somebody
+     * their work, and Rule #2: offline is the product.
+     *
+     * `user` is unknown here because the token could not be exchanged, so
+     * the app gets a stale session with no profile rather than none at all.
+     * Everything local keeps working; sync stays paused until a refresh
+     * succeeds.
+     */
+    return { kind: 'stale', user: {} as User, reason: 'refresh_failed' }
+  }
 
   return {
     async currentState() {
@@ -66,9 +113,19 @@ export function createAuthService(client: SupabaseClient): AuthService {
         if (cached !== null && cached.user !== null) {
           return { kind: 'stale', user: cached.user, reason: 'offline' }
         }
-        return { kind: 'signed_out' }
+        return await fromStoredSession()
       }
-      return toState(result.data.session)
+
+      const state = toState(result.data.session)
+      // NO SESSION REPORTED IS NOT THE SAME AS SIGNED OUT, and this line is
+      // the whole of the "opens on Home, forever" guarantee. `getSession`
+      // refreshes an expired token internally, and whether it hands back the
+      // old session or nothing when that refresh fails is a decision inside
+      // the library — one that could change on an upgrade and quietly start
+      // showing a login screen to people with weeks of work on the device.
+      // So before anybody is sent to sign in, ask storage whether they ever
+      // signed in and ask the server whether it still accepts them.
+      return state.kind === 'signed_out' ? await fromStoredSession() : state
     },
 
     async signInWithPassword(email, password) {

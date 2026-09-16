@@ -11,27 +11,59 @@ import type { SupabaseClient } from '@supabase/supabase-js'
 
 import type { NewBusiness, SessionService, SessionStage } from '../session'
 import { createAuthService } from './auth'
-import { accountState, createCompany } from './account'
+import { accountState, companyFromToken, createCompany } from './account'
+import { browserStorage, storedAccessToken } from './persisted'
 
 export function createSupabaseSession(client: SupabaseClient): SessionService {
   const auth = createAuthService(client)
+
+  /** The company claim from the session supabase-js persisted, if any. */
+  const companyFromStorage = (): string | null => {
+    const token = storedAccessToken(browserStorage, 'docflow.auth')
+    return token === null ? null : companyFromToken(token)
+  }
 
   return {
     async current(): Promise<SessionStage> {
       const state = await auth.currentState()
       if (state.kind === 'signed_out') return { kind: 'signed_out' }
-      // A stale session still opens the app (§M — expired credentials pause
-      // sync, they never lock someone out), so only `signed_out` sends anyone
-      // back to the sign-in screen.
-      const account = await accountState(client)
-      if (account.kind !== 'ready') return { kind: 'needs_company' }
+
+      /*
+       * THE COMPANY COMES FROM THE TOKEN WE ALREADY HAVE, never from a second
+       * lookup — and that is a fix, not a tidy-up.
+       *
+       * `accountState` asks `getSession()` again. Offline, after a refresh it
+       * could not complete, that second ask answers null and the stage came
+       * back `needs_company` — so a person with weeks of work on the device
+       * reopened the app and was shown the BUSINESS SETUP screen. Not a login
+       * screen, but every bit as wrong: the requirement is Home, every time.
+       *
+       * A stale session still opens the app (§M — expired credentials pause
+       * sync, they never lock anybody out), so the claim is read from the
+       * token in hand, and from the persisted one when there is no live
+       * session to read. An expired token still says which business the
+       * records belong to, and that fact does not expire with it. Nothing is
+       * authorised on the strength of it: the server re-checks every claim on
+       * every request, which is what RLS is for.
+       */
+      const companyId =
+        state.kind === 'authenticated'
+          ? companyFromToken(state.session.access_token)
+          : companyFromStorage()
+      if (companyId === null) {
+        // No claim anywhere: a genuinely fresh sign-up that has not made a
+        // business yet, which is the one case that screen is for.
+        const account = await accountState(client)
+        if (account.kind !== 'ready') return { kind: 'needs_company' }
+        return { kind: 'ready', companyId: account.companyId }
+      }
 
       // From the session, never from a row: this is the address that signs
       // in, and a copy kept elsewhere is the one that goes stale.
       const email = state.kind === 'authenticated' ? state.user.email : undefined
       return {
         kind: 'ready',
-        companyId: account.companyId,
+        companyId,
         ...(email === undefined || email === '' ? {} : { email }),
       }
     },
