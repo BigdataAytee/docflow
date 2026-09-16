@@ -78,7 +78,21 @@ Phase 7's §V checklist cannot go green while Phase 5's gate is unproven.
 
 Three things nobody in this repository can do, each one setting:
 
-1. **The SIGN-IN rate limit regressed, and it is the live one.** On 15 Sep
+1. **The SIGN-IN rate limit is still not engaging** (16 Sep, after the value
+   was corrected from 360 back to 30 and confirmed on a refreshed page). A
+   direct diagnostic against `/auth/v1/token?grant_type=password` sent 35
+   requests and got **35× `400 invalid_credentials` and not one 429** — no
+   rate-limit response of any kind, so the probe is not missing a signal in a
+   shape it does not recognise.
+
+   What that rules out: "Supabase does not count sign-ins for an address with
+   no account" — the explanation that fits the reset endpoint. It cannot be the
+   explanation here, because THIS PROBE, against an address with no account,
+   refused after 31 on 15 Sep. The mechanism worked; the configuration is what
+   changed. So it is the dashboard value or its propagation, and only somebody
+   who can open it can settle which.
+
+   Original entry, kept because the timeline is the evidence: on 15 Sep
    `gate:hosted:api` reported it refusing after 31 against a declared 30 per
    300s. On 16 Sep, after the limits were reconfigured and live SMTP added, two
    consecutive runs report **35 requests, none refused**. Same probe, same
