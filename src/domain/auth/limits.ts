@@ -11,11 +11,23 @@
  * attacking it. The limiter is the provider's, and what is ours is the
  * numbers, the reasons, and a verification that the live project matches.
  *
- * So this file is the declaration, and it is honest about its own status:
- * `APPLIED` is false. Nothing here is in force anywhere, because there is no
- * project to put it in force on. `npm run gate:hosted` step 10 reads these
- * rows and probes the endpoints against them; until it has been run against a
- * real project, every number here is an intention.
+ * So this file is the declaration. It used to be an INTENTION — `APPLIED` was
+ * false and the numbers were what a project ought to have rather than what any
+ * project had. That changed on 2026-09-16: the settings were applied, and these
+ * rows were rewritten to match what Supabase actually enforces rather than the
+ * other way round.
+ *
+ * THE REWRITE MATTERS MORE THAN THE FLAG. The old rows described per-endpoint
+ * limits Supabase cannot express — a separate allowance for password reset,
+ * another for magic links, a third for sign-up. There are no such knobs. What
+ * exists is smaller and blunter: one shared sign-up/sign-in limit, one hourly
+ * email budget for every mail-sending endpoint together, and a per-user
+ * minimum interval on top of it. A declaration naming limits the provider
+ * cannot enforce was never going to be verifiable, which is precisely why the
+ * gate found the reset endpoint refusing nothing.
+ *
+ * `scope` is on every row for the same reason: "150 an hour" says nothing
+ * until you know per what.
  *
  * What decided the numbers, in one sentence each, because a limit nobody can
  * explain is a limit somebody widens the first time it is inconvenient:
@@ -53,21 +65,45 @@ export interface AuthLimit {
   readonly endpoint: string
   /** What a person is doing when they hit it, in words a person would use. */
   readonly what: string
-  /** Requests allowed inside the window, per IP. */
+  /** Requests allowed inside the window. Per WHAT is `scope`. */
   readonly allowance: number
+  /**
+   * What the counter is keyed by — because a number without it means nothing,
+   * and the three answers have completely different blast radii. An IP limit
+   * is shared by a whole office; a project limit is shared by every customer
+   * at once.
+   */
+  readonly scope: 'ip' | 'user' | 'project'
   readonly windowSeconds: number
   /** Why this number and not a rounder one. */
   readonly why: string
   readonly probeCost: ProbeCost
+  /**
+   * Why a probe cannot answer this one, where the generic reason is wrong.
+   *
+   * It exists because a probe that CANNOT SEE a limit and a limit that is NOT
+   * SET look identical from outside — and reporting the second when it is the
+   * first is the sort of false red that gets a whole gate ignored.
+   */
+  readonly whyNotProbed?: string
 }
 
 /**
- * FALSE, and it stays false until somebody applies these to a project and
- * records it. The gate reports "declared, unverified" rather than a tick —
- * the same rule the backup schedule follows: a configuration nobody has
- * checked is not a configuration that is in force.
+ * TRUE since 2026-09-16 — and what that does and does not mean.
+ *
+ * It means these values were entered in the project's Authentication → Rate
+ * Limits, and this file was rewritten to match them. Live SMTP went in at the
+ * same time (Resend, on a domain with DKIM and SPF verified), which is what
+ * made the email limits real: before it, Supabase's built-in sender had its
+ * own trickle and these numbers governed nothing.
+ *
+ * It does NOT mean the flag should be trusted. A boolean in a source file is a
+ * claim about a dashboard, and dashboards change without a commit. The thing
+ * that actually checks is `npm run gate:hosted:api` step 10, which probes each
+ * endpoint and reports what it really did. This says "somebody applied these";
+ * only the gate says "and they are still in force".
  */
-export const APPLIED = false
+export const APPLIED = true
 
 export const AUTH_LIMITS: readonly AuthLimit[] = [
   {
@@ -76,50 +112,116 @@ export const AUTH_LIMITS: readonly AuthLimit[] = [
     what: 'Signing in with an email and a password',
     allowance: 30,
     windowSeconds: 300,
+    scope: 'ip',
     why:
       'The endpoint a password-guessing run hits, and the one a whole office ' +
       'shares. Ten people signing in twice each on Monday morning is twenty; ' +
-      'thirty leaves room for the fumbles without leaving room for a script.',
-    probeCost: 'harmless',
-  },
-  {
-    id: 'password_reset',
-    endpoint: '/auth/v1/recover',
-    what: 'Asking for a password-reset link',
-    allowance: 10,
-    windowSeconds: 3600,
-    why:
-      'The address is chosen by whoever is asking, so this is a limit on ' +
-      "sending mail to STRANGERS. A person resets a password once and checks " +
-      'their inbox; ten an hour is already generous, and the cost of being ' +
-      'wrong is our domain in a spam folder.',
+      'thirty leaves room for the fumbles without leaving room for a script. ' +
+      'Supabase counts sign-ups against this same budget.',
     probeCost: 'harmless',
   },
   {
     id: 'sign_up',
     endpoint: '/auth/v1/signup',
     what: 'Creating an account',
-    allowance: 10,
-    windowSeconds: 3600,
+    // The SAME setting as sign-in. Supabase has one control for both, and a
+    // tighter number here would describe a limit nothing enforces.
+    allowance: 30,
+    windowSeconds: 300,
+    scope: 'ip',
     why:
-      'Signing up is rare and deliberate — one per business, and the same ' +
-      'office connection will not do it twice in an afternoon. It also sends ' +
-      'a confirmation email, so the mail-bomb argument applies here too.',
+      'Not a separate budget: Supabase governs sign-ups and sign-ins with one ' +
+      'setting, so this is the same thirty per five minutes. Signing up also ' +
+      'sends a confirmation, and the email budget below is what actually ' +
+      'bounds a mail flood — not this.',
     probeCost: 'creates_account',
+  },
+  {
+    id: 'password_reset',
+    endpoint: '/auth/v1/recover',
+    what: 'Asking for a password-reset link',
+    // The per-user MINIMUM INTERVAL is what binds for one address: one mail,
+    // then a refusal until sixty seconds have passed. The hourly email budget
+    // sits above it and binds for the project as a whole.
+    allowance: 1,
+    windowSeconds: 60,
+    scope: 'user',
+    why:
+      'The address is chosen by whoever is asking, so this is a limit on ' +
+      'sending mail to STRANGERS. A person resets a password once and checks ' +
+      'their inbox; a second request inside a minute is a script or a stuck ' +
+      'finger, and the cost of being wrong is our domain in a spam folder. ' +
+      'Supabase expresses this as a minimum interval rather than an hourly ' +
+      'count, so an interval is what is declared.',
+    /*
+     * `sends_email` SINCE LIVE SMTP, and the change is not cosmetic.
+     *
+     * While Supabase's built-in sender was in use this was genuinely harmless
+     * to probe. With Resend behind it, a probe against a REAL address sends
+     * real mail, and the gate's own rule is that a mail-bomb check must not
+     * mail-bomb.
+     *
+     * Against a FAKE address it is worse than harmless — it is useless. The
+     * gate probed six times and saw nothing refused, because Supabase does not
+     * send for an address with no account (it answers the same either way, so
+     * nobody can enumerate users), and a limit on sending never engages when
+     * nothing is sent. That is a probe blind to the limit, not a limit that is
+     * absent, and the run reported it as a failure.
+     */
+    probeCost: 'sends_email',
+    whyNotProbed:
+      'not probed: against a real address it sends mail, and against a fake one it ' +
+      'proves nothing — Supabase does not send for an address with no account, so ' +
+      'the interval never engages. Verify by asking for two resets on a real mailbox ' +
+      'inside a minute; the second must be refused',
   },
   {
     id: 'otp',
     endpoint: '/auth/v1/otp',
     what: 'Magic links and one-time codes',
-    allowance: 5,
-    windowSeconds: 3600,
+    allowance: 1,
+    windowSeconds: 60,
+    scope: 'user',
     why:
       'DocFlow does not use magic links or OTP at all — but the endpoint is ' +
       'open whether we use it or not, and it sends mail to any address given. ' +
-      'An unused door still needs a lock. Low on purpose: if this ever ' +
-      'becomes a real journey, raising it is a decision somebody makes on ' +
-      'purpose rather than a default nobody noticed.',
+      'It draws on the same email budget and the same per-user interval as a ' +
+      'reset, because Supabase has one mail pipe and both go down it. An ' +
+      'unused door still needs a lock.',
     probeCost: 'sends_email',
+  },
+  {
+    id: 'email_send',
+    endpoint: '(every mail-sending auth endpoint)',
+    what: 'Sending any authentication email at all',
+    allowance: 150,
+    windowSeconds: 3600,
+    // PROJECT, not IP and not user: one budget shared by every customer at
+    // once, which is what makes it the number that decides whether a flood
+    // costs us a sending reputation.
+    scope: 'project',
+    why:
+      'The ceiling every other mail limit sits under, and the one with real ' +
+      'money behind it: bounces and spam complaints are charged to the ' +
+      'sending domain, not to whoever caused them. A hundred and fifty an ' +
+      'hour is far above a real day — sign-ups and resets for a business tool ' +
+      'are single figures — and far below what would burn a domain whose ' +
+      'reputation is days old.',
+    probeCost: 'sends_email',
+  },
+  {
+    id: 'token_verification',
+    endpoint: '/auth/v1/verify',
+    what: 'Redeeming a link or code that was emailed',
+    allowance: 360,
+    windowSeconds: 3600,
+    scope: 'ip',
+    why:
+      'The other half of every emailed link: a token that arrives has to be ' +
+      'redeemed, and guessing at redemption is a different attack from ' +
+      'guessing at sending. Well above a person tapping a link twice because ' +
+      'the first tap did not seem to do anything.',
+    probeCost: 'harmless',
   },
   {
     id: 'token_refresh',
@@ -129,6 +231,7 @@ export const AUTH_LIMITS: readonly AuthLimit[] = [
     // limit hurts the people using the app and nobody else.
     allowance: 1800,
     windowSeconds: 3600,
+    scope: 'ip',
     why:
       'Every open tab refreshes on a schedule nobody chose, and §M says a ' +
       'credential problem must never cost somebody their work. A tight limit ' +

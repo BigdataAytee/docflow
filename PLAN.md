@@ -78,11 +78,18 @@ Phase 7's §V checklist cannot go green while Phase 5's gate is unproven.
 
 Three things nobody in this repository can do, each one setting:
 
-1. **The password-reset rate limit.** `gate:hosted:api` found the endpoint
-   accepting fifteen requests without refusing one, against a declared ten per
-   hour. Dashboard → Authentication → Rate Limits. The address in a reset
-   request is attacker-chosen, so an ungoverned reset endpoint is a mail bomb
-   with our domain on it.
+1. **The SIGN-IN rate limit regressed, and it is the live one.** On 15 Sep
+   `gate:hosted:api` reported it refusing after 31 against a declared 30 per
+   300s. On 16 Sep, after the limits were reconfigured and live SMTP added, two
+   consecutive runs report **35 requests, none refused**. Same probe, same
+   endpoint, same declared number — so the change is in the dashboard, and only
+   somebody who can open it can say what to. This is the password-guessing
+   surface, so it matters more than the one it replaced on this list.
+
+   The password-reset limit is no longer listed here: it is set (60s minimum
+   interval per user, under a 150/hour project email budget), and the gate now
+   reports it as unverifiable-by-probe rather than failing, with the manual
+   check written into the skip line.
 2. **`frame-ancestors` on the web host.** The app carries its own content
    security policy in the built document (`src/web/csp.ts`), because the same
    bundle is served by a host AND by Capacitor from the app's own assets — a

@@ -25,10 +25,44 @@ import {
 } from './limits'
 
 describe('The declaration is honest about itself (§X)', () => {
-  it('says it is not applied anywhere', () => {
-    // The moment this is true, something has to have been run against a real
-    // project — and the gate is the only thing that can say so.
-    expect(APPLIED).toBe(false)
+  /**
+   * This used to assert `APPLIED === false`, with a note saying the moment it
+   * became true something must have been run against a real project. It has
+   * been, so the assertion changed — and flipping it to `toBe(true)` would
+   * have been a weaker test than the one it replaced, because a boolean
+   * asserting its own value proves nothing.
+   *
+   * What guards the flag now is COHERENCE. A declaration claiming to be in
+   * force has to describe limits a provider could actually enforce, and the
+   * three below are the ways the old rows failed that: a mail limit above the
+   * mail budget, a missing scope, an endpoint nobody named. The gate is still
+   * the only thing that can say the dashboard agrees.
+   */
+  it('is applied, and every row says what it is counted per', () => {
+    expect(APPLIED).toBe(true)
+    for (const limit of AUTH_LIMITS) {
+      expect(['ip', 'user', 'project'], `${limit.id} has no scope`).toContain(limit.scope)
+    }
+  })
+
+  it('never declares a mail limit above the mail budget it draws on', () => {
+    // Every mail-sending endpoint shares ONE hourly budget. A per-endpoint
+    // allowance above it would be describing headroom that does not exist —
+    // which is exactly how the old reset row came to promise ten an hour
+    // while the project refused nothing at all.
+    const budget = limitFor('email_send')
+    expect(budget?.scope).toBe('project')
+
+    const perHour = (limit: { allowance: number; windowSeconds: number }): number =>
+      (limit.allowance / limit.windowSeconds) * 3600
+
+    for (const id of ['password_reset', 'otp']) {
+      const limit = limitFor(id)
+      if (limit === undefined) throw new Error(`${id} is missing`)
+      expect(perHour(limit), `${id} claims more mail than the budget allows`).toBeLessThanOrEqual(
+        perHour(budget!),
+      )
+    }
   })
 
   it('gives every limit a reason somebody could argue with', () => {

@@ -349,9 +349,13 @@ export async function checkAuthRateLimits(url: string, anonKey: string): Promise
     record(
       `10. auth throttles ${limit.what.toLowerCase()} (§P)`,
       'skip',
-      limit.probeCost === 'sends_email'
-        ? 'never probed: it sends mail to whatever address is given'
-        : 'set GATE_RESET=1 to probe this on a scratch project — it creates accounts',
+      // The limit's own reason where it has one: "cannot be seen by a probe"
+      // and "would cost somebody something" are different skips, and saying
+      // the wrong one sends whoever reads it to the wrong dashboard.
+      limit.whyNotProbed ??
+        (limit.probeCost === 'sends_email'
+          ? 'never probed: it sends mail to whatever address is given'
+          : 'set GATE_RESET=1 to probe this on a scratch project — it creates accounts'),
     )
   }
 
