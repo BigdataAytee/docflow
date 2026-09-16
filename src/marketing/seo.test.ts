@@ -6,6 +6,7 @@
 import { describe, expect, it } from 'vitest'
 
 import { EN_GB, EN_NG, FR, LAUNCH_LOCALES, TERMINOLOGY_TABLES } from '../domain/locale/data/terminology'
+import { legalPages } from './legalPages'
 import { hasCopyFor } from './copy'
 import { DOCUMENT_TYPES, marketingRoutes, pathFor } from './routes'
 import { MARKETING_ROBOTS, SITE_ORIGIN, absolute, headFor, jsonLdFor } from './seo'
@@ -172,7 +173,14 @@ describe('Only marketing pages are crawlable (§T, §P)', () => {
     const locs = new Set(
       [...xml.matchAll(/<loc>([^<]+)<\/loc>/g)].map((match) => match[1] ?? ''),
     )
-    const expected = new Set(marketingRoutes(LAUNCH_LOCALES).map((r) => absolute(r.path)))
+    // Still built by inclusion — two enumerated lists rather than one, never
+    // a directory walk with a filter. The legal pages are the second list:
+    // English-only, outside the locale cluster, and deliberately indexable,
+    // which is the opposite of a customer's signing page.
+    const expected = new Set([
+      ...marketingRoutes(LAUNCH_LOCALES).map((r) => absolute(r.path)),
+      ...legalPages().map((page) => absolute(page.path)),
+    ])
 
     expect(locs).toEqual(expected)
   })

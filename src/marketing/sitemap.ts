@@ -16,6 +16,7 @@
 
 import type { LocaleId } from '../domain/locale/types'
 import { absolute } from './seo'
+import { legalPages } from './legalPages'
 import { alternatesFor, marketingRoutes, redirects } from './routes'
 
 /** The app's own routes. Not marketing, not crawlable, never in the sitemap. */
@@ -54,6 +55,11 @@ export function sitemapXml(locales: readonly LocaleId[]): string {
     '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"',
     '        xmlns:xhtml="http://www.w3.org/1999/xhtml">',
     ...entries,
+    // The legal pages. No hreflang cluster on these: they are English only,
+    // and a cluster naming a language that does not exist advertises a 404.
+    ...legalPages().map(
+      (page) => `  <url>\n    <loc>${escapeXml(absolute(page.path))}</loc>\n  </url>`,
+    ),
     '</urlset>',
     '',
   ].join('\n')

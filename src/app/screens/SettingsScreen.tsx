@@ -34,6 +34,7 @@ import { DataAndSync } from '../../features/settings/DataAndSync'
 import { ReturnBand } from '../../features/settings/ReturnBand'
 import { dataUrlBytes } from '../../features/settings/storage'
 import { HelpSettings } from '../../features/settings/HelpSettings'
+import { LegalSettings } from '../../features/settings/LegalSettings'
 import { SignOutSheet } from '../../features/auth/SignOutSheet'
 import { useSessionActions } from '../session-context'
 import { ThemeSettings } from '../../features/theme/ThemeSettings'
@@ -61,6 +62,7 @@ const PANEL_ICONS: Readonly<Record<SettingsPanel, IconName>> = {
   pro: 'shield',
   account: 'user',
   help: 'help',
+  legal: 'file-check',
   delete: 'trash',
 }
 
@@ -316,6 +318,9 @@ function SettingsPanelBody() {
 
     case 'help':
       return <HelpPanel />
+
+    case 'legal':
+      return <LegalSettings />
 
     case 'delete':
       return <DeleteAccountPanel />

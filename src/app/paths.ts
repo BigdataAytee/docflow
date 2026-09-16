@@ -56,6 +56,7 @@ export const SETTINGS_PANELS = [
   'data',
   'account',
   'help',
+  'legal',
   'delete',
 ] as const
 export type SettingsPanel = (typeof SETTINGS_PANELS)[number]

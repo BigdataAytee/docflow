@@ -125,3 +125,22 @@ export async function overLimit(
     return false
   }
 }
+
+/**
+ * `payment-webhook`, per company.
+ *
+ * The route is public — it has to be, a provider cannot sign in — and every
+ * request costs an indexed credentials lookup plus an HMAC before it can be
+ * judged. That is small and it is not nothing, and the route name carries the
+ * company id, so anybody who has seen one webhook URL can aim at it.
+ *
+ * Sized against reality rather than against fear: a busy Nigerian business
+ * takes single-figure card payments an hour, and Paystack retries a handful
+ * of times on failure. Three hundred an hour is two orders of magnitude above
+ * that and still bounds a flood.
+ */
+export const PAYMENT_WEBHOOK_BUCKET: RateBucket = {
+  bucket: 'payment_webhook_caller',
+  limit: 300,
+  windowSeconds: 3600,
+}

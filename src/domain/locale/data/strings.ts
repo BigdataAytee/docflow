@@ -395,6 +395,8 @@ export interface UiStrings {
     readonly themeSystem: string
     readonly themeLight: string
     readonly themeDark: string
+    readonly legal: string
+    readonly legalUnfinished: string
     readonly defaultSignature: string
     readonly signatureHint: string
   }
@@ -1292,6 +1294,8 @@ const EN: UiStrings = {
     themeSystem: 'Follow phone',
     themeLight: 'Light',
     themeDark: 'Dark',
+    legal: 'Privacy & terms',
+    legalUnfinished: 'These documents still have blanks to fill in before release.',
     defaultSignature: 'Default signature',
     signatureHint: 'Signs new documents unless you draw a different one.',
   },

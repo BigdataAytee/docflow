@@ -65,8 +65,8 @@ describe('The command palette', () => {
   it('opens on the whole list, so the first use teaches what is in it', () => {
     open()
     const list = screen.getByRole('listbox')
-    // Four tabs, four lists, twelve settings panels, four creates.
-    expect(within(list).getAllByRole('option').length).toBe(24)
+    // Four tabs, four lists, thirteen settings panels, four creates.
+    expect(within(list).getAllByRole('option').length).toBe(25)
     expect(screen.getByRole('dialog', { name: strings.palette.title })).toBeInTheDocument()
   })
 

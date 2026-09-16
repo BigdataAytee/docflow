@@ -12,6 +12,7 @@ import { LAUNCH_LOCALES, TERMINOLOGY_TABLES } from '../domain/locale/data/termin
 import { TEMPLATES } from '../pdf/templates'
 import { hasCopyFor } from './copy'
 import { escapeHtml, pageHtml, renderPage } from './page'
+import { legalPages } from './legalPages'
 import { marketingRoutes } from './routes'
 import { SITE_ORIGIN, headFor } from './seo'
 import { APP_PATH_PREFIXES } from './sitemap'
@@ -32,13 +33,29 @@ const html = (file: string): string => {
 }
 
 describe('What the site publishes', () => {
-  it('publishes a page per PUBLISHABLE locale per type, plus the sitemap and robots', () => {
+  it('publishes a page per PUBLISHABLE locale per type, the legal pages, the sitemap and robots', () => {
     const pages = marketingRoutes(PUBLISHED).length
 
     expect(PUBLISHED.length).toBeLessThan(LAUNCH_LOCALES.length)
-    expect(SITE.files).toHaveLength(pages + 2)
+    // Still counted rather than filtered: the count is what catches a page
+    // appearing that nobody added to a route table.
+    expect(SITE.files).toHaveLength(pages + legalPages().length + 2)
     expect(SITE.files.map((f) => f.file)).toContain('sitemap.xml')
     expect(SITE.files.map((f) => f.file)).toContain('robots.txt')
+  })
+
+  /**
+   * Emitted whatever else is or is not publishable. Both stores require a
+   * privacy policy at an openable URL, and holding it back because a French
+   * landing page has no translator would block a submission for an unrelated
+   * reason.
+   */
+  it('publishes the legal pages even when locales are blocked', () => {
+    for (const page of legalPages()) {
+      expect(SITE.files.map((f) => f.file)).toContain(page.file)
+    }
+    expect(html('legal/privacy/index.html')).toContain('Privacy policy')
+    expect(html('legal/terms/index.html')).toContain('Terms of service')
   })
 
   it('publishes each page at a suffix-free URL', () => {

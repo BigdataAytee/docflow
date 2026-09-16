@@ -34,6 +34,7 @@
 // @ts-expect-error — Deno resolves this at deploy time; the app never builds it.
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
+import { PAYMENT_WEBHOOK_BUCKET, overLimit } from '../_shared/ratelimit.ts'
 import { type Credentials, normalise, routeOf, verify } from './rules.ts'
 
 declare const Deno: { env: { get(name: string): string | undefined } }
@@ -66,6 +67,35 @@ export default async function handler(request: Request): Promise<Response> {
   const route = routeOf(new URL(request.url).pathname)
   if (route === null) return done('ignored', 'unknown route')
   const { provider, companyId } = route
+
+  /*
+   * THE ONE PLACE THIS FUNCTION ANSWERS WITH A NON-2xx, and the reason is the
+   * distinction the rest of the file is built on.
+   *
+   * Everything else here refuses with 200 because those refusals are
+   * PERMANENT: a bad signature will never become a good one, so an escalating
+   * retry storm buys nobody anything. A rate limit is the opposite — it is
+   * temporary by construction, and a provider retrying afterwards is exactly
+   * the behaviour wanted. Answering 200 here would silently DROP a real
+   * payment event during a flood, and §V is explicit that a provider-backed
+   * payment is confirmed only by a verified provider event: lose the event
+   * and the money never lands on the invoice.
+   *
+   * So: 429 with `Retry-After`, charged before the credentials lookup so a
+   * flood stops costing a query per request. The limiter fails OPEN, which is
+   * the right way round here — a limiter outage must not stop payments being
+   * recorded.
+   */
+  if (await overLimit(admin, PAYMENT_WEBHOOK_BUCKET, companyId)) {
+    return new Response(JSON.stringify({ status: 'rate_limited' }), {
+      status: 429,
+      headers: {
+        'content-type': 'application/json',
+        'x-content-type-options': 'nosniff',
+        'retry-after': String(PAYMENT_WEBHOOK_BUCKET.windowSeconds),
+      },
+    })
+  }
 
   // The RAW text, read once and never re-serialised: Paystack signs the bytes,
   // and JSON.parse followed by JSON.stringify is not the same bytes.

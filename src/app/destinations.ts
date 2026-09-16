@@ -105,7 +105,7 @@ export function settingsGroups(strings: UiStrings): readonly SettingsGroup[] {
     {
       id: 'you',
       title: strings.settings.groupYou,
-      panels: ['account', 'region', 'appearance', 'data', 'pro', 'help', 'delete'],
+      panels: ['account', 'region', 'appearance', 'data', 'pro', 'help', 'legal', 'delete'],
     },
   ]
 }
@@ -123,6 +123,7 @@ export function settingsDestinations(strings: UiStrings): Destination[] {
     data: strings.dataSync.title,
     account: strings.account.title,
     help: strings.help.title,
+    legal: strings.settings.legal,
     delete: strings.deleteAccount.rowLabel,
   }
 

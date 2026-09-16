@@ -9,6 +9,7 @@
 import { LAUNCH_LOCALES, TERMINOLOGY_TABLES } from '../domain/locale/data/terminology'
 import type { LocaleId } from '../domain/locale/types'
 import { hasCopyFor } from './copy'
+import { legalPages } from './legalPages'
 import { type StoreIds, renderPage } from './page'
 import { marketingRoutes, routeProblems } from './routes'
 import { robotsTxt, sitemapXml } from './sitemap'
@@ -81,6 +82,11 @@ export function buildSite(
     const page = renderPage(table, route.locale, route.type, published, store)
     if (page !== undefined) files.push({ file: fileFor(page.path), contents: page.html })
   }
+
+  // The legal documents: English only and outside the locale cluster, for the
+  // reason in `legalPages.ts`. Emitted regardless of which locales publish,
+  // because a store reviewer needs the privacy URL whatever else is ready.
+  for (const page of legalPages()) files.push({ file: page.file, contents: page.contents })
 
   files.push({ file: 'sitemap.xml', contents: sitemapXml(published) })
   files.push({ file: 'robots.txt', contents: robotsTxt() })
