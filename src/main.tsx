@@ -26,7 +26,8 @@ import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 
 import { App } from './app/App'
-import { createBackend } from './data/backend'
+import { createBackend, type Backend } from './data/backend'
+import { startApp } from './app/start'
 import './index.css'
 
 const root = document.getElementById('root')
@@ -40,19 +41,19 @@ const env = import.meta.env as unknown as Record<string, string | undefined>
  * On a phone: the encrypted SQLite store, which is the whole point of Phase 4
  * and what every airplane-mode journey runs against. In a browser: the
  * in-memory store `npm run dev` has always used.
+ *
+ * It is told whether it is native rather than asking, because the SHELL is no
+ * longer settled from in here. It used to be, and that was a bug: this
+ * function is `createBackend`'s demo loader, so it is never called at all on a
+ * build with a Supabase project — and the splash on every account build stayed
+ * up over a working app. See `app/start.ts`.
  */
-const loadLocalStore = async () => {
-  const { isNativePlatform, openNativeBackend, settleShell } = await import('./native/boot')
-
-  if (await isNativePlatform()) {
-    document.documentElement.classList.add('native')
-    const native = await openNativeBackend()
-    // After the backend resolves, never before: the splash and the status bar
-    // are not on the cold-start path (§Q Phase 4's < 2s budget).
-    void settleShell()
+const loadLocalStore = async (native: boolean, shell: typeof import('./native/boot')) => {
+  if (native) {
+    const store = await shell.openNativeBackend()
     // Encrypted SQLite: this survives closing the app, and the banner has to
     // say so rather than repeating the browser's answer.
-    return { companyId: native.companyId, repositories: native.repositories, durable: true }
+    return { companyId: store.companyId, repositories: store.repositories, durable: true }
   }
 
   const [{ DEV_COMPANY_ID, devState }, { createMemoryRepositories }] = await Promise.all([
@@ -79,8 +80,18 @@ const loadLocalStore = async () => {
  * deriving the key. There is no idle time to move the work into. See
  * `docs/phase-4/cold-start.md` for the measurements and what would actually
  * help.
+ *
+ * The `native/boot` import is not on the CUSTOMER's path: a public link never
+ * calls this, which is the case `data/backend` defers both branches for.
  */
-const loadBackend = () => createBackend(env, loadLocalStore)
+const loadBackend = async (): Promise<Backend> => {
+  const shell = await import('./native/boot')
+  return startApp(
+    (native) => createBackend(env, () => loadLocalStore(native, shell)),
+    shell,
+    () => document.documentElement.classList.add('native'),
+  )
+}
 
 createRoot(root).render(
   <StrictMode>

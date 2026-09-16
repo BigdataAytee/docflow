@@ -50,6 +50,57 @@ control that cannot do what it says (§N):
 | **"Your name" field** | §E's `users` row has `display_name`; nothing in this build reads that row. An input with nowhere to save is the species above. | needs a users repository |
 | **FR / ES / AR** | §S: no non-working language toggle ever ships. The picker lists what has a complete catalogue, derived rather than hand-kept. | needs catalogues |
 
+### Phase 4 — the native shell, on a device (2026-09-17)
+
+The first debug APK on a Pixel 9 Pro XL showed what looked like a blank white
+screen. It was not: the app booted correctly, served every chunk, threw
+nothing, and rendered behind **Capacitor's splash, which never hid**.
+
+**The bug, and the shape to remember it by.** `settleShell()` — hide the
+splash, paint the status bar, mark the document `native` — had exactly one
+call site, inside `loadLocalStore` in `main.tsx`. That function is the loader
+`createBackend` calls *only when no Supabase project is configured*. So every
+**account** build returned down the other branch and never touched the shell.
+
+The shell depends on the **platform**; the store depends on the
+**configuration**. They are two questions, and answering both in one place
+made one of them unreachable. The split now lives in `src/app/start.ts`,
+which exists as its own module because `main.tsx` calls `createRoot` and
+therefore no test has ever executed a line of it.
+
+Native + account had **no coverage anywhere** — `npm run dev` is web + demo,
+the suite is web + demo, the device gate is native + demo. `src/app/start.test.ts`
+covers the matrix; reverting the fix turns three of its nine red.
+
+**Still Capacitor defaults — the splash and the icons.** `android/.../drawable*`
+and `mipmap*` are the template's assets, and the splash a real owner sees on
+every cold start is the Capacitor logo on a pale background. §Q Phase 4 owns
+this; `capacitor.config.ts` already sets `backgroundColor: '#0B1F4B'` (§F
+Royal Blue), which nothing currently honours because the artwork underneath it
+is the default. The missing favicon noted further down this file is the same
+piece of work.
+
+**Native wiring that is reachable from nowhere.** The sweep for "what else was
+hiding on the demo branch" found nothing else gated that way — but three
+modules are unreferenced by any code path at all, which is worse and is the
+same species `tools/sweeps/declared.ts` was written for:
+
+| Module | Export | State |
+| --- | --- | --- |
+| `src/native/back.ts` | `wireBackButton` | Never called. `boot.ts`'s own step 4 says "wire the back button". Android's back button is unhandled — it exits the app from any screen. Needs router handlers, so it is real integration, not a line. |
+| `src/native/share.ts` | `createNativeSharePort` | Never called. `DocumentScreen` and `SettingsScreen` hardcode `createWebSharePort()`, so the phone shares through the Web Share API and Capacitor's Share plugin is registered and unused. |
+| `src/native/contacts.ts` | `readContacts` | Never called. The Contacts plugin is registered; nothing imports a customer. |
+
+`src/native/secure-storage.ts` also exports a `deviceId()` keyed
+`docflow.deviceId`, and `src/app/device.ts` exports a *different* `deviceId()`
+on the same key backed by `localStorage`. The app uses the `localStorage` one —
+so the id qualifying an offline reference lives somewhere Android's "clear
+cache" can erase, which `device.ts`'s own header says Phase 4 would fix. Two
+implementations, one key, and the durable one is the unused one.
+
+None of the four are fixed here. They are listed so the next person finds them
+as work rather than as a surprise on a device.
+
 ### The deploy (done 2026-09-15) and what it did not settle
 
 Migrations 0001–0020 are applied, the three edge functions are deployed and
