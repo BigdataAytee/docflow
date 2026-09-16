@@ -78,32 +78,42 @@ Phase 7's §V checklist cannot go green while Phase 5's gate is unproven.
 
 Three things nobody in this repository can do, each one setting:
 
-1. **The SIGN-IN rate limit is still not engaging** (16 Sep, after the value
-   was corrected from 360 back to 30 and confirmed on a refreshed page). A
-   direct diagnostic against `/auth/v1/token?grant_type=password` sent 35
-   requests and got **35× `400 invalid_credentials` and not one 429** — no
-   rate-limit response of any kind, so the probe is not missing a signal in a
-   shape it does not recognise.
+1. **NOTHING IS LIMITING FAILED PASSWORD ATTEMPTS.** This is a live exposure,
+   not a flaky check, and it is first on this list for that reason.
 
-   What that rules out: "Supabase does not count sign-ins for an address with
-   no account" — the explanation that fits the reset endpoint. It cannot be the
-   explanation here, because THIS PROBE, against an address with no account,
-   refused after 31 on 15 Sep. The mechanism worked; the configuration is what
-   changed. So it is the dashboard value or its propagation, and only somebody
-   who can open it can settle which.
+   Verified three ways on 16 Sep, after the value was corrected to 30 and
+   confirmed on a refreshed page:
 
-   Original entry, kept because the timeline is the evidence: on 15 Sep
-   `gate:hosted:api` reported it refusing after 31 against a declared 30 per
-   300s. On 16 Sep, after the limits were reconfigured and live SMTP added, two
-   consecutive runs report **35 requests, none refused**. Same probe, same
-   endpoint, same declared number — so the change is in the dashboard, and only
-   somebody who can open it can say what to. This is the password-guessing
-   surface, so it matters more than the one it replaced on this list.
+   · `gate:hosted:api`, four runs across forty minutes including one ten
+     minutes after the change: **35 requests, none refused**, every time.
+     Propagation delay is ruled out.
+   · A direct diagnostic against `/auth/v1/token?grant_type=password`:
+     **35× `400 invalid_credentials`, zero 429**, no rate-limit code in any
+     shape. The probe is not missing a signal it fails to recognise.
+   · The same run against an account that **EXISTS** — created confirmed via
+     the admin API so no mail was sent and no bounce charged, deleted after:
+     **35 wrong passwords, zero 429**.
 
-   The password-reset limit is no longer listed here: it is set (60s minimum
-   interval per user, under a 150/hour project email budget), and the gate now
-   reports it as unverifiable-by-probe rather than failing, with the manual
-   check written into the skip line.
+   That last one is what makes it serious. The comfortable explanation was
+   the one that fits the reset endpoint — a probe blind to a limit because
+   Supabase ignores addresses with no account. It is disproven: a real,
+   confirmed account takes thirty-five consecutive wrong passwords from one
+   IP without a single refusal.
+
+   **There is no fix in this repository.** Sign-in goes straight to GoTrue;
+   no edge function sits in front of it, and a limiter in the client is a
+   suggestion to whoever is attacking it (which is what
+   `src/domain/auth/limits.ts` has said from the day it was written). The
+   control is the provider’s.
+
+   Hypothesis for whoever picks this up, labelled as one: the refusal seen on
+   15 Sep may have come from the restrictions Supabase applies while the
+   BUILT-IN email service is in use, rather than from the configured sign-in
+   limit — and enabling custom SMTP lifted them. If so the configured value
+   has never governed this endpoint, and the 15 Sep pass was measuring
+   something else. Worth raising with Supabase support rather than guessing
+   at the dashboard again.
+
 2. **`frame-ancestors` on the web host.** The app carries its own content
    security policy in the built document (`src/web/csp.ts`), because the same
    bundle is served by a host AND by Capacitor from the app's own assets — a
