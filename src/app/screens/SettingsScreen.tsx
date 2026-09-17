@@ -14,6 +14,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Navigate, NavLink, useLocation, useNavigate, useParams } from 'react-router-dom'
 
+import { countryName } from '../../domain/locale/data/countries'
 import { useCompany } from '../context'
 import { useAppData } from '../store'
 import { ONBOARDING, SETTINGS_PANELS, type SettingsPanel, settingsPath } from '../paths'
@@ -100,7 +101,15 @@ export function SettingsIndexScreen() {
       case 'signature':
         return company?.defaultSignatureAssetId == null ? strings.settings.notSet : undefined
       case 'region':
-        return company?.localeRegion
+        /*
+         * The NAME, not the stored code. This row read "NG" — the third place
+         * in the app to show a person an ISO code as though it were a country,
+         * after both dropdowns. The value a row summarises should read the way
+         * the screen behind it reads.
+         */
+        return company === undefined || company === null
+          ? undefined
+          : countryName(company.localeRegion)
       case 'account':
         return session?.email ?? strings.account.noSession
       default:

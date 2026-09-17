@@ -32,7 +32,8 @@
     "sweep:largetext": "npm run shots:build && cross-env SWEEP=1 vitest run tools/sweeps/largetext.test.ts",
     "sweep:screenreader": "npm run shots:build && cross-env SWEEP=1 vitest run tools/sweeps/screenreader.test.ts",
     "gate:hosted:db": "cross-env GATE_PART=db npm run gate:hosted",
-    "gate:hosted:api": "cross-env GATE_PART=api npm run gate:hosted"
+    "gate:hosted:api": "cross-env GATE_PART=api npm run gate:hosted",
+    "dev:demo": "vite --mode demo --port 5174"
   },
   "dependencies": {
     "@aparajita/capacitor-biometric-auth": "^10.0.0",
