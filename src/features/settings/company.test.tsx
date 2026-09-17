@@ -135,9 +135,19 @@ describe('The logo can actually be set (§F, §G)', () => {
     wrap(<CompanySettings {...props} />)
     const create = screen.getByRole('button', { name: 'Create with AI' })
     expect(create).toBeDisabled()
-    expect(
-      screen.getByText(/offline model/i),
-    ).toHaveAttribute('id', create.getAttribute('aria-describedby'))
+
+    /*
+     * The REASON is described by the button, and it names what to do instead.
+     * Asserted by the aria relationship and by the presence of a way forward,
+     * rather than by pinning the sentence — the wording was changed once
+     * already and a test that only knows the old prose fails on an
+     * improvement while a button wired to nothing would still pass.
+     */
+    const reasonId = create.getAttribute('aria-describedby')
+    expect(reasonId).not.toBeNull()
+    const reason = document.getElementById(reasonId as string)
+    expect(reason?.textContent ?? '').toMatch(/upload/i)
+    expect((reason?.textContent ?? '').length).toBeGreaterThan(10)
   })
 
   it('accepts an image file and hands up a data URL', async () => {

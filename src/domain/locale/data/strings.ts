@@ -1290,7 +1290,7 @@ const EN: UiStrings = {
     uploadLogo: 'Upload',
     replaceLogo: 'Replace',
     createLogo: 'Create with AI',
-    createLogoLater: 'Making a logo on the phone arrives with the offline model. Upload one meanwhile.',
+    createLogoLater: 'Coming soon — upload an image for now.',
     logoUnreadable: 'That file could not be read as an image.',
     nameStyle: 'Name style',
     logoSize: 'Logo size',

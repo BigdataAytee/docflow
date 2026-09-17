@@ -16,6 +16,7 @@ import { DocumentList } from '../documents/DocumentList'
 import { BuilderShell } from '../documents/BuilderShell'
 import { type CompanyLocaleSettings, localeProfileOf } from './region'
 import { RegionSettings } from './RegionSettings'
+import { stringsFor } from '../../domain/locale/data/strings'
 
 const settings: CompanyLocaleSettings = { region: 'NG', language: 'en', labelOverrides: {} }
 
@@ -173,5 +174,60 @@ describe('The app language is a choice, and only where it works (§S, §D.4)', (
     }
     // And it says why there is one, rather than looking broken.
     expect(screen.getByText(/never ships a half-translated screen/i)).toBeInTheDocument()
+  })
+})
+
+/**
+ * The country list a person reads, in BOTH places that show one (§D).
+ *
+ * `NewBusinessScreen` and this screen each render their own country picker.
+ * The first was fixed to show names and cover every country; this one was
+ * missed and still rendered `NG`, `CI` — the app's internal identifier shown
+ * to a person as though it were a country. That is what a second copy of a
+ * list always costs, so the guard is on the rendered options rather than on
+ * either component.
+ */
+describe('The country picker reads as countries, not as codes', () => {
+  const renderRegion = () =>
+    wrap(
+      <RegionSettings
+        settings={settings}
+        onRegion={vi.fn()}
+        onLanguage={vi.fn()}
+        onOverride={vi.fn()}
+      />,
+    )
+
+  const options = (): string[] =>
+    Array.from(
+      screen.getByLabelText(stringsFor('en').settings.businessCountry).querySelectorAll('option'),
+    ).map((option) => option.textContent ?? '')
+
+  it('shows full names, never two-letter codes', () => {
+    renderRegion()
+    const shown = options()
+    expect(shown).toContain('Nigeria')
+    expect(shown).toContain('Ghana')
+    expect(shown).toContain('Côte d’Ivoire')
+    // Not a single bare code left anywhere in the list.
+    expect(shown.filter((label) => /^[A-Z]{2}$/.test(label))).toEqual([])
+  })
+
+  it('covers the world, not a launch shortlist', () => {
+    renderRegion()
+    const shown = options()
+    expect(shown.length).toBeGreaterThan(200)
+    for (const name of ['Kenya', 'Brazil', 'Japan', 'Philippines', 'Pakistan']) {
+      expect(shown, `${name} is missing`).toContain(name)
+    }
+  })
+
+  it('still selects by code underneath, so nothing stored changes', () => {
+    renderRegion()
+    const select = screen.getByLabelText(stringsFor('en').settings.businessCountry)
+    const nigeria = Array.from(select.querySelectorAll('option')).find(
+      (option) => option.textContent === 'Nigeria',
+    )
+    expect(nigeria?.getAttribute('value')).toBe('NG')
   })
 })

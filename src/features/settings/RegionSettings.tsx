@@ -10,15 +10,17 @@
  * effects the user discovers later somewhere else.
  */
 
+import { useMemo } from 'react'
+
 import { useCompany } from '../../app/context'
 import { Icon } from '../../ui'
 import { availableLanguages } from '../../domain/locale/data/strings'
 import { DOCUMENT_TYPES } from '../../domain/documents/types'
 import { label as typeLabel } from '../../domain/locale/profile'
 import { fieldsFor } from '../../domain/locale/bank-fields'
+import { countriesByName } from '../../domain/locale/data/countries'
 import {
   type CompanyLocaleSettings,
-  SUPPORTED_REGIONS,
   localeProfileOf,
   regionProfile,
 } from './region'
@@ -41,6 +43,9 @@ export function RegionSettings({
   const profile = regionProfile(settings.region)
   const localeProfile = localeProfileOf(settings)
   const languages = availableLanguages()
+  // Built once: 240-odd names through a collator is not work to repeat on
+  // every keystroke elsewhere on the screen.
+  const countries = useMemo(() => countriesByName(), [])
 
   return (
     <section className="space-y-4 px-4 py-4">
@@ -56,9 +61,16 @@ export function RegionSettings({
           aria-label={strings.settings.businessCountry}
           className="sunken min-h-tap w-full rounded-lg px-3 text-sm"
         >
-          {SUPPORTED_REGIONS.map((region) => (
-            <option key={region} value={region}>
-              {region}
+          {/*
+            The NAME, not the code. This listed two-letter codes — "NG", "CI"
+            — which is the app's internal identifier shown to a person as
+            though it were a country. `NewBusinessScreen` was fixed for this
+            and this one was missed, which is what a second copy of a list
+            always costs. Both now read the same source, sorted by name.
+          */}
+          {countries.map(({ code, name }) => (
+            <option key={code} value={code}>
+              {name}
             </option>
           ))}
         </select>
