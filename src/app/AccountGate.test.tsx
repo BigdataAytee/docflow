@@ -31,7 +31,11 @@ function session(overrides: Partial<SessionService> & { stage?: SessionStage }):
       // business setup exists for.
       stage = { kind: 'needs_company' }
       listeners.forEach((l) => l())
+      // This project confirms by default in these tests; the cases about the
+      // "check your email" notice say otherwise for themselves.
+      return { needsEmailConfirmation: false }
     },
+    completeFromUrl: async () => {},
     signInWithGoogle: async () => ({ url: 'https://accounts.example/auth' }),
     // Enabled by default here so the existing Google assertions keep testing
     // the button rather than accidentally testing that it is hidden. The

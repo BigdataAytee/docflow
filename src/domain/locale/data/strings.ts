@@ -124,6 +124,11 @@ export interface UiStrings {
      * inbox is opened.
      */
     readonly confirmEmailFirst: string
+    /** Said the moment a sign-up succeeds but cannot be used yet. */
+    readonly confirmSent: string
+    /** While the request is in flight, so the wait is not silent. */
+    readonly signingIn: string
+    readonly creatingAccount: string
     /** A method the project does not have. Points at the one that works. */
     readonly signInUnavailable: string
     readonly signInProblem: string
@@ -1065,6 +1070,9 @@ const EN: UiStrings = {
     tooManyTriesIn: 'Too many tries. Try again in {wait}.',
     wrongDetails: 'That email and password do not match.',
     confirmEmailFirst: 'Open the confirmation link in your email, then sign in.',
+    confirmSent: 'Account created. We sent a confirmation link to {email} — open it, then sign in.',
+    signingIn: 'Signing in…',
+    creatingAccount: 'Creating your account…',
     signInUnavailable: 'That way of signing in is not available. Use your email and password.',
     signInProblem: 'Something went wrong signing in. Try again.',
   },

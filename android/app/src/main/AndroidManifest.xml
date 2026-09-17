@@ -42,6 +42,22 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
 
+            <!--
+              Where an emailed auth link comes back to.
+
+              Without this the app cannot be opened by a link at all, so a
+              confirmation email had nowhere to return and fell back to the
+              project's Site URL - a dev server on someone's laptop. The
+              scheme matches APP_SCHEME in src/features/auth/redirect.ts, and
+              the same value must be in Supabase's redirect allow-list.
+            -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="com.docflow.app" android:host="auth-callback" />
+            </intent-filter>
+
         </activity>
 
         <provider

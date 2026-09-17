@@ -41,7 +41,13 @@ export const mayDeleteLocalData = (_state: AuthState): false => false
 export interface AuthService {
   currentState(): Promise<AuthState>
   signInWithPassword(email: string, password: string): Promise<AuthState>
-  signUpWithPassword(email: string, password: string): Promise<AuthState>
+  signUpWithPassword(
+    email: string,
+    password: string,
+    emailRedirectTo?: string,
+  ): Promise<AuthState>
+  /** Exchanges the code on a returning confirmation/reset link for a session. */
+  completeFromUrl(code: string): Promise<void>
   signInWithGoogle(redirectTo: string): Promise<{ url: string }>
   sendPasswordReset(email: string, redirectTo: string): Promise<void>
   signOut(): Promise<void>
@@ -188,10 +194,30 @@ export function createAuthService(
       return toState(data.session)
     },
 
-    async signUpWithPassword(email, password) {
-      const { data, error } = await client.auth.signUp({ email, password })
+    async signUpWithPassword(email, password, emailRedirectTo) {
+      /*
+       * `emailRedirectTo` is the whole of the fix for a confirmation link
+       * that opened a dev server. Without it GoTrue uses the project's Site
+       * URL, which is a value nobody on a phone can reach.
+       */
+      const { data, error } = await client.auth.signUp({
+        email,
+        password,
+        ...(emailRedirectTo === undefined ? {} : { options: { emailRedirectTo } }),
+      })
       if (error !== null) throw providerRefusal(error)
       return toState(data.session)
+    },
+
+    /**
+     * Completes the round trip a returning link started.
+     *
+     * The PKCE verifier was stored when the link was requested, in this same
+     * WebView origin, so the exchange happens here rather than on any server.
+     */
+    async completeFromUrl(code) {
+      const { error } = await client.auth.exchangeCodeForSession(code)
+      if (error !== null) throw providerRefusal(error)
     },
 
     async signInWithGoogle(redirectTo) {

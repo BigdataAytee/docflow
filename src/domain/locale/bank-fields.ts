@@ -6,18 +6,38 @@
  * the same definition, so the two cannot drift (§J).
  */
 
-import { type BankField, type CurrencyDefinition, CURRENCIES } from './data/currencies'
+import {
+  type BankField,
+  type CurrencyDefinition,
+  CURRENCIES,
+  genericCurrency,
+} from './data/currencies'
 
 export class CurrencyError extends Error {}
 
 export function currencyDefinition(code: string): CurrencyDefinition {
-  const def = CURRENCIES[code]
-  if (def === undefined) {
+  const normalised = code.trim().toUpperCase()
+  const def = CURRENCIES[normalised]
+  if (def !== undefined) return def
+
+  /*
+   * A currency with no §J definition gets the international field set rather
+   * than an exception. The old behaviour — throw — was written to stop a
+   * market's fields being guessed, which is right, but it was the only
+   * behaviour, so a trader in an unlisted country could not create a business
+   * at all. The guess it prevented has been replaced by asking for what is
+   * true everywhere (bank, account number, name, optional SWIFT), and the
+   * per-market sets above are still the only ones anybody claims are local.
+   *
+   * Still an error for a value that is not a currency code: that is a bug in
+   * the caller, not an unlisted market, and defaulting it would hide it.
+   */
+  if (!/^[A-Z]{3}$/.test(normalised)) {
     throw new CurrencyError(
-      `No field definition for ${code}. §J field sets are per-market and must be added deliberately, never guessed (CLAUDE.md).`,
+      `"${code}" is not an ISO 4217 currency code. A missing market falls back; a malformed code is a bug.`,
     )
   }
-  return def
+  return genericCurrency(normalised)
 }
 
 /** The fields to render, in printed order. One source for form and PDF (§J). */

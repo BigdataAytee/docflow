@@ -222,6 +222,34 @@ export async function settleShell(): Promise<void> {
   await Promise.allSettled([hideSplash(), paintStatusBar()])
 }
 
+/**
+ * Listens for the link an emailed confirmation comes back on.
+ *
+ * Android delivers it as an intent because of the `auth-callback`
+ * intent-filter in the manifest; without this listener the app would be
+ * brought to the front and the code on the URL would be dropped on the floor,
+ * which reads to a person as "the link did nothing".
+ *
+ * Returns the unsubscribe. Failures are swallowed like everything else in the
+ * shell: a missing App plugin must not stop the app opening.
+ */
+export async function wireAuthCallback(
+  complete: (url: string) => Promise<void>,
+): Promise<() => void> {
+  try {
+    const [{ App }, { isAuthCallback }] = await Promise.all([
+      import('@capacitor/app'),
+      import('../features/auth/redirect'),
+    ])
+    const listener = await App.addListener('appUrlOpen', ({ url }) => {
+      if (isAuthCallback(url)) void complete(url)
+    })
+    return () => void listener.remove()
+  } catch {
+    return () => {}
+  }
+}
+
 async function hideSplash(): Promise<void> {
   const { SplashScreen } = await import('@capacitor/splash-screen')
   await SplashScreen.hide()

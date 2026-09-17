@@ -21,7 +21,7 @@ import { PASSWORD_MIN_LENGTH, passwordProblem } from './password'
 export interface SignInScreenProps {
   readonly strings: UiStrings
   readonly onSignIn: (email: string, password: string) => Promise<void>
-  readonly onSignUp: (email: string, password: string) => Promise<void>
+  readonly onSignUp: (email: string, password: string) => Promise<{ needsEmailConfirmation: boolean }>
   readonly onGoogle?: () => Promise<void>
   readonly onReset?: (email: string) => Promise<void>
 }
@@ -39,7 +39,13 @@ export function SignInScreen({
   const [mode, setMode] = useState<'in' | 'up'>('in')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
-  const [busy, setBusy] = useState(false)
+  /*
+   * What is happening, in words, while it happens. `busy` alone only greyed
+   * the button out: a sign-up on a slow connection takes seconds, said
+   * nothing, and then — with confirmations on — finished by leaving the screen
+   * exactly as it was. Indistinguishable from a button that does nothing.
+   */
+  const [busy, setBusy] = useState<null | 'in' | 'up' | 'reset' | 'google'>(null)
   const [error, setError] = useState<string | null>(null)
   const [notice, setNotice] = useState<string | null>(null)
 
@@ -50,10 +56,10 @@ export function SignInScreen({
    * and tell a stranger the rule at the same time.
    */
   const tooShort = mode === 'up' && password !== '' && passwordProblem(password) === 'too_short'
-  const canSubmit = email.trim() !== '' && password !== '' && !tooShort && !busy
+  const canSubmit = email.trim() !== '' && password !== '' && !tooShort && busy === null
 
-  const run = async (action: () => Promise<void>) => {
-    setBusy(true)
+  const run = async (what: 'in' | 'up' | 'reset' | 'google', action: () => Promise<void>) => {
+    setBusy(what)
     setError(null)
     setNotice(null)
     try {
@@ -63,7 +69,7 @@ export function SignInScreen({
       // and they describe the machine to whoever is probing it (§P, §S).
       setError(refusalMessage(classifyAuthFailure(cause), strings))
     } finally {
-      setBusy(false)
+      setBusy(null)
     }
   }
 
@@ -77,9 +83,20 @@ export function SignInScreen({
         onSubmit={(event) => {
           event.preventDefault()
           if (!canSubmit) return
-          void run(() =>
-            mode === 'in' ? onSignIn(email.trim(), password) : onSignUp(email.trim(), password),
-          )
+          void run(mode, async () => {
+            if (mode === 'in') {
+              await onSignIn(email.trim(), password)
+              return
+            }
+            const { needsEmailConfirmation } = await onSignUp(email.trim(), password)
+            /*
+             * The account exists but cannot be used yet, and NOTHING else on
+             * this screen would say so — the stage is still `signed_out`, so
+             * the sign-in form simply stays put. Without this the successful
+             * case and the silently-failed case look identical.
+             */
+            if (needsEmailConfirmation) setNotice(format(a.confirmSent, { email: email.trim() }))
+          })
         }}
       >
         <label className="block text-xs font-medium opacity-70" htmlFor={`${ids}-email`}>
@@ -126,18 +143,25 @@ export function SignInScreen({
         <button
           type="submit"
           disabled={!canSubmit}
+          aria-busy={busy !== null}
           className="raised tap-scale mt-5 min-h-tap w-full rounded-xl bg-gradient-to-b from-brand-light to-brand px-4 text-sm font-semibold text-white disabled:opacity-40"
         >
-          {mode === 'in' ? a.signIn : a.createAccount}
+          {busy === null
+            ? mode === 'in'
+              ? a.signIn
+              : a.createAccount
+            : busy === 'up'
+              ? a.creatingAccount
+              : a.signingIn}
         </button>
       </form>
 
       {onGoogle !== undefined && (
         <button
           type="button"
-          disabled={busy}
+          disabled={busy !== null}
           className="mt-3 min-h-tap w-full rounded-xl border border-edge/10 px-4 text-sm font-semibold disabled:opacity-40"
-          onClick={() => void run(onGoogle)}
+          onClick={() => void run('google', onGoogle)}
         >
           {a.continueWithGoogle}
         </button>
@@ -158,10 +182,10 @@ export function SignInScreen({
       {mode === 'in' && onReset !== undefined && (
         <button
           type="button"
-          disabled={email.trim() === '' || busy}
+          disabled={email.trim() === '' || busy !== null}
           className="min-h-tap text-xs font-medium underline opacity-70 disabled:opacity-30"
           onClick={() =>
-            void run(async () => {
+            void run('reset', async () => {
               await onReset(email.trim())
               // Deliberately the same message whether or not the address has
               // an account: anything else tells a stranger which emails are

@@ -12,10 +12,11 @@
  * logo, address, payment details and signature all belong to "Do this later".
  */
 
-import { useId, useState } from 'react'
+import { useId, useMemo, useState } from 'react'
 
 import type { UiStrings } from '../../domain/locale/data/strings'
 import { SUPPORTED_REGIONS, regionProfile } from '../settings/region'
+import { countriesByName } from '../../domain/locale/data/countries'
 
 export interface NewBusinessScreenProps {
   readonly strings: UiStrings
@@ -46,6 +47,9 @@ export function NewBusinessScreen({
 
   const [name, setName] = useState('')
   const [region, setRegion] = useState(suggestedRegion ?? 'NG')
+  // Built once: 240-odd names through a collator is not work to repeat on
+  // every keystroke in the name field above it.
+  const countries = useMemo(() => countriesByName(), [])
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -90,9 +94,18 @@ export function NewBusinessScreen({
           value={region}
           onChange={(event) => setRegion(event.target.value)}
         >
-          {SUPPORTED_REGIONS.map((code) => (
+          {/*
+            The NAME, not the code. This listed thirteen two-letter codes —
+            "NG", "CI" — which is the app's internal identifier shown to a
+            person as though it were a country. Someone who does not already
+            know that CI is Côte d'Ivoire has no way to find it, and someone
+            in Kenya could not find their country at all because it was not
+            there. Sorted by name so the list reads alphabetically to a
+            reader rather than to a database.
+          */}
+          {countries.map(({ code, name: label }) => (
             <option key={code} value={code}>
-              {code}
+              {label}
             </option>
           ))}
         </select>

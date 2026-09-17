@@ -152,9 +152,59 @@ export const CURRENCIES: Readonly<Record<string, CurrencyDefinition>> = {
   ]),
 }
 
+/**
+ * Currencies that are NOT two-decimal, as ISO 4217 defines them.
+ *
+ * This table is the reason the fallback below is safe to have at all. Rule #3
+ * says money is integer minor units and never inferred — so a currency whose
+ * subdivision is guessed at 100 when it is 1 does not merely display oddly, it
+ * stores ¥1,000 as ¥10.00 and loses two orders of magnitude on every amount a
+ * person enters. Nothing about that is recoverable later.
+ *
+ * `1` means no minor unit at all; `1000` means three decimals.
+ */
+const MINOR_UNITS: Readonly<Record<string, number>> = {
+  BIF: 1, CLP: 1, DJF: 1, GNF: 1, ISK: 1, JPY: 1, KMF: 1, KRW: 1, PYG: 1,
+  RWF: 1, UGX: 1, VND: 1, VUV: 1, XAF: 1, XOF: 1, XPF: 1,
+  BHD: 1000, IQD: 1000, JOD: 1000, KWD: 1000, LYD: 1000, OMR: 1000, TND: 1000,
+}
+
+/**
+ * The field set for a currency with no §J definition of its own.
+ *
+ * §J's per-market field sets are still exactly as validated as they were —
+ * `validated` stays false on everything, and `CURRENCIES` above is untouched.
+ * What changed is the answer for a currency that is NOT in it. It used to be
+ * an exception, which meant a trader in a country nobody had written a field
+ * set for could not create a business, let alone send an invoice.
+ *
+ * Bank, account number, account name and SWIFT is the set that works
+ * internationally: it is what a bank abroad needs to receive a transfer, and
+ * it invents no local identifier — no sort code for a country that has none,
+ * no IFSC outside India. Adding a market still means writing its real fields;
+ * until somebody does, this asks for what is universally true instead of
+ * refusing to take the payment.
+ */
+export function genericCurrency(code: string): CurrencyDefinition {
+  return {
+    code,
+    // The ISO code as the symbol. Honest and unambiguous — "KES 4,500" reads
+    // correctly everywhere, and a symbol guessed for the wrong country is
+    // worse than no symbol at all.
+    symbol: code,
+    minorUnits: MINOR_UNITS[code] ?? 100,
+    fields: [bank, accountNumber, accountName, { ...swift, required: false }],
+    validated: false,
+  }
+}
+
 /** The region's default currency (§D). The user may hold accounts in any. */
 export const REGION_DEFAULT_CURRENCY: Readonly<Record<string, string>> = {
   NG: 'NGN', GH: 'GHS', GB: 'GBP', IE: 'EUR', US: 'USD', CA: 'CAD',
-  FR: 'EUR', CI: 'XOF', ES: 'EUR', MX: 'USD', IN: 'INR', AE: 'AED',
+  // MX was 'USD'. Mexico's currency is the peso; the dollar was here because
+  // MXN had no §J field set and the old code threw rather than falling back,
+  // so a Mexican business would have been set up to invoice in dollars. That
+  // is a money default, not a formatting preference.
+  FR: 'EUR', CI: 'XOF', ES: 'EUR', MX: 'MXN', IN: 'INR', AE: 'AED',
   KE: 'KES', ZA: 'ZAR', AU: 'AUD', BR: 'BRL', EG: 'EGP', SG: 'SGD', CN: 'CNY',
 }

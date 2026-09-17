@@ -91,10 +91,39 @@ describe('One definition, read by the form and the PDF (§J)', () => {
     ])
   })
 
-  it('refuses a currency it has no definition for, rather than guessing', () => {
-    // CLAUDE.md: never invent banking rules. An unknown market is an error,
-    // not a best-effort field set.
-    expect(() => fieldsFor('JPY')).toThrow(CurrencyError)
+  /*
+   * CHANGED DELIBERATELY. This asserted that `fieldsFor('JPY')` THREW —
+   * "never invent banking rules; an unknown market is an error, not a
+   * best-effort field set". The principle stands and is asserted below: no
+   * LOCAL identifier is invented for a market nobody has validated. What
+   * changed is the consequence, because throwing meant a trader in an
+   * unlisted country could not record a bank transfer at all, which is not a
+   * safer outcome — it is the same outcome as having no product.
+   *
+   * The fallback asks only for what a transfer needs anywhere.
+   */
+  it('gives an unlisted currency the international field set, inventing nothing local', () => {
+    const kinds = fieldsFor('JPY').map((field) => field.kind)
+    expect(kinds).toEqual(['bank_name', 'account_number', 'account_name', 'swift'])
+    for (const local of ['sort_code', 'ifsc', 'routing_number', 'bsb', 'agencia', 'transit_number']) {
+      expect(kinds, `invented ${local} for a market nobody validated`).not.toContain(local)
+    }
+  })
+
+  /*
+   * A malformed code is a caller bug, not an unlisted market.
+   *
+   * The check is on SHAPE, deliberately: three letters falls back, anything
+   * else throws. Checking membership of a list of real ISO 4217 codes would
+   * mean keeping that list, and a currency missing from it would be refused
+   * for the same reason the whole fallback exists to stop. 'YEN' is not a
+   * real code and will fall back; that is a typo producing a usable form,
+   * not money going astray — the currency is stored as given either way.
+   */
+  it('still refuses something that is not shaped like a currency code', () => {
+    expect(() => fieldsFor('pounds')).toThrow(CurrencyError)
+    expect(() => fieldsFor('')).toThrow(CurrencyError)
+    expect(() => fieldsFor('N')).toThrow(CurrencyError)
   })
 
   it('marks every definition unvalidated until an in-market review (§W)', () => {
@@ -103,8 +132,20 @@ describe('One definition, read by the form and the PDF (§J)', () => {
     }
   })
 
+  /**
+   * The LAUNCH regions — the ones with a §J field set written for them —
+   * must still point at a real definition. The rest of the world resolves
+   * through the fallback, which is asserted above; iterating every country
+   * here would only be asserting that the fallback exists.
+   */
   it('points every launch region at a currency it has a definition for', () => {
     for (const [region, code] of Object.entries(REGION_DEFAULT_CURRENCY)) {
+      if (CURRENCIES[code] === undefined) {
+        // Not a launch market's currency: it resolves through the fallback,
+        // and must still produce usable fields rather than an exception.
+        expect(fieldsFor(code).length, `${region} → ${code}`).toBeGreaterThan(0)
+        continue
+      }
       expect(CURRENCIES[code], `${region} defaults to undefined currency ${code}`).toBeDefined()
     }
   })

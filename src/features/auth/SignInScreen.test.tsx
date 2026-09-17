@@ -6,7 +6,7 @@
  * line that put the provider's English on the page.
  */
 
-import { cleanup, render, screen } from '@testing-library/react'
+import { cleanup, render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { describe, expect, it } from 'vitest'
 
@@ -23,7 +23,7 @@ const signInWith = async (failure: unknown) => {
     <SignInScreen
       strings={EN}
       onSignIn={() => Promise.reject(failure)}
-      onSignUp={() => Promise.resolve()}
+      onSignUp={() => Promise.resolve({ needsEmailConfirmation: false })}
     />,
   )
   await user.type(screen.getByLabelText(EN.account.email), 'owner@example.com')
@@ -59,5 +59,88 @@ describe('A refused sign-in says something a person can act on', () => {
   it('does not dress a lost connection up as a rejected password', async () => {
     const alert = await signInWith(new TypeError('Failed to fetch'))
     expect(alert).toHaveTextContent(EN.account.needsConnection)
+  })
+})
+
+/**
+ * The sign-up that looked like nothing happening (§N, §S).
+ *
+ * Creating an account takes a round trip, and with confirmations on it ends
+ * with NO session — so the screen stayed exactly as it was. Nothing said the
+ * request was in flight and nothing said it had succeeded, which is
+ * indistinguishable from a button that does not work.
+ */
+describe('Creating an account says what is happening', () => {
+  const fill = async (user: ReturnType<typeof userEvent.setup>) => {
+    await user.click(screen.getByRole('button', { name: EN.account.noAccount }))
+    await user.type(screen.getByLabelText(EN.account.email), 'new@example.com')
+    await user.type(screen.getByLabelText(EN.account.password), 'a-long-enough-one')
+  }
+
+  it('says it is working while the request is in flight', async () => {
+    cleanup()
+    const user = userEvent.setup()
+    let release: (value: { needsEmailConfirmation: boolean }) => void = () => {}
+    render(
+      <SignInScreen
+        strings={EN}
+        onSignIn={async () => {}}
+        onSignUp={() => new Promise((resolve) => (release = resolve))}
+      />,
+    )
+    await fill(user)
+    await user.click(screen.getByRole('button', { name: EN.account.createAccount }))
+
+    // Mid-flight: the button says so rather than just greying out.
+    const working = await screen.findByRole('button', { name: EN.account.creatingAccount })
+    expect(working).toHaveAttribute('aria-busy', 'true')
+
+    release({ needsEmailConfirmation: false })
+    await waitFor(() =>
+      expect(screen.queryByRole('button', { name: EN.account.creatingAccount })).toBeNull(),
+    )
+  })
+
+  /**
+   * THE ONE THAT MATTERS. The account was created and cannot be used yet, and
+   * the ONLY place that fact exists is the return value — the stage is still
+   * `signed_out`, so nothing else on the screen changes at all.
+   */
+  it('tells them to check their email when confirmation is pending', async () => {
+    cleanup()
+    const user = userEvent.setup()
+    render(
+      <SignInScreen
+        strings={EN}
+        onSignIn={async () => {}}
+        onSignUp={async () => ({ needsEmailConfirmation: true })}
+      />,
+    )
+    await fill(user)
+    await user.click(screen.getByRole('button', { name: EN.account.createAccount }))
+
+    const notice = await screen.findByRole('status')
+    expect(notice.textContent).toMatch(/confirmation link/i)
+    // The address is named: a typo in it is the likeliest reason no mail
+    // arrives, and it is the one thing the person can check themselves.
+    expect(notice.textContent).toContain('new@example.com')
+  })
+
+  it('says nothing about email when the account is usable immediately', async () => {
+    cleanup()
+    const user = userEvent.setup()
+    render(
+      <SignInScreen
+        strings={EN}
+        onSignIn={async () => {}}
+        onSignUp={async () => ({ needsEmailConfirmation: false })}
+      />,
+    )
+    await fill(user)
+    await user.click(screen.getByRole('button', { name: EN.account.createAccount }))
+    await waitFor(() =>
+      expect(screen.queryByRole('button', { name: EN.account.creatingAccount })).toBeNull(),
+    )
+    expect(screen.queryByRole('status')).toBeNull()
   })
 })

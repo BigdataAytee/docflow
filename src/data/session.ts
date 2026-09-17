@@ -43,7 +43,17 @@ export interface SessionService {
   /** Sign-in, sign-out and token refresh all arrive here. */
   onChange(listener: () => void): () => void
   signIn(email: string, password: string): Promise<void>
-  signUp(email: string, password: string): Promise<void>
+  /**
+   * Creates the account, and says whether it is usable YET.
+   *
+   * Returning this rather than void is what lets the screen say "check your
+   * email". A project with confirmations on creates no session here, so the
+   * sign-in screen simply stayed as it was and nothing on it had changed —
+   * which reads exactly like a button that did nothing.
+   */
+  signUp(email: string, password: string): Promise<{ needsEmailConfirmation: boolean }>
+  /** Completes a returning confirmation or reset link. */
+  completeFromUrl(url: string): Promise<void>
   /** Returns the provider URL to send the browser to. */
   signInWithGoogle(redirectTo: string): Promise<{ url: string }>
   /**

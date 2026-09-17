@@ -110,7 +110,21 @@ describe('A repeat belongs to one company (§P)', () => {
     })
   })
 
-  /** The row cannot be written INTO another company either. */
+  /**
+   * The row cannot be written INTO another company either.
+   *
+   * The document is ACME's and the stamp is ACME's, so the row is internally
+   * CONSISTENT — and that is the point. The first version of this test paired
+   * `RIVAL_DOC` with `ACME`, which is inconsistent, so the trigger below
+   * refused it before the policy was ever consulted: the assertion said
+   * "row-level security" and the database said "a repeat must name a document
+   * belonging to the same company". Refused either way, but the test was
+   * naming the wrong guard, and a test that cannot fail when RLS is dropped is
+   * not testing RLS.
+   *
+   * With a consistent row, the trigger has no objection and only the policy's
+   * `with check` can refuse.
+   */
   it('refuses a row stamped with somebody else’s company', async () => {
     await asCompany(db, RIVAL, async () => {
       await expect(
@@ -118,7 +132,7 @@ describe('A repeat belongs to one company (§P)', () => {
           `insert into public.recurrences
              (source_document_id, company_id, day_of_month, started_on)
            values ($1, $2, 9, date '2026-09-15')`,
-          [RIVAL_DOC, ACME],
+          [ACME_DOC, ACME],
         ),
       ).rejects.toThrow(/row-level security/i)
     })

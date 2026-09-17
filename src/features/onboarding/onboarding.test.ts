@@ -114,8 +114,21 @@ describe('Business setup asks for two things (§R, Rule #1)', () => {
     expect(() => completeBusinessStep(start(), '   ')).toThrow(SetupError)
   })
 
-  it('refuses a country with no validated profile (§W)', () => {
-    expect(() => completeBusinessStep(emptySetup('JP'), 'Some Ltd')).toThrow()
+  /*
+   * CHANGED DELIBERATELY. This asserted that setting up a business in Japan
+   * THREW, because §W held unvalidated markets closed. The refusal was real,
+   * and so was its cost: the country was not in the dropdown, and choosing it
+   * failed. §W's guarantee is about terminology — `regionIsComplete` still
+   * reports which markets have a signed-off table — not about whether someone
+   * abroad may invoice at all.
+   */
+  it('sets a business up in a market nobody has validated yet (§W)', () => {
+    expect(() => completeBusinessStep(emptySetup('JP'), 'Some Ltd')).not.toThrow()
+  })
+
+  /** A malformed country is still a bug, and still refused. */
+  it('refuses something that is not a country code', () => {
+    expect(() => completeBusinessStep(emptySetup('Japan'), 'Some Ltd')).toThrow()
   })
 
   it('lets logo, address, payment and signature be put off (§R)', () => {

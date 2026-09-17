@@ -11,6 +11,8 @@ import type { SupabaseClient } from '@supabase/supabase-js'
 
 import type { NewBusiness, SessionService, SessionStage } from '../session'
 import { readEnabledProviders } from '../../features/auth/providers'
+import { authRedirectTo, codeFromUrl } from '../../features/auth/redirect'
+import { isNative } from '../../app/platform'
 import { readConfig } from './client'
 import { createAuthService } from './auth'
 import { accountState, companyFromToken, createCompany } from './account'
@@ -32,6 +34,14 @@ export function createSupabaseSession(
    * a button that is usually not even drawn.
    */
   let providers: Promise<ReadonlySet<string>> | null = null
+
+  /*
+   * Where an emailed link should come back to. On a device that is the app's
+   * own scheme; `window.location.origin` there is `https://localhost`, which
+   * is real to the WebView and meaningless to an email client.
+   */
+  const redirectTarget = (): string =>
+    authRedirectTo(isNative(), globalThis.location?.origin ?? '')
 
   /** The company claim from the session supabase-js persisted, if any. */
   const companyFromStorage = (): string | null => {
@@ -90,7 +100,16 @@ export function createSupabaseSession(
       await auth.signInWithPassword(email, password)
     },
     async signUp(email, password) {
-      await auth.signUpWithPassword(email, password)
+      const state = await auth.signUpWithPassword(email, password, redirectTarget())
+      // No session back from a sign-up means the project wants the address
+      // confirmed first. That is a state to SAY, not one to sit silently in.
+      return { needsEmailConfirmation: state.kind === 'signed_out' }
+    },
+
+    async completeFromUrl(url) {
+      const code = codeFromUrl(url)
+      if (code === null) return
+      await auth.completeFromUrl(code)
     },
     signInWithGoogle: (redirectTo) => auth.signInWithGoogle(redirectTo),
 

@@ -18,6 +18,7 @@ import type { LocaleId } from '../../domain/locale/types'
 import { TERMINOLOGY_TABLES } from '../../domain/locale/data/terminology'
 import { REGION_DEFAULT_CURRENCY } from '../../domain/locale/data/currencies'
 import { fieldsFor } from '../../domain/locale/bank-fields'
+import { ALL_COUNTRIES, COUNTRY_CURRENCY } from '../../domain/locale/data/countries'
 import { hasStringsFor } from '../../domain/locale/data/strings'
 
 export class RegionError extends Error {}
@@ -56,20 +57,56 @@ const DATE_FORMAT_FOR_REGION: Readonly<Record<string, string>> = {
   US: 'MM/DD/YYYY',
 }
 
-export const SUPPORTED_REGIONS: readonly string[] = Object.keys(LOCALE_FOR_REGION)
+/**
+ * Every country, not just the validated ones.
+ *
+ * This used to be `Object.keys(LOCALE_FOR_REGION)` — thirteen entries — and
+ * `regionProfile` threw for anything outside it. The rule behind that is
+ * sound and is kept below: a market whose TERMINOLOGY nobody has signed off
+ * does not get an invented terminology table. But it was applied to the whole
+ * profile, so a trader in Kenya or Brazil could not create a business, and
+ * the product's answer to most of the world was a dropdown that did not list
+ * them.
+ */
+export const SUPPORTED_REGIONS: readonly string[] = ALL_COUNTRIES
+
+/** The markets whose terminology, tax vocabulary and fields are validated. */
+export const VALIDATED_REGIONS: readonly string[] = Object.keys(LOCALE_FOR_REGION)
+
+/**
+ * The terminology table an unvalidated market reads.
+ *
+ * International English, which is what §D's intl table is for. NOT a guess at
+ * the local vocabulary: `regionIsComplete` still reports which markets have a
+ * signed-off table, and nothing here marks one as reviewed that is not.
+ */
+const FALLBACK_LOCALE: LocaleId = 'EN-GB'
+
+/**
+ * The tax label where §D has no vocabulary for the market.
+ *
+ * Plain "Tax" on purpose. §D lists VAT / GST / Sales tax / TVA as LABELS, and
+ * printing "VAT" on an invoice in a country that calls it something else, or
+ * does not levy it, is the app asserting a fact about somebody's tax affairs.
+ * "Tax" is true everywhere and is overridable in Settings; the rate was always
+ * user-set (§D).
+ */
+const FALLBACK_TAX_LABEL = 'Tax'
 
 export function regionProfile(region: string): RegionProfile {
-  const locale = LOCALE_FOR_REGION[region]
-  const currency = REGION_DEFAULT_CURRENCY[region]
-  const taxLabel = TAX_LABEL_FOR_REGION[region]
+  const code = region.trim().toUpperCase()
 
-  if (locale === undefined || currency === undefined || taxLabel === undefined) {
-    // A market nobody has validated gets an error, not a guess — §W holds the
-    // field sets and tax vocabulary open for per-market review.
+  // A malformed code is a caller bug and must not be absorbed into a default.
+  if (!/^[A-Z]{2}$/.test(code)) {
     throw new RegionError(
-      `No profile for region "${region}". Adding a market means validating its terminology, currency and tax vocabulary first (v6 §W).`,
+      `"${region}" is not an ISO 3166-1 country code. An unlisted market falls back; a malformed code is a bug.`,
     )
   }
+
+  const locale = LOCALE_FOR_REGION[code] ?? FALLBACK_LOCALE
+  const currency = REGION_DEFAULT_CURRENCY[code] ?? COUNTRY_CURRENCY[code] ?? 'USD'
+  const taxLabel = TAX_LABEL_FOR_REGION[code] ?? FALLBACK_TAX_LABEL
+  region = code
 
   return {
     region,
@@ -142,10 +179,20 @@ export function localeProfileOf(settings: CompanyLocaleSettings) {
 }
 
 /** Every region points at a terminology table that actually exists. */
+/**
+ * Whether this market has terminology signed off FOR IT (§W, CLAUDE.md).
+ *
+ * Reads the explicit mapping, never `regionProfile`. Once an unlisted country
+ * falls back to international English, `regionProfile(region).locale` always
+ * names a table that exists — so routing this through the profile would have
+ * answered "complete" for every country on earth, and the one guarantee this
+ * function carries is that a terminology table nobody reviewed is not shipped
+ * as though somebody had.
+ *
+ * "Renders correctly" and "was reviewed by a native speaker of this market"
+ * are different claims. This is the second one.
+ */
 export const regionIsComplete = (region: string): boolean => {
-  try {
-    return TERMINOLOGY_TABLES[regionProfile(region).locale] !== undefined
-  } catch {
-    return false
-  }
+  const locale = LOCALE_FOR_REGION[region.trim().toUpperCase()]
+  return locale !== undefined && TERMINOLOGY_TABLES[locale] !== undefined
 }

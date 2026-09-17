@@ -63,6 +63,25 @@ export function AccountGate({ session, children }: AccountGateProps) {
       if (mounted) void resolve()
     }
     settle()
+    /*
+     * The link an emailed confirmation returns on. Wired here because this is
+     * the component that owns the session: the exchange mints one, and
+     * `onChange` above is already listening, so the app moves off the sign-in
+     * screen by itself the moment it lands.
+     */
+    let unwire: (() => void) | null = null
+    void import('../native/boot')
+      .then(({ wireAuthCallback }) =>
+        wireAuthCallback(async (url) => {
+          await session.completeFromUrl(url)
+        }),
+      )
+      .then((stop) => {
+        if (mounted) unwire = stop
+        else stop()
+      })
+      .catch(() => {})
+
     // Asked alongside the session rather than from the sign-in screen: the
     // screen takes its callbacks, and a component that fetches to decide
     // whether it may render a button cannot be tested without a network.
@@ -75,6 +94,7 @@ export function AccountGate({ session, children }: AccountGateProps) {
     return () => {
       mounted = false
       stop()
+      unwire?.()
     }
   }, [session, resolve])
 

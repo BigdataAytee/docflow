@@ -198,7 +198,17 @@ describe('No hardcoded type name survives the lint rule (§Q Phase 1 gate)', () 
     )
 
     expect(violations).toEqual([])
-  }, 60_000)
+    /*
+     * Three minutes, for a test whose own work takes about seven seconds.
+     *
+     * This is a whole ESLint run over three directories, and it competes for
+     * CPU with every other worker in the suite. It timed out at 60s once the
+     * suite grew past 2,400 tests, and measured on its own immediately
+     * afterwards it took 6.9s — so the bound was measuring machine
+     * contention, not this code. A lint gate that goes red because the
+     * laptop was busy is one people learn to re-run rather than read.
+     */
+  }, 180_000)
 
   it('tells display text from internal tokens and identifiers', async () => {
     // The rule has been refined twice against real code; these pin what it
