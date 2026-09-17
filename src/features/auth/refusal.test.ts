@@ -95,3 +95,57 @@ describe('The words are ours, and they are the same in both directions (§P, §S
     expect(say(new TypeError('Failed to fetch'))).toBe(EN.account.needsConnection)
   })
 })
+
+/**
+ * Classified from the bodies GoTrue ACTUALLY sends.
+ *
+ * Every object below was captured from the live project on 2026-09-17, not
+ * written from memory of the docs. The field named `code` holds the HTTP
+ * status as a NUMBER and `error_code` holds the name — which is the trap this
+ * whole block exists to pin down.
+ */
+describe('The real refusals, as the provider words them', () => {
+  it.each([
+    [
+      'a wrong password',
+      { code: 400, error_code: 'invalid_credentials', msg: 'Invalid login credentials' },
+      'bad_credentials',
+    ],
+    [
+      'an unconfirmed address',
+      { code: 400, error_code: 'email_not_confirmed', msg: 'Email not confirmed' },
+      'email_unconfirmed',
+    ],
+    [
+      'a provider the project does not have',
+      {
+        code: 400,
+        error_code: 'validation_failed',
+        msg: 'Unsupported provider: provider is not enabled',
+      },
+      'unavailable',
+    ],
+    [
+      'too many requests',
+      { code: 429, error_code: 'over_request_rate_limit', msg: 'Request rate limit reached' },
+      'rate_limited',
+    ],
+  ])('reads %s correctly', (_name, body, expected) => {
+    expect(classifyAuthFailure(body).kind).toBe(expected)
+  })
+
+  /**
+   * THE BUG THIS BLOCK WAS WRITTEN FOR. `email_not_confirmed` used to reach
+   * the screen as "Something went wrong signing in. Try again." — advice that
+   * cannot work, because the password was right and nothing on the screen is
+   * what is wrong.
+   */
+  it('never tells somebody to try again when trying again cannot work', () => {
+    for (const body of [
+      { code: 400, error_code: 'email_not_confirmed', msg: 'Email not confirmed' },
+      { code: 400, error_code: 'validation_failed', msg: 'Unsupported provider' },
+    ]) {
+      expect(classifyAuthFailure(body).kind).not.toBe('unknown')
+    }
+  })
+})

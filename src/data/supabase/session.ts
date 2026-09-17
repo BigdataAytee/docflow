@@ -10,12 +10,28 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
 
 import type { NewBusiness, SessionService, SessionStage } from '../session'
+import { readEnabledProviders } from '../../features/auth/providers'
+import { readConfig } from './client'
 import { createAuthService } from './auth'
 import { accountState, companyFromToken, createCompany } from './account'
 import { browserStorage, storedAccessToken } from './persisted'
 
-export function createSupabaseSession(client: SupabaseClient): SessionService {
+export function createSupabaseSession(
+  client: SupabaseClient,
+  env: Record<string, string | undefined> = import.meta.env as unknown as Record<
+    string,
+    string | undefined
+  >,
+): SessionService {
   const auth = createAuthService(client)
+
+  /*
+   * Asked once and remembered. The answer changes when somebody edits the
+   * project's dashboard, not while a person is looking at the sign-in screen,
+   * and re-asking on every render would put a network round trip in front of
+   * a button that is usually not even drawn.
+   */
+  let providers: Promise<ReadonlySet<string>> | null = null
 
   /** The company claim from the session supabase-js persisted, if any. */
   const companyFromStorage = (): string | null => {
@@ -77,6 +93,12 @@ export function createSupabaseSession(client: SupabaseClient): SessionService {
       await auth.signUpWithPassword(email, password)
     },
     signInWithGoogle: (redirectTo) => auth.signInWithGoogle(redirectTo),
+
+    enabledProviders() {
+      const { url, anonKey } = readConfig(env)
+      providers ??= readEnabledProviders(url, anonKey)
+      return providers
+    },
     sendPasswordReset: (email, redirectTo) => auth.sendPasswordReset(email, redirectTo),
     signOut: () => auth.signOut(),
 

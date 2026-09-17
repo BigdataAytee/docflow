@@ -48,7 +48,61 @@ export interface AuthService {
   onChange(listener: (state: AuthState) => void): () => void
 }
 
-export class AuthError extends Error {}
+/**
+ * A refused auth call, carrying what the refusal ACTUALLY said.
+ *
+ * This used to be `class AuthError extends Error {}`, thrown as
+ * `new AuthError(error.message)` — which discarded the status, the provider's
+ * error code and any retry hint, and kept the one field
+ * `features/auth/refusal` is documented not to trust.
+ *
+ * That classifier is ordered "status first, because 429 is unambiguous; the
+ * provider's CODE next; the message text last and only as a hint, because it
+ * is English that changes between releases". Throwing prose alone meant it
+ * could only ever reach the last step, so every refusal GoTrue words
+ * differently — `email_not_confirmed`, `over_email_send_rate_limit`,
+ * "Unsupported provider" — came out as "Something went wrong. Try again."
+ * on a screen, and "try again" is wrong advice for all three.
+ */
+export class AuthError extends Error {
+  readonly status: number | undefined
+  readonly code: string | undefined
+  readonly retryAfter: number | undefined
+
+  constructor(
+    message: string,
+    signals: { status?: unknown; code?: unknown; retryAfter?: unknown } = {},
+  ) {
+    super(message)
+    this.name = 'AuthError'
+    this.status = typeof signals.status === 'number' ? signals.status : undefined
+    this.code = typeof signals.code === 'string' ? signals.code : undefined
+    this.retryAfter =
+      typeof signals.retryAfter === 'number' && Number.isFinite(signals.retryAfter)
+        ? signals.retryAfter
+        : undefined
+  }
+}
+
+/**
+ * Keeps the signals, drops nothing, and still never shows the provider's own
+ * English to anybody — that stays the screen's job (§S).
+ *
+ * `error_code` as well as `code`: GoTrue's body is
+ * `{"code":400,"error_code":"invalid_credentials","msg":"..."}`, so the field
+ * called `code` is the HTTP status as a NUMBER and the one that names the
+ * refusal is `error_code`. A reader that takes `code` on trust gets 400 where
+ * it expected a name.
+ */
+export function providerRefusal(error: unknown): AuthError {
+  const raw = (error ?? {}) as Record<string, unknown>
+  const message = typeof raw['message'] === 'string' ? raw['message'] : String(raw['msg'] ?? '')
+  return new AuthError(message, {
+    status: typeof raw['status'] === 'number' ? raw['status'] : raw['code'],
+    code: typeof raw['code'] === 'string' ? raw['code'] : raw['error_code'],
+    retryAfter: raw['retryAfter'],
+  })
+}
 
 export function createAuthService(
   client: SupabaseClient,
@@ -130,13 +184,13 @@ export function createAuthService(
 
     async signInWithPassword(email, password) {
       const { data, error } = await client.auth.signInWithPassword({ email, password })
-      if (error !== null) throw new AuthError(error.message)
+      if (error !== null) throw providerRefusal(error)
       return toState(data.session)
     },
 
     async signUpWithPassword(email, password) {
       const { data, error } = await client.auth.signUp({ email, password })
-      if (error !== null) throw new AuthError(error.message)
+      if (error !== null) throw providerRefusal(error)
       return toState(data.session)
     },
 
@@ -145,21 +199,21 @@ export function createAuthService(
         provider: 'google',
         options: { redirectTo, queryParams: { access_type: 'offline', prompt: 'consent' } },
       })
-      if (error !== null) throw new AuthError(error.message)
+      if (error !== null) throw providerRefusal(error)
       if (data.url === null) throw new AuthError('Google sign-in returned no URL.')
       return { url: data.url }
     },
 
     async sendPasswordReset(email, redirectTo) {
       const { error } = await client.auth.resetPasswordForEmail(email, { redirectTo })
-      if (error !== null) throw new AuthError(error.message)
+      if (error !== null) throw providerRefusal(error)
     },
 
     async signOut() {
       // Clears credentials only. The encrypted account-scoped local store is
       // retained and locked; deleting it is a separate explicit action (§M).
       const { error } = await client.auth.signOut({ scope: 'local' })
-      if (error !== null) throw new AuthError(error.message)
+      if (error !== null) throw providerRefusal(error)
     },
 
     onChange(listener) {

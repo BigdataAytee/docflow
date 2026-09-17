@@ -46,6 +46,15 @@ export interface SessionService {
   signUp(email: string, password: string): Promise<void>
   /** Returns the provider URL to send the browser to. */
   signInWithGoogle(redirectTo: string): Promise<{ url: string }>
+  /**
+   * Which external providers this project actually has configured.
+   *
+   * A sign-in screen asks before drawing a provider button, because §N does
+   * not allow offering a control whose only outcome is an error — which is
+   * what "Continue with Google" was on a project with no Google credentials.
+   * Unknown reads as none; see `features/auth/providers`.
+   */
+  enabledProviders(): Promise<ReadonlySet<string>>
   sendPasswordReset(email: string, redirectTo: string): Promise<void>
   signOut(): Promise<void>
   /**

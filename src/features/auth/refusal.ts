@@ -34,6 +34,19 @@ export type AuthRefusal =
    * which addresses are registered (§P).
    */
   | { readonly kind: 'bad_credentials' }
+  /**
+   * The account exists and the password is right, but the address has never
+   * been confirmed. Its own outcome because the ACTION is different: nothing
+   * typed on this screen will fix it, and the thing that will is sitting in
+   * an inbox.
+   */
+  | { readonly kind: 'email_unconfirmed' }
+  /**
+   * The project is not configured for what was asked — a provider that is not
+   * enabled, sign-ups turned off. "Try again" is actively wrong advice: it
+   * will fail identically forever, and only an owner can change that.
+   */
+  | { readonly kind: 'unavailable' }
   /** The request never arrived. §R already says auth needs a connection. */
   | { readonly kind: 'offline' }
   | { readonly kind: 'unknown' }
@@ -42,8 +55,15 @@ export type AuthRefusal =
 interface MaybeAuthError {
   readonly status?: unknown
   readonly code?: unknown
+  /**
+   * GoTrue's body names the refusal here, not in `code` — `code` is the HTTP
+   * status as a number. Read both so a raw body classifies the same as the
+   * error the client wraps it in.
+   */
+  readonly error_code?: unknown
   readonly name?: unknown
   readonly message?: unknown
+  readonly msg?: unknown
   readonly retryAfter?: unknown
 }
 
@@ -52,8 +72,10 @@ const asNumber = (value: unknown): number | null =>
 
 export function classifyAuthFailure(cause: unknown): AuthRefusal {
   const error = (cause ?? {}) as MaybeAuthError
-  const message = typeof error.message === 'string' ? error.message.toLowerCase() : ''
-  const code = typeof error.code === 'string' ? error.code.toLowerCase() : ''
+  const text = typeof error.message === 'string' ? error.message : (error.msg ?? '')
+  const message = typeof text === 'string' ? text.toLowerCase() : ''
+  const named = typeof error.code === 'string' ? error.code : error.error_code
+  const code = typeof named === 'string' ? named.toLowerCase() : ''
 
   // 1. The status. Unambiguous, and identical in every deployment.
   if (error.status === 429) {
@@ -67,6 +89,21 @@ export function classifyAuthFailure(cause: unknown): AuthRefusal {
   if (code === 'invalid_credentials' || code === 'invalid_grant') {
     return { kind: 'bad_credentials' }
   }
+  if (code === 'email_not_confirmed') return { kind: 'email_unconfirmed' }
+  /*
+   * `validation_failed` is what GoTrue answers for "Unsupported provider:
+   * provider is not enabled" — the refusal that made "Continue with Google"
+   * a button with no working outcome. `provider_disabled` and `signup_disabled`
+   * are the same shape of answer: a setting, not an attempt.
+   */
+  if (
+    code === 'validation_failed' ||
+    code === 'provider_disabled' ||
+    code === 'signup_disabled' ||
+    code === 'email_provider_disabled'
+  ) {
+    return { kind: 'unavailable' }
+  }
 
   // 3. A network failure never reached a status at all. `TypeError: Failed to
   //    fetch` is what a browser throws with no connection.
@@ -77,6 +114,10 @@ export function classifyAuthFailure(cause: unknown): AuthRefusal {
   // 4. The message, last, as a hint only.
   if (message.includes('rate limit')) return { kind: 'rate_limited', retryAfterSeconds: null }
   if (message.includes('invalid login credentials')) return { kind: 'bad_credentials' }
+  if (message.includes('email not confirmed')) return { kind: 'email_unconfirmed' }
+  if (message.includes('not enabled') || message.includes('unsupported provider')) {
+    return { kind: 'unavailable' }
+  }
 
   return { kind: 'unknown' }
 }
@@ -104,6 +145,10 @@ export function refusalMessage(refusal: AuthRefusal, strings: UiStrings): string
     }
     case 'bad_credentials':
       return a.wrongDetails
+    case 'email_unconfirmed':
+      return a.confirmEmailFirst
+    case 'unavailable':
+      return a.signInUnavailable
     case 'offline':
       return a.needsConnection
     case 'unknown':

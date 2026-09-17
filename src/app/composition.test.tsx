@@ -45,6 +45,7 @@ const signedOut: SessionService = {
   signIn: async () => {},
   signUp: async () => {},
   signInWithGoogle: async () => ({ url: '' }),
+  enabledProviders: async () => new Set<string>(),
   sendPasswordReset: async () => {},
   signOut: async () => {},
   createCompany: async () => ({ companyId: COMPANY }),

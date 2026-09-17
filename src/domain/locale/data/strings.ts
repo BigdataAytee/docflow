@@ -118,6 +118,14 @@ export interface UiStrings {
     readonly tooManyTries: string
     readonly tooManyTriesIn: string
     readonly wrongDetails: string
+    /**
+     * The password was RIGHT. Says the one thing that will work, and never
+     * "try again" — trying again does exactly nothing until a link in an
+     * inbox is opened.
+     */
+    readonly confirmEmailFirst: string
+    /** A method the project does not have. Points at the one that works. */
+    readonly signInUnavailable: string
     readonly signInProblem: string
   }
   readonly nav: {
@@ -1056,6 +1064,8 @@ const EN: UiStrings = {
     tooManyTries: 'Too many tries. Wait a moment and try again.',
     tooManyTriesIn: 'Too many tries. Try again in {wait}.',
     wrongDetails: 'That email and password do not match.',
+    confirmEmailFirst: 'Open the confirmation link in your email, then sign in.',
+    signInUnavailable: 'That way of signing in is not available. Use your email and password.',
     signInProblem: 'Something went wrong signing in. Try again.',
   },
   nav: {

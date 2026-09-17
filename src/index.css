@@ -132,16 +132,46 @@
   .native body {
     /* The bottom nav pads itself; padding the body too would double it. */
     padding-top: env(safe-area-inset-top, 0px);
+
+    /*
+     * Landscape, and the front-facing camera cut-outs that sit in a side edge.
+     * Ignoring these is what puts a Back button under a rounded corner.
+     *
+     * ON THE BODY, NOT ON `main` — and that is the whole point of this block.
+     * It used to read `.native main { padding-inline-start: env(...) }`, which
+     * looks equivalent and is not: `padding-inline-start` IS `padding-left` in
+     * a left-to-right language, and `.native main` (0,1,1) outranks Tailwind's
+     * `.px-5` (0,1,0). So every screen's own horizontal padding was replaced
+     * by the inset — which is `0px` on a phone held upright. Text ran into
+     * both edges of the display on every screen with a `<main>`.
+     *
+     * It hid for as long as it did because `.native` was never applied on an
+     * account build (see `app/start.ts`); fixing that turned this rule on for
+     * the first time, and the layout was the first thing to say so.
+     *
+     * An inset is a property of the DISPLAY's edge, so it belongs on the
+     * element that meets that edge. Here it adds to whatever padding a screen
+     * chose for itself instead of overwriting it.
+     */
+    padding-inline-start: env(safe-area-inset-left, 0px);
+    padding-inline-end: env(safe-area-inset-right, 0px);
   }
 
   /*
-   * Landscape, and the front-facing camera cut-outs that sit in a side edge.
-   * Ignoring these is what puts a Back button under a rounded corner.
+   * `min-h-screen` is `100vh` — the whole display, including the strip under
+   * the status bar that the padding above has just moved the page out of. The
+   * two together make every full-height screen exactly one inset TALLER than
+   * the space it has, so a `justify-center` column sits low and the page
+   * scrolls by a few dozen pixels that contain nothing.
+   *
+   * `dvh` rather than `vh` so the keyboard counts too: a sign-in form centred
+   * in the full display height is centred behind the keyboard covering half
+   * of it.
    */
-  .native main,
-  .native [data-safe-inline] {
-    padding-inline-start: env(safe-area-inset-left, 0px);
-    padding-inline-end: env(safe-area-inset-right, 0px);
+  .native .min-h-screen {
+    min-height: calc(
+      100dvh - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px)
+    );
   }
 
   /*

@@ -37,6 +37,15 @@ export interface AccountGateProps {
 export function AccountGate({ session, children }: AccountGateProps) {
   const [stage, setStage] = useState<Stage>({ kind: 'resolving' })
 
+  /*
+   * What the project has enabled, or `null` while nobody has answered.
+   *
+   * Null and "none" are deliberately the same to the button below: an
+   * unanswered probe must not draw a provider. It never throws — see
+   * `auth/providers` — so there is no error branch to render.
+   */
+  const [providers, setProviders] = useState<ReadonlySet<string> | null>(null)
+
   // Before a company is known there is no company language to read, so the
   // account screens use the catalogue default. This is the one place in the
   // app where that is correct rather than a shortcut: §D resolves language
@@ -54,6 +63,12 @@ export function AccountGate({ session, children }: AccountGateProps) {
       if (mounted) void resolve()
     }
     settle()
+    // Asked alongside the session rather than from the sign-in screen: the
+    // screen takes its callbacks, and a component that fetches to decide
+    // whether it may render a button cannot be tested without a network.
+    void session.enabledProviders().then((enabled) => {
+      if (mounted) setProviders(enabled)
+    })
     // Sign-in, sign-out and token refresh all arrive here, so the gate follows
     // the session rather than sampling it once at mount.
     const stop = session.onChange(settle)
@@ -78,10 +93,21 @@ export function AccountGate({ session, children }: AccountGateProps) {
         strings={strings}
         onSignIn={(email, password) => session.signIn(email, password)}
         onSignUp={(email, password) => session.signUp(email, password)}
-        onGoogle={async () => {
-          const { url } = await session.signInWithGoogle(window.location.origin)
-          window.location.assign(url)
-        }}
+        /*
+         * Only when the project actually has Google configured. Rendering it
+         * unconditionally meant that on a project without credentials the
+         * button's only possible outcome was GoTrue's "Unsupported provider",
+         * which §N does not allow a control to be. `undefined` hides it, and
+         * an unread answer is `undefined` too — see `auth/providers`.
+         */
+        {...(providers?.has('google') === true
+          ? {
+              onGoogle: async () => {
+                const { url } = await session.signInWithGoogle(window.location.origin)
+                window.location.assign(url)
+              },
+            }
+          : {})}
         onReset={(email) => session.sendPasswordReset(email, window.location.origin)}
       />
     )

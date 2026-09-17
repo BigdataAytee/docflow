@@ -33,6 +33,10 @@ function session(overrides: Partial<SessionService> & { stage?: SessionStage }):
       listeners.forEach((l) => l())
     },
     signInWithGoogle: async () => ({ url: 'https://accounts.example/auth' }),
+    // Enabled by default here so the existing Google assertions keep testing
+    // the button rather than accidentally testing that it is hidden. The
+    // cases that turn it off pass their own.
+    enabledProviders: async () => new Set(['google']),
     sendPasswordReset: async () => {},
     signOut: async () => {
       stage = { kind: 'signed_out' }
@@ -205,6 +209,56 @@ describe('A signed-in person can sign out (§P)', () => {
   it('offers nothing when there is no session behind the app', () => {
     render(<SignOutProbe />)
     expect(screen.getByText('no session')).toBeInTheDocument()
+  })
+})
+
+/**
+ * The button that could only ever fail (§N).
+ *
+ * Google sign-in was rendered unconditionally. On a project with no Google
+ * credentials, pressing it reached GoTrue and came back
+ * `{"error_code":"validation_failed","msg":"Unsupported provider: provider is
+ * not enabled"}` — a control whose only outcome is an error, which is the same
+ * species as a toggle wired to nothing.
+ */
+describe('A provider is offered only when the project has it', () => {
+  const findGoogle = () => screen.queryByRole('button', { name: /google/i })
+
+  it('offers Google when the project says it is enabled', async () => {
+    render(
+      <AccountGate session={session({ enabledProviders: async () => new Set(['google']) })}>
+        {() => <p>app</p>}
+      </AccountGate>,
+    )
+    expect(await screen.findByRole('button', { name: /google/i })).toBeInTheDocument()
+  })
+
+  it('does NOT offer Google when the project has it disabled', async () => {
+    render(
+      <AccountGate session={session({ enabledProviders: async () => new Set(['apple']) })}>
+        {() => <p>app</p>}
+      </AccountGate>,
+    )
+    // Waiting on the screen, not on the probe: asserting a button's absence
+    // immediately would pass before the answer ever arrived, and would keep
+    // passing if the answer were ignored.
+    await screen.findByRole('button', { name: /sign in/i })
+    expect(findGoogle()).not.toBeInTheDocument()
+  })
+
+  /*
+   * Unknown is hidden. Whoever cannot reach the project cannot complete an
+   * OAuth round trip either, so the button can only waste their time — and
+   * email sign-in is on the same screen.
+   */
+  it('does NOT offer Google while the answer is still unknown', async () => {
+    render(
+      <AccountGate session={session({ enabledProviders: () => new Promise(() => {}) })}>
+        {() => <p>app</p>}
+      </AccountGate>,
+    )
+    await screen.findByRole('button', { name: /sign in/i })
+    expect(findGoogle()).not.toBeInTheDocument()
   })
 })
 

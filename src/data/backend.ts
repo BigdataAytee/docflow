@@ -107,7 +107,7 @@ export async function createBackend(
   const client = createBrowserClient(readConfig(env))
   return {
     kind: 'account',
-    session: createSupabaseSession(client),
+    session: createSupabaseSession(client, env),
     repositories: createSupabaseRepositories(client),
   }
 }
