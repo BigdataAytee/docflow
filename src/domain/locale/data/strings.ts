@@ -801,6 +801,39 @@ export interface UiStrings {
     readonly notIssuedYet: string
     readonly continueEditing: string
     readonly needsDevice: string
+    /**
+     * §G's four actions per type, as pill labels.
+     *
+     * Short because four sit in a 2×2 grid on a phone; each still says what
+     * it DOES rather than naming a noun — "Copy signing link", not "Link".
+     */
+    readonly action: {
+      readonly sharePdf: string
+      readonly convert: string
+      readonly sign: string
+      readonly voidOrCredit: string
+      readonly copyAcceptLink: string
+      readonly duplicateRev2: string
+      readonly voidAndReissue: string
+      readonly openInvoice: string
+      readonly copySigningLink: string
+      readonly addPhoto: string
+    }
+    /**
+     * Why a pill is dark, said rather than left to be guessed (§N).
+     *
+     * Each is a fact about the document. None of them apologise, and none
+     * say "not available" — an owner who is told that has learnt nothing.
+     */
+    readonly blocked: {
+      readonly notIssued: string
+      readonly notDispatched: string
+      readonly sealed: string
+      readonly voided: string
+      readonly noInvoice: string
+      readonly nothingToConvert: string
+      readonly issuedIsFinal: string
+    }
   }
   readonly design: {
     readonly logoOn: string
@@ -1671,6 +1704,27 @@ const EN: UiStrings = {
     creditNote: 'Credit some of this back',
     openStatement: 'Statement',
     notIssuedYet: 'This is still a draft.',
+    action: {
+      sharePdf: 'Share PDF',
+      convert: 'Convert to…',
+      sign: 'Sign it',
+      voidOrCredit: 'Void or credit',
+      copyAcceptLink: 'Copy accept link',
+      duplicateRev2: 'Duplicate as Rev 2',
+      voidAndReissue: 'Void and reissue',
+      openInvoice: 'Open the invoice',
+      copySigningLink: 'Copy signing link',
+      addPhoto: 'Add photo',
+    },
+    blocked: {
+      notIssued: 'Issue it first',
+      notDispatched: 'Send it on its way first',
+      sealed: 'Signed for — sealed',
+      voided: 'Already void',
+      noInvoice: 'Not against an invoice',
+      nothingToConvert: 'Nothing to convert to',
+      issuedIsFinal: 'Sign before issuing',
+    },
     continueEditing: 'Carry on editing',
     needsDevice: 'Needs the installed app — coming with the phone build.',
   },

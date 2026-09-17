@@ -25,6 +25,8 @@ import { HOME, documentPath, editDocumentPath, statementPath } from '../paths'
 import { PageHeader, SkeletonList, StatusBadge } from '../../ui'
 import { BuilderCard } from '../../features/documents/BuilderCard'
 import { LivePreview } from '../../features/documents/LivePreview'
+import { ActionGrid } from '../../features/documents/ActionGrid'
+import { documentActions } from '../../features/documents/actions'
 import {
   composableOf,
   composeOptionsOf,
@@ -346,16 +348,43 @@ export function DocumentScreen({ today = todayIso() }: { today?: string }) {
           </button>
         )}
 
-        {/* §G's first action on every type. A draft has no frozen reference and
-            no issued page, so there is nothing to send yet. */}
-        {record.status !== 'draft' && !sharing && (
-          <button
-            type="button"
-            className="doc-action raised tap-scale min-h-tap rounded-full bg-gradient-to-b from-brand-light to-brand px-3 text-[12.5px] font-semibold text-white"
-            onClick={() => setSharing(true)}
-          >
-            {strings.savedDocument.sharePdf}
-          </button>
+        {/*
+          §G'S FOUR, AS A GRID (§G, §N).
+
+          "Actions, four per type" — and they keep their places. What used to
+          be here was a stack of full-width buttons appearing and disappearing
+          as the delivery lifecycle advanced, so the layout moved under the
+          owner's thumb and a control that was not possible yet simply was not
+          there to ask about. The lifecycle is unchanged; the pill that cannot
+          act says which step comes first.
+
+          The transitions that MOVE the lifecycle — sending a delivery on its
+          way, marking it on the way — stay below as their own controls. They
+          are not among §G's four, and a delivery that can never be dispatched
+          is a delivery whose signing link never unlocks.
+        */}
+        {!sharing && !converting && !voiding && !crediting && (
+          <ActionGrid
+            actions={documentActions({
+              type: record.type,
+              status: record.status,
+              dispatched: record.status === 'dispatched' || record.status === 'delivered',
+              signed: record.status === 'delivered',
+              ...(record.linkedInvoiceId === undefined
+                ? {}
+                : { linkedInvoiceId: record.linkedInvoiceId }),
+            })}
+            strings={strings}
+            onAction={(id) => {
+              if (id === 'share_pdf') setSharing(true)
+              if (id === 'convert') setConverting(true)
+              if (id === 'void_or_credit' || id === 'void_and_reissue') setVoiding(true)
+              if (id === 'sign') navigate(editDocumentPath(id))
+              if (id === 'open_invoice' && record.linkedInvoiceId !== undefined) {
+                navigate(documentPath(record.linkedInvoiceId))
+              }
+            }}
+          />
         )}
 
         {/*

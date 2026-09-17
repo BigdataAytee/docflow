@@ -886,7 +886,7 @@ describe('Sharing a document (§B, §G, §M)', () => {
 
   it('offers sharing on an issued document', async () => {
     renderAt('/doc/doc_issued', issued)
-    expect(await screen.findByRole('button', { name: 'Share the PDF' })).toBeInTheDocument()
+    expect(await screen.findByRole('button', { name: 'Share PDF' })).toBeInTheDocument()
   })
 
   it('offers nothing to share on a draft, which has no frozen reference yet', async () => {
@@ -905,13 +905,13 @@ describe('Sharing a document (§B, §G, §M)', () => {
     })
     // The draft's own action is there, so the screen has rendered.
     expect(await screen.findByRole('button', { name: 'Carry on editing' })).toBeInTheDocument()
-    expect(screen.queryByRole('button', { name: 'Share the PDF' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Share PDF' })).not.toBeInTheDocument()
   })
 
   it('composes the message from the document, the customer and the ledger', async () => {
     const user = userEvent.setup()
     renderAt('/doc/doc_issued', issued)
-    await user.click(await screen.findByRole('button', { name: 'Share the PDF' }))
+    await user.click(await screen.findByRole('button', { name: 'Share PDF' }))
 
     const sheet = screen.getByLabelText('Send this document')
     expect(sheet).toHaveTextContent('Invoice INV-0042')
@@ -945,7 +945,7 @@ describe('Sharing a document (§B, §G, §M)', () => {
       })
     })
 
-    await user.click(await screen.findByRole('button', { name: 'Share the PDF' }))
+    await user.click(await screen.findByRole('button', { name: 'Share PDF' }))
     const sheet = screen.getByLabelText('Send this document')
     expect(sheet).toHaveTextContent('Waybill WB-0007')
     expect(sheet).not.toHaveTextContent('₦')
@@ -979,7 +979,7 @@ describe('Sharing a document (§B, §G, §M)', () => {
       if (company !== undefined) state.companies[0] = { ...company, localeRegion: 'GB' }
     })
 
-    await user.click(await screen.findByRole('button', { name: 'Share the PDF' }))
+    await user.click(await screen.findByRole('button', { name: 'Share PDF' }))
     const sheet = screen.getByLabelText('Send this document')
     expect(sheet).toHaveTextContent('Waybill WB-0007')
     expect(sheet).not.toHaveTextContent('Delivery note')
@@ -988,7 +988,7 @@ describe('Sharing a document (§B, §G, §M)', () => {
   it('records the handoff against the document, and never a delivery', async () => {
     const user = userEvent.setup()
     const state = renderAt('/doc/doc_issued', issued)
-    await user.click(await screen.findByRole('button', { name: 'Share the PDF' }))
+    await user.click(await screen.findByRole('button', { name: 'Share PDF' }))
 
     // jsdom has no navigator.share, so the port reports no sheet and the
     // screen offers the clipboard instead — the honest capability path (§N).
@@ -1020,7 +1020,7 @@ describe('Sharing a document (§B, §G, §M)', () => {
       })
     })
 
-    await user.click(await screen.findByRole('button', { name: 'Share the PDF' }))
+    await user.click(await screen.findByRole('button', { name: 'Share PDF' }))
     expect(screen.getByText(/Sent once/)).toBeInTheDocument()
     expect(screen.getByText(/Last sent 2026-09-11/)).toBeInTheDocument()
   })
@@ -3108,7 +3108,22 @@ describe('The photo on a delivery (§G, §E, §P)', () => {
 
     expect(await screen.findByRole('img', { name: 'Photo attached' })).toBeInTheDocument()
     expect(screen.getByText(/cannot be changed/)).toBeInTheDocument()
-    expect(screen.queryByRole('button', { name: /photo/i })).not.toBeInTheDocument()
+
+    /*
+     * CHANGED DELIBERATELY, and the contract is stronger than it was.
+     *
+     * This asserted the photo control was ABSENT once signed for. §G asks for
+     * four actions per type and §N says an unavailable capability is said
+     * rather than hidden, so the pill stays in its place, disabled, carrying
+     * the reason — "Signed for — sealed". §P is unchanged and is what these
+     * two lines now check directly: it cannot be pressed, and the page says
+     * why. A missing button proved only that nothing could be tapped; this
+     * proves nothing can be tapped AND that the person is told the record is
+     * closed rather than left to wonder where the button went.
+     */
+    const photo = screen.getByRole('button', { name: /add photo/i })
+    expect(photo).toBeDisabled()
+    expect(photo.textContent).toMatch(/sealed/i)
   })
 
   it('offers nothing on a delivery nobody has issued', async () => {

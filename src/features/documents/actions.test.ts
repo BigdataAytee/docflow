@@ -102,8 +102,28 @@ describe('The four §G names, per type', () => {
 })
 
 describe('A draft can do none of it, and says so', () => {
-  it.each(DOCUMENT_TYPES)('offers a %s draft nothing live', (type) => {
-    expect(live(doc({ type, status: 'draft' }))).toEqual([])
+  it.each(['quotation', 'receipt', 'waybill'] as const)(
+    'offers a %s draft nothing live',
+    (type) => {
+      expect(live(doc({ type, status: 'draft' }))).toEqual([])
+    },
+  )
+
+  /**
+   * An invoice draft is the ONE exception, and it is Rule #5 that makes it
+   * one: §G's invoice "sign" is a thing done BEFORE issue, because a
+   * signature applied to a frozen document changes what was sent.
+   */
+  it('offers an invoice draft its signature, and nothing else', () => {
+    expect(live(doc({ type: 'invoice', status: 'draft' }))).toEqual(['sign'])
+  })
+
+  it('refuses to sign an invoice once it is issued (Rule #5)', () => {
+    const sign = documentActions(doc({ type: 'invoice', status: 'issued' })).find(
+      (a) => a.id === 'sign',
+    )
+    expect(sign?.enabled).toBe(false)
+    expect(sign?.blockedBy).toBe('issued_is_final')
   })
 
   it('blames the draft, not the lifecycle', () => {

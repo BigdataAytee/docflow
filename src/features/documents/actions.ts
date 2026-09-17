@@ -55,6 +55,16 @@ export type ActionBlocker =
   | 'no_invoice'
   /** §G's convert list has no target for this type. */
   | 'nothing_to_convert'
+  /**
+   * Issued, and therefore finished (Rule #5).
+   *
+   * Signing an invoice AFTER issue would change a document whose reference,
+   * totals and labels are frozen — corrections go forward as a void, a credit
+   * note or a reissue, never by editing what was sent. So §G's invoice "sign"
+   * is a thing done to a draft, and afterwards the pill says so rather than
+   * quietly modifying a sent invoice.
+   */
+  | 'issued_is_final'
 
 export interface DocumentAction {
   readonly id: ActionId
@@ -120,7 +130,14 @@ export function documentActions(
       return [
         share,
         convert,
-        when(issued, 'sign', 'not_issued'),
+        /*
+         * BEFORE ISSUE, never after. Rule #5 freezes an issued document, and
+         * a signature applied afterwards changes what was sent. This reads
+         * backwards against the other three — they need the document issued
+         * and this one needs it not to be — which is exactly why it is worth
+         * saying out loud rather than leaving as a condition.
+         */
+        when(!issued, 'sign', 'issued_is_final'),
         when(issued && !voided, 'void_or_credit', voided ? 'voided' : 'not_issued'),
       ]
 
