@@ -15,6 +15,12 @@ import { nextPeriod } from './schedule'
 export interface RepeatToggleProps {
   readonly recurrence: Recurrence | null
   readonly today: string
+  /**
+   * This install has no repeats at all — distinct from "this document does
+   * not repeat", which is `recurrence: null`. An optional feature's absence
+   * is a different fact from the feature being switched off.
+   */
+  readonly unavailable?: boolean
   /** Drafts this schedule has produced that nobody has opened yet. */
   readonly waitingCount?: number
   readonly onStart: () => void
@@ -24,6 +30,7 @@ export interface RepeatToggleProps {
 export function RepeatToggle({
   recurrence,
   today,
+  unavailable = false,
   waitingCount = 0,
   onStart,
   onStop,
@@ -31,7 +38,16 @@ export function RepeatToggle({
   const { strings } = useCompany()
   const r = strings.recurring
 
-  const on = recurrence !== null && recurrence.endedOn === undefined
+  /*
+   * Repeat is an optional Phase 2.5 feature, and an install can be without it
+   * — an older backend that has not run the migration, for one. When it is
+   * missing the row still appears, explains itself and does not respond,
+   * because §N asks for an unavailable capability to be SAID rather than
+   * dressed up. The alternatives are both worse: hiding the row makes the
+   * feature's absence look like the feature never existed, and leaving the
+   * toggle live makes a control that silently fails.
+   */
+  const on = !unavailable && recurrence !== null && recurrence.endedOn === undefined
   const next = recurrence === null ? null : nextPeriod(recurrence, today)
 
   return (
@@ -39,16 +55,20 @@ export function RepeatToggle({
       <div className="flex items-center justify-between gap-3">
         <div className="min-w-0">
           <p className="text-sm font-semibold">{r.repeat}</p>
-          <p className="mt-0.5 text-xs opacity-70">{on ? r.repeatHint : r.repeatOffHint}</p>
+          <p className="mt-0.5 text-xs opacity-70">
+            {unavailable ? r.repeatUnavailable : on ? r.repeatHint : r.repeatOffHint}
+          </p>
         </div>
         <button
           type="button"
+          disabled={unavailable}
           aria-pressed={on}
+          aria-disabled={unavailable}
           aria-label={on ? r.repeatOn : r.repeatOff}
           className={`flex h-7 w-12 shrink-0 items-center rounded-full px-1 motion-safe:transition ${
             on ? 'justify-end bg-emerald-500' : 'justify-start bg-ink/20'
-          }`}
-          onClick={on ? onStop : onStart}
+          } ${unavailable ? 'opacity-40' : ''}`}
+          onClick={unavailable ? undefined : on ? onStop : onStart}
         >
           <span className="h-5 w-5 rounded-full bg-surface" />
         </button>

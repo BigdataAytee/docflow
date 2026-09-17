@@ -59,8 +59,22 @@ export interface AppData {
   readonly shares: readonly ShareEvent[]
   readonly creditNotes: readonly CreditNoteRecord[]
   readonly assets: readonly AssetRecord[]
-  /** Monthly repeats (§L4), so a screen can show a toggle that is really on. */
-  readonly recurrences: readonly RecurrenceRecord[]
+  /**
+   * Monthly repeats (§L4), so a screen can show a toggle that is really on —
+   * or `null` when this backend has no repeats at all.
+   *
+   * NULL AND EMPTY ARE DIFFERENT FACTS, and keeping them apart is the whole
+   * point. `[]` means "nothing repeats yet", which is the ordinary state of a
+   * new account. `null` means "this install cannot do repeats", which is what
+   * a backend missing the table is saying. Collapsing the second into the
+   * first would show a working toggle that silently does nothing — the exact
+   * shape §N forbids and this codebase keeps having to dig out.
+   *
+   * Repeat is an optional Phase 2.5 feature. Its absence must cost the Repeat
+   * panel and nothing else: it used to cost the whole app, because the read
+   * sat on the critical load path and its failure became the app's error.
+   */
+  readonly recurrences: readonly RecurrenceRecord[] | null
   /**
    * Months the launch catch-up owed but did not create, because the gap was
    * longer than the bound. Never silently zero when months were dropped — §L4
@@ -175,7 +189,7 @@ const EMPTY: AppData = {
   shares: [],
   creditNotes: [],
   assets: [],
-  recurrences: [],
+  recurrences: null,
   caughtUpSkipped: [],
   loading: true,
   error: null,
@@ -223,6 +237,24 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
       // stop the app loading — see below.
       const caughtUp = await catchUpSafely(repositories, companyId)
 
+      /*
+       * OUTSIDE the batch below, and outside its failure.
+       *
+       * This was `await repositories.recurrences.list(companyId)` on the main
+       * path, inside the same `try` as everything else — so a backend with no
+       * `recurrences` table threw, the catch set the app-wide error, and a
+       * person who had just created their business was shown a failure screen
+       * instead of Home. An optional feature took the whole app down with it.
+       *
+       * Now the failure is local: the feature reports itself absent and
+       * nothing else notices. It is also no longer a second serial round trip
+       * after the batch, which it had no reason to be.
+       */
+      const recurrencesRead = repositories.recurrences
+        .list(companyId)
+        .then((rows): readonly RecurrenceRecord[] | null => rows)
+        .catch(() => null)
+
       const [company, customers, payments, items, expenses, shares, creditNotes, assets, ...byType] =
         await Promise.all([
           repositories.companies.get(companyId),
@@ -235,7 +267,7 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
           repositories.assets.list(companyId),
           ...DOCUMENT_TYPES.map((type) => repositories.documents.listByType(companyId, type)),
         ])
-      const recurrences = await repositories.recurrences.list(companyId)
+      const recurrences = await recurrencesRead
       if (generation.current !== mine) return
       setData({
         company,

@@ -10,6 +10,7 @@ import { CompanyProvider } from '../../app/context'
 import { createMemoryRepositories, emptyState } from '../../data/repositories'
 import { RepeatToggle } from './RepeatToggle'
 import type { Recurrence } from './schedule'
+import { stringsFor } from '../../domain/locale/data/strings'
 
 const recurrence: Recurrence = {
   sourceDocumentId: 'doc_88',
@@ -79,5 +80,58 @@ describe('A visible state, like the logo switch (§G)', () => {
     renderToggle({ recurrence: { ...recurrence, endedOn: '2026-08-01' } })
     expect(screen.getByRole('button', { name: 'Not repeating' })).toBeInTheDocument()
     expect(screen.queryByText(/Next draft/)).not.toBeInTheDocument()
+  })
+})
+
+/**
+ * Repeat missing is not Repeat off (§N, §L4).
+ *
+ * Repeat is an optional Phase 2.5 feature, and an install can be without it —
+ * a backend that has not run `0021`, for one. When the read fails the store
+ * reports `null`, which means "this install has no repeats", NOT "this
+ * document does not repeat". Collapsing the two draws a live-looking toggle
+ * over a feature that cannot act, which is the toggle-wired-to-nothing shape
+ * §N forbids.
+ */
+describe('When this install has no repeats at all', () => {
+  const EN = stringsFor('en').recurring
+
+  it('says so, rather than showing a toggle that is simply off', async () => {
+    renderToggle({ unavailable: true })
+    expect(screen.getByText(EN.repeatUnavailable)).toBeInTheDocument()
+    expect(screen.queryByText(EN.repeatOffHint)).toBeNull()
+  })
+
+  it('does not respond to a press', async () => {
+    const props = renderToggle({ unavailable: true })
+    const toggle = screen.getByRole('button', { name: EN.repeatOff })
+
+    expect(toggle).toBeDisabled()
+    await userEvent.click(toggle)
+
+    expect(props.onStart).not.toHaveBeenCalled()
+    expect(props.onStop).not.toHaveBeenCalled()
+  })
+
+  /**
+   * Even with a schedule in hand. If the feature is gone the switch cannot
+   * read "on" — an owner told their invoice repeats, by a control that cannot
+   * make it happen, is worse off than one told it is unavailable.
+   */
+  it('never reads as on, even when a schedule is passed', () => {
+    renderToggle({ unavailable: true, recurrence })
+    expect(screen.getByRole('button', { name: EN.repeatOff })).toHaveAttribute(
+      'aria-pressed',
+      'false',
+    )
+  })
+
+  it('is an ordinary working toggle when the feature IS available', async () => {
+    const props = renderToggle({ unavailable: false })
+    const toggle = screen.getByRole('button', { name: EN.repeatOff })
+
+    expect(toggle).not.toBeDisabled()
+    await userEvent.click(toggle)
+    expect(props.onStart).toHaveBeenCalled()
   })
 })

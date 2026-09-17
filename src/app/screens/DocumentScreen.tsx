@@ -137,8 +137,14 @@ export function DocumentScreen({ today = todayIso() }: { today?: string }) {
   const record = documents.find((document) => document.id === id)
   // Derived, never stored on the screen — the same rule as every other piece
   // of truth here (§C: derived states are computed at read time).
-  const recurrence =
-    recurrences.find((row) => row.sourceDocumentId === id) ?? null
+  /*
+   * `null` from the store means this backend has no repeats at all — not that
+   * this document has none. The two must not collapse into each other here:
+   * treating "unavailable" as "off" is what draws a working-looking toggle
+   * over a feature that cannot do anything (§N).
+   */
+  const repeatsUnavailable = recurrences === null
+  const recurrence = recurrences?.find((row) => row.sourceDocumentId === id) ?? null
   const customer = customers.find((row) => row.id === record?.customerId)
 
   const mine = useMemo(
@@ -1179,6 +1185,7 @@ export function DocumentScreen({ today = todayIso() }: { today?: string }) {
             */}
             <RepeatToggle
               recurrence={recurrence}
+              unavailable={repeatsUnavailable}
               today={today}
               onStart={() => {
                 void actions.startRepeat(record.id, record.issueDate ?? today)

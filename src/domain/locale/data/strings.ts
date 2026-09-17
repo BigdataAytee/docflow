@@ -924,6 +924,8 @@ export interface UiStrings {
     readonly repeatOff: string
     readonly repeatHint: string
     readonly repeatOffHint: string
+    /** Said when this install has no repeats at all (§N). */
+    readonly repeatUnavailable: string
     readonly everyMonth: string
     readonly nextOn: string
     readonly draftsWaiting: string
@@ -1767,6 +1769,7 @@ const EN: UiStrings = {
     repeatOff: 'Not repeating',
     repeatHint: 'A fresh draft appears each month for you to check and send.',
     repeatOffHint: 'This one is a one-off.',
+    repeatUnavailable: 'Repeats are not available on this version. Everything else works.',
     everyMonth: 'Every month on day {day}',
     nextOn: 'Next draft on {date}',
     draftsWaiting: '{count} waiting for you to check',
