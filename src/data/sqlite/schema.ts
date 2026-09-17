@@ -30,7 +30,16 @@
  * it — it saves a b-tree per table on a phone with 3GB of RAM.
  */
 
-export const SCHEMA_VERSION = 6
+/*
+ * Bump this whenever a statement is added to `MIGRATIONS`.
+ *
+ * `migrate` runs from the file's `user_version` up to this number, so a new
+ * statement with the version left alone is a statement that never runs — the
+ * column is in the source, the table does not have it, and every write naming
+ * it fails with "no such column". That is exactly what happened when the four
+ * contact and reference columns were added and this still read 6.
+ */
+export const SCHEMA_VERSION = 10
 
 /**
  * Applied in order, inside one transaction, by `migrate`.
@@ -367,6 +376,16 @@ export const MIGRATIONS: readonly string[] = [
   `,
   `
   alter table companies add column website text;
+  `,
+
+  `
+  -- §G's pencil: the owner's own document number.
+  --
+  -- Nullable, and it stays nullable (Rule #1). Uniqueness is NOT enforced
+  -- here on purpose: the server's
+  -- unique (company_id, type, issued_reference) from 0002 is what refuses a
+  -- duplicate, and it refuses it whether the number was generated or typed.
+  alter table documents add column reference_override text;
   `,
 ]
 

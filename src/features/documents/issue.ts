@@ -43,6 +43,13 @@ export interface IssueInput {
   readonly sequence: number
   readonly fromReservedBlock: boolean
   readonly deviceId: string
+  /**
+   * What the owner typed into §G's pencil, if they used it.
+   *
+   * Absent means the generated sequence, which is what almost every document
+   * uses. Present means they are carrying a number in from somewhere else.
+   */
+  readonly referenceOverride?: string
   readonly issuedAt: string
   readonly discountRate?: number
   readonly taxRate?: number
@@ -72,12 +79,36 @@ export function issueDocument(input: IssueInput): IssuedDocument {
   // issued document cannot be issued again and mint a second reference.
   assertTransition(input.draft.type, input.currentStatus, 'issued')
 
-  const reference = buildReference({
-    prefix: input.prefix,
-    sequence: input.sequence,
-    fromReservedBlock: input.fromReservedBlock,
-    deviceId: input.deviceId,
-  })
+  /*
+   * THE OWNER'S OWN NUMBER, where they have set one (§G's pencil override).
+   *
+   * §G gives the reference a pencil, and this is what it writes to. An owner
+   * migrating from a paper book, or from the app they used last year, needs
+   * the next document to carry THEIR next number — DR-INV-0413 — not a
+   * sequence that starts again at one and leaves two numbering systems
+   * running side by side.
+   *
+   * It is used VERBATIM and never repaired. A reference is an identifier a
+   * customer quotes back over the phone; silently reformatting what somebody
+   * typed would mean the document does not carry the number they think it
+   * does. `referenceProblem` refuses what cannot work before it gets here.
+   *
+   * COLLISIONS FAIL LOUDLY, and that is deliberate rather than optimistic:
+   * §M's `unique (company_id, type, issued_reference)` is on the table, so
+   * two documents cannot share a number however this value was chosen. An
+   * override that duplicates an existing reference is refused by the
+   * database, and the owner is told — which is the only safe answer, because
+   * the alternative is two invoices a customer cannot tell apart.
+   */
+  const reference =
+    input.referenceOverride === undefined || input.referenceOverride.trim() === ''
+      ? buildReference({
+          prefix: input.prefix,
+          sequence: input.sequence,
+          fromReservedBlock: input.fromReservedBlock,
+          deviceId: input.deviceId,
+        })
+      : input.referenceOverride.trim()
 
   const totals = carriesMoney(input.draft.type)
     ? computeTotals({

@@ -28,8 +28,8 @@ export interface ActionGridProps {
 const LABEL: Record<ActionId, (s: UiStrings['savedDocument']['action']) => string> = {
   share_pdf: (a) => a.sharePdf,
   convert: (a) => a.convert,
-  sign: (a) => a.sign,
-  void_or_credit: (a) => a.voidOrCredit,
+  record_payment: (a) => a.recordPayment,
+  chase: (a) => a.chase,
   copy_accept_link: (a) => a.copyAcceptLink,
   duplicate_rev2: (a) => a.duplicateRev2,
   void_and_reissue: (a) => a.voidAndReissue,
@@ -45,7 +45,7 @@ const REASON: Record<ActionBlocker, (s: UiStrings['savedDocument']['blocked']) =
   voided: (b) => b.voided,
   no_invoice: (b) => b.noInvoice,
   nothing_to_convert: (b) => b.nothingToConvert,
-  issued_is_final: (b) => b.issuedIsFinal,
+  nothing_owed: (b) => b.nothingOwed,
 }
 
 export function ActionGrid({ actions, strings, onAction }: ActionGridProps): ReactNode {

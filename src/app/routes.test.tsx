@@ -3365,34 +3365,11 @@ describe('Every enabled action does something (§G, §N)', () => {
     }
   })
 
-  it('opens the document itself when signing a draft, not a route named after the action', async () => {
-    renderAt('/doc/doc_inv', (seed) => {
-      seed.customers.push(customer())
-      seed.documents.push({
-        id: 'doc_inv',
-        companyId: DEV_COMPANY_ID,
-        type: 'invoice',
-        status: 'draft',
-        customerId: 'cus_1',
-        currency: 'NGN',
-        lineItems: [],
-        issueDate: '2026-09-01',
-        issuedReference: null,
-        frozenLabels: null,
-        totalMinor: 0,
-      })
-    })
-
-    const pill = await screen.findByRole('button', { name: /sign it/i })
-    await userEvent.click(pill)
-
-    /*
-     * Asserted on what RENDERS, not on the URL: the test router keeps its
-     * history in memory, so `window.location` never moves and a URL check
-     * passes whatever the handler did. `/edit/sign` is a document that does
-     * not exist, so it lands on the empty route — the builder appearing is
-     * the proof it went somewhere real.
-     */
-    expect(await screen.findByText(/draft saved automatically/i)).toBeInTheDocument()
-  })
+  /*
+   * REMOVED. This drove the invoice's "Sign it" pill, which is gone at the
+   * owner's instruction — signing happens in the builder, where Rule #5
+   * allows it. The bug it was written for (navigating with the ACTION's id
+   * rather than the document's) cannot recur: no action navigates by id any
+   * more except `open_invoice`, which is asserted above.
+   */
 })

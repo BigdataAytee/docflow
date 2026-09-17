@@ -187,6 +187,7 @@ export const toDocument = (row: SqlRow): DocumentRecord => ({
   // Both null until issue, then frozen forever (§M). `null` is the value, so
   // these are never omitted — a missing key would read as "not yet loaded".
   issuedReference: text(row['issued_reference']) ?? null,
+  ...optional('referenceOverride', text(row['reference_override'])),
   frozenLabels: parseJson<FrozenLabels | null>(row['frozen_labels'], null),
   ...optional('customerId', text(row['customer_id'])),
   ...optional('issueDate', text(row['issue_date'])),
@@ -267,6 +268,7 @@ export const documentColumns = (document: DocumentRecord): Record<string, SqlVal
   discount_rate_ppm: document.discountRatePpm ?? null,
   recurrence_key: document.recurrenceKey ?? null,
   issued_reference: document.issuedReference,
+  reference_override: document.referenceOverride ?? null,
   frozen_labels: document.frozenLabels === null ? null : json(document.frozenLabels),
   total_minor: document.totalMinor,
 })

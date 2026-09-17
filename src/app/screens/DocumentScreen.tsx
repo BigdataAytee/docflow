@@ -377,18 +377,21 @@ export function DocumentScreen({ today = todayIso() }: { today?: string }) {
               ...(record.linkedInvoiceId === undefined
                 ? {}
                 : { linkedInvoiceId: record.linkedInvoiceId }),
+              /* Whether there is still money to take — §G's paid-so-far. */
+              owes: isInvoice && outstanding.minor > 0,
             })}
             strings={strings}
             onAction={(id) => {
               if (id === 'share_pdf') return setSharing(true)
               if (id === 'convert') return setConverting(true)
-              if (id === 'void_or_credit' || id === 'void_and_reissue') return setVoiding(true)
+              if (id === 'void_and_reissue') return setVoiding(true)
               /*
-                `record.id`, not `id`. This read `editDocumentPath(id)` — the
-                ACTION's id — so "Sign it" navigated to `/edit/sign`, a route
-                for a document that does not exist.
-              */
-              if (id === 'sign') return navigate(editDocumentPath(record.id))
+               * Recording a payment is the honest route to a receipt, and the
+               * reason "convert an invoice to a receipt" is not offered: §G
+               * says a receipt is evidence of a payment, so it follows money
+               * ARRIVING rather than being spun out of the request for it.
+               */
+              if (id === 'record_payment' || id === 'chase') return setMore(true)
               if (id === 'open_invoice' && record.linkedInvoiceId !== undefined) {
                 return navigate(documentPath(record.linkedInvoiceId))
               }

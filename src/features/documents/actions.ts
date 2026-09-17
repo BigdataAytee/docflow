@@ -26,8 +26,8 @@ import type { DocumentType } from '../../domain/documents/types'
 export type ActionId =
   | 'share_pdf'
   | 'convert'
-  | 'sign'
-  | 'void_or_credit'
+  | 'record_payment'
+  | 'chase'
   | 'copy_accept_link'
   | 'duplicate_rev2'
   | 'void_and_reissue'
@@ -56,15 +56,13 @@ export type ActionBlocker =
   /** §G's convert list has no target for this type. */
   | 'nothing_to_convert'
   /**
-   * Issued, and therefore finished (Rule #5).
+   * Nothing is owed on it.
    *
-   * Signing an invoice AFTER issue would change a document whose reference,
-   * totals and labels are frozen — corrections go forward as a void, a credit
-   * note or a reissue, never by editing what was sent. So §G's invoice "sign"
-   * is a thing done to a draft, and afterwards the pill says so rather than
-   * quietly modifying a sent invoice.
+   * Kept as a REASON rather than a hidden pill: the two money actions stay in
+   * their places so the grid does not change shape, and a settled invoice is
+   * a fact worth reading rather than an absence to infer.
    */
-  | 'issued_is_final'
+  | 'nothing_owed'
 
 export interface DocumentAction {
   readonly id: ActionId
@@ -82,6 +80,8 @@ export interface ActionInput {
   readonly signed?: boolean
   /** Receipts: the invoice this is evidence against, if it has one. */
   readonly linkedInvoiceId?: string
+  /** Invoices: whether anything is still outstanding on it. */
+  readonly owes?: boolean
 }
 
 /** §G's convert list: quote → invoice/delivery; invoice → delivery; delivery → invoice. */
@@ -126,19 +126,28 @@ export function documentActions(
     : when(issued, 'convert', 'not_issued')
 
   switch (input.type) {
+    /*
+     * An invoice is about MONEY ARRIVING, so its four are the four acts that
+     * move money: send it, turn it into something else, take the payment,
+     * ask for it.
+     *
+     * §G's list named "sign" and "void-or-credit-note" instead, and both are
+     * gone at the owner's instruction. Neither is lost: signing happens in the
+     * builder, where Rule #5 allows it, and voiding is a CORRECTION — it sits
+     * behind More with the credit note, which is where Rule #5's "corrections
+     * go forward" belongs rather than in the same row as Share PDF.
+     *
+     * Recording a payment is also the only honest route to a receipt. §G:
+     * "A receipt is evidence of a payment... never inventing a duplicate
+     * invoice" — so a receipt is produced by money arriving, not by
+     * converting the request for it.
+     */
     case 'invoice':
       return [
         share,
         convert,
-        /*
-         * BEFORE ISSUE, never after. Rule #5 freezes an issued document, and
-         * a signature applied afterwards changes what was sent. This reads
-         * backwards against the other three — they need the document issued
-         * and this one needs it not to be — which is exactly why it is worth
-         * saying out loud rather than leaving as a condition.
-         */
-        when(!issued, 'sign', 'issued_is_final'),
-        when(issued && !voided, 'void_or_credit', voided ? 'voided' : 'not_issued'),
+        when(issued && !voided && input.owes === true, 'record_payment', voided ? 'voided' : issued ? 'nothing_owed' : 'not_issued'),
+        when(issued && !voided && input.owes === true, 'chase', voided ? 'voided' : issued ? 'nothing_owed' : 'not_issued'),
       ]
 
     case 'quotation':

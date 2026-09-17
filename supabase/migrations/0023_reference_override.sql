@@ -1,0 +1,19 @@
+-- §G's pencil: the owner's own document number.
+--
+-- "Number & dates" has carried a pencil beside the reference since the
+-- prototype, with nothing behind it. This is where what they type goes.
+--
+-- Who needs it: somebody migrating from a paper book or another app, whose
+-- next invoice has to be DR-INV-0413 because that is what follows the one
+-- they wrote last week. Without it they run two numbering systems side by
+-- side, and "invoice 412" becomes a question nobody can answer.
+--
+-- Nullable, and it stays nullable (Rule #1): almost every document uses the
+-- generated sequence, and clearing the box asks for that back.
+--
+-- UNIQUENESS IS ALREADY HANDLED and deliberately not repeated here.
+-- `documents_issued_reference_unique (company_id, type, issued_reference)`
+-- from 0002 is what stops two documents sharing a number, whether the number
+-- was generated or typed. An override that collides is refused by that
+-- constraint at the moment of issue — the only check that cannot race.
+alter table public.documents add column if not exists reference_override text;

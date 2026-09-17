@@ -29,6 +29,21 @@ export interface DocumentDraft {
   readonly currency: string
   readonly customerId?: string
   readonly lineItems: readonly LineItem[]
+  /**
+   * §G's pencil — the owner's own number for THIS document, if they set one.
+   *
+   * On the draft rather than on the issued record, because that is when it is
+   * editable: an issued reference is frozen (Rule #5), and after issue there
+   * is nothing to override.
+   */
+  /*
+   * `| undefined` explicitly, under `exactOptionalPropertyTypes`: clearing
+   * the pencil is a real instruction — "go back to the generated number" —
+   * and it has to be expressible as a patch. Without this the only way to
+   * clear it would be to leave the key out, which a partial patch reads as
+   * "unchanged".
+   */
+  readonly referenceOverride?: string | undefined
   readonly issueDate?: string
   readonly dueDate?: string
   readonly validUntil?: string

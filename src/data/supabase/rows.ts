@@ -229,6 +229,9 @@ export function toDocument(row: Row): DocumentRecord {
     // Both stay NULL rather than absent: §M freezes them at issue, and a
     // draft's null is the thing that says it has not been issued.
     issuedReference: (text(row['issued_reference']) ?? null) as string | null,
+    ...(text(row['reference_override']) === undefined
+      ? {}
+      : { referenceOverride: text(row['reference_override']) as string }),
     frozenLabels: (json<FrozenLabels | null>(row['frozen_labels'], null) ?? null),
     ...omitNull({
       customerId: text(row['customer_id']),
@@ -281,6 +284,7 @@ export function fromDocument(patch: Partial<DocumentRecord>): Row {
   // These two are nullable on purpose: a draft HAS no reference, and writing
   // null is how it is created (§M).
   if (patch.issuedReference !== undefined) row['issued_reference'] = patch.issuedReference
+  if (patch.referenceOverride !== undefined) row['reference_override'] = patch.referenceOverride
   if (patch.frozenLabels !== undefined) row['frozen_labels'] = patch.frozenLabels
   return row
 }

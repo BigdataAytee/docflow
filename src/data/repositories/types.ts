@@ -215,6 +215,8 @@ export interface DocumentRecord {
    */
   readonly recurrenceKey?: string
   /** Both null until issue, then frozen forever (§M). */
+  /** §G's pencil, kept on the draft until issue consumes it. */
+  readonly referenceOverride?: string
   readonly issuedReference: string | null
   readonly frozenLabels: FrozenLabels | null
   readonly totalMinor: number

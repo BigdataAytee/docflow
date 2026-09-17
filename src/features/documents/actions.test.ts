@@ -63,13 +63,23 @@ describe('Always four, whatever the type and whatever the state', () => {
 })
 
 describe('The four §G names, per type', () => {
-  it('gives an invoice share / convert / sign / void-or-credit', () => {
-    expect(ids(doc({ type: 'invoice' }))).toEqual([
+  it('gives an invoice share / convert / record payment / chase', () => {
+    expect(ids(doc({ type: 'invoice', owes: true }))).toEqual([
       'share_pdf',
       'convert',
-      'sign',
-      'void_or_credit',
+      'record_payment',
+      'chase',
     ])
+  })
+
+  /** Nothing owing means nothing to take and nobody to chase — said, not hidden. */
+  it('dims both money actions when the invoice is settled', () => {
+    const settled = documentActions(doc({ type: 'invoice', owes: false }))
+    for (const id of ['record_payment', 'chase'] as const) {
+      const action = settled.find((a) => a.id === id)
+      expect(action?.enabled, id).toBe(false)
+      expect(action?.blockedBy, id).toBe('nothing_owed')
+    }
   })
 
   it('gives a quotation the accept link and Rev 2', () => {
@@ -109,23 +119,16 @@ describe('A draft can do none of it, and says so', () => {
     },
   )
 
-  /**
-   * An invoice draft is the ONE exception, and it is Rule #5 that makes it
-   * one: §G's invoice "sign" is a thing done BEFORE issue, because a
-   * signature applied to a frozen document changes what was sent.
+  /*
+   * CHANGED AT THE OWNER'S INSTRUCTION. The invoice's four were §G's "share
+   * PDF / convert / sign / void-or-credit-note". Sign and void-or-credit are
+   * gone: signing happens in the builder where Rule #5 allows it, and voiding
+   * is a CORRECTION that belongs behind More rather than in the same row as
+   * Share PDF.
+   *
+   * What replaced them are the two acts an invoice is actually about —
+   * taking the money and asking for it.
    */
-  it('offers an invoice draft its signature, and nothing else', () => {
-    expect(live(doc({ type: 'invoice', status: 'draft' }))).toEqual(['sign'])
-  })
-
-  it('refuses to sign an invoice once it is issued (Rule #5)', () => {
-    const sign = documentActions(doc({ type: 'invoice', status: 'issued' })).find(
-      (a) => a.id === 'sign',
-    )
-    expect(sign?.enabled).toBe(false)
-    expect(sign?.blockedBy).toBe('issued_is_final')
-  })
-
   it('blames the draft, not the lifecycle', () => {
     const [share] = documentActions(doc({ type: 'invoice', status: 'draft' }))
     expect(share.blockedBy).toBe('not_issued')
@@ -163,9 +166,9 @@ describe('The lifecycle clause survives intact (§M)', () => {
 })
 
 describe('Rule #5 and §G’s convert list', () => {
-  it('will not void what is already void', () => {
-    const voided = documentActions(doc({ type: 'invoice', status: 'void' }))
-    const action = voided.find((a) => a.id === 'void_or_credit')
+  it('takes no money on a voided invoice', () => {
+    const voided = documentActions(doc({ type: 'invoice', status: 'void', owes: true }))
+    const action = voided.find((a) => a.id === 'record_payment')
     expect(action?.enabled).toBe(false)
     expect(action?.blockedBy).toBe('voided')
   })

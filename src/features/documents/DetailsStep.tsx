@@ -18,6 +18,7 @@ import { format } from '../../domain/locale/data/strings'
 import { Icon, TYPE_PALETTE } from '../../ui'
 import { BuilderCard, TinyButton } from './BuilderCard'
 import { InlineCalendar } from './InlineCalendar'
+import { REFERENCE_MAX, overrideToStore, referenceProblem } from './reference-override'
 import { parseIsoDate, todayIso, type DateSlot } from './dateChips'
 import { carriesMoney, type DocumentType } from '../../domain/documents/types'
 import type { Customer } from '../../data/repositories'
@@ -171,6 +172,28 @@ export function DetailsStep({
 }: DetailsStepProps) {
   const { profile, strings } = useCompany()
   const { accent, tint } = TYPE_PALETTE[draft.type]
+  /*
+   * §G's pencil. `referenceDraft` is what is being typed; `referenceOverride`
+   * on the draft is what has been accepted. Keeping them apart is what lets
+   * somebody type a slash, see why it cannot be used, and fix it — rather
+   * than having the bad value written to the document as they type.
+   */
+  const [editingReference, setEditingReference] = useState(false)
+  const [referenceDraft, setReferenceDraft] = useState('')
+  const referenceIssue =
+    editingReference && referenceDraft.trim() !== '' ? referenceProblem(referenceDraft) : null
+
+  /** Accepts what was typed, or leaves the field open on a problem (§K). */
+  const commitReference = (): void => {
+    if (referenceDraft.trim() !== '' && referenceProblem(referenceDraft) !== null) return
+    onChange({
+      ...(overrideToStore(referenceDraft) === undefined
+        ? { referenceOverride: undefined }
+        : { referenceOverride: overrideToStore(referenceDraft) }),
+    })
+    setEditingReference(false)
+  }
+
   const [openCalendar, setOpenCalendar] = useState<DateSlot | null>(null)
   const first = firstDateFor(draft.type, strings)
   const second = secondDateFor(draft.type, strings)
@@ -189,7 +212,32 @@ export function DetailsStep({
               when somebody reads it down a phone — and a proportional 0 next
               to a proportional O is where that goes wrong.
             */}
-            <span className="block truncate font-mono text-xs font-semibold">{reference}</span>
+            {/*
+              §G'S PENCIL, which for a long time did nothing at all.
+
+              Editing IN PLACE rather than behind a sheet: the value is one
+              short line, the owner is already looking at it, and Rule #1 caps
+              this at the smallest thing that works. A sheet would be a screen
+              to open and dismiss for a field narrower than the button that
+              opens it.
+            */}
+            {editingReference ? (
+              <input
+                autoFocus
+                value={referenceDraft}
+                onChange={(event) => setReferenceDraft(event.target.value)}
+                onBlur={commitReference}
+                onKeyDown={(event) => {
+                  if (event.key === 'Enter') commitReference()
+                  if (event.key === 'Escape') setEditingReference(false)
+                }}
+                aria-label={strings.details.editReference}
+                aria-invalid={referenceIssue !== null}
+                className="sunken min-h-tap w-full rounded-lg px-2 font-mono text-xs font-semibold"
+              />
+            ) : (
+              <span className="block truncate font-mono text-xs font-semibold">{reference}</span>
+            )}
           </span>
           <TinyButton
             label={strings.details.editReference}
@@ -197,13 +245,25 @@ export function DetailsStep({
             accent={accent}
             tint={tint}
             onClick={() => {
-              // §G gives the reference a pencil override. The sheet behind it
-              // is not built yet, and a button that silently does nothing is
-              // worse than one that is not there — so this stays inert and
-              // visible rather than pretending. Noted in PLAN.
+              setReferenceDraft(draft.referenceOverride ?? '')
+              setEditingReference(true)
             }}
           />
         </div>
+
+        {/*
+          Said beside the field, while they are still in it (§K). The rule is
+          about what SURVIVES: a reference goes into a filename and into a
+          shared link, so a slash breaks both and they find out here rather
+          than from a link that will not open.
+        */}
+        {referenceIssue !== null && (
+          <p className="mt-1 text-[11px] font-medium text-status-warn" role="alert">
+            {referenceIssue === 'too_long'
+              ? format(strings.details.referenceTooLong, { count: REFERENCE_MAX })
+              : strings.details.referenceUnusable}
+          </p>
+        )}
         <div className="flex gap-2.5">
           <DateField
             label={first.label}

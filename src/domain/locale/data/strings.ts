@@ -295,6 +295,9 @@ export interface UiStrings {
     readonly numberLabel: string
     readonly reference: string
     readonly editReference: string
+    /** §K: said beside the field, about what SURVIVES a filename and a link. */
+    readonly referenceTooLong: string
+    readonly referenceUnusable: string
     readonly issueDate: string
     readonly dueDate: string
     readonly validUntil: string
@@ -810,8 +813,8 @@ export interface UiStrings {
     readonly action: {
       readonly sharePdf: string
       readonly convert: string
-      readonly sign: string
-      readonly voidOrCredit: string
+      readonly recordPayment: string
+      readonly chase: string
       readonly copyAcceptLink: string
       readonly duplicateRev2: string
       readonly voidAndReissue: string
@@ -832,7 +835,7 @@ export interface UiStrings {
       readonly voided: string
       readonly noInvoice: string
       readonly nothingToConvert: string
-      readonly issuedIsFinal: string
+      readonly nothingOwed: string
     }
   }
   readonly design: {
@@ -1247,6 +1250,8 @@ const EN: UiStrings = {
     numberAndDates: 'Number & dates',
     numberLabel: 'Number',
     reference: 'Reference',
+    referenceTooLong: 'Keep it to {count} characters.',
+    referenceUnusable: 'Letters, numbers, spaces, dots and dashes — no slashes.',
     editReference: 'Edit reference',
     issueDate: 'Date',
     dueDate: 'Due',
@@ -1707,8 +1712,8 @@ const EN: UiStrings = {
     action: {
       sharePdf: 'Share PDF',
       convert: 'Convert to…',
-      sign: 'Sign it',
-      voidOrCredit: 'Void or credit',
+      recordPayment: 'Record a payment',
+      chase: 'Chase this money',
       /*
        * What it DOES, not what it puts on the clipboard.
        *
@@ -1732,7 +1737,13 @@ const EN: UiStrings = {
       voided: 'Already void',
       noInvoice: 'Not against an invoice',
       nothingToConvert: 'Nothing to convert to',
-      issuedIsFinal: 'Sign before issuing',
+      /*
+       * The FIGURE, not a sentence. An owner reading a settled invoice wants
+       * the number — nothing left, nothing to chase — and "0" says it in the
+       * width a pill actually has. The words are for reasons a person has to
+       * act on; this one is arithmetic.
+       */
+      nothingOwed: '0',
     },
     continueEditing: 'Carry on editing',
     needsDevice: 'Needs the installed app — coming with the phone build.',

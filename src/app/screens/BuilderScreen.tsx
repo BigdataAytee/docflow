@@ -463,6 +463,15 @@ export function BuilderScreen({ now = () => new Date().toISOString() }: { now?: 
         sequence: documentsOf(documents, state.draft.type).length,
         fromReservedBlock: false,
         deviceId: deviceId(),
+        /*
+         * §G's pencil, consumed here. Absent means the generated sequence,
+         * which is what almost every document uses. A collision is refused by
+         * §M's unique (company_id, type, issued_reference) and surfaces
+         * through the catch below as an actionable per-record error.
+         */
+        ...(state.draft.referenceOverride === undefined
+          ? {}
+          : { referenceOverride: state.draft.referenceOverride }),
         issuedAt: now(),
         ...(design.discountPercent === 0
           ? {}
