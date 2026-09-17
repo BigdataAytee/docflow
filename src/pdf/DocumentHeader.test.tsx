@@ -457,6 +457,61 @@ describe('Every design is a design (§H)', () => {
  * title, the reference and the party, and three identical headers do that
  * perfectly. "Each one renders" was never the question §H asks.
  */
+/**
+ * Sidebar's column, and whether anything is in it (§H, §I).
+ *
+ * A THIRD OF THE PAGE WAS TINTED AND EMPTY. The chrome painted the column,
+ * `contentInset` pushed the whole document clear of it, and nothing ever went
+ * in — so the design called "Sidebar" was Classic squeezed into two thirds of
+ * the paper with a coloured margin beside it.
+ *
+ * Nothing caught it. Every guard here asks whether a design RENDERS the name,
+ * the title, the party — and it rendered all of them, in the two thirds. The
+ * question none of them asked was whether the structure the design is named
+ * for holds anything.
+ */
+describe('The sidebar column carries the business (§H)', () => {
+  const column = (id: string) => {
+    const { view, article } = draw(id)
+    /* The column is the chrome's own box: positioned, and outside the header. */
+    const node = article.querySelector<HTMLElement>('[data-sidebar-column]')
+    const text = (node?.textContent ?? '').replace(/\s+/g, ' ').trim()
+    view.unmount()
+    return { found: node !== null, text }
+  }
+
+  it('puts the identity inside the column, not beside it', () => {
+    const { found, text } = column('sidebar')
+    expect(found, 'sidebar draws no column').toBe(true)
+    /*
+     * Asserted on the TEXT rather than on the element existing: an empty
+     * column is exactly the defect, and `querySelector` is true for one.
+     */
+    expect(text, 'the sidebar column is empty').toContain('Sola Ventures')
+  })
+
+  /** And the header no longer repeats it — the column IS the identity. */
+  it('does not print the business twice', () => {
+    const { view, article } = draw('sidebar')
+    const header = article.querySelector('header')
+    expect(header?.textContent ?? '').not.toContain('Sola Ventures')
+    view.unmount()
+  })
+
+  /** No other design grows one by accident. */
+  it('belongs to sidebar alone', () => {
+    for (const template of TEMPLATES) {
+      if (template.id === 'sidebar') continue
+      const { view, article } = draw(template.id)
+      expect(
+        article.querySelector('[data-sidebar-column]'),
+        `${template.id} drew a sidebar column`,
+      ).toBeNull()
+      view.unmount()
+    }
+  })
+})
+
 describe('No two designs draw the same header', () => {
   /**
    * The HEADER's markup, with the words stripped out — SHAPE, not content.

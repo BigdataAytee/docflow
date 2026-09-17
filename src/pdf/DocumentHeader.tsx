@@ -73,6 +73,30 @@ const Name = ({ model, className = '' }: { model: PageModel; className?: string 
 )
 
 /**
+ * How to reach the business, stacked — Sidebar's column only.
+ *
+ * The footer strip prints the same three on every design as one line. A
+ * column is tall and narrow, so they stack, and each is optional on its own
+ * (Rule #1): a business with a phone and no website prints a phone and no
+ * blank row under it.
+ */
+const SidebarContact = ({ model }: { model: PageModel }) => {
+  const lines = [model.branding.phone, model.branding.email, model.branding.website].filter(
+    (line): line is string => line !== undefined && line.trim() !== '',
+  )
+  if (lines.length === 0) return null
+  return (
+    <div className="mt-auto space-y-[3px] text-[9px] leading-snug opacity-75">
+      {lines.map((line) => (
+        <p key={line} className="break-words">
+          {line}
+        </p>
+      ))}
+    </div>
+  )
+}
+
+/**
  * Which designs place the headline figure THEMSELVES.
  *
  * Five compose it into their header because its position is part of what
@@ -462,11 +486,6 @@ export function DocumentHeader({ model, template, ink, logo, formatAmount }: Doc
       return (
         <>
           <header className="relative flex items-start gap-[16px]">
-            <span
-              aria-hidden="true"
-              className="pointer-events-none absolute -top-[40%] end-[-8%] h-[128px] w-[128px] rounded-full"
-              style={{ backgroundColor: ink, opacity: 0.14 }}
-            />
             {logo}
             <div className="relative min-w-0 flex-1">
               <Name model={model} />
@@ -478,8 +497,34 @@ export function DocumentHeader({ model, template, ink, logo, formatAmount }: Doc
               </span>
               <Ref model={model} />
             </div>
-            {/* Opposite the badge, so the circle has something to balance. */}
-            <Headline model={model} ink={ink} formatAmount={formatAmount} />
+            {/*
+              THE FIGURE SITS IN THE CIRCLE, rather than under its edge.
+
+              The disc was anchored off the top-right corner at a size that had
+              nothing to do with the figure beside it, so it cut straight
+              through: the label read inside the disc and the amount hung out
+              of its side, struck through by the boundary. Two separate marks
+              fighting for one corner.
+
+              They are one mark now. The disc is centred on the figure and
+              sized to hold it — which is the arrangement the design was
+              reaching for, and the reason it is called Executive: the amount
+              is the thing in the corner, not a decoration next to it.
+
+              It is sized in absolute px like everything else in this file
+              (see the note on the page being a scale model), so it holds the
+              figure at A4 and at 343px alike.
+            */}
+            <div className="relative shrink-0">
+              <span
+                aria-hidden="true"
+                className="pointer-events-none absolute start-1/2 top-1/2 h-[190px] w-[190px] -translate-x-1/2 -translate-y-1/2 rounded-full"
+                style={{ backgroundColor: ink, opacity: 0.14 }}
+              />
+              <div className="relative">
+                <Headline model={model} ink={ink} formatAmount={formatAmount} />
+              </div>
+            </div>
           </header>
           <Rule ink={ink} height={2} />
         </>
@@ -621,7 +666,7 @@ export function DocumentHeader({ model, template, ink, logo, formatAmount }: Doc
           className="-mx-[6%] -mt-[6%] mb-[16px] flex items-start gap-[16px] px-[6%] pb-[40px] pt-[6%]"
           style={{
             backgroundColor: ink,
-            clipPath: 'polygon(0 0, 100% 0, 100% 72%, 0 100%)',
+            clipPath: 'polygon(0 0, 100% 0, 100% 100%, 0 72%)',
           }}
         >
           {/*
@@ -632,11 +677,15 @@ export function DocumentHeader({ model, template, ink, logo, formatAmount }: Doc
             made them one design with two background shapes. The guard caught
             it by comparing the header's markup with the words stripped out.
 
-            The band here is a DIAGONAL: it is deep on the left and shallow on
-            the right, so the weight belongs on the left. The title takes that
-            side, large, with the identity and the figure ranged right where
-            the band is thinnest — the type follows the cut instead of
-            ignoring it.
+            The band here is a DIAGONAL, and WHICH WAY IT CUTS is decided by
+            what has to fit under it. The right-hand stack is the tall one —
+            name, address, logo, and the figure beneath them — so the cut
+            falls the other way: shallow at the left where the title is one
+            line, deep at the right where the stack needs the room.
+
+            It cut the other way first, and the amount was sliced in half by
+            the edge of its own band. Visible on the page, invisible in the
+            markup.
           */}
           <div className="min-w-0 flex-1" style={{ color: template.paper }}>
             <Title model={model} ink={template.paper} />
@@ -737,32 +786,29 @@ export function DocumentHeader({ model, template, ink, logo, formatAmount }: Doc
     /*
      * SIDEBAR — the identity lives IN the column.
      *
-     * `PageChrome` paints a coloured column down the left edge and
-     * `contentInset` holds the content clear of it. Everything here used to
-     * sit to the right of that column like every other design, which made the
-     * column a stripe rather than a structure. The logo and the business sit
-     * inside it now, stacked, and the document's own title takes the top of
-     * the page beside them — so the eye reads WHO down the edge and WHAT
-     * across the top.
+     * `PageChrome` paints the column; `SidebarIdentity` fills it.
+     *
+     * The column was EMPTY — a third of the paper tinted and holding nothing,
+     * with the whole document squeezed into the remaining two thirds. That is
+     * not a sidebar, it is a margin, and it was the sparsest thing in the set.
+     *
+     * The identity lives in the column now (logo, name, address, and how to
+     * reach the business), which is what the name of the design promises and
+     * what the legacy sheet does. The header keeps only what belongs across
+     * the top of the page: the document's title, its reference, and the
+     * figure. So the eye reads WHO down the edge and WHAT across the top,
+     * and neither repeats the other.
      */
     case 'sidebar':
       return (
         <>
           <header className="flex items-start justify-between gap-[16px]">
             <div className="min-w-0 flex-1">
-              <div className="flex items-start gap-[10px]">
-                <div className="shrink-0">{logo}</div>
-                <Name model={model} className="min-w-0 flex-1" />
-              </div>
-            </div>
-            <div className="shrink-0 text-end">
               <Title model={model} ink={ink} />
               <Ref model={model} className="mt-[2px]" />
             </div>
-          </header>
-          <div className="mt-[10px] flex justify-end">
             <Headline model={model} ink={ink} formatAmount={formatAmount} />
-          </div>
+          </header>
           <Rule ink={ink} height={3} />
         </>
       )
@@ -834,20 +880,67 @@ export function DocumentHeader({ model, template, ink, logo, formatAmount }: Doc
  * every one of them is decoration, and none carries a word. The page itself
  * is what a reader hears.
  */
-export function PageChrome({ template, ink }: { template: TemplateDefinition; ink: string }) {
+export function PageChrome({
+  template,
+  ink,
+  model,
+  logo,
+}: {
+  template: TemplateDefinition
+  ink: string
+  /**
+   * Sidebar's column holds the identity, so the chrome needs the words.
+   *
+   * Only Sidebar reads them. Every other mark here is pure decoration and
+   * `aria-hidden` to a one — this is the one that is not, because a column
+   * with a business name in it is content that happens to be positioned.
+   */
+  model: PageModel
+  logo: ReactNode
+}) {
   switch (template.headerStyle) {
-    /* Sidebar — a tinted left column at the width the definition names. */
+    /*
+     * Sidebar — a tinted column at the width the definition names, WITH THE
+     * BUSINESS IN IT.
+     *
+     * Not `aria-hidden`: unlike the spine and the wave this one carries the
+     * name, the address and the contact lines, and hiding them from a screen
+     * reader would mean the one design where the identity is most prominent
+     * is the one design where it is not announced at all.
+     *
+     * `zoom` is inherited from the content layer, so the sizes here are the
+     * same absolute sizes the header uses and scale with it.
+     */
     case 'sidebar':
       return (
-        <span
-          aria-hidden="true"
+        <div
+          data-sidebar-column
           className="pointer-events-none absolute inset-y-0 start-0"
-          style={{
-            width: `${template.sidebarPercent ?? 31}%`,
-            backgroundColor: ink,
-            opacity: 0.16,
-          }}
-        />
+          style={{ width: `${template.sidebarPercent ?? 31}%` }}
+        >
+          {/*
+            THE TINT AND THE TEXT ARE TWO LAYERS, and they have to be.
+
+            `opacity` applies to a whole subtree, so tinting the column by
+            setting 0.16 on the box that also holds the words would print the
+            name at 16% too — a business name the colour of the paper. The
+            wash is its own layer behind, and the identity sits on top of it
+            at full strength.
+          */}
+          <span
+            aria-hidden="true"
+            className="absolute inset-0"
+            style={{ backgroundColor: ink, opacity: 0.16 }}
+          />
+          <div
+            className="relative flex h-full flex-col gap-[16px] p-[9%]"
+            style={{ zoom: 'calc(100cqi / 794px)' }}
+          >
+            {logo}
+            <Name model={model} />
+            <SidebarContact model={model} />
+          </div>
+        </div>
       )
 
     /* Sikky — a solid spine down the leading edge. */

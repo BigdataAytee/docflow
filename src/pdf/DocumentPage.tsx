@@ -172,6 +172,18 @@ export function DocumentPage({
 }: DocumentPageProps) {
   const ink = template.usesBrandAccent ? accent : template.ink
 
+  /*
+   * ONE logo node, because two things draw it.
+   *
+   * Sidebar's column holds the identity, so the chrome needs the logo as
+   * much as the header does. Building it twice would be two places to
+   * forget `showLogo`, and §F's promise is that the switch governs every
+   * design rather than most of them.
+   */
+  const logoNode = model.branding.showLogo ? (
+    <LogoHolder size={model.branding.logoSize} url={model.branding.logoUrl} />
+  ) : null
+
   return (
     <article
       className="relative mx-auto w-full overflow-hidden"
@@ -212,7 +224,7 @@ export function DocumentPage({
         come from the template definition, so a design is one entry in
         `templates.ts` and never a branch here (§H).
       */}
-      <PageChrome template={template} ink={ink} />
+      <PageChrome template={template} ink={ink} model={model} logo={logoNode} />
 
       <div
         className="relative flex h-full flex-col p-[6%]"
@@ -247,23 +259,16 @@ export function DocumentPage({
           template={template}
           ink={ink}
           formatAmount={formatAmount}
-          logo={
-            model.branding.showLogo ? (
-              <LogoHolder
-                size={model.branding.logoSize}
-                url={model.branding.logoUrl}
-              />
-            ) : null
-          }
+          logo={logoNode}
         />
 
         {/*
-          THE HEADLINE, for every design that does not place it itself (§I).
+          THE HEADLINE, for any design that does not place it itself (§I).
 
-          Five compose it into their headers because its position is part of
-          what makes them that design. The other eleven get it here, in one
-          standard place — so the DEFAULT is having the amount at the top, and
-          a new design cannot ship without one by forgetting to add it.
+          All sixteen place it themselves now — its position is part of what
+          makes each of them that design. This stays because the DEFAULT has
+          to be having the amount at the top: a seventeenth design that forgets
+          to draw one gets it here rather than shipping without it.
         */}
         {model.headline !== null && !HEADER_DRAWS_HEADLINE.has(template.headerStyle) && (
           <div className="mt-[10px] flex justify-end" data-headline>
