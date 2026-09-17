@@ -160,13 +160,23 @@ export function RegionSettings({ settings, onRegion, onLanguage }: RegionSetting
         <h2 className="text-xs font-bold uppercase tracking-wide opacity-60">
           {strings.settings.documentsAreCalled}
         </h2>
-        <ul className="space-y-1.5">
-          {DOCUMENT_TYPES.map((type) => (
-            <li key={type} className="flex items-baseline justify-between gap-3">
-              <span className="text-sm font-semibold">{typeLabel(localeProfile, type)}</span>
-              <span className="shrink-0 text-xs tabular-nums opacity-55">
-                {profile.locale}
-              </span>
+        {/*
+          The four words and nothing else.
+
+          The first draft put the locale code beside each one — EN-NG, four
+          times, identical down the column. It repeated itself, it named an
+          internal identifier at somebody who has never seen one, and the line
+          underneath already says where the words come from.
+        */}
+        <ul className="flex flex-wrap gap-x-2 gap-y-1">
+          {DOCUMENT_TYPES.map((type, index) => (
+            <li key={type} className="flex items-baseline gap-2 text-sm font-semibold">
+              {index > 0 && (
+                <span aria-hidden="true" className="opacity-30">
+                  ·
+                </span>
+              )}
+              <span>{typeLabel(localeProfile, type)}</span>
             </li>
           ))}
         </ul>

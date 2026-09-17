@@ -55,6 +55,28 @@ describe('Twenty documents, and every figure on them derived', () => {
     },
   )
 
+  /**
+   * FIVE SAMPLES, NOT THREE WEARING FIVE NUMBERS.
+   *
+   * The quantities came from `(seed * 3) % 9`, whose period is three — so
+   * seeds 1 and 4 generated identical line items, and so did 2 and 5. Three
+   * of the five invoices were the same document, which is the one thing a set
+   * of five samples must not be: the whole reason for having five is to see
+   * how a layout copes with different content.
+   *
+   * Nothing caught it because every other assertion here is per-document, and
+   * a duplicate satisfies all of them twice.
+   */
+  it.each(['invoice', 'quotation', 'receipt', 'waybill'] as const)(
+    'gives each %s a different set of lines',
+    (type) => {
+      const shapes = documents
+        .filter((doc) => doc.type === type)
+        .map((doc) => doc.lineItems.map((line) => line.quantityMilli).join(','))
+      expect(new Set(shapes).size, `two ${type} samples are the same document`).toBe(shapes.length)
+    },
+  )
+
   /** A delivery carries no money at all (§V), so there is no total to store. */
   it('stores nothing on a delivery', () => {
     for (const doc of documents.filter((d) => d.type === 'waybill')) {

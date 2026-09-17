@@ -48,10 +48,19 @@ const CUSTOMERS: readonly { name: string; address: string; phone: string }[] = [
   { name: 'Taiwo Ventures', address: '141 Silverdale Avenue, Abeokuta', phone: '+2348030005555' },
 ]
 
-/** Ten lines, varied so the table has something to cope with. */
+/**
+ * Ten lines, varied so the table has something to cope with.
+ *
+ * THE MULTIPLIER IS 4, NOT 3, and the difference is five samples instead of
+ * three. `(seed * 3) % 9` has a period of three, so seeds 1 and 4 produced
+ * the same ten quantities and seeds 2 and 5 did too — three of the five
+ * invoices were the same document with a different number on it, which
+ * defeats the entire purpose of having five. 4 is coprime with 9, so every
+ * seed lands on a different row of the cycle.
+ */
 function linesFor(type: DocumentType, seed: number): LineItem[] {
   return CATALOGUE.map((item, index) => {
-    const qty = ((seed * 3 + index * 2) % 9) + 1
+    const qty = ((seed * 4 + index * 2) % 9) + 1
     return {
       id: `line_${seed}_${index}`,
       description: item.name,
