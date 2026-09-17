@@ -1,42 +1,48 @@
 /**
- * A safe-area inset must never be the thing that sets a screen's padding.
+ * Safe-area insets: counted once, and never instead of a screen's own padding.
  *
- * THE BUG. `index.css` carried this, and it reads as obviously correct:
+ * Two defects live here, both invisible outside a device, because `env()`
+ * resolves to its fallback everywhere else and the `.native` class is only
+ * ever added inside the shell. The responsive sweep at 320px in Chromium
+ * cannot see either of them, which is why these are source assertions.
+ *
+ * ONE — the inset REPLACING a screen's padding. `index.css` carried:
  *
  *     .native main { padding-inline-start: env(safe-area-inset-left, 0px) }
  *
- * Two facts make it destructive together. `padding-inline-start` IS
- * `padding-left` in a left-to-right language, so it does not sit alongside
- * Tailwind's `px-5` — it competes with it. And `.native main` has specificity
- * (0,1,1) against `.px-5`'s (0,1,0), so it wins. Every screen whose `<main>`
- * set its own horizontal padding therefore had that padding REPLACED by the
- * inset, which on a phone held upright is `0px`. Text ran into both edges of
- * the display, on every screen, on the device only.
+ * `padding-inline-start` IS `padding-left` in a left-to-right language, so it
+ * competes with Tailwind's `px-5` rather than adding to it — and `.native main`
+ * (0,1,1) outranks `.px-5` (0,1,0). Upright, the inset is `0px`. Every screen
+ * with a `<main>` lost its horizontal padding and text ran into both edges.
  *
- * Chromium at 320px cannot see it: `env()` resolves to the fallback there too,
- * but the `.native` class is only ever added inside the shell, so the rule
- * does not apply and the responsive sweep passes. That is why this is a source
- * assertion rather than a rendering one — the defect lives in the interaction
- * between a selector's specificity and a utility class, and it is visible in
- * the stylesheet long before it is visible on a phone.
+ * TWO — the inset counted TWICE. `PageHeader` already carries its own
+ * `pt-[max(1rem,env(safe-area-inset-top))]`, and `.native body` carried a
+ * `padding-top` as well. The result was a pale band across the top where §F
+ * wants the header's gradient to reach the physical edge, and dead space above
+ * every title.
  *
- * The rule: insets belong on `body`, the element that actually meets the
- * display's edge, where they ADD to whatever a screen chose for itself.
+ * The rule that resolves both: a band that DRAWS at an edge pushes its own
+ * content clear, and `body` handles only the left and right edges, which no
+ * component handles for itself.
  */
 
 import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { describe, expect, it } from 'vitest'
 
+/** Strips block and line comments, so a scan never reads prose as code. */
+const stripComments = (source: string): string =>
+  source.replace(/\/\*[\s\S]*?\*\//g, '').replace(/\/\/[^\n]*/g, '')
+
+const read = (...parts: string[]): string =>
+  readFileSync(join(process.cwd(), ...parts), 'utf8')
+
 /*
- * Comments are stripped BEFORE parsing. The prose in this stylesheet explains
- * the very defect being guarded against, braces and all, so a scan that reads
- * comments finds the bug quoted in a comment and fails on the fix.
+ * Comments stripped BEFORE parsing. The prose in this stylesheet explains the
+ * very defects being guarded against — braces, selectors and all — so a scan
+ * that reads comments finds the bug quoted in a comment and fails on the fix.
  */
-const css = readFileSync(join(process.cwd(), 'src', 'index.css'), 'utf8').replace(
-  /\/\*[\s\S]*?\*\//g,
-  '',
-)
+const css = stripComments(read('src', 'index.css'))
 
 /** Every `selector { ... }` block, flattened enough to read declarations. */
 function rules(source: string): { selector: string; body: string }[] {
@@ -51,12 +57,12 @@ function rules(source: string): { selector: string; body: string }[] {
 
 const HORIZONTAL = /padding-(inline(-start|-end)?|left|right)\s*:/
 
-describe('Safe-area insets do not overwrite a screen’s own padding', () => {
+describe('An inset adds to a screen’s padding, it does not replace it', () => {
   it('sets horizontal insets on `body` and nowhere else under `.native`', () => {
     const offenders = rules(css)
       .filter((rule) => rule.selector.includes('.native'))
       .filter((rule) => HORIZONTAL.test(rule.body))
-      .filter((rule) => !/\.native\s+body\b|\.native\s*body\b/.test(rule.selector))
+      .filter((rule) => !rule.selector.includes('.native body'))
       .map((rule) => rule.selector)
 
     // `[data-safe-*]` opt-ins are fine: an attribute an element asks for is a
@@ -67,18 +73,59 @@ describe('Safe-area insets do not overwrite a screen’s own padding', () => {
       [],
     )
   })
+})
+
+describe('The top inset is counted once', () => {
+  /**
+   * `body` must not re-apply what every top band already applies. The pale
+   * stripe under the status bar was this, and nothing else.
+   */
+  it('is not applied by `body` on top of the bands that apply it', () => {
+    const bodyRules = rules(css).filter((rule) => rule.selector.includes('.native body'))
+
+    /*
+     * The scan found something. Without this the filter can silently match
+     * nothing — it did once, on a stray character in the pattern — and an
+     * assertion that a thing is ABSENT passes over an empty string while the
+     * defect sits in the file. The mutation went green and said so.
+     */
+    expect(bodyRules.length, 'no `.native body` rule was found to check').toBeGreaterThan(0)
+
+    const declarations = bodyRules.map((rule) => rule.body).join('\n')
+    expect(declarations, 'body must not re-apply the top inset').not.toMatch(/padding-top\s*:/)
+  })
 
   /**
-   * `min-h-screen` is `100vh` — the whole display, including the strip the
-   * top inset has just pushed the page out of. Without an override, every
-   * full-height screen is exactly one inset taller than the room it has.
+   * EVERY band that draws behind the status bar clears its own content.
+   *
+   * `BuilderShell` did not — it had been living off the body's padding — so
+   * the moment that was removed the builder's title sat underneath the clock.
+   * Found by walking the app on a device, which is the only place `env()` is
+   * anything but zero.
    */
-  it('shortens full-height screens by the insets it just added', () => {
+  it.each([
+    ['src/ui/PageHeader.tsx'],
+    ['src/features/home/Home.tsx'],
+    ['src/features/documents/BuilderShell.tsx'],
+    ['src/app/screens/OnboardingScreen.tsx'],
+  ])('%s clears the status bar itself', (file) => {
+    /*
+     * Comments stripped first, and that is not housekeeping. The comment on
+     * `BuilderShell`'s header QUOTES the class it explains, so a scan that
+     * reads comments finds the fix described in prose and passes with the fix
+     * deleted — which is what happened, twice, before this line existed.
+     */
+    const source = stripComments(read(...file.split('/')))
+    expect(source).toMatch(/pt-\[max\([^\]]*safe-area-inset-top/)
+  })
+
+  /**
+   * `dvh`, not `vh`: a form centred in the full display height is centred
+   * behind the keyboard covering half of it.
+   */
+  it('sizes full-height screens against the viewport the keyboard shrinks', () => {
     const rule = rules(css).find((r) => r.selector.includes('.native .min-h-screen'))
     expect(rule, '.native .min-h-screen must be overridden').toBeDefined()
-    expect(rule?.body).toMatch(/safe-area-inset-top/)
-    // `dvh`, not `vh`: a form centred in the full display height is centred
-    // behind the keyboard covering half of it.
     expect(rule?.body).toMatch(/dvh/)
   })
 })

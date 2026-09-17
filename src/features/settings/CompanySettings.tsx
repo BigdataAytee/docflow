@@ -151,7 +151,17 @@ export function CompanySettings({
             type="button"
             disabled
             aria-describedby="logo-ai-note"
-            className="raised min-h-tap rounded-full bg-gradient-to-b from-brand-light to-brand px-4 text-xs font-semibold text-white opacity-40"
+            /*
+             * Reads as OUT OF SERVICE, not as the primary action.
+             *
+             * It was the brand gradient at `opacity-40`, which on a phone
+             * still looks like the filled, confident button on the panel —
+             * next to a plain white "Upload" it read as the thing to press.
+             * §N is not satisfied by a control being inert; it has to LOOK
+             * inert, or the reason underneath is read as a caption rather
+             * than as the explanation of why nothing happened.
+             */
+            className="min-h-tap cursor-not-allowed rounded-full border border-edge/10 bg-ink/[0.06] px-4 text-xs font-semibold text-ink/40"
           >
             {s.createLogo}
           </button>

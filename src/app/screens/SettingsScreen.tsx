@@ -176,6 +176,12 @@ export function SettingsIndexScreen() {
  * untappable. The index already cleared it; the panels did not, which nobody
  * noticed until one of them ended in a primary action. Cleared here, once,
  * so a panel cannot forget.
+ *
+ * The TOP is the same story at the other edge. A panel has no coloured band
+ * of its own — it opens straight onto its own `<h1>` — so nothing was pushing
+ * that title clear of the status bar, and "Company & logo" rendered underneath
+ * the clock. Cleared here for the same reason: once, where a panel cannot
+ * forget it.
  */
 export function SettingsPanelScreen() {
   const location = useLocation()
@@ -188,7 +194,7 @@ export function SettingsPanelScreen() {
   const errand = location.state as { returnTo?: string; errand?: string } | null
 
   return (
-    <div className="pb-28">
+    <div className="pb-28 pt-[max(0.25rem,env(safe-area-inset-top))]">
       {errand?.returnTo !== undefined && errand.errand === 'payment' && (
         <ReturnBand
           errand={strings.details.settingUpPayment}

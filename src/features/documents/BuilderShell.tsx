@@ -78,7 +78,16 @@ export function BuilderShell({
   return (
     <div className="flex min-h-dvh flex-col bg-page">
       <header
-        className="relative flex items-center gap-2.5 px-3 py-2.5 text-white"
+        /*
+         * `pt-[max(0.625rem,env(safe-area-inset-top))]`, the same way
+         * `PageHeader` does it. This band draws behind the status bar (§F —
+         * the gradient reaches the physical top edge), so it has to push its
+         * OWN content clear of the clock. It was relying on a `padding-top`
+         * the body used to carry, which double-counted the inset everywhere
+         * else and left a dead band under the status bar on every other
+         * screen; with that gone, the title here sat under the clock.
+         */
+        className="relative flex items-center gap-2.5 px-3 pb-2.5 pt-[max(0.625rem,env(safe-area-inset-top))] text-white"
         style={{
           // The type's three stops, at 158deg. No rounded edge and no corner
           // circle here: this band is a toolbar, and the hero treatment would
