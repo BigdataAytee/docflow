@@ -738,6 +738,8 @@ export interface UiStrings {
     readonly theirRole: string
     readonly rolePlaceholder: string
     readonly nameFirst: string
+    /** The remote path, offered inside the sheet rather than ahead of it. */
+    readonly sendLinkInstead: string
     readonly sendOnItsWay: string
     readonly onItsWay: string
     readonly markOnTheWay: string
@@ -1642,6 +1644,7 @@ const EN: UiStrings = {
     whoSigned: 'Who received it?',
     theirRole: 'Their role',
     rolePlaceholder: 'Storekeeper, driver, owner…',
+    sendLinkInstead: 'They are not here — send a link instead',
     nameFirst: 'Add who received it, then hand over the phone to sign.',
     sendOnItsWay: 'Send it on its way',
     onItsWay: 'On its way. Sign for it when it arrives.',

@@ -68,6 +68,17 @@ export function ActionGrid({ actions, strings, onAction }: ActionGridProps): Rea
             type="button"
             disabled={!action.enabled}
             /*
+             * The NAME is the action; the reason is a description.
+             *
+             * Both lines live inside the button, so without this the
+             * accessible name became "Copy signing link Send it on its way
+             * first" — one string that changes as the document's state
+             * changes. A screen reader announced the reason as part of the
+             * control's name, and anything looking the control up by name
+             * had to know the reason to find it.
+             */
+            aria-label={label}
+            /*
              * The reason is the ACCESSIBLE DESCRIPTION as well as the visible
              * line. A screen reader landing on a disabled control otherwise
              * hears "Copy signing link, dimmed" and nothing about why — which

@@ -178,10 +178,20 @@ export function documentActions(
          * have arrived (§M): the link a customer signs cannot exist until the
          * goods have gone. It is dark and says so, rather than absent.
          */
+        /*
+         * ONCE. A delivery that has been signed for cannot be signed again,
+         * and that is §P's rule rather than a preference: evidence is
+         * captured once, `delivered` is terminal, and a second signature
+         * would overwrite the first while the customer holding the earlier
+         * PDF had no way to know it had changed.
+         *
+         * So the pill goes dark and says the record is sealed — the same
+         * answer the repository gives, in the place somebody would ask.
+         */
         when(
-          issued && input.dispatched === true,
+          issued && input.dispatched === true && input.signed !== true,
           'copy_signing_link',
-          issued ? 'not_dispatched' : 'not_issued',
+          input.signed === true ? 'sealed' : issued ? 'not_dispatched' : 'not_issued',
         ),
         convert,
         /*

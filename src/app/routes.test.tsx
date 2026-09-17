@@ -919,7 +919,15 @@ describe('Sharing a document (§B, §G, §M)', () => {
     })
     // The draft's own action is there, so the screen has rendered.
     expect(await screen.findByRole('button', { name: 'Carry on editing' })).toBeInTheDocument()
-    expect(screen.queryByRole('button', { name: 'Share PDF' })).not.toBeInTheDocument()
+
+    /*
+     * Present and DARK, not absent (§N). A draft has no frozen reference and
+     * no issued page, so there is nothing to send — and the pill says that
+     * rather than leaving a gap the owner has to interpret.
+     */
+    const share = screen.getByRole('button', { name: 'Share PDF' })
+    expect(share).toBeDisabled()
+    expect(share.textContent).toMatch(/issue it first/i)
   })
 
   it('composes the message from the document, the customer and the ledger', async () => {
@@ -1168,9 +1176,15 @@ describe('Converting a document (§G, §M)', () => {
       })
     })
     expect(within(await pageHeader()).getByText('REC-0003')).toBeInTheDocument()
-    expect(
-      screen.queryByRole('button', { name: 'Convert to…' }),
-    ).not.toBeInTheDocument()
+
+    /*
+     * §G: "A receipt is evidence of a payment" — there is nothing to turn it
+     * into, and the pill says so rather than vanishing. That answers the
+     * question directly on screen: no, an invoice does not become a receipt.
+     */
+    const convert = screen.getByRole('button', { name: 'Convert to…' })
+    expect(convert).toBeDisabled()
+    expect(convert.textContent).toMatch(/nothing to convert/i)
   })
 
   it('makes a draft invoice from a quotation, leaving the quotation untouched', async () => {
@@ -2203,13 +2217,21 @@ describe('Signing (§G, §I, §P)', () => {
       const user = userEvent.setup()
       const state = renderAt('/doc/doc_way', delivery('issued'))
 
-      // A delivery that never left cannot have arrived, so signing is not
-      // offered yet — this is the button that makes it reachable.
-      expect(screen.queryByRole('button', { name: 'Confirm delivery' })).not.toBeInTheDocument()
+      /*
+       * A delivery that never left cannot have arrived (§M), so the pill is
+       * DARK and says which step comes first — rather than being absent and
+       * leaving the owner to discover the order by its appearing later.
+       */
+      const waiting = await screen.findByRole('button', { name: 'Ask them to sign' })
+      expect(waiting).toBeDisabled()
+      expect(waiting.textContent).toMatch(/on its way first/i)
+
       await user.click(await screen.findByRole('button', { name: 'Send it on its way' }))
 
       await waitFor(() => expect(state.documents[0]?.status).toBe('dispatched'))
-      expect(await screen.findByRole('button', { name: 'Confirm delivery' })).toBeInTheDocument()
+      await waitFor(() =>
+        expect(screen.getByRole('button', { name: 'Ask them to sign' })).not.toBeDisabled(),
+      )
     })
 
     /*
@@ -2230,14 +2252,14 @@ describe('Signing (§G, §I, §P)', () => {
       renderAt('/doc/doc_way', delivery('dispatched'))
 
       expect(
-        await screen.findByRole('button', { name: 'Confirm delivery' }),
+        await screen.findByRole('button', { name: 'Ask them to sign' }),
       ).toBeInTheDocument()
       expect(screen.queryByRole('button', { name: 'Mark it on the way' })).toBeNull()
     })
 
     it('can be signed for straight from dispatched, without the extra step', async () => {
       renderAt('/doc/doc_way', delivery('dispatched'))
-      expect(await screen.findByRole('button', { name: 'Confirm delivery' })).toBeInTheDocument()
+      expect(await screen.findByRole('button', { name: 'Ask them to sign' })).toBeInTheDocument()
     })
 
     it('offers a link for the customer to sign on their own phone (§G)', async () => {
@@ -2245,7 +2267,9 @@ describe('Signing (§G, §I, §P)', () => {
       const state = renderAt('/doc/doc_way', delivery('dispatched'))
 
       // The pill opens the control; the control mints and copies (§G).
+      // The pad opens first; the link is the secondary path inside it.
       await user.click(await screen.findByRole('button', { name: 'Ask them to sign' }))
+      await user.click(await screen.findByRole('button', { name: /send a link instead/i }))
       await user.click(await screen.findByRole('button', { name: /copy a link/i }))
 
       // Only the HASH is kept: a leaked row cannot open a link (§P).
@@ -2268,6 +2292,7 @@ describe('Signing (§G, §I, §P)', () => {
       const state = renderAt('/doc/doc_way', delivery('dispatched'))
 
       await user.click(await screen.findByRole('button', { name: 'Ask them to sign' }))
+      await user.click(await screen.findByRole('button', { name: /send a link instead/i }))
       const button = await screen.findByRole('button', { name: /copy a link/i })
       await user.click(button)
       await waitFor(() => expect(state.linkTokens).toHaveLength(1))
@@ -2284,7 +2309,7 @@ describe('Signing (§G, §I, §P)', () => {
       const user = userEvent.setup()
       const state = renderAt('/doc/doc_way', delivery('dispatched'))
 
-      await user.click(await screen.findByRole('button', { name: 'Confirm delivery' }))
+      await user.click(await screen.findByRole('button', { name: 'Ask them to sign' }))
       await user.type(screen.getByLabelText('Who received it?'), 'Bisi Adeyemi')
       await user.type(screen.getByLabelText('Their role'), 'Storekeeper')
       await sign(user)
@@ -2300,7 +2325,7 @@ describe('Signing (§G, §I, §P)', () => {
     it('asks who received it before taking a mark, rather than discarding one', async () => {
       const user = userEvent.setup()
       renderAt('/doc/doc_way', delivery('dispatched'))
-      await user.click(await screen.findByRole('button', { name: 'Confirm delivery' }))
+      await user.click(await screen.findByRole('button', { name: 'Ask them to sign' }))
 
       // No pad at all until there is a name — a signature already drawn must
       // never be thrown away for a rule nobody was told about.
@@ -2315,13 +2340,26 @@ describe('Signing (§G, §I, §P)', () => {
       const user = userEvent.setup()
       const state = renderAt('/doc/doc_way', delivery('dispatched'))
 
-      await user.click(await screen.findByRole('button', { name: 'Confirm delivery' }))
+      await user.click(await screen.findByRole('button', { name: 'Ask them to sign' }))
       await user.type(screen.getByLabelText('Who received it?'), 'Bisi Adeyemi')
       await sign(user)
       await waitFor(() => expect(state.documents[0]?.status).toBe('delivered'))
 
       expect(await screen.findByText(/Signed by Bisi Adeyemi/)).toBeInTheDocument()
-      expect(screen.queryByRole('button', { name: 'Confirm delivery' })).not.toBeInTheDocument()
+      /*
+       * §P: evidence is captured ONCE. `delivered` is terminal, and a second
+       * signature would overwrite the first while the customer holding the
+       * earlier PDF had no way to know it had changed.
+       *
+       * The pill keeps its place and goes dark carrying "sealed" — the same
+       * answer the repository gives, in the place somebody would ask for it.
+       * A missing button proved only that nothing could be tapped.
+       */
+      const again = screen.getByRole('button', { name: 'Ask them to sign' })
+      expect(again).toBeDisabled()
+      expect(again.textContent).toMatch(/sealed/i)
+
+      // The lifecycle control is gone entirely: there is no step left.
       expect(screen.queryByRole('button', { name: 'Send it on its way' })).not.toBeInTheDocument()
     })
 
@@ -2346,7 +2384,7 @@ describe('Signing (§G, §I, §P)', () => {
         })
       })
       expect(within(await pageHeader()).getByText('INV-0042')).toBeInTheDocument()
-      expect(screen.queryByRole('button', { name: 'Confirm delivery' })).not.toBeInTheDocument()
+      expect(screen.queryByRole('button', { name: 'Ask them to sign' })).not.toBeInTheDocument()
     })
   })
 })
@@ -3333,6 +3371,7 @@ describe('Every enabled action does something (§G, §N)', () => {
     expect(screen.queryByRole('button', { name: /copy a link/i })).toBeNull()
 
     await user.click(await screen.findByRole('button', { name: 'Ask them to sign' }))
+    await user.click(await screen.findByRole('button', { name: /send a link instead/i }))
     expect(await screen.findByRole('button', { name: /copy a link/i })).toBeInTheDocument()
   })
 

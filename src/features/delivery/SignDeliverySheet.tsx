@@ -23,9 +23,18 @@ export interface SignDeliverySheetProps {
   }) => void
   readonly onClose: () => void
   readonly error?: string
+  /**
+   * For when the customer is NOT standing there.
+   *
+   * Signing in person is the common case by a long way, so it is what the
+   * sheet opens on. The remote link used to be a row of its own on the saved
+   * document, ahead of the pad — the rarer path taking the shorter route.
+   * Absent when the document cannot be signed remotely at all.
+   */
+  readonly onSendLink?: () => void
 }
 
-export function SignDeliverySheet({ onSign, onClose, error }: SignDeliverySheetProps) {
+export function SignDeliverySheet({ onSign, onClose, error, onSendLink }: SignDeliverySheetProps) {
   // Opening this panel moves focus into it, and its name is announced.
   const panel = useFocusOnOpen<HTMLElement>()
   const { strings } = useCompany()
@@ -99,6 +108,21 @@ export function SignDeliverySheet({ onSign, onClose, error }: SignDeliverySheetP
         </div>
       ) : (
         <p className="mt-3 rounded-xl bg-ink/5 px-3 py-2.5 text-xs opacity-70">{s.nameFirst}</p>
+      )}
+
+      {/*
+        The other way, kept but subordinate: a secondary line rather than a
+        row above the pad. Somebody whose customer is in front of them never
+        has to read past it.
+      */}
+      {onSendLink !== undefined && (
+        <button
+          type="button"
+          className="mt-3 min-h-tap w-full text-center text-xs font-medium underline opacity-70"
+          onClick={onSendLink}
+        >
+          {s.sendLinkInstead}
+        </button>
       )}
     </section>
   )

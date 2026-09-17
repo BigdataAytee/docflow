@@ -410,7 +410,23 @@ export function DocumentScreen({ today = todayIso() }: { today?: string }) {
                 document names it — is now opened BY the pill instead of
                 sitting beneath it.
               */
-              if (id === 'copy_signing_link' || id === 'copy_accept_link') return setLinking(true)
+              /*
+                THE PAD, not a link row.
+                
+                "Ask them to sign" is what an owner does at the gate: they
+                hand the phone over and the customer signs on it. That is the
+                common case by a long way, and it used to take two taps
+                through a row offering to copy a URL — which is the remote
+                case, and the rarer one.
+
+                The remote link is not lost; it is offered INSIDE the sheet,
+                for when the customer is not standing there.
+              */
+              if (id === 'copy_signing_link') {
+                setSignProblem(null)
+                return setSigning(true)
+              }
+              if (id === 'copy_accept_link') return setLinking(true)
               if (id === 'add_photo') return setPhotoOpen(true)
             }}
           />
@@ -525,6 +541,14 @@ export function DocumentScreen({ today = todayIso() }: { today?: string }) {
         {signing && (
           <SignDeliverySheet
             onClose={() => setSigning(false)}
+            {...(canSign(record)
+              ? {
+                  onSendLink: () => {
+                    setSigning(false)
+                    setLinking(true)
+                  },
+                }
+              : {})}
             {...(signProblem === null ? {} : { error: signProblem })}
             onSign={(input) => {
               // Stored first: a document may only ever name an asset the
@@ -1319,10 +1343,18 @@ function deliveryStatusStep(
    * delivery", so the owner had to walk a step the spec calls optional
    * before they could do the one they came for.
    */
+  /*
+   * DISPATCH ONLY. Signing used to be the second half of this control, and
+   * it is now the "Ask them to sign" pill — so keeping it here would put the
+   * same act on screen twice, which is the duplication that took this page
+   * to nine actions in the first place.
+   *
+   * The order is still the lifecycle's: something that never left cannot
+   * have arrived (§M), so this is what has to happen before the pill can do
+   * anything.
+   */
   const out = nextDeliveryStep(record)
-  if (out !== null) return { kind: 'transition', step: out }
-
-  return canSign(record) ? { kind: 'sign' } : null
+  return out === null ? null : { kind: 'transition', step: out }
 }
 
 function CopyLinkRow({
