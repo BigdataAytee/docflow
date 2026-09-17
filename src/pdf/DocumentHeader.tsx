@@ -128,18 +128,50 @@ export function DocumentHeader({ model, template, ink, logo }: DocumentHeaderPro
 
   switch (style) {
     /* Classic — logo left, identity right, a heavy rule beneath. */
+    /*
+     * CLASSIC — the legacy layout, transcribed from the document the owner
+     * has been sending for years (`docs/design-reference/`).
+     *
+     * Everything else in this file is a variation on "name, title, rule".
+     * This one is the arrangement a customer already recognises, and the
+     * owner asked for it by name:
+     *
+     *   · logo alone, top LEFT
+     *   · the type title top RIGHT, large and letter-spaced, with the
+     *     reference directly beneath it and a rule closing that column
+     *   · the business name and its full address as a block on the left,
+     *     BELOW the logo rather than beside it
+     *   · a heavy rule across the full width, closing the header
+     *
+     * The two columns are deliberately independent: the title block is
+     * right-aligned and self-contained, so a long business name grows
+     * downward on the left without dragging the reference off the page.
+     */
     case 'rule':
       return (
         <>
-          <header className="flex items-start gap-[16px]">
-            {logo}
-            <div className="min-w-0 flex-1">
-              <Name model={model} />
-              <Title model={model} ink={ink} className="mt-[4px]" />
-              <Ref model={model} />
+          <header className="flex items-start justify-between gap-[16px]">
+            <div className="shrink-0">{logo}</div>
+            <div className="min-w-0 text-end">
+              <Title model={model} ink={ink} />
+              <Ref model={model} className="mt-[2px]" />
+              {/* Closes the reference column, as the reference draws it. */}
+              <div
+                className="ms-auto mt-[6px] w-full max-w-[190px] border-t-2"
+                style={{ borderColor: ink }}
+              />
             </div>
           </header>
-          <Rule ink={ink} />
+
+          {/*
+            The business block sits UNDER the logo, not beside it — which is
+            what gives the legacy page its top-left mass and lets the address
+            run to two lines without touching the title.
+          */}
+          <Name model={model} className="mt-[10px]" />
+
+          {/* The heavy rule that separates the header from the document. */}
+          <Rule ink={ink} height={2} />
         </>
       )
 

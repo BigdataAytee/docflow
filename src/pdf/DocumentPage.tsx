@@ -492,7 +492,19 @@ function ContactStrip({
   if (parts.length === 0) return null
 
   return (
-    <div data-contact-strip className="mt-auto pt-[10px]">
+    /*
+      NO `mt-auto` HERE — and that is why the strip was invisible.
+
+      The signature `<footer>` above already carries `mt-auto`, which in a
+      flex column absorbs ALL the free space and pushes itself to the bottom
+      of the page. A second `mt-auto` on this element asks for space that has
+      already been given away, so the strip landed BELOW the footer, past the
+      bottom of a box that is `overflow-hidden` at a fixed A4 aspect — drawn,
+      measurable, and clipped off the paper.
+
+      Sitting directly under the footer is what the reference does anyway.
+    */
+    <div data-contact-strip className="pt-[10px]">
       <div className="border-t opacity-25" style={{ borderColor: ink }} />
       <p className="mt-[6px] text-center text-[9px] tracking-[0.02em] opacity-70">
         {parts.join('  ·  ')}

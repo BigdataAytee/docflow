@@ -1709,11 +1709,20 @@ const EN: UiStrings = {
       convert: 'Convert to…',
       sign: 'Sign it',
       voidOrCredit: 'Void or credit',
-      copyAcceptLink: 'Copy accept link',
+      /*
+       * What it DOES, not what it puts on the clipboard.
+       *
+       * These read "Copy signing link" and "Copy accept link" — the mechanism
+       * rather than the purpose. An owner does not want a link; they want the
+       * customer to sign. The clipboard is an implementation detail of that,
+       * and naming it made the shortest, most common action on a delivery the
+       * hardest one to recognise.
+       */
+      copyAcceptLink: 'Ask them to accept',
       duplicateRev2: 'Duplicate as Rev 2',
       voidAndReissue: 'Void and reissue',
       openInvoice: 'Open the invoice',
-      copySigningLink: 'Copy signing link',
+      copySigningLink: 'Ask them to sign',
       addPhoto: 'Add photo',
     },
     blocked: {

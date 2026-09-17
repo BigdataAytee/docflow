@@ -2245,7 +2245,7 @@ describe('Signing (§G, §I, §P)', () => {
       const state = renderAt('/doc/doc_way', delivery('dispatched'))
 
       // The pill opens the control; the control mints and copies (§G).
-      await user.click(await screen.findByRole('button', { name: 'Copy signing link' }))
+      await user.click(await screen.findByRole('button', { name: 'Ask them to sign' }))
       await user.click(await screen.findByRole('button', { name: /copy a link/i }))
 
       // Only the HASH is kept: a leaked row cannot open a link (§P).
@@ -2267,7 +2267,7 @@ describe('Signing (§G, §I, §P)', () => {
       const user = userEvent.setup()
       const state = renderAt('/doc/doc_way', delivery('dispatched'))
 
-      await user.click(await screen.findByRole('button', { name: 'Copy signing link' }))
+      await user.click(await screen.findByRole('button', { name: 'Ask them to sign' }))
       const button = await screen.findByRole('button', { name: /copy a link/i })
       await user.click(button)
       await waitFor(() => expect(state.linkTokens).toHaveLength(1))
@@ -3332,7 +3332,7 @@ describe('Every enabled action does something (§G, §N)', () => {
     // Nothing minting links is on screen until the pill is pressed.
     expect(screen.queryByRole('button', { name: /copy a link/i })).toBeNull()
 
-    await user.click(await screen.findByRole('button', { name: 'Copy signing link' }))
+    await user.click(await screen.findByRole('button', { name: 'Ask them to sign' }))
     expect(await screen.findByRole('button', { name: /copy a link/i })).toBeInTheDocument()
   })
 

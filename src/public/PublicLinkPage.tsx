@@ -166,7 +166,21 @@ export function PublicLinkPage({ kind, transport }: PublicLinkPageProps) {
       )}
 
       {screen.state === 'open' && kind === 'accept' && (
-        <section className="mt-4 space-y-2">
+        /*
+          STICKY, so the document and the way to sign it are on screen
+          together.
+
+          The page renders a full A4 sheet — on a phone that is taller
+          than the viewport, so a signing control placed after it was
+          always one scroll away. Somebody who opened the link saw a
+          document and no way to act on it, which is the same as a link
+          that does not work for anyone who does not think to scroll.
+
+          `bottom-0` rather than moving it above the document: the
+          document is what they came to read, and it should still be
+          the first thing under their eyes.
+        */
+        <section className="sticky bottom-0 z-10 -mx-4 mt-4 space-y-2 border-t border-edge/10 bg-page/95 px-4 pb-[max(1rem,env(safe-area-inset-bottom))] pt-3 backdrop-blur">
           {signing ? (
             <SignaturePad
               strings={strings}
@@ -213,7 +227,21 @@ export function PublicLinkPage({ kind, transport }: PublicLinkPageProps) {
       )}
 
       {screen.state === 'open' && kind === 'sign' && (
-        <section className="mt-4 space-y-2">
+        /*
+          STICKY, so the document and the way to sign it are on screen
+          together.
+
+          The page renders a full A4 sheet — on a phone that is taller
+          than the viewport, so a signing control placed after it was
+          always one scroll away. Somebody who opened the link saw a
+          document and no way to act on it, which is the same as a link
+          that does not work for anyone who does not think to scroll.
+
+          `bottom-0` rather than moving it above the document: the
+          document is what they came to read, and it should still be
+          the first thing under their eyes.
+        */
+        <section className="sticky bottom-0 z-10 -mx-4 mt-4 space-y-2 border-t border-edge/10 bg-page/95 px-4 pb-[max(1rem,env(safe-area-inset-bottom))] pt-3 backdrop-blur">
           <p className="text-sm font-medium">{s.signHere}</p>
           <label className="block text-xs font-medium opacity-70" htmlFor="public-signer">
             {s.whoAreYou}
