@@ -85,7 +85,15 @@ export function DocumentList({ type, rows, onOpen, onNew, onBack }: DocumentList
   }, [rows, query])
 
   return (
-    <section className="px-3.5 pb-[118px] pt-3.5">
+    /*
+     * `pt-[max(0.875rem,env(safe-area-inset-top))]`, because this screen has
+     * no coloured band above its "← Home" link — the amber card starts below
+     * it — so nothing was pushing that link clear of the status bar and it
+     * rendered under the clock. Same correction as `BuilderShell` and the
+     * Settings panels: with the body no longer padding the page down, each
+     * screen that meets the top edge clears it itself.
+     */
+    <section className="px-3.5 pb-[118px] pt-[max(0.875rem,env(safe-area-inset-top))]">
       {onBack !== undefined && (
         <button
           type="button"

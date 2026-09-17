@@ -108,6 +108,7 @@ describe('The top inset is counted once', () => {
     ['src/features/home/Home.tsx'],
     ['src/features/documents/BuilderShell.tsx'],
     ['src/app/screens/OnboardingScreen.tsx'],
+    ['src/features/documents/DocumentList.tsx'],
   ])('%s clears the status bar itself', (file) => {
     /*
      * Comments stripped first, and that is not housekeeping. The comment on

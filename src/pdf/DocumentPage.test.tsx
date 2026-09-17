@@ -7,7 +7,7 @@
  */
 
 import { describe, expect, it } from 'vitest'
-import { render, screen } from '@testing-library/react'
+import { cleanup, render, screen } from '@testing-library/react'
 
 import { quantity } from '../domain/documents/types'
 import { freezeLabels } from '../domain/locale/profile'
@@ -253,5 +253,70 @@ describe('An issued document prints its frozen title (§D.2, §M, §V)', () => {
 
     expect(screen.getByRole('heading', { level: 2 })).toHaveTextContent('WAYBILL')
     expect(screen.queryByText('DELIVERY NOTE')).not.toBeInTheDocument()
+  })
+})
+
+/**
+ * EVERY DESIGN PRINTS A PAGE THAT HAS SOMETHING ON IT (§H, §I).
+ *
+ * A design was found rendering an entirely blank sheet on a device — the
+ * saved-document view showed the paper, the caption and the four actions, and
+ * nothing in between. The existing guards did not catch it because they assert
+ * that the sixteen designs DIFFER from one another, and blank differs from
+ * populated perfectly well. Sixteen designs, one of them empty, and every test
+ * green.
+ *
+ * "Different" is the wrong question. These ask the only one that matters to
+ * somebody sending an invoice: is the business name on it, is the title on it,
+ * is the customer on it, are the goods on it.
+ *
+ * Four document types as well as sixteen designs, because a header style that
+ * works for an invoice can still lose the goods table on a waybill — waybills
+ * carry no prices, and the row shape differs.
+ */
+describe('Every design renders a populated page, for every type (§H)', () => {
+  const documents: readonly [string, ComposableDocument][] = [
+    ['invoice', invoice],
+    ['waybill', delivery],
+    ['quotation', { ...invoice, type: 'quotation', reference: 'QUO-0001' }],
+    ['receipt', { ...invoice, type: 'receipt', reference: 'REC-0001' }],
+  ]
+
+  const cases = TEMPLATES.flatMap((template) =>
+    documents.map(([name, document]) => [template.id, name, document] as const),
+  )
+
+  it.each(cases)('%s prints a populated %s', (templateId, _name, document) => {
+    cleanup()
+    const { render: paint } = draw(document, templateId)
+    paint()
+
+    const article = screen.getByRole('article')
+
+    /*
+     * The ACTUAL defect: a sheet with nothing on it. Measured as visible text,
+     * because that is what a person looking at the page sees — an element tree
+     * that exists but renders no words is the bug, not the absence of nodes.
+     */
+    const text = (article.textContent ?? '').replace(/\s+/g, ' ').trim()
+    expect(text.length, `${templateId} printed a blank ${_name}`).toBeGreaterThan(40)
+
+    // The four things that make it that document rather than a sheet of paper.
+    expect(text, `${templateId}/${_name}: no business name`).toContain('Dynamic Renaissance')
+    expect(text, `${templateId}/${_name}: no reference`).toContain(document.reference)
+    expect(text, `${templateId}/${_name}: no customer`).toContain('Okoro & Sons')
+    expect(text, `${templateId}/${_name}: no goods`).toContain('Cement')
+  })
+
+  /**
+   * And the page is not merely populated but VISIBLE. A design that renders
+   * its content in white on white, or collapses it to nothing, is blank to a
+   * reader while passing every assertion above.
+   */
+  it.each(TEMPLATES.map((t) => [t.id] as const))('%s does not print ink on its own paper', (id) => {
+    const template = templateById(id)
+    expect(template.ink.toLowerCase(), `${id}: ink equals paper`).not.toBe(
+      template.paper.toLowerCase(),
+    )
   })
 })
