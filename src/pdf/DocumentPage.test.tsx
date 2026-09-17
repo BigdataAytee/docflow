@@ -320,3 +320,38 @@ describe('Every design renders a populated page, for every type (§H)', () => {
     )
   })
 })
+
+/**
+ * NO DOCUMENT EVER PRINTS A MACHINE'S TIMESTAMP (§D, §I, §S).
+ *
+ * A quotation went to a customer reading `Issue Date: 2026-09-04T00:00:00.000Z`.
+ * Nothing stood between the stored value and the page. The fix is one line in
+ * `compose`, which is the single place every type and every design passes
+ * through — and this is the assertion that keeps it that way, swept across all
+ * sixteen designs and all four types, because a date that leaks on one of them
+ * would leak on the rest.
+ */
+describe('Dates print as dates, on every design and every type (§D)', () => {
+  const dated: readonly [string, ComposableDocument][] = [
+    ['invoice', { ...invoice, issueDate: '2026-09-04T00:00:00.000Z', dueDate: '2026-09-25T00:00:00.000Z' }],
+    ['waybill', { ...delivery, issueDate: '2026-09-04T00:00:00.000Z' }],
+    ['quotation', { ...invoice, type: 'quotation', reference: 'QUO-0001', issueDate: '2026-09-04T00:00:00.000Z' }],
+    ['receipt', { ...invoice, type: 'receipt', reference: 'REC-0001', issueDate: '2026-09-04T00:00:00.000Z' }],
+  ]
+
+  const cases = TEMPLATES.flatMap((template) =>
+    dated.map(([name, document]) => [template.id, name, document] as const),
+  )
+
+  it.each(cases)('%s prints no timestamp on a %s', (templateId, _name, document) => {
+    cleanup()
+    const { render: paint } = draw(document, templateId)
+    paint()
+    const text = screen.getByRole('article').textContent ?? ''
+
+    expect(text, `${templateId}/${_name} printed a raw timestamp`).not.toMatch(/\d{4}-\d{2}-\d{2}T/)
+    expect(text, `${templateId}/${_name} printed a UTC marker`).not.toMatch(/\d{2}:\d{2}:\d{2}/)
+    // And the date is actually there, readable — not simply removed.
+    expect(text, `${templateId}/${_name} lost its issue date`).toContain('4 Sep 2026')
+  })
+})

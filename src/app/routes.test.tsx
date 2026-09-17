@@ -1438,9 +1438,15 @@ describe('A delivery list row summarises goods, not money (§G, §V)', () => {
     })
   }
 
-  it('shows the goods and the unit where an amount would be', async () => {
+  /*
+   * CHANGED DELIBERATELY. This read "10 cartons" — the quantity and the UNIT.
+   * The owner decided against the unit on waybills having used it, so the row
+   * names the GOODS instead, which is what actually identifies a delivery:
+   * "10 × Cement 50kg" says which one this is, "10 cartons" never did.
+   */
+  it('summarises the goods where an amount would be', async () => {
     renderAt('/list/waybill', deliveries)
-    expect(await screen.findByText('10 cartons')).toBeInTheDocument()
+    expect(await screen.findByText(/10 × Cement 50kg/)).toBeInTheDocument()
   })
 
   it('shows no currency or total anywhere on the page, though both exist', async () => {
@@ -1583,10 +1589,11 @@ describe('A saved delivery asserts no payment relationship (§V, §G)', () => {
   })
 
   /** And the goods are still legible — absence of money, not of content. */
-  it('still shows the goods, the quantity and the unit', async () => {
+  it('still shows the goods and the quantity, and no unit column', async () => {
     renderAt('/doc/doc_way', deliveredWithEveryRate)
     expect(await screen.findAllByText(/Cement 50kg/)).not.toHaveLength(0)
-    expect(screen.getAllByText(/cartons/).length).toBeGreaterThan(0)
+    // The unit is gone from deliveries by decision; the goods carry the row.
+    expect(screen.queryAllByText(/^cartons$/)).toHaveLength(0)
   })
 })
 

@@ -165,9 +165,21 @@ export function goodsSummary(document: DocumentRecord): string | null {
   if (lines.length === 0) return null
 
   if (lines.length === 1) {
+    /*
+     * The DESCRIPTION and the quantity — no unit.
+     *
+     * This read `${quantity} ${unit}` and returned null when there was no
+     * unit, so a delivery of "10 × Cement 50kg" summarised as nothing at all
+     * unless somebody had typed a noun. Waybills no longer carry a unit
+     * column by the owner's decision, so the noun is the GOODS themselves,
+     * which is the thing that actually identifies the delivery — "10 ×
+     * Cement 50kg" says which one this is; "10 cartons" never did.
+     */
     const line = lines[0]!
-    if (line.unit === undefined) return null
-    return `${line.quantityMilli / QUANTITY_SCALE} ${line.unit}`
+    const quantity = line.quantityMilli / QUANTITY_SCALE
+    const name = line.description.trim()
+    if (name === '') return null
+    return `${quantity} × ${name}`
   }
 
   /*

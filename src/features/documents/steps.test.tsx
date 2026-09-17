@@ -290,13 +290,23 @@ describe('Items: a delivery document has no price field at all (§G, §V)', () =
    *
    * "12" is not something anybody can sign for at a door; "12 bundles" is.
    */
-  it('gives a delivery a unit field where a priced document has a price', () => {
+  /*
+   * CHANGED DELIBERATELY. These asserted that a delivery got a UNIT field
+   * where a priced document gets a price — §I's "deliveries swap amount for
+   * unit". The owner decided against the unit on waybills having used it, so
+   * a delivery row is description and quantity, and the column is simply not
+   * drawn rather than drawn empty.
+   *
+   * The half of §V that matters is unchanged and still asserted: a delivery
+   * never shows a price field.
+   */
+  it('gives a delivery neither a price field nor a unit field', () => {
     wrap(<ItemsStep draft={draftFor('waybill')} onChange={() => {}} />)
-    expect(screen.getByLabelText('Unit')).toBeInTheDocument()
     expect(screen.queryByLabelText('Unit price')).not.toBeInTheDocument()
+    expect(screen.queryByLabelText('Unit')).not.toBeInTheDocument()
   })
 
-  it('puts the unit on the line and shows it beside the quantity', async () => {
+  it('still records description and quantity on the line', async () => {
     const user = userEvent.setup()
     const onChange = vi.fn()
     wrap(<ItemsStep draft={draftFor('waybill')} onChange={onChange} />)
@@ -304,36 +314,22 @@ describe('Items: a delivery document has no price field at all (§G, §V)', () =
     await user.type(screen.getByLabelText('Description'), 'Roofing sheets')
     await user.clear(screen.getByLabelText('Qty'))
     await user.type(screen.getByLabelText('Qty'), '12')
-    await user.type(screen.getByLabelText('Unit'), 'bundles')
     await user.click(screen.getByRole('button', { name: 'Add' }))
 
-    const patch = onChange.mock.calls[0]?.[0] as { lineItems: { unit?: string }[] }
-    expect(patch.lineItems[0]?.unit).toBe('bundles')
-  })
-
-  it('shows the unit on a rendered line', () => {
-    const line = {
-      id: 'l1',
-      description: 'Roofing sheets',
-      quantityMilli: quantity(12),
-      unit: 'bundles',
-      taxable: false,
+    const patch = onChange.mock.calls[0]?.[0] as {
+      lineItems: { description: string; quantityMilli: number }[]
     }
-    wrap(<ItemsStep draft={draftFor('waybill', { lineItems: [line] })} onChange={() => {}} />)
-    expect(screen.getByText('12 bundles')).toBeInTheDocument()
+    expect(patch.lineItems[0]?.description).toBe('Roofing sheets')
+    expect(patch.lineItems[0]?.quantityMilli).toBe(quantity(12))
   })
 
-  it('keeps the unit for the next line, and clears everything else', async () => {
+  it('clears the row after adding, ready for the next line', async () => {
     const user = userEvent.setup()
     wrap(<ItemsStep draft={draftFor('waybill')} onChange={() => {}} />)
 
     await user.type(screen.getByLabelText('Description'), 'Roofing sheets')
-    await user.type(screen.getByLabelText('Unit'), 'bundles')
     await user.click(screen.getByRole('button', { name: 'Add' }))
 
-    // A delivery is usually cartons all the way down; retyping the unit on
-    // every line is the tax the field would otherwise charge for existing.
-    expect(screen.getByLabelText('Unit')).toHaveValue('bundles')
     expect(screen.getByLabelText('Description')).toHaveValue('')
   })
 })

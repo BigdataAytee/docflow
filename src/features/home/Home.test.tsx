@@ -188,3 +188,28 @@ describe('One page per type, never combined tabs (§G)', () => {
     expect(screen.getAllByRole('button', { name: '+ New quotation' }).length).toBeGreaterThanOrEqual(1)
   })
 })
+
+/**
+ * The logo an owner set shows where they set it AND on Home (§G, §E).
+ *
+ * `HomeScreen` passed no `logoUrl`, with a comment explaining that nothing in
+ * the app could resolve an asset id to something an `<img>` loads. That had
+ * stopped being true — `SettingsScreen` resolves it in one line — so an owner
+ * uploaded a logo, saw it in Settings, and Home went on saying "Tap to add
+ * your logo". A stale comment reads as a decision, which is why nobody
+ * revisited it.
+ */
+describe('The logo holder shows the logo (§G)', () => {
+  it('renders the image once there is one', () => {
+    home({ logoUrl: 'data:image/png;base64,iVBORw0KGgo=' })
+    const image = document.querySelector('header img') as HTMLImageElement | null
+    expect(image, 'no logo image on Home').not.toBeNull()
+    expect(image?.getAttribute('src')).toContain('data:image/png')
+  })
+
+  /** And still invites one when there is not — the holder is a way in (§G). */
+  it('keeps the invitation when no logo is set', () => {
+    home({})
+    expect(document.querySelector('header img')).toBeNull()
+  })
+})

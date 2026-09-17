@@ -65,11 +65,19 @@ describe('A delivery document carries no money, under any design (§I, §V)', ()
     expect(composeDocument(delivery, options()).paymentBox).toBeNull()
   })
 
-  it('swaps the amount column for unit and drops every money column (§I)', () => {
+  /*
+   * CHANGED DELIBERATELY. This asserted a delivery carried a UNIT column, per
+   * §I's "deliveries swap amount for unit". The owner has decided against it
+   * having used it: a waybill is description and quantity. The money half of
+   * §I — which is the half that matters, and the one §V gates on — is
+   * unchanged and still asserted here.
+   */
+  it('carries description and quantity only, and no money column (§I, §V)', () => {
     const page = composeDocument(delivery, options())
     const keys = page.columns.map((c) => c.key)
-    expect(keys).toContain('unit')
+    expect(keys).toEqual(['description', 'quantity'])
     expect(keys).not.toContain('amount')
+    expect(keys).not.toContain('unit')
     expect(page.rows.every((r) => r.amount === undefined)).toBe(true)
   })
 

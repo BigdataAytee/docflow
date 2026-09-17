@@ -203,14 +203,20 @@ export function ItemsStep({ draft, onChange, onRemember, onOpenCatalogue }: Item
           </label>
 
           {/*
-            A delivery gets the UNIT here; every money type gets the price.
-            Never both, and never a disabled price on a delivery (§V).
+            The PRICE, and only on a type that carries money.
+            Never a disabled price on a delivery (§V).
+
+            A delivery used to get a UNIT input here. The owner decided
+            against the unit on waybills having used it, so a delivery row is
+            description and quantity — and this column simply is not drawn for
+            one, rather than being drawn empty. `unit` still exists on the
+            model and on `SavedItem`; invoices and quotations still print it.
           */}
-          <label className="block min-w-0 flex-[1.4]">
-            <span className="mb-1 block text-[9.5px] opacity-55">
-              {showsMoney ? strings.items.unitPrice : strings.items.unit}
-            </span>
-            {showsMoney ? (
+          {showsMoney && (
+            <label className="block min-w-0 flex-[1.4]">
+              <span className="mb-1 block text-[9.5px] opacity-55">
+                {strings.items.unitPrice}
+              </span>
               <input
                 inputMode="decimal"
                 value={price}
@@ -218,18 +224,8 @@ export function ItemsStep({ draft, onChange, onRemember, onOpenCatalogue }: Item
                 aria-label={strings.items.unitPrice}
                 className="sunken min-h-tap w-full rounded-[10px] px-2.5 text-[11.5px]"
               />
-            ) : (
-              <input
-                value={unit}
-                onChange={(event) => setUnit(event.target.value)}
-                // A word, not a number — said by example rather than by a
-                // rule, because units differ by trade and by market.
-                placeholder={strings.items.unitExample}
-                aria-label={strings.items.unit}
-                className="sunken min-h-tap w-full rounded-[10px] px-2.5 text-[11.5px]"
-              />
-            )}
-          </label>
+            </label>
+          )}
 
           <button
             type="button"

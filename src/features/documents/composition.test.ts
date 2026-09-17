@@ -232,9 +232,10 @@ describe('A delivery table is headed GOODS (§G, §I)', () => {
     expect(columns[0]?.label).not.toBe(strings.items.description)
   })
 
-  it('keeps QTY and UNIT beside it, and no amount column', () => {
+  /* The unit column is gone from deliveries by the owner's decision (§I). */
+  it('keeps QTY beside it, and neither a unit nor an amount column', () => {
     const keys = waybillModel().columns.map((column) => column.key)
-    expect(keys).toEqual(['description', 'quantity', 'unit'])
+    expect(keys).toEqual(['description', 'quantity'])
   })
 
   /** A money document is unaffected — its table still lists descriptions. */

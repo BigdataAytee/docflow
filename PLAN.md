@@ -465,7 +465,7 @@ not start until they are.
 | --- | --- |
 | Two seeded companies cannot read or write each other | ✅ verified, local Postgres — 21 tests in `supabase/tests/rls.test.ts`, blocking in CI |
 | Money and transition property tests pass | ✅ verified — 66 tests across `src/domain/{money,documents,payments}`, blocking in CI |
-| Label resolution passes its own property test; no hardcoded type name survives the lint rule | ✅ verified, both halves — 48 tests in `src/domain/locale`, plus the lint rule |
+| Label resolution passes its own property test; no hardcoded type name survives the lint rule | ✅ verified, both halves — 52 tests in `src/domain/locale`, plus the lint rule |
 | Encrypted SQLite opens on device | ⏸ **deferred to Phase 4** — needs the native shell and a physical device |
 | Login / register / Google / reset in ≤ legacy tap counts | ⛔ **unverified** — code complete, no reachable instance (S6; the tap count itself is D2) |
 | *(self-imposed)* the same denial suite against the hosted instance | ⛔ **unverified** — same reason (S4) |

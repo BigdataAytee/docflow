@@ -47,9 +47,13 @@ import { todayIso } from '../../domain/dates/calendar'
 
 export function HomeScreen({ now = new Date() }: { now?: Date }) {
   const { strings } = useCompany()
-  const { company, customers, documents, payments, creditNotes, caughtUpSkipped, loading } =
+  const { company, customers, documents, payments, creditNotes, assets, caughtUpSkipped, loading } =
     useAppData()
   const navigate = useNavigate()
+
+  // Resolved the same way `SettingsScreen` does it — one source, so the
+  // holder on Home and the one in Settings cannot disagree.
+  const logoUrl = assets.find((asset) => asset.id === company?.logoAssetId)?.dataUrl
 
   const [query, setQuery] = useState('')
   /*
@@ -187,14 +191,23 @@ export function HomeScreen({ now = new Date() }: { now?: Date }) {
       <Home
       businessName={company?.name ?? ''}
       userName=""
+      /*
+       * The logo an owner actually set (§G, §E).
+       *
+       * This said "no `logoUrl` yet, and deliberately none invented: nothing
+       * in the app resolves an asset to something an `<img>` can load until
+       * the local asset store lands". The store landed — `SettingsScreen`
+       * resolves it in one line, and has for a while — so the comment was
+       * describing a state of the world that had stopped being true, and an
+       * owner who uploaded a logo saw it in Settings and nowhere else.
+       *
+       * A stale comment is worse than none: it reads as a decision, so the
+       * next person leaves it alone.
+       */
+      {...(logoUrl === undefined ? {} : { logoUrl })}
       // §G's logo holder is a way INTO Settings, not an ornament: "tap to add
       // your logo" has to be tappable or it is an instruction with nowhere to
       // follow it.
-      //
-      // No `logoUrl` yet, and deliberately none invented: §E stores a logo as
-      // an ASSET ID, and nothing in the app resolves an asset to something an
-      // `<img>` can load until the local asset store lands. The holder shows
-      // the empty state, which is the truth on every install today.
       onAddLogo={() => navigate(settingsPath('company'))}
       // §N: a capability that is not installed says so. Never a toast
       // claiming work that did not happen.

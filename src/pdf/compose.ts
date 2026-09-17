@@ -30,6 +30,7 @@ import {
   printedTitle,
   shared as sharedTerms,
 } from '../domain/locale/profile'
+import { formatDocumentDate } from '../domain/locale/dates'
 import { fieldsFor } from '../domain/locale/bank-fields'
 
 export interface CompanyBranding {
@@ -189,6 +190,11 @@ export interface PageModel {
 
 export interface ComposeOptions {
   readonly profile: LocaleProfile
+  /**
+   * The region's date order (§D). Optional so every existing caller keeps
+   * working; absent means the day-first order the default profile uses.
+   */
+  readonly dateFormat?: string
   readonly branding: CompanyBranding
   /**
    * Column headings, already in the active language.
@@ -240,7 +246,21 @@ export function composeDocument(
         { key: 'quantity', label: options.columnLabels.quantity, align: 'right' },
         { key: 'amount', label: options.columnLabels.amount, align: 'right' },
       ]
-    : // §I: "deliveries swap amount for unit and drop every money column".
+    : /*
+       * A delivery is DESCRIPTION and QUANTITY. Nothing else.
+       *
+       * §I said "deliveries swap amount for unit and drop every money
+       * column", and that is what this did. The owner has since decided
+       * against the unit column on waybills — deliberately, having used it —
+       * so it is gone from the printed table, from the builder's Goods step
+       * and from the row summary together. A column removed from one of the
+       * three and left in the others is the drift §J spends its whole section
+       * preventing.
+       *
+       * `unit` itself is NOT deleted from the row model: invoices and
+       * quotations still print it, and `SavedItem.unit` still carries it.
+       * Only the delivery table stops asking.
+       */
       [
         {
           key: 'description',
@@ -248,7 +268,6 @@ export function composeDocument(
           align: 'left',
         },
         { key: 'quantity', label: options.columnLabels.quantity, align: 'right' },
-        { key: 'unit', label: options.columnLabels.unit, align: 'right' },
       ]
 
   const rows: TableRow[] = document.lineItems.map((line) => ({
@@ -297,8 +316,19 @@ export function composeDocument(
         : options.replacesLabel(document.replaces),
     partyLabel: labels.partyLabel,
     party: document.party,
-    issueDate: document.issueDate,
-    ...(document.dueDate === undefined ? {} : { dueDate: document.dueDate }),
+    /*
+     * FORMATTED HERE, at the one place every document type passes through.
+     *
+     * These were the stored strings, straight onto the page — which is how
+     * `2026-09-04T00:00:00.000Z` came to be printed on a quotation sent to a
+     * customer. Doing it in `compose` rather than in the page component means
+     * every type, every template and the PDF all get it from one line: a new
+     * design cannot forget, and neither can a new document type.
+     */
+    issueDate: formatDocumentDate(document.issueDate, options.dateFormat),
+    ...(document.dueDate === undefined
+      ? {}
+      : { dueDate: formatDocumentDate(document.dueDate, options.dateFormat) }),
     columns,
     rows,
     totals,
