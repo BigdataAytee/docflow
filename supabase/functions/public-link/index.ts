@@ -179,7 +179,22 @@ Deno.serve?.(async (request: Request): Promise<Response> => {
       .from('assets')
       .insert({
         company_id: (document as unknown as { company_id: string }).company_id,
-        kind: document.type === 'waybill' ? 'delivery_photo' : 'signature',
+        /*
+         * A SIGNATURE, whatever the document type.
+         *
+         * This read `document.type === 'waybill' ? 'delivery_photo' :
+         * 'signature'` — so the mark a customer drew to sign FOR a delivery
+         * was filed as a photo OF the delivery. The two are different facts:
+         * §E gives them different kinds because a signature is evidence of
+         * who accepted the goods and a photo is evidence of what arrived, and
+         * §P seals them at different moments.
+         *
+         * Nothing downstream resolved by kind, which is why it went unseen —
+         * the document names the asset by id. It was wrong in the data all
+         * the same, and the first thing to read assets by kind would have
+         * found a delivery with two photos and no signature.
+         */
+        kind: 'signature',
         data_url: body.signatureDataUrl,
       })
       .select('id')

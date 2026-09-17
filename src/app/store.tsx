@@ -298,6 +298,55 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
     void load()
   }, [load])
 
+  /**
+   * RE-READ WHEN THE APP COMES BACK TO THE FRONT (§M, §P).
+   *
+   * A customer signing a delivery does it on THEIR phone, through the public
+   * link — the owner's app is not part of that conversation. The edge
+   * function writes the signature and kills the token atomically, so the
+   * record is correct the moment they lift their finger; the owner's copy
+   * simply had no reason to look again. Nothing in the app re-read unless the
+   * owner themselves changed something, so a signed delivery stayed unsigned
+   * on the owner's screen until they happened to navigate somewhere that
+   * rebuilt the store.
+   *
+   * Two triggers, because there are two shells: `appStateChange` inside the
+   * native app, and `visibilitychange` in a browser. Both mean the same thing
+   * — somebody is looking at this again — and that is the moment to find out
+   * whether the world moved while they were not.
+   *
+   * It is a re-read, not a sync: `load` is the same function the first render
+   * uses, so an offline device fails it exactly the way it already fails and
+   * keeps showing what it has (Rule #2).
+   */
+  useEffect(() => {
+    const again = () => {
+      if (globalThis.document?.visibilityState === 'hidden') return
+      void load()
+    }
+
+    globalThis.addEventListener?.('visibilitychange', again)
+    globalThis.addEventListener?.('focus', again)
+
+    let stop: (() => void) | null = null
+    void import('@capacitor/app')
+      .then(({ App }) => App.addListener('appStateChange', ({ isActive }) => {
+        if (isActive) again()
+      }))
+      .then((listener) => {
+        stop = () => void listener.remove()
+      })
+      .catch(() => {
+        // No Capacitor here — the browser listeners above are the whole story.
+      })
+
+    return () => {
+      globalThis.removeEventListener?.('visibilitychange', again)
+      globalThis.removeEventListener?.('focus', again)
+      stop?.()
+    }
+  }, [load])
+
   const actions = useMemo<AppActions>(() => {
     /**
      * One key per logical operation. Callers that need a retry to collapse
