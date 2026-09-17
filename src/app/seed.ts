@@ -61,6 +61,8 @@ export function devState(companyId = DEV_COMPANY_ID, region = DEFAULT_REGION): M
               email: 'admin@dynamicrenaissance.org',
               website: 'www.dynamicrenaissance.org',
               taxRatePpm: 75_000,
+              documentNote:
+                'Thank you for your continued business. Payment is due within 14 days.',
             }),
       },
     ],

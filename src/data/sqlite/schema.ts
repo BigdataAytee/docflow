@@ -39,7 +39,7 @@
  * it fails with "no such column". That is exactly what happened when the four
  * contact and reference columns were added and this still read 6.
  */
-export const SCHEMA_VERSION = 12
+export const SCHEMA_VERSION = 13
 
 /**
  * Applied in order, inside one transaction, by `migrate`.
@@ -401,6 +401,12 @@ export const MIGRATIONS: readonly string[] = [
   `,
   `
   alter table documents add column wht_rate_ppm integer;
+  `,
+
+  `
+  -- The NOTE TO CUSTOMER block (§I): payment terms in the owner's own words,
+  -- printed under the totals. Nullable — no note prints no block.
+  alter table companies add column document_note text;
   `,
 ]
 

@@ -36,6 +36,8 @@ export interface DocumentHeaderProps {
   /** The template's ink, or the brand accent where the design uses one. */
   readonly ink: string
   readonly logo: ReactNode
+  /** The headline figure needs formatting; the page owns the formatter. */
+  readonly formatAmount: (minor: number, currency: string) => string
 }
 
 /* ------------------------------------------------------------- the pieces */
@@ -69,6 +71,52 @@ const Name = ({ model, className = '' }: { model: PageModel; className?: string 
     )}
   </div>
 )
+
+/**
+ * Which designs place the headline figure THEMSELVES.
+ *
+ * Five compose it into their header because its position is part of what
+ * makes them that design — beside the name in Classic, under the rule in
+ * Modern, above the hairline in Minimal. Every other design gets it in the
+ * one standard place instead (see `DocumentPage`), so a new design cannot
+ * ship without one: the default is having it, not lacking it.
+ */
+export const HEADER_DRAWS_HEADLINE: ReadonlySet<string> = new Set([
+  'rule',
+  'band',
+  'hairline',
+  'split',
+  'centred',
+])
+
+/**
+ * The headline figure: BALANCE DUE and the amount, large (§I).
+ *
+ * Every legacy document puts what is owed at the TOP, beside the title. It is
+ * the first thing a recipient needs, and ours made them find it at the foot of
+ * the totals stack. Null on a delivery, which carries no money (§V).
+ */
+const Headline = ({
+  model,
+  ink,
+  formatAmount,
+  align = 'end',
+}: {
+  model: PageModel
+  ink: string
+  formatAmount: (minor: number, currency: string) => string
+  align?: 'start' | 'end'
+}) =>
+  model.headline === null ? null : (
+    <div className={align === 'end' ? 'text-end' : ''} data-headline>
+      <p className="text-[8.5px] font-bold uppercase tracking-[0.16em] opacity-55">
+        {model.headline.label}
+      </p>
+      <p className="mt-[1px] text-[20px] font-black tabular-nums" style={{ color: ink }}>
+        {formatAmount(model.headline.amount.minor, model.headline.amount.currency)}
+      </p>
+    </div>
+  )
 
 const Title = ({
   model,
@@ -123,7 +171,7 @@ const Rule = ({ ink, opacity = 1, height = 3 }: { ink: string; opacity?: number;
 
 /* ------------------------------------------------------------- the header */
 
-export function DocumentHeader({ model, template, ink, logo }: DocumentHeaderProps) {
+export function DocumentHeader({ model, template, ink, logo, formatAmount }: DocumentHeaderProps) {
   const style = template.headerStyle
 
   switch (style) {
@@ -166,9 +214,14 @@ export function DocumentHeader({ model, template, ink, logo }: DocumentHeaderPro
           {/*
             The business block sits UNDER the logo, not beside it — which is
             what gives the legacy page its top-left mass and lets the address
-            run to two lines without touching the title.
+            run to two lines without touching the title. The headline figure
+            sits opposite it, so name-and-address and BALANCE DUE share a
+            baseline the way the reference draws them.
           */}
-          <Name model={model} className="mt-[10px]" />
+          <div className="mt-[10px] flex items-end justify-between gap-[16px]">
+            <Name model={model} className="min-w-0" />
+            <Headline model={model} ink={ink} formatAmount={formatAmount} />
+          </div>
 
           {/* The heavy rule that separates the header from the document. */}
           <Rule ink={ink} height={2} />
@@ -180,39 +233,86 @@ export function DocumentHeader({ model, template, ink, logo }: DocumentHeaderPro
      * The thumb's third shape is that band, and it is why the title moves
      * BELOW the rule here rather than sitting above it.
      */
+    /*
+     * MODERN — the business name and the title share a BASELINE.
+     *
+     * Logo top left; the name on the left and INVOICE large on the right of
+     * the same line; the address and the reference on the line beneath, each
+     * under the thing it belongs to; then a heavy rule spanning the page.
+     *
+     * The difference from Classic is structural rather than decorative: here
+     * the name competes with the title for the top line, which is what makes
+     * a page with a long business name read as a letterhead rather than as a
+     * form.
+     */
     case 'band':
       return (
         <>
           <header className="flex items-start gap-[16px]">
-            {logo}
+            <div className="shrink-0">{logo}</div>
             <div className="min-w-0 flex-1">
-              <Name model={model} />
-              <Ref model={model} />
+              <div className="flex items-baseline justify-between gap-[16px]">
+                <p className="min-w-0 break-words text-[16px] font-bold leading-tight">
+                  {model.branding.name}
+                </p>
+                <Title model={model} ink={ink} className="shrink-0" />
+              </div>
+              <div className="mt-[3px] flex items-start justify-between gap-[16px]">
+                {model.branding.address !== undefined &&
+                model.branding.address.trim() !== '' ? (
+                  <p
+                    data-business-address
+                    className="min-w-0 break-words text-[9.5px] leading-snug opacity-65"
+                  >
+                    {model.branding.address}
+                  </p>
+                ) : (
+                  <span />
+                )}
+                <Ref model={model} className="shrink-0 text-end" />
+              </div>
             </div>
           </header>
           <Rule ink={ink} height={2} />
-          <div
-            className="mt-[8px] flex items-baseline justify-between gap-[16px] px-[12px] py-[8px]"
-            style={{ backgroundColor: `${ink}1a` }}
-          >
-            <Title model={model} ink={ink} />
-            <p className="text-[12px] tabular-nums opacity-70">{model.issueDate}</p>
+          <div className="mt-[8px] flex items-end justify-end">
+            <Headline model={model} ink={ink} formatAmount={formatAmount} />
           </div>
         </>
       )
 
     /* Minimal — a hairline, and a great deal of nothing. */
+    /*
+     * MINIMAL — hairlines only, and the dates live in the TITLE column.
+     *
+     * Logo top left; the title small and widely letter-spaced top right with
+     * the reference and both dates stacked beneath it; the business name and
+     * address on the left; the headline figure above the table. No heavy
+     * rules and no tinted bands anywhere — that restraint is the design, so
+     * the only rule on the page is a hairline.
+     */
     case 'hairline':
       return (
         <>
-          <header className="flex items-start gap-[16px]">
-            {logo}
-            <div className="min-w-0 flex-1">
-              <Name model={model} className="text-[16px] font-semibold opacity-80" />
-              <Title model={model} ink={ink} className="mt-[4px] text-[20px] font-medium tracking-normal" />
-              <Ref model={model} />
+          <header className="flex items-start justify-between gap-[16px]">
+            <div className="shrink-0">{logo}</div>
+            <div className="min-w-0 text-end">
+              <h2
+                className="break-words text-[13px] font-semibold uppercase tracking-[0.3em]"
+                style={{ color: ink }}
+              >
+                {model.title}
+              </h2>
+              <Ref model={model} className="mt-[2px]" />
+              <p className="mt-[4px] text-[9.5px] tabular-nums opacity-60">{model.issueDate}</p>
+              {model.dueDate !== undefined && (
+                <p className="text-[9.5px] tabular-nums opacity-60">{model.dueDate}</p>
+              )}
             </div>
           </header>
+          <div className="mt-[10px] flex items-end justify-between gap-[16px]">
+            <Name model={model} className="min-w-0" />
+            <Headline model={model} ink={ink} formatAmount={formatAmount} />
+          </div>
           <Rule ink={ink} opacity={0.25} height={1} />
         </>
       )
@@ -221,43 +321,61 @@ export function DocumentHeader({ model, template, ink, logo }: DocumentHeaderPro
      * Bold — a split header: the name on a tinted block, the title reversed
      * out of a solid one, and an accent rule under both.
      */
+    /*
+     * BOLD — the title is the biggest thing on the page.
+     *
+     * Logo top left; INVOICE very large top right; the business name stacked
+     * beneath the logo with its full address under that. Where Modern makes
+     * name and title share a line, this one lets the title dominate outright
+     * — the name gets its own block and does not compete.
+     */
     case 'split':
       return (
         <>
-          <header className="flex items-stretch gap-[12px]">
-            <div
-              className="flex min-w-0 flex-1 items-center gap-[12px] px-[12px] py-[8px]"
-              style={{ backgroundColor: `${template.ink}1f` }}
-            >
-              {logo}
-              <div className="min-w-0">
-                <Name model={model} />
-                <Ref model={model} />
-              </div>
-            </div>
-            <div
-              className="flex shrink-0 items-center px-[16px]"
-              style={{ backgroundColor: ink }}
-            >
-              {/* Reversed out, so the title reads on the block (§F). */}
-              <Title model={model} ink={template.paper} />
+          <header className="flex items-start justify-between gap-[16px]">
+            <div className="shrink-0">{logo}</div>
+            <div className="min-w-0 text-end">
+              <h2
+                className="break-words text-[34px] font-black uppercase leading-none tracking-[0.02em]"
+                style={{ color: ink }}
+              >
+                {model.title}
+              </h2>
+              <Ref model={model} className="mt-[3px]" />
             </div>
           </header>
-          <Rule ink={ink} />
+
+          <div className="mt-[10px] flex items-end justify-between gap-[16px]">
+            <Name model={model} className="min-w-0" />
+            <Headline model={model} ink={ink} formatAmount={formatAmount} />
+          </div>
+          <Rule ink={ink} height={2} />
         </>
       )
 
-    /* Elegant — centred, a diamond between two rules. */
+    /*
+     * ELEGANT — everything centred, and the DIVIDER comes between identity
+     * and document.
+     *
+     * Logo, business name and address centred; a hairline-with-diamond rule;
+     * then the title letter-spaced and centred with the reference beneath it.
+     * The order matters and is what makes this one different: the divider
+     * separates WHO SENT IT from WHAT IT IS, rather than sitting under the
+     * whole header as it did before.
+     *
+     * The headline stays right-aligned even here — a centred amount reads as
+     * a heading rather than as a figure, and it has to line up with the
+     * totals column beneath it.
+     */
     case 'centred':
       return (
         <>
           <header className="flex flex-col items-center text-center">
             {logo}
-            <Name model={model} className="mt-[8px]" />
-            <Title model={model} ink={ink} className="mt-[4px]" />
-            <Ref model={model} className="text-center" />
+            <Name model={model} className="mt-[8px] text-center" />
           </header>
-          <div className="mt-[16px] flex items-center gap-[8px] px-[10%]">
+
+          <div className="mt-[12px] flex items-center gap-[8px] px-[10%]">
             <div className="h-px flex-1" style={{ backgroundColor: ink }} />
             <div
               className="h-[8px] w-[8px] rotate-45"
@@ -265,6 +383,15 @@ export function DocumentHeader({ model, template, ink, logo }: DocumentHeaderPro
               aria-hidden="true"
             />
             <div className="h-px flex-1" style={{ backgroundColor: ink }} />
+          </div>
+
+          <div className="mt-[10px] text-center">
+            <Title model={model} ink={ink} className="text-center" />
+            <Ref model={model} className="text-center" />
+          </div>
+
+          <div className="mt-[8px] flex justify-end">
+            <Headline model={model} ink={ink} formatAmount={formatAmount} />
           </div>
         </>
       )

@@ -1,0 +1,11 @@
+-- The NOTE TO CUSTOMER block every legacy document ends with (§I).
+--
+-- "Thank you for your continued business. Payment is due within 14 days." —
+-- the same sentence on every invoice, which is what makes it a COMPANY
+-- setting rather than something typed per document. Our pages had no such
+-- block at all, so the one place an owner says their payment terms in their
+-- own words did not exist.
+--
+-- Nullable, and it stays nullable (Rule #1). No note prints no block — never
+-- an empty heading with nothing under it.
+alter table public.companies add column if not exists document_note text;

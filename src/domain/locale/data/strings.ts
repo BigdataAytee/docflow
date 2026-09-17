@@ -886,6 +886,8 @@ export interface UiStrings {
      * something typed on this invoice last week is editing blind, and the two
      * have different consequences for the next document.
      */
+    /** §I's block heading for the owner's payment terms. */
+    readonly noteToCustomer: string
     readonly fromSettings: string
     readonly onThisOne: string
     readonly driver: string
@@ -1781,6 +1783,7 @@ const EN: UiStrings = {
     payable: 'Payable',
     received: 'Received',
     atRate: '{label} {rate}%',
+    noteToCustomer: 'NOTE TO CUSTOMER',
     fromSettings: 'From Settings',
     onThisOne: 'Set on this one',
     ratesFromSettings: 'Tax rates come from Settings → Tax, and are saved onto the document when you issue it.',

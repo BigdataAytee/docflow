@@ -63,6 +63,15 @@ export interface Company {
   readonly phone?: string
   readonly email?: string
   readonly website?: string
+  /**
+   * The NOTE TO CUSTOMER block every document ends with (§I).
+   *
+   * Payment terms in the owner's own words — "Payment is due within 14 days"
+   * — printed under the totals. A company setting rather than a per-document
+   * field because it is the same sentence every time; §G's "no new required
+   * field, ever" means no note simply prints no block.
+   */
+  readonly documentNote?: string
   readonly currency: string
   readonly numberingPrefixes: Partial<Record<DocumentType, string>>
   readonly bankFields: Record<string, string>

@@ -224,9 +224,34 @@ export interface PageModel {
     readonly imageUrl?: string
     readonly caption: string
     readonly signerName?: string
+    /**
+     * The business the signature commits, printed under the caption.
+     *
+     * Every legacy document carries it — "AUTHORISED SIGNATORY" then the
+     * company name — because a signature over a bare rule says somebody
+     * signed and not on whose behalf.
+     */
+    readonly signerBusiness?: string
   }
   /** §I: totals right-aligned at 58% width. */
   readonly totalsWidthPercent: number
+  /**
+   * THE HEADLINE FIGURE, in the header (§I).
+   *
+   * Every legacy document puts the amount owed at the TOP, large, beside the
+   * title — "BALANCE DUE ₦322,500.00". It is the first thing the recipient
+   * needs and ours made them find it at the bottom of the totals stack.
+   *
+   * Null on a delivery, which carries no money at all (§V).
+   */
+  readonly headline: { readonly label: string; readonly amount: Money } | null
+  /**
+   * The NOTE TO CUSTOMER block (§I): payment terms in the owner's own words.
+   *
+   * Null when the owner has written none — an empty heading with nothing
+   * under it says less than no heading (Rule #1).
+   */
+  readonly note: { readonly label: string; readonly body: string } | null
 }
 
 export interface ComposeOptions {
@@ -244,6 +269,9 @@ export interface ComposeOptions {
    * table: §D gates that table on native-speaker sign-off, and these come
    * from the UI catalogue that is already translated with the screen.
    */
+  /** The owner's payment terms, printed under the totals (§I). */
+  readonly note?: string
+  readonly noteLabel?: string
   readonly totalsLabels?: {
     readonly subtotal: string
     readonly tax: string
@@ -389,6 +417,17 @@ export function composeDocument(
     totals,
     totalsLabel:
       totals === null ? null : totalsLabelFor(document.type, terms, options.totalsLabels),
+    headline:
+      totals === null
+        ? null
+        : {
+            label: totalsLabelFor(document.type, terms, options.totalsLabels) ?? '',
+            amount: totals.payable,
+          },
+    note:
+      options.note === undefined || options.note.trim() === ''
+        ? null
+        : { label: options.noteLabel ?? 'NOTE TO CUSTOMER', body: options.note.trim() },
     subtotalLabel: options.totalsLabels?.subtotal ?? 'Subtotal',
     taxLabel:
       totals === null || totals.tax.minor === 0
@@ -409,6 +448,8 @@ export function composeDocument(
         ? {}
         : { imageUrl: options.assetUrls[document.signatureAssetId] }),
       caption: labels.signatureCaption,
+      /* Whose signature it is — the business it commits (§I). */
+      ...(branding.name.trim() === '' ? {} : { signerBusiness: branding.name }),
       ...(document.signerName === undefined ? {} : { signerName: document.signerName }),
     },
     totalsWidthPercent: 58,

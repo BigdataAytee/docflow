@@ -271,6 +271,10 @@ export function composeOptionsOf(input: ComposeOptionsInput): Omit<ComposeOption
       ...(company?.website ? { website: company.website } : {}),
       ...(company?.logoAssetId === undefined ? {} : { logoAssetId: company.logoAssetId }),
     },
+    /* The owner's payment terms, printed under the totals (§I). */
+    ...(company?.documentNote === undefined || company.documentNote.trim() === ''
+      ? {}
+      : { note: company.documentNote, noteLabel: strings.totals.noteToCustomer }),
     /* The words beside the figures above the total — see `ComposeOptions`. */
     totalsLabels: {
       subtotal: strings.totals.subtotal,

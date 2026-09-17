@@ -13,7 +13,7 @@ import type { PageModel, TableRow } from './compose'
 import type { PrintPage } from './paginate'
 import type { TemplateDefinition } from './templates'
 import { LOGO_SCALE, fitLogo } from './logo'
-import { DocumentHeader, PageChrome, contentInset, headerCarriesParty } from './DocumentHeader'
+import { DocumentHeader, HEADER_DRAWS_HEADLINE, PageChrome, contentInset, headerCarriesParty } from './DocumentHeader'
 
 /** A4 portrait: 210 × 297 mm. */
 export const A4_ASPECT = 210 / 297
@@ -217,6 +217,7 @@ export function DocumentPage({
           model={model}
           template={template}
           ink={ink}
+          formatAmount={formatAmount}
           logo={
             model.branding.showLogo ? (
               <LogoHolder
@@ -226,6 +227,27 @@ export function DocumentPage({
             ) : null
           }
         />
+
+        {/*
+          THE HEADLINE, for every design that does not place it itself (§I).
+
+          Five compose it into their headers because its position is part of
+          what makes them that design. The other eleven get it here, in one
+          standard place — so the DEFAULT is having the amount at the top, and
+          a new design cannot ship without one by forgetting to add it.
+        */}
+        {model.headline !== null && !HEADER_DRAWS_HEADLINE.has(template.headerStyle) && (
+          <div className="mt-[10px] flex justify-end" data-headline>
+            <div className="text-end">
+              <p className="text-[8.5px] font-bold uppercase tracking-[0.16em] opacity-55">
+                {model.headline.label}
+              </p>
+              <p className="mt-[1px] text-[20px] font-black tabular-nums" style={{ color: ink }}>
+                {formatAmount(model.headline.amount.minor, model.headline.amount.currency)}
+              </p>
+            </div>
+          </div>
+        )}
 
         {/*
           THE PARTY BAND (§I).
@@ -348,6 +370,30 @@ export function DocumentPage({
                     </span>
                   </div>
                 </div>
+              </section>
+            )}
+
+            {/*
+              NOTE TO CUSTOMER (§I) — the owner's payment terms in their own
+              words, under the totals and above the signature, which is where
+              every legacy document puts it. Ours had no such block at all, so
+              the one place an owner says "payment is due within 14 days" did
+              not exist.
+
+              Nothing at all when there is no note: an empty heading says less
+              than no heading (Rule #1).
+            */}
+            {model.note !== null && (
+              <section className="mt-[14px]" data-note-block>
+                <p
+                  className="text-[8.5px] font-bold uppercase tracking-[0.14em] opacity-55"
+                  style={{ color: ink }}
+                >
+                  {model.note.label}
+                </p>
+                <p className="mt-[3px] text-[10px] leading-relaxed opacity-75">
+                  {model.note.body}
+                </p>
               </section>
             )}
 
@@ -480,6 +526,16 @@ export function DocumentPage({
                 <p className="mt-[4px] font-bold uppercase tracking-wide">{model.signature.caption}</p>
                 {model.signature.signerName !== undefined && (
                   <p className="opacity-70">{model.signature.signerName}</p>
+                )}
+                {/*
+                  Whose signature it is. A mark over a bare rule says somebody
+                  signed and not on whose behalf — every legacy document names
+                  the business under the caption.
+                */}
+                {model.signature.signerBusiness !== undefined && (
+                  <p className="opacity-70" data-signer-business>
+                    {model.signature.signerBusiness}
+                  </p>
                 )}
               </div>
             </footer>

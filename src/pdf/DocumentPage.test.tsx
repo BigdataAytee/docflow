@@ -507,3 +507,75 @@ describe('No amount prints without the word for it (§I)', () => {
     }
   })
 })
+
+/**
+ * COMPLETE, NOT SPARSE — all sixteen (§I, §H).
+ *
+ * The reference documents carry, on every design: the headline amount in the
+ * header, the business address, a ruled totals stack with its words, a NOTE
+ * TO CUSTOMER block, a signature with its caption AND the business it commits,
+ * and a footer contact strip. Ours carried almost none of it — the designs
+ * differed in their headers and were identical, and sparse, everywhere else.
+ *
+ * "Different" was never the question. This asks whether each one is a whole
+ * document.
+ */
+describe('Every design renders a COMPLETE document (§I)', () => {
+  const full = {
+    ...opts,
+    branding: {
+      ...branding,
+      address: 'Lagos Abeokuta Motor Road, Ifo, Ogun State',
+      phone: '+2348106332490',
+      email: 'admin@dynamicrenaissance.org',
+      website: 'www.dynamicrenaissance.org',
+    },
+    note: 'Thank you for your continued business. Payment is due within 14 days.',
+    noteLabel: 'NOTE TO CUSTOMER',
+  }
+
+  const taxed: ComposableDocument = { ...invoice, taxRate: 75_000 }
+
+  it.each(TEMPLATES.map((t) => [t.id] as const))('%s carries every block', (id) => {
+    cleanup()
+    const { container } = draw(taxed, id, 20, full).render()
+    const article = screen.getByRole('article')
+    const text = (article.textContent ?? '').replace(/\s+/g, ' ')
+
+    // The headline figure, in the header rather than only at the foot.
+    expect(container.querySelector('[data-headline]'), `${id}: no headline figure`).not.toBeNull()
+
+    // The business, and where it is.
+    expect(
+      container.querySelector('[data-business-address]'),
+      `${id}: no business address`,
+    ).not.toBeNull()
+
+    // The owner's terms.
+    expect(container.querySelector('[data-note-block]'), `${id}: no note block`).not.toBeNull()
+    expect(text, `${id}: the note did not print`).toContain('due within 14 days')
+
+    // Whose signature it is.
+    expect(
+      container.querySelector('[data-signer-business]'),
+      `${id}: the signature names no business`,
+    ).not.toBeNull()
+
+    // How to reach them.
+    expect(container.querySelector('[data-contact-strip]'), `${id}: no footer strip`).not.toBeNull()
+
+    // The totals stack, with its words.
+    for (const word of ['Subtotal', 'Payable']) {
+      expect(text, `${id}: totals missing "${word}"`).toContain(word)
+    }
+  })
+
+  /** A delivery has no money, so no headline — and still everything else (§V). */
+  it.each(TEMPLATES.map((t) => [t.id] as const))('%s gives a delivery no headline', (id) => {
+    cleanup()
+    const { container } = draw(delivery, id, 20, full).render()
+    expect(container.querySelector('[data-headline]'), `${id}: a delivery grew a total`).toBeNull()
+    expect(container.querySelector('[data-contact-strip]'), `${id}: no footer`).not.toBeNull()
+    expect(container.querySelector('[data-note-block]'), `${id}: no note`).not.toBeNull()
+  })
+})

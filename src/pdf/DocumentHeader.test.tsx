@@ -282,10 +282,16 @@ describe('Every design is a design (§H)', () => {
         page.getByText('Adeola Hardware'),
         `${template.name} lost the party`,
       ).toBeInTheDocument()
+      /*
+       * TWICE now, by design: in the header, and under the signature as the
+       * business the mark commits — which is what every legacy document does.
+       * A signature over a bare rule says somebody signed and not on whose
+       * behalf. `getAllByText` because `getByText` fails on more than one.
+       */
       expect(
-        page.getByText('Sola Ventures'),
+        page.getAllByText('Sola Ventures').length,
         `${template.name} lost the business name`,
-      ).toBeInTheDocument()
+      ).toBeGreaterThan(0)
 
       view.unmount()
     }
