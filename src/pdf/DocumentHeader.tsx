@@ -40,10 +40,34 @@ export interface DocumentHeaderProps {
 
 /* ------------------------------------------------------------- the pieces */
 
+/**
+ * The business, as a block: its name and its full address beneath.
+ *
+ * THE ADDRESS USED TO PRINT ON EXACTLY ONE DESIGN of the sixteen — Sikky's
+ * boxed office address — so an owner who filled it in saw it on that one and
+ * on nothing else. Every document the legacy app produced carries the full
+ * address directly under the name, and it is the line that tells a customer
+ * where the business actually is.
+ *
+ * It lives HERE rather than in each of the sixteen header cases, because
+ * sixteen copies of it is sixteen chances for one to be forgotten — which is
+ * how it came to be on one.
+ *
+ * `address` stays optional (Rule #1): no address prints no line, never an
+ * empty one.
+ */
 const Name = ({ model, className = '' }: { model: PageModel; className?: string }) => (
-  <p className={`break-words text-[18px] font-bold leading-tight ${className}`}>
-    {model.branding.name}
-  </p>
+  <div className={className}>
+    <p className="break-words text-[18px] font-bold leading-tight">{model.branding.name}</p>
+    {model.branding.address !== undefined && model.branding.address.trim() !== '' && (
+      <p
+        data-business-address
+        className="mt-[3px] break-words text-[9.5px] leading-snug opacity-65"
+      >
+        {model.branding.address}
+      </p>
+    )}
+  </div>
 )
 
 const Title = ({

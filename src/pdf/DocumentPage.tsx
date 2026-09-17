@@ -207,17 +207,39 @@ export function DocumentPage({
           }
         />
 
-        {/* Compact's strip already carries these — see `headerCarriesParty`. */}
+        {/*
+          THE PARTY BAND (§I).
+
+          A tinted band holding who the document is for and when it was
+          issued, the way every document the legacy app produced does it. It
+          was an untinted row of text sitting between the header and the
+          table, so the eye ran straight past the one line saying who this is
+          for into the list of things being charged.
+
+          The tint is the ink at 6%, so it follows the design's own colour and
+          a template with a brand accent does not suddenly grow a grey box.
+
+          Compact's strip already carries these — see `headerCarriesParty`.
+        */}
         {!headerCarriesParty(template) && (
-        <section className="mt-[16px] flex justify-between gap-[24px] text-[12px]">
+        <section
+          className="mt-[14px] flex justify-between gap-[24px] px-[12px] py-[10px] text-[12px]"
+          style={{ backgroundColor: `${ink}0f` }}
+        >
           <div className="min-w-0">
-            <p className="font-bold uppercase tracking-wide opacity-60">{model.partyLabel}</p>
-            <p className="font-semibold">{model.party.name}</p>
-            {model.party.address !== undefined && <p className="opacity-80">{model.party.address}</p>}
+            <p className="text-[9px] font-bold uppercase tracking-[0.14em] opacity-60">
+              {model.partyLabel}
+            </p>
+            <p className="mt-[3px] font-semibold">{model.party.name}</p>
+            {model.party.address !== undefined && (
+              <p className="opacity-80">{model.party.address}</p>
+            )}
           </div>
           <div className="shrink-0 text-end">
             <p className="tabular-nums">{model.issueDate}</p>
-            {model.dueDate !== undefined && <p className="tabular-nums opacity-70">{model.dueDate}</p>}
+            {model.dueDate !== undefined && (
+              <p className="tabular-nums opacity-70">{model.dueDate}</p>
+            )}
           </div>
         </section>
         )}
@@ -225,9 +247,21 @@ export function DocumentPage({
         <table className="mt-[16px] w-full border-collapse text-[12px]">
           {/* Repeated on every page (§I). */}
           <thead>
-            <tr style={{ borderBottom: `1px solid ${ink}` }}>
+            {/*
+              A RULED BAND, not a bare underline. The reference sets the
+              column headings on a tinted strip closed by a heavier rule,
+              which is what separates the headings from the first row at a
+              glance on a page held at arm's length.
+            */}
+            <tr
+              style={{ backgroundColor: `${ink}0a`, borderBottom: `1.5px solid ${ink}` }}
+            >
               {model.columns.map((column) => (
-                <th key={column.key} style={{ textAlign: column.align }} className="pb-[4px] font-bold uppercase tracking-wide">
+                <th
+                  key={column.key}
+                  style={{ textAlign: column.align }}
+                  className="px-[8px] py-[6px] text-[9.5px] font-bold uppercase tracking-[0.1em]"
+                >
                   {column.label}
                 </th>
               ))}
@@ -261,12 +295,30 @@ export function DocumentPage({
                 className="mt-[12px] self-end text-[12px]"
                 style={{ width: `${model.totalsWidthPercent}%` }}
               >
-                <Line label="" value={formatAmount(model.totals.subtotal.minor, currency)} />
-                {model.totals.tax.minor !== 0 && (
-                  <Line label="" value={formatAmount(model.totals.tax.minor, currency)} />
+                {/*
+                  THE WORDS BESIDE THE FIGURES.
+
+                  These were `label=""` — a right-aligned column of amounts
+                  with nothing saying which was the subtotal and which was
+                  tax. A customer reading two figures and a total has to guess
+                  what the middle one is, and where there is withholding the
+                  guess is about money they are owed.
+                */}
+                <Line
+                  label={model.subtotalLabel}
+                  value={formatAmount(model.totals.subtotal.minor, currency)}
+                />
+                {model.taxLabel !== null && (
+                  <Line
+                    label={model.taxLabel}
+                    value={formatAmount(model.totals.tax.minor, currency)}
+                  />
                 )}
-                {model.totals.wht.minor !== 0 && (
-                  <Line label="" value={`−${formatAmount(model.totals.wht.minor, currency)}`} />
+                {model.whtLabel !== null && (
+                  <Line
+                    label={model.whtLabel}
+                    value={`−${formatAmount(model.totals.wht.minor, currency)}`}
+                  />
                 )}
                 <div className="mt-[4px] border-t-2 pt-[4px]" style={{ borderColor: ink }}>
                   <div className="flex justify-between text-[14px] font-black" style={{ color: ink }}>

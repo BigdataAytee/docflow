@@ -202,6 +202,14 @@ export function composeOptionsOf(input: ComposeOptionsInput): Omit<ComposeOption
       ...(company?.website ? { website: company.website } : {}),
       ...(company?.logoAssetId === undefined ? {} : { logoAssetId: company.logoAssetId }),
     },
+    /* The words beside the figures above the total — see `ComposeOptions`. */
+    totalsLabels: {
+      subtotal: strings.totals.subtotal,
+      tax: strings.totals.tax,
+      withholding: strings.totals.withholding,
+      payable: strings.totals.payable,
+      received: strings.totals.received,
+    },
     columnLabels: {
       description: strings.items.description,
       // A delivery's table lists what was handed over, not what was charged.

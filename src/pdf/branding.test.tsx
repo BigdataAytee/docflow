@@ -189,21 +189,35 @@ describe('The business address prints where §F puts one, and nowhere else', () 
     expect(article.textContent).toContain(ADDRESS)
   })
 
-  /**
-   * PER-TEMPLATE, not once. "The business address appears on exactly one
-   * design" is the kind of claim that drifts back one component at a time, so
-   * the check walks all sixteen with the field SET rather than omitted — a
-   * fixture that leaves it out proves nothing about a page that would print
-   * it.
+  /*
+   * CHANGED DELIBERATELY. This asserted the address printed on Sikky and on
+   * NO OTHER DESIGN — §F gives Sikky a boxed office address and nothing was
+   * said about the rest. The consequence was that an owner who filled the
+   * field in saw it on one design of sixteen, and every reference document
+   * the legacy app produced carries the full address directly under the
+   * business name.
+   *
+   * PER-TEMPLATE, not once, and still walked with the field SET: a fixture
+   * that leaves it out proves nothing about a page that would print it.
    */
-  it('prints it on no other design', () => {
+  it('prints it on every design, under the business name', () => {
     const model = modelWith({ address: ADDRESS })
     for (const template of TEMPLATES) {
-      if (template.id === 'sikky') continue
       const { view, article } = draw(template.id, model)
-      expect(article.textContent, `${template.id} prints the business address`).not.toContain(
-        ADDRESS,
-      )
+      expect(article.textContent, `${template.id} omits the business address`).toContain(ADDRESS)
+      view.unmount()
+    }
+  })
+
+  /** Rule #1 across all sixteen: no address prints no line, never an empty one. */
+  it('prints no address line on any design when there is none', () => {
+    const model = modelWith({})
+    for (const template of TEMPLATES) {
+      const { view, article } = draw(template.id, model)
+      expect(
+        article.querySelector('[data-business-address]'),
+        `${template.id} drew an empty address line`,
+      ).toBeNull()
       view.unmount()
     }
   })

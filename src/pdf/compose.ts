@@ -176,6 +176,22 @@ export interface PageModel {
   readonly totals: DocumentTotals | null
   /** §H: a quotation says the localised "Estimated total". */
   readonly totalsLabel: string | null
+  /**
+   * The words beside the figures above the total.
+   *
+   * These lines printed as BARE NUMBERS — `<Line label="" …>` — so a document
+   * showed a right-aligned column of amounts with nothing saying which was
+   * the subtotal and which was tax. A customer reading two figures and a
+   * total has to guess what the middle one is, and on a document with
+   * withholding the guess is about money they are owed.
+   *
+   * Through the options like `columnLabels`, not through the terminology
+   * table: §D gates that table on native-speaker sign-off, and these come
+   * from the UI catalogue that is already translated with the screen.
+   */
+  readonly subtotalLabel: string
+  readonly taxLabel: string | null
+  readonly whtLabel: string | null
   /** Invoices only. Quotations omit payment instructions by default (§I). */
   readonly paymentBox: PaymentBox | null
   /** Delivery documents replace the payment box with this rule (§I). */
@@ -206,6 +222,20 @@ export interface ComposeOptions {
    */
   readonly dateFormat?: string
   readonly branding: CompanyBranding
+  /**
+   * The words beside the figures above the total.
+   *
+   * Through the options like `columnLabels`, not through the terminology
+   * table: §D gates that table on native-speaker sign-off, and these come
+   * from the UI catalogue that is already translated with the screen.
+   */
+  readonly totalsLabels?: {
+    readonly subtotal: string
+    readonly tax: string
+    readonly withholding: string
+    readonly payable: string
+    readonly received: string
+  }
   /**
    * Column headings, already in the active language.
    *
@@ -342,7 +372,17 @@ export function composeDocument(
     columns,
     rows,
     totals,
-    totalsLabel: totals === null ? null : totalsLabelFor(document.type, terms),
+    totalsLabel:
+      totals === null ? null : totalsLabelFor(document.type, terms, options.totalsLabels),
+    subtotalLabel: options.totalsLabels?.subtotal ?? 'Subtotal',
+    taxLabel:
+      totals === null || totals.tax.minor === 0
+        ? null
+        : (options.totalsLabels?.tax ?? 'Tax'),
+    whtLabel:
+      totals === null || totals.wht.minor === 0
+        ? null
+        : (options.totalsLabels?.withholding ?? 'Less withholding tax'),
     paymentBox: buildPaymentBox(document, options, terms),
     // §I: deliveries replace the payment box with the localised RECEIVED BY.
     receivedByRule: showsMoney ? null : terms.receivedBy,
@@ -360,12 +400,27 @@ export function composeDocument(
   }
 }
 
+/**
+ * The word on the grand total line.
+ *
+ * §H gives quotations the localised "Estimated total" and said nothing about
+ * the rest, so everything else returned NULL and an invoice printed its
+ * grand total as a bare figure — directly beneath a line that now reads
+ * "Subtotal", which makes the omission look deliberate and wrong rather than
+ * merely bare.
+ *
+ * The quotation term still comes from the terminology table, because §H names
+ * it and §D owns it. The others come through the options from the UI
+ * catalogue, the same route `columnLabels` takes.
+ */
 function totalsLabelFor(
   type: DocumentType,
   terms: ReturnType<typeof sharedTerms>,
+  labels: ComposeOptions['totalsLabels'],
 ): string | null {
-  // §H: "quotations say the localised 'Estimated total'".
-  return type === 'quotation' ? terms.estimatedTotal : null
+  if (type === 'quotation') return terms.estimatedTotal
+  if (type === 'receipt') return labels?.received ?? 'Received'
+  return labels?.payable ?? 'Payable'
 }
 
 function buildPaymentBox(

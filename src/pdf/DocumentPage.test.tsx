@@ -462,3 +462,48 @@ describe('Every document says how to reach the business (§I)', () => {
     expect(screen.getByRole('article').textContent ?? '').toContain(contact.phone)
   })
 })
+
+/**
+ * EVERY FIGURE HAS A WORD BESIDE IT (§I).
+ *
+ * The totals block rendered `<Line label="" …>` for subtotal, tax and
+ * withholding, and `totalsLabelFor` returned null for everything but a
+ * quotation — so an invoice printed a right-aligned column of amounts with
+ * nothing saying which was which, and the grand total was a bare figure
+ * directly under them. A customer reading three numbers has to guess, and
+ * where there is withholding the guess is about money they are owed.
+ */
+describe('No amount prints without the word for it (§I)', () => {
+  const taxed: ComposableDocument = { ...invoice, taxRate: 75_000, whtRate: 50_000 }
+
+  it.each(TEMPLATES.map((t) => [t.id] as const))('%s labels every totals line', (id) => {
+    cleanup()
+    draw(taxed, id).render()
+    const text = (screen.getByRole('article').textContent ?? '').replace(/\s+/g, ' ')
+
+    expect(text, `${id}: no subtotal word`).toContain('Subtotal')
+    expect(text, `${id}: no tax word`).toContain('Tax')
+    expect(text, `${id}: no withholding word`).toContain('Less withholding tax')
+    expect(text, `${id}: no word on the grand total`).toContain('Payable')
+  })
+
+  it.each([
+    ['quotation', 'quotation' as const, 'Estimated total'],
+    ['receipt', 'receipt' as const, 'Received'],
+    ['invoice', 'invoice' as const, 'Payable'],
+  ])('names the grand total on a %s', (_name, type, word) => {
+    cleanup()
+    draw({ ...invoice, type, reference: 'X-1' }, 'classic').render()
+    expect(screen.getByRole('article').textContent ?? '').toContain(word)
+  })
+
+  /** A delivery has no money at all — and must not grow a totals word (§V). */
+  it('puts no totals word on a delivery', () => {
+    cleanup()
+    draw(delivery, 'classic').render()
+    const text = screen.getByRole('article').textContent ?? ''
+    for (const word of ['Subtotal', 'Payable', 'Estimated total']) {
+      expect(text, `a delivery printed "${word}"`).not.toContain(word)
+    }
+  })
+})
