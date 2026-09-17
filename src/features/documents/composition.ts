@@ -192,6 +192,14 @@ export function composeOptionsOf(input: ComposeOptionsInput): Omit<ComposeOption
       logoSize: company?.logoSize ?? 'M',
       showLogo: design.showLogo,
       ...(company?.address === undefined ? {} : { address: company.address }),
+      /*
+       * The footer strip's three (§I). Empty strings are dropped as well as
+       * undefined ones: a field an owner opened and left blank must not print
+       * as a stranded separator between two things that are there.
+       */
+      ...(company?.phone ? { phone: company.phone } : {}),
+      ...(company?.email ? { email: company.email } : {}),
+      ...(company?.website ? { website: company.website } : {}),
       ...(company?.logoAssetId === undefined ? {} : { logoAssetId: company.logoAssetId }),
     },
     columnLabels: {

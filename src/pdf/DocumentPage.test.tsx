@@ -355,3 +355,110 @@ describe('Dates print as dates, on every design and every type (§D)', () => {
     expect(text, `${templateId}/${_name} lost its issue date`).toContain('4 Sep 2026')
   })
 })
+
+/**
+ * THE FOOTER STRIP — how a customer reaches the business (§I).
+ *
+ * Every document the app produced ended in white space. The legacy documents
+ * carried phone · email · website centred under a hairline, and on a quotation
+ * that is the one thing the recipient needs: somebody who wants to accept it
+ * otherwise has no way to say so.
+ */
+describe('Every document says how to reach the business (§I)', () => {
+  const contact = {
+    phone: '+2348106332490',
+    email: 'admin@dynamicrenaissance.org',
+    website: 'www.dynamicrenaissance.org',
+  }
+
+  const withContact = (over: Partial<typeof contact> = contact) => ({
+    ...opts,
+    branding: { ...branding, ...over },
+  })
+
+  it.each(TEMPLATES.map((t) => [t.id] as const))('%s prints all three', (id) => {
+    cleanup()
+    draw(invoice, id, 20, withContact()).render()
+    const text = (screen.getByRole('article').textContent ?? '').replace(/\s+/g, ' ')
+
+    expect(text, `${id}: no phone`).toContain(contact.phone)
+    expect(text, `${id}: no email`).toContain(contact.email)
+    expect(text, `${id}: no website`).toContain(contact.website)
+  })
+
+  it.each([
+    ['invoice', invoice],
+    ['waybill', delivery],
+    ['quotation', { ...invoice, type: 'quotation' as const, reference: 'QUO-1' }],
+    ['receipt', { ...invoice, type: 'receipt' as const, reference: 'REC-1' }],
+  ])('prints on a %s as well', (_name, document) => {
+    cleanup()
+    draw(document as ComposableDocument, 'classic', 20, withContact()).render()
+    expect(screen.getByRole('article').textContent ?? '').toContain(contact.phone)
+  })
+
+  /**
+   * SEPARATORS BETWEEN, NEVER AROUND. A business with only a phone number
+   * must print the number, not "· +234… ·" — a stranded separator announces
+   * a field the owner chose not to fill.
+   */
+  it('prints one value with no separators around it', () => {
+    cleanup()
+    draw(invoice, 'classic', 20, withContact({ phone: '+2348106332490' })).render()
+    const text = (screen.getByRole('article').textContent ?? '').replace(/\s+/g, ' ')
+    expect(text).toContain('+2348106332490')
+    expect(text).not.toMatch(/·\s*·/)
+    expect(text.trim()).not.toMatch(/·\s*$/)
+  })
+
+  /**
+   * NOTHING AT ALL WHEN THERE IS NOTHING. No strip, and no hairline either —
+   * an empty band with a rule over it announces that something is missing.
+   */
+  it('draws no strip and no rule when none of the three are set', () => {
+    cleanup()
+    const { container } = draw(invoice, 'classic', 20, { ...opts, branding }).render()
+
+    /*
+     * The ELEMENT, not the text. An empty strip renders no words, so a text
+     * assertion passes over it while the hairline is still drawn across the
+     * foot of the page announcing a section that is not there — the mutation
+     * went green on exactly that before this line.
+     */
+    expect(container.querySelector('[data-contact-strip]')).toBeNull()
+  })
+
+  it('draws the strip element when there is something to put in it', () => {
+    cleanup()
+    const { container } = draw(invoice, 'classic', 20, withContact()).render()
+    expect(container.querySelector('[data-contact-strip]')).not.toBeNull()
+  })
+
+  /**
+   * ON THE LAST PAGE ONLY. Repeated under page one of four, a footer reads as
+   * the end of the document — four times.
+   */
+  it('appears on the final page and not on the ones before it', () => {
+    cleanup()
+    const many = {
+      ...invoice,
+      lineItems: Array.from({ length: 40 }, (_, index) => ({
+        id: `l${index}`,
+        description: `Item ${index}`,
+        quantityMilli: quantity(1),
+        unitPriceMinor: 1000,
+        taxable: false,
+      })),
+    }
+    const sheet = draw(many, 'classic', 12, withContact())
+    expect(sheet.pages.length).toBeGreaterThan(1)
+
+    sheet.render(0)
+    expect(screen.getByRole('article').textContent ?? '').not.toContain(contact.phone)
+
+    cleanup()
+    const last = draw(many, 'classic', 12, withContact())
+    last.render(last.pages.length - 1)
+    expect(screen.getByRole('article').textContent ?? '').toContain(contact.phone)
+  })
+})

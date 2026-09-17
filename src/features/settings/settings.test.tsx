@@ -176,6 +176,12 @@ describe('The user’s numbering prefix always wins (§D)', () => {
   it('shows the regional suggestion as a placeholder, not a value', () => {
     wrap(
       <CompanySettings
+        businessPhone=""
+        businessEmail=""
+        businessWebsite=""
+        onBusinessPhone={vi.fn()}
+        onBusinessEmail={vi.fn()}
+        onBusinessWebsite={vi.fn()}
         businessName="Dynamic Renaissance"
         nameStyle="classic"
         logoSize="M"
@@ -197,6 +203,12 @@ describe('The user’s numbering prefix always wins (§D)', () => {
   it('keeps a configured prefix over the suggestion', () => {
     wrap(
       <CompanySettings
+        businessPhone=""
+        businessEmail=""
+        businessWebsite=""
+        onBusinessPhone={vi.fn()}
+        onBusinessEmail={vi.fn()}
+        onBusinessWebsite={vi.fn()}
         businessName="Dynamic Renaissance"
         nameStyle="classic"
         logoSize="M"
@@ -216,6 +228,12 @@ describe('The user’s numbering prefix always wins (§D)', () => {
   it('previews the name style live, including the monogram', () => {
     const { unmount } = wrap(
       <CompanySettings
+        businessPhone=""
+        businessEmail=""
+        businessWebsite=""
+        onBusinessPhone={vi.fn()}
+        onBusinessEmail={vi.fn()}
+        onBusinessWebsite={vi.fn()}
         businessName="Dynamic Renaissance"
         nameStyle="classic"
         logoSize="M"
@@ -234,6 +252,12 @@ describe('The user’s numbering prefix always wins (§D)', () => {
 
     wrap(
       <CompanySettings
+        businessPhone=""
+        businessEmail=""
+        businessWebsite=""
+        onBusinessPhone={vi.fn()}
+        onBusinessEmail={vi.fn()}
+        onBusinessWebsite={vi.fn()}
         businessName="Dynamic Renaissance"
         nameStyle="monogram"
         logoSize="M"

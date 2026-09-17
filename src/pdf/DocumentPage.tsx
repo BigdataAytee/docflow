@@ -394,6 +394,8 @@ export function DocumentPage({
           </>
         )}
 
+        <ContactStrip branding={model.branding} showsFooter={page.showsFooter} ink={template.ink} />
+
         {totalPages > 1 && (
           <p className="mt-[8px] text-center text-[10px] tabular-nums opacity-50">
             {page.pageNumber} / {totalPages}
@@ -401,6 +403,49 @@ export function DocumentPage({
         )}
       </div>
     </article>
+  )
+}
+
+/**
+ * How a customer reaches the business (§I).
+ *
+ * Every document ended in white space. On a quotation that is the one thing
+ * the recipient needs — somebody who wants to accept it has no way to say so
+ * — and the legacy documents carried it on every page they produced.
+ *
+ * Three rules, each from a way this goes wrong:
+ *
+ *  · ON THE LAST PAGE ONLY. A footer repeated under page one of four reads as
+ *    the end of the document, four times.
+ *  · NOTHING AT ALL WHEN THERE IS NOTHING. An owner who has filled none of
+ *    the three gets no strip and no hairline, rather than an empty band with
+ *    a rule over it announcing that something is missing.
+ *  · SEPARATORS BETWEEN, NEVER AROUND. Joining the present values means a
+ *    business with only a phone number prints the number, not "· +234… ·".
+ */
+function ContactStrip({
+  branding,
+  showsFooter,
+  ink,
+}: {
+  branding: PageModel['branding']
+  showsFooter: boolean
+  ink: string
+}) {
+  if (!showsFooter) return null
+
+  const parts = [branding.phone, branding.email, branding.website].filter(
+    (value): value is string => value !== undefined && value.trim() !== '',
+  )
+  if (parts.length === 0) return null
+
+  return (
+    <div data-contact-strip className="mt-auto pt-[10px]">
+      <div className="border-t opacity-25" style={{ borderColor: ink }} />
+      <p className="mt-[6px] text-center text-[9px] tracking-[0.02em] opacity-70">
+        {parts.join('  ·  ')}
+      </p>
+    </div>
   )
 }
 

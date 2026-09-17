@@ -260,12 +260,18 @@ function SettingsPanelBody() {
         <CompanySettings
           businessName={company.name}
           businessAddress={company.address ?? ''}
+          businessPhone={company.phone ?? ''}
+          businessEmail={company.email ?? ''}
+          businessWebsite={company.website ?? ''}
           nameStyle={company.nameStyle ?? 'classic'}
           logoSize={company.logoSize ?? 'M'}
           prefixes={company.numberingPrefixes}
           {...(logoUrl === undefined ? {} : { logoUrl })}
           onBusinessName={(value) => void actions.updateCompany({ name: value })}
           onBusinessAddress={(value) => void actions.updateCompany({ address: value })}
+          onBusinessPhone={(value) => void actions.updateCompany({ phone: value })}
+          onBusinessEmail={(value) => void actions.updateCompany({ email: value })}
+          onBusinessWebsite={(value) => void actions.updateCompany({ website: value })}
           onLogo={async (dataUrl) => {
             // Stored first, then referenced: the company may only name an
             // asset the repository accepted — the same order a delivery

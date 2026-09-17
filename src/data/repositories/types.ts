@@ -48,6 +48,21 @@ export interface Company {
    * and no address rather than a form that will not let them past.
    */
   readonly address?: string
+  /**
+   * How a customer reaches the business — the footer strip every document
+   * ends with (§I): phone · email · website, centred under a hairline.
+   *
+   * These were on CUSTOMERS and never on the business itself, so a document
+   * carried the address of whoever it was sent to and no way to reply to the
+   * business that sent it.
+   *
+   * All three optional, and they stay optional (Rule #1). The strip prints
+   * whichever are present and hides itself when none are — never a stranded
+   * separator, never an empty band.
+   */
+  readonly phone?: string
+  readonly email?: string
+  readonly website?: string
   readonly currency: string
   readonly numberingPrefixes: Partial<Record<DocumentType, string>>
   readonly bankFields: Record<string, string>

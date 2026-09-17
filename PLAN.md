@@ -331,8 +331,11 @@ gate:hosted" silently did nothing. One script now, with
 `--env-file-if-exists=.env`: exported shell variables and a gitignored `.env`
 both work, and `gate:hosted:local` is gone.
 
-**Twenty-one migrations** are written; the twenty-first — `0021_recurrences`
-— ships with the client half and is the one still to push.
+**Twenty-two migrations** are written. `0021_recurrences` is applied on the
+remote (`migration list` shows `local 0021 -> remote 0021`) and its RLS suite
+is green in CI. `0022_company_contact` adds the business's own phone, email
+and website — the footer strip every document ends with (§I) — and is the one
+still to push.
 
 **Ten separate items sat behind that one act** — S1–S10 under "The server
 remainder" below. S1 is now done and the other nine are unblocked, so the

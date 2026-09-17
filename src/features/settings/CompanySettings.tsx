@@ -41,6 +41,10 @@ export type LogoSize = (typeof LOGO_SIZES)[number]
 export interface CompanySettingsProps {
   readonly businessName: string
   readonly businessAddress: string
+  /** The footer strip's three (§I). Each optional — Rule #1. */
+  readonly businessPhone: string
+  readonly businessEmail: string
+  readonly businessWebsite: string
   readonly nameStyle: NameStyle
   readonly logoSize: LogoSize
   readonly prefixes: Partial<Record<DocumentType, string>>
@@ -48,6 +52,9 @@ export interface CompanySettingsProps {
   readonly logoUrl?: string
   readonly onBusinessName: (value: string) => void
   readonly onBusinessAddress: (value: string) => void
+  readonly onBusinessPhone: (value: string) => void
+  readonly onBusinessEmail: (value: string) => void
+  readonly onBusinessWebsite: (value: string) => void
   readonly onNameStyle: (style: NameStyle) => void
   readonly onLogoSize: (size: LogoSize) => void
   readonly onPrefix: (type: DocumentType, value: string) => void
@@ -61,12 +68,18 @@ const HOLDER_SIDE: Record<LogoSize, number> = { S: 60, M: 76, L: 92 }
 export function CompanySettings({
   businessName,
   businessAddress,
+  businessPhone,
+  businessEmail,
+  businessWebsite,
   nameStyle,
   logoSize,
   prefixes,
   logoUrl,
   onBusinessName,
   onBusinessAddress,
+  onBusinessPhone,
+  onBusinessEmail,
+  onBusinessWebsite,
   onNameStyle,
   onLogoSize,
   onPrefix,
@@ -197,6 +210,56 @@ export function CompanySettings({
             value={businessAddress}
             onChange={(event) => onBusinessAddress(event.target.value)}
             aria-label={s.businessAddress}
+            className="sunken min-h-tap w-full rounded-lg px-3 text-sm"
+          />
+        </label>
+
+        {/*
+          HOW A CUSTOMER REACHES THE BUSINESS (§I).
+
+          These three print as the footer strip on every document — phone ·
+          email · website, centred under a hairline. Every document the app
+          produced ended in white space instead, which on a quotation means
+          the one person who wants to reply has no way to.
+
+          Each is optional and stays optional (Rule #1). The strip prints
+          whichever are filled and does not appear at all when none are, so a
+          business with only a phone number gets a phone number rather than
+          two stranded separators.
+        */}
+        <label className="block">
+          <span className="mb-1 block text-xs font-medium opacity-70">{s.businessPhone}</span>
+          <input
+            type="tel"
+            inputMode="tel"
+            autoComplete="tel"
+            value={businessPhone}
+            onChange={(event) => onBusinessPhone(event.target.value)}
+            aria-label={s.businessPhone}
+            className="sunken min-h-tap w-full rounded-lg px-3 text-sm"
+          />
+        </label>
+        <label className="block">
+          <span className="mb-1 block text-xs font-medium opacity-70">{s.businessEmail}</span>
+          <input
+            type="email"
+            inputMode="email"
+            autoComplete="email"
+            value={businessEmail}
+            onChange={(event) => onBusinessEmail(event.target.value)}
+            aria-label={s.businessEmail}
+            className="sunken min-h-tap w-full rounded-lg px-3 text-sm"
+          />
+        </label>
+        <label className="block">
+          <span className="mb-1 block text-xs font-medium opacity-70">{s.businessWebsite}</span>
+          <input
+            type="url"
+            inputMode="url"
+            autoComplete="url"
+            value={businessWebsite}
+            onChange={(event) => onBusinessWebsite(event.target.value)}
+            aria-label={s.businessWebsite}
             className="sunken min-h-tap w-full rounded-lg px-3 text-sm"
           />
         </label>

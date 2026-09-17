@@ -376,6 +376,10 @@ export interface UiStrings {
     readonly company: string
     readonly businessName: string
     readonly businessAddress: string
+    /** The footer strip's three (§I). */
+    readonly businessPhone: string
+    readonly businessEmail: string
+    readonly businessWebsite: string
     /** The logo holder and the two ways to fill it (§F, §Q). */
     readonly noLogoYet: string
     readonly uploadLogo: string
@@ -1285,6 +1289,9 @@ const EN: UiStrings = {
     currencyChanged: 'Your currency changed, so these fields changed too.',
     company: 'Company & logo',
     businessName: 'Business name',
+    businessPhone: 'Phone',
+    businessEmail: 'Email',
+    businessWebsite: 'Website',
     businessAddress: 'Address',
     noLogoYet: 'No logo yet',
     uploadLogo: 'Upload',

@@ -349,6 +349,25 @@ export const MIGRATIONS: readonly string[] = [
   -- with "the same fields and validation as Settings".
   alter table companies add column address text;
   `,
+
+  `
+  -- How a customer reaches the business (§F, §I).
+  --
+  -- Every document ends in a footer strip — phone, email, website, centred
+  -- under a hairline — and ours ended in white space. phone and email
+  -- existed on CUSTOMERS and never on the business, so a document carried
+  -- the address of whoever it was sent to and no way to reply to the sender.
+  --
+  -- Three separate statements: SQLite adds one column per ALTER, and a
+  -- migration that half-applies is worse than one that does not run.
+  alter table companies add column phone text;
+  `,
+  `
+  alter table companies add column email text;
+  `,
+  `
+  alter table companies add column website text;
+  `,
 ]
 
 /**

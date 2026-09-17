@@ -37,6 +37,16 @@ export interface CompanyBranding {
   readonly name: string
   /** The business address, where a template has somewhere to put one (§F). */
   readonly address?: string
+  /**
+   * How a customer reaches the business — the footer strip (§I).
+   *
+   * Each optional (Rule #1). The strip prints whichever are present and does
+   * not appear at all when none are, so a business with only a phone number
+   * gets a phone number rather than two stranded separators.
+   */
+  readonly phone?: string
+  readonly email?: string
+  readonly website?: string
   readonly logoAssetId?: string
   /**
    * The bytes behind that id, resolved by `composeDocument` from
