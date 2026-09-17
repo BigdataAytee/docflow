@@ -151,7 +151,10 @@ describe('The payment box (§I, §J)', () => {
     // locale layer itself (Rule #4).
     expect(page.receiptEvidence).toMatchObject({
       amount: money('NGN', 50_000_00),
-      paidAt: '2026-09-11',
+      // FORMATTED, like every other date on the page. The date that makes a
+      // receipt a receipt was printing as the stored value while the issue
+      // and due dates went through the formatter.
+      paidAt: '11 Sep 2026',
       method: 'Bank transfer',
     })
     expect(page.receiptEvidence?.heading).toBe('Payment received')

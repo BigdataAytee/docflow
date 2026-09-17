@@ -154,7 +154,10 @@ describe('A receipt carries its evidence, and nothing else does (§I, §K)', () 
       const block = within(heading.parentElement!)
 
       expect(block.getByText('₦50000.00'), `${template.name} lost the amount`).toBeInTheDocument()
-      expect(block.getByText('2026-09-11'), `${template.name} lost the date paid`).toBeInTheDocument()
+      expect(
+        block.getByText('11 Sep 2026'),
+        `${template.name} lost the date paid`,
+      ).toBeInTheDocument()
       expect(block.getByText('Bank transfer'), `${template.name} lost the method`).toBeInTheDocument()
 
       view.unmount()

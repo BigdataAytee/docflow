@@ -47,6 +47,8 @@ const SHARED = {
   paymentReceived: 'Payment received',
   datePaid: 'Date paid',
   paidBy: 'Paid by',
+  /** §E: a receipt names the invoice it is evidence against. */
+  against: 'For invoice',
   otherPaymentMethods: 'Other payment methods',
 } as const
 

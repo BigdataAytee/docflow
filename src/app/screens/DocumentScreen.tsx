@@ -169,6 +169,23 @@ export function DocumentScreen({ today = todayIso() }: { today?: string }) {
   const labels = displayLabels(profile, record.type, record.frozenLabels)
   const design = designOf(record, company)
   const template = templateById(design.templateId)
+  /* The ledger row this receipt stands for, and the invoice behind it. */
+  const receiptPayment = (() => {
+    if (record.type !== 'receipt' || record.paymentId === undefined) return undefined
+    const paid = payments.find((payment) => payment.id === record.paymentId)
+    if (paid === undefined) return undefined
+    return {
+      amount: paid.amount,
+      at: paid.paidAt,
+      ...(paid.method === undefined ? {} : { method: paid.method }),
+    }
+  })()
+
+  const againstReference =
+    record.type === 'receipt' && record.linkedInvoiceId !== undefined
+      ? documents.find((row) => row.id === record.linkedInvoiceId)?.issuedReference ?? undefined
+      : undefined
+
   const composable = composableOf({
     draft: draftOf(record),
     design,
@@ -183,6 +200,20 @@ export function DocumentScreen({ today = todayIso() }: { today?: string }) {
     // a test can pin the day. Only ever reached by a draft with no issue date
     // of its own; an issued document froze its date at issue (§M).
     today,
+    /*
+     * THE PAYMENT A RECEIPT IS EVIDENCE OF (§E line 190, §I).
+     *
+     * Resolved here because this is where the ledger is. Nothing supplied it
+     * before, so `buildReceiptEvidence` returned null on every receipt and the
+     * evidence block never drew — a receipt printed the goods with no amount
+     * paid, no date paid and no method on it.
+     *
+     * Rule #3 holds: this READS the payment, it never derives one. A receipt
+     * with no payment behind it prints no evidence rather than an invented
+     * figure, which is the same answer §K gives when it refuses to issue one.
+     */
+    ...(receiptPayment === undefined ? {} : { payment: receiptPayment }),
+    ...(againstReference === undefined ? {} : { againstReference }),
   })
   const composeOptions = composeOptionsOf({ company, design, strings, assets })
   const total = totalOf(record)

@@ -604,3 +604,78 @@ describe('No money reaches a delivery document on any step (§V)', () => {
     ).toThrow(MoneyError)
   })
 })
+
+/**
+ * A LINE THAT WAS TYPED IS A LINE THE OWNER MEANT (§G, Rule #1).
+ *
+ * `+` was the only way a line became real, so somebody who filled the goods
+ * in and went straight to Next lost them — the commonest way to lose work in
+ * the builder, and the kind of loss Rule #1 is about: the app asking for a
+ * gesture that carries no information.
+ */
+describe('Goods register without pressing Add', () => {
+  it('commits the typed line when focus leaves the row', async () => {
+    const user = userEvent.setup()
+    const onChange = vi.fn()
+    wrap(<ItemsStep draft={draftFor('waybill')} onChange={onChange} />)
+
+    await user.type(screen.getByLabelText('Description'), 'Roofing sheets')
+    await user.clear(screen.getByLabelText('Qty'))
+    await user.type(screen.getByLabelText('Qty'), '12')
+
+    // Away, without ever touching `+`.
+    await user.tab()
+    await user.tab()
+    await user.tab()
+
+    const patch = onChange.mock.calls.at(-1)?.[0] as
+      | { lineItems: { description: string; quantityMilli: number }[] }
+      | undefined
+    expect(patch?.lineItems.at(-1)?.description).toBe('Roofing sheets')
+    expect(patch?.lineItems.at(-1)?.quantityMilli).toBe(quantity(12))
+  })
+
+  /**
+   * MOVING BETWEEN THE BOXES IS STILL BEING IN THE ROW. Committing on the way
+   * from Description to Qty would file half a line and clear the boxes under
+   * the owner's hands — which is worse than the bug it fixes.
+   */
+  it('does not commit while moving between the fields', async () => {
+    const user = userEvent.setup()
+    const onChange = vi.fn()
+    wrap(<ItemsStep draft={draftFor('waybill')} onChange={onChange} />)
+
+    await user.type(screen.getByLabelText('Description'), 'Roofing sheets')
+    await user.click(screen.getByLabelText('Qty'))
+
+    expect(onChange).not.toHaveBeenCalled()
+    expect(screen.getByLabelText('Description')).toHaveValue('Roofing sheets')
+  })
+
+  /** Nothing typed, nothing filed — an empty row leaving focus is not a line. */
+  it('files nothing when the row is empty', async () => {
+    const user = userEvent.setup()
+    const onChange = vi.fn()
+    wrap(<ItemsStep draft={draftFor('waybill')} onChange={onChange} />)
+
+    await user.click(screen.getByLabelText('Description'))
+    await user.tab()
+    await user.tab()
+    await user.tab()
+
+    expect(onChange).not.toHaveBeenCalled()
+  })
+
+  /** `+` still works, and still returns the cursor for the next line. */
+  it('keeps Add as the shortcut for the next line', async () => {
+    const user = userEvent.setup()
+    const onChange = vi.fn()
+    wrap(<ItemsStep draft={draftFor('waybill')} onChange={onChange} />)
+
+    await user.type(screen.getByLabelText('Description'), 'Cement')
+    await user.click(screen.getByRole('button', { name: 'Add' }))
+
+    expect(onChange).toHaveBeenCalled()
+    expect(screen.getByLabelText('Description')).toHaveValue('')
+  })
+})

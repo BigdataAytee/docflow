@@ -125,15 +125,35 @@ function Cell({ row, column, formatAmount, currency }: {
   const style: CSSProperties = { textAlign: column.align }
   switch (column.key) {
     case 'description':
-      return <td style={style} className="py-[6px] pe-[8px]">{row.description}</td>
+      return (
+        <td style={style} className="px-[8px] py-[6px]">
+          {row.description}
+        </td>
+      )
     case 'quantity':
-      return <td style={style} className="py-[6px] tabular-nums">{row.quantity}</td>
+      /*
+         PADDED LIKE THE HEADING ABOVE IT.
+
+         The heading band carries `px-[8px]` and the cells carried none, so a
+         right-aligned quantity sat flush against a right-aligned amount and a
+         full invoice printed "8₦304,000.00" — two numbers touching, which on
+         a document about money is the one place they must not.
+      */
+      return (
+        <td style={style} className="px-[8px] py-[6px] tabular-nums">
+          {row.quantity}
+        </td>
+      )
     case 'unit':
-      return <td style={style} className="py-[6px]">{row.unit ?? ''}</td>
+      return (
+        <td style={style} className="px-[8px] py-[6px]">
+          {row.unit ?? ''}
+        </td>
+      )
     case 'amount':
       // Absent on a delivery document — composeDocument never emits the column.
       return (
-        <td style={style} className="py-[6px] tabular-nums">
+        <td style={style} className="px-[8px] py-[6px] tabular-nums">
           {row.amount === undefined ? '' : formatAmount(row.amount.minor, currency)}
         </td>
       )
@@ -406,6 +426,26 @@ export function DocumentPage({
                           {model.receiptEvidence.methodLabel}
                         </dt>
                         <dd className="font-medium">{model.receiptEvidence.method}</dd>
+                      </div>
+                    )}
+                    {/*
+                      §E line 190's "linked invoice", which was on the record
+                      and never reached the page. A receipt that says money
+                      arrived without saying what it was for leaves the one
+                      question the person filing it will have.
+
+                      Omitted rather than blank on a standalone receipt: §G
+                      allows a payment that stands alone, and a row reading
+                      "For invoice —" claims a link that does not exist.
+                    */}
+                    {model.receiptEvidence.against !== undefined && (
+                      <div className="flex gap-[8px]">
+                        <dt className="w-[96px] shrink-0 opacity-60">
+                          {model.receiptEvidence.againstLabel}
+                        </dt>
+                        <dd className="font-medium tabular-nums">
+                          {model.receiptEvidence.against}
+                        </dd>
                       </div>
                     )}
                   </dl>

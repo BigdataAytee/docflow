@@ -12,6 +12,7 @@
  */
 
 import { type MemoryState, emptyState } from '../data/repositories'
+import { showcaseState } from './showcase'
 import { regionProfile } from '../features/settings/region'
 
 export const DEV_COMPANY_ID = 'co_dev'
@@ -22,8 +23,22 @@ const DEFAULT_REGION = 'NG'
 export function devState(companyId = DEV_COMPANY_ID, region = DEFAULT_REGION): MemoryState {
   const profile = regionProfile(region)
 
+  /*
+   * A full set to look at, when the demo build asks for one.
+   *
+   * `VITE_SHOWCASE=1` alongside the demo mode — never in an account build,
+   * because `createBackend` only reaches this branch when no project is
+   * configured. §R: a demo is never passed off as an account, and twenty
+   * invented invoices in somebody's ledger would be exactly that.
+   */
+  const showcase =
+    (import.meta.env as unknown as Record<string, string | undefined>).VITE_SHOWCASE === '1'
+      ? showcaseState(companyId, region)
+      : {}
+
   return {
     ...emptyState(),
+    ...showcase,
     companies: [
       {
         id: companyId,
@@ -37,6 +52,16 @@ export function devState(companyId = DEV_COMPANY_ID, region = DEFAULT_REGION): M
         enabledPaymentMethods: [],
         nameStyle: 'classic',
         logoSize: 'M',
+        ...(showcase.documents === undefined
+          ? {}
+          : {
+              name: 'Dynamic Renaissance BIZ ENTs. LTD',
+              address: 'Lagos Abeokuta Motor Road, Vespa Bus Stop, Ifo, 572, Ogun State',
+              phone: '+2348106332490',
+              email: 'admin@dynamicrenaissance.org',
+              website: 'www.dynamicrenaissance.org',
+              taxRatePpm: 75_000,
+            }),
       },
     ],
   }

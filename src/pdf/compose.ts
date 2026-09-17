@@ -102,6 +102,18 @@ export interface ComposableDocument {
   readonly paidAmount?: Money
   readonly paidAt?: string
   readonly paidMethod?: string
+  /**
+   * The reference of the invoice this receipt is evidence against.
+   *
+   * §E line 190: "receipts show date paid, LINKED INVOICE, method +
+   * reference". The link was on the record and never reached the page, so a
+   * printed receipt said money arrived and not what it was for — which is the
+   * one question the person filing it will have.
+   *
+   * Absent on a standalone receipt, which is a real case (§G: a payment that
+   * stands alone, never inventing a duplicate invoice).
+   */
+  readonly againstReference?: string
   /** Delivery documents. */
   readonly driverName?: string
   readonly vehicleNumber?: string
@@ -152,6 +164,9 @@ export interface ReceiptEvidence {
   readonly heading: string
   readonly amount: Money
   readonly paidAt: string
+  /** "Against INV-0042", when this receipt has an invoice behind it. */
+  readonly against?: string
+  readonly againstLabel: string
   readonly datePaidLabel: string
   /** Absent when no method was recorded — never an empty row. */
   readonly method?: string
@@ -386,7 +401,7 @@ export function composeDocument(
     paymentBox: buildPaymentBox(document, options, terms),
     // §I: deliveries replace the payment box with the localised RECEIVED BY.
     receivedByRule: showsMoney ? null : terms.receivedBy,
-    receiptEvidence: buildReceiptEvidence(document, terms),
+    receiptEvidence: buildReceiptEvidence(document, terms, options),
     signature: {
       ...(document.signatureAssetId === undefined ? {} : { assetId: document.signatureAssetId }),
       ...(document.signatureAssetId === undefined ||
@@ -452,14 +467,25 @@ function buildPaymentBox(
 function buildReceiptEvidence(
   document: ComposableDocument,
   terms: ReturnType<typeof sharedTerms>,
+  options: ComposeOptions,
 ): ReceiptEvidence | null {
   if (document.type !== 'receipt') return null
   if (document.paidAmount === undefined || document.paidAt === undefined) return null
   return {
     heading: terms.paymentReceived,
     amount: document.paidAmount,
-    paidAt: document.paidAt,
+    /*
+     * FORMATTED, like every other date on the page. This one printed the
+     * stored value: the issue and due dates go through `formatDocumentDate`
+     * at the top of this function and the date PAID — the date that makes a
+     * receipt a receipt — was left as it came out of the database.
+     */
+    paidAt: formatDocumentDate(document.paidAt, options.dateFormat),
     datePaidLabel: terms.datePaid,
+    againstLabel: terms.against,
+    ...(document.againstReference === undefined || document.againstReference === ''
+      ? {}
+      : { against: document.againstReference }),
     // Omitted rather than blank: a row reading "Paid by —" says less than no
     // row at all, and claims a field was recorded when it was not.
     ...(document.paidMethod === undefined || document.paidMethod === ''

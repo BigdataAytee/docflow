@@ -10,6 +10,8 @@
 
 import { describe, expect, it } from 'vitest'
 
+import { money } from '../../domain/money/money'
+
 import type { Company, Customer, DocumentRecord } from '../../data/repositories'
 import { quantity } from '../../domain/documents/types'
 import { freezeLabels } from '../../domain/locale/profile'
@@ -418,5 +420,96 @@ describe('A document keeps the rate it was computed at', () => {
     expect(
       composableAt({ type: 'invoice', whtRatePpm: 20_000 }, { whtRatePpm: 50_000 }).whtRate,
     ).toBe(20_000)
+  })
+})
+
+/**
+ * A RECEIPT CARRIES ITS PAYMENT (§E line 190, §I).
+ *
+ * `buildReceiptEvidence` needs `paidAmount`, `paidAt` and `paidMethod`, and
+ * NOTHING EVER SUPPLIED THEM. So it returned null on every receipt ever
+ * printed and the evidence block in `DocumentPage` — built, tested, and
+ * asserted across all sixteen designs — never once drew. A receipt said
+ * "RECEIPT" at the top and then described the goods: no amount paid, no date
+ * paid, no method, no invoice. The three facts that make it a receipt rather
+ * than an invoice with a different title were all missing.
+ *
+ * The page tests could not catch it: they hand `DocumentPage` a model with
+ * the fields already filled, which proves the block renders and says nothing
+ * about whether anything fills it. That is the "declared and never reachably
+ * FILLED" shape, and this is the seam it was hiding in.
+ */
+describe('A receipt reaches the page with its payment on it', () => {
+  const receiptRow = () => ({
+    ...record(),
+    type: 'receipt' as const,
+    paymentId: 'pay_1',
+    linkedInvoiceId: 'doc_inv',
+  })
+
+  const composeReceipt = (over: Partial<Parameters<typeof composableOf>[0]> = {}) => {
+    const row = receiptRow()
+    return composableOf({
+      draft: draftOf(row),
+      design: designOf(row, company),
+      company,
+      customer,
+      profile,
+      reference: 'REC-0003',
+      status: 'issued',
+      frozenLabels: row.frozenLabels,
+      replaces: null,
+      today: '2026-09-15',
+      ...over,
+    })
+  }
+
+  it('carries the amount, the date and the method through to the document', () => {
+    const composable = composeReceipt({
+      payment: { amount: money('NGN', 50_000_00), at: '2026-09-11', method: 'Bank transfer' },
+    })
+
+    expect(composable.paidAmount).toEqual(money('NGN', 50_000_00))
+    expect(composable.paidAt).toBe('2026-09-11')
+    expect(composable.paidMethod).toBe('Bank transfer')
+  })
+
+  /** §E's "linked invoice": what the money was for. */
+  it('names the invoice it is evidence against', () => {
+    const composable = composeReceipt({
+      payment: { amount: money('NGN', 50_000_00), at: '2026-09-11' },
+      againstReference: 'INV-0042',
+    })
+    expect(composable.againstReference).toBe('INV-0042')
+  })
+
+  /**
+   * Rule #3: this READS a payment, it never derives one. A receipt with no
+   * payment behind it prints no evidence rather than an invented figure —
+   * the same answer §K gives when it refuses to issue one.
+   */
+  it('invents nothing when there is no payment behind it', () => {
+    const composable = composeReceipt()
+    expect(composable.paidAmount).toBeUndefined()
+    expect(composable.paidAt).toBeUndefined()
+  })
+
+  /** Only receipts. An invoice does not grow a "paid" block (§V). */
+  it('puts no payment evidence on a document that is not a receipt', () => {
+    const row = record()
+    const composable = composableOf({
+      draft: draftOf(row),
+      design: designOf(row, company),
+      company,
+      customer,
+      profile,
+      reference: 'INV-0001',
+      status: 'issued',
+      frozenLabels: row.frozenLabels,
+      replaces: null,
+      today: '2026-09-15',
+      payment: { amount: money('NGN', 50_000_00), at: '2026-09-11' },
+    })
+    expect(composable.paidAmount).toBeUndefined()
   })
 })

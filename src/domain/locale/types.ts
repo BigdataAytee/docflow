@@ -79,6 +79,8 @@ export interface SharedTerminology {
   readonly paymentReceived: string
   readonly datePaid: string
   readonly paidBy: string
+  /** §E's "linked invoice": what this receipt is evidence against. */
+  readonly against: string
   /** §I: online methods print under a dashed divider carrying this label. */
   readonly otherPaymentMethods: string
 }

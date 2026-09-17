@@ -16,6 +16,7 @@
 
 import type { AssetRecord, Company, Customer, DocumentRecord } from '../../data/repositories'
 import type { DocumentType, FrozenLabels } from '../../domain/documents/types'
+import type { Money } from '../../domain/money/money'
 import type { IsoDay } from '../../domain/dates/calendar'
 import { type LocaleProfile, numberingPrefix } from '../../domain/locale/profile'
 import { type UiStrings, format } from '../../domain/locale/data/strings'
@@ -154,6 +155,30 @@ export interface ComposableInput {
    * the last hours of every evening.
    */
   readonly today: IsoDay
+  /**
+   * The reference of the invoice a receipt is evidence against (§E line 190).
+   *
+   * The id is on the record; the page needs the REFERENCE, which only a
+   * caller holding the documents can resolve.
+   */
+  readonly againstReference?: string | undefined
+  /**
+   * The payment a receipt is evidence OF (§E line 190, §I).
+   *
+   * Nothing supplied this, so `buildReceiptEvidence` returned null on every
+   * receipt ever printed and the evidence block — built, tested, and sitting
+   * in `DocumentPage` — never once drew. A receipt said "RECEIPT" at the top
+   * and then described the goods, with no amount paid, no date paid and no
+   * method: the three facts that make it a receipt rather than an invoice
+   * with a different title.
+   *
+   * This is the "declared and never reachably FILLED" shape CLAUDE.md warns
+   * the sweep cannot see — the mapper assigns it, so a text scan reads a
+   * write, and only opening a receipt shows the block is empty.
+   */
+  readonly payment?:
+    | { readonly amount: Money; readonly at: string; readonly method?: string | undefined }
+    | undefined
 }
 
 export function composableOf(input: ComposableInput): ComposableDocument {
@@ -175,6 +200,24 @@ export function composableOf(input: ComposableInput): ComposableDocument {
       ...(customer?.address === undefined ? {} : { address: customer.address }),
       ...(customer?.phone === undefined ? {} : { phone: customer.phone }),
     },
+    /*
+     * THE THREE FACTS THAT MAKE A RECEIPT A RECEIPT (§E line 190, §I).
+     *
+     * Amount, date paid and method — plus the invoice it is against. None of
+     * them were ever supplied, so the evidence block in `DocumentPage` has
+     * drawn nothing since it was written and every printed receipt described
+     * the goods with no payment on it at all.
+     */
+    ...(draft.type === 'receipt' && input.payment !== undefined
+      ? {
+          paidAmount: input.payment.amount,
+          paidAt: input.payment.at,
+          ...(input.payment.method === undefined ? {} : { paidMethod: input.payment.method }),
+        }
+      : {}),
+    ...(draft.type === 'receipt' && input.againstReference !== undefined
+      ? { againstReference: input.againstReference }
+      : {}),
     frozenLabels: input.frozenLabels,
     ...(design.discountPercent === 0
       ? {}

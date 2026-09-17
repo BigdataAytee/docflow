@@ -132,6 +132,30 @@ export function ItemsStep({ draft, onChange, onRemember, onOpenCatalogue }: Item
           )
         }
       >
+        {/*
+          WHAT IS TYPED COUNTS, WITHOUT PRESSING ADD.
+
+          A line that has been filled in is a line the owner meant. Requiring
+          `+` before it existed meant somebody who typed the goods and went
+          straight to Next lost them — the commonest way to lose work in the
+          builder, and exactly the kind of loss Rule #1 is about: the app
+          asking for a gesture that carries no information.
+
+          The listener is on the WHOLE entry block, description included, and
+          `relatedTarget` is checked against it — moving from Description to
+          Qty is still being in the row, and committing then would file half a
+          line and clear the boxes under the owner's hands.
+
+          `+` stays and still does something: it commits and puts the cursor
+          back in Description, which is what somebody adding a tenth line
+          wants. It is a shortcut now rather than a toll.
+        */}
+        <div
+          onBlur={(event) => {
+            if (event.currentTarget.contains(event.relatedTarget)) return
+            if (canAdd) add()
+          }}
+        >
         <div className="relative">
           <input
             ref={describe}
@@ -179,6 +203,24 @@ export function ItemsStep({ draft, onChange, onRemember, onOpenCatalogue }: Item
           )}
         </div>
 
+        {/*
+          WHAT IS TYPED COUNTS, WITHOUT PRESSING ADD.
+
+          A line that has been filled in is a line the owner meant. Requiring
+          `+` before it exists meant somebody who typed the goods and went
+          straight to Next lost them — the commonest way to lose work in the
+          builder, and the kind of loss Rule #1 is about: the app asking for a
+          gesture that carries no information.
+
+          So focus LEAVING the row commits it. `relatedTarget` is checked
+          against the row itself, because moving from Description to Qty is
+          still being in the row: committing then would file half a line and
+          clear the boxes under the owner's hands.
+
+          `+` stays, and still does something — it commits and puts the cursor
+          back in Description, which is what somebody adding a tenth line
+          wants. It is now a shortcut rather than a toll.
+        */}
         <div className="flex items-end gap-1.5">
           {/*
             BOTH boxes are labelled, visibly.
@@ -240,6 +282,7 @@ export function ItemsStep({ draft, onChange, onRemember, onOpenCatalogue }: Item
           >
             <Icon name="plus" size={1.1} />
           </button>
+        </div>
         </div>
       </BuilderCard>
 

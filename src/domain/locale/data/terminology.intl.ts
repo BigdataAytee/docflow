@@ -75,6 +75,7 @@ export const FR: TerminologyTable = {
     paymentReceived: 'Paiement reçu',
     datePaid: 'Date de paiement',
     paidBy: 'Payé par',
+    against: 'Pour la facture',
     otherPaymentMethods: 'Autres moyens de paiement',
   },
   synonyms: {
@@ -146,6 +147,7 @@ export const ES: TerminologyTable = {
     paymentReceived: 'Pago recibido',
     datePaid: 'Fecha de pago',
     paidBy: 'Pagado por',
+    against: 'Para la factura',
     otherPaymentMethods: 'Otros métodos de pago',
   },
   synonyms: {
@@ -215,6 +217,7 @@ export const AR: TerminologyTable = {
     paymentReceived: 'تم استلام الدفعة',
     datePaid: 'تاريخ الدفع',
     paidBy: 'طريقة الدفع',
+    against: 'عن الفاتورة',
     otherPaymentMethods: 'طرق دفع أخرى',
   },
   synonyms: {
