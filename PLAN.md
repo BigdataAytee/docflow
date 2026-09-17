@@ -50,6 +50,43 @@ control that cannot do what it says (§N):
 | **"Your name" field** | §E's `users` row has `display_name`; nothing in this build reads that row. An input with nowhere to save is the species above. | needs a users repository |
 | **FR / ES / AR** | §S: no non-working language toggle ever ships. The picker lists what has a complete catalogue, derived rather than hand-kept. | needs catalogues |
 
+### Supabase dashboard settings — set these by hand (2026-09-17)
+
+The email confirmation link opened `localhost:3000`. The app now always sends
+an explicit `emailRedirectTo`, so it no longer depends on the Site URL — but
+**GoTrue silently substitutes the Site URL for any redirect that is not on the
+allow-list**, which brings the dead link straight back. Both of these must be
+set, in **Authentication → URL Configuration**:
+
+**Site URL** — the fallback for anything that does not pass a redirect. Set it
+to the deployed web app's origin. It must NOT be a localhost port.
+
+```
+https://[[WEB_APP_ORIGIN]]
+```
+
+**Redirect URLs** (the allow-list) — add each of these on its own line:
+
+```
+com.docflow.app://auth-callback
+https://[[WEB_APP_ORIGIN]]
+https://[[WEB_APP_ORIGIN]]/**
+```
+
+`com.docflow.app://auth-callback` is the one that makes a confirmation open the
+APP. It is registered in `android/app/src/main/AndroidManifest.xml` and in
+`src/features/auth/redirect.ts`, and `redirect.test.ts` reads the manifest so
+the two cannot drift. Verified on the device: Android resolves that URL to
+`com.docflow.app/.MainActivity`.
+
+`[[WEB_APP_ORIGIN]]` is a placeholder because this repository has never been
+told the web app's domain — `contact.webdocflow.com` is the SMTP sender, which
+is a different thing. Substitute the real origin; do not guess it from the mail
+domain.
+
+Until the allow-list contains the scheme, confirmation links keep going to the
+Site URL, wherever that points.
+
 ### Phase 4 — the native shell, on a device (2026-09-17)
 
 The first debug APK on a Pixel 9 Pro XL showed what looked like a blank white
