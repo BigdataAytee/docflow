@@ -444,3 +444,63 @@ describe('Every design is a design (§H)', () => {
     }
   })
 })
+
+/**
+ * SIXTEEN DESIGNS, SIXTEEN HEADERS (§H).
+ *
+ * `sidebar`, `frame` and `wave` shared ONE case block, differing only by a
+ * ternary on the centring and the rule's thickness. Three of the sixteen drew
+ * the same arrangement and were told apart by their background chrome alone —
+ * which is a background, not a design.
+ *
+ * The existing checks could not see it: they assert each design renders the
+ * title, the reference and the party, and three identical headers do that
+ * perfectly. "Each one renders" was never the question §H asks.
+ */
+describe('No two designs draw the same header', () => {
+  /**
+   * The HEADER's markup, with the words stripped out — SHAPE, not content.
+   *
+   * The `<header>` element specifically, not the whole article. The first
+   * version of this compared the article and could never have worked:
+   * `PageChrome` paints a different column, spine, wave or frame behind each
+   * design, so two identical headers still produced different markup and the
+   * mutation — wave copied verbatim from sidebar — passed. The chrome is a
+   * background; this is about the arrangement in front of it.
+   */
+  const shapeOf = (id: string): string => {
+    const { view, article } = draw(id)
+    const header = article.querySelector('header')
+    expect(header, `${id} draws no header element`).not.toBeNull()
+    const html = ((header?.innerHTML ?? '').match(/<[^>]+>/g) ?? [])
+      .join('')
+      .replace(/\s+/g, ' ')
+    view.unmount()
+    return html
+  }
+
+  it('gives every one of the sixteen its own arrangement', () => {
+    const seen = new Map<string, string>()
+    const clashes: string[] = []
+
+    for (const template of TEMPLATES) {
+      const shape = shapeOf(template.id)
+      const first = seen.get(shape)
+      if (first !== undefined) clashes.push(`${template.id} draws the same header as ${first}`)
+      else seen.set(shape, template.id)
+    }
+
+    expect(clashes, clashes.join('; ')).toEqual([])
+    expect(seen.size, 'sixteen designs should produce sixteen shapes').toBe(TEMPLATES.length)
+  })
+
+  /**
+   * And the three that used to share one are still distinct from each other
+   * specifically — named, because a future tidy-up that folds them back
+   * together would otherwise only show up as a count.
+   */
+  it('keeps Sidebar, Aria and Wave apart', () => {
+    const shapes = ['sidebar', 'aria', 'wave'].map(shapeOf)
+    expect(new Set(shapes).size).toBe(3)
+  })
+})

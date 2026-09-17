@@ -87,6 +87,17 @@ export const HEADER_DRAWS_HEADLINE: ReadonlySet<string> = new Set([
   'hairline',
   'split',
   'centred',
+  'sidebar',
+  'badge',
+  'wave',
+  'condensed',
+  'spine',
+  'gradient',
+  'double-rule',
+  'flourish',
+  'diagonal',
+  'arch',
+  'frame',
 ])
 
 /**
@@ -467,6 +478,8 @@ export function DocumentHeader({ model, template, ink, logo, formatAmount }: Doc
               </span>
               <Ref model={model} />
             </div>
+            {/* Opposite the badge, so the circle has something to balance. */}
+            <Headline model={model} ink={ink} formatAmount={formatAmount} />
           </header>
           <Rule ink={ink} height={2} />
         </>
@@ -488,19 +501,32 @@ export function DocumentHeader({ model, template, ink, logo, formatAmount }: Doc
             <Title model={model} ink={ink} className="text-[20px]" />
           </header>
           <Rule ink={ink} opacity={0.75} height={2} />
-          <div className="mt-[8px] grid grid-cols-3 gap-[8px] text-[10px]">
+          {/*
+            The figure is the FOURTH CELL of the strip, not a block above it.
+            Compact's whole idea is that the facts sit in one band; lifting
+            the amount out of it would be every other design's header.
+          */}
+          <div className="mt-[8px] grid grid-cols-4 gap-[8px] text-[10px]">
             {[
               [model.partyLabel, model.party.name],
               ['', model.reference],
               ['', model.issueDate],
+              [model.headline?.label ?? '', model.headline === null ? '' : formatAmount(model.headline.amount.minor, model.headline.amount.currency)],
             ].map(([label, value], cell) => (
               <div
                 key={cell}
                 className="px-[8px] py-[4px]"
                 style={{ backgroundColor: `${template.ink}14` }}
+                /*
+                  The fourth cell IS this design's headline, so it carries the
+                  marker the completeness guard looks for. Without it Compact
+                  reads as a design with no amount at the top — which is the
+                  thing the guard exists to catch, and it caught this.
+                */
+                {...(cell === 3 && model.headline !== null ? { 'data-headline': true } : {})}
               >
                 {label !== '' && <p className="font-bold uppercase opacity-60">{label}</p>}
-                <p className="truncate font-medium">{value}</p>
+                <p className="truncate font-medium tabular-nums">{value}</p>
               </div>
             ))}
           </div>
@@ -520,6 +546,12 @@ export function DocumentHeader({ model, template, ink, logo, formatAmount }: Doc
             <Title model={model} ink={template.paper} className="mt-[4px]" />
             <Ref model={model} />
           </div>
+          {/*
+            ON the band, reversed out with everything else. Lifting the figure
+            below it would leave the band carrying only the name — and the
+            band IS this design.
+          */}
+          <Headline model={model} ink={template.paper} formatAmount={formatAmount} />
         </header>
       )
 
@@ -535,8 +567,16 @@ export function DocumentHeader({ model, template, ink, logo, formatAmount }: Doc
               <Ref model={model} />
             </div>
           </header>
+          {/*
+            BETWEEN the two rules. Ledger's whole idea is the pair of lines;
+            putting the figure in the space they enclose uses the design
+            rather than sitting above it and leaving the gap empty.
+          */}
           <Rule ink={ink} height={2} />
-          <div className="mt-[4px] w-full" style={{ backgroundColor: ink, height: '2px' }} />
+          <div className="flex justify-end py-[4px]">
+            <Headline model={model} ink={ink} formatAmount={formatAmount} />
+          </div>
+          <div className="w-full" style={{ backgroundColor: ink, height: '2px' }} />
         </>
       )
 
@@ -563,6 +603,14 @@ export function DocumentHeader({ model, template, ink, logo, formatAmount }: Doc
             className="mx-[8%] mt-[16px]"
             style={{ backgroundColor: ink, opacity: 0.6, height: '1px' }}
           />
+          {/*
+            UNDER the inset hairline, and inset with it — the rule stops short
+            of the edges on this design, so a figure running to the margin
+            would break the frame the flourish sets up.
+          */}
+          <div className="mx-[8%] mt-[8px] flex justify-end">
+            <Headline model={model} ink={ink} formatAmount={formatAmount} />
+          </div>
         </>
       )
 
@@ -576,11 +624,32 @@ export function DocumentHeader({ model, template, ink, logo, formatAmount }: Doc
             clipPath: 'polygon(0 0, 100% 0, 100% 72%, 0 100%)',
           }}
         >
-          {logo}
+          {/*
+            PRISM READS THE OTHER WAY ROUND TO AURORA.
+
+            Both reverse out of a coloured band, and both used to stack the
+            same three things in the same order down the same column — which
+            made them one design with two background shapes. The guard caught
+            it by comparing the header's markup with the words stripped out.
+
+            The band here is a DIAGONAL: it is deep on the left and shallow on
+            the right, so the weight belongs on the left. The title takes that
+            side, large, with the identity and the figure ranged right where
+            the band is thinnest — the type follows the cut instead of
+            ignoring it.
+          */}
           <div className="min-w-0 flex-1" style={{ color: template.paper }}>
-            <Name model={model} />
-            <Title model={model} ink={template.paper} className="mt-[4px]" />
-            <Ref model={model} />
+            <Title model={model} ink={template.paper} />
+            <Ref model={model} className="mt-[2px]" />
+          </div>
+          <div className="flex shrink-0 flex-col items-end gap-[6px]">
+            <div className="flex items-start gap-[10px]">
+              <div className="min-w-0 text-end">
+                <Name model={model} className="text-end" />
+              </div>
+              <div className="shrink-0">{logo}</div>
+            </div>
+            <Headline model={model} ink={template.paper} formatAmount={formatAmount} />
           </div>
         </header>
       )
@@ -606,6 +675,15 @@ export function DocumentHeader({ model, template, ink, logo, formatAmount }: Doc
             <Ref model={model} className="text-center" />
           </header>
           <div className="mx-[28%] mt-[16px]" style={{ backgroundColor: ink, opacity: 0.7, height: '2px' }} />
+          {/*
+            CENTRED, under the arch's short rule. This is the second design
+            where a centred figure works: the arch closes over the identity
+            and the rule gives the amount an axis to sit on. Everywhere else
+            a centred amount reads as a heading.
+          */}
+          <div className="mt-[8px] flex justify-center">
+            <Headline model={model} ink={ink} formatAmount={formatAmount} align="start" />
+          </div>
         </>
       )
 
@@ -639,6 +717,11 @@ export function DocumentHeader({ model, template, ink, logo, formatAmount }: Doc
                 </p>
               )}
             </div>
+            {/*
+              Opposite the boxed address, which is §F's own note for Sikky.
+              The box is the weight on the left; the figure answers it.
+            */}
+            <Headline model={model} ink={ink} formatAmount={formatAmount} />
           </header>
           <h2
             className="mt-[12px] break-words text-center text-[24px] font-black uppercase tracking-[0.12em]"
@@ -651,25 +734,92 @@ export function DocumentHeader({ model, template, ink, logo, formatAmount }: Doc
         </>
       )
 
+    /*
+     * SIDEBAR — the identity lives IN the column.
+     *
+     * `PageChrome` paints a coloured column down the left edge and
+     * `contentInset` holds the content clear of it. Everything here used to
+     * sit to the right of that column like every other design, which made the
+     * column a stripe rather than a structure. The logo and the business sit
+     * inside it now, stacked, and the document's own title takes the top of
+     * the page beside them — so the eye reads WHO down the edge and WHAT
+     * across the top.
+     */
     case 'sidebar':
+      return (
+        <>
+          <header className="flex items-start justify-between gap-[16px]">
+            <div className="min-w-0 flex-1">
+              <div className="flex items-start gap-[10px]">
+                <div className="shrink-0">{logo}</div>
+                <Name model={model} className="min-w-0 flex-1" />
+              </div>
+            </div>
+            <div className="shrink-0 text-end">
+              <Title model={model} ink={ink} />
+              <Ref model={model} className="mt-[2px]" />
+            </div>
+          </header>
+          <div className="mt-[10px] flex justify-end">
+            <Headline model={model} ink={ink} formatAmount={formatAmount} />
+          </div>
+          <Rule ink={ink} height={3} />
+        </>
+      )
+
+    /*
+     * ARIA (frame) — centred inside the border, and NOTHING crosses it.
+     *
+     * The chrome draws a rule around the whole page, so a full-width bar
+     * under the header would fight it. Instead the identity is centred and
+     * closed by a short hairline the width of the title — a mark that sits
+     * INSIDE the frame rather than competing with it — and the headline is
+     * centred with it, which is the one design where a centred figure reads
+     * correctly because the frame gives it an edge to be centred against.
+     */
     case 'frame':
+      return (
+        <>
+          <header className="flex flex-col items-center text-center">
+            {logo}
+            <Name model={model} className="mt-[8px] text-center" />
+            <Title model={model} ink={ink} className="mt-[6px] text-center" />
+            <Ref model={model} className="text-center" />
+            <div
+              className="mt-[6px] h-px w-[46%]"
+              style={{ backgroundColor: ink, opacity: 0.8 }}
+            />
+          </header>
+          <div className="mt-[8px] flex justify-center">
+            <Headline model={model} ink={ink} formatAmount={formatAmount} align="start" />
+          </div>
+        </>
+      )
+
+    /*
+     * WAVE — the header rides the crest.
+     *
+     * The chrome sweeps a curve across the top of the page, so this one puts
+     * the title and reference ABOVE the business rather than after it: the
+     * type follows the shape down, title at the high edge and the identity
+     * settling beneath it. Reversing that order is what makes the wave read
+     * as part of the layout instead of a decoration behind it.
+     */
     case 'wave':
       return (
         <>
-          <header className="flex items-start gap-[16px]">
-            {logo}
-            <div className="min-w-0 flex-1">
-              <Name model={model} className={style === 'frame' ? 'text-center' : ''} />
-              <Title
-                model={model}
-                ink={ink}
-                className={`mt-[4px] ${style === 'frame' ? 'text-center' : ''}`}
-              />
-              <Ref model={model} className={style === 'frame' ? 'text-center' : ''} />
+          <header className="flex items-start justify-between gap-[16px]">
+            <div className="shrink-0">{logo}</div>
+            <div className="min-w-0 text-end">
+              <Title model={model} ink={ink} />
+              <Ref model={model} className="mt-[2px]" />
             </div>
           </header>
-          {/* Aria's gold hairline under the name; the others keep a plain rule. */}
-          <Rule ink={ink} height={style === 'frame' ? 1 : 3} opacity={style === 'frame' ? 0.8 : 1} />
+          <div className="mt-[14px] flex items-end justify-between gap-[16px]">
+            <Name model={model} className="min-w-0 flex-1" />
+            <Headline model={model} ink={ink} formatAmount={formatAmount} />
+          </div>
+          <Rule ink={ink} height={3} />
         </>
       )
   }
