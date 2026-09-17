@@ -39,7 +39,7 @@
  * it fails with "no such column". That is exactly what happened when the four
  * contact and reference columns were added and this still read 6.
  */
-export const SCHEMA_VERSION = 10
+export const SCHEMA_VERSION = 12
 
 /**
  * Applied in order, inside one transaction, by `migrate`.
@@ -386,6 +386,21 @@ export const MIGRATIONS: readonly string[] = [
   -- unique (company_id, type, issued_reference) from 0002 is what refuses a
   -- duplicate, and it refuses it whether the number was generated or typed.
   alter table documents add column reference_override text;
+  `,
+
+  `
+  -- The rate this document was issued at (§D, §K, Rule #5).
+  --
+  -- The rates lived only on companies, so every render read the default of
+  -- the day: change VAT in Settings and an invoice issued last year re-prints
+  -- this year's percentage beside a total frozen at the old one.
+  --
+  -- Parts per million, like every rate in §K. Null means draft, or issued
+  -- before this column — both fall back to the company default.
+  alter table documents add column tax_rate_ppm integer;
+  `,
+  `
+  alter table documents add column wht_rate_ppm integer;
   `,
 ]
 

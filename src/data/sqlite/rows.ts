@@ -188,6 +188,8 @@ export const toDocument = (row: SqlRow): DocumentRecord => ({
   // these are never omitted — a missing key would read as "not yet loaded".
   issuedReference: text(row['issued_reference']) ?? null,
   ...optional('referenceOverride', text(row['reference_override'])),
+  ...optional('taxRatePpm', int(row['tax_rate_ppm'])),
+  ...optional('whtRatePpm', int(row['wht_rate_ppm'])),
   frozenLabels: parseJson<FrozenLabels | null>(row['frozen_labels'], null),
   ...optional('customerId', text(row['customer_id'])),
   ...optional('issueDate', text(row['issue_date'])),
@@ -269,6 +271,8 @@ export const documentColumns = (document: DocumentRecord): Record<string, SqlVal
   recurrence_key: document.recurrenceKey ?? null,
   issued_reference: document.issuedReference,
   reference_override: document.referenceOverride ?? null,
+  tax_rate_ppm: document.taxRatePpm ?? null,
+  wht_rate_ppm: document.whtRatePpm ?? null,
   frozen_labels: document.frozenLabels === null ? null : json(document.frozenLabels),
   total_minor: document.totalMinor,
 })

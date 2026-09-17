@@ -20,7 +20,7 @@ import { DesignStep } from '../../features/documents/DesignStep'
 import { ReviewStep } from '../../features/documents/ReviewStep'
 import type { ComposableDocument, ComposeOptions } from '../../pdf/compose'
 import type { TemplateId } from '../../pdf/templates'
-import { PPM } from '../../domain/money/money'
+import { PPM, percentToPpm } from '../../domain/money/money'
 
 /** §F's five brand colours, offered on the design step. */
 export const BRAND_COLOURS = ['#2b3fd6', '#534AB7', '#0F6E56', '#BA7517', '#1d2452'] as const
@@ -92,12 +92,27 @@ export function StepBody(props: StepBodyProps) {
         <TotalsStep
           draft={props.draft}
           discountPercent={props.discountPercent}
-          taxPercent={percentOf(props.company?.taxRatePpm)}
-          whtPercent={percentOf(props.company?.whtRatePpm)}
+          taxPercent={percentOf(props.draft.taxRatePpm ?? props.company?.taxRatePpm)}
+          whtPercent={percentOf(props.draft.whtRatePpm ?? props.company?.whtRatePpm)}
           taxLabel={props.taxLabel}
           onChange={props.onChange}
           onRates={(rates) => {
             if (rates.discountPercent !== undefined) props.onDiscount(rates.discountPercent)
+            /*
+             * ONTO THE DRAFT, never onto the company (§J).
+             *
+             * Settings is the only place the DEFAULT changes; this is a rate
+             * for this document. Writing back would mean an owner adjusting
+             * one invoice silently re-rated every future one — which is the
+             * exact worry that kept these fields read-only, and the reason
+             * the override lives on the document instead.
+             */
+            if (rates.taxPercent !== undefined) {
+              props.onChange({ taxRatePpm: percentToPpm(rates.taxPercent) })
+            }
+            if (rates.whtPercent !== undefined) {
+              props.onChange({ whtRatePpm: percentToPpm(rates.whtPercent) })
+            }
           }}
         />
       )

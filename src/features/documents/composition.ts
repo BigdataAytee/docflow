@@ -96,6 +96,21 @@ export function draftOf(record: DocumentRecord): DocumentDraft {
     ...(record.vehicleNumber === undefined ? {} : { vehicleNumber: record.vehicleNumber }),
     ...(record.dispatchDate === undefined ? {} : { dispatchDate: record.dispatchDate }),
     ...(record.expectedDate === undefined ? {} : { expectedDate: record.expectedDate }),
+    /*
+     * THE FROZEN RATES COME BACK (Rule #5, §K).
+     *
+     * Without these the record's rate was written at issue and never read
+     * again — `draftOf` is how a saved document becomes something the app can
+     * render, so a rate that does not survive this function does not survive
+     * reopening the document, and the page falls back to today's company
+     * default. The declared-field sweep caught exactly that: "read but never
+     * written".
+     */
+    ...(record.taxRatePpm === undefined ? {} : { taxRatePpm: record.taxRatePpm }),
+    ...(record.whtRatePpm === undefined ? {} : { whtRatePpm: record.whtRatePpm }),
+    ...(record.referenceOverride === undefined
+      ? {}
+      : { referenceOverride: record.referenceOverride }),
   }
 }
 
@@ -164,10 +179,21 @@ export function composableOf(input: ComposableInput): ComposableDocument {
     ...(design.discountPercent === 0
       ? {}
       : { discountRate: percentToPpm(design.discountPercent) }),
-    ...(company?.taxRatePpm === undefined ? {} : { taxRate: company.taxRatePpm }),
-    ...(company?.whtRatePpm === undefined || draft.type !== 'invoice'
+    /*
+     * THE DOCUMENT'S OWN RATE FIRST (Rule #5, §K).
+     *
+     * This read the company default unconditionally, so an issued invoice
+     * re-rendered with whatever Settings says TODAY — this year's percentage
+     * printed beside a total frozen at last year's. A document that carries a
+     * rate was computed at that rate and keeps it; only one with none falls
+     * back, which is every draft and everything issued before the column.
+     */
+    ...((draft.taxRatePpm ?? company?.taxRatePpm) === undefined
       ? {}
-      : { whtRate: company.whtRatePpm }),
+      : { taxRate: (draft.taxRatePpm ?? company?.taxRatePpm) as number }),
+    ...((draft.whtRatePpm ?? company?.whtRatePpm) === undefined || draft.type !== 'invoice'
+      ? {}
+      : { whtRate: (draft.whtRatePpm ?? company?.whtRatePpm) as number }),
     ...(draft.driverName === undefined ? {} : { driverName: draft.driverName }),
     ...(draft.vehicleNumber === undefined ? {} : { vehicleNumber: draft.vehicleNumber }),
     // So the preview shows the page as it will print, signature and all.

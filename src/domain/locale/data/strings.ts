@@ -879,6 +879,15 @@ export interface UiStrings {
     readonly atRate: string
     /** Where the tax rates come from, said once rather than guessed at (§J). */
     readonly ratesFromSettings: string
+    /**
+     * WHERE THE RATE CAME FROM, beside the figure it explains.
+     *
+     * An owner who cannot see whether 7.5% is their settings default or
+     * something typed on this invoice last week is editing blind, and the two
+     * have different consequences for the next document.
+     */
+    readonly fromSettings: string
+    readonly onThisOne: string
     readonly driver: string
     readonly vehicle: string
     readonly noMoneyOnDelivery: string
@@ -1772,6 +1781,8 @@ const EN: UiStrings = {
     payable: 'Payable',
     received: 'Received',
     atRate: '{label} {rate}%',
+    fromSettings: 'From Settings',
+    onThisOne: 'Set on this one',
     ratesFromSettings: 'Tax rates come from Settings → Tax, and are saved onto the document when you issue it.',
     driver: 'Driver',
     vehicle: 'Vehicle',

@@ -217,6 +217,19 @@ export interface DocumentRecord {
   /** Both null until issue, then frozen forever (§M). */
   /** §G's pencil, kept on the draft until issue consumes it. */
   readonly referenceOverride?: string
+  /**
+   * The rates this document is computed at, in parts per million (§K).
+   *
+   * SNAPSHOTTED AT ISSUE, alongside the reference and the labels (Rule #5).
+   * They were on the company alone, so an issued invoice re-printed with
+   * whatever Settings said today — this year's percentage beside a total
+   * frozen at last year's. A rate is the EXPLANATION of the figure, and an
+   * explanation that drifts from what it explains is worse than none.
+   *
+   * Absent on a draft, which reads the company default until issue fixes it.
+   */
+  readonly taxRatePpm?: number
+  readonly whtRatePpm?: number
   readonly issuedReference: string | null
   readonly frozenLabels: FrozenLabels | null
   readonly totalMinor: number
@@ -320,7 +333,14 @@ export interface DocumentRepository {
   /** Freezes reference and labels together, once (§M). */
   issue(
     id: string,
-    issued: { reference: string; frozenLabels: FrozenLabels; totalMinor: number },
+    issued: {
+      reference: string
+      frozenLabels: FrozenLabels
+      totalMinor: number
+      /** Frozen with the rest (Rule #5) — see `DocumentRecord`. */
+      taxRatePpm?: number
+      whtRatePpm?: number
+    },
     ctx: MutationContext,
   ): Promise<DocumentRecord>
   transition(id: string, to: string, ctx: MutationContext): Promise<DocumentRecord>

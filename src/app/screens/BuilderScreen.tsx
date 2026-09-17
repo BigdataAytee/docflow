@@ -432,6 +432,21 @@ export function BuilderScreen({ now = () => new Date().toISOString() }: { now?: 
     void commit(state).finally(() => navigate(documentPath(id)))
   }
 
+  /*
+   * THE RATES THIS DOCUMENT IS COMPUTED AT.
+   *
+   * The document's own override where it has one, the company default
+   * otherwise — one place deciding it, so the figure on the Totals step, the
+   * figure on the printed page and the figure frozen at issue are the same
+   * number by construction rather than by three call sites agreeing.
+   *
+   * Settings remains the only place the DEFAULT changes; this is a value for
+   * this document, and it never writes back to the company.
+   */
+  const effectiveTaxPpm = state.draft.taxRatePpm ?? company?.taxRatePpm
+  const effectiveWhtPpm =
+    state.draft.type === 'invoice' ? (state.draft.whtRatePpm ?? company?.whtRatePpm) : undefined
+
   const save = () => {
     // §G: "draft saving is always allowed", and final issue validates. The
     // amber band already lists what is missing, so pressing Save takes the
@@ -476,8 +491,8 @@ export function BuilderScreen({ now = () => new Date().toISOString() }: { now?: 
         ...(design.discountPercent === 0
           ? {}
           : { discountRate: percentToPpm(design.discountPercent) }),
-        ...(company?.taxRatePpm === undefined ? {} : { taxRate: company.taxRatePpm }),
-        ...(company?.whtRatePpm === undefined ? {} : { whtRate: company.whtRatePpm }),
+        ...(effectiveTaxPpm === undefined ? {} : { taxRate: effectiveTaxPpm }),
+        ...(effectiveWhtPpm === undefined ? {} : { whtRate: effectiveWhtPpm }),
       })
     } catch (cause) {
       // §M: a failed operation carries an actionable per-record error. The
@@ -497,6 +512,17 @@ export function BuilderScreen({ now = () => new Date().toISOString() }: { now?: 
           reference: issued.reference,
           frozenLabels: issued.frozenLabels,
           totalMinor: issued.totals?.payable.minor ?? 0,
+          /*
+           * THE RATE FREEZES WITH THEM (Rule #5).
+           *
+           * Reference, totals and labels freeze at issue, and the rate is the
+           * EXPLANATION of the total — so leaving it on the company alone
+           * meant an invoice issued last year re-printed this year's
+           * percentage beside a figure frozen at the old one. Whatever this
+           * document was actually computed at is what it keeps.
+           */
+          ...(effectiveTaxPpm === undefined ? {} : { taxRatePpm: effectiveTaxPpm }),
+          ...(effectiveWhtPpm === undefined ? {} : { whtRatePpm: effectiveWhtPpm }),
         }),
       )
       .then(() => navigate(documentPath(id)))

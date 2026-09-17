@@ -34,7 +34,12 @@ export interface TotalsStepProps {
   /** The locale's word for tax — VAT / GST / Sales tax / TVA (§J). */
   readonly taxLabel: string
   readonly onChange: (patch: Partial<DocumentDraft>) => void
-  readonly onRates: (rates: { discountPercent?: number }) => void
+  readonly onRates: (rates: {
+    discountPercent?: number
+    /** A rate for THIS document. Settings stays the only default (§J). */
+    taxPercent?: number
+    whtPercent?: number
+  }) => void
 }
 
 /** One line of the totals block: a label, and a figure hard against the edge. */
@@ -43,19 +48,32 @@ function Line({
   value,
   tone,
   control,
+  note,
 }: {
   label: string
   value: string
   /** Coral for money coming OFF the bill, muted for tax, ink for the rest. */
-  tone?: 'off' | 'muted'
+  tone?: 'off' | 'muted' | undefined
   control?: React.ReactNode
+  /**
+   * Where the rate came from, under the label it explains.
+   *
+   * Quiet on purpose — it is the answer to a question somebody only asks when
+   * a figure surprises them, and it should not compete with the figure.
+   */
+  note?: string | undefined
 }) {
   const colour =
     tone === 'off' ? 'text-status-bad' : tone === 'muted' ? 'opacity-55' : 'font-medium'
 
   return (
     <div className="flex items-center justify-between gap-2 py-[5px] text-[11.5px]">
-      <span className="min-w-0 opacity-70">{label}</span>
+      <span className="min-w-0">
+        <span className="block opacity-70">{label}</span>
+        {note !== undefined && (
+          <span className="block text-[9.5px] opacity-45">{note}</span>
+        )}
+      </span>
       <span className="flex shrink-0 items-center gap-2">
         {control}
         <span className={`tabular-nums ${colour}`}>{value}</span>
@@ -157,28 +175,58 @@ export function TotalsStep({
         />
 
         {/*
-          Tax and withholding are read from Settings rather than typed here.
-          §G says "where configured" and §J puts the rates in one place with a
-          worked example; a second editable copy in the builder would either
-          silently change the company default from inside a document, or
-          invent a per-document override that §E does not model. The RATE is
-          shown so the figure is never unexplained.
+          TAX AND WITHHOLDING, EDITABLE HERE — and every figure says where its
+          rate came from (§K, §J).
+
+          These were read-only, on the reasoning that a second editable copy
+          would either change the company default from inside a document or
+          invent a per-document override §E did not model. §E models it now,
+          and the first half of that worry is answered by not doing it:
+          editing here writes to THIS DOCUMENT only. Settings remains the one
+          place the default changes.
+
+          The provenance line is what makes it safe to touch. An owner who
+          cannot see whether 7.5% came from their settings or from something
+          they typed on this invoice last week is editing blind, and the two
+          have completely different consequences for the next document.
         */}
-        {totals.tax.minor !== 0 && (
-          <Line
-            label={format(strings.totals.atRate, { label: taxLabel, rate: taxPercent })}
-            value={formatMoney(totals.tax)}
-            tone="muted"
-          />
-        )}
-        {totals.wht.minor !== 0 && (
+        <Line
+          label={format(strings.totals.atRate, { label: taxLabel, rate: taxPercent })}
+          value={formatMoney(totals.tax)}
+          tone={totals.tax.minor === 0 ? 'off' : undefined}
+          note={draft.taxRatePpm === undefined ? strings.totals.fromSettings : strings.totals.onThisOne}
+          control={
+            <input
+              inputMode="decimal"
+              value={String(taxPercent)}
+              onChange={(event) => onRates({ taxPercent: Number(event.target.value) || 0 })}
+              aria-label={taxLabel}
+              className="sunken w-[52px] rounded-[9px] py-1.5 text-center text-[11.5px]"
+            />
+          }
+        />
+
+        {/* Invoices only (§I): withholding is deducted from what is billed. */}
+        {draft.type === 'invoice' && (
           <Line
             label={format(strings.totals.atRate, {
               label: strings.totals.withholding,
               rate: whtPercent,
             })}
-            value={`−${formatMoney(totals.wht)}`}
+            value={totals.wht.minor === 0 ? '—' : `−${formatMoney(totals.wht)}`}
             tone="off"
+            note={
+              draft.whtRatePpm === undefined ? strings.totals.fromSettings : strings.totals.onThisOne
+            }
+            control={
+              <input
+                inputMode="decimal"
+                value={String(whtPercent)}
+                onChange={(event) => onRates({ whtPercent: Number(event.target.value) || 0 })}
+                aria-label={strings.totals.withholding}
+                className="sunken w-[52px] rounded-[9px] py-1.5 text-center text-[11.5px]"
+              />
+            }
           />
         )}
 

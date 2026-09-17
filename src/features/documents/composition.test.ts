@@ -374,3 +374,49 @@ describe('What is switched on reaches the printed page (§I, §J)', () => {
     expect(options.assetUrls?.['as_1']).toBe('data:image/png;base64,x')
   })
 })
+
+/**
+ * THE RATE FREEZES WITH THE REST (Rule #5, §K).
+ *
+ * The rates lived only on `companies`, so every render read the default of
+ * the day: change VAT in Settings and an invoice issued last year re-prints
+ * this year's percentage beside a total frozen at the old one — a document
+ * that disagrees with itself.
+ */
+describe('A document keeps the rate it was computed at', () => {
+  const composableAt = (
+    draftOver: Partial<ReturnType<typeof draftOf>>,
+    companyOver: Partial<typeof company>,
+  ) => {
+    const row = record()
+    return composableOf({
+      draft: { ...draftOf(row), ...draftOver },
+      design: designOf(row, company),
+      company: { ...company, ...companyOver },
+      customer,
+      profile,
+      reference: row.issuedReference,
+      status: row.status,
+      frozenLabels: row.frozenLabels,
+      replaces: null,
+      today: '2026-09-15',
+    })
+  }
+
+  /** THE ONE THIS IS FOR. */
+  it('prefers the document’s own rate over today’s company default', () => {
+    expect(composableAt({ taxRatePpm: 50_000 }, { taxRatePpm: 75_000 }).taxRate).toBe(50_000)
+  })
+
+  /** A draft has nothing frozen, so Settings is the right answer for it. */
+  it('falls back to the company default when the document carries none', () => {
+    expect(composableAt({}, { taxRatePpm: 75_000 }).taxRate).toBe(75_000)
+  })
+
+  /** Withholding is invoices only (§I), and follows the same rule. */
+  it('keeps the document’s withholding rate too', () => {
+    expect(
+      composableAt({ type: 'invoice', whtRatePpm: 20_000 }, { whtRatePpm: 50_000 }).whtRate,
+    ).toBe(20_000)
+  })
+})

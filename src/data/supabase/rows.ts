@@ -232,6 +232,12 @@ export function toDocument(row: Row): DocumentRecord {
     ...(text(row['reference_override']) === undefined
       ? {}
       : { referenceOverride: text(row['reference_override']) as string }),
+    ...(row['tax_rate_ppm'] === null || row['tax_rate_ppm'] === undefined
+      ? {}
+      : { taxRatePpm: Number(row['tax_rate_ppm']) }),
+    ...(row['wht_rate_ppm'] === null || row['wht_rate_ppm'] === undefined
+      ? {}
+      : { whtRatePpm: Number(row['wht_rate_ppm']) }),
     frozenLabels: (json<FrozenLabels | null>(row['frozen_labels'], null) ?? null),
     ...omitNull({
       customerId: text(row['customer_id']),
@@ -285,6 +291,8 @@ export function fromDocument(patch: Partial<DocumentRecord>): Row {
   // null is how it is created (§M).
   if (patch.issuedReference !== undefined) row['issued_reference'] = patch.issuedReference
   if (patch.referenceOverride !== undefined) row['reference_override'] = patch.referenceOverride
+  if (patch.taxRatePpm !== undefined) row['tax_rate_ppm'] = patch.taxRatePpm
+  if (patch.whtRatePpm !== undefined) row['wht_rate_ppm'] = patch.whtRatePpm
   if (patch.frozenLabels !== undefined) row['frozen_labels'] = patch.frozenLabels
   return row
 }

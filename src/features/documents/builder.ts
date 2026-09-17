@@ -44,6 +44,15 @@ export interface DocumentDraft {
    * "unchanged".
    */
   readonly referenceOverride?: string | undefined
+  /**
+   * A rate set on THIS document, overriding the company default (§K).
+   *
+   * Parts per million — 7.5% is 75_000 — so a rate is an integer and never a
+   * float, the same rule that governs amounts (Rule #3). Absent means "use
+   * the company default", which is what almost every document does.
+   */
+  readonly taxRatePpm?: number | undefined
+  readonly whtRatePpm?: number | undefined
   readonly issueDate?: string
   readonly dueDate?: string
   readonly validUntil?: string
