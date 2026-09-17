@@ -21,9 +21,10 @@ import { Navigate, useNavigate, useParams } from 'react-router-dom'
 
 import { useCompany } from '../context'
 import { useAppData } from '../store'
-import { HOME, documentPath, editDocumentPath, statementPath } from '../paths'
+import { HOME, documentPath, editDocumentPath } from '../paths'
 import { PageHeader, SkeletonList, StatusBadge } from '../../ui'
 import { BuilderCard } from '../../features/documents/BuilderCard'
+import type { UiStrings } from '../../domain/locale/data/strings'
 import { LivePreview } from '../../features/documents/LivePreview'
 import { ActionGrid } from '../../features/documents/ActionGrid'
 import { documentActions } from '../../features/documents/actions'
@@ -62,14 +63,12 @@ import {
   DeliverySignError,
   canSign,
   nextDeliveryStep,
-  optionalDeliveryStep,
   signDelivery,
 } from '../../features/delivery/sign'
 import { CreditNoteError, issueCreditNote } from '../../features/credits/issue'
 import {
   ConvertError,
   type ConvertibleDocument,
-  conversionsFor,
   convertDocument,
   convertedFrom,
   conversionsOf,
@@ -130,6 +129,11 @@ export function DocumentScreen({ today = todayIso() }: { today?: string }) {
   const [reissueProblem, setReissueProblem] = useState<string | null>(null)
   const [answerProblem, setAnswerProblem] = useState<string | null>(null)
   const [crediting, setCrediting] = useState(false)
+  /* Opened BY the four pills, rather than living under them (§G). */
+  const [linking, setLinking] = useState(false)
+  const [photoOpen, setPhotoOpen] = useState(false)
+  /* Cancel is a correction, not a primary action — it sits behind More. */
+  const [more, setMore] = useState(false)
   const [creditProblem, setCreditProblem] = useState<string | null>(null)
 
   // One port per mount. Phase 4 swaps the Capacitor plugin in behind it and no
@@ -376,13 +380,35 @@ export function DocumentScreen({ today = todayIso() }: { today?: string }) {
             })}
             strings={strings}
             onAction={(id) => {
-              if (id === 'share_pdf') setSharing(true)
-              if (id === 'convert') setConverting(true)
-              if (id === 'void_or_credit' || id === 'void_and_reissue') setVoiding(true)
-              if (id === 'sign') navigate(editDocumentPath(id))
+              if (id === 'share_pdf') return setSharing(true)
+              if (id === 'convert') return setConverting(true)
+              if (id === 'void_or_credit' || id === 'void_and_reissue') return setVoiding(true)
+              /*
+                `record.id`, not `id`. This read `editDocumentPath(id)` — the
+                ACTION's id — so "Sign it" navigated to `/edit/sign`, a route
+                for a document that does not exist.
+              */
+              if (id === 'sign') return navigate(editDocumentPath(record.id))
               if (id === 'open_invoice' && record.linkedInvoiceId !== undefined) {
-                navigate(documentPath(record.linkedInvoiceId))
+                return navigate(documentPath(record.linkedInvoiceId))
               }
+
+              /*
+                THE PILL OPENS THE CONTROL — it does not scroll to a copy of
+                it. The first version of this pointed at duplicate controls
+                further down the page, which is how the screen came to carry
+                NINE actions where §G asks for four: "Copy signing link" and
+                "Copy a link for them to sign" were the same act under two
+                names, as were "Add photo" and "Add a photo", and "Convert
+                to…" and "Turn this into something else".
+
+                Those duplicates are gone. What owned the job — minting the
+                link, recording the handoff, storing the asset before the
+                document names it — is now opened BY the pill instead of
+                sitting beneath it.
+              */
+              if (id === 'copy_signing_link' || id === 'copy_accept_link') return setLinking(true)
+              if (id === 'add_photo') return setPhotoOpen(true)
             }}
           />
         )}
@@ -392,60 +418,43 @@ export function DocumentScreen({ today = todayIso() }: { today?: string }) {
           document". One tap here, one sheet, and the delivery is signed for
           (Rule #1).
         */}
-        {nextDeliveryStep(record) !== null && (
-          <button
-            type="button"
-            className="doc-action min-h-tap rounded-full border-brand/30 px-3 text-[12.5px] font-semibold text-brand"
-            onClick={() => {
-              // An issued delivery cannot jump to delivered — it has to go
-              // out first. Without this the sign action below would be
-              // correct by the lifecycle and unreachable in the app.
-              const step = nextDeliveryStep(record)
-              if (step !== null) void actions.transition(record.id, step)
-            }}
-          >
-            {strings.signature.sendOnItsWay}
-          </button>
-        )}
 
-        {canSign(record) && !signing && (
+        {/*
+          ONE STATUS CONTROL, not three buttons (§G, §M).
+
+          "Send it on its way", "Mark it on the way" and "Confirm delivery"
+          were three full-width buttons competing with §G's four actions. They
+          are not actions on the document — they are the delivery's STATE
+          moving forward — and only ever one of them applies at a time. So
+          there is one control, and it says which step is next.
+
+          The lifecycle is untouched: something that never left cannot have
+          arrived (§M), so `nextDeliveryStep` still gates dispatch before
+          signing, and "on the way" is still the optional middle a delivery
+          may skip (Rule #1).
+        */}
+        {!signing && deliveryStatusStep(record) !== null && (
           <>
-            <p className="text-center text-xs opacity-60">{strings.signature.onItsWay}</p>
-            {/*
-              §F gives "on the way" its own colour and §D its own word, and a
-              signing link is valid for it — but nothing could produce it.
-              Optional rather than a required step: a delivery is signed for
-              from "sent out" just as well, and a second compulsory tap would
-              buy nothing (Rule #1). It earns its place on the journey that
-              takes days, where "sent out" on Monday and still "sent out" on
-              Thursday tells the owner nothing.
-            */}
-            {optionalDeliveryStep(record) !== null && (
-              <button
-                type="button"
-                className="min-h-tap w-full rounded-full border border-edge/10 bg-surface px-4 text-sm font-medium"
-                onClick={() => {
-                  const step = optionalDeliveryStep(record)
-                  if (step !== null) void actions.transition(record.id, step)
-                }}
-              >
-                {strings.signature.markOnTheWay}
-              </button>
+            {canSign(record) && (
+              <p className="text-center text-xs opacity-60">{strings.signature.onItsWay}</p>
             )}
+            <button
+              type="button"
+              className="min-h-tap w-full rounded-full border border-edge/10 bg-surface px-4 text-sm font-medium"
+              onClick={() => {
+                const next = deliveryStatusStep(record)
+                if (next === null) return
+                if (next.kind === 'sign') {
+                  setSignProblem(null)
+                  setSigning(true)
+                  return
+                }
+                void actions.transition(record.id, next.step)
+              }}
+            >
+              {statusLabel(deliveryStatusStep(record), strings)}
+            </button>
           </>
-        )}
-
-        {canSign(record) && !signing && (
-          <button
-            type="button"
-            className="doc-action min-h-tap rounded-full border-brand/30 px-3 text-[12.5px] font-semibold text-brand"
-            onClick={() => {
-              setSignProblem(null)
-              setSigning(true)
-            }}
-          >
-            {strings.signature.confirmDelivery}
-          </button>
         )}
 
         {/*
@@ -455,8 +464,12 @@ export function DocumentScreen({ today = todayIso() }: { today?: string }) {
           signature, because a photo added after the customer signed would
           change what the record says happened (§P).
         */}
-        {(canAttachPhoto(record) || deliveryPhotoUrl !== undefined) && (
-          <section className="glass rounded-2xl p-4" aria-label={strings.photo.title}>
+        {(photoOpen || deliveryPhotoUrl !== undefined) && (
+          <section
+            id="action-target-add_photo"
+            className="glass rounded-2xl p-4"
+            aria-label={strings.photo.title}
+          >
             <h2 className="text-sm font-semibold">{strings.photo.title}</h2>
             <p className="mt-0.5 mb-3 text-xs opacity-70">
               {canAttachPhoto(record) ? strings.photo.explain : strings.photo.sealed}
@@ -484,7 +497,7 @@ export function DocumentScreen({ today = todayIso() }: { today?: string }) {
           </section>
         )}
 
-        {canSign(record) && !signing && <CopyLinkRow documentId={record.id} kind="sign"
+        {linking && canSign(record) && !signing && <CopyLinkRow anchorId="action-target-copy_signing_link" documentId={record.id} kind="sign"
             typeLabel={labels.printedTitle}
             reference={record.issuedReference ?? record.id}
             recipient={customer?.name ?? ''}
@@ -763,7 +776,7 @@ export function DocumentScreen({ today = todayIso() }: { today?: string }) {
                 </button>
               ))}
             </div>
-            <CopyLinkRow documentId={record.id} kind="accept"
+            <CopyLinkRow anchorId="action-target-copy_accept_link" documentId={record.id} kind="accept"
             typeLabel={labels.printedTitle}
             reference={record.issuedReference ?? record.id}
             recipient={customer?.name ?? ''}
@@ -871,19 +884,11 @@ export function DocumentScreen({ today = todayIso() }: { today?: string }) {
           </p>
         )}
 
-        {/* §G's second action on every type that has somewhere to go. */}
-        {conversionsFor(convertible).length > 0 && !converting && (
-          <button
-            type="button"
-            className="doc-action min-h-tap rounded-full border-brand/30 px-3 text-[12.5px] font-semibold text-brand"
-            onClick={() => {
-              setConvertProblem(null)
-              setConverting(true)
-            }}
-          >
-            {strings.convert.title}
-          </button>
-        )}
+        {/*
+          "Turn this into something else" used to sit here — the same act as
+          the Convert pill above, under a second name. §G asks for four
+          actions; two wordings for one of them is how four became nine.
+        */}
 
         {converting && (
           <ConvertSheet
@@ -942,8 +947,28 @@ export function DocumentScreen({ today = todayIso() }: { today?: string }) {
           />
         )}
 
-        {/* §G's fourth invoice action, and the third correction Rule #5 allows. */}
-        {canVoidOrCredit && !voiding && !crediting && (
+        {/*
+          CORRECTIONS SIT BEHIND "MORE" (§G, Rule #5).
+
+          Cancelling competed visually with the four actions — a destructive
+          control in the same shape and the same row as Share PDF. Rule #5
+          makes it a correction rather than a thing an owner does in passing,
+          so it takes one deliberate tap to reveal.
+
+          The §G pill still opens the sheet directly; this is the second way
+          in, for somebody who came looking rather than being offered it.
+        */}
+        {canVoidOrCredit && !voiding && !crediting && !more && (
+          <button
+            type="button"
+            className="min-h-tap w-full rounded-full px-4 text-xs font-medium opacity-60"
+            onClick={() => setMore(true)}
+          >
+            {strings.savedDocument.actions}
+          </button>
+        )}
+
+        {canVoidOrCredit && !voiding && !crediting && more && (
           // A fragment, not a flex row: the grid pairs these two itself now,
           // and a nested row inside a grid cell was what held the page 40px
           // wider than a 320px phone at 200% text.
@@ -1226,15 +1251,12 @@ export function DocumentScreen({ today = todayIso() }: { today?: string }) {
           </>
         )}
 
-        {customer !== undefined && (
-          <button
-            type="button"
-            className="glass min-h-tap w-full rounded-2xl px-4 text-sm font-medium"
-            onClick={() => navigate(statementPath(customer.id, record.currency))}
-          >
-            {strings.savedDocument.openStatement}
-          </button>
-        )}
+        {/*
+          The statement lived here as a full-width button. It is a CUSTOMER
+          action — every invoice against every payment for a period — and it
+          belongs on the customer, not on one delivery that happens to name
+          them. It is still reachable from the contact page (§G).
+        */}
       </div>
     </div>
   )
@@ -1253,7 +1275,55 @@ export function DocumentScreen({ today = todayIso() }: { today?: string }) {
  * link and kills the old one, which is also how an owner revokes one sent to
  * the wrong number.
  */
+
+/**
+ * The ONE step a delivery's status can take next (§M, §G).
+ *
+ * Three buttons used to sit on the screen for this — send it on its way, mark
+ * it on the way, confirm delivery — and only ever one of them applied. They
+ * are not actions on the document; they are its state moving forward, and §G's
+ * four actions are what the space beside them is for.
+ *
+ * The ORDER is the lifecycle's, unchanged. Something that never left cannot
+ * have arrived (§M), so dispatch comes before signing; "on the way" is the
+ * optional middle a delivery may skip, because one signed for from "sent out"
+ * is signed for just as well and a compulsory extra tap buys nothing (Rule #1).
+ */
+/** The word for whichever step is next. One control, one label. */
+function statusLabel(
+  next: ReturnType<typeof deliveryStatusStep>,
+  strings: UiStrings,
+): string {
+  if (next === null) return ''
+  if (next.kind === 'sign') return strings.signature.confirmDelivery
+  return next.step === 'dispatched'
+    ? strings.signature.sendOnItsWay
+    : strings.signature.markOnTheWay
+}
+
+function deliveryStatusStep(
+  record: Parameters<typeof canSign>[0] & Parameters<typeof nextDeliveryStep>[0],
+): { kind: 'transition'; step: 'dispatched' | 'in_transit' } | { kind: 'sign' } | null {
+  /*
+   * THE REQUIRED STEP ONLY. Dispatch first, because something that never left
+   * cannot have arrived (§M) — then signing.
+   *
+   * "On the way" is NOT here, and leaving it out is the point. It is the
+   * optional middle: §G's own reasoning is that a delivery signed for from
+   * "sent out" is signed for just as well, and a compulsory extra tap buys
+   * nothing (Rule #1). Putting it in this control made it compulsory —
+   * a dispatched delivery offered "Mark it on the way" INSTEAD of "Confirm
+   * delivery", so the owner had to walk a step the spec calls optional
+   * before they could do the one they came for.
+   */
+  const out = nextDeliveryStep(record)
+  if (out !== null) return { kind: 'transition', step: out }
+
+  return canSign(record) ? { kind: 'sign' } : null
+}
+
 function CopyLinkRow({
+  anchorId,
   documentId,
   kind,
   typeLabel,
@@ -1262,6 +1332,8 @@ function CopyLinkRow({
   port,
   onSent,
 }: {
+  /** Where the action pill scrolls to, so the pill and the control agree. */
+  anchorId: string
   documentId: string
   kind: 'accept' | 'sign'
   typeLabel: string
@@ -1278,12 +1350,14 @@ function CopyLinkRow({
 
   if (!online) {
     return (
-      <p className="text-center text-[11px] opacity-60">{strings.publicLink.needsInternet}</p>
+      <p id={anchorId} className="text-center text-[11px] opacity-60">
+        {strings.publicLink.needsInternet}
+      </p>
     )
   }
 
   return (
-    <div className="space-y-1">
+    <div id={anchorId} className="space-y-1">
       <button
         type="button"
         className="min-h-tap w-full rounded-xl border border-edge/10 bg-surface px-4 text-sm font-medium"

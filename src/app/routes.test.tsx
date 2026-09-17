@@ -94,6 +94,20 @@ const withIncome = (minor: number) => (state: MemoryState) => {
   })
 }
 
+/**
+ * Corrections sit behind "More" now — cancelling used to compete visually
+ * with §G's four actions, in the same shape and the same row as Share PDF.
+ */
+const revealMore = async (): Promise<void> => {
+  /*
+   * `findByRole`, not `queryByRole`. The query form reads the DOM at the
+   * instant it is called — before the first render has landed — so it found
+   * nothing, returned quietly, and every assertion after it failed looking
+   * for a control that was never revealed.
+   */
+  await userEvent.click(await screen.findByRole('button', { name: 'Actions' }))
+}
+
 describe('Every page is reachable (§G)', () => {
   it('opens Home', async () => {
     renderAt('/', withCompanyName('Sola Ventures'))
@@ -1129,7 +1143,7 @@ describe('Converting a document (§G, §M)', () => {
   it('offers the action on an accepted quotation and not on a draft', async () => {
     renderAt('/doc/doc_quote', (state) => quote(state))
     expect(
-      await screen.findByRole('button', { name: 'Turn this into something else' }),
+      await screen.findByRole('button', { name: 'Convert to…' }),
     ).toBeInTheDocument()
   })
 
@@ -1155,7 +1169,7 @@ describe('Converting a document (§G, §M)', () => {
     })
     expect(within(await pageHeader()).getByText('REC-0003')).toBeInTheDocument()
     expect(
-      screen.queryByRole('button', { name: 'Turn this into something else' }),
+      screen.queryByRole('button', { name: 'Convert to…' }),
     ).not.toBeInTheDocument()
   })
 
@@ -1163,7 +1177,7 @@ describe('Converting a document (§G, §M)', () => {
     const user = userEvent.setup()
     const state = renderAt('/doc/doc_quote', (state) => quote(state))
 
-    await user.click(await screen.findByRole('button', { name: 'Turn this into something else' }))
+    await user.click(await screen.findByRole('button', { name: 'Convert to…' }))
     await user.click(screen.getByRole('button', { name: 'Turn into Invoice' }))
 
     await waitFor(() => expect(state.documents).toHaveLength(2))
@@ -1188,7 +1202,7 @@ describe('Converting a document (§G, §M)', () => {
     const user = userEvent.setup()
     const state = renderAt('/doc/doc_quote', (state) => quote(state))
 
-    await user.click(await screen.findByRole('button', { name: 'Turn this into something else' }))
+    await user.click(await screen.findByRole('button', { name: 'Convert to…' }))
     await user.click(screen.getByRole('button', { name: 'Turn into Waybill' }))
 
     await waitFor(() => expect(state.documents).toHaveLength(2))
@@ -1216,7 +1230,7 @@ describe('Converting a document (§G, §M)', () => {
       })
     })
 
-    await user.click(await screen.findByRole('button', { name: 'Turn this into something else' }))
+    await user.click(await screen.findByRole('button', { name: 'Convert to…' }))
     expect(screen.getByText('Already made: Invoice')).toBeInTheDocument()
     expect(screen.queryByRole('button', { name: 'Turn into Invoice' })).not.toBeInTheDocument()
 
@@ -1639,6 +1653,7 @@ describe('Cancelling and crediting (Rule #5, §G)', () => {
     const user = userEvent.setup()
     const state = renderAt('/doc/doc_inv', (seed) => invoiced(seed))
 
+    await revealMore()
     await user.click(await screen.findByRole('button', { name: 'Cancel this document' }))
     // Nothing to type: the required reason was a new required field that got
     // discarded, so the warning is the confirmation now (Rule #1).
@@ -1657,7 +1672,7 @@ describe('Cancelling and crediting (Rule #5, §G)', () => {
       invoiced(seed)
       paid(seed, 50_000_00)
     })
-
+    await revealMore()
     await user.click(await screen.findByRole('button', { name: 'Cancel this document' }))
     expect(screen.getByText(/Money has already come in against this/)).toBeInTheDocument()
     expect(screen.queryByRole('button', { name: 'Cancel it' })).not.toBeInTheDocument()
@@ -1675,6 +1690,7 @@ describe('Cancelling and crediting (Rule #5, §G)', () => {
       invoiced(seed)
       paid(seed, 50_000_00)
     })
+    await revealMore()
 
     // ₦95,000 outstanding before crediting.
     expect(
@@ -1720,6 +1736,7 @@ describe('Cancelling and crediting (Rule #5, §G)', () => {
     expect(await screen.findByText('Settled in full')).toBeInTheDocument()
     // And the cancel route no longer offers to credit, because there is
     // nothing left to credit.
+    await revealMore()
     await user.click(screen.getByRole('button', { name: 'Cancel this document' }))
     expect(
       screen.queryByRole('button', { name: 'Credit the balance back instead' }),
@@ -2195,17 +2212,27 @@ describe('Signing (§G, §I, §P)', () => {
       expect(await screen.findByRole('button', { name: 'Confirm delivery' })).toBeInTheDocument()
     })
 
-    it('offers the on-the-way step once it has left, and only once', async () => {
-      const user = userEvent.setup()
-      const state = renderAt('/doc/doc_way', delivery('dispatched'))
+    /*
+     * CHANGED DELIBERATELY. This drove "Mark it on the way" as its own
+     * full-width button. The saved document carried NINE actions where §G
+     * asks for four, and three of them were the delivery's STATE rather than
+     * actions on the document — so they are one control now, showing the step
+     * that is actually next.
+     *
+     * "On the way" is not that step. §G's own reasoning is that a delivery
+     * signed for from "sent out" is signed for just as well and a compulsory
+     * extra tap buys nothing (Rule #1), so making it the primary control
+     * would have forced the optional middle on everybody. What this asserts
+     * now is the thing that matters: from dispatched, signing is reachable
+     * directly.
+     */
+    it('offers signing directly once it has left, with no step in between', async () => {
+      renderAt('/doc/doc_way', delivery('dispatched'))
 
-      await user.click(await screen.findByRole('button', { name: 'Mark it on the way' }))
-      await waitFor(() => expect(state.documents[0]?.status).toBe('in_transit'))
-
-      // Not a step anything waits for: signing was offered before it, and
-      // still is after.
-      expect(await screen.findByRole('button', { name: 'Confirm delivery' })).toBeInTheDocument()
-      expect(screen.queryByRole('button', { name: 'Mark it on the way' })).not.toBeInTheDocument()
+      expect(
+        await screen.findByRole('button', { name: 'Confirm delivery' }),
+      ).toBeInTheDocument()
+      expect(screen.queryByRole('button', { name: 'Mark it on the way' })).toBeNull()
     })
 
     it('can be signed for straight from dispatched, without the extra step', async () => {
@@ -2217,9 +2244,9 @@ describe('Signing (§G, §I, §P)', () => {
       const user = userEvent.setup()
       const state = renderAt('/doc/doc_way', delivery('dispatched'))
 
-      await user.click(
-        await screen.findByRole('button', { name: 'Copy a link for them to sign' }),
-      )
+      // The pill opens the control; the control mints and copies (§G).
+      await user.click(await screen.findByRole('button', { name: 'Copy signing link' }))
+      await user.click(await screen.findByRole('button', { name: /copy a link/i }))
 
       // Only the HASH is kept: a leaked row cannot open a link (§P).
       await waitFor(() => expect(state.linkTokens).toHaveLength(1))
@@ -2240,7 +2267,8 @@ describe('Signing (§G, §I, §P)', () => {
       const user = userEvent.setup()
       const state = renderAt('/doc/doc_way', delivery('dispatched'))
 
-      const button = await screen.findByRole('button', { name: 'Copy a link for them to sign' })
+      await user.click(await screen.findByRole('button', { name: 'Copy signing link' }))
+      const button = await screen.findByRole('button', { name: /copy a link/i })
       await user.click(button)
       await waitFor(() => expect(state.linkTokens).toHaveLength(1))
       const first = state.linkTokens[0]?.tokenHash
@@ -2739,6 +2767,7 @@ describe('Void and reissue a receipt (§G, Rule #5, §V)', () => {
       screen.queryByRole('button', { name: 'Cancel and draw a new one' }),
     ).not.toBeInTheDocument()
     // The plain cancel is still there, which is the honest action.
+    await revealMore()
     expect(screen.getByRole('button', { name: 'Cancel this document' })).toBeInTheDocument()
   })
 
@@ -2991,7 +3020,7 @@ describe('Recording the customer’s answer (§G, §P)', () => {
     await waitFor(() => expect(state.documents[0]?.status).toBe('accepted'))
 
     await user.click(
-      await screen.findByRole('button', { name: 'Turn this into something else' }),
+      await screen.findByRole('button', { name: 'Convert to…' }),
     )
     expect(await screen.findByLabelText('Turn this into something else')).toBeInTheDocument()
   })
@@ -3048,9 +3077,14 @@ describe('The photo on a delivery (§G, §E, §P)', () => {
   }
 
   it('offers it on a delivery that exists as a document', async () => {
+    const user = userEvent.setup()
     renderAt('/doc/doc_way', delivery('dispatched'))
+
+    // The card opens from §G's pill now; it no longer sits open underneath
+    // a second button that did the same thing.
+    await user.click(await screen.findByRole('button', { name: 'Add photo' }))
     expect(await screen.findByLabelText('Proof of delivery')).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'Add a photo' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /add a photo/i })).toBeInTheDocument()
   })
 
   it('stores the shrunk photo and attaches it to the delivery', async () => {
@@ -3058,7 +3092,8 @@ describe('The photo on a delivery (§G, §E, §P)', () => {
     const toDataURL = stubShrink()
     const state = renderAt('/doc/doc_way', delivery('dispatched'))
 
-    await screen.findByRole('button', { name: 'Add a photo' })
+    await user.click(await screen.findByRole('button', { name: 'Add photo' }))
+    await screen.findByRole('button', { name: /add a photo/i })
     await user.upload(document.querySelector('input[type="file"]')!, photo())
 
     await waitFor(() => expect(state.assets).toHaveLength(1))
@@ -3079,7 +3114,8 @@ describe('The photo on a delivery (§G, §E, §P)', () => {
     stubShrink()
     const state = renderAt('/doc/doc_way', delivery('dispatched'))
 
-    await screen.findByRole('button', { name: 'Add a photo' })
+    await user.click(await screen.findByRole('button', { name: 'Add photo' }))
+    await screen.findByRole('button', { name: /add a photo/i })
     await user.upload(document.querySelector('input[type="file"]')!, photo())
     await waitFor(() => expect(state.documents[0]?.deliveryPhotoAssetId).toBeTruthy())
 
@@ -3161,8 +3197,10 @@ describe('The photo on a delivery (§G, §E, §P)', () => {
   })
 
   it('says so when the chosen file is not a photo', async () => {
+    const opener = userEvent.setup()
     renderAt('/doc/doc_way', delivery('dispatched'))
-    await screen.findByRole('button', { name: 'Add a photo' })
+    await opener.click(await screen.findByRole('button', { name: 'Add photo' }))
+    await screen.findByRole('button', { name: /add a photo/i })
 
     // `user.upload` filters by the input's `accept`, so it would drop this
     // silently. `accept` is a hint the platform may ignore, which is exactly
@@ -3241,5 +3279,120 @@ describe('The payment detour goes somewhere and comes back (§G, §J)', () => {
     renderAt('/settings/payment', bankTransferOnly)
     expect(await screen.findByRole('heading', { name: 'How you get paid' })).toBeInTheDocument()
     expect(screen.queryByText('Setting up payment for your document')).not.toBeInTheDocument()
+  })
+})
+
+/**
+ * NO LIVE PILL IS WIRED TO NOTHING (§G, §N).
+ *
+ * I shipped four of them. `copy_signing_link`, `copy_accept_link`,
+ * `add_photo` and `duplicate_rev2` rendered enabled in §G's action grid and
+ * had no branch in the handler at all, so tapping them did nothing — the
+ * exact shape this codebase keeps digging out, introduced by the change that
+ * was meant to honour §G.
+ *
+ * `sign` was worse than nothing: it navigated to `editDocumentPath(id)` with
+ * the ACTION's id, so it opened `/edit/sign` — a route for a document that
+ * does not exist.
+ */
+describe('Every enabled action does something (§G, §N)', () => {
+  /** Its own fixture: the ones above are scoped inside their describes. */
+  const dispatched = (seed: MemoryState) => {
+    seed.customers.push(customer())
+    seed.documents.push({
+      id: 'doc_way',
+      companyId: DEV_COMPANY_ID,
+      type: 'waybill',
+      status: 'dispatched',
+      customerId: 'cus_1',
+      currency: 'NGN',
+      lineItems: [],
+      issueDate: '2026-09-01',
+      issuedReference: 'WAY-0007',
+      frozenLabels: {
+        printedTitle: 'WAYBILL',
+        partyLabel: 'Deliver to',
+        signatureCaption: 'Received by',
+        language: 'en',
+      },
+      totalMinor: 0,
+    })
+  }
+
+  /*
+   * REWRITTEN. These asserted the pill SCROLLED to a control further down —
+   * which was the first shape of this fix and the wrong one: it left the
+   * duplicates in place, and the screen carried nine actions where §G asks
+   * for four. The pill OPENS the control now, and the duplicate is gone.
+   */
+  it('opens the signing-link control from its pill, with no duplicate below', async () => {
+    const user = userEvent.setup()
+    renderAt('/doc/doc_way', dispatched)
+
+    // Nothing minting links is on screen until the pill is pressed.
+    expect(screen.queryByRole('button', { name: /copy a link/i })).toBeNull()
+
+    await user.click(await screen.findByRole('button', { name: 'Copy signing link' }))
+    expect(await screen.findByRole('button', { name: /copy a link/i })).toBeInTheDocument()
+  })
+
+  it('opens the proof-of-delivery card from its pill, with no duplicate below', async () => {
+    const user = userEvent.setup()
+    renderAt('/doc/doc_way', dispatched)
+
+    expect(screen.queryByLabelText('Proof of delivery')).toBeNull()
+
+    await user.click(await screen.findByRole('button', { name: 'Add photo' }))
+    expect(await screen.findByLabelText('Proof of delivery')).toBeInTheDocument()
+  })
+
+  /**
+   * THE COUNT ITSELF. §G asks for four actions per type; the screen had nine
+   * plus a card, three of them the same acts under different wording.
+   */
+  it('shows four actions and no more', async () => {
+    renderAt('/doc/doc_way', dispatched)
+    const grid = await screen.findByRole('group', { name: 'Actions' })
+    expect(grid.querySelectorAll('button')).toHaveLength(4)
+
+    for (const gone of [
+      /turn this into something else/i,
+      /copy a link for them to sign/i,
+      /^add a photo$/i,
+      /statement/i,
+    ]) {
+      expect(screen.queryByRole('button', { name: gone }), String(gone)).toBeNull()
+    }
+  })
+
+  it('opens the document itself when signing a draft, not a route named after the action', async () => {
+    renderAt('/doc/doc_inv', (seed) => {
+      seed.customers.push(customer())
+      seed.documents.push({
+        id: 'doc_inv',
+        companyId: DEV_COMPANY_ID,
+        type: 'invoice',
+        status: 'draft',
+        customerId: 'cus_1',
+        currency: 'NGN',
+        lineItems: [],
+        issueDate: '2026-09-01',
+        issuedReference: null,
+        frozenLabels: null,
+        totalMinor: 0,
+      })
+    })
+
+    const pill = await screen.findByRole('button', { name: /sign it/i })
+    await userEvent.click(pill)
+
+    /*
+     * Asserted on what RENDERS, not on the URL: the test router keeps its
+     * history in memory, so `window.location` never moves and a URL check
+     * passes whatever the handler did. `/edit/sign` is a document that does
+     * not exist, so it lands on the empty route — the builder appearing is
+     * the proof it went somewhere real.
+     */
+    expect(await screen.findByText(/draft saved automatically/i)).toBeInTheDocument()
   })
 })
