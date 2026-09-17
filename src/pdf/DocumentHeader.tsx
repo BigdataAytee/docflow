@@ -80,7 +80,16 @@ const Title = ({
   className?: string
 }) => (
   <h2
-    className={`break-words text-[24px] font-black uppercase tracking-tight ${className}`}
+    /*
+      LETTER-SPACED, not tightened. The reference sets the type title wide —
+      "Q U O T A T I O N" — which is what makes it read as the document's
+      name rather than as a heading inside it. This was `tracking-tight`,
+      the opposite, and the title sat on the page looking like body copy in
+      caps. `break-words` stays: §F requires the longest shipped label to
+      wrap rather than clip, and wide tracking makes "DELIVERY NOTE" longer
+      still.
+    */
+    className={`break-words text-[24px] font-black uppercase tracking-[0.12em] ${className}`}
     style={{ color: ink }}
   >
     {model.title}
@@ -427,7 +436,7 @@ export function DocumentHeader({ model, template, ink, logo }: DocumentHeaderPro
             </div>
           </header>
           <h2
-            className="mt-[12px] break-words text-center text-[24px] font-black uppercase tracking-tight"
+            className="mt-[12px] break-words text-center text-[24px] font-black uppercase tracking-[0.12em]"
             style={{ color: ink, textDecoration: 'underline', textUnderlineOffset: '4px' }}
           >
             {model.title}
