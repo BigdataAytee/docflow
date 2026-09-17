@@ -108,11 +108,21 @@ const Headline = ({
   align?: 'start' | 'end'
 }) =>
   model.headline === null ? null : (
-    <div className={align === 'end' ? 'text-end' : ''} data-headline>
+    <div
+      className={`shrink-0 ${align === 'end' ? 'text-end' : ''}`}
+      data-headline
+    >
       <p className="text-[8.5px] font-bold uppercase tracking-[0.16em] opacity-55">
         {model.headline.label}
       </p>
-      <p className="mt-[1px] text-[20px] font-black tabular-nums" style={{ color: ink }}>
+      {/*
+        `whitespace-nowrap`: an amount broken across two lines is unreadable
+        as a number, and worse than any crowding it would relieve.
+      */}
+      <p
+        className="mt-[1px] whitespace-nowrap text-[20px] font-black tabular-nums"
+        style={{ color: ink }}
+      >
         {formatAmount(model.headline.amount.minor, model.headline.amount.currency)}
       </p>
     </div>
@@ -218,8 +228,20 @@ export function DocumentHeader({ model, template, ink, logo, formatAmount }: Doc
             sits opposite it, so name-and-address and BALANCE DUE share a
             baseline the way the reference draws them.
           */}
+          {/*
+            `flex-1` ON THE NAME, and that is the whole tuning.
+
+            It carried `min-w-0` alone, which lets a long name SHRINK but
+            never makes it grow — so it sized to its own content, wrapped to
+            three lines, and left the space beside it empty while the address
+            underneath was squeezed into a column narrower than the figure
+            opposite. §I's idiom is 58% to the totals; the identity block
+            should have the larger share for the same reason, and `flex-1`
+            against a `shrink-0` figure produces exactly that: the amount
+            takes what it needs and the name gets the rest.
+          */}
           <div className="mt-[10px] flex items-end justify-between gap-[16px]">
-            <Name model={model} className="min-w-0" />
+            <Name model={model} className="min-w-0 flex-1" />
             <Headline model={model} ink={ink} formatAmount={formatAmount} />
           </div>
 
@@ -309,8 +331,20 @@ export function DocumentHeader({ model, template, ink, logo, formatAmount }: Doc
               )}
             </div>
           </header>
+          {/*
+            `flex-1` ON THE NAME, and that is the whole tuning.
+
+            It carried `min-w-0` alone, which lets a long name SHRINK but
+            never makes it grow — so it sized to its own content, wrapped to
+            three lines, and left the space beside it empty while the address
+            underneath was squeezed into a column narrower than the figure
+            opposite. §I's idiom is 58% to the totals; the identity block
+            should have the larger share for the same reason, and `flex-1`
+            against a `shrink-0` figure produces exactly that: the amount
+            takes what it needs and the name gets the rest.
+          */}
           <div className="mt-[10px] flex items-end justify-between gap-[16px]">
-            <Name model={model} className="min-w-0" />
+            <Name model={model} className="min-w-0 flex-1" />
             <Headline model={model} ink={ink} formatAmount={formatAmount} />
           </div>
           <Rule ink={ink} opacity={0.25} height={1} />
@@ -345,8 +379,20 @@ export function DocumentHeader({ model, template, ink, logo, formatAmount }: Doc
             </div>
           </header>
 
+          {/*
+            `flex-1` ON THE NAME, and that is the whole tuning.
+
+            It carried `min-w-0` alone, which lets a long name SHRINK but
+            never makes it grow — so it sized to its own content, wrapped to
+            three lines, and left the space beside it empty while the address
+            underneath was squeezed into a column narrower than the figure
+            opposite. §I's idiom is 58% to the totals; the identity block
+            should have the larger share for the same reason, and `flex-1`
+            against a `shrink-0` figure produces exactly that: the amount
+            takes what it needs and the name gets the rest.
+          */}
           <div className="mt-[10px] flex items-end justify-between gap-[16px]">
-            <Name model={model} className="min-w-0" />
+            <Name model={model} className="min-w-0 flex-1" />
             <Headline model={model} ink={ink} formatAmount={formatAmount} />
           </div>
           <Rule ink={ink} height={2} />

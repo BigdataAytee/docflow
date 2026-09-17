@@ -195,6 +195,11 @@ export function DocumentPage({
          * screen presents everything this page says in accessible form.
          */
         fontSize: '16px',
+        /*
+         * A CONTAINER, so the page can scale itself to whatever width it is
+         * given. See the zoom on the content layer below.
+         */
+        containerType: 'inline-size',
         backgroundColor: template.paper,
         color: template.ink,
         fontFamily: FONT_STACK[template.fontFamily],
@@ -211,7 +216,31 @@ export function DocumentPage({
 
       <div
         className="relative flex h-full flex-col p-[6%]"
-        style={contentInset(template)}
+        style={{
+          ...contentInset(template),
+          /*
+           * THE PAGE IS A FAITHFUL SCALE MODEL, at any width.
+           *
+           * Every size in here is absolute because a printed page does not
+           * reflow (see the note above). But the BOX it lives in is whatever
+           * width the screen gives it — 343px on a phone against A4's 794px
+           * at 96dpi — so the type was rendering at 2.3× its proper size
+           * relative to the paper. A business name that fits one line on A4
+           * wrapped to three, and the address was squeezed into a column
+           * narrower than the figure beside it.
+           *
+           * That looked like a column-split problem and was not: the columns
+           * are right, the type was too big for the page. `zoom` against the
+           * container's own inline size makes the preview a true miniature —
+           * 0.43 on a phone, 1.0 at A4 — so what is seen is what prints, at
+           * every width, without a second set of sizes to keep in step.
+           *
+           * `cqi` needs the unit in the divisor: `100cqi / 794` is a length
+           * and silently resolves to 1, which is how this first went in
+           * doing nothing at all.
+           */
+          zoom: 'calc(100cqi / 794px)',
+        }}
       >
         <DocumentHeader
           model={model}
@@ -242,7 +271,12 @@ export function DocumentPage({
               <p className="text-[8.5px] font-bold uppercase tracking-[0.16em] opacity-55">
                 {model.headline.label}
               </p>
-              <p className="mt-[1px] text-[20px] font-black tabular-nums" style={{ color: ink }}>
+              {/* Never wrapped — an amount broken across two lines stops
+                  reading as a number. Same rule as the header's own. */}
+              <p
+                className="mt-[1px] whitespace-nowrap text-[20px] font-black tabular-nums"
+                style={{ color: ink }}
+              >
                 {formatAmount(model.headline.amount.minor, model.headline.amount.currency)}
               </p>
             </div>
