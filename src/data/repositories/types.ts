@@ -37,7 +37,6 @@ export interface Company {
   readonly name: string
   readonly localeRegion: string
   readonly localeLanguage: string
-  readonly labelOverrides: Partial<Record<DocumentType, string>>
   /**
    * The business's own address, printed where a template has a place for one
    * (§F's Sikky carries a boxed office address) and asked for by §R's setup,

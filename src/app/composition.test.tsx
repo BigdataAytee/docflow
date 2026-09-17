@@ -25,7 +25,6 @@ function demoBackend(): Backend {
     name: 'Demo Business',
     localeRegion: 'NG',
     localeLanguage: 'en',
-    labelOverrides: {},
     currency: 'NGN',
     numberingPrefixes: {},
     bankFields: {},

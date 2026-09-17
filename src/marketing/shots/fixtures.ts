@@ -176,7 +176,6 @@ export function shotState(region: string, companyId = SHOT_COMPANY_ID): MemorySt
         // only thing standing between here and a French screenshot, when in
         // fact there is no French UI to photograph.
         localeLanguage: TERMINOLOGY_TABLES[profile.locale]?.language ?? 'en',
-        labelOverrides: {},
         currency: profile.currency,
         numberingPrefixes: {},
         bankFields: {},

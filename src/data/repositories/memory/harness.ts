@@ -18,7 +18,6 @@ const seed = (companyIds: readonly string[]): MemoryState => {
       name: id,
       localeRegion: 'NG',
       localeLanguage: 'en',
-      labelOverrides: {},
       currency: 'NGN',
       numberingPrefixes: {},
       bankFields: {},

@@ -30,15 +30,9 @@ export interface RegionSettingsProps {
   readonly onRegion: (region: string) => void
   /** §D.4: the language is chosen independently of the region. */
   readonly onLanguage: (language: string) => void
-  readonly onOverride: (type: (typeof DOCUMENT_TYPES)[number], label: string | null) => void
 }
 
-export function RegionSettings({
-  settings,
-  onRegion,
-  onLanguage,
-  onOverride,
-}: RegionSettingsProps) {
+export function RegionSettings({ settings, onRegion, onLanguage }: RegionSettingsProps) {
   const { strings } = useCompany()
   const profile = regionProfile(settings.region)
   const localeProfile = localeProfileOf(settings)
@@ -147,24 +141,38 @@ export function RegionSettings({
         )}
       </section>
 
-      <section className="glass-solid space-y-3 rounded-2xl p-4">
+      {/*
+        WHAT THE DOCUMENTS ARE CALLED — shown, not asked.
+
+        This was four text boxes, one per type, for the owner to type their own
+        word into. Removed at their instruction: "it should be an automatic
+        thing the app is able to decide by itself." It always could — the
+        country picks the terminology table, and the table has the word. Asking
+        somebody to type "Waybill" into a box labelled Waybill was the app
+        handing back the one job it was supposed to do.
+
+        It is still SHOWN, because §N says a thing the app decided is said
+        rather than left to be discovered on a finished PDF — and because it is
+        the clearest possible demonstration of what the country above actually
+        does. Change the country and these four words change with it.
+      */}
+      <section className="glass-solid space-y-2 rounded-2xl p-4" data-document-names>
         <h2 className="text-xs font-bold uppercase tracking-wide opacity-60">
-          {strings.settings.callThisDocument}
+          {strings.settings.documentsAreCalled}
         </h2>
-        {DOCUMENT_TYPES.map((type) => (
-          <label key={type} className="block">
-            <span className="mb-1 block text-xs opacity-70">{typeLabel(localeProfile, type)}</span>
-            <input
-              value={settings.labelOverrides[type] ?? ''}
-              placeholder={typeLabel({ locale: profile.locale }, type)}
-              onChange={(event) =>
-                onOverride(type, event.target.value === '' ? null : event.target.value)
-              }
-              aria-label={typeLabel(localeProfile, type)}
-              className="sunken min-h-tap w-full rounded-lg px-3 text-sm"
-            />
-          </label>
-        ))}
+        <ul className="space-y-1.5">
+          {DOCUMENT_TYPES.map((type) => (
+            <li key={type} className="flex items-baseline justify-between gap-3">
+              <span className="text-sm font-semibold">{typeLabel(localeProfile, type)}</span>
+              <span className="shrink-0 text-xs tabular-nums opacity-55">
+                {profile.locale}
+              </span>
+            </li>
+          ))}
+        </ul>
+        <p className="text-xs leading-relaxed opacity-60">
+          {strings.settings.namesFollowCountry}
+        </p>
       </section>
 
       <p className="text-xs opacity-60">{strings.settings.effectiveImmediately}</p>

@@ -13,7 +13,6 @@
  * Lagos gets FR strings with NGN banking and its chosen terminology.
  */
 
-import type { DocumentType } from '../../domain/documents/types'
 import type { LocaleId } from '../../domain/locale/types'
 import { TERMINOLOGY_TABLES } from '../../domain/locale/data/terminology'
 import { REGION_DEFAULT_CURRENCY } from '../../domain/locale/data/currencies'
@@ -121,7 +120,6 @@ export function regionProfile(region: string): RegionProfile {
 export interface CompanyLocaleSettings {
   readonly region: string
   readonly language: string
-  readonly labelOverrides: Partial<Record<DocumentType, string>>
 }
 
 /**
@@ -157,25 +155,9 @@ export function applyLanguage(
   return { ...current, language }
 }
 
-/** The per-type override §D allows for the rare edge case. */
-export function applyLabelOverride(
-  current: CompanyLocaleSettings,
-  type: DocumentType,
-  label: string | null,
-): CompanyLocaleSettings {
-  const overrides = { ...current.labelOverrides }
-  if (label === null || label.trim() === '') {
-    delete overrides[type]
-  } else {
-    overrides[type] = label.trim()
-  }
-  return { ...current, labelOverrides: overrides }
-}
-
 /** The locale profile the rest of the app reads, from these settings. */
 export function localeProfileOf(settings: CompanyLocaleSettings) {
-  const profile = regionProfile(settings.region)
-  return { locale: profile.locale, labelOverrides: settings.labelOverrides }
+  return { locale: regionProfile(settings.region).locale }
 }
 
 /** Every region points at a terminology table that actually exists. */

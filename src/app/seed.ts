@@ -45,7 +45,6 @@ export function devState(companyId = DEV_COMPANY_ID, region = DEFAULT_REGION): M
         name: '',
         localeRegion: region,
         localeLanguage: 'en',
-        labelOverrides: {},
         currency: profile.currency,
         numberingPrefixes: {},
         bankFields: {},

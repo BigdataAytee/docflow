@@ -359,7 +359,8 @@ export interface UiStrings {
     readonly countryHint: string
     readonly appLanguage: string
     readonly oneLanguageOnly: string
-    readonly callThisDocument: string
+    readonly documentsAreCalled: string
+    readonly namesFollowCountry: string
     readonly useRegionalName: string
     readonly currencyIs: string
     readonly taxIsCalled: string
@@ -1321,7 +1322,9 @@ const EN: UiStrings = {
     countryHint: 'Sets what your documents are called, your currency, your bank fields and your tax wording.',
     appLanguage: 'App language',
     oneLanguageOnly: 'More languages appear here as each one is finished. DocFlow never ships a half-translated screen.',
-    callThisDocument: 'Call this document',
+    documentsAreCalled: 'Your documents are called',
+    namesFollowCountry:
+      'DocFlow works this out from your country — change the country above and these change with it. You never have to type them.',
     useRegionalName: 'Use the usual name',
     currencyIs: 'Currency',
     taxIsCalled: 'Tax is called',

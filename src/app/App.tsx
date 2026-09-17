@@ -217,7 +217,6 @@ function LocaleFromCompany({
       return localeProfileOf({
         region: company.localeRegion,
         language: company.localeLanguage,
-        labelOverrides: company.labelOverrides,
       })
     } catch {
       // An unrecognised saved region must not brick the app; Settings is the

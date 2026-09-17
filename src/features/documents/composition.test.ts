@@ -36,7 +36,6 @@ const company: Company = {
   localeRegion: 'NG',
   localeLanguage: 'en',
   currency: 'NGN',
-  labelOverrides: {},
   numberingPrefixes: {},
   bankFields: {},
   enabledPaymentMethods: ['bank_transfer'],

@@ -16,7 +16,7 @@ import fc from 'fast-check'
 import { ESLint } from 'eslint'
 
 import { DOCUMENT_TYPES } from '../documents/types'
-import { LAUNCH_LOCALES, TERMINOLOGY_TABLES } from './data/terminology'
+import { LAUNCH_LOCALES } from './data/terminology'
 import type { TypeTerminology } from './types'
 import {
   type LocaleProfile,
@@ -117,13 +117,27 @@ describe('Every surface resolves through one lookup (Rule #5, §D.1)', () => {
     ])
   })
 
-  it('applies a per-type override to every surface, not just the tile (§D)', () => {
-    const p: LocaleProfile = { locale: 'EN-GB', labelOverrides: { waybill: 'Dispatch docket' } }
-    expect(label(p, 'waybill')).toBe('Dispatch docket')
-    expect(pluralLabel(p, 'waybill')).toBe('Dispatch docket')
-    expect(printedTitle(p, 'waybill')).toBe('DISPATCH DOCKET')
-    // Other types are untouched.
-    expect(label(p, 'invoice')).toBe(TERMINOLOGY_TABLES['EN-GB']?.types.invoice.label)
+  /**
+   * THE LOCALE IS THE ONLY THING THAT DECIDES A WORD.
+   *
+   * There used to be a `labelOverrides` on the profile — four boxes in
+   * Settings for the owner to type their own name for each type — and it is
+   * gone at their instruction: the app works the word out from the country,
+   * and asking somebody to type "Waybill" into a field labelled Waybill was
+   * the app handing back its own job.
+   *
+   * This asserts the shape cannot come back by accident: two profiles on the
+   * same locale resolve identically, whatever else is attached to them.
+   */
+  it('resolves from the locale alone, with nothing able to override it', () => {
+    const plain: LocaleProfile = { locale: 'EN-GB' }
+    const decorated = { locale: 'EN-GB', labelOverrides: { waybill: 'Dispatch docket' } }
+
+    expect(label(decorated as LocaleProfile, 'waybill')).toBe('Delivery note')
+    expect(printedTitle(decorated as LocaleProfile, 'waybill')).toBe('DELIVERY NOTE')
+    for (const type of ['invoice', 'quotation', 'receipt', 'waybill'] as const) {
+      expect(label(decorated as LocaleProfile, type)).toBe(label(plain, type))
+    }
   })
 
   it('refuses an unknown locale rather than falling back silently', () => {

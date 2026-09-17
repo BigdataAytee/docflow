@@ -134,7 +134,7 @@ export function AccountGate({ session, children }: AccountGateProps) {
   }
 
   if (stage.kind === 'needs_company') {
-    const suggested = regionFromBrowser(navigator.language)
+    const suggested = regionFromBrowser()
     return (
       <NewBusinessScreen
         strings={strings}

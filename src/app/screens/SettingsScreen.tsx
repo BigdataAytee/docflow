@@ -42,7 +42,7 @@ import { ThemeSettings } from '../../features/theme/ThemeSettings'
 import { useThemeChoice } from '../../features/theme/ThemeContext'
 import { runExport } from '../../features/export/action'
 import { createWebSharePort } from '../../share/web'
-import { applyLabelOverride, applyRegion, regionProfile } from '../../features/settings/region'
+import { applyRegion, regionProfile } from '../../features/settings/region'
 import { PPM, percentToPpm } from '../../domain/money/money'
 import { type UiStrings, format } from '../../domain/locale/data/strings'
 import { ALWAYS_AVAILABLE, methodName } from '../../features/payments/methods'
@@ -221,14 +221,10 @@ function SettingsPanelBody() {
     case 'region':
       return (
         <RegionSettings
-          settings={{
-            region,
-            language: company.localeLanguage,
-            labelOverrides: company.labelOverrides,
-          }}
+          settings={{ region, language: company.localeLanguage }}
           onRegion={(next) => {
             const { settings, profile } = applyRegion(
-              { region, language: company.localeLanguage, labelOverrides: company.labelOverrides },
+              { region, language: company.localeLanguage },
               next,
             )
             // §D: terminology, currency default, bank fields, tax label and
@@ -243,14 +239,6 @@ function SettingsPanelBody() {
             // currency and bank fields; this drives the surrounding words,
             // and App re-reads the catalogue from the company record.
             void actions.updateCompany({ localeLanguage: next })
-          }}
-          onOverride={(type, label) => {
-            const settings = applyLabelOverride(
-              { region, language: company.localeLanguage, labelOverrides: company.labelOverrides },
-              type,
-              label,
-            )
-            void actions.updateCompany({ labelOverrides: settings.labelOverrides })
           }}
         />
       )

@@ -1,0 +1,24 @@
+-- The app names the documents; nobody types the word (§D).
+--
+-- `label_overrides` held a per-type custom name — the four "Call this
+-- document" boxes in Settings → Region & language. Removed at the owner's
+-- instruction: "it should be an automatic thing the app is able to decide by
+-- itself by location of where it is been downloaded."
+--
+-- It already could, and that is what made the boxes wrong. The device's time
+-- zone gives the country, the country selects a §D terminology table, and the
+-- table has the word: Africa/Lagos → NG → "Waybill", Europe/London → GB →
+-- "Delivery note", America/New_York → US → "Packing slip". Four text inputs
+-- labelled with the very word they were asking to be typed were the app
+-- handing back the one job the table exists to do.
+--
+-- NOTHING ALREADY PRINTED CHANGES. Labels freeze into `frozen_labels` at
+-- issue (Rule #5, §D.2), so every issued document keeps the exact words it
+-- was issued with whether or not an override was ever set. This column only
+-- ever affected what a DRAFT would be called next, and a draft re-resolves
+-- through the table now.
+--
+-- Dropping rather than leaving it: a column nothing reads is a column the
+-- next person has to work out the status of, and the app no longer writes it
+-- at all.
+alter table public.companies drop column if exists label_overrides;

@@ -331,11 +331,17 @@ gate:hosted" silently did nothing. One script now, with
 `--env-file-if-exists=.env`: exported shell variables and a gitignored `.env`
 both work, and `gate:hosted:local` is gone.
 
-**Twenty-five migrations** are written. `0021_recurrences` is applied on the
+**Twenty-six migrations** are written. `0021_recurrences` is applied on the
 remote (`migration list` shows `local 0021 -> remote 0021`) and its RLS suite
 is green in CI. `0022_company_contact` adds the business's own phone, email
-and website — the footer strip every document ends with (§I) — and is the one
-still to push.
+and website — the footer strip every document ends with (§I).
+
+`0026_drop_label_overrides` is written and NOT YET APPLIED. It removes the
+per-type custom document name at the owner's instruction — the app works the
+word out from the device's time zone now, so the four "Call this document"
+boxes are gone from Settings. Nothing printed changes: labels freeze into
+`frozen_labels` at issue (Rule #5), so an issued document keeps its words
+either way. The app no longer reads or writes the column.
 
 **Ten separate items sat behind that one act** — S1–S10 under "The server
 remainder" below. S1 is now done and the other nine are unblocked, so the
@@ -468,7 +474,7 @@ not start until they are.
 | --- | --- |
 | Two seeded companies cannot read or write each other | ✅ verified, local Postgres — 21 tests in `supabase/tests/rls.test.ts`, blocking in CI |
 | Money and transition property tests pass | ✅ verified — 66 tests across `src/domain/{money,documents,payments}`, blocking in CI |
-| Label resolution passes its own property test; no hardcoded type name survives the lint rule | ✅ verified, both halves — 52 tests in `src/domain/locale`, plus the lint rule |
+| Label resolution passes its own property test; no hardcoded type name survives the lint rule | ✅ verified, both halves — 67 tests in `src/domain/locale`, plus the lint rule |
 | Encrypted SQLite opens on device | ⏸ **deferred to Phase 4** — needs the native shell and a physical device |
 | Login / register / Google / reset in ≤ legacy tap counts | ⛔ **unverified** — code complete, no reachable instance (S6; the tap count itself is D2) |
 | *(self-imposed)* the same denial suite against the hosted instance | ⛔ **unverified** — same reason (S4) |

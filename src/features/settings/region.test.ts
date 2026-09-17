@@ -11,7 +11,6 @@ import {
   type CompanyLocaleSettings,
   RegionError,
   VALIDATED_REGIONS,
-  applyLabelOverride,
   applyLanguage,
   applyRegion,
   localeProfileOf,
@@ -19,7 +18,7 @@ import {
   regionProfile,
 } from './region'
 
-const settings: CompanyLocaleSettings = { region: 'NG', language: 'en', labelOverrides: {} }
+const settings: CompanyLocaleSettings = { region: 'NG', language: 'en' }
 
 describe('One country choice settles five things (§D)', () => {
   it('gives Nigeria NGN, three bank fields, VAT and a waybill', () => {
@@ -111,30 +110,46 @@ describe('Changing region moves everything at once (§D, §V)', () => {
   })
 })
 
-describe('The per-type label override (§D)', () => {
-  it('renames one type without touching the others', () => {
-    const overridden = applyLabelOverride(settings, 'waybill', 'Dispatch docket')
-    const profile = localeProfileOf(overridden)
+/**
+ * The country names the documents, and nobody types a word (§D).
+ *
+ * Settings used to carry four text boxes — "Call this document" — for the
+ * owner to name each type themselves. Removed at their instruction: the app
+ * decides this from where the business is, which it always could. What is
+ * left is the demonstration that it does.
+ */
+describe('What a document is called follows the country', () => {
+  const nameFor = (region: string, type: (typeof DOCUMENT_TYPES)[number]) =>
+    typeLabel(localeProfileOf({ region, language: 'en' }), type)
 
-    expect(typeLabel(profile, 'waybill')).toBe('Dispatch docket')
-    for (const type of DOCUMENT_TYPES) {
-      if (type !== 'waybill') {
-        expect(typeLabel(profile, type)).toBe(typeLabel({ locale: 'EN-NG' }, type))
-      }
-    }
+  /** The owner's own example, both halves of it. */
+  it('calls a delivery a Waybill in Nigeria and a Delivery note in the UK', () => {
+    expect(nameFor('NG', 'waybill')).toBe('Waybill')
+    expect(nameFor('GB', 'waybill')).toBe('Delivery note')
   })
 
-  it('clears back to the regional name', () => {
-    const set = applyLabelOverride(settings, 'waybill', 'Dispatch docket')
-    const cleared = applyLabelOverride(set, 'waybill', null)
-    expect(typeLabel(localeProfileOf(cleared), 'waybill')).toBe('Waybill')
+  it('calls it a Packing slip in the United States, and a quotation a Quote', () => {
+    expect(nameFor('US', 'waybill')).toBe('Packing slip')
+    expect(nameFor('US', 'quotation')).toBe('Quote')
   })
 
-  it('treats blank as clearing rather than as an empty label', () => {
-    const set = applyLabelOverride(settings, 'waybill', 'Dispatch docket')
-    expect(typeLabel(localeProfileOf(applyLabelOverride(set, 'waybill', '   ')), 'waybill')).toBe(
-      'Waybill',
+  /**
+   * Changing the country moves the words with it — which is the whole reason
+   * nobody needs to type them.
+   */
+  it('moves every name at once when the country changes', () => {
+    const before = DOCUMENT_TYPES.map((type) => nameFor('NG', type))
+    const { settings: moved } = applyRegion({ region: 'NG', language: 'en' }, 'GB')
+    const after = DOCUMENT_TYPES.map((type) =>
+      typeLabel(localeProfileOf(moved), type),
     )
+    expect(after).not.toEqual(before)
+    expect(after[DOCUMENT_TYPES.indexOf('waybill')]).toBe('Delivery note')
+  })
+
+  /** A market §D has no signed-off vocabulary for reads international English. */
+  it('gives an unvalidated market the intl table rather than an invented one', () => {
+    expect(nameFor('KE', 'waybill')).toBe(nameFor('GB', 'waybill'))
   })
 })
 

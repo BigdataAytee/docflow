@@ -16,15 +16,20 @@ import { DEFAULT_LOCALE, TERMINOLOGY_TABLES } from './data/terminology'
 /**
  * A company's chosen profile. Region and language are independent (§S): a
  * French-speaking business in Lagos gets FR strings with NGN banking.
+ *
+ * THE LOCALE IS THE WHOLE PROFILE, and that is the point.
+ *
+ * This carried `labelOverrides` — a per-type custom name the owner typed into
+ * Settings — and it has been removed at the owner's instruction: "it should
+ * be an automatic thing the app is able to decide by itself." It already
+ * could. `Africa/Lagos` resolves to NG, NG reads EN-NG, and EN-NG calls a
+ * delivery a Waybill; a device in London resolves to GB and gets Delivery
+ * note. Four text boxes asking somebody to type the word themselves were
+ * asking them to do the one job the table exists to do.
  */
 export interface LocaleProfile {
-  /** Which terminology table to read (§D). */
+  /** Which terminology table to read (§D). The only thing that decides a word. */
   readonly locale: LocaleId
-  /**
-   * Per-type custom names, for the rare edge case Settings exposes as
-   * "Call this document: Waybill / Delivery note / Custom…" (§D).
-   */
-  readonly labelOverrides?: Partial<Record<DocumentType, string>>
 }
 
 export class LocaleError extends Error {}
@@ -44,25 +49,7 @@ export function tableFor(profile: LocaleProfile): TerminologyTable {
  * surface cannot accidentally resolve a label a different way.
  */
 export function resolve(profile: LocaleProfile, type: DocumentType): TypeTerminology {
-  const base = tableFor(profile).types[type]
-  const override = profile.labelOverrides?.[type]
-  if (override === undefined || override.trim() === '') return base
-
-  // An override renames the document on every surface at once — including the
-  // printed title — or it would break Rule #5 the moment it was used.
-  //
-  // The override is used AS TYPED for the sentence form. Case-folding somebody
-  // else's word is the one thing this layer must not do: "BL" is an
-  // abbreviation, not a noun that wants lowering, and there is no rule here
-  // that can tell the two apart.
-  return {
-    ...base,
-    label: override,
-    labelInSentence: override,
-    pluralLabel: override,
-    pluralInSentence: override,
-    printedTitle: override.toLocaleUpperCase(),
-  }
+  return tableFor(profile).types[type]
 }
 
 /** The name on a tile, a list hero, a builder header, a chip, the share text. */

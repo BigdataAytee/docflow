@@ -118,7 +118,6 @@ describe('Every mapped field has a column that exists (§E)', () => {
       name: 'Sola Ventures',
       localeRegion: 'NG',
       localeLanguage: 'en',
-      labelOverrides: { waybill: 'Delivery note' },
       currency: 'NGN',
       numberingPrefixes: { invoice: 'INV' },
       bankFields: { bank_name: 'GTB' },
@@ -133,7 +132,6 @@ describe('Every mapped field has a column that exists (§E)', () => {
     const back = toCompany(await roundTrip('companies', fromCompany(patch)))
 
     expect(back.name).toBe('Sola Ventures')
-    expect(back.labelOverrides).toEqual({ waybill: 'Delivery note' })
     expect(back.enabledPaymentMethods).toEqual(['bank_transfer'])
     expect(back.brandColour).toBe('#2b3fd6')
     expect(back.nameStyle).toBe('serif')

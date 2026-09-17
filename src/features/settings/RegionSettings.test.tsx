@@ -18,7 +18,8 @@ import { type CompanyLocaleSettings, localeProfileOf } from './region'
 import { RegionSettings } from './RegionSettings'
 import { stringsFor } from '../../domain/locale/data/strings'
 
-const settings: CompanyLocaleSettings = { region: 'NG', language: 'en', labelOverrides: {} }
+const settings: CompanyLocaleSettings = { region: 'NG', language: 'en' }
+const gbSettings: CompanyLocaleSettings = { region: 'GB', language: 'en' }
 
 const wrap = (node: React.ReactNode, s: CompanyLocaleSettings = settings) => {
   const repositories = createMemoryRepositories(emptyState())
@@ -37,7 +38,7 @@ const wrap = (node: React.ReactNode, s: CompanyLocaleSettings = settings) => {
 describe('The consequences sit beside the cause (§D)', () => {
   it('shows what the country settles: currency, tax wording, bank fields', () => {
     wrap(<RegionSettings settings={settings} onRegion={vi.fn()}
-        onLanguage={vi.fn()} onOverride={vi.fn()} />)
+        onLanguage={vi.fn()} />)
     expect(screen.getByText('NGN')).toBeInTheDocument()
     expect(screen.getByText('VAT')).toBeInTheDocument()
     expect(screen.getByText('Bank · Account number · Account name')).toBeInTheDocument()
@@ -46,7 +47,7 @@ describe('The consequences sit beside the cause (§D)', () => {
   it('shows the UK consequences when the country is the UK', () => {
     wrap(
       <RegionSettings settings={{ ...settings, region: 'GB' }} onRegion={vi.fn()}
-        onLanguage={vi.fn()} onOverride={vi.fn()} />,
+        onLanguage={vi.fn()} />,
       { ...settings, region: 'GB' },
     )
     expect(screen.getByText('GBP')).toBeInTheDocument()
@@ -55,7 +56,7 @@ describe('The consequences sit beside the cause (§D)', () => {
 
   it('says the change applies offline and immediately (§D.6)', () => {
     wrap(<RegionSettings settings={settings} onRegion={vi.fn()}
-        onLanguage={vi.fn()} onOverride={vi.fn()} />)
+        onLanguage={vi.fn()} />)
     expect(screen.getByText(/with or without internet/i)).toBeInTheDocument()
   })
 
@@ -63,7 +64,7 @@ describe('The consequences sit beside the cause (§D)', () => {
     const user = userEvent.setup()
     const onRegion = vi.fn()
     wrap(<RegionSettings settings={settings} onRegion={onRegion}
-        onLanguage={vi.fn()} onOverride={vi.fn()} />)
+        onLanguage={vi.fn()} />)
     await user.selectOptions(screen.getByLabelText('Business country'), 'GB')
     expect(onRegion).toHaveBeenCalledWith('GB')
   })
@@ -125,10 +126,40 @@ describe('Switching region changes every surface at once (§V)', () => {
     expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent(/delivery note/i)
   })
 
-  it('lets a per-type override reach the same surfaces', () => {
-    const custom = { ...settings, labelOverrides: { waybill: 'Dispatch docket' } }
-    wrap(<DocumentList type="waybill" rows={[]} onOpen={vi.fn()} onNew={vi.fn()} />, custom)
-    expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('Dispatch docket')
+  /**
+   * The screen SAYS what it decided, and offers no way to change it (§N).
+   *
+   * There were four text boxes here — "Call this document" — for the owner to
+   * type each name themselves. They are a read-only list now: the country
+   * above decides the words, which it always did, and this is the panel that
+   * makes that visible rather than something discovered on a finished PDF.
+   */
+  it('shows the four names it worked out, and no box to type one into', () => {
+    const view = wrap(
+      <RegionSettings settings={settings} onRegion={vi.fn()} onLanguage={vi.fn()} />,
+      settings,
+    )
+    const panel = view.container.querySelector('[data-document-names]')
+    expect(panel, 'the screen does not say what the documents are called').not.toBeNull()
+    expect(panel?.textContent).toContain('Waybill')
+
+    /*
+     * THE POINT OF THE CHANGE. A text input here is the feature coming back.
+     * Asserted on the panel rather than on the screen, because the country
+     * and language controls above are legitimately interactive.
+     */
+    expect(panel?.querySelectorAll('input, textarea')).toHaveLength(0)
+  })
+
+  /** And it follows the country, which is what makes the boxes unnecessary. */
+  it('says Delivery note once the country is the UK', () => {
+    const view = wrap(
+      <RegionSettings settings={gbSettings} onRegion={vi.fn()} onLanguage={vi.fn()} />,
+      gbSettings,
+    )
+    const panel = view.container.querySelector('[data-document-names]')
+    expect(panel?.textContent).toContain('Delivery note')
+    expect(panel?.textContent).not.toContain('Waybill')
   })
 })
 
@@ -145,7 +176,6 @@ describe('The app language is a choice, and only where it works (§S, §D.4)', (
         settings={settings}
         onRegion={vi.fn()}
         onLanguage={onLanguage}
-        onOverride={vi.fn()}
       />,
     )
 
@@ -164,7 +194,6 @@ describe('The app language is a choice, and only where it works (§S, §D.4)', (
         settings={settings}
         onRegion={vi.fn()}
         onLanguage={vi.fn()}
-        onOverride={vi.fn()}
       />,
     )
 
@@ -194,7 +223,6 @@ describe('The country picker reads as countries, not as codes', () => {
         settings={settings}
         onRegion={vi.fn()}
         onLanguage={vi.fn()}
-        onOverride={vi.fn()}
       />,
     )
 

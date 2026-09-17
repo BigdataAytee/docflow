@@ -16,6 +16,7 @@ import { useId, useMemo, useState } from 'react'
 
 import type { UiStrings } from '../../domain/locale/data/strings'
 import { SUPPORTED_REGIONS, regionProfile } from '../settings/region'
+import { detectRegion, readSignals } from '../../domain/locale/detect'
 import { countriesByName } from '../../domain/locale/data/countries'
 
 export interface NewBusinessScreenProps {
@@ -27,13 +28,18 @@ export interface NewBusinessScreenProps {
 }
 
 /**
- * The device's country, when the browser will say. A GUESS at a default, never
- * a decision: it lands in a control the owner can see and change before
- * anything is created.
+ * The device's country. A GUESS at a default, never a decision: it lands in a
+ * control the owner can see and change before anything is created.
+ *
+ * It used to read the country out of `navigator.language` alone, which is a
+ * LANGUAGE tag and not a location — a Nigerian phone in English says `en-US`,
+ * so this offered the United States and the business's delivery documents
+ * came out called "Packing slip". `detectRegion` reads the time zone first,
+ * which is the one signal that describes a place, and falls back to the
+ * language tag only when it carries a real country subtag.
  */
-export function regionFromBrowser(locale: string | undefined): string | undefined {
-  const region = locale?.split('-')[1]?.toUpperCase()
-  return region !== undefined && SUPPORTED_REGIONS.includes(region) ? region : undefined
+export function regionFromBrowser(): string | undefined {
+  return detectRegion(readSignals(), (region) => SUPPORTED_REGIONS.includes(region)).region
 }
 
 export function NewBusinessScreen({
