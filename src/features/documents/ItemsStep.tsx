@@ -21,7 +21,13 @@ import { useEffect, useRef, useState } from 'react'
 
 import { useCompany } from '../../app/context'
 import { EmptyState, Icon, TYPE_PALETTE } from '../../ui'
-import { carriesMoney, quantity as toQuantity, type LineItem } from '../../domain/documents/types'
+import {
+  carriesItemPhotos,
+  carriesMoney,
+  quantity as toQuantity,
+  type LineItem,
+} from '../../domain/documents/types'
+import { ItemPhoto } from '../photos/ItemPhoto'
 import type { SavedItem } from '../../data/repositories'
 import { lineTotal } from '../../domain/money/totals'
 import { money } from '../../domain/money/money'
@@ -36,13 +42,40 @@ export interface ItemsStepProps {
   readonly onRemember?: (item: { name: string; unitPriceMinor?: number; unit?: string }) => void
   /** §G: "a list icon jumps to Settings → Saved items". */
   readonly onOpenCatalogue?: () => void
+  /**
+   * Stores a line's photo and gives back its asset id (§P).
+   *
+   * The screen never holds the image: it hands over the shrunk data URL and
+   * gets an id back, exactly as the signature pad does. A line pointing at an
+   * asset the repository never accepted would print a broken thumbnail on a
+   * document claiming to show the goods.
+   */
+  readonly onStorePhoto?: (dataUrl: string) => Promise<string>
+  /** The stored photos, by asset id, so a row can draw the one it has. */
+  readonly photoUrls?: Readonly<Record<string, string>>
 }
 
 let nextLineId = 0
 
-export function ItemsStep({ draft, onChange, onRemember, onOpenCatalogue }: ItemsStepProps) {
+export function ItemsStep({
+  draft,
+  onChange,
+  onRemember,
+  onOpenCatalogue,
+  onStorePhoto,
+  photoUrls = {},
+}: ItemsStepProps) {
   const { companyId, repositories, strings } = useCompany()
   const showsMoney = carriesMoney(draft.type)
+  /*
+   * A RECEIPT SHOWS NO PICTURES OF MERCHANDISE.
+   *
+   * It is evidence that money arrived, and the goods were described on the
+   * invoice it settles — which carries the photographs already. The rule
+   * lives in the domain beside `carriesMoney`, so the builder and the printed
+   * page cannot come to different conclusions about the same document.
+   */
+  const showsPhotos = carriesItemPhotos(draft.type) && onStorePhoto !== undefined
   const { accent, tint } = TYPE_PALETTE[draft.type]
 
   const [description, setDescription] = useState('')
@@ -348,6 +381,45 @@ export function ItemsStep({ draft, onChange, onRemember, onOpenCatalogue }: Item
                 <span className="shrink-0 text-[11.5px] font-semibold tabular-nums">
                   {formatMoney(lineTotal(draft.currency, line))}
                 </span>
+              )}
+
+              {/*
+                THE PICTURE OF THE GOODS (§G step 2, §I).
+
+                At the END of the row, the size of the delete button beside
+                it, and drawn at 45% opacity when empty. A row with no photo
+                has to read as finished rather than as a form somebody did
+                not complete — Rule #1's "ignoring it costs nothing" is about
+                what the screen looks like as much as what it asks for.
+              */}
+              {showsPhotos && (
+                <ItemPhoto
+                  itemName={line.description}
+                  {...(line.imageAssetId === undefined ||
+                  photoUrls[line.imageAssetId] === undefined
+                    ? {}
+                    : { currentUrl: photoUrls[line.imageAssetId] })}
+                  onPhoto={async (dataUrl) => {
+                    const assetId = await onStorePhoto(dataUrl)
+                    onChange({
+                      lineItems: draft.lineItems.map((row, i) =>
+                        i === index ? { ...row, imageAssetId: assetId } : row,
+                      ),
+                    })
+                  }}
+                  onRemove={() =>
+                    onChange({
+                      lineItems: draft.lineItems.map((row, i) => {
+                        if (i !== index) return row
+                        // The FIELD goes, not an empty string in it: a line
+                        // carrying `imageAssetId: ''` reads as one with a
+                        // photo everywhere that checks for the field.
+                        const { imageAssetId: _gone, ...rest } = row
+                        return rest
+                      }),
+                    })
+                  }
+                />
               )}
 
               <button

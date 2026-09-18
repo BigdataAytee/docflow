@@ -258,8 +258,11 @@ report.
 | The inert pencil on the document number | **done** | The WRITE always worked; the field printed the provisional reference unconditionally, so a typed `DR-INV-0413` turned back into `INV-…` and the control stayed indistinguishable from the dead one it replaced. There were no UI tests for it at all; five now, including `shows the owner their own number back`. |
 | Receipts: frozen remaining balance on the printed document | **done** | §4 of the rebuild. `0029`, applied. |
 | Receipts: two entry paths | **done** | §1–§3. Walked on the device. |
-| Receipts: Path A without an items step | **in progress** | Description comes from the invoice it settles. |
-| Receipts: quotation → invoice → receipt, both entry points | **not started** | |
+| Receipts: Path A as ONE page | **done** | `2387c8c`. Who paid → which bill → one screen: amount prefilled to the whole balance, date, method, live preview that moves with the amount, signature pad, one button that writes the payment, issues the receipt and shows it. No items, design or review step. |
+| The invoice picker is readable | **done** | `2387c8c`. Goods and date lead the row; reference, face value and balance beside them — the pair is what says a part payment already happened. |
+| Receipts: the printed picture | **done** | `2387c8c`, `0030` applied. Items from the invoice, invoice total, paid before, paid now, balance or "Paid in full", all frozen at issue. Caught a live trap on the way: a receipt's total was the SUM OF ITS LINES, so carrying the invoice's goods would have issued a ₦45,000 part payment at the bill's ₦145,000. §V is structural now. |
+| Per-item photos, end to end | **done** | `0031` applied. §E declared `image asset id`, §G asked for the card, §I for the thumbnail — and `LineItem` had no field, so three layers were ready for a value none could receive. Camera per line in the builder, thumbnail in the description column, 320px at q0.6. Not on receipts. Five mutations proved the guards. |
+| Receipts: quotation → invoice → receipt, both entry points | **in progress** | The domain (`quotationPaid.ts`) and the picker's accepted-quotation rows are in; the "They've paid" action on the quotation itself and the confirmation naming both documents are not. |
 | The device walk: both receipt journeys end to end | **not done** | Four defects found by the partial walk, none reachable by any test written for them. |
 | The navigation walk (Back chains, hardware Back, gesture bar) | **not done** | Nav placement and the Settings Back are confirmed on device; the rest is not. |
 
@@ -355,7 +358,7 @@ gate:hosted" silently did nothing. One script now, with
 `--env-file-if-exists=.env`: exported shell variables and a gitignored `.env`
 both work, and `gate:hosted:local` is gone.
 
-**Thirty migrations** are written. `0021_recurrences` is applied on the
+**Thirty-one migrations** are written. `0021_recurrences` is applied on the
 remote (`migration list` shows `local 0021 -> remote 0021`) and its RLS suite
 is green in CI. `0022_company_contact` adds the business's own phone, email
 and website — the footer strip every document ends with (§I).

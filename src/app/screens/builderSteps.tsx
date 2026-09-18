@@ -39,6 +39,10 @@ export interface StepBodyProps {
   readonly discountPercent: number
   readonly taxLabel: string
   readonly problems: readonly IssueProblem[]
+  /** §G step 2's per-line photo: stores the shrunk image, returns its id. */
+  readonly onStoreItemPhoto?: (dataUrl: string) => Promise<string>
+  /** The stored line photos, by asset id, so a row can draw the one it has. */
+  readonly photoUrls?: Readonly<Record<string, string>>
   readonly composable: ComposableDocument
   readonly composeOptions: Omit<ComposeOptions, 'profile'>
   readonly customers: readonly Customer[]
@@ -94,6 +98,10 @@ export function StepBody(props: StepBodyProps) {
           onChange={props.onChange}
           onRemember={props.onRememberItem}
           onOpenCatalogue={props.onOpenCatalogue}
+          {...(props.onStoreItemPhoto === undefined
+            ? {}
+            : { onStorePhoto: props.onStoreItemPhoto })}
+          {...(props.photoUrls === undefined ? {} : { photoUrls: props.photoUrls })}
         />
       )
     case 'totals':

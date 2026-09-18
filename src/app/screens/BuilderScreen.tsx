@@ -862,6 +862,18 @@ export function BuilderScreen({ now = () => new Date().toISOString() }: { now?: 
   const assetUrl = (id: string | undefined): string | undefined =>
     id === undefined ? undefined : assets.find((asset) => asset.id === id)?.dataUrl
   const signatureUrl = assetUrl(state?.draft.signatureAssetId)
+
+  /*
+   * The line photos, by id — resolved ONCE for the whole step (§G step 2).
+   *
+   * Every asset is a `data:` URL held in memory, so a lookup per row per
+   * render would be a linear scan over every logo, signature and delivery
+   * photo the business owns, on a list that can be long.
+   */
+  const photoUrls = useMemo(
+    () => Object.fromEntries(assets.map((asset) => [asset.id, asset.dataUrl])),
+    [assets],
+  )
   const defaultSignatureId = company?.defaultSignatureAssetId ?? undefined
 
   /** One place the mark reaches the draft, whether drawn now or saved before. */
@@ -1104,6 +1116,18 @@ export function BuilderScreen({ now = () => new Date().toISOString() }: { now?: 
         }}
         {...(signatureUrl === undefined ? {} : { signatureUrl })}
         onOpenCatalogue={() => navigate(settingsPath('items'))}
+        /*
+         * §G step 2's per-line photo, stored before it is referenced (§P).
+         *
+         * The same order as the signature pad: the asset is written, and only
+         * the id it comes back with reaches the draft. A line pointing at an
+         * asset the repository never accepted would print a broken thumbnail
+         * on a document claiming to show the goods.
+         */
+        onStoreItemPhoto={(dataUrl) =>
+          actions.storeAsset('item_photo', dataUrl).then((asset) => asset.id)
+        }
+        photoUrls={photoUrls}
         onRememberItem={(item) => {
           void actions.rememberItem({
             name: item.name,

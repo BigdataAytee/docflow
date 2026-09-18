@@ -3905,6 +3905,167 @@ describe('Recording the customer’s answer (§G, §P)', () => {
   })
 })
 
+/**
+ * A picture of the goods, on a line item (§E, §G step 2, §I).
+ *
+ * The declared-and-never-REACHABLY-filled shape CLAUDE.md warns the sweep
+ * cannot see. `imageAssetId` could be read by a mapper and printed by the
+ * page and still be a dead field, because nothing a person can touch put a
+ * value in it. So this walks the builder: open the Items step, attach a
+ * photo, and check the draft that gets SAVED carries the id.
+ */
+describe('A photo on a line item (§E, §G step 2)', () => {
+  /**
+   * jsdom has no canvas and no `createImageBitmap`, so `shrinkItemPhoto`
+   * cannot run here — the same split the signature pad and the delivery photo
+   * use: the arithmetic is property-tested on its own, and this drives the
+   * wiring around it.
+   */
+  const stubShrink = () => {
+    const bitmap = { width: 4032, height: 3024, close: () => undefined } as unknown as ImageBitmap
+    vi.stubGlobal('createImageBitmap', async () => bitmap)
+    const toDataURL = vi.fn(() => 'data:image/jpeg;base64,THUMB')
+    vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockReturnValue({
+      drawImage: () => undefined,
+    } as unknown as CanvasRenderingContext2D)
+    vi.spyOn(HTMLCanvasElement.prototype, 'toDataURL').mockImplementation(toDataURL)
+    return toDataURL
+  }
+
+  afterEach(() => {
+    vi.unstubAllGlobals()
+    vi.restoreAllMocks()
+  })
+
+  const shot = () => new File(['pretend-jpeg-bytes'], 'sheets.jpg', { type: 'image/jpeg' })
+
+  const drafted = (type: 'invoice' | 'quotation' | 'waybill' | 'receipt') => (state: MemoryState) => {
+    state.customers.push(customer())
+    state.documents.push({
+      id: 'doc_draft',
+      companyId: DEV_COMPANY_ID,
+      type,
+      status: 'draft',
+      customerId: 'cus_1',
+      currency: 'NGN',
+      lineItems: [
+        {
+          id: 'li_1',
+          description: 'Roofing sheets',
+          quantityMilli: 1_000,
+          ...(type === 'waybill' ? { unit: 'bundles' } : { unitPriceMinor: 145_000_00 }),
+          taxable: true,
+        },
+      ],
+      issueDate: '2026-09-01',
+      issuedReference: null,
+      frozenLabels: null,
+      totalMinor: type === 'waybill' ? 0 : 145_000_00,
+      ...(type === 'receipt' ? { paymentId: 'pay_1' } : {}),
+    })
+  }
+
+  /** A delivery calls the step Goods; everything else calls it Items (§D). */
+  const openItems = async (
+    user: ReturnType<typeof userEvent.setup>,
+    named: 'Items' | 'Goods' = 'Items',
+  ) => {
+    await user.click(await screen.findByRole('button', { name: named }))
+  }
+
+  /**
+   * Drafts autosave on step change (§G), so moving on is what writes.
+   *
+   * Which is also the real gesture: a trader attaches the photo and carries
+   * on. Reading the record without it would be reading the screen's state
+   * back to itself.
+   */
+  const moveOn = async (user: ReturnType<typeof userEvent.setup>) => {
+    await user.click(screen.getByRole('button', { name: 'Next' }))
+  }
+
+  /**
+   * THE ONE THIS IS FOR. Before the field existed, the control could not be
+   * drawn and the id could not be stored — the spec had asked for both since
+   * it was written.
+   */
+  it('stores the shrunk photo and puts its id on the line', async () => {
+    const user = userEvent.setup()
+    const toDataURL = stubShrink()
+    const state = renderAt('/edit/doc_draft', drafted('invoice'))
+
+    await openItems(user)
+    await user.upload(document.querySelector('input[type="file"]')!, shot())
+
+    await waitFor(() => expect(state.assets).toHaveLength(1))
+    expect(state.assets[0]?.kind).toBe('item_photo')
+    expect(state.assets[0]?.dataUrl).toBe('data:image/jpeg;base64,THUMB')
+
+    /*
+     * SHRUNK MUCH HARDER than a delivery photo. A thumbnail is drawn 34pt
+     * wide on the page; a document full of evidence-quality photographs is
+     * several megabytes over metered data, which is a PDF that never gets
+     * sent.
+     */
+    expect(toDataURL).toHaveBeenCalledWith('image/jpeg', 0.6)
+
+    // And the row draws the picture rather than saying one is attached.
+    expect(await screen.findByRole('img', { name: /Roofing sheets/ })).toBeInTheDocument()
+
+    await moveOn(user)
+    await waitFor(() =>
+      expect(state.documents[0]?.lineItems[0]?.imageAssetId).toBe(state.assets[0]?.id),
+    )
+  })
+
+  /** Taking it off removes the FIELD, not the id — an empty string reads as a photo. */
+  it('removes the photo from the line', async () => {
+    const user = userEvent.setup()
+    stubShrink()
+    const state = renderAt('/edit/doc_draft', drafted('invoice'))
+
+    await openItems(user)
+    await user.upload(document.querySelector('input[type="file"]')!, shot())
+    await screen.findByRole('img', { name: /Roofing sheets/ })
+    await moveOn(user)
+    await waitFor(() => expect(state.documents[0]?.lineItems[0]?.imageAssetId).toBeTruthy())
+
+    await openItems(user)
+    await user.click(await screen.findByRole('button', { name: /Remove the photo/ }))
+    await moveOn(user)
+    await waitFor(() =>
+      expect(state.documents[0]?.lineItems[0]?.imageAssetId).toBeUndefined(),
+    )
+    expect('imageAssetId' in (state.documents[0]?.lineItems[0] ?? {})).toBe(false)
+  })
+
+  /**
+   * A ROW WITH NO PHOTO MUST LOOK FINISHED. Most traders will not attach one
+   * most of the time, and Rule #1's "ignoring it costs nothing" is about what
+   * the screen looks like as much as what it asks for — so the control is a
+   * camera the size of the delete button, with no label taking width.
+   */
+  it.each(['invoice', 'quotation', 'waybill'] as const)('offers a quiet control on a %s', async (type) => {
+    const user = userEvent.setup()
+    renderAt('/edit/doc_draft', drafted(type))
+    await openItems(user, type === 'waybill' ? 'Goods' : 'Items')
+    const add = await screen.findByRole('button', { name: /Add a photo to Roofing sheets/ })
+    expect(add.textContent, 'the control took width for a label').toBe('')
+  })
+
+  /**
+   * AND NOT ON A RECEIPT. It is evidence money arrived; the goods were
+   * described on the invoice it settles, which carries the photographs.
+   */
+  it('offers nothing on a receipt', async () => {
+    const user = userEvent.setup()
+    renderAt('/edit/doc_draft', drafted('receipt'))
+    await openItems(user)
+    await screen.findByText('Roofing sheets')
+    expect(screen.queryByRole('button', { name: /Add a photo to/ })).toBeNull()
+  })
+})
+
 describe('The photo on a delivery (§G, §E, §P)', () => {
   /**
    * jsdom has no canvas and no `createImageBitmap`, so `shrinkImage` cannot

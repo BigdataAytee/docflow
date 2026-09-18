@@ -20,6 +20,7 @@ import {
   type FrozenLabels,
   type LineItem,
   QUANTITY_SCALE,
+  carriesItemPhotos,
   carriesMoney,
 } from '../domain/documents/types'
 import { type Money, money } from '../domain/money/money'
@@ -147,6 +148,15 @@ export interface TableRow {
   readonly unit?: string
   /** Absent on a delivery document — the column does not exist there (§I). */
   readonly amount?: Money
+  /**
+   * §I's "thumbnail if a photo was attached", resolved to a `data:` URL.
+   *
+   * The URL rather than the asset id, because the page draws it and §M says
+   * nothing needed to open a saved document touches a CDN — so the image is
+   * already in hand or the row simply has none. An id the asset store cannot
+   * resolve prints no thumbnail rather than a broken one.
+   */
+  readonly imageUrl?: string
 }
 
 export interface PaymentBoxRow {
@@ -456,6 +466,23 @@ export function composeDocument(
      * that was meant to say which.
      */
     ...(line.unit === undefined ? {} : { unit: line.unit }),
+    /*
+     * THE PICTURE OF THE GOODS (§E, §G step 2, §I).
+     *
+     * Not on a receipt: it is evidence that money arrived, and the goods were
+     * described on the invoice it settles — which carries the photographs
+     * already. `carriesItemPhotos` is the domain's rule, so the builder's
+     * control and this page cannot disagree about which types show them.
+     *
+     * Resolved through the same `assetUrls` map as the logo and the
+     * signature. An id nothing resolves prints no thumbnail rather than a
+     * broken image on a document claiming to show the goods.
+     */
+    ...(!carriesItemPhotos(document.type) ||
+    line.imageAssetId === undefined ||
+    options.assetUrls?.[line.imageAssetId] === undefined
+      ? {}
+      : { imageUrl: options.assetUrls[line.imageAssetId] }),
     ...(showsMoney ? { amount: lineTotal(document.currency, line) } : {}),
   }))
 

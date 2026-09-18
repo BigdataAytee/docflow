@@ -760,6 +760,11 @@ export interface UiStrings {
     readonly sealed: string
     readonly notAnImage: string
     readonly failed: string
+    /** The quiet per-line control in the Items step (§G step 2). */
+    readonly addToItem: string
+    readonly onItem: string
+    readonly replaceOnItem: string
+    readonly removeFromItem: string
   }
   readonly signature: {
     readonly title: string
@@ -1817,6 +1822,18 @@ const EN: UiStrings = {
     sealed: 'This was taken at delivery and cannot be changed.',
     notAnImage: 'That file is not a photo.',
     failed: 'That photo could not be saved: {reason}',
+    /*
+     * NAMED FOR SCREEN READERS, not drawn as words.
+     *
+     * The control on a line is a camera the size of the delete button beside
+     * it, because most traders will not use it most of the time and Rule #1
+     * says ignoring it must cost nothing — including the width of a label. A
+     * row with no photo has to look finished, not unfinished.
+     */
+    addToItem: 'Add a photo to {item}',
+    onItem: 'Photo of {item}',
+    replaceOnItem: 'Change the photo of {item}',
+    removeFromItem: 'Remove the photo of {item}',
   },
   signature: {
     title: 'Sign',

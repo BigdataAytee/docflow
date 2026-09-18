@@ -12,6 +12,26 @@ export type DocumentType = (typeof DOCUMENT_TYPES)[number]
 export const carriesMoney = (type: DocumentType): boolean => type !== 'waybill'
 
 /**
+ * Which documents show a picture of the goods (§E, §G step 2, §I).
+ *
+ * EVERYTHING BUT A RECEIPT, and the exception is the reason this is a rule
+ * rather than a check at each call site.
+ *
+ *  · A DELIVERY is the strongest case. A photograph of what left the yard,
+ *    on the paper somebody signs at the gate, is what settles an argument
+ *    about what arrived and in what condition.
+ *  · A QUOTATION persuades. A picture of the exact item is the difference
+ *    between a customer understanding an offer and guessing at it.
+ *  · An INVOICE is weaker — the customer has usually agreed what they are
+ *    buying — but an invoice with no quotation before it is the first time
+ *    the goods are described in writing at all.
+ *  · A RECEIPT is evidence that money arrived. The goods were described on
+ *    the invoice it settles, which carries the photographs already; printing
+ *    them again puts pictures of merchandise on a proof of payment.
+ */
+export const carriesItemPhotos = (type: DocumentType): boolean => type !== 'receipt'
+
+/**
  * Stored statuses, per type. Derived financial states (unpaid, partially_paid,
  * paid, overdue, expired) are NOT here — they are computed at read time from
  * dated documents and effective ledger entries (§C).
@@ -78,6 +98,21 @@ export interface LineItem {
    * and old rows simply have no unit.
    */
   readonly unit?: string
+  /**
+   * A picture of the goods — §E's `image asset id` on a line item.
+   *
+   * §E has declared it, §G step 2 has asked for "a card with optional photo"
+   * and §I for "a thumbnail if a photo was attached" since the spec was
+   * written, and nothing could attach one because the field did not exist.
+   *
+   * An ASSET ID, never the image: assets are stored once, by id, exactly as
+   * signatures and delivery photos are (§P), so a picture used on two lines
+   * is stored once and a document syncs a reference rather than a payload.
+   *
+   * Line items are stored as JSON on both sides, so this needs no migration
+   * and old rows simply have no photo.
+   */
+  readonly imageAssetId?: string
   /** Whether this line is in the tax base (§E line_items.tax_flag). */
   readonly taxable: boolean
 }

@@ -69,6 +69,22 @@ export const isImage = (type: string): boolean => type.startsWith('image/')
  * arrive sideways with its rotation tag stripped.
  */
 export async function shrinkImage(file: Blob, maxEdge: number = MAX_EDGE): Promise<string> {
+  return shrinkAs(file, maxEdge, 'image/jpeg', QUALITY)
+}
+
+/**
+ * The one encoder. Every size and format this app stores goes through it.
+ *
+ * Three copies of "decode, measure, draw, encode" had already been written,
+ * differing only in a number — which is three places for the EXIF-dropping
+ * re-encode and the orientation fix to drift apart.
+ */
+async function shrinkAs(
+  file: Blob,
+  maxEdge: number,
+  mime: 'image/jpeg' | 'image/png',
+  quality?: number,
+): Promise<string> {
   if (!isImage(file.type)) throw new PhotoError('not_an_image')
 
   let bitmap: ImageBitmap
@@ -90,7 +106,47 @@ export async function shrinkImage(file: Blob, maxEdge: number = MAX_EDGE): Promi
   context.drawImage(bitmap, 0, 0, size.width, size.height)
   bitmap.close()
 
-  return canvas.toDataURL('image/jpeg', QUALITY)
+  return quality === undefined ? canvas.toDataURL(mime) : canvas.toDataURL(mime, quality)
+}
+
+/* ------------------------------------------------------- line-item photos */
+
+/**
+ * A picture of the goods, sized for the table it prints in (§I, §M, Rule #1).
+ *
+ * MUCH SMALLER THAN A DELIVERY PHOTO, and deliberately so. A delivery photo
+ * is evidence — the stack of bags, the plate number — and wants detail. A
+ * line-item thumbnail is drawn about 40pt wide in the description column and
+ * needs to be RECOGNISABLE, not readable: at 320px it is already four times
+ * the resolution the page can print.
+ *
+ * The reason is the trader, not the byte count. These go out over WhatsApp on
+ * metered data with poor signal, and a document with eight photographs in it
+ * at delivery-photo size is several megabytes — which is not a slow PDF, it
+ * is a PDF that never gets sent. A tenth of that, and the picture still does
+ * its job on the page.
+ *
+ * ONE ASSET, not an original and a thumbnail. Keeping the full-resolution
+ * photograph as well would double what syncs for the people who can least
+ * afford it, to serve a zoom nothing in the app offers. If a "see it bigger"
+ * ever arrives, 320px is still larger than a phone draws it in a list.
+ */
+export const ITEM_PHOTO_MAX_EDGE = 320
+/** Lower than a delivery photo's: a thumbnail hides its own artefacts. */
+export const ITEM_PHOTO_QUALITY = 0.6
+
+/**
+ * The ceiling a stored thumbnail must come in under, in data-URL characters.
+ *
+ * Roughly 60 KB of base64, which is about 45 KB of JPEG — comfortably above
+ * what 320px at quality 0.6 produces for a photograph, and far below what a
+ * document full of them could cost. It exists so the budget is a number
+ * something can fail against rather than an intention in a comment.
+ */
+export const ITEM_PHOTO_BUDGET = 60_000
+
+export async function shrinkItemPhoto(file: Blob): Promise<string> {
+  return shrinkAs(file, ITEM_PHOTO_MAX_EDGE, 'image/jpeg', ITEM_PHOTO_QUALITY)
 }
 
 /* ------------------------------------------------------------------ logos */
@@ -112,26 +168,5 @@ export async function shrinkImage(file: Blob, maxEdge: number = MAX_EDGE): Promi
 export const LOGO_MAX_EDGE = 512
 
 export async function shrinkLogo(file: Blob): Promise<string> {
-  if (!isImage(file.type)) throw new PhotoError('not_an_image')
-
-  let bitmap: ImageBitmap
-  try {
-    bitmap = await createImageBitmap(file, { imageOrientation: 'from-image' })
-  } catch {
-    throw new PhotoError('unreadable')
-  }
-
-  const size = targetSize({ width: bitmap.width, height: bitmap.height }, LOGO_MAX_EDGE)
-  const canvas = document.createElement('canvas')
-  canvas.width = size.width
-  canvas.height = size.height
-  const context = canvas.getContext('2d')
-  if (context === null) {
-    bitmap.close()
-    throw new PhotoError('no_canvas')
-  }
-  context.drawImage(bitmap, 0, 0, size.width, size.height)
-  bitmap.close()
-
-  return canvas.toDataURL('image/png')
+  return shrinkAs(file, LOGO_MAX_EDGE, 'image/png')
 }

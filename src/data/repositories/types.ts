@@ -514,7 +514,7 @@ export interface AssetRecord {
   readonly id: string
   readonly companyId: string
   /** What this image is. A logo, a delivery photo and a signature seal alike (§P). */
-  readonly kind: 'signature' | 'delivery_photo' | 'expense_photo' | 'logo'
+  readonly kind: 'signature' | 'delivery_photo' | 'expense_photo' | 'logo' | 'item_photo'
   /** A `data:` URL. Never a remote one — §M: nothing needed to open a saved document touches a CDN. */
   readonly dataUrl: string
   readonly createdAt: string
