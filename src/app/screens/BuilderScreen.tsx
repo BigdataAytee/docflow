@@ -47,7 +47,10 @@ import {
   draftOf,
   replacesOf,
 } from '../../features/documents/composition'
+import type { Money } from '../../domain/money/money'
 import { NewReceiptSheet } from '../../features/payments/NewReceiptSheet'
+import { ReceiptStart } from '../../features/payments/ReceiptStart'
+import { OwedPicker } from '../../features/payments/OwedPicker'
 import { SignaturePad } from '../../features/signature/SignaturePad'
 import { availableMethods } from '../../features/payments/methods'
 import {
@@ -113,6 +116,20 @@ function NewReceiptFlow({ today = todayIso() }: { today?: string }) {
   const navigate = useNavigate()
 
   const [problem, setProblem] = useState<string | null>(null)
+  /*
+   * WHERE IN THE TWO PATHS THIS IS.
+   *
+   * `start` asks the one question that divides the journeys; `owed` picks a
+   * debtor; `form` is the form, which asks a different first question
+   * depending on how it was reached (§G, Rule #1).
+   *
+   * The owner built this app and could not work out how to create a receipt,
+   * because the form opened on "Who paid?" — a list of existing customers —
+   * which is the wrong first question for cash from somebody not in the book.
+   */
+  const [step, setStep] = useState<'start' | 'owed' | 'form'>('start')
+  const [mode, setMode] = useState<'owed' | 'cash'>('cash')
+  const [payerId, setPayerId] = useState('')
   // One id per submission, so a double tap collapses onto one payment and one
   // receipt rather than two of each (§M). Cleared only on a failure.
   const submission = useRef<string | null>(null)
@@ -144,89 +161,185 @@ function NewReceiptFlow({ today = todayIso() }: { today?: string }) {
     [documents, payments, creditNotes, company, profile],
   )
 
+
+  /*
+   * ONE IMPLEMENTATION FOR BOTH PATHS.
+   *
+   * The two entries differ only in how the payer is named — picked from the
+   * debtors list, or typed and matched. Everything after that is identical
+   * and must stay identical: the payment is written first and on its own, the
+   * receipt is derived from what the repository acknowledged, and §V's
+   * "issuing or resharing a receipt never increments income" holds because a
+   * receipt can never be the thing that records money.
+   */
+  const recordAndDraw = (input: {
+    customerId: string
+    amount: Money
+    paidAt: string
+    method: string
+    reference?: string
+    invoiceId?: string
+  }): void => {
+    /*
+     * THE DOUBLE-TAP GUARD IS THE CALLER'S, not this function's.
+     *
+     * It used to be the first line here, and the typed-name path sets `busy`
+     * before it can resolve the customer — so this returned immediately and
+     * the payment was never written. A guard that both halves try to own is a
+     * guard one of them loses.
+     */
+    setProblem(null)
+    submission.current ??= `sub:${deviceId()}:${Date.now()}`
+
+    const chosen = invoices.find((invoice) => invoice.id === input.invoiceId)
+    let started
+    try {
+      started = startReceipt({
+        paymentId: submission.current,
+        customerId: input.customerId,
+        amount: input.amount,
+        paidAt: input.paidAt,
+        method: input.method,
+        ...(input.reference === undefined ? {} : { reference: input.reference }),
+        ...(chosen === undefined
+          ? {}
+          : {
+              invoiceId: chosen.id,
+              // The total the allocation is capped against is the
+              // BALANCE, not the face value: an earlier part payment
+              // already took its share (§K).
+              invoiceTotal: chosen.outstanding,
+              existingPayments: [],
+            }),
+      })
+    } catch (cause) {
+      busy.current = false
+      submission.current = null
+      setProblem(
+        format(strings.newReceipt.failed, {
+          reason: cause instanceof Error ? cause.message : String(cause),
+        }),
+      )
+      return
+    }
+
+    // The repository mints the real id; the one `startReceipt` built the
+    // allocations against was only ever a local handle.
+    const { id: _localId, ...withoutId } = started.payment
+    const { paymentKey } = started
+    void actions
+      // The payment, first and on its own. Nothing below runs until the
+      // repository has acknowledged it (§M).
+      .recordPayment(withoutId, paymentKey)
+      .then((recorded) =>
+        actions.createDraftWithKey(
+          receiptRecordFor({
+            payment: recorded,
+            description:
+              chosen === undefined
+                ? strings.newReceipt.lineStandalone
+                : format(strings.newReceipt.lineAgainst, { reference: chosen.reference }),
+            ...(chosen === undefined ? {} : { linkedInvoiceId: chosen.id }),
+            /*
+             * The balance BEFORE this payment, so the receipt can freeze
+             * what is left after it (§I, Rule #5).
+             *
+             * `chosen.outstanding` is the same figure the allocation was
+             * capped against a few lines up, so the money the receipt
+             * reports and the money the ledger moved cannot disagree.
+             */
+            ...(chosen === undefined
+              ? {}
+              : { invoiceOutstandingBefore: chosen.outstanding }),
+          }),
+          receiptKeyFor(recorded.id),
+        ),
+      )
+      .then((created) => navigate(editDocumentPath(created.id), { replace: true }))
+      .catch((cause: unknown) => {
+        busy.current = false
+        submission.current = null
+        setProblem(
+          format(strings.newReceipt.failed, {
+            reason: cause instanceof Error ? cause.message : String(cause),
+          }),
+        )
+      })
+  }
+
   if (loading || company === null) return <NewDocumentSkeleton />
+
+  if (step === 'start') {
+    return (
+      <div className="px-4 py-4">
+        <ReceiptStart
+          anyoneOwes={invoices.some((invoice) => invoice.outstanding.minor > 0)}
+          onOwed={() => {
+            setMode('owed')
+            setStep('owed')
+          }}
+          onCash={() => {
+            setMode('cash')
+            setStep('form')
+          }}
+          onClose={() => navigate(HOME)}
+        />
+      </div>
+    )
+  }
+
+  if (step === 'owed') {
+    return (
+      <div className="px-4 py-4">
+        <OwedPicker
+          customers={customers}
+          invoices={invoices}
+          currency={company.currency}
+          onPick={(id) => {
+            setPayerId(id)
+            setStep('form')
+          }}
+          onBack={() => setStep('start')}
+        />
+      </div>
+    )
+  }
 
   return (
     <div className="px-4 py-4">
       <NewReceiptSheet
-        currency={company.currency}
-        today={today}
-        customers={customers}
-        invoices={invoices}
-        methods={availableMethods(company.enabledPaymentMethods, strings)}
-        onClose={() => navigate(HOME)}
-        {...(problem === null ? {} : { error: problem })}
-        onRecord={(input) => {
+        mode={mode}
+        {...(mode === 'owed' ? { payerId } : {})}
+        onRecordByName={(input) => {
           if (busy.current) return
           busy.current = true
           setProblem(null)
           submission.current ??= `sub:${deviceId()}:${Date.now()}`
 
-          const chosen = invoices.find((invoice) => invoice.id === input.invoiceId)
-          let started
-          try {
-            started = startReceipt({
-              paymentId: submission.current,
-              customerId: input.customerId,
-              amount: input.amount,
-              paidAt: input.paidAt,
-              method: input.method,
-              ...(input.reference === undefined ? {} : { reference: input.reference }),
-              ...(chosen === undefined
-                ? {}
-                : {
-                    invoiceId: chosen.id,
-                    // The total the allocation is capped against is the
-                    // BALANCE, not the face value: an earlier part payment
-                    // already took its share (§K).
-                    invoiceTotal: chosen.outstanding,
-                    existingPayments: [],
-                  }),
-            })
-          } catch (cause) {
-            busy.current = false
-            submission.current = null
-            setProblem(
-              format(strings.newReceipt.failed, {
-                reason: cause instanceof Error ? cause.message : String(cause),
+          /*
+           * A NAME BECOMES A CUSTOMER, as a consequence of being paid.
+           *
+           * Matched case-insensitively against the book first, so paying
+           * "ade stores" twice does not leave two of them; created only when
+           * nobody matches. Never a toll before the money can be recorded —
+           * which is what "never force creating a contact first" means (§G).
+           */
+          const existing = customers.find(
+            (row) => row.name.trim().toLowerCase() === input.name.toLowerCase(),
+          )
+          void (existing !== undefined
+            ? Promise.resolve(existing)
+            : actions.addCustomer({ kind: 'person', name: input.name, labels: [] })
+          )
+            .then((customer) =>
+              recordAndDraw({
+                customerId: customer.id,
+                amount: input.amount,
+                paidAt: input.paidAt,
+                method: input.method,
+                ...(input.reference === undefined ? {} : { reference: input.reference }),
               }),
             )
-            return
-          }
-
-          // The repository mints the real id; the one `startReceipt` built the
-          // allocations against was only ever a local handle.
-          const { id: _localId, ...withoutId } = started.payment
-          const { paymentKey } = started
-          void actions
-            // The payment, first and on its own. Nothing below runs until the
-            // repository has acknowledged it (§M).
-            .recordPayment(withoutId, paymentKey)
-            .then((recorded) =>
-              actions.createDraftWithKey(
-                receiptRecordFor({
-                  payment: recorded,
-                  description:
-                    chosen === undefined
-                      ? strings.newReceipt.lineStandalone
-                      : format(strings.newReceipt.lineAgainst, { reference: chosen.reference }),
-                  ...(chosen === undefined ? {} : { linkedInvoiceId: chosen.id }),
-                  /*
-                   * The balance BEFORE this payment, so the receipt can freeze
-                   * what is left after it (§I, Rule #5).
-                   *
-                   * `chosen.outstanding` is the same figure the allocation was
-                   * capped against a few lines up, so the money the receipt
-                   * reports and the money the ledger moved cannot disagree.
-                   */
-                  ...(chosen === undefined
-                    ? {}
-                    : { invoiceOutstandingBefore: chosen.outstanding }),
-                }),
-                receiptKeyFor(recorded.id),
-              ),
-            )
-            .then((created) => navigate(editDocumentPath(created.id), { replace: true }))
             .catch((cause: unknown) => {
               busy.current = false
               submission.current = null
@@ -236,6 +349,18 @@ function NewReceiptFlow({ today = todayIso() }: { today?: string }) {
                 }),
               )
             })
+        }}
+        currency={company.currency}
+        today={today}
+        customers={customers}
+        invoices={invoices}
+        methods={availableMethods(company.enabledPaymentMethods, strings)}
+        onClose={() => setStep('start')}
+        {...(problem === null ? {} : { error: problem })}
+        onRecord={(input) => {
+          if (busy.current) return
+          busy.current = true
+          recordAndDraw(input)
         }}
       />
     </div>

@@ -2449,11 +2449,30 @@ describe('A receipt is evidence of a payment (§G, §K, §V)', () => {
       expect(screen.queryByLabelText('Acknowledge a payment')).not.toBeInTheDocument()
     })
 
+    /*
+     * THE TWO PATHS (§G, Rule #1).
+     *
+     * `/new/receipt` opens on a choice now, not a form. The owner built this
+     * app and could not work out how to create a receipt, because the form's
+     * first question was "Who paid?" from a list of existing customers —
+     * which is the wrong first question for cash from somebody not in the
+     * book, and made the commonest receipt in a market impossible to record.
+     */
+    const viaOwed = async (user: ReturnType<typeof userEvent.setup>, name: string) => {
+      await user.click(await screen.findByRole('button', { name: 'Payment towards money owed' }))
+      await user.click(await screen.findByRole('button', { name: new RegExp(name) }))
+    }
+
+    const viaCash = async (user: ReturnType<typeof userEvent.setup>, name: string) => {
+      await user.click(await screen.findByRole('button', { name: 'New sale / cash payment' }))
+      await user.type(await screen.findByLabelText('Received from'), name)
+    }
+
     it('writes the payment, then the draft derived from it, and opens the builder', async () => {
       const user = userEvent.setup()
       const state = renderAt('/new/receipt', billed)
 
-      await user.selectOptions(await screen.findByLabelText('Who paid?'), 'cus_1')
+      await viaOwed(user, 'Ade Stores')
       await user.type(screen.getByLabelText('How much came in?'), '45000')
       // Through the owes card, which is where the invoice link lives now — it
       // was a `<select>` labelled "Against" that nobody could find.
@@ -2492,16 +2511,26 @@ describe('A receipt is evidence of a payment (§G, §K, §V)', () => {
       expect(await screen.findByRole('button', { name: /Next/ })).toBeInTheDocument()
     })
 
+    /*
+     * THE CASH PATH, and the case that was impossible before: a name that is
+     * in nobody's book. The payer is TYPED, matched to a customer if one
+     * exists and created if not — the contact happens as a consequence of
+     * being paid, never as a toll before it.
+     */
     it('records money standing alone without billing anybody for it (§G, §K)', async () => {
       const user = userEvent.setup()
       const state = renderAt('/new/receipt', billed)
 
-      await user.selectOptions(await screen.findByLabelText('Who paid?'), 'cus_1')
+      await viaCash(user, 'A passing stranger')
       await user.type(screen.getByLabelText('How much came in?'), '10000')
       await user.click(screen.getByRole('button', { name: 'Record it' }))
 
       await waitFor(() => expect(state.payments).toHaveLength(1))
       expect(state.payments[0]?.allocations).toEqual([])
+      // The name became a customer, because it matched nobody.
+      const made = state.customers.find((row) => row.name === 'A passing stranger')
+      expect(made, 'a typed name did not become a customer').toBeDefined()
+      expect(state.payments[0]?.customerId).toBe(made?.id)
       // No second invoice appeared from nowhere: still the one that was seeded.
       expect(state.documents.filter((document) => document.type === 'invoice')).toHaveLength(1)
       const receipt = state.documents.find((document) => document.type === 'receipt')
@@ -2512,7 +2541,7 @@ describe('A receipt is evidence of a payment (§G, §K, §V)', () => {
       const user = userEvent.setup()
       const state = renderAt('/new/receipt', billed)
 
-      await user.selectOptions(await screen.findByLabelText('Who paid?'), 'cus_1')
+      await viaOwed(user, 'Ade Stores')
       await user.type(screen.getByLabelText('How much came in?'), '45000')
       // An impatient owner on a slow phone. Two taps land BEFORE the first
       // write comes back, which `userEvent` cannot reproduce — it yields
@@ -2546,7 +2575,7 @@ describe('A receipt is evidence of a payment (§G, §K, §V)', () => {
         </StrictMode>,
       )
 
-      await user.selectOptions(await screen.findByLabelText('Who paid?'), 'cus_1')
+      await viaOwed(user, 'Ade Stores')
       await user.type(screen.getByLabelText('How much came in?'), '45000')
       await user.click(screen.getByRole('button', { name: 'Record it' }))
 
@@ -2554,15 +2583,33 @@ describe('A receipt is evidence of a payment (§G, §K, §V)', () => {
       expect(state.documents.filter((document) => document.type === 'receipt')).toHaveLength(1)
     })
 
-    it('never offers a balance belonging to somebody else (§G, §K)', async () => {
+    /*
+     * THE DEBTORS PICKER SHOWS ONLY PEOPLE WHO OWE, so somebody who owes
+     * nothing cannot be reached down this path at all — which is a stronger
+     * version of the old guarantee. Money from one customer allocated to
+     * another's invoice would settle a debt nobody paid and leave the real
+     * one standing (§K).
+     */
+    it('never offers a debtor who owes nothing (§G, §K)', async () => {
       const user = userEvent.setup()
       renderAt('/new/receipt', (state) => {
         billed(state)
         state.customers.push(customer('cus_2', 'Bisi'))
       })
 
-      await user.selectOptions(await screen.findByLabelText('Who paid?'), 'cus_2')
-      expect(screen.queryByRole('option', { name: /INV-0042/ })).not.toBeInTheDocument()
+      await user.click(await screen.findByRole('button', { name: 'Payment towards money owed' }))
+      expect(await screen.findByRole('button', { name: /Ade Stores/ })).toBeInTheDocument()
+      expect(screen.queryByRole('button', { name: /Bisi/ })).toBeNull()
+    })
+
+    /** And the picker states what each one owes, so nobody has to remember. */
+    it('says what each debtor owes', async () => {
+      const user = userEvent.setup()
+      renderAt('/new/receipt', billed)
+      await user.click(await screen.findByRole('button', { name: 'Payment towards money owed' }))
+      expect(
+        await screen.findByRole('button', { name: /Ade Stores.*₦145,000\.00/ }),
+      ).toBeInTheDocument()
     })
   })
 

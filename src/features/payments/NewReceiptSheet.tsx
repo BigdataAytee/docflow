@@ -43,6 +43,35 @@ export interface NewReceiptSheetProps {
   }) => void
   readonly onClose: () => void
   readonly error?: string
+  /**
+   * WHICH QUESTION THIS FORM ASKS FIRST.
+   *
+   * `owed` — the payer is already known, chosen from the debtors picker, and
+   * the invoices to apply against are the point of the screen.
+   *
+   * `cash` — the payer is TYPED. A cash sale to somebody not in the book is
+   * the common case on that path, and a dropdown of existing customers made
+   * it the impossible one: there was no way to name a stranger, so the
+   * commonest receipt in a market was the one the app could not produce.
+   */
+  readonly mode?: 'owed' | 'cash'
+  /** `owed`: who was picked. The form does not ask again. */
+  readonly payerId?: string
+  /**
+   * `cash`: records the payment for a name that may be nobody yet.
+   *
+   * The screen hands over a NAME, not an id, and the caller matches it to a
+   * customer or creates one. That is what keeps "never force creating a
+   * contact first" true: the contact happens as a consequence of being paid,
+   * not as a toll before it.
+   */
+  readonly onRecordByName?: (input: {
+    name: string
+    amount: Money
+    paidAt: string
+    method: string
+    reference?: string
+  }) => void
 }
 
 export function NewReceiptSheet({
@@ -54,6 +83,9 @@ export function NewReceiptSheet({
   onRecord,
   onClose,
   error,
+  mode = 'owed',
+  payerId,
+  onRecordByName,
 }: NewReceiptSheetProps) {
   // Opening this panel moves focus into it, and its name is announced.
   const panel = useFocusOnOpen<HTMLElement>()
@@ -61,7 +93,9 @@ export function NewReceiptSheet({
   const r = strings.newReceipt
   const ids = useId()
 
-  const [customerId, setCustomerId] = useState('')
+  const [customerId, setCustomerId] = useState(payerId ?? '')
+  /** `cash`: the name as typed. Matched to a customer, or kept as a new one. */
+  const [payerName, setPayerName] = useState('')
   const [major, setMajor] = useState('')
   const [paidAt, setPaidAt] = useState(today)
   const [method, setMethod] = useState(methods[0]?.id ?? 'cash')
@@ -123,7 +157,13 @@ export function NewReceiptSheet({
     }
   }
 
-  const canRecord = minor > 0 && customerId !== ''
+  /*
+   * A cash receipt needs a NAME; an owed one needs the customer it was
+   * started from. Neither needs anything else: the date is prefilled, the
+   * method has a default, and the reference is optional (§G's four fields).
+   */
+  const canRecord =
+    minor > 0 && (mode === 'cash' ? payerName.trim() !== '' : customerId !== '')
 
   return (
     <section
@@ -145,6 +185,43 @@ export function NewReceiptSheet({
       </div>
       <p className="mt-1 text-xs opacity-70">{r.explain}</p>
 
+      {mode === 'cash' ? (
+        <>
+          {/*
+            TYPE ANY NAME — no list to be absent from.
+
+            This was a `<select>` of existing customers, which made a cash sale
+            to somebody not in the book impossible to record: the commonest
+            receipt in a market was the one the app could not produce. A name
+            that matches nobody is used as typed and kept for next time, and
+            nobody is asked to choose between "existing" and "new" before they
+            have typed a letter.
+          */}
+          <label className="mt-3 block text-xs font-medium opacity-70" htmlFor={`${ids}-name`}>
+            {r.receivedFrom}
+          </label>
+          <input
+            id={`${ids}-name`}
+            value={payerName}
+            onChange={(event) => setPayerName(event.target.value)}
+            placeholder={r.receivedFromHint}
+            autoComplete="off"
+            list={`${ids}-known`}
+            aria-label={r.receivedFrom}
+            className="sunken mt-1 min-h-tap w-full rounded-xl px-3 text-sm"
+          />
+          {/*
+            Suggestions, not a gate. The browser's own datalist offers the
+            names already known and accepts anything else without comment.
+          */}
+          <datalist id={`${ids}-known`}>
+            {customers.map((customer) => (
+              <option key={customer.id} value={customer.name} />
+            ))}
+          </datalist>
+        </>
+      ) : (
+        <>
       <label className="mt-3 block text-xs font-medium opacity-70" htmlFor={`${ids}-who`}>
         {r.whoPaid}
       </label>
@@ -166,6 +243,8 @@ export function NewReceiptSheet({
           </option>
         ))}
       </select>
+        </>
+      )}
 
       <label className="mt-3 block text-xs font-medium opacity-70" htmlFor={`${ids}-amount`}>
         {r.amount}
@@ -229,7 +308,7 @@ export function NewReceiptSheet({
         anything (§G's simplicity rule); the card states a fact and offers one
         control.
       */}
-      {customerId === '' ? (
+      {mode === 'cash' ? null : customerId === '' ? (
         <p className="mt-3 text-[11px] opacity-60">{r.pickWhoFirst}</p>
       ) : options.length === 0 ? (
         <p className="mt-3 text-[11px] opacity-60">{r.standaloneNote}</p>
@@ -316,6 +395,24 @@ export function NewReceiptSheet({
         className="raised tap-scale mt-4 min-h-tap w-full rounded-xl bg-gradient-to-b from-brand-light to-brand px-4 text-sm font-semibold text-white disabled:opacity-40"
         disabled={!canRecord}
         onClick={() => {
+          /*
+           * A NAME on the cash path, an ID on the owed one.
+           *
+           * The screen never resolves the name itself: it hands one over and
+           * the caller matches it to a customer or creates one. Doing it here
+           * would make this component decide when a contact comes into
+           * existence, which is a thing about the ledger and not about a form.
+           */
+          if (mode === 'cash') {
+            onRecordByName?.({
+              name: payerName.trim(),
+              amount: money(currency, minor),
+              paidAt,
+              method,
+              ...(reference.trim() === '' ? {} : { reference: reference.trim() }),
+            })
+            return
+          }
           const chosen = options.find((invoice) => invoice.id === invoiceId)
           onRecord({
             customerId,

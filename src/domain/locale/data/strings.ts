@@ -673,6 +673,13 @@ export interface UiStrings {
     readonly reference: string
     readonly datePaid: string
     readonly whoPaid: string
+    readonly pathOwed: string
+    readonly pathCash: string
+    readonly pickWhoOwes: string
+    readonly owesAmount: string
+    readonly nobodyOwes: string
+    readonly receivedFrom: string
+    readonly receivedFromHint: string
     readonly against: string
     readonly owesOne: string
     readonly owesMany: string
@@ -1655,6 +1662,31 @@ const EN: UiStrings = {
     reference: 'Their reference',
     datePaid: 'When?',
     whoPaid: 'Who paid?',
+    /*
+     * TWO PATHS, IN PLAIN WORDS, and no explanation under either.
+     *
+     * The owner built this app and could not work out how to create a
+     * receipt — a Rule #1 failure. The form asked "Who paid?" from a list of
+     * existing customers, which is the wrong first question for the commonest
+     * case: cash from somebody who is not in the book yet.
+     *
+     * Anybody must be able to tell instantly which of these is theirs, so
+     * neither says "allocation", "ledger" or "outstanding".
+     */
+    pathOwed: 'Payment towards money owed',
+    pathCash: 'New sale / cash payment',
+    pickWhoOwes: 'Who is paying?',
+    owesAmount: '{name} — {amount}',
+    nobodyOwes: 'Nobody owes anything right now.',
+    /*
+     * TYPE ANY NAME. Matching customers appear as suggestions; a name that
+     * matches nobody is used as typed and kept for next time. Never a choice
+     * between "existing" and "new" before a single letter is typed, and never
+     * a contact that has to be created first — a cash sale to a stranger is
+     * the common case on this path.
+     */
+    receivedFrom: 'Received from',
+    receivedFromHint: 'Type any name',
     against: 'Against',
     /*
      * THE INVOICE LINK, SAID OUT LOUD.
