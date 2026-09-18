@@ -680,6 +680,7 @@ export interface UiStrings {
     readonly nobodyOwes: string
     readonly receivedFrom: string
     readonly receivedFromHint: string
+    readonly addReference: string
     readonly against: string
     readonly owesOne: string
     readonly owesMany: string
@@ -1687,6 +1688,8 @@ const EN: UiStrings = {
      */
     receivedFrom: 'Received from',
     receivedFromHint: 'Type any name',
+    // One tap away rather than one field in the way — almost nobody has one.
+    addReference: '+ Add their reference',
     against: 'Against',
     /*
      * THE INVOICE LINK, SAID OUT LOUD.

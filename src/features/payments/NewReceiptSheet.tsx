@@ -98,8 +98,22 @@ export function NewReceiptSheet({
   const [payerName, setPayerName] = useState('')
   const [major, setMajor] = useState('')
   const [paidAt, setPaidAt] = useState(today)
-  const [method, setMethod] = useState(methods[0]?.id ?? 'cash')
+  /*
+   * A PATH CALLED "CASH PAYMENT" DEFAULTS TO CASH.
+   *
+   * It took the first method in the list, which is bank transfer — so the
+   * commonest journey opened with the wrong answer already filled in and the
+   * owner had to notice and change it. Falls back to the first available
+   * where cash is somehow not offered: the list never empties (Rule #1), but
+   * what is in it is not this component's assumption to make.
+   */
+  const [method, setMethod] = useState(
+    (mode === 'cash'
+      ? (methods.find((one) => one.id.includes('cash'))?.id ?? methods[0]?.id)
+      : methods[0]?.id) ?? 'cash',
+  )
   const [reference, setReference] = useState('')
+  const [showReference, setShowReference] = useState(false)
   const [invoiceId, setInvoiceId] = useState('')
   /*
    * Whether the invoice list is open.
@@ -119,6 +133,22 @@ export function NewReceiptSheet({
   // Only what this money could actually settle: the payer's own balances, in
   // the currency handed over (§G — "offers only what makes sense").
   const options = settleableInvoices(invoices, customerId, currency)
+
+  /*
+   * Names worth offering: a real match on what has been typed, and never the
+   * exact name already in the box. Capped at four — a list longer than a
+   * glance is a list somebody scrolls instead of typing.
+   */
+  const typed = payerName.trim().toLowerCase()
+  const suggestions =
+    mode !== 'cash' || typed === ''
+      ? []
+      : customers
+          .filter((customer) => {
+            const name = customer.name.trim().toLowerCase()
+            return name !== typed && name.includes(typed)
+          })
+          .slice(0, 4)
 
   const chosen = options.find((invoice) => invoice.id === invoiceId)
   const totalOwed = money(
@@ -206,19 +236,39 @@ export function NewReceiptSheet({
             onChange={(event) => setPayerName(event.target.value)}
             placeholder={r.receivedFromHint}
             autoComplete="off"
-            list={`${ids}-known`}
             aria-label={r.receivedFrom}
             className="sunken mt-1 min-h-tap w-full rounded-xl px-3 text-sm"
           />
+
           {/*
-            Suggestions, not a gate. The browser's own datalist offers the
-            names already known and accepts anything else without comment.
+            SUGGESTIONS THAT MATCH, AND DO NOT SIT ON THE NEXT FIELD.
+
+            This was a native `<datalist>`, and on the device it did neither:
+            after typing "Musa Adamu" it still offered "Flour Mills of Nigeria
+            FZE" — a WebView datalist does not filter — and the popup covered
+            the amount box beneath it, so tapping "amount" put the text in the
+            name field instead. I did exactly that while walking it.
+
+            In FLOW rather than floating, so it pushes the form down instead of
+            covering it, and gone the moment what is typed matches a name
+            exactly: at that point the suggestion is the thing already in the
+            box, and repeating it is noise.
           */}
-          <datalist id={`${ids}-known`}>
-            {customers.map((customer) => (
-              <option key={customer.id} value={customer.name} />
-            ))}
-          </datalist>
+          {suggestions.length > 0 && (
+            <ul className="mt-1.5 space-y-1" role="list">
+              {suggestions.map((customer) => (
+                <li key={customer.id}>
+                  <button
+                    type="button"
+                    onClick={() => setPayerName(customer.name)}
+                    className="raised tap-scale min-h-tap w-full rounded-xl bg-surface px-3 text-start text-[13px]"
+                  >
+                    {customer.name}
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
         </>
       ) : (
         <>
@@ -284,15 +334,37 @@ export function NewReceiptSheet({
         ))}
       </select>
 
-      <label className="mt-3 block text-xs font-medium opacity-70" htmlFor={`${ids}-ref`}>
-        {r.reference}
-      </label>
-      <input
-        id={`${ids}-ref`}
-        className="mt-1 min-h-tap w-full rounded-xl border border-edge/10 bg-surface px-3 text-sm"
-        value={reference}
-        onChange={(event) => setReference(event.target.value)}
-      />
+      {/*
+        THE REFERENCE IS BELOW THE FOLD, because almost nobody has one.
+
+        It sat between the method and the button as a fifth thing to read on a
+        form §G caps at four. A transfer narration or a cheque number is worth
+        keeping when it exists and worth nothing at all when it does not, so it
+        is one tap away rather than one field in the way.
+      */}
+      {showReference ? (
+        <>
+          <label className="mt-3 block text-xs font-medium opacity-70" htmlFor={`${ids}-ref`}>
+            {r.reference}
+          </label>
+          <input
+            id={`${ids}-ref`}
+            autoFocus
+            aria-label={r.reference}
+            className="mt-1 min-h-tap w-full rounded-xl border border-edge/10 bg-surface px-3 text-sm"
+            value={reference}
+            onChange={(event) => setReference(event.target.value)}
+          />
+        </>
+      ) : (
+        <button
+          type="button"
+          onClick={() => setShowReference(true)}
+          className="mt-3 min-h-tap text-[12.5px] font-semibold text-brand"
+        >
+          {r.addReference}
+        </button>
+      )}
 
       {/*
         WHAT THEY OWE, SAID OUT LOUD — the whole point of this change.
