@@ -95,11 +95,73 @@ describe('A delivery document carries no money, under any design (§I, §V)', ()
     expect(page.rows[0]?.unit).toBe('cartons')
   })
 
-  it('replaces the payment box with the localised received-by rule (§I)', () => {
-    expect(composeDocument(delivery, options()).receivedByRule).toBe('RECEIVED BY')
-    expect(composeDocument(delivery, options({ profile: { locale: 'FR' } })).receivedByRule).toBe(
-      'REÇU PAR',
+  it('replaces the payment box with the localised received-by block (§I)', () => {
+    expect(composeDocument(delivery, options()).receivedBy?.caption).toBe('RECEIVED BY')
+    expect(
+      composeDocument(delivery, options({ profile: { locale: 'FR' } })).receivedBy?.caption,
+    ).toBe('REÇU PAR')
+  })
+
+  /**
+   * THE ONE THIS WHOLE BLOCK EXISTS FOR.
+   *
+   * The customer's drawn mark went into `signatureAssetId` — the BUSINESS's
+   * signature — so a signed delivery printed the customer's hand under
+   * "DISPATCHED BY" with the business's name beneath it, and the "RECEIVED
+   * BY" block they had actually signed stayed empty. It also destroyed the
+   * business's own mark on that document, because the two were one field.
+   *
+   * On top of that, `composition.ts` never forwarded `signerName`,
+   * `signerRole` or `signedAt` to compose at all — so even with a column of
+   * its own the block had no facts to fill from. One bug was hiding the
+   * other: the page LOOKED signed because the wrong mark was in the right
+   * place on the wrong side.
+   */
+  it('fills the recipient block from the recipient’s own fields', () => {
+    const signed = doc('waybill', {
+      reference: 'WAY-0002',
+      lineItems: [
+        { id: 'l1', description: 'Cement', quantityMilli: quantity(3), taxable: false },
+      ],
+      signerSignatureAssetId: 'ast_recipient',
+      signerName: 'Bisi Adeyemi',
+      signerRole: 'Storekeeper',
+      signedAt: '2026-09-14T14:30:00Z',
+      signatureAssetId: 'ast_business',
+    })
+    const page = composeDocument(
+      signed,
+      options({ assetUrls: { ast_recipient: 'data:recipient', ast_business: 'data:business' } }),
     )
+
+    expect(page.receivedBy?.markUrl, 'the recipient’s mark did not reach the page').toBe(
+      'data:recipient',
+    )
+    expect(page.receivedBy?.name).toBe('Bisi Adeyemi')
+    expect(page.receivedBy?.role).toBe('Storekeeper')
+    // Formatted, never the raw stamp — the same rule every other date obeys.
+    expect(page.receivedBy?.signedOn).not.toContain('T14:30')
+
+    /*
+     * AND THE TWO MARKS DO NOT SWAP. The sender's block keeps the business's
+     * signature and the business's name; the recipient's name appears in
+     * neither of those places.
+     */
+    expect(page.signature.imageUrl, 'the sender’s mark was replaced').toBe('data:business')
+    expect(page.signature.signerName, 'the recipient’s name is on the sender’s block').toBeUndefined()
+  })
+
+  /**
+   * An unsigned delivery still draws the caption and the rule, because that
+   * is what somebody puts their hand ON. What it must not do is claim
+   * anything: no mark, no name, no date until there is one.
+   */
+  it('leaves the recipient block empty until somebody signs', () => {
+    const block = composeDocument(delivery, options()).receivedBy
+    expect(block?.caption).toBe('RECEIVED BY')
+    expect(block?.markUrl).toBeUndefined()
+    expect(block?.name).toBeUndefined()
+    expect(block?.signedOn).toBeUndefined()
   })
 
   it('stays money-free for every template, since templates are style only', () => {

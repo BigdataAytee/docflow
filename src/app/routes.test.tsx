@@ -2319,7 +2319,15 @@ describe('Signing (§G, §I, §P)', () => {
       expect(signed?.signerName).toBe('Bisi Adeyemi')
       expect(signed?.signerRole).toBe('Storekeeper')
       expect(signed?.signedAt).toBeTruthy()
-      expect(signed?.signatureAssetId).toBe(state.assets[0]?.id)
+      // The RECIPIENT's field, which is the whole point of it existing.
+      expect(signed?.signerSignatureAssetId).toBe(state.assets[0]?.id)
+      /*
+       * AND THE BUSINESS'S OWN MARK IS UNTOUCHED. Signing used to write into
+       * `signatureAssetId` — the sender's signature — so taking a customer's
+       * hand at the gate destroyed the business's mark on that document and
+       * printed the customer's under the sender's caption.
+       */
+      expect(signed?.signatureAssetId).not.toBe(state.assets[0]?.id)
     })
 
     it('asks who received it before taking a mark, rather than discarding one', async () => {

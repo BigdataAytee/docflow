@@ -56,7 +56,23 @@ export interface DocumentDraft {
   readonly issueDate?: string
   readonly dueDate?: string
   readonly validUntil?: string
+  /** The BUSINESS's mark, printed under the localised signature caption. */
   readonly signatureAssetId?: string
+  /**
+   * THE RECIPIENT's mark and the three facts beside it (§E, §P).
+   *
+   * Not editable here — a draft cannot have been signed, and evidence seals
+   * the moment it is captured. They live on the draft shape because this is
+   * what `composableOf` reads to build the page, and a fact this type does
+   * not declare is a fact that silently DOES NOT ARRIVE: `draftOf` was
+   * already setting all four and TypeScript dropped them on the way through,
+   * because a conditional spread defeats excess-property checking. The
+   * mapper looked right, the page stayed empty, and nothing failed.
+   */
+  readonly signerSignatureAssetId?: string
+  readonly signerName?: string
+  readonly signerRole?: string
+  readonly signedAt?: string
   /** Receipts only: the payment this receipt is evidence of (§G, §K). */
   readonly paymentId?: string
   readonly linkedInvoiceId?: string

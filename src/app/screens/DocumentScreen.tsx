@@ -224,7 +224,12 @@ export function DocumentScreen({ today = todayIso() }: { today?: string }) {
   const status = displayStatus(record, payments, today, mineCredits)
 
   /** The mark on this document, resolved from the id it holds (§E). */
-  const signatureUrl = assets.find((asset) => asset.id === record.signatureAssetId)?.dataUrl
+  /*
+   * The proof card shows the RECIPIENT's mark, not the business's. It read
+   * `signatureAssetId` — which is the sender's — and only appeared to work
+   * because signing used to overwrite that field with the customer's asset.
+   */
+  const signatureUrl = assets.find((asset) => asset.id === record.signerSignatureAssetId)?.dataUrl
   const deliveryPhotoUrl = assets.find((asset) => asset.id === record.deliveryPhotoAssetId)
     ?.dataUrl
 
@@ -592,7 +597,7 @@ export function DocumentScreen({ today = todayIso() }: { today?: string }) {
                     document: record,
                     signerName: input.signerName,
                     ...(input.signerRole === undefined ? {} : { signerRole: input.signerRole }),
-                    signatureAssetId: asset.id,
+                    signerSignatureAssetId: asset.id,
                     at: new Date().toISOString(),
                   })
                   // ONE write. The mark, the signer, the moment and the
@@ -603,7 +608,7 @@ export function DocumentScreen({ today = todayIso() }: { today?: string }) {
                       ? {}
                       : { signerRole: decision.signerRole }),
                     signedAt: decision.signedAt,
-                    signatureAssetId: decision.signatureAssetId,
+                    signerSignatureAssetId: decision.signerSignatureAssetId,
                   })
                 })
                 .then(() => setSigning(false))

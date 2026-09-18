@@ -236,7 +236,25 @@ export function DetailsStep({
                 className="sunken min-h-tap w-full rounded-lg px-2 font-mono text-xs font-semibold"
               />
             ) : (
-              <span className="block truncate font-mono text-xs font-semibold">{reference}</span>
+              /*
+                THE OWNER'S OWN NUMBER, once they have set one.
+                
+                This printed `reference` unconditionally — the PROVISIONAL
+                "INV-…" the app will mint at issue. So somebody typed
+                DR-INV-0413, pressed Enter, and watched the field go back to
+                "INV-…": the override was stored, nothing said so, and the
+                pencil was indistinguishable from the inert button it used to
+                be. The write was the easy half; this is the half that makes
+                it visible.
+
+                `referenceOverride` only exists on a draft, and at issue it
+                becomes the reference — so showing it here is showing what
+                this document will actually be called, not a preview of a
+                guess.
+              */
+              <span className="block truncate font-mono text-xs font-semibold">
+                {draft.referenceOverride ?? reference}
+              </span>
             )}
           </span>
           <TinyButton

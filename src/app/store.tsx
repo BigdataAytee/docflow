@@ -129,7 +129,7 @@ export interface AppActions {
       signerName: string
       signerRole?: string
       signedAt: string
-      signatureAssetId: string
+      signerSignatureAssetId: string
     },
   ): Promise<void>
   /**

@@ -529,7 +529,7 @@ async function deliveryAndSignature(
         signerName: 'Bisi Adeyemi',
         signerRole: 'Storekeeper',
         signedAt: '2026-09-14T14:30:00Z',
-        signatureAssetId: mark.id,
+        signerSignatureAssetId: mark.id,
       },
       key('sign'),
     )
@@ -549,7 +549,7 @@ async function deliveryAndSignature(
           signerName: 'Someone Else',
           signerRole: 'Impostor',
           signedAt: '2026-09-14T15:00:00Z',
-          signatureAssetId: mark.id,
+          signerSignatureAssetId: mark.id,
         },
         key('resign'),
       )

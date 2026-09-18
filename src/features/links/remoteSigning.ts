@@ -59,7 +59,7 @@ export interface RemoteSignInput {
   readonly document: SignableDocument
   readonly signerName: string
   readonly signerRole?: string
-  readonly signatureAssetId: string
+  readonly signerSignatureAssetId: string
   readonly at: string
 }
 
@@ -108,7 +108,7 @@ export async function signThroughLink(input: RemoteSignInput): Promise<RemoteSig
     document: input.document,
     signerName: input.signerName,
     ...(input.signerRole === undefined ? {} : { signerRole: input.signerRole }),
-    signatureAssetId: input.signatureAssetId,
+    signerSignatureAssetId: input.signerSignatureAssetId,
     at: input.at,
   })
 

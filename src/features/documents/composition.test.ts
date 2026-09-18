@@ -512,3 +512,86 @@ describe('A receipt reaches the page with its payment on it', () => {
     expect(composable.paidAmount).toBeUndefined()
   })
 })
+
+/**
+ * A signed delivery, all the way from the stored record to the page (§I, §P).
+ *
+ * THE LAYER THAT WAS ACTUALLY BROKEN. `compose` could build the RECEIVED BY
+ * block perfectly well; nothing handed it the facts. `draftOf` did not carry
+ * `signerName`, `signerRole` or `signedAt`, and when it was made to, the
+ * DocumentDraft type did not declare them — a conditional spread defeats
+ * excess-property checking, so TypeScript dropped all four on the way through
+ * and said nothing.
+ *
+ * A test that calls `composeDocument` directly cannot see any of that: it
+ * proves compose CAN fill the block, never that anything does. This one goes
+ * record → draftOf → composableOf → page, which is the road the app takes.
+ */
+describe('The recipient’s signature reaches the page it is printed on', () => {
+  const signedDelivery = record({
+    type: 'waybill',
+    status: 'delivered',
+    issuedReference: 'WAY-0002',
+    frozenLabels: freezeLabels(profile, 'waybill'),
+    lineItems: [{ id: 'l1', description: 'Cement', quantityMilli: quantity(3), taxable: false }],
+    signatureAssetId: 'ast_business',
+    signerSignatureAssetId: 'ast_recipient',
+    signerName: 'Bisi Adeyemi',
+    signerRole: 'Storekeeper',
+    signedAt: '2026-09-14T14:30:00Z',
+  })
+
+  const page = () => {
+    const design = designOf(signedDelivery, company)
+    return composeDocument(
+      composableOf({
+        draft: draftOf(signedDelivery),
+        design,
+        company,
+        customer,
+        profile,
+        reference: signedDelivery.issuedReference,
+        status: signedDelivery.status,
+        frozenLabels: signedDelivery.frozenLabels,
+        replaces: null,
+        today: '2026-09-15',
+      }),
+      {
+        ...composeOptionsOf({
+          company,
+          design,
+          strings,
+          assets: [
+            { id: 'ast_recipient', dataUrl: 'data:recipient' },
+            { id: 'ast_business', dataUrl: 'data:business' },
+          ] as never,
+        }),
+        profile,
+      },
+    )
+  }
+
+  it('carries the mark, the name, the role and the date', () => {
+    const received = page().receivedBy
+    expect(received?.markUrl, 'the recipient’s mark never reached the page').toBe('data:recipient')
+    expect(received?.name, 'the signer’s name never reached the page').toBe('Bisi Adeyemi')
+    expect(received?.role).toBe('Storekeeper')
+    expect(received?.signedOn, 'the date never reached the page').toBeDefined()
+  })
+
+  /** Formatted for the document's locale — never the stored stamp. */
+  it('prints the date rather than the timestamp', () => {
+    expect(page().receivedBy?.signedOn).not.toContain('T14:30')
+  })
+
+  /**
+   * AND THE TWO MARKS DO NOT SWAP. Signing wrote into `signatureAssetId` —
+   * the sender's — so the customer's hand printed under "DISPATCHED BY" over
+   * the business's name, and the business's own mark was destroyed.
+   */
+  it('leaves the sender’s block to the sender', () => {
+    const model = page()
+    expect(model.signature.imageUrl, 'the sender’s mark was replaced').toBe('data:business')
+    expect(model.signature.signerName, 'the recipient is named on the sender’s block').toBeUndefined()
+  })
+})

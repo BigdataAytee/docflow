@@ -104,7 +104,7 @@ export interface SignDeliveryInput {
   readonly signerName: string
   readonly signerRole?: string
   /** The mark itself, already stored. A document never holds the bytes (§E). */
-  readonly signatureAssetId: string
+  readonly signerSignatureAssetId: string
   readonly at: string
 }
 
@@ -113,7 +113,7 @@ export interface SignedDelivery {
   readonly signerName: string
   readonly signerRole?: string
   readonly signedAt: string
-  readonly signatureAssetId: string
+  readonly signerSignatureAssetId: string
   /** Always `delivered`. Signing IS delivery; there is no other outcome. */
   readonly status: 'delivered'
   /** §P: the evidence and the status are one write, never two. */
@@ -130,7 +130,7 @@ export function signDelivery(input: SignDeliveryInput): SignedDelivery {
   if (signerName === '') {
     throw new DeliverySignError('name', 'A mark with nobody behind it is not evidence (v6 §P).')
   }
-  if (input.signatureAssetId === '') {
+  if (input.signerSignatureAssetId === '') {
     throw new DeliverySignError('signature', 'A name with no mark is not a signature (v6 §P).')
   }
 
@@ -140,7 +140,7 @@ export function signDelivery(input: SignDeliveryInput): SignedDelivery {
     signerName,
     ...(role === '' ? {} : { signerRole: role }),
     signedAt: input.at,
-    signatureAssetId: input.signatureAssetId,
+    signerSignatureAssetId: input.signerSignatureAssetId,
     status: 'delivered' as const,
     isAtomic: true as const,
   })

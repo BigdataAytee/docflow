@@ -149,7 +149,7 @@ export function createDocumentRepository(db: SupabaseClient): DocumentRepository
             ...fromDocument({
               signerName: evidence.signerName,
               signedAt: evidence.signedAt,
-              signatureAssetId: evidence.signatureAssetId,
+              signerSignatureAssetId: evidence.signerSignatureAssetId,
               ...(evidence.signerRole === undefined ? {} : { signerRole: evidence.signerRole }),
             }),
             status: 'delivered',

@@ -332,7 +332,7 @@ describe('Delivery evidence is one write, and captured once (§P)', () => {
     signerName: 'Bisi Adeyemi',
     signerRole: 'Storekeeper',
     signedAt: '2026-09-12T14:30:00Z',
-    signatureAssetId: 'ast_1',
+    signerSignatureAssetId: 'ast_1',
   }
 
   it('applies the mark, the signer, the moment and the status together', async () => {
@@ -343,7 +343,7 @@ describe('Delivery evidence is one write, and captured once (§P)', () => {
     expect(signed.signerName).toBe('Bisi Adeyemi')
     expect(signed.signerRole).toBe('Storekeeper')
     expect(signed.signedAt).toBe('2026-09-12T14:30:00Z')
-    expect(signed.signatureAssetId).toBe('ast_1')
+    expect(signed.signerSignatureAssetId).toBe('ast_1')
   })
 
   it('refuses to re-sign a delivery already signed for', async () => {
@@ -355,14 +355,14 @@ describe('Delivery evidence is one write, and captured once (§P)', () => {
     await expect(
       repos.documents.signDelivery(
         id,
-        { ...evidence, signerName: 'Somebody Else', signatureAssetId: 'ast_2' },
+        { ...evidence, signerName: 'Somebody Else', signerSignatureAssetId: 'ast_2' },
         ctx('sign-2'),
       ),
     ).rejects.toThrow(RepositoryError)
 
     const after = await repos.documents.get(ACME, id)
     expect(after?.signerName).toBe('Bisi Adeyemi')
-    expect(after?.signatureAssetId).toBe('ast_1')
+    expect(after?.signerSignatureAssetId).toBe('ast_1')
   })
 
   it('refuses a delivery that never went out', async () => {
@@ -414,7 +414,7 @@ describe('A delivery photo is evidence being captured, not a document edited (§
       {
         signerName: 'Bisi Adeyemi',
         signedAt: '2026-09-12T14:30:00Z',
-        signatureAssetId: 'ast_sig',
+        signerSignatureAssetId: 'ast_sig',
       },
       ctx('sign-1'),
     )

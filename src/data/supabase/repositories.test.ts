@@ -230,7 +230,7 @@ describe('Delivery evidence seals (§P)', () => {
         signerName: 'Ada',
         signerRole: 'Storekeeper',
         signedAt: '2026-09-13T10:00:00Z',
-        signatureAssetId: 'ast_1',
+        signerSignatureAssetId: 'ast_1',
       },
       ctx('sign:doc_1'),
     )
@@ -240,7 +240,10 @@ describe('Delivery evidence seals (§P)', () => {
       signer_name: 'Ada',
       signer_role: 'Storekeeper',
       signed_at: '2026-09-13T10:00:00Z',
-      signature_asset_id: 'ast_1',
+      // THE RECIPIENT's column. It wrote `signature_asset_id`, which is the
+      // business's own mark — so signing replaced the sender's signature with
+      // the customer's and printed it under the sender's caption.
+      signer_signature_asset_id: 'ast_1',
       status: 'delivered',
     })
   })
@@ -250,7 +253,7 @@ describe('Delivery evidence seals (§P)', () => {
     await expect(
       createDocumentRepository(h.db).signDelivery(
         'doc_1',
-        { signerName: 'Someone else', signedAt: '2026-09-13T11:00:00Z', signatureAssetId: 'ast_2' },
+        { signerName: 'Someone else', signedAt: '2026-09-13T11:00:00Z', signerSignatureAssetId: 'ast_2' },
         ctx('sign:again'),
       ),
     ).rejects.toThrow(/already signed for/)

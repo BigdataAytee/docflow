@@ -20,7 +20,7 @@ const sign = (over: Partial<Parameters<typeof signDelivery>[0]> = {}) =>
   signDelivery({
     document: waybill('dispatched'),
     signerName: 'Bisi Adeyemi',
-    signatureAssetId: 'ast_1',
+    signerSignatureAssetId: 'ast_1',
     at: '2026-09-12T14:30:00Z',
     ...over,
   })
@@ -135,7 +135,7 @@ describe('Signed and delivered are one fact (§P)', () => {
       documentId: 'doc_1',
       signerName: 'Bisi Adeyemi',
       signedAt: '2026-09-12T14:30:00Z',
-      signatureAssetId: 'ast_1',
+      signerSignatureAssetId: 'ast_1',
       status: 'delivered',
       isAtomic: true,
     })
@@ -146,7 +146,7 @@ describe('Signed and delivered are one fact (§P)', () => {
     // the mark alongside the status.
     const decision = sign()
     expect(decision.signerName).not.toBe('')
-    expect(decision.signatureAssetId).not.toBe('')
+    expect(decision.signerSignatureAssetId).not.toBe('')
     expect(decision.signedAt).not.toBe('')
   })
 
@@ -162,7 +162,7 @@ describe('A name without a mark is not a signature (§P)', () => {
   })
 
   it('refuses a name with no mark behind it', () => {
-    expect(() => sign({ signatureAssetId: '' })).toThrow(DeliverySignError)
+    expect(() => sign({ signerSignatureAssetId: '' })).toThrow(DeliverySignError)
   })
 
   it('tells the two apart, so the sheet can say which is missing', () => {
@@ -175,7 +175,7 @@ describe('A name without a mark is not a signature (§P)', () => {
       }
     }
     expect(field(() => sign({ signerName: '' }))).toBe('name')
-    expect(field(() => sign({ signatureAssetId: '' }))).toBe('signature')
+    expect(field(() => sign({ signerSignatureAssetId: '' }))).toBe('signature')
   })
 })
 

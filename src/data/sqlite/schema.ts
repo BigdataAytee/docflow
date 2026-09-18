@@ -39,7 +39,7 @@
  * it fails with "no such column". That is exactly what happened when the four
  * contact and reference columns were added and this still read 6.
  */
-export const SCHEMA_VERSION = 13
+export const SCHEMA_VERSION = 14
 
 /**
  * Applied in order, inside one transaction, by `migrate`.
@@ -407,6 +407,19 @@ export const MIGRATIONS: readonly string[] = [
   -- The NOTE TO CUSTOMER block (§I): payment terms in the owner's own words,
   -- printed under the totals. Nullable — no note prints no block.
   alter table companies add column document_note text;
+  `,
+  `
+  -- THE RECIPIENT'S OWN MARK, which had nowhere of its own to go.
+  --
+  -- Signing a delivery wrote the customer's drawn signature into
+  -- \`signature_asset_id\` — the BUSINESS's mark, the one printed under
+  -- "DISPATCHED BY". So a signed waybill showed the customer's hand
+  -- attributed to the sender, over the sender's name, while the "RECEIVED BY"
+  -- block the customer had actually signed stayed a heading above an empty
+  -- rule. It also overwrote the business's own signature on that document.
+  --
+  -- Two marks, two columns. Nullable: most documents are never signed for.
+  alter table documents add column signer_signature_asset_id text;
   `,
 ]
 

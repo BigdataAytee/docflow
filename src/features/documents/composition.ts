@@ -92,6 +92,25 @@ export function draftOf(record: DocumentRecord): DocumentDraft {
     ...(record.paymentId === undefined ? {} : { paymentId: record.paymentId }),
     ...(record.linkedInvoiceId === undefined ? {} : { linkedInvoiceId: record.linkedInvoiceId }),
     ...(record.signatureAssetId === undefined ? {} : { signatureAssetId: record.signatureAssetId }),
+    /*
+     * WHO SIGNED FOR IT — the four facts the RECEIVED BY block is made of.
+     *
+     * None of them were forwarded. `compose` has had a `signerName` on its
+     * input since it was written and this mapper never set it, so the block
+     * could not have filled even once the mark had a column of its own: the
+     * page was asking for facts nothing handed over.
+     *
+     * That is the second bug species CLAUDE.md names — declared and never
+     * reachably FILLED — and the reason the delivery appeared to work was
+     * that signing overwrote `signatureAssetId`, printing the customer's mark
+     * under the sender's caption. One bug hiding another.
+     */
+    ...(record.signerSignatureAssetId === undefined
+      ? {}
+      : { signerSignatureAssetId: record.signerSignatureAssetId }),
+    ...(record.signerName === undefined ? {} : { signerName: record.signerName }),
+    ...(record.signerRole === undefined ? {} : { signerRole: record.signerRole }),
+    ...(record.signedAt === undefined ? {} : { signedAt: record.signedAt }),
     ...(record.deliveryAddress === undefined ? {} : { deliveryAddress: record.deliveryAddress }),
     ...(record.driverName === undefined ? {} : { driverName: record.driverName }),
     ...(record.vehicleNumber === undefined ? {} : { vehicleNumber: record.vehicleNumber }),
@@ -241,6 +260,21 @@ export function composableOf(input: ComposableInput): ComposableDocument {
     ...(draft.vehicleNumber === undefined ? {} : { vehicleNumber: draft.vehicleNumber }),
     // So the preview shows the page as it will print, signature and all.
     ...(draft.signatureAssetId === undefined ? {} : { signatureAssetId: draft.signatureAssetId }),
+    /*
+     * The recipient's half, carried through to the page.
+     *
+     * `draftOf` above sets all four and this is where they cross into the
+     * composable document. Leaving this out is exactly how the block stayed
+     * empty after it had a column of its own — and nothing failed, because a
+     * test that calls `composeDocument` directly proves compose CAN fill the
+     * block, never that anything fills it.
+     */
+    ...(draft.signerSignatureAssetId === undefined
+      ? {}
+      : { signerSignatureAssetId: draft.signerSignatureAssetId }),
+    ...(draft.signerName === undefined ? {} : { signerName: draft.signerName }),
+    ...(draft.signerRole === undefined ? {} : { signerRole: draft.signerRole }),
+    ...(draft.signedAt === undefined ? {} : { signedAt: draft.signedAt }),
     ...(replaces === null ? {} : { replaces }),
   }
 }

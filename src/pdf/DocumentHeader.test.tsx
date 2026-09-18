@@ -427,7 +427,7 @@ describe('Every design is a design (§H)', () => {
       // same way absence does, and a delivery with no RECEIVED BY line is one
       // nobody can sign at a gate (§I).
       expect(
-        page.getByText(waybill.receivedByRule!),
+        page.getByText(waybill.receivedBy!.caption),
         `${template.name} lost the received-by rule`,
       ).toBeInTheDocument()
       expect(

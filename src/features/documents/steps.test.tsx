@@ -230,6 +230,91 @@ describe('Details: the per-type differences §G spells out', () => {
   })
 })
 
+/**
+ * §G's pencil, and the half of it that was still inert (§G, §K, §M).
+ *
+ * The control existed and did nothing for as long as it had existed. The
+ * WRITE was fixed — `referenceOverride` lands on the draft and `issueDocument`
+ * uses it verbatim, which `reference-override.test.ts` covers thoroughly.
+ *
+ * None of that is visible. The field printed the PROVISIONAL reference
+ * unconditionally, so somebody typed DR-INV-0413, pressed Enter, and watched
+ * it turn back into "INV-…". From the owner's side the pencil was exactly as
+ * inert as before, and no test here could tell — because there were no tests
+ * here at all. The unit tests proved the rule; nothing proved the screen.
+ */
+describe('The pencil on the document number (§G)', () => {
+  const detailsWith = (over: Partial<DocumentDraft>, onChange = vi.fn()) => {
+    wrap(
+      <DetailsStep
+        draft={draftFor('invoice', over)}
+        reference="INV-…"
+        enabledPaymentMethodCount={1}
+        customers={[]}
+        invoices={[]}
+        payments={[]}
+        onChange={onChange}
+        onAddCustomer={() => {}}
+        onSetUpPayment={() => {}}
+        onSign={() => {}}
+      />,
+    )
+    return onChange
+  }
+
+  it('stores what was typed, exactly as typed', async () => {
+    const user = userEvent.setup()
+    const onChange = detailsWith({})
+
+    await user.click(screen.getByRole('button', { name: 'Edit reference' }))
+    // By ROLE: the pencil and the field it opens share an accessible name, so
+    // `getByLabelText` matches both and the query is ambiguous.
+    await user.type(screen.getByRole('textbox', { name: 'Edit reference' }), 'DR-INV-0413{Enter}')
+
+    expect(onChange).toHaveBeenCalledWith({ referenceOverride: 'DR-INV-0413' })
+  })
+
+  /** THE ONE THIS IS FOR. */
+  it('shows the owner their own number back, not the provisional one', () => {
+    detailsWith({ referenceOverride: 'DR-INV-0413' })
+    expect(
+      screen.getByText('DR-INV-0413'),
+      'the field went back to the generated reference',
+    ).toBeInTheDocument()
+    expect(screen.queryByText('INV-…'), 'the provisional number is still shown').toBeNull()
+  })
+
+  it('shows the provisional number when no override is set', () => {
+    detailsWith({})
+    expect(screen.getByText('INV-…')).toBeInTheDocument()
+  })
+
+  /** A refused value stays in the box so it can be fixed, and is not stored. */
+  it('keeps a bad reference in the field rather than writing it', async () => {
+    const user = userEvent.setup()
+    const onChange = detailsWith({})
+
+    await user.click(screen.getByRole('button', { name: 'Edit reference' }))
+    await user.type(screen.getByRole('textbox', { name: 'Edit reference' }), 'INV/2026/1{Enter}')
+
+    expect(onChange).not.toHaveBeenCalled()
+    expect(screen.getByRole('textbox', { name: 'Edit reference' })).toHaveValue('INV/2026/1')
+    expect(screen.getByRole('alert')).toBeInTheDocument()
+  })
+
+  /** Clearing it asks for the app's numbering back — a choice, not an error. */
+  it('clears back to the generated sequence', async () => {
+    const user = userEvent.setup()
+    const onChange = detailsWith({ referenceOverride: 'DR-INV-0413' })
+
+    await user.click(screen.getByRole('button', { name: 'Edit reference' }))
+    await user.clear(screen.getByRole('textbox', { name: 'Edit reference' }))
+    await user.keyboard('{Enter}')
+
+    expect(onChange).toHaveBeenCalledWith({ referenceOverride: undefined })
+  })
+})
+
 describe('Items: a delivery document has no price field at all (§G, §V)', () => {
   it('offers a unit price on a priced document', () => {
     wrap(<ItemsStep draft={draftFor('invoice')} onChange={() => {}} />)
@@ -331,6 +416,110 @@ describe('Items: a delivery document has no price field at all (§G, §V)', () =
     await user.click(screen.getByRole('button', { name: 'Add' }))
 
     expect(screen.getByLabelText('Description')).toHaveValue('')
+  })
+
+  /**
+   * THE UNIT MUST NOT ARRIVE BY THE BACK DOOR EITHER.
+   *
+   * The field is not drawn for a delivery, which is what "dropped from the
+   * Goods step" meant — but the component still held a `unit` state, and
+   * taking a suggestion from the saved-item catalogue still filled it on
+   * exactly that branch, left over from when a waybill did have the field.
+   *
+   * So picking a catalogue item put a unit on a delivery line the owner
+   * could not see, could not clear and would never have typed. Invisible on
+   * the PDF, which drops the column — and VISIBLE in the row summary right
+   * beside it, which read "3 cartons" under a document that prints "3".
+   */
+  it('puts no unit on a delivery line taken from the catalogue', async () => {
+    const user = userEvent.setup()
+    const onChange = vi.fn()
+    const onRemember = vi.fn()
+    /*
+     * A REAL catalogue behind a REAL suggestion. The first version of this
+     * passed a `savedItems` prop that does not exist — suggestions come from
+     * `repositories.items.suggest` through the context — so the click path
+     * was never exercised and `unit` was undefined for the dullest possible
+     * reason. A fixture that cannot reach the code proves nothing.
+     */
+    const state = emptyState()
+    state.items.push({
+      id: 'si1',
+      companyId: 'co_1',
+      name: 'Cement 50kg',
+      unit: 'cartons',
+      timesUsed: 4,
+    })
+    wrap(
+      <ItemsStep draft={draftFor('waybill')} onChange={onChange} onRemember={onRemember} />,
+      state,
+    )
+
+    await user.type(screen.getByLabelText('Description'), 'Cement')
+    // The suggestion has to actually be there, or this is the vacuous version.
+    const suggestion = await screen.findByRole('button', { name: /Cement 50kg/ })
+    await user.click(suggestion)
+    await user.click(screen.getByRole('button', { name: 'Add' }))
+
+    const patch = onChange.mock.calls[0]?.[0] as { lineItems: { unit?: string }[] }
+    expect(patch.lineItems[0]?.unit, 'a delivery line carried a unit').toBeUndefined()
+    // And the catalogue is not taught one out of a field this screen never drew.
+    expect(onRemember.mock.calls[0]?.[0]).not.toHaveProperty('unit')
+  })
+
+  /** The same path on an invoice DOES carry it — proof the click works. */
+  it('takes the unit from the catalogue on a priced document', async () => {
+    const user = userEvent.setup()
+    const onChange = vi.fn()
+    const state = emptyState()
+    state.items.push({
+      id: 'si1',
+      companyId: 'co_1',
+      name: 'Cement 50kg',
+      unit: 'bags',
+      lastPrice: money('NGN', 500_000),
+      timesUsed: 4,
+    })
+    wrap(<ItemsStep draft={draftFor('invoice')} onChange={onChange} />, state)
+
+    await user.type(screen.getByLabelText('Description'), 'Cement')
+    await user.click(await screen.findByRole('button', { name: /Cement 50kg/ }))
+    await user.click(screen.getByRole('button', { name: 'Add' }))
+
+    const patch = onChange.mock.calls[0]?.[0] as { lineItems: { unit?: string }[] }
+    expect(patch.lineItems[0]?.unit, 'the suggestion click never filled anything').toBe('bags')
+  })
+
+  /**
+   * The summary has to match the paper. It printed the unit on every type, so
+   * a delivery row read "3 cartons" in the builder while the page it composes
+   * prints "3" — the builder promising a column the document does not have.
+   */
+  it('summarises a delivery line without a unit, even if the line has one', () => {
+    const line = {
+      id: 'l1',
+      description: 'Cement',
+      quantityMilli: quantity(3),
+      unit: 'cartons',
+      taxable: false,
+    }
+    wrap(<ItemsStep draft={draftFor('waybill', { lineItems: [line] })} onChange={() => {}} />)
+    expect(screen.getByText('Cement')).toBeInTheDocument()
+    expect(screen.queryByText(/cartons/), 'the builder shows a unit the page will not').toBeNull()
+  })
+
+  /** And a priced document keeps it, because that half never changed. */
+  it('still summarises an invoice line with its unit', () => {
+    const line = {
+      id: 'l1',
+      description: 'Cement',
+      quantityMilli: quantity(3),
+      unit: 'bags',
+      unitPriceMinor: 500_000,
+      taxable: true,
+    }
+    wrap(<ItemsStep draft={draftFor('invoice', { lineItems: [line] })} onChange={() => {}} />)
+    expect(screen.getByText(/bags/)).toBeInTheDocument()
   })
 })
 

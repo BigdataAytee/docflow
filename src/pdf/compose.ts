@@ -93,8 +93,13 @@ export interface ComposableDocument {
   readonly party: PartySnapshot
   /** Set at issue and never rewritten (§M). Null on a draft. */
   readonly frozenLabels: FrozenLabels | null
+  /** The BUSINESS's mark, printed under the localised signature caption. */
   readonly signatureAssetId?: string
+  /** The RECIPIENT's, and the three facts that go with it (§E, §P). */
+  readonly signerSignatureAssetId?: string
   readonly signerName?: string
+  readonly signerRole?: string
+  readonly signedAt?: string
   readonly discountRate?: number
   readonly taxRate?: number
   readonly whtRate?: number
@@ -146,6 +151,25 @@ export interface PaymentBox {
   readonly otherMethodsLabel: string
   /** §I: "inline at ≤ ~60% width beside the signature, never a full-width band." */
   readonly maxWidthPercent: number
+}
+
+/** The recipient's block on a delivery — caption, mark, and who signed (§I). */
+export interface ReceivedBy {
+  readonly caption: string
+  /**
+   * The drawn mark, resolved to something drawable.
+   *
+   * Absent when nobody has signed yet, and ALSO absent when the asset cannot
+   * be resolved — the same rule the business's own signature follows. A page
+   * may only print a mark the repository actually handed over; a missing one
+   * prints the rule alone rather than a broken image over a claim that
+   * somebody signed (§P).
+   */
+  readonly markUrl?: string
+  readonly name?: string
+  readonly role?: string
+  /** Already formatted for the document's locale — never a raw ISO string. */
+  readonly signedOn?: string
 }
 
 /**
@@ -209,8 +233,21 @@ export interface PageModel {
   readonly whtLabel: string | null
   /** Invoices only. Quotations omit payment instructions by default (§I). */
   readonly paymentBox: PaymentBox | null
-  /** Delivery documents replace the payment box with this rule (§I). */
-  readonly receivedByRule: string | null
+  /**
+   * The RECIPIENT's half of a delivery: the caption, and what they left on it.
+   *
+   * This was a bare `receivedByRule: string | null` — a caption over an empty
+   * rule, and empty FOREVER, because the mark a customer drew at the gate was
+   * written into `signature.assetId` (the business's) and printed under the
+   * business's caption with the business's name. The one block on the page
+   * that belongs to the person receiving the goods was the only one that
+   * could never say anything.
+   *
+   * `mark`, `name`, `role` and `signedOn` are each absent until there is one:
+   * an unsigned delivery still prints the caption and the rule, which is what
+   * somebody signs ON.
+   */
+  readonly receivedBy: ReceivedBy | null
   /** Receipts show what was paid — never an instruction to pay again (§I). */
   readonly receiptEvidence: ReceiptEvidence | null
   readonly signature: {
@@ -439,7 +476,7 @@ export function composeDocument(
         : (options.totalsLabels?.withholding ?? 'Less withholding tax'),
     paymentBox: buildPaymentBox(document, options, terms),
     // §I: deliveries replace the payment box with the localised RECEIVED BY.
-    receivedByRule: showsMoney ? null : terms.receivedBy,
+    receivedBy: showsMoney ? null : buildReceivedBy(document, terms, options),
     receiptEvidence: buildReceiptEvidence(document, terms, options),
     signature: {
       ...(document.signatureAssetId === undefined ? {} : { assetId: document.signatureAssetId }),
@@ -450,7 +487,14 @@ export function composeDocument(
       caption: labels.signatureCaption,
       /* Whose signature it is — the business it commits (§I). */
       ...(branding.name.trim() === '' ? {} : { signerBusiness: branding.name }),
-      ...(document.signerName === undefined ? {} : { signerName: document.signerName }),
+      /*
+       * `signerName` IS NOT READ HERE, and that is the fix.
+       *
+       * It is the RECIPIENT — §E defines it as "who took delivery" — and this
+       * block is the sender's. Printing it here put the customer's name under
+       * "DISPATCHED BY", beneath the business's own name, on the one document
+       * where the distinction is the whole point. It belongs to `receivedBy`.
+       */
     },
     totalsWidthPercent: 58,
   }
@@ -502,6 +546,47 @@ function buildPaymentBox(
     otherMethods: options.otherPaymentMethods ?? [],
     otherMethodsLabel: terms.otherPaymentMethods,
     maxWidthPercent: 60,
+  }
+}
+
+/**
+ * The recipient's block on a delivery (§I, §E, §P).
+ *
+ * Drawn on EVERY delivery, signed or not: unsigned it is the caption over the
+ * rule somebody puts their hand on, which is what makes the paper usable at
+ * the gate. Signed, it carries the mark they drew, their name, their role and
+ * the date — the four facts that turn a delivery note into proof.
+ *
+ * The mark comes from `signerSignatureAssetId`, never from
+ * `signatureAssetId`. The two were one column, which is how the customer's
+ * hand came to be printed under the sender's caption.
+ */
+function buildReceivedBy(
+  document: ComposableDocument,
+  terms: ReturnType<typeof sharedTerms>,
+  options: ComposeOptions,
+): ReceivedBy {
+  const assetId = document.signerSignatureAssetId
+  const markUrl = assetId === undefined ? undefined : options.assetUrls?.[assetId]
+  return {
+    caption: terms.receivedBy,
+    /*
+     * A mark only when the repository actually handed the bytes over. An
+     * unresolvable asset prints the rule alone rather than a broken image
+     * over a claim that somebody signed (§P) — the same rule the business's
+     * own signature follows a few lines above.
+     */
+    ...(markUrl === undefined ? {} : { markUrl }),
+    ...(document.signerName === undefined || document.signerName.trim() === ''
+      ? {}
+      : { name: document.signerName }),
+    ...(document.signerRole === undefined || document.signerRole.trim() === ''
+      ? {}
+      : { role: document.signerRole }),
+    // Formatted like every other date on the page, never a raw ISO string.
+    ...(document.signedAt === undefined
+      ? {}
+      : { signedOn: formatDocumentDate(document.signedAt, options.dateFormat) }),
   }
 }
 

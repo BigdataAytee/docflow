@@ -180,6 +180,24 @@ export interface DocumentRecord {
   readonly signerRole?: string
   readonly signedAt?: string
   /**
+   * THE RECIPIENT'S OWN MARK — the one they drew on the phone at the gate.
+   *
+   * Separate from `signatureAssetId`, and it has to be. Signing a delivery
+   * wrote the customer's mark into that field, which is the BUSINESS's
+   * signature: so the page printed the customer's hand under "DISPATCHED BY"
+   * with the business's name beneath it — a document attributing the
+   * customer's signature to the sender — and the "RECEIVED BY" block they had
+   * actually signed stayed empty, a heading over a blank rule on every
+   * delivery ever signed.
+   *
+   * It also destroyed the business's own mark on that document, because the
+   * two were the same column.
+   *
+   * Sealed with the rest of the evidence (§P): written once, with the
+   * transition to delivered, and never edited after.
+   */
+  readonly signerSignatureAssetId?: string
+  /**
    * §E's "delivery photo asset" — the goods at the gate. Part of the same
    * evidence as the signature, so it seals when the delivery does (§P).
    */
@@ -385,7 +403,8 @@ export interface DocumentRepository {
       signerName: string
       signerRole?: string
       signedAt: string
-      signatureAssetId: string
+      /** The RECIPIENT's mark. Never the business's — see the record field. */
+      signerSignatureAssetId: string
     },
     ctx: MutationContext,
   ): Promise<DocumentRecord>

@@ -537,10 +537,53 @@ export function DocumentPage({
                 </div>
               )}
 
-              {model.receivedByRule !== null && (
-                <div className="flex-1">
-                  <div className="mt-[24px] w-[160px] border-t" style={{ borderColor: ink }} />
-                  <p className="mt-[4px] font-bold uppercase tracking-wide">{model.receivedByRule}</p>
+              {/*
+                THE RECIPIENT'S BLOCK — and it can finally say something.
+
+                This drew a caption over an empty rule, and it was empty
+                FOREVER: the mark a customer drew at the gate went into the
+                business's signature field and printed on the other side of
+                this row, under the business's caption and the business's
+                name. The one block belonging to the person receiving the
+                goods was the only one that could never carry anything.
+
+                Unsigned it is still a caption over a rule, because that is
+                what somebody signs ON — the paper has to work at the gate
+                before anyone has touched it.
+              */}
+              {model.receivedBy !== null && (
+                <div className="flex-1" data-received-by>
+                  {/*
+                    The mark sits ON the rule, bottom-aligned in a fixed-height
+                    box so a tall hand and a flat one meet the same line — the
+                    same treatment the sender's mark gets opposite.
+                  */}
+                  {model.receivedBy.markUrl !== undefined && (
+                    <div className="flex h-[40px] w-[160px] items-end">
+                      <img
+                        src={model.receivedBy.markUrl}
+                        alt={model.receivedBy.caption}
+                        data-received-mark
+                        className="max-h-[40px] w-auto max-w-[140px] object-contain object-bottom"
+                      />
+                    </div>
+                  )}
+                  <div
+                    className={`${model.receivedBy.markUrl === undefined ? 'mt-[24px]' : ''} w-[160px] border-t`}
+                    style={{ borderColor: ink }}
+                  />
+                  <p className="mt-[4px] font-bold uppercase tracking-wide">
+                    {model.receivedBy.caption}
+                  </p>
+                  {model.receivedBy.name !== undefined && (
+                    <p className="opacity-70">
+                      {model.receivedBy.name}
+                      {model.receivedBy.role === undefined ? '' : ` · ${model.receivedBy.role}`}
+                    </p>
+                  )}
+                  {model.receivedBy.signedOn !== undefined && (
+                    <p className="opacity-55">{model.receivedBy.signedOn}</p>
+                  )}
                 </div>
               )}
 

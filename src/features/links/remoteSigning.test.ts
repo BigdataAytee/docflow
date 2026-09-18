@@ -36,7 +36,7 @@ const sign = async (over: Partial<Parameters<typeof signThroughLink>[0]> = {}) =
     token: TOKEN,
     document: waybill(),
     signerName: 'Bisi Adeyemi',
-    signatureAssetId: 'ast_1',
+    signerSignatureAssetId: 'ast_1',
     at: AT,
     ...over,
   })
@@ -131,7 +131,7 @@ describe('The remote path and the phone in the owner hand agree (§P)', () => {
       signerName: 'Bisi Adeyemi',
       signerRole: 'Storekeeper',
       signedAt: AT,
-      signatureAssetId: 'ast_1',
+      signerSignatureAssetId: 'ast_1',
       status: 'delivered',
       isAtomic: true,
     })

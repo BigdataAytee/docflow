@@ -331,12 +331,15 @@ gate:hosted" silently did nothing. One script now, with
 `--env-file-if-exists=.env`: exported shell variables and a gitignored `.env`
 both work, and `gate:hosted:local` is gone.
 
-**Twenty-six migrations** are written. `0021_recurrences` is applied on the
+**Twenty-seven migrations** are written. `0021_recurrences` is applied on the
 remote (`migration list` shows `local 0021 -> remote 0021`) and its RLS suite
 is green in CI. `0022_company_contact` adds the business's own phone, email
 and website — the footer strip every document ends with (§I).
 
-`0026_drop_label_overrides` is written and NOT YET APPLIED. It removes the
+`0027_recipient_signature` gives the recipient's mark a column of its own and
+points the public signing link at it — written, NOT YET APPLIED.
+
+`0026_drop_label_overrides` is applied on the remote. It removes the
 per-type custom document name at the owner's instruction — the app works the
 word out from the device's time zone now, so the four "Call this document"
 boxes are gone from Settings. Nothing printed changes: labels freeze into

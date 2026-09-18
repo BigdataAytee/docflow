@@ -74,13 +74,35 @@ export function ItemsStep({ draft, onChange, onRemember, onOpenCatalogue }: Item
       quantityMilli: toQuantity(Number(qty) || 1),
       taxable: true,
       ...(minor === undefined ? {} : { unitPriceMinor: minor }),
-      ...(unit.trim() === '' ? {} : { unit: unit.trim() }),
+      /*
+       * NO UNIT ON A DELIVERY, not even one that arrived by the back door.
+       *
+       * The input is not drawn for a delivery, so `unit` should be empty —
+       * except `takeSuggestion` was still filling it from the catalogue on
+       * exactly that branch, left over from when a waybill did have the
+       * field. So picking a saved item put a unit on a delivery line that the
+       * owner could not see, could not clear, and would never have typed.
+       *
+       * It was invisible on the PDF, which drops the column, and visible in
+       * the row summary right here — the builder read "3 cartons" under a
+       * document that would print "3". Guarded by `showsMoney` rather than by
+       * clearing the state, because state that is never read is the next
+       * person's puzzle.
+       */
+      ...(!showsMoney || unit.trim() === '' ? {} : { unit: unit.trim() }),
     }
     onChange({ lineItems: [...draft.lineItems, line] })
     // THE UNIT GOES WITH IT. §E gives the catalogue a `unit` column and the
     // line above has just set one; dropping it here is why every saved item
     // had a price and no unit, and why the catalogue could never say
     // "per carton" the way §L2 intends it to.
+    /*
+     * The catalogue learns what this screen actually collected.
+     *
+     * A delivery collects no unit, so it teaches none — otherwise a waybill
+     * would be writing a `SavedItem.unit` out of a field it does not draw,
+     * and the catalogue would be carrying a fact nobody entered.
+     */
     onRemember?.({
       name: line.description,
       ...(minor === undefined ? {} : { unitPriceMinor: minor }),
@@ -103,7 +125,9 @@ export function ItemsStep({ draft, onChange, onRemember, onOpenCatalogue }: Item
   const takeSuggestion = (item: SavedItem) => {
     setDescription(item.name)
     if (showsMoney && item.lastPrice !== undefined) setPrice(String(item.lastPrice.minor / 100))
-    if (!showsMoney && item.unit !== undefined) setUnit(item.unit)
+    // The unit comes back on a type that still has the field. A delivery does
+    // not, so taking a suggestion on one fills the description and nothing else.
+    if (showsMoney && item.unit !== undefined) setUnit(item.unit)
     setShowSuggestions(false)
     describe.current?.focus()
   }
@@ -300,13 +324,17 @@ export function ItemsStep({ draft, onChange, onRemember, onOpenCatalogue }: Item
                   {line.description}
                 </span>
                 {/*
-                  A delivery reads "3 cartons"; a money type reads "3 × ₦5,000".
-                  The unit shows on both when it is there — "3 bags × ₦5,000"
-                  is no worse on an invoice than it is on a delivery note.
+                  A money type reads "3 bags × ₦5,000"; a delivery reads "3".
+                  THE SUMMARY HAS TO MATCH THE PAPER. This printed the unit on
+                  every type, so a delivery row read "3 cartons" in the builder
+                  under a document whose table prints "3" — the builder
+                  promising a column the page does not have.
                 */}
                 <span className="mt-0.5 block truncate text-[10px] opacity-55">
                   {[
-                    `${line.quantityMilli / 1000}${line.unit === undefined ? '' : ` ${line.unit}`}`,
+                    `${line.quantityMilli / 1000}${
+                      !showsMoney || line.unit === undefined ? '' : ` ${line.unit}`
+                    }`,
                     showsMoney && line.unitPriceMinor !== undefined
                       ? `× ${formatMoney(money(draft.currency, line.unitPriceMinor))}`
                       : '',
