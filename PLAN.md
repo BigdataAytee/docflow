@@ -336,8 +336,12 @@ remote (`migration list` shows `local 0021 -> remote 0021`) and its RLS suite
 is green in CI. `0022_company_contact` adds the business's own phone, email
 and website — the footer strip every document ends with (§I).
 
-`0027_recipient_signature` gives the recipient's mark a column of its own and
-points the public signing link at it — written, NOT YET APPLIED.
+`0027_recipient_signature` is applied on the remote (`migration list` shows
+`local 0027 -> remote 0027`). It gives the recipient's mark a column of its
+own and repoints `apply_public_link` at it — one changed line in the function
+from 0007, same parameter list, so it replaces rather than overloads.
+
+**All twenty-seven are applied.** `local` and `remote` agree on every row.
 
 `0026_drop_label_overrides` is applied on the remote. It removes the
 per-type custom document name at the owner's instruction — the app works the
