@@ -45,7 +45,22 @@ import { Icon, Orbs, applyGlass, glassFactsOf, wantsGlass, type IconName } from 
  */
 const NAV_ICONS: readonly IconName[] = ['home', 'users', 'chart-bar', 'settings']
 
-export function Shell() {
+export interface ShellProps {
+  /**
+   * Whether this route carries primary navigation.
+   *
+   * Decided by the ROUTE GROUP in `App.tsx`, which is built from
+   * `ROOT_DESTINATIONS` — so the answer is written down once and this
+   * component never asks what page it is on. A shell that inspected the
+   * pathname would be the same conditional, moved somewhere harder to find.
+   *
+   * `false` means ABSENT, not hidden: no element, no layout space, nothing
+   * for a detail screen's own controls to sit under.
+   */
+  readonly nav?: boolean
+}
+
+export function Shell({ nav = true }: ShellProps) {
   const { strings } = useCompany()
   const main = useAnnouncedRoute<HTMLElement>()
   const palette = usePalette()
@@ -63,6 +78,20 @@ export function Shell() {
     applyGlass(root, wantsGlass(glassFactsOf(globalThis.navigator)))
   }, [])
 
+  /*
+   * TAPPING THE TAB YOU ARE ALREADY ON DOES NOT STACK A DUPLICATE, and
+   * nothing here has to arrange that.
+   *
+   * `replace={current}` was added on the assumption that `Link` always
+   * pushes. It does not: React Router's own click handler computes
+   * `replace ?? createPath(location) === createPath(to)`, so a link to the
+   * location you are already at replaces by default. The prop was removed
+   * once the mutation proved it — deleting it changed no behaviour, which
+   * means it was decoration that read as load-bearing.
+   *
+   * The guard in `routes.test.tsx` stays. It pins the BEHAVIOUR against a
+   * real browser router, so if that default ever changes the app finds out.
+   */
   const tabs = navDestinations(strings).map((destination, index) => ({
     ...destination,
     icon: NAV_ICONS[index] ?? 'home',
@@ -79,7 +108,7 @@ export function Shell() {
         at the same time, which is a duplicate landmark anywhere the
         stylesheet is not the arbiter.
       */}
-      {wide ? (
+      {nav && wide ? (
         <nav
           aria-label={strings.nav.sections}
           className="fixed bottom-0 start-0 top-0 z-10 flex w-60 flex-col gap-1 border-e border-edge/5 bg-surface/60 p-3 backdrop-blur"
@@ -127,11 +156,21 @@ export function Shell() {
         -1 keeps it out of the tab order, so a keyboard user never lands on
         the container itself while tabbing through the page.
       */}
-      <main ref={main} tabIndex={-1} className={`relative z-[1] outline-none ${wide ? 'ps-60' : ''}`}>
+      {/*
+        The rail's inset goes with the rail. Keeping `ps-60` on a detail page
+        that draws no rail would leave a 15rem strip of nothing down the side
+        of the content — the desktop version of exactly the gap this change
+        exists to remove.
+      */}
+      <main
+        ref={main}
+        tabIndex={-1}
+        className={`relative z-[1] outline-none ${nav && wide ? 'ps-60' : ''}`}
+      >
         <Outlet />
       </main>
 
-      {wide ? null : (
+      {!nav || wide ? null : (
         <nav
           /*
             The bar spans the screen so the safe-area padding has something to

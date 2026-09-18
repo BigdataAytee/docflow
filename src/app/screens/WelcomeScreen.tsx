@@ -26,8 +26,13 @@ export function WelcomeScreen() {
 
   const sample = sampleRecords(companyId)
 
+  /*
+   * A FULL-SCREEN ROUTE, outside the shell — so there has never been a nav
+   * under this page, and the 7rem held open for one was always a blank band at
+   * the foot of it. The gesture area is all this needs.
+   */
   return (
-    <div className="pb-28">
+    <div className="pb-[max(1.25rem,env(safe-area-inset-bottom))]">
       <FirstRun
         suggestedType="invoice"
         onCreate={(type) => navigate(newDocumentPath(type))}

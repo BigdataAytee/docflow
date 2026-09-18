@@ -86,8 +86,17 @@ export function ContactPage({
   const digits = customer.phone?.replace(/\D/g, '') ?? ''
   const canReach = digits !== ''
 
+  /*
+   * NO NAV BELOW THIS PAGE, so no room reserved for one.
+   *
+   * `pb-28` was 7rem of empty space held open for a floating pill that this
+   * screen no longer draws — a blank band under the last control, which is the
+   * gap that makes a removed element look like a bug. What stays is the gesture
+   * area, which is a property of the DEVICE and does not care which route is on
+   * screen.
+   */
   return (
-    <div className="pb-28">
+    <div className="pb-[max(1.25rem,env(safe-area-inset-bottom))]">
       <PageHeader
         title={customer.name}
         {...(customer.address === undefined ? {} : { subtitle: customer.address })}

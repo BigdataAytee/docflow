@@ -178,6 +178,175 @@ describe('Every page is reachable (§G)', () => {
  * is not terminology, and Settings and signup had both been printing them for
  * some time.
  */
+/**
+ * The nav belongs to the app shell, not to every screen (§F, §G).
+ *
+ * The floating pill rendered around EVERY route. On the saved document it sat
+ * directly over the four contextual actions — two navigations competing for
+ * one corner of one screen, and the one that won was the one irrelevant to
+ * what the person was doing.
+ *
+ * It is primary navigation between top-level sections, so it appears at that
+ * level and nowhere else. `ROOT_DESTINATIONS` says which those are, once, and
+ * `App.tsx` builds the nav-bearing route group from it.
+ *
+ * Asserted by RENDERING each route, because the rule is about what a person
+ * sees. A test that read the route table would agree with itself.
+ */
+describe('Primary navigation appears only at the top level (§F, §G)', () => {
+  const navOf = () => screen.queryByRole('navigation', { name: 'Sections' })
+
+  const seededNav = (state: MemoryState) => {
+    state.customers.push(customer())
+    state.documents.push({
+      id: 'doc_nav',
+      companyId: DEV_COMPANY_ID,
+      type: 'invoice',
+      status: 'issued',
+      customerId: 'cus_1',
+      currency: 'NGN',
+      lineItems: [
+        { id: 'l1', description: 'Cement', quantityMilli: quantity(2), unitPriceMinor: 500_000, taxable: false },
+      ],
+      issueDate: '2026-09-05',
+      issuedReference: 'INV-0001',
+      frozenLabels: {
+        printedTitle: 'INVOICE',
+        partyLabel: 'Bill to',
+        signatureCaption: 'Authorised signature',
+        language: 'en',
+      },
+      totalMinor: 1_000_000,
+    })
+  }
+
+  it.each([
+    ['/', 'Home'],
+    ['/list/invoice', 'the invoice list'],
+    ['/list/waybill', 'the delivery list'],
+    ['/customers', 'Customers'],
+    ['/analytics', 'Analytics'],
+    ['/settings', 'the settings index'],
+  ])('shows it on %s (%s)', async (path) => {
+    renderAt(path, seededNav)
+    await screen.findByRole('main')
+    expect(navOf(), `${path} lost its navigation`).toBeInTheDocument()
+  })
+
+  /**
+   * THE ONE THIS IS FOR — and the rest of the detail screens with it. Absent,
+   * not hidden: `queryByRole` finds an element that is merely transparent or
+   * positioned off-screen, which is the implementation this rules out.
+   */
+  it.each([
+    ['/doc/doc_nav', 'the saved document'],
+    ['/customers/cus_1', 'a customer'],
+    ['/settings/company', 'a settings panel'],
+    ['/settings/region', 'another settings panel'],
+  ])('hides it on %s (%s)', async (path) => {
+    renderAt(path, seededNav)
+    await screen.findByRole('main')
+    expect(navOf(), `${path} still draws the navigation`).not.toBeInTheDocument()
+  })
+
+  /** The builder and setup are full-screen flows and never had it. */
+  it.each([['/new/invoice'], ['/edit/doc_nav'], ['/start']])('keeps it off %s', async (path) => {
+    renderAt(path, seededNav)
+    expect(navOf(), `${path} drew the navigation`).not.toBeInTheDocument()
+  })
+
+  /**
+   * Tapping the tab you are already on must not stack a duplicate.
+   *
+   * `NavLink` pushes unconditionally, so four taps on Home left four
+   * identical history entries — and then four presses of Back to leave, each
+   * one appearing to do nothing.
+   */
+  it('does not push a duplicate entry for the tab already showing', async () => {
+    const user = userEvent.setup()
+
+    /*
+     * A REAL ROUTER, because this is a claim about HISTORY.
+     *
+     * Every other case here runs on the memory router, where
+     * `window.history` never moves — so a length check passes whatever the
+     * component does. The first version of this did exactly that and survived
+     * having `replace` deleted, which is the definition of a guard that
+     * cannot fail. A browser router in jsdom pushes real entries.
+     */
+    const { state, repositories } = seeded(seededNav)
+    void state
+    window.history.replaceState({}, '', '/')
+    render(
+      <App repositories={repositories} companyId={DEV_COMPANY_ID} router="browser" />,
+    )
+
+    const home = await screen.findByRole('link', { name: 'Home' })
+    const before = window.history.length
+    await user.click(home)
+    await user.click(home)
+    await user.click(home)
+    expect(
+      window.history.length - before,
+      'tapping the tab already showing stacked history entries',
+    ).toBe(0)
+  })
+
+  /** And moving to a DIFFERENT section still pushes one, or Back is broken. */
+  it('pushes exactly one entry when the section changes', async () => {
+    const user = userEvent.setup()
+    const { repositories } = seeded(seededNav)
+    window.history.replaceState({}, '', '/')
+    render(<App repositories={repositories} companyId={DEV_COMPANY_ID} router="browser" />)
+
+    const before = window.history.length
+    await user.click(await screen.findByRole('link', { name: 'Customers' }))
+    expect(window.history.length - before, 'moving section did not push').toBe(1)
+  })
+
+  /**
+   * And a different tab still navigates — asserted on what RENDERS, because
+   * the harness drives a memory router and `window.location` never moves.
+   */
+  it('still moves between sections', async () => {
+    const user = userEvent.setup()
+    renderAt('/', seededNav)
+    await user.click(await screen.findByRole('link', { name: 'Customers' }))
+    // The seeded customer is on the customers screen and on no other.
+    expect(await screen.findByText('Ade Stores')).toBeInTheDocument()
+  })
+
+  /**
+   * EVERY DETAIL SCREEN HAS A WAY OFF IT.
+   *
+   * None of them needed one while a floating pill sat on every page. Take the
+   * pill away and the saved document and all six settings panels had no exit
+   * at all — except Android's hardware button, which is the one platform
+   * being tested and would have hidden this everywhere else.
+   */
+  it.each([
+    ['/doc/doc_nav', 'the saved document'],
+    ['/customers/cus_1', 'a customer'],
+    ['/settings/company', 'a settings panel'],
+    ['/settings/region', 'another settings panel'],
+  ])('gives %s (%s) a way back', async (path) => {
+    renderAt(path, seededNav)
+    await screen.findByRole('main')
+    const back = screen.queryAllByRole('button', { name: /back|all customers/i })
+    expect(back.length, `${path} has no way off it`).toBeGreaterThan(0)
+  })
+
+  /**
+   * And the four actions on the saved document are untouched. Removing the
+   * nav was meant to make them clearer, not to alter them.
+   */
+  it('leaves the saved document its four actions', async () => {
+    renderAt('/doc/doc_nav', seededNav)
+    const grid = await screen.findByRole('group', { name: /actions/i })
+    expect(grid.querySelectorAll('button')).toHaveLength(4)
+  })
+})
+
 describe('Every country picker names its countries (§D, §R)', () => {
   const codeLike = /^[A-Z]{2}$/
 
@@ -1456,10 +1625,16 @@ describe('The Repeat toggle keeps its answer (§L4)', () => {
     await user.click(await screen.findByRole('button', { name: 'Not repeating' }))
     expect(await screen.findByRole('button', { name: 'Repeating' })).toBeInTheDocument()
 
-    // Away, and back — the screen unmounts and its state goes with it. Search
-    // rather than the tiles, because this is about the schedule surviving the
-    // round trip, not about how you get there.
-    await user.click(screen.getByRole('link', { name: 'Home' }))
+    /*
+     * Away, and back — the screen unmounts and its state goes with it. Search
+     * rather than the tiles, because this is about the schedule surviving the
+     * round trip, not about how you get there.
+     *
+     * Via the screen's own BACK, not the nav: a detail screen carries no
+     * primary navigation any more, which is the point of it having a back
+     * control at all.
+     */
+    await user.click(screen.getByRole('button', { name: /back/i }))
     await user.type(await screen.findByRole('searchbox', { name: /Search/i }), 'INV-0042')
     await user.click(await screen.findByText('INV-0042'))
 
@@ -2222,7 +2397,9 @@ describe('Signing (§G, §I, §P)', () => {
       await sign(user)
       await waitFor(() => expect(state.assets).toHaveLength(1))
 
-      await user.click(screen.getByRole('link', { name: 'Home' }))
+      // Back off the settings panel, then Home — a panel has no nav on it.
+      await user.click(screen.getByRole('button', { name: /back/i }))
+      await user.click(await screen.findByRole('link', { name: 'Home' }))
       await user.click(await screen.findByRole('button', { name: /^\d+ Invoice/ }))
       // "+ New invoice" — the sentence form, cased by the terminology table
       // rather than by the call site (§D). Matched case-insensitively so this

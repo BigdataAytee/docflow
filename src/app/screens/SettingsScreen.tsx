@@ -17,13 +17,14 @@ import { Navigate, NavLink, useLocation, useNavigate, useParams } from 'react-ro
 import { countryName } from '../../domain/locale/data/countries'
 import { useCompany } from '../context'
 import { useAppData } from '../store'
-import { ONBOARDING, SETTINGS_PANELS, type SettingsPanel, settingsPath } from '../paths'
+import { ONBOARDING, SETTINGS, SETTINGS_PANELS, type SettingsPanel, settingsPath } from '../paths'
 import { settingsDestinations, settingsGroups } from '../destinations'
 import { DeleteAccount } from '../../features/account/DeleteAccount'
 import { ProSettings } from '../../features/billing/ProSettings'
 import { standing } from '../../domain/billing/entitlement'
 import type { Lifecycle, Refusal } from '../../domain/account/deletion'
 import { Icon, type IconName, PageHeader, SkeletonList } from '../../ui'
+import { useGoBack } from '../useGoBack'
 import { CompanySettings } from '../../features/settings/CompanySettings'
 import { PaymentSettings } from '../../features/settings/PaymentSettings'
 import { RegionSettings } from '../../features/settings/RegionSettings'
@@ -191,16 +192,54 @@ export function SettingsPanelScreen() {
   // §G's detour: a panel reached from a draft says so, and offers the way
   // back. Carried in the navigation rather than stored — the draft itself is
   // already on the device, so there is no state here worth persisting.
+  // A panel opened cold — from a deep link — falls back to the settings index.
+  const goBack = useGoBack(SETTINGS)
   const errand = location.state as { returnTo?: string; errand?: string } | null
 
+  /*
+   * NO NAV BELOW THIS PAGE, so no room reserved for one.
+   *
+   * `pb-28` was 7rem of empty space held open for a floating pill that this
+   * screen no longer draws — a blank band under the last control, which is the
+   * gap that makes a removed element look like a bug. What stays is the gesture
+   * area, which is a property of the DEVICE and does not care which route is on
+   * screen.
+   */
   return (
-    <div className="pb-28 pt-[max(0.25rem,env(safe-area-inset-top))]">
+    <div className="pb-[max(1.25rem,env(safe-area-inset-bottom))] pt-[max(0.25rem,env(safe-area-inset-top))]">
       {errand?.returnTo !== undefined && errand.errand === 'payment' && (
         <ReturnBand
           errand={strings.details.settingUpPayment}
           onBack={() => navigate(errand.returnTo!)}
         />
       )}
+
+      {/*
+        ONE BACK FOR EVERY PANEL, here rather than in each of them.
+
+        No panel had one — the nav pill was the only way out of Company & logo,
+        How you get paid, Region & language and the rest. Six screens would
+        have needed six copies of this and one of them would have been
+        forgotten; the wrapper every panel already renders through is the
+        place it belongs.
+
+        Not drawn when an errand band is showing: that band is already a way
+        back, to a more specific place, and two back controls stacked is a
+        question about which one returns where.
+      */}
+      {errand?.returnTo === undefined && (
+        <div className="px-4 pt-2">
+          <button
+            type="button"
+            onClick={goBack}
+            className="tap-scale -ms-1 flex min-h-tap items-center gap-1 text-[13px] font-semibold text-brand"
+          >
+            <span aria-hidden="true">←</span>
+            {strings.common.back}
+          </button>
+        </div>
+      )}
+
       <SettingsPanelBody />
     </div>
   )

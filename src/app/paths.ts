@@ -61,3 +61,34 @@ export const SETTINGS_PANELS = [
 ] as const
 export type SettingsPanel = (typeof SETTINGS_PANELS)[number]
 export const settingsPath = (panel: SettingsPanel): string => `/settings/${segment(panel)}`
+
+/**
+ * THE ROUTES THAT CARRY PRIMARY NAVIGATION — the whole classification, once.
+ *
+ * The nav is how somebody moves between the app's top-level sections, so it
+ * belongs at that level and nowhere else. It was rendered around every route
+ * instead, which on the saved-document screen put a floating pill directly
+ * over the four contextual actions: two navigations competing for the same
+ * corner of the same screen, one of them irrelevant to what the person was
+ * doing.
+ *
+ * ROUTE PATTERNS, matched by the router — not pathnames. `/list/:type` is one
+ * entry covering all four lists.
+ *
+ * The four document lists are root destinations and keep the nav. They are
+ * reached by tapping a tile on Home and are where a trader spends most of the
+ * day; hiding it there would mean losing global navigation on the busiest
+ * screens in the app.
+ *
+ * THE DEFAULT IS "NO NAV", and that is the point of listing the roots rather
+ * than the details. A screen added later — a quotation detail, an expense, a
+ * statement — is a detail screen until somebody deliberately writes it down
+ * here, so nobody has to remember to opt out.
+ */
+export const ROOT_DESTINATIONS: readonly string[] = [
+  HOME,
+  '/list/:type',
+  CUSTOMERS,
+  ANALYTICS,
+  SETTINGS,
+]

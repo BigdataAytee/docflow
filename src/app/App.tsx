@@ -28,7 +28,7 @@ import { PaletteProvider } from './PaletteHost'
 import { AccountNotice } from './AccountNotice'
 import { ReviewProvider } from './ReviewHost'
 import { Shell } from './Shell'
-import { HOME, ONBOARDING, SETTINGS_PANELS } from './paths'
+import { ANALYTICS, CUSTOMERS, HOME, ONBOARDING, SETTINGS, SETTINGS_PANELS } from './paths'
 import { DEV_COMPANY_ID } from './seed'
 import { ThemeProvider } from '../features/theme/ThemeContext'
 import type { Repositories } from '../data/repositories'
@@ -309,21 +309,45 @@ export function AppRoutes() {
       <Route path="/new/:type" element={<NewDocumentScreen />} />
       <Route path="/edit/:id" element={<BuilderScreen />} />
 
+      {/*
+        TWO SHELLS, and which one a screen gets is the whole of the rule.
+
+        `ROOT_DESTINATIONS` in `paths.ts` names the five patterns that carry
+        primary navigation; this group is built from that list and nothing
+        else goes in it. Everything below is a detail or a workflow and gets
+        the same chrome WITHOUT the nav — not hidden, not transparent, not
+        pushed off-screen: absent, taking no layout space.
+
+        The split lives here rather than in the screens because a screen
+        asking "am I a detail page?" is the same question answered in as many
+        places as there are screens, and the answers drift. A new route gets
+        the right behaviour by being added to the right group, and the default
+        — anything not written into `ROOT_DESTINATIONS` — is no nav.
+      */}
       <Route
         element={
           <FirstRunGate>
-            <Shell />
+            <Shell nav />
           </FirstRunGate>
         }
       >
         <Route path={HOME} element={<HomeScreen />} />
         <Route path="/list/:type" element={<ListScreen />} />
+        <Route path={CUSTOMERS} element={<CustomersScreen />} />
+        <Route path={ANALYTICS} element={<AnalyticsScreen />} />
+        <Route path={SETTINGS} element={<SettingsIndexScreen />} />
+      </Route>
+
+      <Route
+        element={
+          <FirstRunGate>
+            <Shell nav={false} />
+          </FirstRunGate>
+        }
+      >
         <Route path="/doc/:id" element={<DocumentScreen />} />
-        <Route path="/customers" element={<CustomersScreen />} />
         <Route path="/customers/:customerId" element={<ContactScreen />} />
         <Route path="/customers/:customerId/statement/:currency" element={<StatementScreen />} />
-        <Route path="/analytics" element={<AnalyticsScreen />} />
-        <Route path="/settings" element={<SettingsIndexScreen />} />
         <Route path="/settings/:panel" element={<SettingsPanelScreen />} />
         <Route path="*" element={<NotFound />} />
       </Route>

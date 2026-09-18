@@ -21,7 +21,8 @@ import { Navigate, useNavigate, useParams } from 'react-router-dom'
 
 import { useCompany } from '../context'
 import { useAppData } from '../store'
-import { HOME, documentPath, editDocumentPath } from '../paths'
+import { HOME, documentPath, editDocumentPath, listPath } from '../paths'
+import { useGoBack } from '../useGoBack'
 import { PageHeader, SkeletonList, StatusBadge } from '../../ui'
 import { BuilderCard } from '../../features/documents/BuilderCard'
 import type { UiStrings } from '../../domain/locale/data/strings'
@@ -141,6 +142,13 @@ export function DocumentScreen({ today = todayIso() }: { today?: string }) {
   const port = useMemo(() => createWebSharePort(), [])
 
   const record = documents.find((document) => document.id === id)
+  /*
+   * The FALLBACK is this document's own list, not Home. A shared link opened
+   * cold has no history behind it, and the nearest sensible place above an
+   * invoice is the invoices — which is also what the person would have
+   * reached had they arrived the ordinary way.
+   */
+  const goBack = useGoBack(record === undefined ? HOME : listPath(record.type))
   // Derived, never stored on the screen — the same rule as every other piece
   // of truth here (§C: derived states are computed at read time).
   /*
@@ -321,12 +329,36 @@ export function DocumentScreen({ today = todayIso() }: { today?: string }) {
   const timesShared = shareCount(shares, record.id)
   const latestShare = lastShared(shares, record.id)
 
+  /*
+   * NO NAV BELOW THIS PAGE, so no room reserved for one.
+   *
+   * `pb-28` was 7rem of empty space held open for a floating pill that this
+   * screen no longer draws — a blank band under the last control, which is the
+   * gap that makes a removed element look like a bug. What stays is the gesture
+   * area, which is a property of the DEVICE and does not care which route is on
+   * screen.
+   */
   return (
-    <div className="pb-28">
+    <div className="pb-[max(1.25rem,env(safe-area-inset-bottom))]">
       <PageHeader
         title={labels.printedTitle}
         eyebrow={record.issuedReference ?? strings.savedDocument.notIssuedYet}
         accent={TYPE_PALETTE[record.type].accent}
+        /*
+         * THE WAY OFF THIS SCREEN. It had none: the floating nav pill was the
+         * only exit, and it was also the thing sitting on top of the four
+         * actions. Removing it without this would have left the screen with
+         * no way out except Android's hardware button — which is the one
+         * platform being tested, and would have hidden the problem on every
+         * other.
+         *
+         * `history.back()`, not a path: Customers → customer → invoice →
+         * Back reaches the CUSTOMER, which is where the person came from.
+         * `useGoBack` supplies the list as the fallback for the case with no
+         * history behind it — a shared link, a notification, a cold start.
+         */
+        onBack={goBack}
+        backLabel={strings.common.back}
         {...(customer === undefined ? {} : { subtitle: customer.name })}
         trailing={<StatusBadge status={status} label={strings.statuses[status] ?? status} />}
       />
