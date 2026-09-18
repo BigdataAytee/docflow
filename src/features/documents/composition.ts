@@ -108,10 +108,24 @@ export function draftOf(record: DocumentRecord): DocumentDraft {
     ...(record.signerSignatureAssetId === undefined
       ? {}
       : { signerSignatureAssetId: record.signerSignatureAssetId }),
+    /*
+     * §V: a receipt's total IS the payment, and the record already holds it.
+     * Carried onto the draft because the sum of the lines is the INVOICE's
+     * total once the goods come across, and issuing off that sum would bill
+     * the full amount for a part payment.
+     */
+    ...(record.type === 'receipt' ? { paidAmountMinor: record.totalMinor } : {}),
     /* The receipt's frozen balance, straight through to the page (Rule #5). */
     ...(record.balanceAfterMinor === undefined
       ? {}
       : { balanceAfterMinor: record.balanceAfterMinor }),
+    /* And the two figures it is the remainder OF. */
+    ...(record.invoiceTotalMinor === undefined
+      ? {}
+      : { invoiceTotalMinor: record.invoiceTotalMinor }),
+    ...(record.paidBeforeMinor === undefined
+      ? {}
+      : { paidBeforeMinor: record.paidBeforeMinor }),
     ...(record.signerName === undefined ? {} : { signerName: record.signerName }),
     ...(record.signerRole === undefined ? {} : { signerRole: record.signerRole }),
     ...(record.signedAt === undefined ? {} : { signedAt: record.signedAt }),
@@ -279,6 +293,12 @@ export function composableOf(input: ComposableInput): ComposableDocument {
     ...(draft.balanceAfterMinor === undefined
       ? {}
       : { balanceAfterMinor: draft.balanceAfterMinor }),
+    ...(draft.invoiceTotalMinor === undefined
+      ? {}
+      : { invoiceTotalMinor: draft.invoiceTotalMinor }),
+    ...(draft.paidBeforeMinor === undefined
+      ? {}
+      : { paidBeforeMinor: draft.paidBeforeMinor }),
     ...(draft.signerName === undefined ? {} : { signerName: draft.signerName }),
     ...(draft.signerRole === undefined ? {} : { signerRole: draft.signerRole }),
     ...(draft.signedAt === undefined ? {} : { signedAt: draft.signedAt }),

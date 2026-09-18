@@ -194,6 +194,9 @@ export interface ReceiptRecordFields {
   readonly linkedInvoiceId?: string
   /** What the linked invoice still owes after this payment. Frozen (Rule #5). */
   readonly balanceAfterMinor?: number
+  /** The bill, and what had arrived before this payment. Frozen with it. */
+  readonly invoiceTotalMinor?: number
+  readonly paidBeforeMinor?: number
 }
 
 /**
@@ -221,26 +224,50 @@ export function receiptRecordFor(input: {
    * figure it capped the allocation against.
    */
   readonly invoiceOutstandingBefore?: Money
+  /**
+   * The invoice's own goods and its total, when this settles one.
+   *
+   * The receipt CARRIES THE ITEMS rather than one summary line: a customer
+   * reconciling a part payment needs to see what the bill was for, and the
+   * invoice they hold is the only place those words exist. Copied at issue,
+   * so the receipt keeps them even if the invoice is later voided.
+   */
+  readonly invoiceLineItems?: readonly LineItem[]
+  readonly invoiceTotal?: Money
 }): ReceiptRecordFields {
   const { payment } = input
   return {
     type: 'receipt',
     status: 'draft',
     currency: payment.amount.currency,
-    lineItems: [
-      {
-        id: `${payment.id}:line`,
-        description: input.description,
-        quantityMilli: quantity(1),
-        unitPriceMinor: payment.amount.minor,
-        taxable: false,
-      },
-    ],
+    /*
+     * THE INVOICE'S OWN GOODS, when there is an invoice.
+     *
+     * A receipt settling a bill shows what the bill was FOR — the customer
+     * reconciling a part payment has the invoice in front of them and needs
+     * the two to line up. Copied rather than referenced, so the receipt still
+     * says what it was for if the invoice is later voided (Rule #5).
+     *
+     * A standalone receipt has no such source and keeps its one line, priced
+     * at exactly what was handed over.
+     */
+    lineItems:
+      input.invoiceLineItems !== undefined && input.invoiceLineItems.length > 0
+        ? input.invoiceLineItems.map((line, index) => ({
+            ...line,
+            id: `${payment.id}:line:${index}`,
+          }))
+        : [
+            {
+              id: `${payment.id}:line`,
+              description: input.description,
+              quantityMilli: quantity(1),
+              unitPriceMinor: payment.amount.minor,
+              taxable: false,
+            },
+          ],
     totalMinor: payment.amount.minor,
     // `paidAt` is a timestamp; a document date is a day (§E).
-    // The day the MONEY arrived, in the owner's calendar. Slicing the
-    // instant dated the receipt in UTC, which west of Greenwich puts an
-    // evening payment on tomorrow's receipt.
     // The day the MONEY arrived, in the owner's calendar. Slicing the
     // instant dated the receipt in UTC, which west of Greenwich puts an
     // evening payment on tomorrow's receipt.
@@ -260,12 +287,51 @@ export function receiptRecordFor(input: {
      */
     ...(input.linkedInvoiceId === undefined || input.invoiceOutstandingBefore === undefined
       ? {}
-      : {
-          balanceAfterMinor: Math.max(
-            0,
-            input.invoiceOutstandingBefore.minor - payment.amount.minor,
-          ),
-        }),
+      : input.invoiceTotal === undefined
+        ? {
+            balanceAfterMinor: Math.max(
+              0,
+              input.invoiceOutstandingBefore.minor - payment.amount.minor,
+            ),
+          }
+        : frozenPicture({
+            invoiceTotal: input.invoiceTotal,
+            outstandingBefore: input.invoiceOutstandingBefore,
+            paidMinor: payment.amount.minor,
+          })),
+  }
+}
+
+/**
+ * The three frozen figures a receipt prints, worked out ONCE (§I, Rule #5).
+ *
+ * The live preview on Path A's page and the record that is actually written
+ * both need them, and computing them twice is two chances to disagree about
+ * one number — which would mean somebody signing under a balance the printed
+ * receipt then contradicts. So it is one function, read twice.
+ *
+ * Never below zero: paying more than is owed settles the debt and leaves the
+ * surplus as customer credit (§K), so the receipt says "Paid in full" rather
+ * than reporting a negative balance nobody owes.
+ */
+export function frozenPicture(input: {
+  readonly invoiceTotal: Money
+  readonly outstandingBefore: Money
+  readonly paidMinor: number
+}): {
+  readonly balanceAfterMinor: number
+  readonly invoiceTotalMinor: number
+  readonly paidBeforeMinor: number
+} {
+  return {
+    balanceAfterMinor: Math.max(0, input.outstandingBefore.minor - input.paidMinor),
+    invoiceTotalMinor: input.invoiceTotal.minor,
+    /*
+     * What had already arrived: the bill less what was still owing before
+     * this payment. Derived rather than passed separately, so the three
+     * figures on the printed receipt cannot fail to add up.
+     */
+    paidBeforeMinor: Math.max(0, input.invoiceTotal.minor - input.outstandingBefore.minor),
   }
 }
 
@@ -277,12 +343,27 @@ export function receiptRecordFor(input: {
  */
 export const receiptKeyFor = (paymentId: string): string => `rct:${paymentId}`
 
-/** Which invoices a payment could reasonably settle, for the picker (§G). */
+/**
+ * Which invoices a payment could reasonably settle, for the picker (§G).
+ *
+ * ENOUGH TO RECOGNISE ONE BY. A reference and a balance is what the picker
+ * used to show, and a trader with four bills to the same customer cannot tell
+ * INV-0007 from INV-0009 by their numbers — the thing they remember is what
+ * the job was and roughly when. So the row carries the date, the goods and the
+ * face value too, and the same set is what the receipt freezes at issue.
+ */
 export interface SettleableInvoice {
   readonly id: string
   readonly customerId: string
   readonly reference: string
+  /** What is still owed on it, after every payment and credit note. */
   readonly outstanding: Money
+  /** The day it was issued — the other half of recognising a bill. */
+  readonly issueDate: string
+  /** The face value, before anything was paid against it. */
+  readonly total: Money
+  /** Its own goods, which the picker names and the receipt carries. */
+  readonly lineItems: readonly LineItem[]
 }
 
 /**

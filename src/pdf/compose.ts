@@ -115,6 +115,9 @@ export interface ComposableDocument {
    * payment cleared it, and prints "Paid in full" rather than a zero.
    */
   readonly balanceAfterMinor?: number
+  /** The bill this settles, and what had arrived before — frozen (Rule #5). */
+  readonly invoiceTotalMinor?: number
+  readonly paidBeforeMinor?: number
   /**
    * The reference of the invoice this receipt is evidence against.
    *
@@ -221,6 +224,22 @@ export interface ReceiptEvidence {
    */
   readonly balanceRemaining?: Money
   readonly balanceRemainingLabel: string
+  /**
+   * WHAT THE BILL WAS AND WHAT HAD ALREADY ARRIVED, frozen with the balance.
+   *
+   * A receipt showing only the amount handed over answers one of the four
+   * questions its holder has: what was the bill, what had I paid, what did I
+   * just pay, what is left. These are the first two.
+   *
+   * Absent together on a standalone receipt, which settles no invoice and has
+   * no such picture to show — never a zero, which would claim a bill of
+   * nothing.
+   */
+  readonly invoiceTotal?: Money
+  readonly invoiceTotalLabel: string
+  readonly paidBefore?: Money
+  readonly paidBeforeLabel: string
+  readonly paidNowLabel: string
   /**
    * Printed INSTEAD of the balance when this payment cleared the debt.
    *
@@ -485,14 +504,39 @@ export function composeDocument(
     columns,
     rows,
     totals,
+    /*
+     * THE FIGURE UNDER THE GOODS IS WHAT THE GOODS COME TO.
+     *
+     * On a receipt that settles an invoice the rows are the INVOICE'S items,
+     * so the sum beneath them is the bill — and labelling it "Received" would
+     * put the word for the payment over the figure for the debt. A customer
+     * reading a part-payment receipt would see the full amount marked
+     * received. It is labelled as the invoice total instead, and the money
+     * that actually arrived is the headline and the evidence block.
+     */
     totalsLabel:
-      totals === null ? null : totalsLabelFor(document.type, terms, options.totalsLabels),
+      totals === null
+        ? null
+        : document.type === 'receipt' && document.invoiceTotalMinor !== undefined
+          ? terms.invoiceTotal
+          : totalsLabelFor(document.type, terms, options.totalsLabels),
+    /*
+     * AND THE HEADLINE IS THE PAYMENT (§V).
+     *
+     * It read `totals.payable` — the sum of the lines — which was the payment
+     * only because a receipt used to hold one synthetic line priced at it.
+     * With the invoice's own goods on the page that accident breaks, and the
+     * big figure at the top of a ₦95,000 receipt would read ₦190,000.
+     */
     headline:
       totals === null
         ? null
         : {
             label: totalsLabelFor(document.type, terms, options.totalsLabels) ?? '',
-            amount: totals.payable,
+            amount:
+              document.type === 'receipt' && document.paidAmount !== undefined
+                ? document.paidAmount
+                : totals.payable,
           },
     /*
      * NOT ON A RECEIPT, which is the one type it contradicts.
@@ -671,6 +715,23 @@ function buildReceiptEvidence(
       : { method: document.paidMethod }),
     methodLabel: terms.paidBy,
     balanceRemainingLabel: terms.balanceRemaining,
+    invoiceTotalLabel: terms.invoiceTotal,
+    paidBeforeLabel: terms.paidBefore,
+    paidNowLabel: terms.paidNow,
+    /*
+     * Read off the RECORD, never recomputed — the same rule the balance
+     * follows, and for the same reason: later payments must not change what a
+     * copy already handed over says.
+     *
+     * `paidBefore` is omitted at zero because "Paid before ₦0.00" is a row
+     * that tells somebody nothing had happened yet, which they know.
+     */
+    ...(document.invoiceTotalMinor === undefined
+      ? {}
+      : { invoiceTotal: money(document.currency, document.invoiceTotalMinor) }),
+    ...(document.paidBeforeMinor === undefined || document.paidBeforeMinor <= 0
+      ? {}
+      : { paidBefore: money(document.currency, document.paidBeforeMinor) }),
     /*
      * FROZEN AT ISSUE, and read straight off the record.
      *

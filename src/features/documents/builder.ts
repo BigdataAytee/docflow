@@ -143,6 +143,27 @@ export interface DocumentDraft {
    * recipient's signature went missing.
    */
   readonly balanceAfterMinor?: number
+  /**
+   * The rest of the receipt's frozen picture (Rule #5).
+   *
+   * The bill, and what had already arrived against it before this payment.
+   * Carried on the DRAFT because the chain record -> draft -> composable is
+   * the only route to the printed page: a column the record holds and the
+   * draft drops prints blank while every mapper reads as filled.
+   */
+  readonly invoiceTotalMinor?: number
+  readonly paidBeforeMinor?: number
+  /**
+   * What a receipt is evidence OF — §V's "the printed total IS the payment".
+   *
+   * It used to be true by accident: a receipt held one synthetic line priced
+   * at the payment, so summing the lines happened to give the payment back.
+   * Once the receipt carries the INVOICE'S items that accident breaks, and a
+   * receipt for a part payment would have been issued, listed and reported at
+   * the full value of the bill. So the payment is carried explicitly and the
+   * sum of the lines is never allowed to stand in for it.
+   */
+  readonly paidAmountMinor?: number
   readonly signerName?: string
   readonly signerRole?: string
   readonly signedAt?: string

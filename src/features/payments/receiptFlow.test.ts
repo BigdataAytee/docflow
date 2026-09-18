@@ -209,6 +209,17 @@ describe('The picker offers only what this money could settle (§G, §K)', () =>
     customerId,
     reference: `INV-${id}`,
     outstanding: amount,
+    issueDate: '2026-09-01',
+    total: amount,
+    lineItems: [
+      {
+        id: `${id}:1`,
+        description: 'Cement, 20 bags',
+        quantityMilli: 1_000,
+        unitPriceMinor: amount.minor,
+        taxable: false,
+      },
+    ],
   })
 
   it('offers nothing until the payer is named', () => {

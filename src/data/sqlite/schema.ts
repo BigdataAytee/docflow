@@ -39,7 +39,7 @@
  * it fails with "no such column". That is exactly what happened when the four
  * contact and reference columns were added and this still read 6.
  */
-export const SCHEMA_VERSION = 16
+export const SCHEMA_VERSION = 17
 
 /**
  * Applied in order, inside one transaction, by `migrate`.
@@ -436,6 +436,13 @@ export const MIGRATIONS: readonly string[] = [
   -- every time the PDF was opened, as later payments arrived — the customer's
   -- copy and the owner's copy disagreeing about a figure neither can change.
   alter table documents add column balance_after_minor integer;
+  `,
+  `
+  -- The rest of the picture a receipt carries (§I, Rule #5): what the bill
+  -- was, and what had already been paid against it. Frozen with the balance,
+  -- so two copies of one receipt cannot disagree as later payments land.
+  alter table documents add column invoice_total_minor integer;
+  alter table documents add column paid_before_minor integer;
   `,
 ]
 

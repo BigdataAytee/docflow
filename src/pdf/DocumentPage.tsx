@@ -495,8 +495,26 @@ export function DocumentPage({
                   <p className="font-bold uppercase tracking-wide" style={{ color: ink }}>
                     {model.receiptEvidence.heading}
                   </p>
-                  <p className="mt-[4px] text-[14px] font-black tabular-nums">
-                    {formatAmount(model.receiptEvidence.amount.minor, model.receiptEvidence.amount.currency)}
+                  {/*
+                    THE FIGURE, AND THE WORD FOR IT.
+
+                    It was a bare amount under the heading, which was clear
+                    enough when it was the only figure in the block. It no
+                    longer is: the bill and what had already arrived sit
+                    beneath it now, and three amounts in a column with two of
+                    them labelled makes the unlabelled one ambiguous — which
+                    is the one that says how much this receipt is for.
+                  */}
+                  <p className="mt-[4px]" data-paid-now>
+                    <span className="block uppercase tracking-wide opacity-60">
+                      {model.receiptEvidence.paidNowLabel}
+                    </span>
+                    <span className="text-[14px] font-black tabular-nums">
+                      {formatAmount(
+                        model.receiptEvidence.amount.minor,
+                        model.receiptEvidence.amount.currency,
+                      )}
+                    </span>
                   </p>
                   <dl className="mt-[4px]">
                     <div className="flex gap-[8px]">
@@ -548,6 +566,41 @@ export function DocumentPage({
                       words. A standalone receipt shows neither — there is no
                       debt whose state to report, and a zero would invent one.
                     */}
+                    {/*
+                      THE BILL, AND WHAT HAD ALREADY ARRIVED.
+
+                      Four questions a receipt's holder has — what was the
+                      bill, what had I paid, what did I just pay, what is left
+                      — and the amount alone answers one. These are the other
+                      three, in the order somebody reads them.
+                    */}
+                    {model.receiptEvidence.invoiceTotal !== undefined && (
+                      <div className="flex gap-[8px]" data-invoice-total>
+                        <dt className="w-[96px] shrink-0 opacity-60">
+                          {model.receiptEvidence.invoiceTotalLabel}
+                        </dt>
+                        <dd className="font-medium tabular-nums">
+                          {formatAmount(
+                            model.receiptEvidence.invoiceTotal.minor,
+                            model.receiptEvidence.invoiceTotal.currency,
+                          )}
+                        </dd>
+                      </div>
+                    )}
+                    {model.receiptEvidence.paidBefore !== undefined && (
+                      <div className="flex gap-[8px]" data-paid-before>
+                        <dt className="w-[96px] shrink-0 opacity-60">
+                          {model.receiptEvidence.paidBeforeLabel}
+                        </dt>
+                        <dd className="font-medium tabular-nums">
+                          {formatAmount(
+                            model.receiptEvidence.paidBefore.minor,
+                            model.receiptEvidence.paidBefore.currency,
+                          )}
+                        </dd>
+                      </div>
+                    )}
+
                     {model.receiptEvidence.balanceRemaining !== undefined && (
                       <div className="flex gap-[8px]" data-balance-remaining>
                         <dt className="w-[96px] shrink-0 opacity-60">

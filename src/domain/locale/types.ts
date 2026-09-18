@@ -90,6 +90,15 @@ export interface SharedTerminology {
    */
   readonly balanceRemaining: string
   readonly paidInFull: string
+  /**
+   * The rest of the picture: what the bill was, and what had already arrived.
+   *
+   * A receipt showing only the amount handed over answers one of the four
+   * questions its holder has. These are two of the others.
+   */
+  readonly invoiceTotal: string
+  readonly paidBefore: string
+  readonly paidNow: string
   /** §I: online methods print under a dashed divider carrying this label. */
   readonly otherPaymentMethods: string
 }

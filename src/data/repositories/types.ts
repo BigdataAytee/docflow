@@ -224,6 +224,23 @@ export interface DocumentRecord {
    */
   readonly balanceAfterMinor?: number
   /**
+   * THE REST OF THE PICTURE A RECEIPT HAS TO CARRY, frozen with the balance.
+   *
+   * A customer holding a receipt for ₦500,000 needs to see what the bill was,
+   * what had already been paid, what they just handed over and what is left.
+   * The amount alone answers one of those four.
+   *
+   * `invoiceTotalMinor` is the invoice's own total at the moment of payment;
+   * `paidBeforeMinor` is what had already arrived against it. Both frozen for
+   * the same reason as the balance (Rule #5): recomputed at print time, two
+   * copies of one receipt would disagree as later payments landed.
+   *
+   * Absent on a standalone receipt, which settles no invoice and has no such
+   * picture to show.
+   */
+  readonly invoiceTotalMinor?: number
+  readonly paidBeforeMinor?: number
+  /**
    * §E's "delivery photo asset" — the goods at the gate. Part of the same
    * evidence as the signature, so it seals when the delivery does (§P).
    */

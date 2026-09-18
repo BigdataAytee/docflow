@@ -110,7 +110,33 @@ export function issueDocument(input: IssueInput): IssuedDocument {
         })
       : input.referenceOverride.trim()
 
-  const totals = carriesMoney(input.draft.type)
+  /*
+   * §V: A RECEIPT'S TOTAL IS THE PAYMENT, never the sum of its lines.
+   *
+   * A receipt settling an invoice carries the INVOICE'S items, so summing
+   * them gives the bill rather than the money — and this total is what gets
+   * frozen onto the record, listed on Home and read back everywhere. Issuing
+   * a ₦95,000 part payment would have recorded it as ₦190,000.
+   *
+   * Through `computeTotals` rather than hand-built, so a receipt's totals are
+   * the same shape as every other document's: one line, quantity one, no tax
+   * on money already received.
+   */
+  const totals = input.draft.type === 'receipt' && input.draft.paidAmountMinor !== undefined
+    ? computeTotals({
+        type: 'receipt',
+        currency: input.draft.currency,
+        lines: [
+          {
+            id: 'paid',
+            description: '',
+            quantityMilli: 1_000,
+            unitPriceMinor: input.draft.paidAmountMinor,
+            taxable: false,
+          },
+        ],
+      })
+    : carriesMoney(input.draft.type)
     ? computeTotals({
         type: input.draft.type,
         currency: input.draft.currency,

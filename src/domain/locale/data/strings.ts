@@ -691,6 +691,14 @@ export interface UiStrings {
     readonly pickInvoice: string
     readonly leaveUnapplied: string
     readonly owingLine: string
+    /** The readable invoice row, and the one page Path A ends on. */
+    readonly andMoreItems: string
+    readonly originalTotal: string
+    readonly payingLine: string
+    readonly leavesOwing: string
+    readonly clearsIt: string
+    readonly overpayingNote: string
+    readonly recordPayment: string
     readonly standalone: string
     readonly standaloneNote: string
     readonly pickWhoFirst: string
@@ -1717,6 +1725,27 @@ const EN: UiStrings = {
     pickInvoice: 'Which one is this paying?',
     leaveUnapplied: 'None of them — this stands on its own',
     owingLine: '{amount} left',
+    /*
+     * THE READABLE INVOICE ROW.
+     *
+     * A reference and a balance is not enough to recognise a bill by: a trader
+     * with four out to the same customer cannot tell one number from another.
+     * What they remember is the job and roughly when, so the row leads with
+     * the goods and carries the face value beside the balance — the pair is
+     * what says a part payment already happened.
+     */
+    andMoreItems: '+{count} more',
+    originalTotal: 'Total {amount}',
+    /*
+     * PATH A'S ONE PAGE. Who paid and which bill, as a LINE rather than two
+     * controls to re-answer: both were chosen on the way here, and offering
+     * them again invites changing one after the amount was worked out from it.
+     */
+    payingLine: '{name}, paying {label} {reference}',
+    leavesOwing: 'Leaves {amount} owing',
+    clearsIt: 'This clears it',
+    overpayingNote: '{amount} more than is owed — it becomes credit for them',
+    recordPayment: 'Record payment',
     standalone: 'Nothing — it stands on its own',
     standaloneNote: 'Nothing is billed for it. The money sits as customer credit.',
     pickWhoFirst: 'Say who paid, and anything they still owe appears here.',

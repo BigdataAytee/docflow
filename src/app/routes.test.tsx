@@ -1957,7 +1957,21 @@ describe('The Repeat toggle keeps its answer (§L4)', () => {
       status: 'issued',
       customerId: 'cus_1',
       currency: 'NGN',
-      lineItems: [],
+      /*
+       * REAL GOODS, because the receipt has to carry them.
+       *
+       * An empty `lineItems` made the picker row blank and would have let the
+       * "the receipt carries the invoice's items" guard pass over nothing.
+       */
+      lineItems: [
+        {
+          id: 'li_1',
+          description: 'Roofing sheets, 30 bundles',
+          quantityMilli: 1_000,
+          unitPriceMinor: 145_000_00,
+          taxable: false,
+        },
+      ],
       issueDate: '2026-09-01',
       issuedReference: 'INV-0042',
       frozenLabels: {
@@ -2406,7 +2420,21 @@ describe('A receipt is evidence of a payment (§G, §K, §V)', () => {
       status: 'issued',
       customerId: 'cus_1',
       currency: 'NGN',
-      lineItems: [],
+      /*
+       * REAL GOODS, because the receipt has to carry them.
+       *
+       * An empty `lineItems` made the picker row blank and would have let the
+       * "the receipt carries the invoice's items" guard pass over nothing.
+       */
+      lineItems: [
+        {
+          id: 'li_1',
+          description: 'Roofing sheets, 30 bundles',
+          quantityMilli: 1_000,
+          unitPriceMinor: 145_000_00,
+          taxable: false,
+        },
+      ],
       issueDate: '2026-09-01',
       issuedReference: 'INV-0042',
       frozenLabels: {
@@ -2463,22 +2491,43 @@ describe('A receipt is evidence of a payment (§G, §K, §V)', () => {
       await user.click(await screen.findByRole('button', { name: new RegExp(name) }))
     }
 
+    /**
+     * Path A, all the way to its one page: who paid, which bill, done.
+     *
+     * There is no items step, no design step and no review — the invoice
+     * already described the goods, and the preview is on the page itself.
+     */
+    const viaOwedInvoice = async (user: ReturnType<typeof userEvent.setup>, name: string) => {
+      await viaOwed(user, name)
+      await user.click(await screen.findByRole('button', { name: /INV-0042/ }))
+      await screen.findByLabelText('Acknowledge a payment')
+    }
+
     const viaCash = async (user: ReturnType<typeof userEvent.setup>, name: string) => {
       await user.click(await screen.findByRole('button', { name: 'New sale / cash payment' }))
       await user.type(await screen.findByLabelText('Received from'), name)
     }
 
-    it('writes the payment, then the draft derived from it, and opens the builder', async () => {
+    /**
+     * PATH A, ONE PAGE, ENDING IN THE RECEIPT (§G, §K, §V).
+     *
+     * Pick who paid, pick which bill, and the next screen is the last one:
+     * the amount already filled with the whole balance, the date, the method
+     * and the signature, and one button that writes the payment, issues the
+     * receipt and shows it.
+     */
+    it('records the payment and issues the receipt from one page', async () => {
       const user = userEvent.setup()
       const state = renderAt('/new/receipt', billed)
 
-      await viaOwed(user, 'Ade Stores')
-      await user.type(screen.getByLabelText('How much came in?'), '45000')
-      // Through the owes card, which is where the invoice link lives now — it
-      // was a `<select>` labelled "Against" that nobody could find.
-      await user.click(screen.getByRole('button', { name: 'Apply this to an invoice' }))
-      await user.click(screen.getByRole('button', { name: /INV-/ }))
-      await user.click(screen.getByRole('button', { name: 'Record it' }))
+      await viaOwedInvoice(user, 'Ade Stores')
+
+      // PREFILLED WITH THE WHOLE BALANCE: paying in full costs no typing.
+      const amount = screen.getByLabelText('How much came in?')
+      expect(amount, 'the balance was not offered as the amount').toHaveValue('145000')
+      await user.clear(amount)
+      await user.type(amount, '45000')
+      await user.click(screen.getByRole('button', { name: 'Record payment' }))
 
       await waitFor(() => expect(state.payments).toHaveLength(1))
       const payment = state.payments[0]
@@ -2489,26 +2538,101 @@ describe('A receipt is evidence of a payment (§G, §K, §V)', () => {
 
       await waitFor(() => expect(state.documents).toHaveLength(2))
       const receipt = state.documents.find((document) => document.type === 'receipt')
-      expect(receipt?.status).toBe('draft')
       expect(receipt?.paymentId).toBe(payment?.id)
       expect(receipt?.linkedInvoiceId).toBe('doc_inv')
-      expect(receipt?.totalMinor).toBe(45_000_00)
       expect(receipt?.customerId).toBe('cus_1')
 
       /*
-       * AND WHAT IS STILL OWED, FROZEN ONTO IT (§I, Rule #5).
-       *
-       * The invoice is ₦145,000 and ₦45,000 came in, so ₦100,000 is left.
-       * The app knew this and printed nothing, which left a customer holding
-       * a receipt unable to tell from it whether they were square.
-       *
-       * On the RECORD rather than recomputed at print time: later payments
-       * must not change what a copy already handed over says.
+       * ISSUED, NOT LEFT AS A DRAFT. The customer is standing there; a draft
+       * would hand them nothing and put an unexplained step in the way.
        */
+      expect(receipt?.status, 'the receipt was left as a draft').toBe('issued')
+      expect(receipt?.issuedReference).toBeTruthy()
+
+      /*
+       * §V: THE PRINTED TOTAL IS THE PAYMENT.
+       *
+       * This is the one the receipt's new items could have broken. The
+       * receipt now carries the INVOICE'S goods, which come to ₦145,000, and
+       * issuing computes a total from the lines — so a ₦45,000 part payment
+       * would have been recorded, listed and reported as the full bill.
+       */
+      expect(receipt?.totalMinor, 'the receipt was issued at the bill, not the payment').toBe(
+        45_000_00,
+      )
+
+      /*
+       * THE WHOLE PICTURE, FROZEN AT ISSUE (§I, Rule #5).
+       *
+       * The goods the money was for, the bill, what had arrived before, and
+       * what is left — so a customer holding the PDF can add it up, and finds
+       * the same figures on it next year.
+       */
+      expect(receipt?.lineItems.map((line) => line.description)).toEqual([
+        'Roofing sheets, 30 bundles',
+      ])
+      expect(receipt?.invoiceTotalMinor).toBe(145_000_00)
+      expect(receipt?.paidBeforeMinor).toBe(0)
       expect(receipt?.balanceAfterMinor, 'the receipt does not say what is left').toBe(100_000_00)
 
-      // And the builder took over on the draft's own URL.
-      expect(await screen.findByRole('button', { name: /Next/ })).toBeInTheDocument()
+      // And what came back is the document, not its builder: an issued
+      // receipt has nothing left to edit (Rule #5).
+      expect(screen.queryByRole('button', { name: /Next/ })).toBeNull()
+    })
+
+    /**
+     * NO ITEMS STEP ANYWHERE ON PATH A (§G, Rule #1).
+     *
+     * The invoice already described the goods, so asking for them again is
+     * asking somebody to describe what they are holding.
+     */
+    it('never asks for items on the way to a receipt for money owed', async () => {
+      const user = userEvent.setup()
+      renderAt('/new/receipt', billed)
+
+      await viaOwedInvoice(user, 'Ade Stores')
+      expect(screen.queryByRole('button', { name: /Next/ })).toBeNull()
+      expect(screen.queryByText(/Add item/i)).toBeNull()
+      // The one page holds the amount, the date, the method and the pad.
+      expect(screen.getByLabelText('How much came in?')).toBeInTheDocument()
+      expect(screen.getByLabelText('When?')).toBeInTheDocument()
+      expect(screen.getByLabelText('How?')).toBeInTheDocument()
+      expect(screen.getByRole('button', { name: 'Tap to sign' })).toBeInTheDocument()
+    })
+
+    /**
+     * THE PICKER IS READABLE (§G, Rule #1).
+     *
+     * A reference and a balance is not enough to recognise a bill by. The row
+     * leads with the goods and carries the date, the face value and what is
+     * still owing — the face value beside the balance being what says a part
+     * payment already happened.
+     */
+    it('names the goods, the date and both figures on each invoice', async () => {
+      const user = userEvent.setup()
+      renderAt('/new/receipt', (state) => {
+        billed(state)
+        state.payments.push({
+          id: 'pay_old',
+          customerId: 'cus_1',
+          amount: NGN(45_000_00),
+          paidAt: '2026-09-05T09:00:00Z',
+          method: 'cash',
+          source: 'manual',
+          allocations: [
+            { id: 'pay_old:a', paymentId: 'pay_old', invoiceId: 'doc_inv', amount: NGN(45_000_00) },
+          ],
+        })
+      })
+
+      await viaOwed(user, 'Ade Stores')
+      const row = await screen.findByRole('button', { name: /INV-0042/ })
+      expect(row).toHaveTextContent('Roofing sheets, 30 bundles')
+      expect(row).toHaveTextContent('1 Sep 2026')
+      expect(row, 'the face value is missing, so a part payment is invisible').toHaveTextContent(
+        'Total ₦145,000.00',
+      )
+      expect(row).toHaveTextContent('₦100,000.00 left')
     })
 
     /*
@@ -2541,20 +2665,19 @@ describe('A receipt is evidence of a payment (§G, §K, §V)', () => {
       const user = userEvent.setup()
       const state = renderAt('/new/receipt', billed)
 
-      await viaOwed(user, 'Ade Stores')
-      await user.type(screen.getByLabelText('How much came in?'), '45000')
+      await viaOwedInvoice(user, 'Ade Stores')
       // An impatient owner on a slow phone. Two taps land BEFORE the first
       // write comes back, which `userEvent` cannot reproduce — it yields
       // between events, so the screen has already moved on by the second.
       // Money is the one place a retry must never add (Rule #3, §M).
-      const button = screen.getByRole('button', { name: 'Record it' })
+      const button = screen.getByRole('button', { name: 'Record payment' })
       fireEvent.click(button)
       fireEvent.click(button)
 
       // Let the whole gesture settle — both taps — before counting. A
       // `waitFor(length === 1)` would pass on the first write and never see
       // the second, which is the bug being guarded against.
-      expect(await screen.findByRole('button', { name: /Next/ })).toBeInTheDocument()
+      await waitFor(() => expect(state.payments).toHaveLength(1))
       await waitFor(() =>
         expect(state.documents.filter((document) => document.type === 'receipt')).toHaveLength(1),
       )
@@ -2575,9 +2698,8 @@ describe('A receipt is evidence of a payment (§G, §K, §V)', () => {
         </StrictMode>,
       )
 
-      await viaOwed(user, 'Ade Stores')
-      await user.type(screen.getByLabelText('How much came in?'), '45000')
-      await user.click(screen.getByRole('button', { name: 'Record it' }))
+      await viaOwedInvoice(user, 'Ade Stores')
+      await user.click(screen.getByRole('button', { name: 'Record payment' }))
 
       await waitFor(() => expect(state.payments).toHaveLength(1))
       expect(state.documents.filter((document) => document.type === 'receipt')).toHaveLength(1)

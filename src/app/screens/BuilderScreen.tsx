@@ -57,19 +57,24 @@ import {
   draftOf,
   replacesOf,
 } from '../../features/documents/composition'
-import type { Money } from '../../domain/money/money'
+import { type Money, money } from '../../domain/money/money'
 import { NewReceiptSheet } from '../../features/payments/NewReceiptSheet'
 import { ReceiptStart } from '../../features/payments/ReceiptStart'
 import { OwedPicker } from '../../features/payments/OwedPicker'
+import { InvoicePicker } from '../../features/payments/InvoicePicker'
+import { PayInvoice } from '../../features/payments/PayInvoice'
 import { SignaturePad } from '../../features/signature/SignaturePad'
 import { availableMethods } from '../../features/payments/methods'
 import {
   type SettleableInvoice,
+  frozenPicture,
   receiptKeyFor,
   receiptRecordFor,
+  settleableInvoices,
   startReceipt,
 } from '../../features/payments/receiptFlow'
 import type { ComposableDocument } from '../../pdf/compose'
+import type { Customer } from '../../data/repositories'
 import { SkeletonList } from '../../ui'
 import { StepBody } from './builderSteps'
 import { billedInvoices, documentsOf, totalOf } from '../derive'
@@ -122,7 +127,8 @@ export function NewDocumentScreen() {
  */
 function NewReceiptFlow({ today = todayIso() }: { today?: string }) {
   const { profile, strings } = useCompany()
-  const { company, customers, documents, payments, creditNotes, loading, actions } = useAppData()
+  const { company, customers, documents, payments, creditNotes, assets, loading, actions } =
+    useAppData()
   const navigate = useNavigate()
 
   const [problem, setProblem] = useState<string | null>(null)
@@ -137,9 +143,13 @@ function NewReceiptFlow({ today = todayIso() }: { today?: string }) {
    * because the form opened on "Who paid?" — a list of existing customers —
    * which is the wrong first question for cash from somebody not in the book.
    */
-  const [step, setStep] = useState<'start' | 'owed' | 'form'>('start')
+  const [step, setStep] = useState<'start' | 'owed' | 'invoice' | 'pay' | 'form'>('start')
   const [mode, setMode] = useState<'owed' | 'cash'>('cash')
   const [payerId, setPayerId] = useState('')
+  /** Path A's chosen bill, and the mark that will print on its receipt. */
+  const [invoiceId, setInvoiceId] = useState('')
+  const [signatureAssetId, setSignatureAssetId] = useState<string | undefined>(undefined)
+  const [signProblem, setSignProblem] = useState<string | null>(null)
   // One id per submission, so a double tap collapses onto one payment and one
   // receipt rather than two of each (§M). Cleared only on a failure.
   const submission = useRef<string | null>(null)
@@ -167,8 +177,19 @@ function NewReceiptFlow({ today = todayIso() }: { today?: string }) {
             payments,
             creditNotes.filter((note) => note.invoiceId === document.id),
           ),
+          /*
+           * ENOUGH TO RECOGNISE THE BILL BY, and to print its receipt.
+           *
+           * The date and the goods are what a trader remembers; the face
+           * value beside the balance is what says a part payment already
+           * happened. The same three go onto the receipt at issue, so what
+           * was picked from and what gets printed cannot disagree.
+           */
+          issueDate: document.issueDate ?? today,
+          total: totalOf(document),
+          lineItems: document.lineItems,
         })),
-    [documents, payments, creditNotes, company, profile],
+    [documents, payments, creditNotes, company, profile, today],
   )
 
 
@@ -263,12 +284,180 @@ function NewReceiptFlow({ today = todayIso() }: { today?: string }) {
              */
             ...(chosen === undefined
               ? {}
-              : { invoiceOutstandingBefore: chosen.outstanding }),
+              : {
+                  invoiceOutstandingBefore: chosen.outstanding,
+                  /*
+                   * THE WHOLE PICTURE, frozen at issue (Rule #5).
+                   *
+                   * The invoice's own goods, so the receipt says what the
+                   * money was for; its face value and what had already
+                   * arrived, so the customer holding the PDF can add the
+                   * three figures up and get the balance printed beneath.
+                   */
+                  invoiceLineItems: chosen.lineItems,
+                  invoiceTotal: chosen.total,
+                }),
           }),
           receiptKeyFor(recorded.id),
         ),
       )
       .then((created) => navigate(editDocumentPath(created.id), { replace: true }))
+      .catch((cause: unknown) => {
+        busy.current = false
+        submission.current = null
+        setProblem(
+          format(strings.newReceipt.failed, {
+            reason: cause instanceof Error ? cause.message : String(cause),
+          }),
+        )
+      })
+  }
+
+  /*
+   * The region's own date format, so a picked row reads like the printed
+   * page (§D). Resolved the way the composed document resolves it, rather
+   * than a second table beside it.
+   */
+  const receiptDateFormat = useMemo(() => {
+    try {
+      return regionProfile(company?.localeRegion ?? '').dateFormat
+    } catch {
+      return undefined
+    }
+  }, [company])
+
+  /** Path A's chosen bill, and the customer it belongs to. */
+  const chosenInvoice = invoices.find((invoice) => invoice.id === invoiceId)
+  const payer = customers.find((row) => row.id === payerId)
+  const signatureUrl =
+    signatureAssetId === undefined
+      ? undefined
+      : assets.find((asset) => asset.id === signatureAssetId)?.dataUrl
+
+  /*
+   * PATH A, END TO END, FROM ONE BUTTON (§G, §K, §V).
+   *
+   * Payment, receipt, issue, PDF — in that order, and with nothing asked in
+   * between. The order is structural: the payment is written first and on its
+   * own, the receipt is derived from what the repository acknowledged, and
+   * the issue freezes what the customer will hold. A receipt can never be the
+   * thing that records money, so §V's "issuing or resharing never increments
+   * income" stays true by construction.
+   *
+   * IT ISSUES RATHER THAN LEAVING A DRAFT. The owner asked for "tapping it
+   * writes the payment and issues the receipt immediately, then shows the
+   * PDF" — a draft would mean the customer standing there is handed nothing,
+   * and a second, unexplained step before the thing they came for.
+   */
+  const payAndIssue = (input: {
+    amount: Money
+    paidAt: string
+    method: string
+    reference?: string
+  }): void => {
+    if (busy.current || chosenInvoice === undefined || company === null) return
+    busy.current = true
+    setProblem(null)
+    submission.current ??= `sub:${deviceId()}:${Date.now()}`
+    const invoice = chosenInvoice
+
+    let started
+    try {
+      started = startReceipt({
+        paymentId: submission.current,
+        customerId: payerId,
+        amount: input.amount,
+        paidAt: input.paidAt,
+        method: input.method,
+        ...(input.reference === undefined ? {} : { reference: input.reference }),
+        invoiceId: invoice.id,
+        // Capped against the BALANCE, not the face value: an earlier part
+        // payment already took its share (§K).
+        invoiceTotal: invoice.outstanding,
+        existingPayments: [],
+      })
+    } catch (cause) {
+      busy.current = false
+      submission.current = null
+      setProblem(
+        format(strings.newReceipt.failed, {
+          reason: cause instanceof Error ? cause.message : String(cause),
+        }),
+      )
+      return
+    }
+
+    const { id: _localId, ...withoutId } = started.payment
+    const { paymentKey } = started
+    void actions
+      .recordPayment(withoutId, paymentKey)
+      .then((recorded) =>
+        actions.createDraftWithKey(
+          {
+            ...receiptRecordFor({
+              payment: recorded,
+              description: format(strings.newReceipt.lineAgainst, {
+                label: typeInSentence(profile, 'invoice'),
+                reference: invoice.reference,
+              }),
+              linkedInvoiceId: invoice.id,
+              invoiceOutstandingBefore: invoice.outstanding,
+              invoiceLineItems: invoice.lineItems,
+              invoiceTotal: invoice.total,
+            }),
+            ...(signatureAssetId === undefined ? {} : { signatureAssetId }),
+          },
+          receiptKeyFor(recorded.id),
+        ),
+      )
+      .then(async (created) => {
+        /*
+         * ISSUED THROUGH THE ORDINARY PATH, not a shortcut beside it.
+         *
+         * `issueDocument` is where the reference, the labels and the totals
+         * freeze together (§M, Rule #5). A receipt issued some other way
+         * would be the one document in the app whose numbering and frozen
+         * words came from somewhere else.
+         */
+        const issued = issueDocument({
+          draft: draftOf(created),
+          currentStatus: created.status,
+          context: {
+            enabledPaymentMethodCount: (company.enabledPaymentMethods ?? []).length,
+            usablePaymentMethodCount: usableMethodCount({
+              currency: company.currency,
+              enabled: company.enabledPaymentMethods ?? [],
+              bankValues: company.bankFields ?? {},
+            }),
+            paymentIsRecorded: true,
+            signatureRequired: company.signatureRequired === true,
+          },
+          profile,
+          prefix: company.numberingPrefixes?.receipt ?? numberingPrefix(profile, 'receipt'),
+          /*
+           * PLUS ONE, because this receipt is not in `documents` yet.
+           *
+           * The builder counts after the draft has been loaded, so its own
+           * row is already in the tally. Here the create has only just
+           * resolved and the list in hand is the one from before it, which
+           * made the first receipt of a business ask for sequence zero —
+           * and `buildReference` refuses that rather than printing INV-0000.
+           */
+          sequence: documentsOf(documents, 'receipt').length + 1,
+          fromReservedBlock: false,
+          deviceId: deviceId(),
+          issuedAt: new Date().toISOString(),
+        })
+        await actions.issue(created.id, {
+          reference: issued.reference,
+          frozenLabels: issued.frozenLabels,
+          totalMinor: issued.totals?.payable.minor ?? 0,
+        })
+        return created
+      })
+      // The DOCUMENT, not its builder: what was asked for is the PDF, and an
+      // issued document has nothing left to edit (Rule #5).
+      .then((created) => navigate(documentPath(created.id), { replace: true }))
       .catch((cause: unknown) => {
         busy.current = false
         submission.current = null
@@ -310,9 +499,81 @@ function NewReceiptFlow({ today = todayIso() }: { today?: string }) {
           currency={company.currency}
           onPick={(id) => {
             setPayerId(id)
-            setStep('form')
+            // PATH A NEVER REACHES THE FORM. Which bill, then one page —
+            // no items step, no design step, no review (§G, Rule #1).
+            setInvoiceId('')
+            setStep('invoice')
           }}
           onBack={() => setStep('start')}
+        />
+      </div>
+    )
+  }
+
+  if (step === 'invoice') {
+    return (
+      <div className="px-4 py-4">
+        <InvoicePicker
+          payerName={payer?.name ?? ''}
+          invoices={settleableInvoices(invoices, payerId, company.currency)}
+          {...(receiptDateFormat === undefined ? {} : { dateFormat: receiptDateFormat })}
+          onPick={(invoice) => {
+            setInvoiceId(invoice.id)
+            setStep('pay')
+          }}
+          onBack={() => setStep('owed')}
+        />
+      </div>
+    )
+  }
+
+  if (step === 'pay' && chosenInvoice !== undefined) {
+    return (
+      <div className="px-4 py-4">
+        <PayInvoice
+          payerName={payer?.name ?? ''}
+          invoice={chosenInvoice}
+          currency={company.currency}
+          today={today}
+          methods={availableMethods(company.enabledPaymentMethods, strings)}
+          {...(signatureUrl === undefined ? {} : { signatureUrl })}
+          {...(signProblem === null ? {} : { signatureError: signProblem })}
+          {...(company.defaultSignatureAssetId == null
+            ? {}
+            : {
+                onUseDefaultSignature: () =>
+                  setSignatureAssetId(company.defaultSignatureAssetId ?? undefined),
+              })}
+          onDrawSignature={(drawn) => {
+            // Stored first, then referenced. A draft pointing at an asset the
+            // repository never accepted would print a blank signature and
+            // claim to be signed (§P).
+            void actions
+              .storeAsset('signature', drawn.dataUrl)
+              .then((asset) => {
+                setSignProblem(null)
+                setSignatureAssetId(asset.id)
+              })
+              .catch((cause: unknown) => {
+                setSignProblem(
+                  format(strings.signature.failed, {
+                    reason: cause instanceof Error ? cause.message : String(cause),
+                  }),
+                )
+              })
+          }}
+          renderPreview={(live) => (
+            <PayInvoicePreview
+              invoice={chosenInvoice}
+              state={live}
+              customer={payer}
+              today={today}
+              {...(signatureAssetId === undefined ? {} : { signatureAssetId })}
+            />
+          )}
+          onRecord={payAndIssue}
+          onBack={() => setStep('invoice')}
+          {...(problem === null ? {} : { error: problem })}
         />
       </div>
     )
@@ -380,6 +641,81 @@ function NewReceiptFlow({ today = todayIso() }: { today?: string }) {
   )
 }
 
+
+/**
+ * The receipt Path A is about to issue, drawn as it will print (§H, Rule #5).
+ *
+ * THE SAME COMPOSITION AS THE PRINTED PAGE — `composableOf`, `composeDocument`
+ * and `DocumentPage`, exactly as Review and the PDF use them. A second
+ * renderer here could disagree with the thing actually shared, which is the
+ * whole class of bug §H's "one piece of state" clause exists to prevent.
+ *
+ * AND THE SAME ARITHMETIC as the record that gets written: `frozenPicture` is
+ * called once here and once in `receiptRecordFor`, from the same three inputs.
+ * Two copies of that sum would eventually disagree, and the disagreement would
+ * be somebody signing under a balance the printed receipt contradicts.
+ */
+function PayInvoicePreview({
+  invoice,
+  state,
+  customer,
+  today,
+  signatureAssetId,
+}: {
+  invoice: SettleableInvoice
+  state: { amountMinor: number; paidAt: string; method: string }
+  customer: Customer | undefined
+  today: string
+  signatureAssetId?: string
+}) {
+  const { profile, strings } = useCompany()
+  const { company, assets } = useAppData()
+  const design = useMemo(() => designOf(undefined, company), [company])
+
+  const picture = frozenPicture({
+    invoiceTotal: invoice.total,
+    outstandingBefore: invoice.outstanding,
+    paidMinor: state.amountMinor,
+  })
+
+  const composable = composableOf({
+    draft: {
+      type: 'receipt',
+      currency: invoice.outstanding.currency,
+      // The INVOICE's goods, which is what the issued receipt will carry.
+      lineItems: invoice.lineItems,
+      issueDate: state.paidAt,
+      linkedInvoiceId: invoice.id,
+      ...picture,
+      ...(customer === undefined ? {} : { customerId: customer.id }),
+      ...(signatureAssetId === undefined ? {} : { signatureAssetId }),
+    },
+    design,
+    company,
+    customer,
+    profile,
+    reference: null,
+    status: 'draft',
+    frozenLabels: null,
+    replaces: null,
+    today,
+    againstReference: invoice.reference,
+    payment: {
+      amount: money(invoice.outstanding.currency, state.amountMinor),
+      at: state.paidAt,
+      method: state.method,
+    },
+  })
+
+  return (
+    <LivePreview
+      document={composable}
+      templateId={design.templateId}
+      composeOptions={composeOptionsOf({ company, design, strings, assets })}
+      brandColour={design.brandColour}
+    />
+  )
+}
 
 function NewDocumentSkeleton() {
   const { strings } = useCompany()
@@ -468,6 +804,10 @@ export function BuilderScreen({ now = () => new Date().toISOString() }: { now?: 
         ...(draft.signatureAssetId === undefined
           ? {}
           : { signatureAssetId: draft.signatureAssetId }),
+        ...(draft.invoiceTotalMinor === undefined
+          ? {}
+          : { invoiceTotalMinor: draft.invoiceTotalMinor }),
+        ...(draft.paidBeforeMinor === undefined ? {} : { paidBeforeMinor: draft.paidBeforeMinor }),
         ...(draft.deliveryAddress === undefined ? {} : { deliveryAddress: draft.deliveryAddress }),
         ...(draft.driverName === undefined ? {} : { driverName: draft.driverName }),
         ...(draft.vehicleNumber === undefined ? {} : { vehicleNumber: draft.vehicleNumber }),

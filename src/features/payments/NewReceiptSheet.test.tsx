@@ -33,8 +33,40 @@ function renderSheet(over: Partial<React.ComponentProps<typeof NewReceiptSheet>>
     today: '2026-09-12',
     customers: [ADE, BISI, CHIKE],
     invoices: [
-      { id: 'doc_a', customerId: 'cus_1', reference: 'INV-0042', outstanding: NGN(95_000_00) },
-      { id: 'doc_b', customerId: 'cus_2', reference: 'INV-0043', outstanding: NGN(5_000_00) },
+      {
+        id: 'doc_a',
+        customerId: 'cus_1',
+        reference: 'INV-0042',
+        outstanding: NGN(95_000_00),
+        issueDate: '2026-08-30',
+        total: NGN(190_000_00),
+        lineItems: [
+          {
+            id: 'li_a',
+            description: 'Roofing sheets',
+            quantityMilli: 1_000,
+            unitPriceMinor: 190_000_00,
+            taxable: false,
+          },
+        ],
+      },
+      {
+        id: 'doc_b',
+        customerId: 'cus_2',
+        reference: 'INV-0043',
+        outstanding: NGN(5_000_00),
+        issueDate: '2026-09-02',
+        total: NGN(5_000_00),
+        lineItems: [
+          {
+            id: 'li_b',
+            description: 'Delivery',
+            quantityMilli: 1_000,
+            unitPriceMinor: 5_000_00,
+            taxable: false,
+          },
+        ],
+      },
     ],
     /*
      * BOTH, like the real `availableMethods` — which never returns an empty
