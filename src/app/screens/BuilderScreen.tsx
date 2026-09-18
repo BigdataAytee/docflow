@@ -30,6 +30,7 @@ import { regionProfile } from '../../features/settings/region'
 import {
   type BuilderState,
   clampStep,
+  stepKeysFor,
   committed,
   edit,
   firstProblemStep,
@@ -698,6 +699,9 @@ export function BuilderScreen({ now = () => new Date().toISOString() }: { now?: 
       // the issued reference, falling back to the plain type name.
       {...(justCreated ? {} : { reference: record?.issuedReference ?? '' })}
       step={state.step}
+      // So the shell knows how many steps THIS document runs: a receipt
+      // settling an invoice has no items step (§G).
+      draft={state.draft}
       dirty={state.dirty}
       lastSavedAt={state.lastSavedAt}
       problems={problems}
@@ -706,7 +710,7 @@ export function BuilderScreen({ now = () => new Date().toISOString() }: { now?: 
       onStep={(target) => {
         // Drafts autosave on step change with a visible saved state (§G).
         void commit(state)
-        setState(goToStep(state, clampStep(target)))
+        setState(goToStep(state, clampStep(target, stepKeysFor(state.draft).length)))
       }}
     >
       <StepBody

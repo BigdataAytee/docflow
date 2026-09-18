@@ -245,6 +245,30 @@ Three things nobody in this repository can do, each one setting:
 
 ---
 
+## The owner's open list
+
+Kept here because two items slid far enough out of sight to be asked for again
+after they had been done. A thing is on this list until the owner has SEEN it
+work, not when the commit lands — a report buried thirty turns back is not a
+report.
+
+| What | State | Evidence |
+| --- | --- | --- |
+| Sixteen templates rebuilt against the legacy reference | **done** | `61c81a9`. Built from `docs/design-reference/handoff/reference/frontend.html`, which carries explicit markup for all sixteen. It disagreed with the screenshot-based version in nine places — Prism's band cut the wrong way, Sidebar's column at 16% brand ink, Minimal's title in the accent. Guard: `gives every one of the sixteen its own arrangement`. |
+| The inert pencil on the document number | **done** | The WRITE always worked; the field printed the provisional reference unconditionally, so a typed `DR-INV-0413` turned back into `INV-…` and the control stayed indistinguishable from the dead one it replaced. There were no UI tests for it at all; five now, including `shows the owner their own number back`. |
+| Receipts: frozen remaining balance on the printed document | **done** | §4 of the rebuild. `0029`, applied. |
+| Receipts: two entry paths | **done** | §1–§3. Walked on the device. |
+| Receipts: Path A without an items step | **in progress** | Description comes from the invoice it settles. |
+| Receipts: quotation → invoice → receipt, both entry points | **not started** | |
+| The device walk: both receipt journeys end to end | **not done** | Four defects found by the partial walk, none reachable by any test written for them. |
+| The navigation walk (Back chains, hardware Back, gesture bar) | **not done** | Nav placement and the Settings Back are confirmed on device; the rest is not. |
+
+### Outstanding elsewhere
+
+* Eight `[[PLACEHOLDER]]` legal blanks.
+* `frame-ancestors` and HSTS on the web host.
+* The sign-in rate-limit ticket — stays red until the Dashboard is changed.
+
 ## Status board
 
 | Phase | Scope | Gate | State |

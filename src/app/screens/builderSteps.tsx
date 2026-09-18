@@ -12,7 +12,7 @@ import type { Company, Customer } from '../../data/repositories'
 import type { Payment } from '../../domain/payments/ledger'
 import type { BilledInvoice } from '../../features/customers/balance'
 import type { NewCustomer } from '../../features/customers/CustomerSheet'
-import type { IssueProblem, DocumentDraft, StepIndex } from '../../features/documents/builder'
+import { type IssueProblem, type DocumentDraft, type StepIndex, stepKeysFor } from '../../features/documents/builder'
 import { DetailsStep } from '../../features/documents/DetailsStep'
 import { ItemsStep } from '../../features/documents/ItemsStep'
 import { TotalsStep } from '../../features/documents/TotalsStep'
@@ -61,8 +61,17 @@ export interface StepBodyProps {
 }
 
 export function StepBody(props: StepBodyProps) {
-  switch (props.step) {
-    case 0:
+  /*
+   * SWITCHED ON WHAT THE STEP IS, not on where it sits.
+   *
+   * This read the numeric index, which is correct only while every document
+   * runs the same five. A receipt settling an invoice runs four — the items
+   * were described on the invoice the customer holds — and by index alone
+   * dropping one would slide Totals into the Items slot and render the wrong
+   * body under the right heading.
+   */
+  switch (stepKeysFor(props.draft)[props.step] ?? 'review') {
+    case 'details':
       return (
         <DetailsStep
           draft={props.draft}
@@ -78,7 +87,7 @@ export function StepBody(props: StepBodyProps) {
           {...(props.signatureUrl === undefined ? {} : { signatureUrl: props.signatureUrl })}
         />
       )
-    case 1:
+    case 'items':
       return (
         <ItemsStep
           draft={props.draft}
@@ -87,7 +96,7 @@ export function StepBody(props: StepBodyProps) {
           onOpenCatalogue={props.onOpenCatalogue}
         />
       )
-    case 2:
+    case 'totals':
       return (
         <TotalsStep
           draft={props.draft}
@@ -116,7 +125,7 @@ export function StepBody(props: StepBodyProps) {
           }}
         />
       )
-    case 3:
+    case 'design':
       return (
         <DesignStep
           // The pill and the chosen card take the DOCUMENT's colour, so the
@@ -132,7 +141,7 @@ export function StepBody(props: StepBodyProps) {
           preview={props.preview}
         />
       )
-    case 4:
+    case 'review':
       return (
         <ReviewStep
           document={props.composable}

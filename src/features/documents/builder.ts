@@ -20,9 +20,53 @@ import { type LocaleProfile, steps as localisedSteps } from '../../domain/locale
 export const STEP_COUNT = 5
 export type StepIndex = 0 | 1 | 2 | 3 | 4
 
-/** The localised step names, in order, for this type (§G). */
-export const stepNames = (profile: LocaleProfile, type: DocumentType): readonly string[] =>
-  localisedSteps(profile, type)
+/**
+ * What each step IS, independent of what it is called or where it sits.
+ *
+ * Positional, aligned with every terminology table's `steps` array — the money
+ * types read Details / Items / Totals / Design / Review and a delivery reads
+ * Deliver to / Goods / Dispatch / Design / Review, but index 1 is the
+ * line-items step in both. The key is what the body switches on, so a flow
+ * with fewer steps does not silently shift Totals into the Items slot.
+ */
+export const STEP_KEYS = ['details', 'items', 'totals', 'design', 'review'] as const
+export type StepKey = (typeof STEP_KEYS)[number]
+
+/**
+ * Whether this document asks for line items at all.
+ *
+ * A RECEIPT THAT SETTLES AN INVOICE DOES NOT. The items were described on the
+ * invoice the customer is holding; typing them again is work that document
+ * already did, and two lists of the same goods can disagree — at which point
+ * the receipt contradicts the thing it is evidence for. Its description comes
+ * from the invoice it settles.
+ *
+ * A cash receipt is the opposite case: there is no prior document, so the
+ * receipt is the only record of what was bought. It keeps the step.
+ */
+export const wantsItemsStep = (draft: {
+  readonly type: DocumentType
+  readonly linkedInvoiceId?: string
+}): boolean => !(draft.type === 'receipt' && draft.linkedInvoiceId !== undefined)
+
+/** The keys this document's builder actually runs, in order. */
+export const stepKeysFor = (draft: {
+  readonly type: DocumentType
+  readonly linkedInvoiceId?: string
+}): readonly StepKey[] =>
+  wantsItemsStep(draft) ? STEP_KEYS : STEP_KEYS.filter((key) => key !== 'items')
+
+/** The localised step names, in order, for this document (§G). */
+export const stepNames = (
+  profile: LocaleProfile,
+  type: DocumentType,
+  draft?: { readonly type: DocumentType; readonly linkedInvoiceId?: string },
+): readonly string[] => {
+  const names = localisedSteps(profile, type)
+  if (draft === undefined || wantsItemsStep(draft)) return names
+  // Dropped by POSITION, because the key list and the name list are one order.
+  return names.filter((_, index) => STEP_KEYS[index] !== 'items')
+}
 
 export interface DocumentDraft {
   readonly type: DocumentType
@@ -263,10 +307,11 @@ export interface BuilderState {
   readonly lastSavedAt?: string
 }
 
-export const clampStep = (step: number): StepIndex =>
-  Math.min(STEP_COUNT - 1, Math.max(0, Math.trunc(step))) as StepIndex
+export const clampStep = (step: number, count: number = STEP_COUNT): StepIndex =>
+  Math.min(count - 1, Math.max(0, Math.trunc(step))) as StepIndex
 
-export const isLastStep = (step: StepIndex): boolean => step === STEP_COUNT - 1
+export const isLastStep = (step: StepIndex, count: number = STEP_COUNT): boolean =>
+  step === count - 1
 
 /**
  * Moving between steps. Every step is reachable in both directions — the
@@ -299,5 +344,14 @@ export const committed = (state: BuilderState, at: string): BuilderState => ({
 })
 
 /** What the primary button does: "Next", or "Save {label}" on the last step. */
-export const primaryAction = (step: StepIndex): 'next' | 'save' =>
-  isLastStep(step) ? 'save' : 'next'
+/*
+ * WHAT THE BUTTON SAYS, and it has to agree with what it DOES.
+ *
+ * `count` was not a parameter, so on a four-step flow the click handler saved
+ * while the label still read "Next" — a button that does one thing and
+ * announces another. Caught by a test looking for Save and finding none; a
+ * person would have found it by pressing Next and watching the document get
+ * issued.
+ */
+export const primaryAction = (step: StepIndex, count: number = STEP_COUNT): 'next' | 'save' =>
+  isLastStep(step, count) ? 'save' : 'next'

@@ -2637,10 +2637,20 @@ describe('A receipt is evidence of a payment (§G, §K, §V)', () => {
       await user.click(await screen.findByRole('button', { name: /Receipt/i }))
       await waitFor(() => expect(state.documents).toHaveLength(2))
 
-      // The payment supplied the party, the date, the line and the total, so
-      // nothing is missing and nothing had to be retyped (Rule #1).
-      for (let step = 0; step < 4; step += 1) {
-        await user.click(await screen.findByRole('button', { name: 'Next' }))
+      /*
+       * The payment supplied the party, the date, the line and the total, so
+       * nothing is missing and nothing had to be retyped (Rule #1).
+       *
+       * THREE Nexts, not four: this receipt settles an invoice, so it has no
+       * ITEMS step — the items were described on the invoice the customer is
+       * holding. Walking to the end by pressing Next until Save appears, so
+       * the case stays about the payment reaching the draft rather than about
+       * how many steps that takes.
+       */
+      for (let step = 0; step < 6; step += 1) {
+        const next = screen.queryByRole('button', { name: 'Next' })
+        if (next === null) break
+        await user.click(next)
       }
       expect(screen.queryByRole('alert')).not.toBeInTheDocument()
       await user.click(screen.getByRole('button', { name: /^Save/ }))

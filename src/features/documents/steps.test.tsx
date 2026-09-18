@@ -18,7 +18,7 @@ import type { LocaleProfile } from '../../domain/locale/profile'
 import { DetailsStep } from './DetailsStep'
 import { ItemsStep } from './ItemsStep'
 import { TotalsStep } from './TotalsStep'
-import type { DocumentDraft } from './builder'
+import { type DocumentDraft, primaryAction, stepKeysFor, stepNames } from './builder'
 
 const draftFor = (type: DocumentType, over: Partial<DocumentDraft> = {}): DocumentDraft => ({
   type,
@@ -866,5 +866,51 @@ describe('Goods register without pressing Add', () => {
 
     expect(onChange).toHaveBeenCalled()
     expect(screen.getByLabelText('Description')).toHaveValue('')
+  })
+})
+
+/**
+ * A receipt that settles an invoice asks for no items (§G, Rule #1).
+ *
+ * The owner's instruction: "the items were already described on the invoice
+ * the customer holds; re-entering them is work the invoice already did, and
+ * risks contradicting it." Two lists of the same goods can disagree, and then
+ * the receipt contradicts the thing it is evidence for.
+ *
+ * A CASH receipt is the opposite case and keeps the step: there is no prior
+ * document, so the receipt is the only record of what was bought.
+ */
+describe('Which steps a receipt actually runs (§G)', () => {
+  const profile = { locale: 'EN-NG' } as const
+
+  it('drops the items step when it settles an invoice', () => {
+    const keys = stepKeysFor({ type: 'receipt', linkedInvoiceId: 'doc_inv' })
+    expect(keys).not.toContain('items')
+    expect(keys).toEqual(['details', 'totals', 'design', 'review'])
+  })
+
+  it('keeps it on a cash receipt, which is the only record of the sale', () => {
+    expect(stepKeysFor({ type: 'receipt' })).toContain('items')
+  })
+
+  it.each(['invoice', 'quotation', 'waybill'] as const)('leaves a %s alone', (type) => {
+    expect(stepKeysFor({ type })).toHaveLength(5)
+  })
+
+  /** The NAMES drop with the key, or the bar would label four steps with five. */
+  it('drops the name too, not just the body', () => {
+    const named = stepNames(profile, 'receipt', { type: 'receipt', linkedInvoiceId: 'doc_inv' })
+    expect(named).toHaveLength(4)
+    expect(named).not.toContain('Items')
+  })
+
+  /**
+   * AND THE LAST STEP IS STILL THE LAST ONE. `primaryAction` did not take the
+   * count, so on a four-step flow the button saved while still reading
+   * "Next" — doing one thing and announcing another.
+   */
+  it('says Save on the last step of a shortened flow', () => {
+    expect(primaryAction(3, 4)).toBe('save')
+    expect(primaryAction(2, 4)).toBe('next')
   })
 })

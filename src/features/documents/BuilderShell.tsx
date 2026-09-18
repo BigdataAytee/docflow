@@ -20,7 +20,6 @@ import type { DocumentType } from '../../domain/documents/types'
 import {
   type IssueProblem,
   type StepIndex,
-  STEP_COUNT,
   isLastStep,
   primaryAction,
   stepNames,
@@ -39,6 +38,14 @@ export interface BuilderShellProps {
    */
   readonly reference?: string
   readonly step: StepIndex
+  /**
+   * The draft, so the shell knows how many steps this document actually runs.
+   *
+   * A receipt settling an invoice runs four, not five: the items were
+   * described on the invoice the customer holds. Optional so every other
+   * caller keeps the five it has always had.
+   */
+  readonly draft?: { readonly type: DocumentType; readonly linkedInvoiceId?: string }
   readonly dirty: boolean
   readonly lastSavedAt?: string | undefined
   readonly problems: readonly IssueProblem[]
@@ -58,11 +65,12 @@ export function BuilderShell({
   onStep,
   onClose,
   onSave,
+  draft,
   children,
 }: BuilderShellProps) {
   const { profile, strings } = useCompany()
   const palette = TYPE_PALETTE[type]
-  const names = stepNames(profile, type)
+  const names = stepNames(profile, type, draft)
   const label = typeLabel(profile, type)
   // "New invoice" and "Save invoice" put the word INSIDE a sentence, so they
   // take the sentence form; the header's fallback is the name standing alone
@@ -125,7 +133,7 @@ export function BuilderShell({
       */}
       <nav
         className="flex gap-1 px-3 pb-0.5 pt-2.5"
-        aria-label={format(strings.builder.stepOf, { current: step + 1, total: STEP_COUNT })}
+        aria-label={format(strings.builder.stepOf, { current: step + 1, total: names.length })}
       >
         {names.map((name, index) => {
           const reached = index <= step
@@ -185,14 +193,14 @@ export function BuilderShell({
         </button>
         <button
           type="button"
-          onClick={() => (isLastStep(step) ? onSave() : onStep(step + 1))}
+          onClick={() => (isLastStep(step, names.length) ? onSave() : onStep(step + 1))}
           className="tap-scale min-h-tap flex-[2] rounded-full text-[11.5px] font-semibold text-white"
           style={{
             backgroundImage: `linear-gradient(160deg, ${palette.light}, ${palette.accent} 60%, ${palette.deep})`,
             boxShadow: `0 10px 22px -6px ${palette.accent}8c, inset 0 1px 0 rgb(255 255 255 / 0.35)`,
           }}
         >
-          {primaryAction(step) === 'save'
+          {primaryAction(step, names.length) === 'save'
             ? format(strings.builder.saveDocument, { label: inSentence })
             : strings.common.next}
         </button>
