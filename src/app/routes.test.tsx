@@ -2094,7 +2094,10 @@ describe('A receipt is evidence of a payment (§G, §K, §V)', () => {
 
       await user.selectOptions(await screen.findByLabelText('Who paid?'), 'cus_1')
       await user.type(screen.getByLabelText('How much came in?'), '45000')
-      await user.selectOptions(screen.getByLabelText('Against'), 'doc_inv')
+      // Through the owes card, which is where the invoice link lives now — it
+      // was a `<select>` labelled "Against" that nobody could find.
+      await user.click(screen.getByRole('button', { name: 'Apply this to an invoice' }))
+      await user.click(screen.getByRole('button', { name: /INV-/ }))
       await user.click(screen.getByRole('button', { name: 'Record it' }))
 
       await waitFor(() => expect(state.payments).toHaveLength(1))

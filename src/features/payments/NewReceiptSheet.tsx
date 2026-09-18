@@ -16,6 +16,7 @@
 import { useId, useState } from 'react'
 
 import { useCompany } from '../../app/context'
+import { format } from '../../domain/locale/data/strings'
 import { type Money, money } from '../../domain/money/money'
 import { parseAmount } from '../../domain/money/parse'
 import { minorUnitsFor } from '../../domain/locale/bank-fields'
@@ -66,6 +67,14 @@ export function NewReceiptSheet({
   const [method, setMethod] = useState(methods[0]?.id ?? 'cash')
   const [reference, setReference] = useState('')
   const [invoiceId, setInvoiceId] = useState('')
+  /*
+   * Whether the invoice list is open.
+   *
+   * Closed to begin with, on purpose: §G's simplicity rule is that nobody
+   * picks a MODE before entering anything. The card says what is owed and
+   * offers one control; the list appears when they ask for it.
+   */
+  const [applying, setApplying] = useState(false)
 
   // Through the domain parser rather than `parseFloat`: a blank must not
   // become zero money, and "5,000" must not become 5. `null` is "not an
@@ -76,6 +85,43 @@ export function NewReceiptSheet({
   // Only what this money could actually settle: the payer's own balances, in
   // the currency handed over (§G — "offers only what makes sense").
   const options = settleableInvoices(invoices, customerId, currency)
+
+  const chosen = options.find((invoice) => invoice.id === invoiceId)
+  const totalOwed = money(
+    currency,
+    options.reduce((sum, invoice) => sum + invoice.outstanding.minor, 0),
+  )
+
+  /*
+   * Choosing an invoice fills the amount when nothing has been typed yet, so
+   * paying in full costs no typing — and NEVER overwrites a figure somebody
+   * has already entered, which would silently change what they said came in.
+   */
+  const pickInvoice = (invoice: SettleableInvoice): void => {
+    setInvoiceId(invoice.id)
+    setApplying(false)
+    if (parsed === null) {
+      /*
+       * Back to MAJOR units for the field, which takes what a person types.
+       * Integer arithmetic on the way out as well as in (Rule #3): the minor
+       * amount is split by the currency's own scale rather than divided as a
+       * float and rounded back.
+       */
+      const scale = minorUnitsFor(currency)
+      const whole = Math.trunc(invoice.outstanding.minor / scale)
+      const rest = invoice.outstanding.minor - whole * scale
+      /*
+       * No trailing `.00` on a whole amount. The field takes what a person
+       * would type, and nobody types the zeros — offering them back makes the
+       * prefill look like a calculation rather than an answer.
+       */
+      setMajor(
+        rest === 0
+          ? String(whole)
+          : `${whole}.${String(rest).padStart(String(scale).length - 1, '0')}`,
+      )
+    }
+  }
 
   const canRecord = minor > 0 && customerId !== ''
 
@@ -169,30 +215,100 @@ export function NewReceiptSheet({
         onChange={(event) => setReference(event.target.value)}
       />
 
-      <label className="mt-3 block text-xs font-medium opacity-70" htmlFor={`${ids}-against`}>
-        {r.against}
-      </label>
-      <select
-        id={`${ids}-against`}
-        className="mt-1 min-h-tap w-full rounded-xl border border-edge/10 bg-surface px-3 text-sm"
-        value={invoiceId}
-        onChange={(event) => setInvoiceId(event.target.value)}
-        disabled={customerId === ''}
-      >
-        <option value="">{r.standalone}</option>
-        {options.map((invoice) => (
-          <option key={invoice.id} value={invoice.id}>
-            {invoice.reference} · {formatMoney(invoice.outstanding)}
-          </option>
-        ))}
-      </select>
+      {/*
+        WHAT THEY OWE, SAID OUT LOUD — the whole point of this change.
+
+        This was a `<select>` labelled "Against" with a faint line under it: a
+        control somebody had to already know about to notice, offering the one
+        act that makes a receipt do more than acknowledge cash. A first-time
+        owner never found it.
+
+        It is a card now, and it only exists when there is something to say —
+        no card when the customer owes nothing, and none before a customer is
+        chosen. Nobody is asked to pick a MODE before they have entered
+        anything (§G's simplicity rule); the card states a fact and offers one
+        control.
+      */}
       {customerId === '' ? (
-        <p className="mt-1 text-[11px] opacity-60">{r.pickWhoFirst}</p>
+        <p className="mt-3 text-[11px] opacity-60">{r.pickWhoFirst}</p>
+      ) : options.length === 0 ? (
+        <p className="mt-3 text-[11px] opacity-60">{r.standaloneNote}</p>
       ) : (
-        invoiceId === '' && (
-          // Said out loud: nothing is billed to anyone from nowhere (§G).
-          <p className="mt-1 text-[11px] opacity-60">{r.standaloneNote}</p>
-        )
+        <section
+          data-owes-card
+          className="mt-4 rounded-2xl border border-brand/20 bg-brand-tint p-3.5"
+        >
+          <p className="text-[13px] font-semibold leading-snug text-brand">
+            {format(options.length === 1 ? r.owesOne : r.owesMany, {
+              name: customers.find((c) => c.id === customerId)?.name ?? '',
+              amount: formatMoney(totalOwed),
+              count: String(options.length),
+            })}
+          </p>
+
+          {!applying && chosen === undefined && (
+            <button
+              type="button"
+              onClick={() => setApplying(true)}
+              className="raised tap-scale mt-2.5 min-h-tap w-full rounded-xl bg-surface px-3 text-[13px] font-semibold text-brand"
+            >
+              {r.applyToInvoice}
+            </button>
+          )}
+
+          {/* The chosen one, and a way to change your mind. */}
+          {chosen !== undefined && !applying && (
+            <button
+              type="button"
+              onClick={() => setApplying(true)}
+              className="mt-2.5 flex min-h-tap w-full items-center justify-between gap-3 rounded-xl bg-surface px-3 text-start text-[13px] font-semibold"
+            >
+              <span className="min-w-0 truncate">{chosen.reference}</span>
+              <span className="shrink-0 tabular-nums opacity-70">
+                {formatMoney(chosen.outstanding)}
+              </span>
+            </button>
+          )}
+
+          {applying && (
+            <div className="mt-2.5">
+              <p className="mb-1.5 text-[11px] font-medium opacity-70">{r.pickInvoice}</p>
+              <ul className="space-y-1.5" role="list">
+                {options.map((invoice) => (
+                  <li key={invoice.id}>
+                    <button
+                      type="button"
+                      onClick={() => pickInvoice(invoice)}
+                      aria-pressed={invoiceId === invoice.id}
+                      className={`flex min-h-tap w-full items-center justify-between gap-3 rounded-xl px-3 text-start text-[13px] ${
+                        invoiceId === invoice.id
+                          ? 'bg-brand text-white'
+                          : 'raised tap-scale bg-surface'
+                      }`}
+                    >
+                      <span className="min-w-0 truncate font-semibold">{invoice.reference}</span>
+                      <span className="shrink-0 tabular-nums opacity-80">
+                        {format(r.owingLine, { amount: formatMoney(invoice.outstanding) })}
+                      </span>
+                    </button>
+                  </li>
+                ))}
+                <li>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setInvoiceId('')
+                      setApplying(false)
+                    }}
+                    className="min-h-tap w-full rounded-xl px-3 text-start text-[12.5px] opacity-70"
+                  >
+                    {r.leaveUnapplied}
+                  </button>
+                </li>
+              </ul>
+            </div>
+          )}
+        </section>
       )}
 
       <button

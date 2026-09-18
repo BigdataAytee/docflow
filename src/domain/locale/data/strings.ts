@@ -661,6 +661,12 @@ export interface UiStrings {
     readonly datePaid: string
     readonly whoPaid: string
     readonly against: string
+    readonly owesOne: string
+    readonly owesMany: string
+    readonly applyToInvoice: string
+    readonly pickInvoice: string
+    readonly leaveUnapplied: string
+    readonly owingLine: string
     readonly standalone: string
     readonly standaloneNote: string
     readonly pickWhoFirst: string
@@ -1583,6 +1589,20 @@ const EN: UiStrings = {
     datePaid: 'When?',
     whoPaid: 'Who paid?',
     against: 'Against',
+    /*
+     * THE INVOICE LINK, SAID OUT LOUD.
+     *
+     * It was a `<select>` labelled "Against" with a faint line under it — a
+     * control somebody has to already know about to notice. The one act that
+     * makes a receipt do any work beyond acknowledging cash was the quietest
+     * thing on the form.
+     */
+    owesOne: '{name} owes {amount} on 1 invoice',
+    owesMany: '{name} owes {amount} across {count} invoices',
+    applyToInvoice: 'Apply this to an invoice',
+    pickInvoice: 'Which one is this paying?',
+    leaveUnapplied: 'None of them — this stands on its own',
+    owingLine: '{amount} left',
     standalone: 'Nothing — it stands on its own',
     standaloneNote: 'Nothing is billed for it. The money sits as customer credit.',
     pickWhoFirst: 'Say who paid, and anything they still owe appears here.',
