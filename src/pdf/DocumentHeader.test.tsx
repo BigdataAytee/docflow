@@ -470,6 +470,69 @@ describe('Every design is a design (§H)', () => {
  * question none of them asked was whether the structure the design is named
  * for holds anything.
  */
+/**
+ * Nothing is printed in the colour of the paper, unless something is behind it
+ * (§F, §I).
+ *
+ * Prism reversed its header out of a solid band and drew the figure in
+ * `template.paper` — correct INSIDE the band, and the band is a diagonal only
+ * 40% deep on the right, which is the side the figure was on. The amount fell
+ * out from under its own background and printed WHITE ON WHITE.
+ *
+ * Every bounds check passed. A box can be on the paper, the right size and in
+ * the right place and still say nothing to anybody: "is it inside the page" is
+ * a different question from "can it be read".
+ *
+ * Reversing out is LEGITIMATE — Aurora's gradient really is solid behind its
+ * figure — so the rule is not "never paper-coloured". It is: paper-coloured
+ * only where something is painted behind you.
+ */
+describe('Nothing prints in the colour of the paper unless a band is behind it (§F)', () => {
+  /*
+   * jsdom normalises an inline colour to `rgb(r, g, b)` while the template
+   * stores `#ffffff`, so the two are compared in one form. The first version
+   * of this compared them raw — they never matched, the guard could not fail,
+   * and the mutation sailed through it.
+   */
+  const rgb = (colour: string): string => {
+    const hex = colour.trim().replace('#', '')
+    if (/^[0-9a-f]{6}$/i.test(hex)) {
+      const n = parseInt(hex, 16)
+      return `${(n >> 16) & 255},${(n >> 8) & 255},${n & 255}`
+    }
+    const parts = colour.match(/\d+/g)
+    return parts === null ? colour.trim().toLowerCase() : parts.slice(0, 3).join(',')
+  }
+
+  /** Whether anything between the figure and the page paints a background. */
+  const hasBandBehind = (figure: HTMLElement, article: Element): boolean => {
+    let node: HTMLElement | null = figure
+    while (node !== null && node !== article) {
+      const { backgroundColor, backgroundImage } = node.style
+      if (backgroundColor !== '' || backgroundImage !== '') return true
+      node = node.parentElement
+    }
+    return false
+  }
+
+  it.each(TEMPLATES.map((t) => [t.id, t.paper] as const))(
+    '%s draws a readable headline figure',
+    (id, paper) => {
+      const { view, article } = draw(id)
+      const figure = article.querySelector<HTMLElement>('[data-headline] p:last-of-type')
+      expect(figure, `${id} draws no headline figure`).not.toBeNull()
+
+      if (figure !== null && rgb(figure.style.color) === rgb(paper)) {
+        expect(
+          hasBandBehind(figure, article),
+          `${id}: the amount is the colour of the paper with nothing painted behind it`,
+        ).toBe(true)
+      }
+      view.unmount()
+    },
+  )
+})
+
 describe('The sidebar column carries the business (§H)', () => {
   const column = (id: string) => {
     const { view, article } = draw(id)

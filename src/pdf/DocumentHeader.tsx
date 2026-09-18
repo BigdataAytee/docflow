@@ -353,10 +353,14 @@ export function DocumentHeader({ model, template, ink, logo, formatAmount }: Doc
           <header className="flex items-start justify-between gap-[16px]">
             <div className="shrink-0">{logo}</div>
             <div className="min-w-0 text-end">
-              <h2
-                className="break-words text-[13px] font-semibold uppercase tracking-[0.3em]"
-                style={{ color: ink }}
-              >
+              {/*
+                GREY, and the reference is emphatic about it: `color:#8a93a6`
+                with no brand anywhere in Minimal's header. The title was
+                drawn in the accent, which made the loudest thing on the
+                quietest design its own name — Minimal's entire argument is
+                that the document does not announce itself.
+              */}
+              <h2 className="break-words text-[13px] font-semibold uppercase tracking-[0.3em] text-[#8a93a6]">
                 {model.title}
               </h2>
               <Ref model={model} className="mt-[2px]" />
@@ -516,10 +520,19 @@ export function DocumentHeader({ model, template, ink, logo, formatAmount }: Doc
               figure at A4 and at 343px alike.
             */}
             <div className="relative shrink-0">
+              {/*
+                NEUTRAL GREY, which is the reference's own `#f1f2f6`.
+
+                It was the brand ink at 14%, and Executive already spends its
+                brand colour on the title badge two inches away — so the disc
+                was a second, weaker statement of the same colour competing
+                with the first. Grey lets the badge be the only coloured thing
+                in the header, which is what makes a badge read as one.
+              */}
               <span
                 aria-hidden="true"
                 className="pointer-events-none absolute start-1/2 top-1/2 h-[190px] w-[190px] -translate-x-1/2 -translate-y-1/2 rounded-full"
-                style={{ backgroundColor: ink, opacity: 0.14 }}
+                style={{ backgroundColor: '#f1f2f6' }}
               />
               <div className="relative">
                 <Headline model={model} ink={ink} formatAmount={formatAmount} />
@@ -617,11 +630,20 @@ export function DocumentHeader({ model, template, ink, logo, formatAmount }: Doc
             putting the figure in the space they enclose uses the design
             rather than sitting above it and leaving the gap empty.
           */}
-          <Rule ink={ink} height={2} />
-          <div className="flex justify-end py-[4px]">
+          {/*
+            A HAIRLINE OVER A DOUBLE RULE, which is what makes it a ledger.
+
+            Both rules were 2px solid and identical, so the pair read as a
+            mistake — two lines the same weight with a gap. The reference sets
+            `border-top:1px solid` above and `border-bottom:3px double` below:
+            one thin line opening the band, a ruled double line closing it,
+            exactly as an account book rules off a column.
+          */}
+          <div className="mt-[16px] w-full" style={{ borderTop: `1px solid ${ink}` }} />
+          <div className="flex justify-end py-[5px]">
             <Headline model={model} ink={ink} formatAmount={formatAmount} />
           </div>
-          <div className="w-full" style={{ backgroundColor: ink, height: '2px' }} />
+          <div className="w-full" style={{ borderBottom: `3px double ${ink}` }} />
         </>
       )
 
@@ -630,24 +652,50 @@ export function DocumentHeader({ model, template, ink, logo, formatAmount }: Doc
       return (
         <>
           <header className="relative flex flex-col items-center text-center">
-            <span
+            {/*
+              A DRAWN STEM, not a rounded rectangle.
+
+              The flourish was a box with two corners rounded — a shape with
+              no reference to anything, which is why the design read as
+              "Classic with an odd corner". The reference draws three
+              springing strokes and a bud, and that is what earns the name.
+            */}
+            <svg
               aria-hidden="true"
-              className="pointer-events-none absolute end-0 top-0 h-14 w-[80px]"
-              style={{
-                border: `1px solid ${ink}`,
-                borderRadius: '0 60% 0 60%',
-                opacity: 0.6,
-              }}
-            />
+              viewBox="0 0 60 60"
+              className="pointer-events-none absolute end-0 top-0 h-[64px] w-[64px]"
+              style={{ opacity: 0.4 }}
+            >
+              <path
+                d="M58 2C40 6 26 18 20 34M58 2c-2 16-10 26-22 32M58 2c-14-1-26 6-32 18"
+                fill="none"
+                stroke={ink}
+                strokeWidth="1.1"
+              />
+              <circle cx="20" cy="34" r="2" fill={ink} />
+            </svg>
             {logo}
             <Name model={model} className="mt-[8px]" />
-            <Title model={model} ink={ink} className="mt-[4px]" />
+            {/*
+              THE TITLE SITS BETWEEN THE RULES, not above one.
+
+              A single rule under the title closes the block and leaves the
+              title outside it. The reference runs a hairline in from each
+              margin to meet the letter-spaced title, so the rule and the word
+              are one horizontal mark across the page.
+            */}
+            <div className="mt-[9px] flex w-full items-center gap-[6px]">
+              <span className="h-px flex-1" style={{ backgroundColor: ink, opacity: 0.35 }} />
+              <span
+                className="shrink-0 whitespace-nowrap text-[13px] uppercase tracking-[0.24em]"
+                style={{ color: ink }}
+              >
+                {model.title}
+              </span>
+              <span className="h-px flex-1" style={{ backgroundColor: ink, opacity: 0.35 }} />
+            </div>
             <Ref model={model} className="text-center" />
           </header>
-          <div
-            className="mx-[8%] mt-[16px]"
-            style={{ backgroundColor: ink, opacity: 0.6, height: '1px' }}
-          />
           {/*
             UNDER the inset hairline, and inset with it — the rule stops short
             of the edges on this design, so a figure running to the margin
@@ -662,45 +710,64 @@ export function DocumentHeader({ model, template, ink, logo, formatAmount }: Doc
     /* Prism — an angular cut across the header, identity reversed out. */
     case 'diagonal':
       return (
+        <>
         <header
-          className="-mx-[6%] -mt-[6%] mb-[16px] flex items-start gap-[16px] px-[6%] pb-[40px] pt-[6%]"
+          className="-mx-[6%] -mt-[6%] mb-[16px] flex items-start gap-[16px] px-[6%] pb-[44px] pt-[6%]"
           style={{
             backgroundColor: ink,
-            clipPath: 'polygon(0 0, 100% 0, 100% 100%, 0 72%)',
+            /*
+             * DEEP ON THE LEFT, exactly as the reference cuts it:
+             * `polygon(0,0 100,0 100,14 0,34)` over a 40-unit box — full
+             * depth at the left edge, falling to 40% at the right.
+             *
+             * I had this flipped. The band was cut deep on the RIGHT because
+             * I had put the tall stack there — name, address, logo AND the
+             * figure — and it was being sliced by its own edge. The reference
+             * solves it the other way and the right way round: the right side
+             * carries ONLY the title, one line, so the shallow end has almost
+             * nothing under it and the identity gets the deep end.
+             */
+            clipPath: 'polygon(0 0, 100% 0, 100% 40%, 0 100%)',
           }}
         >
           {/*
-            PRISM READS THE OTHER WAY ROUND TO AURORA.
+            Identity LEFT, title RIGHT — the opposite of Aurora, which is what
+            keeps two reversed-out bands from being one design with two
+            background shapes.
 
-            Both reverse out of a coloured band, and both used to stack the
-            same three things in the same order down the same column — which
-            made them one design with two background shapes. The guard caught
-            it by comparing the header's markup with the words stripped out.
-
-            The band here is a DIAGONAL, and WHICH WAY IT CUTS is decided by
-            what has to fit under it. The right-hand stack is the tall one —
-            name, address, logo, and the figure beneath them — so the cut
-            falls the other way: shallow at the left where the title is one
-            line, deep at the right where the stack needs the room.
-
-            It cut the other way first, and the amount was sliced in half by
-            the edge of its own band. Visible on the page, invisible in the
-            markup.
+            The logo sits in a white tile because the band is solid brand
+            behind it, and a logo with its own dark artwork disappears into a
+            dark ink otherwise. The reference does the same, for the same
+            reason.
           */}
-          <div className="min-w-0 flex-1" style={{ color: template.paper }}>
-            <Title model={model} ink={template.paper} />
-            <Ref model={model} className="mt-[2px]" />
+          <div className="flex min-w-0 flex-1 items-start gap-[10px]" style={{ color: template.paper }}>
+            {logo !== null && (
+              <div className="shrink-0 rounded-[4px] bg-white p-[2px]">{logo}</div>
+            )}
+            <Name model={model} className="min-w-0 flex-1" />
           </div>
           <div className="flex shrink-0 flex-col items-end gap-[6px]">
-            <div className="flex items-start gap-[10px]">
-              <div className="min-w-0 text-end">
-                <Name model={model} className="text-end" />
-              </div>
-              <div className="shrink-0">{logo}</div>
-            </div>
-            <Headline model={model} ink={template.paper} formatAmount={formatAmount} />
+            <Title model={model} ink={template.paper} />
+            <Ref model={model} />
           </div>
         </header>
+        {/*
+          THE FIGURE SITS BELOW THE BAND, in ink.
+
+          It was inside it, in paper white, on the shallow right-hand side —
+          and the band is only 40% deep there, so the amount fell out from
+          under its own background and printed WHITE ON WHITE. Invisible on
+          the page and invisible to a bounds check, which asks whether a box
+          is on the paper and never whether anybody can see what is in it.
+
+          The reference has no figure here at all; it puts the amount in the
+          totals. Ours keeps it at the top (§I), so it goes where the band
+          has ended and the ink reads.
+        */}
+        <div className="-mt-[8px] mb-[12px] flex justify-end">
+          <Headline model={model} ink={ink} formatAmount={formatAmount} />
+        </div>
+        </>
       )
 
     /* Bloom — an arch drawn over a centred identity. */
@@ -708,22 +775,57 @@ export function DocumentHeader({ model, template, ink, logo, formatAmount }: Doc
       return (
         <>
           <header className="relative flex flex-col items-center pt-[8px] text-center">
-            <span
+            {/*
+              BLOOM HAS ITS OWN PALETTE, and that is what makes it Bloom.
+
+              It was an arch outlined in the brand accent — the same ink as
+              every other design, bent into a curve. The reference draws a
+              flowering branch in fixed pinks and sets the identity in them:
+              `#E8B4C6` for the stem, `#7C4257` for the name, `#B4577E` for
+              the title.
+
+              Hardcoded on purpose. These are the design's own colours, the
+              way Sikky's cream spine is; a design whose entire character is a
+              palette cannot take its palette from somewhere else. The brand
+              accent still governs the table, the totals and the rest of the
+              page — this is the header only.
+            */}
+            <svg
               aria-hidden="true"
-              className="pointer-events-none absolute inset-x-[8%] top-0 h-[96px]"
-              style={{
-                border: `1px solid ${ink}`,
-                borderBottom: 'none',
-                borderRadius: '50% 50% 0 0',
-                opacity: 0.55,
-              }}
-            />
-            {logo}
-            <Name model={model} className="mt-[8px]" />
-            <Title model={model} ink={ink} className="mt-[4px]" />
+              viewBox="0 0 200 46"
+              preserveAspectRatio="none"
+              className="pointer-events-none absolute inset-x-0 top-0 h-[38px] w-full"
+            >
+              <path
+                d="M0 40 Q50 6 100 22 T200 12"
+                fill="none"
+                stroke="#E8B4C6"
+                strokeWidth="1.4"
+              />
+              <circle cx="44" cy="17" r="5" fill="#F3D3DD" />
+              <circle cx="44" cy="17" r="2" fill="#D98BA6" />
+              <circle cx="128" cy="18" r="4" fill="#F3D3DD" />
+              <circle cx="166" cy="13" r="3" fill="#EFC6D5" />
+            </svg>
+            <div className="mt-[26px] flex flex-col items-center">
+              {logo}
+              <div className="mt-[6px] italic" style={{ color: '#7C4257' }}>
+                <Name model={model} className="text-center" />
+              </div>
+            </div>
+            {/* The title between two pink hairlines, as the reference rules it. */}
+            <div className="mt-[9px] flex w-full items-center gap-[5px]">
+              <span className="h-px flex-1" style={{ backgroundColor: '#F0D7E0' }} />
+              <span
+                className="shrink-0 whitespace-nowrap text-[13px] uppercase tracking-[0.25em]"
+                style={{ color: '#B4577E' }}
+              >
+                {model.title}
+              </span>
+              <span className="h-px flex-1" style={{ backgroundColor: '#F0D7E0' }} />
+            </div>
             <Ref model={model} className="text-center" />
           </header>
-          <div className="mx-[28%] mt-[16px]" style={{ backgroundColor: ink, opacity: 0.7, height: '2px' }} />
           {/*
             CENTRED, under the arch's short rule. This is the second design
             where a centred figure works: the arch closes over the identity
@@ -753,25 +855,36 @@ export function DocumentHeader({ model, template, ink, logo, formatAmount }: Doc
     case 'spine':
       return (
         <>
-          <header className="flex items-start gap-[16px]">
-            {logo}
-            <div className="min-w-0 flex-1">
-              <Name model={model} />
-              {model.branding.address !== undefined && (
-                <p
-                  className="mt-[6px] inline-block break-words px-[8px] py-[4px] text-[11px] leading-snug opacity-80"
-                  style={{ border: `1px solid ${ink}` }}
-                >
+          {/*
+            LOGO LEFT, OFFICE RIGHT, then the business beneath both — the
+            reference's arrangement exactly.
+
+            The address is ranged right against a single brand-coloured rule
+            on its leading edge, not boxed on all four sides: the box competed
+            with the cream spine down the page and made two frames out of one
+            design. `OFFICE` names what the block is, which is the reason it
+            reads as an address rather than as a stray second business.
+          */}
+          <header className="flex items-start justify-between gap-[16px]">
+            <div className="shrink-0">{logo}</div>
+            {model.branding.address !== undefined && model.branding.address.trim() !== '' && (
+              <div
+                className="max-w-[46%] shrink-0 ps-[6px] text-end text-[10.5px] leading-snug opacity-75"
+                style={{ borderInlineStart: `2px solid ${ink}` }}
+              >
+                <p className="font-bold uppercase tracking-wide">{model.partyLabel}</p>
+                <p data-business-address className="break-words">
                   {model.branding.address}
                 </p>
-              )}
-            </div>
-            {/*
-              Opposite the boxed address, which is §F's own note for Sikky.
-              The box is the weight on the left; the figure answers it.
-            */}
-            <Headline model={model} ink={ink} formatAmount={formatAmount} />
+              </div>
+            )}
           </header>
+          <div className="mt-[8px] flex items-end justify-between gap-[16px]">
+            <p className="min-w-0 break-words text-[18px] font-bold leading-tight">
+              {model.branding.name}
+            </p>
+            <Headline model={model} ink={ink} formatAmount={formatAmount} />
+          </div>
           <h2
             className="mt-[12px] break-words text-center text-[24px] font-black uppercase tracking-[0.12em]"
             style={{ color: ink, textDecoration: 'underline', textUnderlineOffset: '4px' }}
@@ -826,16 +939,43 @@ export function DocumentHeader({ model, template, ink, logo, formatAmount }: Doc
     case 'frame':
       return (
         <>
+          {/*
+            ARIA IS GOLD ON IVORY, and hardcoded for the same reason Bloom is
+            pink: the palette IS the design. `#D9B48F` frames the page,
+            `#C9A227` rules under the name, `#B08A3E` sets the title.
+
+            The name is LETTER-SPACED WIDE and centred rather than set as an
+            ordinary heading — the reference breaks it across two lines at
+4.6px of tracking, which is what gives the design its stillness. Here
+            it is one block with the tracking applied, so a business with a
+            one-word name does not get a stranded second line.
+          */}
           <header className="flex flex-col items-center text-center">
             {logo}
-            <Name model={model} className="mt-[8px] text-center" />
-            <Title model={model} ink={ink} className="mt-[6px] text-center" />
+            <p
+              className="mt-[8px] break-words text-[15px] uppercase leading-relaxed tracking-[0.34em]"
+              style={{ color: '#3A3330' }}
+            >
+              {model.branding.name}
+            </p>
+            {model.branding.address !== undefined && model.branding.address.trim() !== '' && (
+              <p
+                data-business-address
+                className="mt-[4px] break-words text-[9.5px] leading-snug opacity-60"
+              >
+                {model.branding.address}
+              </p>
+            )}
+            <span className="mt-[7px] h-px w-[34px]" style={{ backgroundColor: '#C9A227' }} />
+            <h2
+              className="mt-[7px] break-words text-[15px] uppercase tracking-[0.32em]"
+              style={{ color: '#B08A3E' }}
+            >
+              {model.title}
+            </h2>
             <Ref model={model} className="text-center" />
-            <div
-              className="mt-[6px] h-px w-[46%]"
-              style={{ backgroundColor: ink, opacity: 0.8 }}
-            />
           </header>
+          <div className="mt-[9px] w-full" style={{ borderBottom: '1px solid #EFE3D2' }} />
           <div className="mt-[8px] flex justify-center">
             <Headline model={model} ink={ink} formatAmount={formatAmount} align="start" />
           </div>
@@ -919,18 +1059,22 @@ export function PageChrome({
           style={{ width: `${template.sidebarPercent ?? 31}%` }}
         >
           {/*
-            THE TINT AND THE TEXT ARE TWO LAYERS, and they have to be.
+            PALE PAPER AND A HAIRLINE, not a brand wash.
 
-            `opacity` applies to a whole subtree, so tinting the column by
-            setting 0.16 on the box that also holds the words would print the
-            name at 16% too — a business name the colour of the paper. The
-            wash is its own layer behind, and the identity sits on top of it
-            at full strength.
+            This was the ink at 16%, which on a strong accent came out as a
+            solid coloured third of the page — a block of colour with a
+            business name sitting in it. The reference uses `#fbfbfd` with a
+            single `1px solid #eee` on its inner edge: the column is a change
+            of PAPER, and the rule is what says where it ends.
+
+            Still its own layer rather than a background on the box that holds
+            the words: `opacity` applies to a whole subtree, so the two have
+            to stay separate whatever the fill is.
           */}
           <span
             aria-hidden="true"
             className="absolute inset-0"
-            style={{ backgroundColor: ink, opacity: 0.16 }}
+            style={{ backgroundColor: '#fbfbfd', borderInlineEnd: '1px solid #eee' }}
           />
           <div
             className="relative flex h-full flex-col gap-[16px] p-[9%]"
@@ -943,13 +1087,20 @@ export function PageChrome({
         </div>
       )
 
-    /* Sikky — a solid spine down the leading edge. */
+    /*
+     * Sikky — a CREAM spine down the leading edge, 10% wide.
+     *
+     * It was 7% of solid brand ink: a hard saturated bar against a white
+     * page, which read as a printing error rather than as stationery. The
+     * reference uses `#fdf0dc` — warm paper, not ink — which is what lets it
+     * sit beside a Georgia setting without shouting over it.
+     */
     case 'spine':
       return (
         <span
           aria-hidden="true"
           className="pointer-events-none absolute inset-y-0 start-0"
-          style={{ width: '7%', backgroundColor: ink }}
+          style={{ width: '10%', backgroundColor: '#fdf0dc' }}
         />
       )
 
@@ -970,12 +1121,13 @@ export function PageChrome({
       )
 
     /* Aria — ivory inside a thin frame. */
+    /* Aria — a gold rule inset from all four edges, on ivory. */
     case 'frame':
       return (
         <span
           aria-hidden="true"
           className="pointer-events-none absolute"
-          style={{ inset: '3%', border: `1px solid ${ink}`, opacity: 0.6 }}
+          style={{ inset: '3%', border: '1px solid #D9B48F', borderRadius: '2px' }}
         />
       )
 
