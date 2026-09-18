@@ -950,6 +950,12 @@ export function BuilderScreen({ now = () => new Date().toISOString() }: { now?: 
   // preview and the print cannot disagree about a discount or a label.
   const replaces = useMemo(() => replacesOf(documents, record), [documents, record])
 
+  /** The payment a receipt is evidence of, for the method it was paid by. */
+  const receiptPayment = useMemo(
+    () => payments.find((payment) => payment.id === state?.draft.paymentId),
+    [payments, state],
+  )
+
   const composable = useMemo<ComposableDocument>(
     () =>
       composableOf({
@@ -964,8 +970,28 @@ export function BuilderScreen({ now = () => new Date().toISOString() }: { now?: 
         replaces,
         // `now()` is an INSTANT; an issue date is a DAY.
         today: localDay(now()),
+        /*
+         * WHAT THE RECEIPT IS EVIDENCE OF, so Review shows what will print.
+         *
+         * Nothing supplied this, so the headline fell back to the sum of the
+         * lines: a ₦40,000 payment against a ₦100,000 sale previewed as
+         * "RECEIVED ₦100,000" and only became right after saving. Review is
+         * the last look before issuing — a figure that changes on the way to
+         * the paper is the one thing it must not show.
+         */
+        ...(state?.draft.type === 'receipt' && state.draft.paidAmountMinor !== undefined
+          ? {
+              payment: {
+                amount: money(state.draft.currency, state.draft.paidAmountMinor),
+                at: state.draft.issueDate ?? localDay(now()),
+                ...(receiptPayment?.method === undefined
+                  ? {}
+                  : { method: receiptPayment.method }),
+              },
+            }
+          : {}),
       }),
-    [state, record, customer, company, design, profile, now, replaces],
+    [state, record, customer, company, design, profile, now, replaces, receiptPayment],
   )
 
   const composeOptions = useMemo(
@@ -1071,6 +1097,14 @@ export function BuilderScreen({ now = () => new Date().toISOString() }: { now?: 
         issueDate: billed.invoice.issueDate ?? todayIso(),
         dueDate: billed.invoice.dueDate ?? todayIso(),
         totalMinor: total.minor,
+        /*
+         * NO RATE, stored rather than left to fall back (Rule #5, §K).
+         *
+         * Without it the page reads the company's default at print time, so
+         * this bill printed ₦107,500 while the ledger and the receipt that
+         * names it both said ₦100,000 — one sale, three figures.
+         */
+        taxRatePpm: 0,
       },
       billed.idempotencyKey,
     )

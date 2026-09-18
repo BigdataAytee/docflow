@@ -500,13 +500,27 @@ export function composeDocument(
     ...(showsMoney ? { amount: lineTotal(document.currency, line) } : {}),
   }))
 
+  /*
+   * A RECEIPT COMPUTES NOTHING (§V, §I).
+   *
+   * No tax, no discount — money already received is not a tax base, and a
+   * receipt is evidence rather than a calculation. This applied the company's
+   * default rate to a cash sale, so one document printed two different totals:
+   * "Subtotal ₦100,000 / Tax ₦7,500 / Invoice total ₦107,500" above an
+   * evidence block reading "Invoice total ₦100,000", and the debt billed on
+   * the lower one. Found by walking it; every test agreed with both figures
+   * because no test had a company with a default rate and a receipt at once.
+   */
+  const computesTax = document.type !== 'receipt'
   const totals: DocumentTotals | null = showsMoney
     ? computeTotals({
         type: document.type,
         currency: document.currency,
         lines: document.lineItems,
-        ...(document.discountRate === undefined ? {} : { discountRate: document.discountRate }),
-        ...(document.taxRate === undefined ? {} : { taxRate: document.taxRate }),
+        ...(document.discountRate === undefined || !computesTax
+          ? {}
+          : { discountRate: document.discountRate }),
+        ...(document.taxRate === undefined || !computesTax ? {} : { taxRate: document.taxRate }),
         ...(document.type === 'invoice' && document.whtRate !== undefined
           ? { whtRate: document.whtRate }
           : {}),

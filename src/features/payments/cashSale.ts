@@ -146,7 +146,22 @@ export function invoiceForCashSale(input: {
       lineItems: receipt.lineItems.map((line, index) => ({
         ...line,
         id: `${input.receiptId}:inv:${index}`,
+        /*
+         * NOT TAXABLE, and this is the sale's own arithmetic rather than a
+         * tax opinion.
+         *
+         * The price the trader typed is what was charged over the counter —
+         * ₦5,000 a bag, twenty bags, ₦100,000 — and the customer has already
+         * handed over part of it against that figure. Adding the company's
+         * default rate on top here would bill them ₦107,500 for a ₦100,000
+         * sale they were standing in front of, and would make this bill
+         * disagree with the receipt that names it.
+         */
+        taxable: false,
       })),
+      // For the same reason, and explicitly: this document carries no rate,
+      // so re-rendering it next year cannot find one (Rule #5).
+      taxRatePpm: 0,
       issueDate: input.today,
       dueDate: input.today,
     },
