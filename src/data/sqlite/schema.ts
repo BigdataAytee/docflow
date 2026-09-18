@@ -39,7 +39,7 @@
  * it fails with "no such column". That is exactly what happened when the four
  * contact and reference columns were added and this still read 6.
  */
-export const SCHEMA_VERSION = 14
+export const SCHEMA_VERSION = 15
 
 /**
  * Applied in order, inside one transaction, by `migrate`.
@@ -420,6 +420,14 @@ export const MIGRATIONS: readonly string[] = [
   --
   -- Two marks, two columns. Nullable: most documents are never signed for.
   alter table documents add column signer_signature_asset_id text;
+  `,
+  `
+  -- The part-paid invoice this one bills the remainder of (§G, §K).
+  --
+  -- An issued invoice is frozen, so what is still owed after a part payment
+  -- has to be asked for on a NEW document — and without this link the two read
+  -- as two separate charges for the same goods. One debt, asked for twice.
+  alter table documents add column bills_balance_of_id text;
   `,
 ]
 

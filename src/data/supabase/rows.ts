@@ -256,6 +256,7 @@ export function toDocument(row: Row): DocumentRecord {
       signerName: text(row['signer_name']),
       signerRole: text(row['signer_role']),
       signerSignatureAssetId: text(row['signer_signature_asset_id']),
+      billsBalanceOfId: text(row['bills_balance_of_id']),
       signedAt: stamp(row['signed_at']),
       deliveryPhotoAssetId: text(row['delivery_photo_asset_id']),
     }),
@@ -286,6 +287,7 @@ export function fromDocument(patch: Partial<DocumentRecord>): Row {
     signer_name: patch.signerName,
     signer_role: patch.signerRole,
     signer_signature_asset_id: patch.signerSignatureAssetId,
+    bills_balance_of_id: patch.billsBalanceOfId,
     signed_at: patch.signedAt,
     delivery_photo_asset_id: patch.deliveryPhotoAssetId,
   })

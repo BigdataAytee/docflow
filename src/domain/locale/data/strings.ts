@@ -587,6 +587,13 @@ export interface UiStrings {
     readonly title: string
     readonly paidOfTotal: string
     readonly amountLeft: string
+    readonly billBalance: string
+    readonly billBalanceLine: string
+    readonly billBalanceFailed: string
+    readonly billBalanceWhy: Readonly<Record<string, string>>
+    readonly billsBalanceOf: string
+    readonly balanceBilledBy: string
+    readonly openIt: string
     readonly settled: string
     readonly recordPayment: string
     readonly amount: string
@@ -1518,6 +1525,39 @@ const EN: UiStrings = {
     title: 'Payments',
     paidOfTotal: '{paid} paid of {total}',
     amountLeft: '{amount} left',
+    /*
+     * The way to ask for the rest. It sits beside the balance because that is
+     * where somebody reads the number and thinks "so send them a bill for it"
+     * — not behind More, and not in the four-action row, which §G fills.
+     */
+    billBalance: 'Invoice the balance',
+    billBalanceLine: 'Balance of {reference}',
+    billBalanceFailed: 'That could not be drawn up: {reason}',
+    /*
+     * The reasons, in words, keyed by the code the domain throws.
+     *
+     * The domain throws a CODE and never a sentence: its first version threw
+     * English prose naming the document type, which the Rule #4 lint rule
+     * refused — a business whose documents are called something else would
+     * have been told about a type it does not have.
+     */
+    /*
+     * The two ends of the link, in words.
+     *
+     * ONE DEBT ASKED FOR TWICE. Without these the pair sit in the list looking
+     * like two separate charges for the same goods — to the owner reading
+     * their own documents as much as to the customer receiving them.
+     */
+    billsBalanceOf: 'Bills the balance of {reference}',
+    balanceBilledBy: 'The balance of this is billed on {reference}',
+    openIt: 'Open it',
+    billBalanceWhy: {
+      wrong_type: 'Only something that was billed has a balance to chase.',
+      not_issued: 'This has not been sent yet, so nothing is outstanding.',
+      voided: 'This one was cancelled, so nothing is owed on it.',
+      nothing_owed: 'This is settled in full. There is nothing left to bill.',
+      currency_mismatch: 'The balance is in a different currency.',
+    },
     settled: 'Settled in full',
     recordPayment: 'Record a payment',
     amount: 'Amount',

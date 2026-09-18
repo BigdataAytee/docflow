@@ -198,6 +198,18 @@ export interface DocumentRecord {
    */
   readonly signerSignatureAssetId?: string
   /**
+   * The part-paid invoice this one bills the remainder of (§G, §K).
+   *
+   * ONE DEBT ASKED FOR TWICE. An issued invoice is frozen (Rule #5), so the
+   * amount still owed after a part payment has to be asked for on a new
+   * document — and without this link the two read as two separate charges for
+   * the same goods. Both ends name each other.
+   *
+   * Never touches the ledger: the original keeps its own balance and its own
+   * payments, and making this draft settles, moves and double-counts nothing.
+   */
+  readonly billsBalanceOfId?: string
+  /**
    * §E's "delivery photo asset" — the goods at the gate. Part of the same
    * evidence as the signature, so it seals when the delivery does (§P).
    */

@@ -23,6 +23,11 @@ import { useCompany } from '../context'
 import { useAppData } from '../store'
 import { HOME, documentPath, editDocumentPath, listPath } from '../paths'
 import { useGoBack } from '../useGoBack'
+import {
+  BillBalanceError,
+  balanceInvoiceDraft,
+  billBalanceKeyFor,
+} from '../../features/payments/billBalance'
 import { PageHeader, SkeletonList, StatusBadge } from '../../ui'
 import { BuilderCard } from '../../features/documents/BuilderCard'
 import type { UiStrings } from '../../domain/locale/data/strings'
@@ -123,6 +128,7 @@ export function DocumentScreen({ today = todayIso() }: { today?: string }) {
   const [converting, setConverting] = useState(false)
   const [convertProblem, setConvertProblem] = useState<string | null>(null)
   const [voiding, setVoiding] = useState(false)
+  const [billProblem, setBillProblem] = useState<string | null>(null)
   const [voidProblem, setVoidProblem] = useState<string | null>(null)
   const [signing, setSigning] = useState(false)
   const [signProblem, setSignProblem] = useState<string | null>(null)
@@ -274,6 +280,76 @@ export function DocumentScreen({ today = todayIso() }: { today?: string }) {
   // Real credit notes, not an empty list: a credited invoice owes less, and
   // every figure on this screen has always been ready to be told (§E).
   const mineCredits = creditNotes.filter((note) => note.invoiceId === record.id)
+
+  /*
+   * The other end of a balance follow-up, in both directions.
+   *
+   * `billsBalanceOf` is what THIS document follows; `balanceBilledBy` is the
+   * document that follows THIS one. Looked up rather than stored twice: one
+   * link, read from both sides, so the two can never disagree about each
+   * other.
+   */
+  const billsBalanceOf = documents.find((doc) => doc.id === record.billsBalanceOfId)
+  const balanceBilledBy = documents.find((doc) => doc.billsBalanceOfId === record.id)
+
+  /*
+   * ASKING FOR THE REST — what is still owed on a part-paid invoice.
+   *
+   * Null on everything else. "Part paid" rather than "anything owed" is the
+   * condition, deliberately: an invoice nobody has paid does not want a SECOND
+   * invoice for the same money, it wants chasing, which is already one of its
+   * four actions. This is for the case those four do not cover — some money
+   * came in, and the rest has to be asked for on a document the frozen
+   * original cannot become (Rule #5).
+   */
+  const billable = (() => {
+    if (record.type !== 'invoice') return null
+    if (record.status === 'draft' || record.status === 'void') return null
+    const bar = paidSoFar(record.id, total, payments, mineCredits)
+    if (bar.left.minor <= 0 || bar.paid.minor <= 0) return null
+    return bar.left
+  })()
+
+  const billTheBalance = (): void => {
+    if (billable === null) return
+    setBillProblem(null)
+    let next
+    try {
+      next = balanceInvoiceDraft({
+        invoice: record,
+        outstanding: billable,
+        today: localDay(new Date().toISOString()),
+        description: format(strings.payments.billBalanceLine, {
+          reference: record.issuedReference ?? '',
+        }),
+      })
+    } catch (cause) {
+      // The domain hands back a CODE; the words are the catalogue's (Rule #4).
+      const why =
+        cause instanceof BillBalanceError
+          ? (strings.payments.billBalanceWhy[cause.reason] ?? cause.reason)
+          : cause instanceof Error
+            ? cause.message
+            : String(cause)
+      setBillProblem(format(strings.payments.billBalanceFailed, { reason: why }))
+      return
+    }
+    /*
+     * Keyed on the invoice AND the balance (§M): two taps make one draft, and
+     * a later follow-up at a different remainder is a different act with its
+     * own key rather than silently returning the first one.
+     */
+    void actions
+      .createDraftWithKey(next, billBalanceKeyFor(record.id, billable.minor))
+      .then((created) => navigate(editDocumentPath(created.id)))
+      .catch((cause: unknown) => {
+        setBillProblem(
+          format(strings.payments.billBalanceFailed, {
+            reason: cause instanceof Error ? cause.message : String(cause),
+          }),
+        )
+      })
+  }
   const status = displayStatus(record, payments, today, mineCredits)
 
   /** The mark on this document, resolved from the id it holds (§E). */
@@ -752,6 +828,49 @@ export function DocumentScreen({ today = todayIso() }: { today?: string }) {
           Rev 3. A reissued receipt replaces exactly one cancelled receipt,
           so numbering it would say more than is true.
         */}
+        {/*
+          THE TWO ENDS OF A BALANCE FOLLOW-UP, each naming the other.
+
+          An issued invoice is frozen, so what is still owed after a part
+          payment is asked for on a NEW document — and without this the pair
+          read as two separate charges for the same goods, to the owner
+          reading their own list as much as to the customer.
+
+          The field was stored and shown nowhere, which the declared-field
+          sweep caught: "one debt asked for twice" was a claim in a comment
+          and nothing a person could see.
+        */}
+        {billsBalanceOf !== undefined && (
+          <button
+            type="button"
+            className="glass w-full rounded-2xl p-4 text-start text-sm"
+            onClick={() => navigate(documentPath(billsBalanceOf.id))}
+          >
+            <span className="font-semibold">
+              {format(strings.payments.billsBalanceOf, {
+                reference: billsBalanceOf.issuedReference ?? '',
+              })}
+            </span>
+            <span className="mt-0.5 block text-xs opacity-70">{strings.payments.openIt}</span>
+          </button>
+        )}
+
+        {balanceBilledBy !== undefined && (
+          <button
+            type="button"
+            className="glass w-full rounded-2xl p-4 text-start text-sm"
+            onClick={() => navigate(documentPath(balanceBilledBy.id))}
+          >
+            <span className="font-semibold">
+              {format(strings.payments.balanceBilledBy, {
+                reference:
+                  balanceBilledBy.issuedReference ?? strings.savedDocument.notIssuedYet,
+              })}
+            </span>
+            <span className="mt-0.5 block text-xs opacity-70">{strings.payments.openIt}</span>
+          </button>
+        )}
+
         {newerRevision !== null && (
           <button
             type="button"
@@ -1239,6 +1358,33 @@ export function DocumentScreen({ today = todayIso() }: { today?: string }) {
         {isInvoice && record.status !== 'draft' && (
           <>
             <PaidSoFarBar bar={paidSoFar(record.id, total, payments, mineCredits)} />
+
+            {/*
+              ASKING FOR THE REST, from where the rest is written down.
+
+              The bar says "₦50,000 paid of ₦145,000 · ₦95,000 left" and there
+              was nothing to press: the owner made a second invoice by hand,
+              retyping the balance off the screen behind them.
+
+              Beside the balance rather than in the four-action row, which §G
+              fills — and only while an invoice has been PART paid. An
+              untouched one wants chasing, not a second bill; a settled one has
+              no remainder.
+            */}
+            {billable !== null && (
+              <button
+                type="button"
+                onClick={billTheBalance}
+                className="raised tap-scale min-h-tap w-full rounded-2xl bg-surface px-4 text-[13px] font-semibold text-brand"
+              >
+                {strings.payments.billBalance}
+              </button>
+            )}
+            {billProblem !== null && (
+              <p role="alert" className="text-[12px] leading-relaxed text-status-bad">
+                {billProblem}
+              </p>
+            )}
 
             <BuilderCard
               title={strings.payments.title}

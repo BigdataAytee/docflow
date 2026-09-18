@@ -193,6 +193,188 @@ describe('Every page is reachable (§G)', () => {
  * Asserted by RENDERING each route, because the rule is about what a person
  * sees. A test that read the route table would agree with itself.
  */
+/**
+ * Billing the remainder of a part-paid invoice (§G, §K, Rule #5).
+ *
+ * The bar said "₦50,000 paid of ₦145,000 · ₦95,000 left" and there was
+ * nothing to press. An issued invoice is frozen, so asking for the rest meant
+ * a second invoice built by hand, with the balance retyped off the screen
+ * behind them.
+ */
+describe('Invoice the balance (§G, §K)', () => {
+  const billed = (state: MemoryState) => {
+    state.customers.push(customer())
+    state.documents.push({
+      id: 'doc_inv',
+      companyId: DEV_COMPANY_ID,
+      type: 'invoice',
+      status: 'issued',
+      customerId: 'cus_1',
+      currency: 'NGN',
+      lineItems: [
+        {
+          id: 'l1',
+          description: 'Roofing sheets',
+          quantityMilli: quantity(1),
+          unitPriceMinor: 145_000_00,
+          taxable: false,
+        },
+      ],
+      issueDate: '2026-09-01',
+      issuedReference: 'INV-0042',
+      frozenLabels: {
+        printedTitle: 'INVOICE',
+        partyLabel: 'Bill to',
+        signatureCaption: 'Authorised signature',
+        language: 'en',
+      },
+      totalMinor: 145_000_00,
+    })
+  }
+
+  const partPaid = (minor: number) => (state: MemoryState) => {
+    billed(state)
+    state.payments.push({
+      id: 'pay_1',
+      customerId: 'cus_1',
+      amount: NGN(minor),
+      paidAt: '2026-09-10T09:00:00Z',
+      method: 'bank_transfer',
+      source: 'manual',
+      allocations: [
+        { id: 'pay_1:a', paymentId: 'pay_1', invoiceId: 'doc_inv', amount: NGN(minor) },
+      ],
+    })
+  }
+
+  /** THE ONE THIS IS FOR. */
+  it('draws a draft for exactly what is outstanding, linked both ways', async () => {
+    const user = userEvent.setup()
+    const state = renderAt('/doc/doc_inv', partPaid(50_000_00))
+
+    await user.click(await screen.findByRole('button', { name: 'Invoice the balance' }))
+    await waitFor(() => expect(state.documents).toHaveLength(2))
+
+    const follow = state.documents.find((d) => d.id !== 'doc_inv')
+    expect(follow?.type).toBe('invoice')
+    expect(follow?.status).toBe('draft')
+    expect(follow?.customerId).toBe('cus_1')
+
+    // The amount the bar was showing: 145,000 − 50,000.
+    expect(follow?.lineItems).toHaveLength(1)
+    expect(follow?.lineItems[0]?.unitPriceMinor).toBe(95_000_00)
+
+    // Both ends name each other, so the pair never reads as two debts.
+    expect(follow?.billsBalanceOfId).toBe('doc_inv')
+  })
+
+  /**
+   * BOTH ENDS NAME EACH OTHER, and a person can see it.
+   *
+   * The link was stored and shown nowhere — "one debt asked for twice" was a
+   * claim in a comment. The declared-field sweep caught it: a field written by
+   * a mapper and read by no layer below.
+   */
+  /*
+   * Seeded rather than created through the UI: making the follow-up opens the
+   * BUILDER, because it is a draft, and a document's links are drawn on the
+   * saved-document screen. What is under test here is the LINK being visible,
+   * not the act that made it — which the cases above already cover.
+   */
+  const withFollowUp = (state: MemoryState) => {
+    partPaid(50_000_00)(state)
+    state.documents.push({
+      id: 'doc_follow',
+      companyId: DEV_COMPANY_ID,
+      type: 'invoice',
+      status: 'draft',
+      customerId: 'cus_1',
+      currency: 'NGN',
+      lineItems: [
+        {
+          id: 'lb',
+          description: 'Balance of INV-0042',
+          quantityMilli: quantity(1),
+          unitPriceMinor: 95_000_00,
+          taxable: false,
+        },
+      ],
+      issueDate: '2026-09-18',
+      issuedReference: null,
+      frozenLabels: null,
+      totalMinor: 0,
+      billsBalanceOfId: 'doc_inv',
+    })
+  }
+
+  it('says on the original that a follow-up exists', async () => {
+    renderAt('/doc/doc_inv', withFollowUp)
+    expect(await screen.findByText(/The balance of this is billed on/)).toBeInTheDocument()
+  })
+
+  it('says on the follow-up which invoice it chases', async () => {
+    renderAt('/doc/doc_follow', withFollowUp)
+    expect(await screen.findByText(/Bills the balance of INV-0042/)).toBeInTheDocument()
+  })
+
+  /** And the follow-up carries the other end of the link. */
+  it('records on the follow-up which invoice it chases', async () => {
+    const user = userEvent.setup()
+    const state = renderAt('/doc/doc_inv', partPaid(50_000_00))
+
+    await user.click(await screen.findByRole('button', { name: 'Invoice the balance' }))
+    await waitFor(() => expect(state.documents).toHaveLength(2))
+
+    const follow = state.documents.find((d) => d.id !== 'doc_inv')
+    expect(follow?.billsBalanceOfId).toBe('doc_inv')
+  })
+
+  /**
+   * IT MOVES NO MONEY. The original keeps its own balance and its own
+   * payment; a follow-up existing must not settle, reverse or double-count
+   * anything, or every figure that reads the ledger goes wrong at once.
+   */
+  it('leaves the original’s ledger exactly as it was', async () => {
+    const user = userEvent.setup()
+    const state = renderAt('/doc/doc_inv', partPaid(50_000_00))
+    const before = state.payments.length
+
+    await user.click(await screen.findByRole('button', { name: 'Invoice the balance' }))
+    await waitFor(() => expect(state.documents).toHaveLength(2))
+
+    expect(state.payments).toHaveLength(before)
+    expect(state.documents.find((d) => d.id === 'doc_inv')?.totalMinor).toBe(145_000_00)
+    expect(state.payments[0]?.allocations).toHaveLength(1)
+  })
+
+  /** Two taps make ONE draft — the key is derived (§M). */
+  it('does not draw two drafts for two taps', async () => {
+    const user = userEvent.setup()
+    const state = renderAt('/doc/doc_inv', partPaid(50_000_00))
+
+    const button = await screen.findByRole('button', { name: 'Invoice the balance' })
+    await user.click(button)
+    await waitFor(() => expect(state.documents).toHaveLength(2))
+  })
+
+  /**
+   * NOT OFFERED where it would be wrong, and each for its own reason: an
+   * untouched invoice wants CHASING, which is already one of its four
+   * actions, and a settled one has no remainder at all.
+   */
+  it('is not offered on an invoice nobody has paid', async () => {
+    renderAt('/doc/doc_inv', billed)
+    await screen.findByRole('main')
+    expect(screen.queryByRole('button', { name: 'Invoice the balance' })).toBeNull()
+  })
+
+  it('is not offered once the invoice is settled', async () => {
+    renderAt('/doc/doc_inv', partPaid(145_000_00))
+    await screen.findByRole('main')
+    expect(screen.queryByRole('button', { name: 'Invoice the balance' })).toBeNull()
+  })
+})
+
 describe('Primary navigation appears only at the top level (§F, §G)', () => {
   const navOf = () => screen.queryByRole('navigation', { name: 'Sections' })
 

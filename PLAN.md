@@ -331,7 +331,7 @@ gate:hosted" silently did nothing. One script now, with
 `--env-file-if-exists=.env`: exported shell variables and a gitignored `.env`
 both work, and `gate:hosted:local` is gone.
 
-**Twenty-seven migrations** are written. `0021_recurrences` is applied on the
+**Twenty-eight migrations** are written. `0021_recurrences` is applied on the
 remote (`migration list` shows `local 0021 -> remote 0021`) and its RLS suite
 is green in CI. `0022_company_contact` adds the business's own phone, email
 and website — the footer strip every document ends with (§I).
@@ -341,7 +341,10 @@ and website — the footer strip every document ends with (§I).
 own and repoints `apply_public_link` at it — one changed line in the function
 from 0007, same parameter list, so it replaces rather than overloads.
 
-**All twenty-seven are applied.** `local` and `remote` agree on every row.
+`0028_bills_balance_of` links a follow-up invoice to the part-paid one it
+chases, and is applied.
+
+**All twenty-eight are applied.** `local` and `remote` agree on every row.
 
 `0026_drop_label_overrides` is applied on the remote. It removes the
 per-type custom document name at the owner's instruction — the app works the
