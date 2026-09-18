@@ -77,7 +77,7 @@ export function ContactScreen({ today = todayIso() }: { today?: string }) {
       // Newest first: §G calls it history, and the recent end is the live one.
       .sort((a, b) => (b.issueDate ?? '').localeCompare(a.issueDate ?? '') || b.id.localeCompare(a.id))
       .map((document) => {
-        const status = displayStatus(document, payments, today, creditNotes)
+        const status = displayStatus(document, payments, today, creditNotes, documents)
         return {
           id: document.id,
           reference:

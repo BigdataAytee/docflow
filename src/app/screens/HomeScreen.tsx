@@ -99,7 +99,7 @@ export function HomeScreen({ now = new Date() }: { now?: Date }) {
     const document = documents.find((row) => row.id === entry.id)
     if (document === undefined) return undefined
 
-    const status = displayStatus(document, payments, today, creditNotes)
+    const status = displayStatus(document, payments, today, creditNotes, documents)
     const name = document.customerId === undefined ? undefined : names.get(document.customerId)
     const amount = document.type === 'waybill' ? undefined : formatMoney(totalOf(document))
 

@@ -28,6 +28,7 @@ import {
   balanceInvoiceDraft,
   billBalanceKeyFor,
 } from '../../features/payments/billBalance'
+import { canBillBalance } from '../../domain/payments/supersession'
 import { PageHeader, SkeletonList, StatusBadge } from '../../ui'
 import { BuilderCard } from '../../features/documents/BuilderCard'
 import type { UiStrings } from '../../domain/locale/data/strings'
@@ -305,6 +306,13 @@ export function DocumentScreen({ today = todayIso() }: { today?: string }) {
   const billable = (() => {
     if (record.type !== 'invoice') return null
     if (record.status === 'draft' || record.status === 'void') return null
+    /*
+     * ONE FOLLOW-UP AT A TIME. Two live ones would each claim the same
+     * balance, which is the double count again by another route. A CANCELLED
+     * one does not block: the balance came back to this invoice, so asking
+     * again is exactly what somebody would want to do next.
+     */
+    if (!canBillBalance(record.id, documents)) return null
     const bar = paidSoFar(record.id, total, payments, mineCredits)
     if (bar.left.minor <= 0 || bar.paid.minor <= 0) return null
     return bar.left
@@ -350,7 +358,7 @@ export function DocumentScreen({ today = todayIso() }: { today?: string }) {
         )
       })
   }
-  const status = displayStatus(record, payments, today, mineCredits)
+  const status = displayStatus(record, payments, today, mineCredits, documents)
 
   /** The mark on this document, resolved from the id it holds (§E). */
   /*
@@ -1357,7 +1365,38 @@ export function DocumentScreen({ today = todayIso() }: { today?: string }) {
 
         {isInvoice && record.status !== 'draft' && (
           <>
-            <PaidSoFarBar bar={paidSoFar(record.id, total, payments, mineCredits)} />
+            {/*
+              THE SPLIT, when the balance has moved to a follow-up.
+
+              The bar would say "₦50,000 paid of ₦145,000 · ₦95,000 left" —
+              true of this document in isolation and misleading in every other
+              way, because the ₦95,000 is not being asked for here any more.
+              Neither "Paid" nor "Part paid" is the word either: one claims
+              money that did not arrive, the other leaves something to chase
+              on a document that is not chasing it.
+            */}
+            {balanceBilledBy !== undefined && balanceBilledBy.status !== 'draft' ? (
+              <div className="glass rounded-2xl p-4" data-balance-split>
+                <p className="text-sm font-semibold">
+                  {format(strings.payments.splitReceived, {
+                    amount: formatMoney(
+                      paidSoFar(record.id, total, payments, mineCredits).paid,
+                    ),
+                  })}
+                </p>
+                <p className="mt-0.5 text-sm">
+                  {format(strings.payments.splitBilledOn, {
+                    amount: formatMoney(
+                      paidSoFar(record.id, total, payments, mineCredits).left,
+                    ),
+                    reference:
+                      balanceBilledBy.issuedReference ?? strings.savedDocument.notIssuedYet,
+                  })}
+                </p>
+              </div>
+            ) : (
+              <PaidSoFarBar bar={paidSoFar(record.id, total, payments, mineCredits)} />
+            )}
 
             {/*
               ASKING FOR THE REST, from where the rest is written down.

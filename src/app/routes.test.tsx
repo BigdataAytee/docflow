@@ -330,6 +330,122 @@ describe('Invoice the balance (§G, §K)', () => {
   })
 
   /**
+   * ONE DEBT, IN ONE PLACE, THROUGH THE APP'S OWN READ PATH.
+   *
+   * The guard that shipped with this feature asserted the original invoice's
+   * ledger was UNTOUCHED — true, and exactly the wrong property to lock in,
+   * because the bug was that both documents then billed the same money.
+   * Measured before the fix: ₦190,000 outstanding on a ₦95,000 debt, and the
+   * original still unpaid after the follow-up was settled.
+   *
+   * These assert the TOTAL a person sees, at each stage the pair can be in.
+   */
+  const withFollowUpAt = (status: string, extraPayment = false) => (state: MemoryState) => {
+    partPaid(50_000_00)(state)
+    state.documents.push({
+      id: 'doc_follow',
+      companyId: DEV_COMPANY_ID,
+      type: 'invoice',
+      status,
+      customerId: 'cus_1',
+      currency: 'NGN',
+      lineItems: [
+        {
+          id: 'lb',
+          description: 'Balance of INV-0042',
+          quantityMilli: quantity(1),
+          unitPriceMinor: 95_000_00,
+          taxable: false,
+        },
+      ],
+      issueDate: '2026-09-18',
+      issuedReference: status === 'draft' ? null : 'INV-0043',
+      frozenLabels:
+        status === 'draft'
+          ? null
+          : {
+              printedTitle: 'INVOICE',
+              partyLabel: 'Bill to',
+              signatureCaption: 'Authorised signature',
+              language: 'en',
+            },
+      totalMinor: status === 'draft' ? 0 : 95_000_00,
+      billsBalanceOfId: 'doc_inv',
+    })
+    if (extraPayment) {
+      state.payments.push({
+        id: 'pay_2',
+        customerId: 'cus_1',
+        amount: NGN(95_000_00),
+        paidAt: '2026-09-20T09:00:00Z',
+        method: 'bank_transfer',
+        source: 'manual',
+        allocations: [
+          { id: 'pay_2:a', paymentId: 'pay_2', invoiceId: 'doc_follow', amount: NGN(95_000_00) },
+        ],
+      })
+    }
+  }
+
+  /** Home's Outstanding is the figure a trader looks at first. */
+  const outstandingOnHome = async () => {
+    const card = await screen.findByLabelText(/outstanding/i)
+    return (card.textContent ?? '').replace(/\s+/g, ' ')
+  }
+
+  it('shows the debt once while the follow-up is only a draft', async () => {
+    renderAt('/', withFollowUpAt('draft'))
+    expect(await outstandingOnHome()).toContain('95,000')
+  })
+
+  /** THE FIRST HALF OF THE BUG: this used to read ₦190,000. */
+  it('shows the debt once when the follow-up is issued', async () => {
+    renderAt('/', withFollowUpAt('issued'))
+    const text = await outstandingOnHome()
+    expect(text).toContain('95,000')
+    expect(text, 'the debt is being counted twice').not.toContain('190,000')
+  })
+
+  /** THE SECOND HALF: this used to leave ₦95,000 owed after it was settled. */
+  it('shows nothing owed once the follow-up is paid', async () => {
+    renderAt('/', withFollowUpAt('issued', true))
+    expect(await outstandingOnHome()).not.toContain('95,000')
+  })
+
+  /** REVERSIBILITY: cancelling the follow-up must not erase a real debt. */
+  it('returns the debt to the original when the follow-up is cancelled', async () => {
+    renderAt('/', withFollowUpAt('void'))
+    expect(await outstandingOnHome()).toContain('95,000')
+  })
+
+  /**
+   * CONDITION 1: never a word implying the money came in. The original shows
+   * the split instead of a paid-so-far bar.
+   */
+  it('never says paid on the original, and shows the split', async () => {
+    renderAt('/doc/doc_inv', withFollowUpAt('issued'))
+    await screen.findByRole('main')
+    const split = document.querySelector('[data-balance-split]')
+    expect(split, 'the original does not say where the balance went').not.toBeNull()
+    expect(split?.textContent).toContain('₦50,000.00 received')
+    expect(split?.textContent).toContain('₦95,000.00 billed on INV-0043')
+  })
+
+  /** CONDITION 3: one follow-up at a time. */
+  it('does not offer a second follow-up while one is live', async () => {
+    renderAt('/doc/doc_inv', withFollowUpAt('issued'))
+    await screen.findByRole('main')
+    expect(screen.queryByRole('button', { name: 'Invoice the balance' })).toBeNull()
+  })
+
+  it('offers one again once the follow-up is cancelled', async () => {
+    renderAt('/doc/doc_inv', withFollowUpAt('void'))
+    expect(
+      await screen.findByRole('button', { name: 'Invoice the balance' }),
+    ).toBeInTheDocument()
+  })
+
+  /**
    * IT MOVES NO MONEY. The original keeps its own balance and its own
    * payment; a follow-up existing must not settle, reverse or double-count
    * anything, or every figure that reads the ledger goes wrong at once.

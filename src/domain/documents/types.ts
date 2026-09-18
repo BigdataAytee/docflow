@@ -27,7 +27,21 @@ export type DocumentStatus<T extends DocumentType = DocumentType> =
   (typeof DOCUMENT_STATUSES)[T][number]
 
 /** Derived payment state of an invoice — computed, never stored as truth. */
-export type PaymentState = 'unpaid' | 'partially_paid' | 'paid' | 'overdue'
+export type PaymentState =
+  | 'unpaid'
+  | 'partially_paid'
+  | 'paid'
+  | 'overdue'
+  /**
+   * Part paid, and the REST IS BILLED ON ANOTHER DOCUMENT (§K).
+   *
+   * Its own state, and it has to be. The alternatives both lie: "paid" says
+   * money arrived that did not, on an invoice where ₦50,000 of ₦145,000 came
+   * in; "part paid" leaves it looking like something still to chase here,
+   * when the chasing belongs to the follow-up. A trader must be able to tell
+   * those apart at a glance in a list.
+   */
+  | 'balance_billed'
 
 /** Derived state of a quotation. */
 export type QuotationState = 'open' | 'accepted' | 'rejected' | 'expired'

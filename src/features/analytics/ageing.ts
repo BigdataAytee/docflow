@@ -29,6 +29,19 @@ export interface AgeingDocument {
   readonly status: string
   readonly total: Money
   readonly dueDate?: string
+  /**
+   * Whether a LIVE follow-up is billing this invoice's balance (§K).
+   *
+   * Derived, never stored — `supersededBalanceIds` works it out from the
+   * documents at read time. When it is true this invoice is not the one
+   * asking for the money any more, so it contributes nothing to what is owed;
+   * the follow-up contributes instead, and the debt is counted exactly once.
+   *
+   * Without it both documents billed the same money: ₦95,000 owed showed as
+   * ₦190,000, and the original still read unpaid after the follow-up was
+   * settled.
+   */
+  readonly balanceSuperseded?: boolean
 }
 
 export interface Ageing {
@@ -74,8 +87,19 @@ function emptyBuckets(currency: CurrencyCode): Record<AgeingBucket, Money> {
   }
 }
 
+/*
+ * A SUPERSEDED BALANCE IS BILLED SOMEWHERE ELSE, so it is not counted here.
+ *
+ * The debt has not gone: a live follow-up is asking for it, and that document
+ * counts in this same sum. Counting both is how ₦95,000 owed came to show as
+ * ₦190,000, and how the original still read unpaid after the follow-up was
+ * settled. One debt, one place, at every stage (§K).
+ */
 const countsAsOwed = (document: AgeingDocument): boolean =>
-  document.type === 'invoice' && document.status !== 'draft' && document.status !== 'void'
+  document.type === 'invoice' &&
+  document.balanceSuperseded !== true &&
+  document.status !== 'draft' &&
+  document.status !== 'void'
 
 /** Ageing per currency — §G forbids adding NGN to USD to make one chart. */
 export function ageingByCurrency(

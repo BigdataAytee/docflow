@@ -15,6 +15,7 @@ import { type DocumentType, QUANTITY_SCALE } from '../domain/documents/types'
 import { deriveInvoiceState, deriveQuotationState } from '../domain/documents/lifecycle'
 import { type CurrencyCode, type Money, money } from '../domain/money/money'
 import { type CreditNote, invoiceOutstanding } from '../domain/payments/ledger'
+import { supersededBalanceIds } from '../domain/payments/supersession'
 import type { StatDocument } from '../features/home/stats'
 import type { AgeingDocument } from '../features/analytics/ageing'
 import type { SoldDocument } from '../features/analytics/topItems'
@@ -26,22 +27,38 @@ import { revisionNumberOf, supersededBy } from '../features/documents/revision'
 export const totalOf = (document: DocumentRecord): Money =>
   money(document.currency, document.totalMinor)
 
-export const statDocuments = (documents: readonly DocumentRecord[]): StatDocument[] =>
-  documents.map((document) => ({
+/*
+ * WORKED OUT ONCE, FOR ALL THREE PROJECTIONS.
+ *
+ * Home's Outstanding, the customer balance and the ageing report each sum the
+ * same debts, so they have to agree about which invoice is asking for which
+ * money. Computing it per projection would be three chances to disagree about
+ * one number — which is the shape of the bug this exists to prevent.
+ */
+const supersededIn = (documents: readonly DocumentRecord[]) => supersededBalanceIds(documents)
+
+export const statDocuments = (documents: readonly DocumentRecord[]): StatDocument[] => {
+  const superseded = supersededIn(documents)
+  return documents.map((document) => ({
     id: document.id,
     type: document.type,
     status: document.status,
     total: totalOf(document),
+    ...(superseded.has(document.id) ? { balanceSuperseded: true } : {}),
   }))
+}
 
-export const ageingDocuments = (documents: readonly DocumentRecord[]): AgeingDocument[] =>
-  documents.map((document) => ({
+export const ageingDocuments = (documents: readonly DocumentRecord[]): AgeingDocument[] => {
+  const superseded = supersededIn(documents)
+  return documents.map((document) => ({
     id: document.id,
     type: document.type,
     status: document.status,
     total: totalOf(document),
     ...(document.dueDate === undefined ? {} : { dueDate: document.dueDate }),
+    ...(superseded.has(document.id) ? { balanceSuperseded: true } : {}),
   }))
+}
 
 export const soldDocuments = (documents: readonly DocumentRecord[]): SoldDocument[] =>
   documents.map((document) => ({
@@ -74,6 +91,7 @@ export const statementDocuments = (documents: readonly DocumentRecord[]): Statem
  * customer has never seen.
  */
 export function billedInvoices(documents: readonly DocumentRecord[]): BilledInvoice[] {
+  const superseded = supersededIn(documents)
   return documents
     .filter(
       (document) =>
@@ -88,6 +106,7 @@ export function billedInvoices(documents: readonly DocumentRecord[]): BilledInvo
       total: totalOf(document),
       issueDate: document.issueDate ?? '',
       ...(document.dueDate === undefined ? {} : { dueDate: document.dueDate }),
+      ...(superseded.has(document.id) ? { balanceSuperseded: true } : {}),
     }))
 }
 
@@ -122,10 +141,22 @@ export function displayStatus(
   payments: readonly Payment[],
   today: string,
   creditNotes: readonly CreditNote[] = [],
+  /** Every document, so a follow-up billing this one's balance can be seen. */
+  all: readonly DocumentRecord[] = [],
 ): string {
   if (document.status === 'draft' || document.status === 'void') return document.status
 
   if (document.type === 'invoice') {
+    /*
+     * BILLED ELSEWHERE BEATS EVERY MONEY STATE, because it decides which
+     * document the question is even about. An invoice whose balance a live
+     * follow-up is asking for is not "paid" — the money did not arrive — and
+     * not "part paid" either, which would leave it looking like something to
+     * chase here. The screen says the split: what came in, and where the rest
+     * is being asked for.
+     */
+    if (supersededBalanceIds(all).has(document.id)) return 'balance_billed'
+
     return deriveInvoiceState({
       status: document.status as 'issued',
       total: totalOf(document),

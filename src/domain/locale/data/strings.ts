@@ -592,6 +592,8 @@ export interface UiStrings {
     readonly billBalanceFailed: string
     readonly billBalanceWhy: Readonly<Record<string, string>>
     readonly billsBalanceOf: string
+    readonly splitReceived: string
+    readonly splitBilledOn: string
     readonly balanceBilledBy: string
     readonly openIt: string
     readonly settled: string
@@ -1548,6 +1550,15 @@ const EN: UiStrings = {
      * like two separate charges for the same goods — to the owner reading
      * their own documents as much as to the customer receiving them.
      */
+    /*
+     * THE SPLIT, SAID PLAINLY.
+     *
+     * On an invoice where ₦50,000 of ₦145,000 arrived and the rest is billed
+     * elsewhere, neither "Paid" nor "Part paid" is the truth. These two lines
+     * are: what came in, and where the rest is being asked for.
+     */
+    splitReceived: '{amount} received',
+    splitBilledOn: '{amount} billed on {reference}',
     billsBalanceOf: 'Bills the balance of {reference}',
     balanceBilledBy: 'The balance of this is billed on {reference}',
     openIt: 'Open it',
@@ -1991,6 +2002,15 @@ const EN: UiStrings = {
     unpaid: 'Not paid',
     partially_paid: 'Part paid',
     paid: 'Paid',
+    /*
+     * NEVER A WORD IMPLYING THE MONEY CAME IN.
+     *
+     * On an invoice where ₦50,000 of ₦145,000 arrived and the rest is billed
+     * elsewhere, "Paid" is false and "Part paid" leaves it looking like
+     * something still to chase here. This says what actually happened, and
+     * the screen beneath says the split.
+     */
+    balance_billed: 'Balance billed',
     overdue: 'Late',
     expired: 'Out of date',
     money_out: 'Money out',
