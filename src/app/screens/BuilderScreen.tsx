@@ -428,8 +428,26 @@ export function BuilderScreen({ now = () => new Date().toISOString() }: { now?: 
   if (state === null) return <SkeletonList rows={4} label={strings.common.loading} />
 
   const close = () => {
-    // Pending edits flush on exit (§G), then the page leaves either way.
-    void commit(state).finally(() => navigate(documentPath(id)))
+    /*
+     * REPLACE, NOT PUSH — and this was a trap.
+     *
+     * Leaving the builder pushed the saved document ON TOP of it, so the
+     * builder stayed on the stack behind the thing you had just left it for:
+     *
+     *     Home → /edit/x → (✕) → /doc/x → (Back) → /edit/x → (✕) → /doc/x …
+     *
+     * Back and forth between the two, for ever, with Home buried underneath
+     * and unreachable by the one control that should reach it. An owner who
+     * had not finished editing could not get out.
+     *
+     * The builder is a STEP on the way to the document, not a place to return
+     * to: you left it, so it leaves the history with you. Back from the
+     * document then goes where the builder was opened from, which is what
+     * anybody pressing it means.
+     *
+     * Pending edits still flush on exit (§G), and the page leaves either way.
+     */
+    void commit(state).finally(() => navigate(documentPath(id), { replace: true }))
   }
 
   /*
@@ -525,7 +543,13 @@ export function BuilderScreen({ now = () => new Date().toISOString() }: { now?: 
           ...(effectiveWhtPpm === undefined ? {} : { whtRatePpm: effectiveWhtPpm }),
         }),
       )
-      .then(() => navigate(documentPath(id)))
+      /*
+       * Replace for the same reason as `close`: an issued document must not
+       * leave its own builder sitting behind it on the stack, where Back
+       * would return somebody to editing a document that Rule #5 has already
+       * frozen.
+       */
+      .then(() => navigate(documentPath(id), { replace: true }))
       .catch((cause: unknown) =>
         setIssueProblem(format(strings.builder.couldNotIssue, { reason: String(cause) })),
       )

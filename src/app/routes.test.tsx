@@ -201,6 +201,69 @@ describe('Every page is reachable (§G)', () => {
  * a second invoice built by hand, with the balance retyped off the screen
  * behind them.
  */
+/**
+ * Leaving the builder must not trap you between two screens (§G).
+ *
+ * The owner's report: "when I press back it takes me back to the edit invoice
+ * area back and forth — I am supposed to be able to go back to home page
+ * without being held down."
+ *
+ * The ✕ PUSHED the saved document on top of the builder, so the builder
+ * stayed on the stack behind the thing you had just left it for:
+ *
+ *     Home → /edit/x → (✕) → /doc/x → (Back) → /edit/x → (✕) → /doc/x …
+ *
+ * Home was buried under the pair and unreachable by the one control that
+ * should reach it.
+ */
+describe('The builder is a step, not a place you come back to (§G)', () => {
+  const draft = (state: MemoryState) => {
+    state.customers.push(customer())
+    state.documents.push({
+      id: 'doc_draft',
+      companyId: DEV_COMPANY_ID,
+      type: 'invoice',
+      status: 'draft',
+      customerId: 'cus_1',
+      currency: 'NGN',
+      lineItems: [
+        {
+          id: 'l1',
+          description: 'Cement',
+          quantityMilli: quantity(2),
+          unitPriceMinor: 500_000,
+          taxable: false,
+        },
+      ],
+      issueDate: '2026-09-18',
+      issuedReference: null,
+      frozenLabels: null,
+      totalMinor: 0,
+    })
+  }
+
+  /**
+   * A REAL ROUTER, because this is a claim about history. On the memory
+   * router `window.history` never moves, so a length check passes whatever
+   * the component does.
+   */
+  it('does not grow the history when you leave it', async () => {
+    const user = userEvent.setup()
+    const { repositories } = seeded(draft)
+    window.history.replaceState({}, '', '/edit/doc_draft')
+    render(<App repositories={repositories} companyId={DEV_COMPANY_ID} router="browser" />)
+
+    const before = window.history.length
+    await user.click(await screen.findByRole('button', { name: /close|cancel|✕/i }))
+
+    await waitFor(() => expect(screen.queryByText(/Draft saved automatically/)).toBeNull())
+    expect(
+      window.history.length - before,
+      'leaving the builder stacked the document on top of it',
+    ).toBe(0)
+  })
+})
+
 describe('Invoice the balance (§G, §K)', () => {
   const billed = (state: MemoryState) => {
     state.customers.push(customer())
