@@ -26,6 +26,8 @@
 
 import { useRef, useState } from 'react'
 
+import { SavedField } from './SavedField'
+
 import { useCompany } from '../../app/context'
 import { DOCUMENT_TYPES, type DocumentType } from '../../domain/documents/types'
 import { label as typeLabel, numberingPrefix } from '../../domain/locale/profile'
@@ -50,11 +52,21 @@ export interface CompanySettingsProps {
   readonly prefixes: Partial<Record<DocumentType, string>>
   /** The logo already saved, shown rather than described. */
   readonly logoUrl?: string
-  readonly onBusinessName: (value: string) => void
-  readonly onBusinessAddress: (value: string) => void
-  readonly onBusinessPhone: (value: string) => void
-  readonly onBusinessEmail: (value: string) => void
-  readonly onBusinessWebsite: (value: string) => void
+  /*
+   * THESE RETURN THE WRITE, and the return type is load-bearing.
+   *
+   * They were `=> void`, which is what let the screen do
+   * `void actions.updateCompany(...)` and discard the promise — so a failed
+   * save was indistinguishable from a successful one and took the typed value
+   * with it. A handler that returns nothing gives `SavedField` nothing to
+   * wait for, and its tick would be a claim about the keyboard rather than
+   * about the database.
+   */
+  readonly onBusinessName: (value: string) => Promise<unknown>
+  readonly onBusinessAddress: (value: string) => Promise<unknown>
+  readonly onBusinessPhone: (value: string) => Promise<unknown>
+  readonly onBusinessEmail: (value: string) => Promise<unknown>
+  readonly onBusinessWebsite: (value: string) => Promise<unknown>
   readonly onNameStyle: (style: NameStyle) => void
   readonly onLogoSize: (size: LogoSize) => void
   readonly onPrefix: (type: DocumentType, value: string) => void
@@ -195,24 +207,21 @@ export function CompanySettings({
 
       {/* ------------------------------------------ name and address */}
       <section className="glass-solid space-y-2 rounded-2xl p-4">
-        <label className="block">
-          <span className="mb-1 block text-xs font-medium opacity-70">{s.businessName}</span>
-          <input
-            value={businessName}
-            onChange={(event) => onBusinessName(event.target.value)}
-            aria-label={s.businessName}
-            className="sunken min-h-tap w-full rounded-lg px-3 text-sm"
-          />
-        </label>
-        <label className="block">
-          <span className="mb-1 block text-xs font-medium opacity-70">{s.businessAddress}</span>
-          <input
-            value={businessAddress}
-            onChange={(event) => onBusinessAddress(event.target.value)}
-            aria-label={s.businessAddress}
-            className="sunken min-h-tap w-full rounded-lg px-3 text-sm"
-          />
-        </label>
+        {/*
+          EVERY FIELD SAYS WHETHER IT SAVED.
+
+          These were `onChange={(v) => void updateCompany(...)}` — the write's
+          promise discarded, so a save that landed and one that failed looked
+          identical, and a failure took the typed value with it because the
+          box is fed from the company record. `SavedField` owns the write, so
+          its tick is a fact about the database rather than the keyboard.
+        */}
+        <SavedField label={s.businessName} value={businessName} onCommit={onBusinessName} />
+        <SavedField
+          label={s.businessAddress}
+          value={businessAddress}
+          onCommit={onBusinessAddress}
+        />
 
         {/*
           HOW A CUSTOMER REACHES THE BUSINESS (§I).
@@ -227,42 +236,27 @@ export function CompanySettings({
           business with only a phone number gets a phone number rather than
           two stranded separators.
         */}
-        <label className="block">
-          <span className="mb-1 block text-xs font-medium opacity-70">{s.businessPhone}</span>
-          <input
-            type="tel"
-            inputMode="tel"
-            autoComplete="tel"
-            value={businessPhone}
-            onChange={(event) => onBusinessPhone(event.target.value)}
-            aria-label={s.businessPhone}
-            className="sunken min-h-tap w-full rounded-lg px-3 text-sm"
-          />
-        </label>
-        <label className="block">
-          <span className="mb-1 block text-xs font-medium opacity-70">{s.businessEmail}</span>
-          <input
-            type="email"
-            inputMode="email"
-            autoComplete="email"
-            value={businessEmail}
-            onChange={(event) => onBusinessEmail(event.target.value)}
-            aria-label={s.businessEmail}
-            className="sunken min-h-tap w-full rounded-lg px-3 text-sm"
-          />
-        </label>
-        <label className="block">
-          <span className="mb-1 block text-xs font-medium opacity-70">{s.businessWebsite}</span>
-          <input
-            type="url"
-            inputMode="url"
-            autoComplete="url"
-            value={businessWebsite}
-            onChange={(event) => onBusinessWebsite(event.target.value)}
-            aria-label={s.businessWebsite}
-            className="sunken min-h-tap w-full rounded-lg px-3 text-sm"
-          />
-        </label>
+        <SavedField
+          label={s.businessPhone}
+          value={businessPhone}
+          onCommit={onBusinessPhone}
+          inputMode="tel"
+          autoComplete="tel"
+        />
+        <SavedField
+          label={s.businessEmail}
+          value={businessEmail}
+          onCommit={onBusinessEmail}
+          inputMode="email"
+          autoComplete="email"
+        />
+        <SavedField
+          label={s.businessWebsite}
+          value={businessWebsite}
+          onCommit={onBusinessWebsite}
+          inputMode="url"
+          autoComplete="url"
+        />
       </section>
 
       {/* ------------------------------------------------- name style */}

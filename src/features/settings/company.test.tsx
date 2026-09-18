@@ -17,7 +17,7 @@
  */
 
 import { describe, expect, it, vi } from 'vitest'
-import { render, screen, within } from '@testing-library/react'
+import { render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 
 import { CompanyProvider } from '../../app/context'
@@ -43,14 +43,14 @@ const props = {
   nameStyle: 'classic' as const,
   logoSize: 'M' as const,
   prefixes: {},
-  onBusinessName: vi.fn(),
+  onBusinessName: vi.fn(() => Promise.resolve()),
   businessPhone: '',
   businessEmail: '',
   businessWebsite: '',
-  onBusinessAddress: vi.fn(),
-  onBusinessPhone: vi.fn(),
-  onBusinessEmail: vi.fn(),
-  onBusinessWebsite: vi.fn(),
+  onBusinessAddress: vi.fn(() => Promise.resolve()),
+  onBusinessPhone: vi.fn(() => Promise.resolve()),
+  onBusinessEmail: vi.fn(() => Promise.resolve()),
+  onBusinessWebsite: vi.fn(() => Promise.resolve()),
   onNameStyle: vi.fn(),
   onLogoSize: vi.fn(),
   onPrefix: vi.fn(),
@@ -93,12 +93,21 @@ describe('The panel is the order the reference has (§F)', () => {
 })
 
 describe('The address is a field that goes somewhere (§R)', () => {
-  it('reports what was typed', async () => {
-    const onBusinessAddress = vi.fn()
+  /*
+   * ON LEAVING THE BOX, not on every keystroke.
+   *
+   * The field writes after a short settle, or immediately on blur — a write
+   * per letter is what the screen did before, and it makes the "Saved" mark
+   * meaningless by flickering on every character. `tab()` is what a person
+   * does when they have finished with a field.
+   */
+  it('reports what was typed once the field is left', async () => {
+    const onBusinessAddress = vi.fn(() => Promise.resolve())
     wrap(<CompanySettings {...props} onBusinessAddress={onBusinessAddress} />)
 
     await userEvent.type(screen.getByLabelText('Address'), 'Ifo')
-    expect(onBusinessAddress).toHaveBeenCalled()
+    await userEvent.tab()
+    await waitFor(() => expect(onBusinessAddress).toHaveBeenCalledWith('Ifo'))
   })
 
   it('shows the saved one rather than an empty box', () => {

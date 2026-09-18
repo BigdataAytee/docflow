@@ -366,6 +366,10 @@ export interface UiStrings {
     readonly taxIsCalled: string
     readonly bankFieldsAre: string
     readonly effectiveImmediately: string
+    readonly savedAutomatically: string
+    readonly savedField: string
+    readonly savingField: string
+    readonly saveFailed: string
     readonly howYouGetPaid: string
     readonly methodsOn: string
     readonly noMethodsYet: string
@@ -1345,6 +1349,18 @@ const EN: UiStrings = {
     currencyIs: 'Currency',
     taxIsCalled: 'Tax is called',
     bankFieldsAre: 'Bank details',
+    /*
+     * THE SAME PROMISE THE BUILDER MAKES, in the same words.
+     *
+     * The builder says "Draft saved automatically" at the top of every step;
+     * Settings saved automatically too and never said so, and never said when
+     * it FAILED either — the write's promise was discarded, so a save that
+     * did not land looked exactly like one that did.
+     */
+    savedAutomatically: 'Saved automatically',
+    savedField: 'Saved',
+    savingField: 'Saving…',
+    saveFailed: 'Not saved. Check and try again.',
     effectiveImmediately: 'Changes apply everywhere straight away, with or without internet.',
     howYouGetPaid: 'How you get paid',
     methodsOn: '{count} switched on',
