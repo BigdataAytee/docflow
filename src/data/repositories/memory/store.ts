@@ -50,6 +50,42 @@ import { reversalOf } from '../../../domain/payments/ledger'
 let counter = 0
 const nextId = (prefix: string): string => `${prefix}_${(++counter).toString(36)}`
 
+/**
+ * MINTED IDS MUST NOT COLLIDE WITH SEEDED ONES.
+ *
+ * The counter started at zero and knew nothing about the state it was handed,
+ * so the first customer added to a SEEDED store was minted `cus_1` — the id
+ * the seed had already given somebody else.
+ *
+ * What that looked like, walked on a phone: recording a cash payment from
+ * "Musa Adamu" produced a receipt made out to Okoro & Sons Ltd, and Musa's
+ * balance showed Okoro's ₦1,227,012.50. The name had been stored correctly
+ * and every lookup by id then found the wrong person — two customers, one id,
+ * and `find` returns whichever comes first.
+ *
+ * Demo-only: SQLite and Supabase both mint UUIDs, so nothing an account build
+ * does can produce this. But the samples app is what anybody judges the
+ * product by, and it was attributing money to the wrong customer.
+ *
+ * Counted past every id already present rather than reset, because the store
+ * is a module singleton — two of them in one process (a test file, a preview
+ * with a reseed) must not hand out the same id twice either.
+ */
+function reserveSeededIds(state: MemoryState): void {
+  const ids = [
+    ...state.customers.map((row) => row.id),
+    ...state.documents.map((row) => row.id),
+    ...state.payments.map((row) => row.id),
+    ...state.items.map((row) => row.id),
+    ...state.expenses.map((row) => row.id),
+  ]
+  for (const id of ids) {
+    const suffix = id.slice(id.lastIndexOf('_') + 1)
+    const value = Number.parseInt(suffix, 36)
+    if (Number.isFinite(value) && value > counter) counter = value
+  }
+}
+
 /** Remembers what each idempotency key produced, so a retry is a no-op (§M). */
 class IdempotencyLog {
   private readonly seen = new Map<string, unknown>()
@@ -94,6 +130,7 @@ export const emptyState = (): MemoryState => ({
 })
 
 export function createMemoryRepositories(state: MemoryState = emptyState()): Repositories {
+  reserveSeededIds(state)
   const log = new IdempotencyLog()
   const scoped = <T extends { companyId: string }>(rows: T[], companyId: string): T[] =>
     rows.filter((r) => r.companyId === companyId)
