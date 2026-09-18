@@ -370,6 +370,9 @@ export function composeOptionsOf(input: ComposeOptionsInput): Omit<ComposeOption
     // Every signature the company owns, not just this one's: the preview
     // follows the pad without a reload (§I).
     assetUrls: Object.fromEntries(assets.map((asset) => [asset.id, asset.dataUrl])),
+    // §D: the method a receipt was paid by, in words rather than in the id the
+    // ledger stores. Every id resolves, including ones since switched off.
+    paymentMethodLabel: (id: string) => methodName(strings, id),
     // The words live in the catalogue (§S), so the page is handed the sentence
     // rather than the pieces. A numbered chain says which revision it is; a
     // reissued receipt only says what it replaces.

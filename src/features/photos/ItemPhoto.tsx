@@ -51,11 +51,20 @@ export function ItemPhoto({ itemName, currentUrl, onPhoto, onRemove }: ItemPhoto
         type="file"
         accept={ACCEPTED}
         /*
-         * The rear camera on a phone, a file picker on a desktop — and on
-         * Android the chooser still offers the gallery beside the camera, so
-         * "camera or gallery" costs no second control.
+         * NO `capture`, and that is the whole difference from the delivery
+         * photo's control.
+         *
+         * `capture="environment"` does not mean "offer the camera" — it means
+         * GO STRAIGHT TO IT. Walking the phone showed exactly that: tapping
+         * the camera on a line went to the viewfinder, and a trader who had
+         * already photographed the goods that morning had no way to reach the
+         * shot. §G asked for camera or gallery; without the attribute Android
+         * shows its own chooser, which offers both.
+         *
+         * A delivery photo keeps `capture`, and should: it is taken at the
+         * gate, of what is in front of you, and a picker there would be a
+         * detour past the only answer.
          */
-        capture="environment"
         className="sr-only"
         onChange={(event) => {
           const file = event.target.files?.[0]

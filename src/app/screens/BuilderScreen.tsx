@@ -473,7 +473,7 @@ function NewReceiptFlow({ today = todayIso() }: { today?: string }) {
 
   if (step === 'start') {
     return (
-      <div className="px-4 py-4">
+      <div className="px-4 pt-4 pb-[max(1.25rem,env(safe-area-inset-bottom))]">
         <ReceiptStart
           anyoneOwes={invoices.some((invoice) => invoice.outstanding.minor > 0)}
           onOwed={() => {
@@ -492,7 +492,7 @@ function NewReceiptFlow({ today = todayIso() }: { today?: string }) {
 
   if (step === 'owed') {
     return (
-      <div className="px-4 py-4">
+      <div className="px-4 pt-4 pb-[max(1.25rem,env(safe-area-inset-bottom))]">
         <OwedPicker
           customers={customers}
           invoices={invoices}
@@ -512,7 +512,7 @@ function NewReceiptFlow({ today = todayIso() }: { today?: string }) {
 
   if (step === 'invoice') {
     return (
-      <div className="px-4 py-4">
+      <div className="px-4 pt-4 pb-[max(1.25rem,env(safe-area-inset-bottom))]">
         <InvoicePicker
           payerName={payer?.name ?? ''}
           invoices={settleableInvoices(invoices, payerId, company.currency)}
@@ -529,7 +529,7 @@ function NewReceiptFlow({ today = todayIso() }: { today?: string }) {
 
   if (step === 'pay' && chosenInvoice !== undefined) {
     return (
-      <div className="px-4 py-4">
+      <div className="px-4 pt-4 pb-[max(1.25rem,env(safe-area-inset-bottom))]">
         <PayInvoice
           payerName={payer?.name ?? ''}
           invoice={chosenInvoice}
@@ -580,7 +580,7 @@ function NewReceiptFlow({ today = todayIso() }: { today?: string }) {
   }
 
   return (
-    <div className="px-4 py-4">
+    <div className="px-4 pt-4 pb-[max(1.25rem,env(safe-area-inset-bottom))]">
       <NewReceiptSheet
         mode={mode}
         {...(mode === 'owed' ? { payerId } : {})}
@@ -786,6 +786,15 @@ export function BuilderScreen({ now = () => new Date().toISOString() }: { now?: 
     setState((latest) => (latest === null ? latest : edit(latest, {})))
   }, [])
 
+  /**
+   * The latest draft, for the unmount commit below.
+   *
+   * A ref rather than a dependency, because the cleanup must see what was on
+   * screen at the moment the screen went away — and an effect that re-runs on
+   * every keystroke to keep a dependency fresh would commit on every keystroke.
+   */
+  const latest = useRef<BuilderState | null>(null)
+
   const commit = useCallback(
     async (current: BuilderState) => {
       if (id === undefined || !current.dirty) return
@@ -824,6 +833,38 @@ export function BuilderScreen({ now = () => new Date().toISOString() }: { now?: 
       setState((latest) => (latest === null ? latest : committed(latest, now())))
     },
     [id, actions, now, design],
+  )
+
+  /*
+   * WHATEVER IS ON SCREEN IS SAVED WHEN THE SCREEN GOES AWAY (§G, Rule #1).
+   *
+   * Autosave fired on STEP CHANGE and nowhere else, so every route out of the
+   * builder that is not the step bar threw away everything since the last
+   * one — and the Items step has a catalogue link in its own header, one tap
+   * from the rows it discards.
+   *
+   * Found by walking it: a photograph attached to a line, visible on the row,
+   * gone from the printed page after a trip to Saved items and back. Nothing
+   * failed and nothing said so; the draft was simply re-seeded from a record
+   * that had never been written to. It was never about photographs — any item
+   * edit, any typed address, went the same way.
+   *
+   * Refs rather than dependencies on purpose. The cleanup has to see what was
+   * on screen at the MOMENT the screen went away, and an effect that re-ran to
+   * keep a dependency fresh would commit on every keystroke.
+   */
+  const committer = useRef(commit)
+  latest.current = state
+  committer.current = commit
+
+  useEffect(
+    () => () => {
+      const leaving = latest.current
+      // `commit` returns early on a clean draft, so this costs nothing on the
+      // way out of a document nobody touched.
+      if (leaving !== null) void committer.current(leaving)
+    },
+    [],
   )
 
   /*

@@ -360,6 +360,20 @@ export interface ComposeOptions {
    * working; absent means the day-first order the default profile uses.
    */
   readonly dateFormat?: string
+  /**
+   * A stored payment method id, as a person reads it (§D, Rule #4).
+   *
+   * The receipt printed `bank_transfer` — the database's word, on a document
+   * handed to a customer — while the form that collected it said "Bank
+   * transfer" two lines above. The id is what the ledger stores and must keep
+   * storing; the NAME is a display concern, so it resolves here through the
+   * catalogue like every other word on the page.
+   *
+   * A resolver rather than a lookup table, because a method the business has
+   * since switched off still has to print on receipts issued while it was on
+   * (Rule #5) — and a table built from what is enabled today would not have it.
+   */
+  readonly paymentMethodLabel?: (id: string) => string
   readonly branding: CompanyBranding
   /**
    * The words beside the figures above the total.
@@ -739,7 +753,7 @@ function buildReceiptEvidence(
     // row at all, and claims a field was recorded when it was not.
     ...(document.paidMethod === undefined || document.paidMethod === ''
       ? {}
-      : { method: document.paidMethod }),
+      : { method: options.paymentMethodLabel?.(document.paidMethod) ?? document.paidMethod }),
     methodLabel: terms.paidBy,
     balanceRemainingLabel: terms.balanceRemaining,
     invoiceTotalLabel: terms.invoiceTotal,

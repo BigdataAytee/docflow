@@ -360,9 +360,18 @@ export function DetailsStep({
         )}
       </BuilderCard>
 
-      {/* §J: payment setup is never shown on a quotation, and a delivery
-          document carries no money at all — so neither gets this card. */}
-      {showsMoney && draft.type !== 'quotation' && (
+      {/*
+        §J: payment setup is never shown on a quotation, and a delivery
+        document carries no money at all — so neither gets this card.
+
+        NOR A RECEIPT, and that one was wrong on the paper as well as on the
+        screen. A receipt prints no payment box (§I) — it is evidence the money
+        already arrived — so an amber "Set up payment" on one was asking the
+        owner to fix something that document will never show. §N's rule is that
+        an unavailable capability is SAID; this was the opposite, a demand for
+        a capability nothing here needs.
+      */}
+      {showsMoney && draft.type !== 'quotation' && draft.type !== 'receipt' && (
         <BuilderCard title={strings.details.currencyAndPayment} icon="credit-card" accent={accent}>
           <div className="flex items-center gap-3">
             <span className="text-sm font-semibold">{draft.currency}</span>
