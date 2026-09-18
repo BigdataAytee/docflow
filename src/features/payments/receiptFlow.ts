@@ -259,7 +259,7 @@ export function receiptRecordFor(input: {
           }))
         : [
             {
-              id: `${payment.id}:line`,
+              id: generatedLineIdFor(payment.id),
               description: input.description,
               quantityMilli: quantity(1),
               unitPriceMinor: payment.amount.minor,
@@ -334,6 +334,24 @@ export function frozenPicture(input: {
     paidBeforeMinor: Math.max(0, input.invoiceTotal.minor - input.outstandingBefore.minor),
   }
 }
+
+/**
+ * The stand-in line a receipt starts with when nothing was itemised.
+ *
+ * A receipt has to print SOMETHING for the money, so one is generated at the
+ * amount handed over. It is a placeholder, not a sale: the moment the owner
+ * types what was actually sold it has to go, or the goods and the stand-in
+ * both count and a ₦100,000 sale reads as ₦200,000.
+ *
+ * Identified by its id rather than by a flag on `LineItem`, because it is not
+ * a property of a line item — it is a fact about which line THIS module made.
+ */
+export const generatedLineIdFor = (paymentId: string): string => `${paymentId}:line`
+
+export const isGeneratedLine = (
+  line: { readonly id: string },
+  paymentId: string | undefined,
+): boolean => paymentId !== undefined && line.id === generatedLineIdFor(paymentId)
 
 /**
  * The idempotency handle for the receipt of one payment.

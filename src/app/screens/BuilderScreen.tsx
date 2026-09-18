@@ -66,6 +66,14 @@ import { PayInvoice } from '../../features/payments/PayInvoice'
 import { SignaturePad } from '../../features/signature/SignaturePad'
 import { availableMethods } from '../../features/payments/methods'
 import {
+  cashSalePaymentKeyFor,
+  cashSaleSplit,
+  invoiceForCashSale,
+  saleTotal,
+} from '../../features/payments/cashSale'
+import { recordPayment as recordPaymentCommand } from '../../features/payments/record'
+import type { DocumentRecord } from '../../data/repositories'
+import {
   type SettleableInvoice,
   frozenPicture,
   receiptKeyFor,
@@ -1007,6 +1015,152 @@ export function BuilderScreen({ now = () => new Date().toISOString() }: { now?: 
   const effectiveWhtPpm =
     state.draft.type === 'invoice' ? (state.draft.whtRatePpm ?? company?.whtRatePpm) : undefined
 
+  /**
+   * A cash sale that was short paid becomes a bill as well (§G, §K, §V).
+   *
+   * THE DEBT HAS TO EXIST SOMEWHERE. ₦100,000 of goods, ₦40,000 handed over,
+   * and without this the ₦60,000 still owed appears in no balance, no
+   * Outstanding, no ageing report and nothing to chase — real in the yard,
+   * invisible in the ledger. So the app bills the FULL sale, allocates the
+   * payment against it, and the remainder becomes an ordinary debt.
+   *
+   * The payment already exists: Path B writes it before this screen opens. If
+   * the figure on the Items step differs from what was first typed, the
+   * original is REVERSED and a replacement recorded allocated to the new
+   * invoice — the ledger is append-only (§K), so nothing is edited in place.
+   *
+   * Every key is derived from this receipt, so saving twice lands on the same
+   * invoice, the same reversal and the same replacement rather than billing
+   * the customer again (§M).
+   */
+  const billTheRemainder = async (): Promise<
+    { invoice: DocumentRecord; split: ReturnType<typeof cashSaleSplit> } | null
+  > => {
+    if (state.draft.type !== 'receipt') return null
+    if (state.draft.linkedInvoiceId !== undefined) return null
+    if (id === undefined || company === null) return null
+
+    const total = saleTotal(state.draft.currency, state.draft.lineItems)
+    const paidMinor = state.draft.paidAmountMinor ?? total.minor
+    const split = cashSaleSplit({ total, paidMinor })
+    // Paid in full is the common case and costs nothing extra (§G).
+    if (split.paidInFull || state.draft.lineItems.length === 0) return null
+    if (state.draft.customerId === undefined) return null
+
+    const billed = invoiceForCashSale({
+      receipt: state.draft,
+      receiptId: id,
+      today: todayIso(),
+    })
+
+    /*
+     * Named fields rather than a spread of the draft.
+     *
+     * A draft carries builder-only shapes a record has no column for, and
+     * `exactOptionalPropertyTypes` refuses the spread — which is the type
+     * system catching the same class of bug the conditional-spread rule
+     * elsewhere exists for: a field arriving that nothing downstream reads.
+     */
+    const invoice = await actions.createDraftWithKey(
+      {
+        type: 'invoice',
+        status: 'draft',
+        currency: billed.invoice.currency,
+        customerId: state.draft.customerId,
+        lineItems: billed.invoice.lineItems,
+        issueDate: billed.invoice.issueDate ?? todayIso(),
+        dueDate: billed.invoice.dueDate ?? todayIso(),
+        totalMinor: total.minor,
+      },
+      billed.idempotencyKey,
+    )
+    const invoiceIssued = issueDocument({
+      draft: billed.invoice,
+      currentStatus: 'draft',
+      /*
+       * THE PAYMENT-METHOD GATE DOES NOT APPLY TO THIS ONE (§J, §K).
+       *
+       * §J refuses to issue an invoice a customer has no way to pay, which is
+       * right for a bill you are about to send somebody. This is not that. It
+       * is the record of a debt from a sale that already happened, part of it
+       * already settled in cash by a customer who was standing there — and
+       * blocking it would mean a business that has not filled in its bank
+       * details silently loses the remainder instead of being told.
+       *
+       * Losing the debt is the failure this whole path exists to prevent, so
+       * the bookkeeping record is allowed through. The owner is still nudged
+       * to set payment up everywhere §J already nudges them.
+       */
+      context: {
+        enabledPaymentMethodCount: 1,
+        usablePaymentMethodCount: 1,
+        paymentIsRecorded: false,
+        signatureRequired: false,
+      },
+      profile,
+      prefix: company.numberingPrefixes?.invoice ?? numberingPrefix(profile, 'invoice'),
+      // Plus one: the bill this screen just made is not in `documents` yet.
+      sequence: documentsOf(documents, 'invoice').length + 1,
+      fromReservedBlock: false,
+      deviceId: deviceId(),
+      issuedAt: new Date().toISOString(),
+    })
+    await actions.issue(invoice.id, {
+      reference: invoiceIssued.reference,
+      frozenLabels: invoiceIssued.frozenLabels,
+      totalMinor: invoiceIssued.totals?.payable.minor ?? total.minor,
+    })
+
+    /*
+     * THE MONEY MOVES ONTO THE BILL.
+     *
+     * Reverse and replace rather than edit: §K's ledger is append-only, and a
+     * payment whose amount changed under it is exactly the shape that makes a
+     * balance impossible to explain afterwards.
+     */
+    const existing = payments.find((payment) => payment.id === state.draft.paymentId)
+    if (existing !== undefined) {
+      await actions.reversePayment(existing.id)
+      /*
+       * Built through `recordPayment`, not by hand.
+       *
+       * It is where §K's cap lives: paying more than an invoice owes is
+       * customer credit, never a larger allocation. A hand-built allocation
+       * here would be a second place that rule has to be remembered.
+       *
+       * The local id is a handle the repository replaces; it re-stamps the
+       * allocations with the real one on the way in.
+       */
+      const replacement = recordPaymentCommand({
+        id: cashSalePaymentKeyFor(id),
+        customerId: existing.customerId,
+        amount: split.paid,
+        paidAt: existing.paidAt,
+        method: existing.method,
+        ...(existing.reference === undefined ? {} : { reference: existing.reference }),
+        source: existing.source,
+        invoiceId: invoice.id,
+        invoiceTotal: total,
+        existingPayments: [],
+      })
+      const { id: _handle, ...withoutId } = replacement
+      const recorded = await actions.recordPayment(withoutId, cashSalePaymentKeyFor(id))
+      /*
+       * THE RECEIPT NOW SETTLES A BILL, so it prints the same picture Path A
+       * does: the goods, the invoice total, what was paid, what is left.
+       */
+      await actions.updateDraft(id, {
+        paymentId: recorded.id,
+        linkedInvoiceId: invoice.id,
+        invoiceTotalMinor: total.minor,
+        paidBeforeMinor: 0,
+        balanceAfterMinor: split.balance.minor,
+      })
+    }
+
+    return { invoice, split }
+  }
+
   const save = () => {
     // §G: "draft saving is always allowed", and final issue validates. The
     // amber band already lists what is missing, so pressing Save takes the
@@ -1067,7 +1221,16 @@ export function BuilderScreen({ now = () => new Date().toISOString() }: { now?: 
 
     setIssueProblem(null)
     void commit(state)
-      .then(() =>
+      /*
+       * THE BILL FIRST, then the receipt (§V).
+       *
+       * A short-paid cash sale needs somewhere for the remainder to live, and
+       * the receipt has to be able to name it — so the invoice exists, is
+       * issued and carries the payment before the receipt freezes. Resolves
+       * to `null` on every other document, which is almost all of them.
+       */
+      .then(() => billTheRemainder())
+      .then((billed) =>
         actions.issue(id, {
           reference: issued.reference,
           frozenLabels: issued.frozenLabels,
@@ -1083,15 +1246,35 @@ export function BuilderScreen({ now = () => new Date().toISOString() }: { now?: 
            */
           ...(effectiveTaxPpm === undefined ? {} : { taxRatePpm: effectiveTaxPpm }),
           ...(effectiveWhtPpm === undefined ? {} : { whtRatePpm: effectiveWhtPpm }),
-        }),
+        }).then(() => billed),
       )
       /*
        * Replace for the same reason as `close`: an issued document must not
        * leave its own builder sitting behind it on the stack, where Back
        * would return somebody to editing a document that Rule #5 has already
        * frozen.
+       *
+       * The confirmation rides along in route state, so the document that
+       * opens can name the OTHER one it just produced — a second bill
+       * appearing in the invoices list unannounced is the surprise §N exists
+       * to prevent.
        */
-      .then(() => navigate(documentPath(id), { replace: true }))
+      .then((billed) =>
+        navigate(documentPath(id), {
+          replace: true,
+          ...(billed === null
+            ? {}
+            : {
+                state: {
+                  billed: {
+                    invoiceId: billed.invoice.id,
+                    owedMinor: billed.split.balance.minor,
+                    paidMinor: billed.split.paid.minor,
+                  },
+                },
+              }),
+        }),
+      )
       .catch((cause: unknown) =>
         setIssueProblem(format(strings.builder.couldNotIssue, { reason: String(cause) })),
       )

@@ -28,6 +28,8 @@ import {
   type LineItem,
 } from '../../domain/documents/types'
 import { ItemPhoto } from '../photos/ItemPhoto'
+import { isGeneratedLine } from '../payments/receiptFlow'
+import { ReceiptTotals } from './ReceiptTotals'
 import type { SavedItem } from '../../data/repositories'
 import { lineTotal } from '../../domain/money/totals'
 import { money } from '../../domain/money/money'
@@ -124,7 +126,17 @@ export function ItemsStep({
        */
       ...(!showsMoney || unit.trim() === '' ? {} : { unit: unit.trim() }),
     }
-    onChange({ lineItems: [...draft.lineItems, line] })
+    /*
+     * THE STAND-IN GOES WHEN A REAL LINE ARRIVES (§V).
+     *
+     * A cash receipt opens holding one generated line at the amount handed
+     * over, so it can print something if the owner itemises nothing. It is a
+     * placeholder: leaving it in place while goods are typed beside it made a
+     * ₦100,000 sale add up to ₦200,000, which the new totals block then billed
+     * a customer for.
+     */
+    const standing = draft.lineItems.filter((row) => !isGeneratedLine(row, draft.paymentId))
+    onChange({ lineItems: [...standing, line] })
     // THE UNIT GOES WITH IT. §E gives the catalogue a `unit` column and the
     // line above has just set one; dropping it here is why every saved item
     // had a price and no unit, and why the catalogue could never say
@@ -433,6 +445,20 @@ export function ItemsStep({
             </li>
           ))}
         </ul>
+      )}
+
+      {/*
+        WHAT THE GOODS COME TO, and what was handed over (§G, §K).
+
+        Only on a receipt, and only one that stands on its own: a receipt
+        settling an invoice takes its figures from that invoice and asks
+        nothing, which is the whole of Path A.
+
+        Not a Totals step coming back — there is no tax, discount or subtotal
+        here, because none of them apply to money already received.
+      */}
+      {draft.type === 'receipt' && draft.linkedInvoiceId === undefined && (
+        <ReceiptTotals draft={draft} onChange={onChange} />
       )}
     </div>
   )

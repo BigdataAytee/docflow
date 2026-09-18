@@ -17,7 +17,7 @@
  */
 
 import { useMemo, useState } from 'react'
-import { Navigate, useNavigate, useParams } from 'react-router-dom'
+import { Navigate, useLocation, useNavigate, useParams } from 'react-router-dom'
 
 import { useCompany } from '../context'
 import { useAppData } from '../store'
@@ -91,6 +91,7 @@ import { invoiceOutstanding } from '../../domain/payments/ledger'
 import { TYPE_PALETTE } from '../../ui/tokens'
 import { displayLabels, labelInSentence as typeInSentence } from '../../domain/locale/profile'
 import { formatMoney } from '../../features/customers/formatMoney'
+import { money } from '../../domain/money/money'
 import { format } from '../../domain/locale/data/strings'
 import { ShareSheet } from '../../share/ShareSheet'
 import { SigningLinkSheet } from '../../features/links/SigningLinkSheet'
@@ -108,6 +109,18 @@ import { localDay } from '../../domain/dates/calendar'
 
 export function DocumentScreen({ today = todayIso() }: { today?: string }) {
   const { id } = useParams<{ id: string }>()
+  /*
+   * WHAT THE SAVE JUST PRODUCED BESIDES THIS (§G, §N).
+   *
+   * A short-paid cash sale makes an invoice for the remainder, and a second
+   * document appearing in the invoices list unannounced is exactly the
+   * surprise §N forbids. It rides in route state rather than on the record
+   * because it is a fact about how somebody ARRIVED — reopening this receipt
+   * tomorrow is the same document and is not news.
+   */
+  const billedAlso = (
+    useLocation().state as { billed?: { invoiceId: string; owedMinor: number; paidMinor: number } } | null
+  )?.billed
   const { profile, strings } = useCompany()
   const review = useReview()
   const {
@@ -492,6 +505,43 @@ export function DocumentScreen({ today = todayIso() }: { today?: string }) {
         {...(customer === undefined ? {} : { subtitle: customer.name })}
         trailing={<StatusBadge status={status} label={strings.statuses[status] ?? status} />}
       />
+
+      {/*
+        THE SECOND DOCUMENT, NAMED (§G, §N).
+
+        A cash sale that was short paid produces a bill for the remainder, and
+        the owner did nothing to ask for it. An invoice appearing in the list
+        unannounced is the surprise §N forbids, so the receipt says what was
+        made, what each one is for, and offers the way to it.
+
+        The receipt's own reference is in the header above this, which is why
+        only the invoice carries a control: a link to the page you are already
+        on is a control that does nothing.
+      */}
+      {billedAlso !== undefined && (
+        <div data-billed-also className="px-3.5 pt-3">
+          <section className="rounded-2xl border border-brand/20 bg-brand-tint p-3.5">
+            <p className="text-[13px] font-semibold leading-snug text-brand">
+              {format(strings.newReceipt.billedAndPaid, {
+                invoiceLabel: typeInSentence(profile, 'invoice'),
+                invoice:
+                  documents.find((row) => row.id === billedAlso.invoiceId)?.issuedReference ?? '',
+                owed: formatMoney(money(record.currency, billedAlso.owedMinor)),
+                receiptLabel: typeInSentence(profile, 'receipt'),
+                receipt: record.issuedReference ?? '',
+                paid: formatMoney(money(record.currency, billedAlso.paidMinor)),
+              })}
+            </p>
+            <button
+              type="button"
+              onClick={() => navigate(documentPath(billedAlso.invoiceId))}
+              className="raised tap-scale mt-2.5 min-h-tap w-full rounded-xl bg-surface px-3 text-[13px] font-semibold text-brand"
+            >
+              {strings.savedDocument.action.openInvoice}
+            </button>
+          </section>
+        </div>
+      )}
 
       {/*
         The document itself (§4): what it is, which design, on what paper —

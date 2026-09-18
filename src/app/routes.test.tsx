@@ -19,6 +19,7 @@ import { App } from './App'
 import { devState, DEV_COMPANY_ID } from './seed'
 import { createMemoryRepositories, type MemoryState } from '../data/repositories'
 import { money } from '../domain/money/money'
+import { effectivePayments, invoiceOutstanding } from '../domain/payments/ledger'
 import { quantity } from '../domain/documents/types'
 
 const NGN = (m: number) => money('NGN', m)
@@ -4063,6 +4064,209 @@ describe('A photo on a line item (§E, §G step 2)', () => {
     await openItems(user)
     await screen.findByText('Roofing sheets')
     expect(screen.queryByRole('button', { name: /Add a photo to/ })).toBeNull()
+  })
+})
+
+/**
+ * A cash sale that was not paid in full (§G, §K, §V).
+ *
+ * Path B has items, so a totals block at the foot of them says what they come
+ * to and how much of it was actually handed over. Leaving the figure alone is
+ * the common case and costs nothing; reducing it says a customer walked away
+ * owing something — and a debt that is real in the yard must not be invisible
+ * in the ledger.
+ */
+describe('Path B totals, and the bill a short payment produces', () => {
+  const cashPath = async (
+    user: ReturnType<typeof userEvent.setup>,
+    name: string,
+    amount: string,
+  ) => {
+    await user.click(await screen.findByRole('button', { name: 'New sale / cash payment' }))
+    await user.type(await screen.findByLabelText('Received from'), name)
+    await user.type(screen.getByLabelText('How much came in?'), amount)
+    await user.click(screen.getByRole('button', { name: 'Record it' }))
+    await screen.findByText('Draft saved automatically')
+  }
+
+  const addGoods = async (
+    user: ReturnType<typeof userEvent.setup>,
+    description: string,
+    qty: string,
+    price: string,
+  ) => {
+    await user.clear(await screen.findByLabelText('Qty'))
+    await user.type(screen.getByLabelText('Qty'), qty)
+    await user.type(screen.getByPlaceholderText(/Type an item/), description)
+    await user.type(screen.getByLabelText('Unit price'), price)
+    await user.click(screen.getByRole('button', { name: 'Add' }))
+  }
+
+  const totals = () => document.querySelector('[data-receipt-totals]')
+  const paidField = () => totals()?.querySelector('[data-paid-now]') as HTMLInputElement
+
+  const sellFor = async (user: ReturnType<typeof userEvent.setup>) => {
+    await cashPath(user, 'Mama Bisi', '100000')
+    await user.click(screen.getByRole('button', { name: 'Items' }))
+    await addGoods(user, 'Cement, 20 bags', '20', '5000')
+  }
+
+  const shortPay = async (user: ReturnType<typeof userEvent.setup>) => {
+    const paid = paidField()
+    await user.clear(paid)
+    await user.type(paid, '40000')
+    await waitFor(() => expect(totals()?.textContent).toContain('60,000.00'))
+  }
+
+  /**
+   * THE FIGURE THE ITEMS COME TO, which had no home at all: the Totals step is
+   * gone from receipts — correctly, a receipt computes nothing — and the sum
+   * first appeared on the saved document.
+   */
+  it('shows what the items add up to, and follows them', async () => {
+    const user = userEvent.setup()
+    renderAt('/new/receipt')
+
+    await sellFor(user)
+    await waitFor(() =>
+      expect(totals()?.querySelector('[data-sale-total]')?.textContent).toContain('100,000.00'),
+    )
+
+    // A second line moves it, because the block reads the LIST rather than a
+    // figure somebody typed once.
+    await addGoods(user, 'Delivery', '1', '7500')
+    await waitFor(() =>
+      expect(totals()?.querySelector('[data-sale-total]')?.textContent).toContain('107,500.00'),
+    )
+  })
+
+  /**
+   * LEAVING IT ALONE CHANGES NOTHING. Paid in full is the common case, and §G
+   * caps it at no extra taps: no invoice, no second document, no question.
+   */
+  it('makes no invoice when the amount is left alone', async () => {
+    const user = userEvent.setup()
+    const state = renderAt('/new/receipt')
+    const before = state.documents.filter((row) => row.type === 'invoice').length
+
+    await sellFor(user)
+    expect(totals()?.textContent).toContain('This clears it')
+
+    await user.click(screen.getByRole('button', { name: 'Review' }))
+    await user.click(await screen.findByRole('button', { name: /Save/ }))
+
+    await waitFor(() =>
+      expect(state.documents.find((row) => row.type === 'receipt')?.status).toBe('issued'),
+    )
+    expect(
+      state.documents.filter((row) => row.type === 'invoice'),
+      'a sale paid in full billed somebody anyway',
+    ).toHaveLength(before)
+    const receipt = state.documents.find((row) => row.type === 'receipt')
+    expect(receipt?.linkedInvoiceId).toBeUndefined()
+    expect(receipt?.balanceAfterMinor).toBeUndefined()
+  })
+
+  /**
+   * THE ONE THIS IS FOR. ₦100,000 of goods, ₦40,000 handed over — and without
+   * this the ₦60,000 lives only in the owner's memory.
+   */
+  it('bills the full sale and allocates the payment when it is short', async () => {
+    const user = userEvent.setup()
+    const state = renderAt('/new/receipt')
+
+    await sellFor(user)
+    await shortPay(user)
+
+    await user.click(screen.getByRole('button', { name: 'Review' }))
+    await user.click(await screen.findByRole('button', { name: /Save/ }))
+
+    const billsMade = () =>
+      state.documents.filter((row) => row.type === 'invoice')
+    await waitFor(() => expect(billsMade()[0]?.status).toBe('issued'))
+    const invoice = billsMade()[0]
+
+    /*
+     * THE WHOLE SALE, not the remainder. Billing ₦60,000 would rewrite the
+     * sale to match what was left over — a purchase the customer never made,
+     * and ₦40,000 allocated to nothing.
+     */
+    expect(invoice?.totalMinor, 'the bill was written for the remainder').toBe(100_000_00)
+    expect(invoice?.status).toBe('issued')
+    expect(invoice?.issuedReference).toBeTruthy()
+    expect(invoice?.lineItems.map((row) => row.description)).toEqual(['Cement, 20 bags'])
+
+    // ONE payment counts, allocated to that invoice: the original is reversed
+    // and replaced, because §K's ledger is append-only.
+    await waitFor(() => {
+      const live = effectivePayments(state.payments)
+      expect(live).toHaveLength(1)
+      expect(live[0]?.amount.minor).toBe(40_000_00)
+      expect(live[0]?.allocations[0]?.invoiceId).toBe(invoice?.id)
+    })
+
+    // And the receipt prints the same picture Path A does.
+    const receipt = state.documents.find((row) => row.type === 'receipt')
+    expect(receipt?.linkedInvoiceId).toBe(invoice?.id)
+    expect(receipt?.invoiceTotalMinor).toBe(100_000_00)
+    expect(receipt?.paidBeforeMinor).toBe(0)
+    expect(receipt?.balanceAfterMinor).toBe(60_000_00)
+  })
+
+  /**
+   * AND THE REMAINDER BEHAVES LIKE ANY OTHER DEBT. That is the whole reason
+   * for billing it: Outstanding, the customer balance and the ageing report
+   * all read the same invoices, so a debt the app cannot see is one nobody
+   * chases.
+   */
+  it('puts the remainder where every balance in the app will find it', async () => {
+    const user = userEvent.setup()
+    const state = renderAt('/new/receipt')
+
+    await sellFor(user)
+    await shortPay(user)
+    await user.click(screen.getByRole('button', { name: 'Review' }))
+    await user.click(await screen.findByRole('button', { name: /Save/ }))
+
+    await waitFor(() =>
+      expect(
+        state.documents.filter((row) => row.type === 'invoice'),
+      ).toHaveLength(1),
+    )
+    const made = state.documents.find((row) => row.type === 'invoice')
+    const owed = invoiceOutstanding(
+      made?.id ?? '',
+      NGN(made?.totalMinor ?? 0),
+      effectivePayments(state.payments),
+      [],
+    )
+    expect(owed, 'the remainder is invisible to every balance in the app').toEqual(NGN(60_000_00))
+  })
+
+  /**
+   * SAVING TWICE NEVER BILLS TWICE (§M). The key is derived from the receipt,
+   * so a second save finds the first invoice rather than minting a rival.
+   */
+  it('mints one invoice however many times the save runs', async () => {
+    const user = userEvent.setup()
+    const state = renderAt('/new/receipt')
+
+    await sellFor(user)
+    await shortPay(user)
+    await user.click(screen.getByRole('button', { name: 'Review' }))
+
+    const save = await screen.findByRole('button', { name: /Save/ })
+    fireEvent.click(save)
+    fireEvent.click(save)
+
+    await waitFor(() =>
+      expect(state.documents.find((row) => row.type === 'receipt')?.status).toBe('issued'),
+    )
+    expect(
+      state.documents.filter((row) => row.type === 'invoice'),
+      'the customer was billed twice for one sale',
+    ).toHaveLength(1)
+    expect(effectivePayments(state.payments)).toHaveLength(1)
   })
 })
 

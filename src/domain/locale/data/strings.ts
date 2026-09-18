@@ -699,6 +699,11 @@ export interface UiStrings {
     readonly clearsIt: string
     readonly overpayingNote: string
     readonly recordPayment: string
+    /** Path B's totals block, and the invoice a short payment produces. */
+    readonly saleTotal: string
+    readonly paidNow: string
+    readonly willBill: string
+    readonly billedAndPaid: string
     readonly standalone: string
     readonly standaloneNote: string
     readonly pickWhoFirst: string
@@ -1751,6 +1756,23 @@ const EN: UiStrings = {
     clearsIt: 'This clears it',
     overpayingNote: '{amount} more than is owed — it becomes credit for them',
     recordPayment: 'Record payment',
+    /*
+     * PATH B'S TOTALS BLOCK — two lines, not a step coming back.
+     *
+     * A receipt has nothing to compute: no tax, no discount, no subtotal that
+     * differs from the total. What it does have on this path is ITEMS, and
+     * somebody typing them could not see what they came to until the document
+     * was saved.
+     *
+     * `willBill` is said BEFORE it happens. A second document appearing
+     * unannounced is the surprise §N exists to prevent, and the sentence is
+     * also the reason the app is allowed to create one.
+     */
+    saleTotal: 'Total',
+    paidNow: 'Amount paid now',
+    willBill: '{amount} still owed — an invoice will record it',
+    billedAndPaid:
+      '{invoiceLabel} {invoice} records the {owed} still owed, {receiptLabel} {receipt} records the {paid} paid.',
     standalone: 'Nothing — it stands on its own',
     standaloneNote: 'Nothing is billed for it. The money sits as customer credit.',
     pickWhoFirst: 'Say who paid, and anything they still owe appears here.',
