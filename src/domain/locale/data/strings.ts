@@ -838,6 +838,7 @@ export interface UiStrings {
       readonly voided: string
       readonly noInvoice: string
       readonly nothingToConvert: string
+      readonly noPayment: string
       readonly nothingOwed: string
     }
   }
@@ -1754,6 +1755,7 @@ const EN: UiStrings = {
       voided: 'Already void',
       noInvoice: 'Not against an invoice',
       nothingToConvert: 'Nothing to convert to',
+      noPayment: 'No payment left to acknowledge',
       /*
        * The FIGURE, not a sentence. An owner reading a settled invoice wants
        * the number — nothing left, nothing to chase — and "0" says it in the

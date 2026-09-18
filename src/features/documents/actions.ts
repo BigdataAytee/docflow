@@ -56,6 +56,15 @@ export type ActionBlocker =
   /** §G's convert list has no target for this type. */
   | 'nothing_to_convert'
   /**
+   * The payment behind this receipt is gone — never recorded, or reversed.
+   *
+   * Void-and-reissue draws a REPLACEMENT acknowledging the same money, so it
+   * needs money to acknowledge. The pill was live whenever the receipt was
+   * issued, and the act then failed after the tap with an error sheet; §N
+   * asks for the reason before the tap, not after it.
+   */
+  | 'no_payment'
+  /**
    * Nothing is owed on it.
    *
    * Kept as a REASON rather than a hidden pill: the two money actions stay in
@@ -82,6 +91,14 @@ export interface ActionInput {
   readonly linkedInvoiceId?: string
   /** Invoices: whether anything is still outstanding on it. */
   readonly owes?: boolean
+  /**
+   * Receipts: whether there is still a live payment to re-acknowledge.
+   *
+   * Passed IN rather than worked out here, because the answer lives in the
+   * ledger — `canReissue` reads the payments and their reversals — and this
+   * module deliberately knows nothing about money.
+   */
+  readonly reissuable?: boolean
 }
 
 /** §G's convert list: quote → invoice/delivery; invoice → delivery; delivery → invoice. */
@@ -162,7 +179,11 @@ export function documentActions(
       return [
         share,
         convert,
-        when(issued && !voided, 'void_and_reissue', voided ? 'voided' : 'not_issued'),
+        when(
+          issued && !voided && input.reissuable !== false,
+          'void_and_reissue',
+          voided ? 'voided' : !issued ? 'not_issued' : 'no_payment',
+        ),
         when(
           input.linkedInvoiceId !== undefined && input.linkedInvoiceId !== '',
           'open_invoice',

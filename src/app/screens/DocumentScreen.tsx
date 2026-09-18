@@ -149,6 +149,51 @@ export function DocumentScreen({ today = todayIso() }: { today?: string }) {
    * reached had they arrived the ordinary way.
    */
   const goBack = useGoBack(record === undefined ? HOME : listPath(record.type))
+
+  /*
+   * §G's "void and reissue", as one act.
+   *
+   * A receipt cannot be corrected any other way: it is immutable once issued
+   * (Rule #5), and a credit note is an INVOICE correction — crediting a
+   * receipt would mean money going back to the customer, which is a refund
+   * rather than a typo.
+   *
+   * Cancel first, then draw. If the second write does not land the owner is
+   * not stuck: a cancelled receipt does not count as the payment's receipt,
+   * so the payment's own Receipt button offers to draw one. The recovery path
+   * is the ordinary path.
+   */
+  const reissueReceipt = (): void => {
+    if (record === undefined) return
+    setReissueProblem(null)
+    let plan
+    try {
+      plan = voidAndReissue(record, {
+        payments,
+        description: format(strings.newReceipt.lineAgainst, {
+          reference: linkedInvoice?.issuedReference ?? '',
+        }),
+      })
+    } catch (cause) {
+      setReissueProblem(
+        format(strings.reissue.failed, {
+          reason: cause instanceof Error ? cause.message : String(cause),
+        }),
+      )
+      return
+    }
+    void actions
+      .transition(plan.voidId, 'void')
+      .then(() => actions.createDraftWithKey(plan.replacement, plan.idempotencyKey))
+      .then((created) => navigate(editDocumentPath(created.id)))
+      .catch((cause: unknown) => {
+        setReissueProblem(
+          format(strings.reissue.failed, {
+            reason: cause instanceof Error ? cause.message : String(cause),
+          }),
+        )
+      })
+  }
   // Derived, never stored on the screen — the same rule as every other piece
   // of truth here (§C: derived states are computed at read time).
   /*
@@ -447,12 +492,22 @@ export function DocumentScreen({ today = todayIso() }: { today?: string }) {
                 : { linkedInvoiceId: record.linkedInvoiceId }),
               /* Whether there is still money to take — §G's paid-so-far. */
               owes: isInvoice && outstanding.minor > 0,
+              /*
+               * Whether a receipt still has a payment to re-acknowledge.
+               * `canReissue` reads the ledger; `documentActions` deliberately
+               * knows nothing about money, so the answer is handed to it.
+               */
+              reissuable: canReissue(record, payments),
             })}
             strings={strings}
             onAction={(id) => {
               if (id === 'share_pdf') return setSharing(true)
               if (id === 'convert') return setConverting(true)
-              if (id === 'void_and_reissue') return setVoiding(true)
+              if (id === 'void_and_reissue') {
+                // A receipt's correction is void AND reissue, in one act. Any
+                // other type's is the void sheet, which offers a credit note.
+                return record.type === 'receipt' ? reissueReceipt() : setVoiding(true)
+              }
               /*
                * Recording a payment is the honest route to a receipt, and the
                * reason "convert an invoice to a receipt" is not offered: §G
@@ -734,68 +789,19 @@ export function DocumentScreen({ today = todayIso() }: { today?: string }) {
         )}
 
         {/*
-          §G's two receipt actions. "Open what it paid for" is the link the
-          receipt already carries (§E `related_invoice_id`) — without it the
-          link is stored and unreachable.
-        */}
-        {linkedInvoice !== null && (
-          <button
-            type="button"
-            className="doc-action min-h-tap rounded-full border-brand/30 px-3 text-[12.5px] font-semibold text-brand"
-            onClick={() => navigate(documentPath(linkedInvoice.id))}
-          >
-            {strings.reissue.openInvoice}
-          </button>
-        )}
+          §G'S TWO RECEIPT ACTIONS USED TO BE DRAWN TWICE.
 
-        {/*
-          §G's "void and reissue". A receipt cannot be corrected any other
-          way: it is immutable once issued (Rule #5), and a credit note is an
-          INVOICE correction — crediting a receipt would mean money going back
-          to the customer, which is a refund rather than a typo.
+          "Open what it paid for" and "Cancel and draw a new one" stood here
+          as their own buttons, and the four-action grid above also carries
+          `open_invoice` and `void_and_reissue` — the same two acts under two
+          sets of words. A receipt showed SIX actions where §G asks for four,
+          and two of them did the same thing as two others.
+
+          They are the grid's now. The behaviour moved with them: the grid's
+          `void_and_reissue` opened a sheet that only VOIDED, which is half of
+          what its own name promises — `reissueReceipt` below is the whole act
+          and is what the pill runs.
         */}
-        {canReissue(record, payments) && newerRevision === null && (
-          <button
-            type="button"
-            className="doc-action min-h-tap rounded-full border-brand/30 px-3 text-[12.5px] font-semibold text-brand"
-            onClick={() => {
-              setReissueProblem(null)
-              let plan
-              try {
-                plan = voidAndReissue(record, {
-                  payments,
-                  description: format(strings.newReceipt.lineAgainst, {
-                    reference: linkedInvoice?.issuedReference ?? '',
-                  }),
-                })
-              } catch (cause) {
-                setReissueProblem(
-                  format(strings.reissue.failed, {
-                    reason: cause instanceof Error ? cause.message : String(cause),
-                  }),
-                )
-                return
-              }
-              // Cancel first, then draw. If the second write does not land the
-              // owner is not stuck: a cancelled receipt does not count as the
-              // payment's receipt, so the payment's own Receipt button offers
-              // to draw one. The recovery path is the ordinary path.
-              void actions
-                .transition(plan.voidId, 'void')
-                .then(() => actions.createDraftWithKey(plan.replacement, plan.idempotencyKey))
-                .then((created) => navigate(editDocumentPath(created.id)))
-                .catch((cause: unknown) => {
-                  setReissueProblem(
-                    format(strings.reissue.failed, {
-                      reason: cause instanceof Error ? cause.message : String(cause),
-                    }),
-                  )
-                })
-            }}
-          >
-            {strings.reissue.action}
-          </button>
-        )}
 
         {/*
           §G's other route for a receipt whose payment came back: there is

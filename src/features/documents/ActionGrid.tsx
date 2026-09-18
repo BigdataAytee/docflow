@@ -46,6 +46,7 @@ const REASON: Record<ActionBlocker, (s: UiStrings['savedDocument']['blocked']) =
   no_invoice: (b) => b.noInvoice,
   nothing_to_convert: (b) => b.nothingToConvert,
   nothing_owed: (b) => b.nothingOwed,
+  no_payment: (b) => b.noPayment,
 }
 
 export function ActionGrid({ actions, strings, onAction }: ActionGridProps): ReactNode {

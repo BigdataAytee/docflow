@@ -2968,18 +2968,31 @@ describe('Void and reissue a receipt (§G, Rule #5, §V)', () => {
       })
     }
 
-  it('offers both of §G’s receipt actions', async () => {
+  /*
+   * THROUGH THE FOUR-ACTION GRID, which is where these two live now.
+   *
+   * They used to be standalone buttons further down the page — "Cancel and
+   * draw a new one" and "Open what it paid for" — while the grid ALSO carried
+   * `void_and_reissue` and `open_invoice`. A receipt showed six actions where
+   * §G asks for four, two of them doing the same thing as two others under
+   * different words.
+   */
+  it('offers both of §G’s receipt actions, and exactly four in total', async () => {
     renderAt('/doc/doc_rct', withReceipt())
-    expect(
-      await screen.findByRole('button', { name: 'Cancel and draw a new one' }),
-    ).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'Open what it paid for' })).toBeInTheDocument()
+    const grid = await screen.findByRole('group', { name: /actions/i })
+    expect(grid.querySelectorAll('button')).toHaveLength(4)
+    expect(within(grid).getByRole('button', { name: 'Void and reissue' })).toBeInTheDocument()
+    expect(within(grid).getByRole('button', { name: 'Open the invoice' })).toBeInTheDocument()
+
+    // And the old pair is gone rather than merely moved.
+    expect(screen.queryByRole('button', { name: 'Cancel and draw a new one' })).toBeNull()
+    expect(screen.queryByRole('button', { name: 'Open what it paid for' })).toBeNull()
   })
 
   it('opens what the payment settled — the link was stored and unreachable', async () => {
     const user = userEvent.setup()
     renderAt('/doc/doc_rct', withReceipt())
-    await user.click(await screen.findByRole('button', { name: 'Open what it paid for' }))
+    await user.click(await screen.findByRole('button', { name: 'Open the invoice' }))
     expect(within(await pageHeader()).getByText('INV-0042')).toBeInTheDocument()
   })
 
@@ -2987,7 +3000,7 @@ describe('Void and reissue a receipt (§G, Rule #5, §V)', () => {
     renderAt('/doc/doc_inv', paid)
     expect(within(await pageHeader()).getByText('INV-0042')).toBeInTheDocument()
     expect(
-      screen.queryByRole('button', { name: 'Cancel and draw a new one' }),
+      screen.queryByRole('button', { name: 'Void and reissue' }),
     ).not.toBeInTheDocument()
   })
 
@@ -2995,7 +3008,13 @@ describe('Void and reissue a receipt (§G, Rule #5, §V)', () => {
     const user = userEvent.setup()
     const state = renderAt('/doc/doc_rct', withReceipt())
 
-    await user.click(await screen.findByRole('button', { name: 'Cancel and draw a new one' }))
+    /*
+     * THE PILL DOES THE WHOLE ACT. It used to open a sheet that only VOIDED
+     * — half of what "Void and reissue" promises — while the standalone
+     * button beneath it did the void AND drew the replacement. Now there is
+     * one control and it does both.
+     */
+    await user.click(await screen.findByRole('button', { name: 'Void and reissue' }))
     await waitFor(() => expect(state.documents).toHaveLength(3))
 
     const cancelled = state.documents.find((d) => d.id === 'doc_rct')
@@ -3017,7 +3036,13 @@ describe('Void and reissue a receipt (§G, Rule #5, §V)', () => {
   it('never moves the money, in either direction (§V)', async () => {
     const user = userEvent.setup()
     const state = renderAt('/doc/doc_rct', withReceipt())
-    await user.click(await screen.findByRole('button', { name: 'Cancel and draw a new one' }))
+    /*
+     * THE PILL DOES THE WHOLE ACT. It used to open a sheet that only VOIDED
+     * — half of what "Void and reissue" promises — while the standalone
+     * button beneath it did the void AND drew the replacement. Now there is
+     * one control and it does both.
+     */
+    await user.click(await screen.findByRole('button', { name: 'Void and reissue' }))
     await waitFor(() => expect(state.documents).toHaveLength(3))
 
     // One payment, unchanged, still allocated to the same invoice. Cancelling
@@ -3052,12 +3077,18 @@ describe('Void and reissue a receipt (§G, Rule #5, §V)', () => {
     expect(screen.getByRole('button', { name: 'Cancel this document' })).toBeInTheDocument()
   })
 
-  it('offers nothing on one already cancelled', async () => {
+  /*
+   * SAID, NOT HIDDEN (§N). The standalone button used to vanish on a cancelled
+   * receipt; the grid keeps its four and darkens the one that cannot act, with
+   * the reason under it — which is what tells somebody WHY rather than leaving
+   * them to notice an absence.
+   */
+  it('cannot cancel one already cancelled, and says so', async () => {
     renderAt('/doc/doc_rct', withReceipt({ status: 'void' }))
     expect(within(await pageHeader()).getByText('REC-0003')).toBeInTheDocument()
-    expect(
-      screen.queryByRole('button', { name: 'Cancel and draw a new one' }),
-    ).not.toBeInTheDocument()
+    const pill = screen.getByRole('button', { name: 'Void and reissue' })
+    expect(pill).toBeDisabled()
+    expect(pill).toHaveTextContent(/already void|void/i)
   })
 
   it('says at both ends which receipt replaced which, without numbering them', async () => {
