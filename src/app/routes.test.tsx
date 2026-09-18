@@ -163,6 +163,64 @@ describe('Every page is reachable (§G)', () => {
   })
 })
 
+/**
+ * Countries are named, everywhere somebody picks one (§D, §R).
+ *
+ * `countries.test.ts` proves `COUNTRY_NAMES` has all 243 and that
+ * `countriesByName()` sorts them. Nothing proved a SCREEN used it — and the
+ * one screen that did not was setup, which is the first screen anybody sees.
+ * A person starting a business was handed an alphabetical list of two-letter
+ * codes and asked to find themselves in it.
+ *
+ * The comment defending it claimed a country name would be "a new claim this
+ * project has not had reviewed". That reasoning belongs to TERMINOLOGY, which
+ * §D really does gate on native-speaker sign-off. A country's name in English
+ * is not terminology, and Settings and signup had both been printing them for
+ * some time.
+ */
+describe('Every country picker names its countries (§D, §R)', () => {
+  const codeLike = /^[A-Z]{2}$/
+
+  /**
+   * The picker is on the flow's `business` page, one step in from its welcome
+   * page — and the flow is at `/start`, not `/welcome`, which is a different
+   * screen entirely.
+   */
+  const openSetup = async () => {
+    const user = userEvent.setup()
+    renderAt('/start')
+    await user.click(await screen.findByRole('button', { name: /get started/i }))
+    return screen.findByLabelText(/country/i)
+  }
+
+  it('lists full names on the setup screen, not codes', async () => {
+    const select = await openSetup()
+    const options = [...select.querySelectorAll('option')]
+
+    expect(options.length, 'the country picker is empty').toBeGreaterThan(100)
+
+    /*
+     * Asserted on the LABEL, not on the value. The value is the code and has
+     * to stay one — it is what gets stored. What changed is what a person
+     * reads, which is the whole complaint.
+     */
+    const bare = options.filter((o) => codeLike.test((o.textContent ?? '').trim()))
+    expect(bare.map((o) => o.textContent), 'options are still two-letter codes').toEqual([])
+
+    expect(options.map((o) => (o.textContent ?? '').trim())).toContain('Nigeria')
+    expect(options.map((o) => (o.textContent ?? '').trim())).toContain('United Kingdom')
+  })
+
+  /** And the code is still what gets stored, or nothing downstream works. */
+  it('keeps the two-letter code as the value', async () => {
+    const select = await openSetup()
+    const nigeria = [...select.querySelectorAll('option')].find(
+      (o) => (o.textContent ?? '').trim() === 'Nigeria',
+    )
+    expect(nigeria?.getAttribute('value')).toBe('NG')
+  })
+})
+
 describe('The tab bar (§G)', () => {
   it('marks the page you are on', async () => {
     renderAt('/customers')

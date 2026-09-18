@@ -17,7 +17,7 @@
  * refusal is an empty business name, in the same sentence Settings uses.
  */
 
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 
 import { useCompany } from '../context'
@@ -28,7 +28,7 @@ import { TYPE_PALETTE } from '../../ui/tokens'
 import { DOCUMENT_TYPES } from '../../domain/documents/types'
 import { label as typeLabel, labelInSentence } from '../../domain/locale/profile'
 import { format } from '../../domain/locale/data/strings'
-import { SUPPORTED_REGIONS } from '../../features/settings/region'
+import { countriesByName } from '../../domain/locale/data/countries'
 import {
   type FlowState,
   FlowError,
@@ -53,6 +53,9 @@ export function OnboardingScreen() {
 
   const [state, setState] = useState<FlowState>(() => startFlow(company?.localeRegion ?? 'NG'))
   const [problem, setProblem] = useState<string | null>(null)
+  // Built once: 240-odd names through a collator is not work to repeat on
+  // every keystroke in the business-name field above it.
+  const countries = useMemo(() => countriesByName(), [])
 
   // The country is pre-filled from the phone (§R), and the company is loaded
   // asynchronously — so it is seeded again once it arrives rather than
@@ -235,11 +238,27 @@ export function OnboardingScreen() {
               onChange={(event) => setState({ ...state, region: event.target.value })}
               className="glass-solid mt-1.5 block min-h-tap w-full rounded-xl px-3 py-3 text-[13px] text-ink"
             >
-              {/* The codes, exactly as Settings lists them — a country name
-                  this project has not had reviewed would be a new claim. */}
-              {SUPPORTED_REGIONS.map((region) => (
-                <option key={region} value={region}>
-                  {region}
+              {/*
+                FULL NAMES, sorted by name — the same list Settings and signup
+                show, from the same function.
+
+                The comment here used to say the codes were deliberate: "a
+                country name this project has not had reviewed would be a new
+                claim." That reasoning belongs to TERMINOLOGY, which §D really
+                does gate on native-speaker review. A country's name in English
+                is not terminology; `COUNTRY_NAMES` has carried all 243 since
+                the list was widened, and Settings and signup have both printed
+                them since.
+
+                So this was the one screen left showing "NG" — and it is the
+                FIRST screen anybody sees. A person setting up a business was
+                asked to find themselves in an alphabetical list of two-letter
+                codes, on the one screen where they have least idea what the
+                app is doing.
+              */}
+              {countries.map((country) => (
+                <option key={country.code} value={country.code}>
+                  {country.name}
                 </option>
               ))}
             </select>

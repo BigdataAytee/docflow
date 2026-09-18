@@ -21,6 +21,30 @@ android {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
+        /*
+         * A SHOWCASE BUILD THAT SITS BESIDE THE REAL APP.
+         *
+         * The twenty sample documents are demo-only on purpose: `createBackend`
+         * takes the demo branch only when no Supabase project is configured, so
+         * they cannot reach anybody's real records. §R is explicit that a demo
+         * is never passed off as an account, and twenty invented invoices in
+         * somebody's ledger would be exactly that.
+         *
+         * Which left no way to LOOK at them on a phone — the installed APK is
+         * an account build, so the samples were only ever visible in a browser.
+         * The suffix gives the demo its own package id, so it installs
+         * alongside the real app instead of replacing it: two icons, two
+         * sandboxes, and no chance of mistaking one for the other.
+         *
+         * Built from a demo web bundle (`npm run build:showcase`), which is
+         * what actually decides the branch. This only decides where it lands.
+         */
+        showcase {
+            initWith debug
+            applicationIdSuffix ".showcase"
+            versionNameSuffix "-showcase"
+            matchingFallbacks = ['debug']
+        }
     }
 }
 

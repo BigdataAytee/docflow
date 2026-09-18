@@ -1,0 +1,14 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <!--
+      A DIFFERENT NAME ON THE HOME SCREEN, because it is a different app.
+
+      It carries its own package id and its own sandbox, and nothing in it can
+      reach a real account — but two identical "DocFlow" icons side by side
+      would make that impossible to see from the outside. §R's rule is that a
+      demo is never passed off as an account; the label is where that rule
+      meets the launcher.
+    -->
+    <string name="app_name">DocFlow Samples</string>
+    <string name="title_activity_main">DocFlow Samples</string>
+</resources>

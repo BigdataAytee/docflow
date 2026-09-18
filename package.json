@@ -34,6 +34,7 @@
     "gate:hosted:db": "cross-env GATE_PART=db npm run gate:hosted",
     "gate:hosted:api": "cross-env GATE_PART=api npm run gate:hosted",
     "dev:demo": "vite --mode demo --port 5174",
+    "build:showcase": "vite build --mode demo",
     "dev:showcase": "vite --mode demo --port 5175"
   },
   "dependencies": {
