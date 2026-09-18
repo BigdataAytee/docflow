@@ -19,6 +19,7 @@ import type { ReactNode } from 'react'
 import { useCompany } from '../../app/context'
 import { type Money, money } from '../../domain/money/money'
 import { format } from '../../domain/locale/data/strings'
+import { label as typeLabel } from '../../domain/locale/profile'
 import { formatMoney } from '../customers/formatMoney'
 import type { Customer } from '../../data/repositories'
 import type { SettleableInvoice } from './receiptFlow'
@@ -29,6 +30,27 @@ export interface OwedPickerProps {
   readonly currency: string
   readonly onPick: (customerId: string) => void
   readonly onBack: () => void
+  /**
+   * Accepted quotations, offered beside the debtors (§G).
+   *
+   * An accepted quotation is money agreed and not yet billed, which is the
+   * same situation as an unpaid invoice from the payer's side: they owe it.
+   * Leaving them out meant the owner had to know that a quotation must be
+   * converted before it can be paid for — a step the app can take itself.
+   *
+   * Picking one bills it in full and settles the bill, so exactly one invoice
+   * and one receipt exist afterwards (see `quotationPaid.ts`).
+   */
+  readonly quotations?: readonly PayableQuotation[]
+  readonly onPickQuotation?: (quotationId: string) => void
+}
+
+/** An accepted quotation, as this picker needs it. */
+export interface PayableQuotation {
+  readonly id: string
+  readonly customerId: string
+  readonly reference: string
+  readonly total: Money
 }
 
 /** A debtor and what they owe, in the currency the money is coming in. */
@@ -73,10 +95,13 @@ export function OwedPicker({
   currency,
   onPick,
   onBack,
+  quotations = [],
+  onPickQuotation,
 }: OwedPickerProps): ReactNode {
-  const { strings } = useCompany()
+  const { profile, strings } = useCompany()
   const r = strings.newReceipt
   const debtors = debtorsFrom(customers, invoices, currency)
+  const offers = quotations.filter((one) => one.total.currency === currency)
 
   return (
     <section className="glass-solid rounded-2xl p-4" aria-label={r.pickWhoOwes}>
@@ -91,7 +116,7 @@ export function OwedPicker({
         </button>
       </div>
 
-      {debtors.length === 0 ? (
+      {debtors.length === 0 && offers.length === 0 ? (
         <p className="mt-3 text-xs opacity-60">{r.nobodyOwes}</p>
       ) : (
         <ul className="mt-3 space-y-1.5" role="list">
@@ -110,6 +135,39 @@ export function OwedPicker({
                 <span className="min-w-0 truncate font-semibold">{debtor.name}</span>
                 <span className="shrink-0 font-semibold tabular-nums opacity-75">
                   {formatMoney(debtor.owed)}
+                </span>
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
+
+      {/*
+        ACCEPTED QUOTATIONS, beside the debtors and marked as what they are.
+
+        Money agreed and not yet billed is the same situation as an unpaid
+        invoice from the payer's side. Leaving these out meant the owner had to
+        know that a quotation must be converted before it can be paid for —
+        which is a step the app can take itself, and does.
+
+        Labelled with the type's own word (Rule #4) and with "accepted", so
+        nobody has to work out why a quotation is in a list about money owed.
+      */}
+      {offers.length > 0 && (
+        <ul className="mt-1.5 space-y-1.5" role="list">
+          {offers.map((offer) => (
+            <li key={offer.id}>
+              <button
+                type="button"
+                onClick={() => onPickQuotation?.(offer.id)}
+                className="raised tap-scale flex min-h-tap w-full items-center justify-between gap-3 rounded-xl bg-surface px-3 text-start text-sm"
+              >
+                <span className="min-w-0 truncate">
+                  {format(r.acceptedQuote, {
+                    label: typeLabel(profile, 'quotation'),
+                    reference: offer.reference,
+                    amount: formatMoney(offer.total),
+                  })}
                 </span>
               </button>
             </li>

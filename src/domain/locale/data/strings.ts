@@ -681,6 +681,9 @@ export interface UiStrings {
     readonly receivedFrom: string
     readonly receivedFromHint: string
     readonly addReference: string
+    readonly theyPaid: string
+    readonly acceptedQuote: string
+    readonly bothMade: string
     readonly against: string
     readonly owesOne: string
     readonly owesMany: string
@@ -1690,6 +1693,15 @@ const EN: UiStrings = {
     receivedFromHint: 'Type any name',
     // One tap away rather than one field in the way — almost nobody has one.
     addReference: '+ Add their reference',
+    /*
+     * A QUOTATION THAT HAS BEEN PAID becomes a bill and its evidence in one
+     * act — the offer is agreed, the money arrived, and what was missing was
+     * the invoice in between. Named in the flow rather than announced: this
+     * is something the owner just did, not news to interrupt them with.
+     */
+    theyPaid: 'They’ve paid',
+    acceptedQuote: '{label} {reference} · {amount} · accepted',
+    bothMade: '{invoiceLabel} {invoice} was created from this {quotationLabel}, and {receiptLabel} {receipt} records the payment.',
     against: 'Against',
     /*
      * THE INVOICE LINK, SAID OUT LOUD.
