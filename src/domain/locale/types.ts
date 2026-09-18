@@ -81,6 +81,15 @@ export interface SharedTerminology {
   readonly paidBy: string
   /** §E's "linked invoice": what this receipt is evidence against. */
   readonly against: string
+  /**
+   * What is still owed after this payment, and the words for having cleared it.
+   *
+   * A customer holding a receipt for part of a debt needs to know what is
+   * left; the app knew and did not print it, so the paper answered half the
+   * question it exists to answer.
+   */
+  readonly balanceRemaining: string
+  readonly paidInFull: string
   /** §I: online methods print under a dashed divider carrying this label. */
   readonly otherPaymentMethods: string
 }

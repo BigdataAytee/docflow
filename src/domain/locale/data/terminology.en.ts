@@ -45,6 +45,8 @@ const SHARED = {
   receivedBy: 'RECEIVED BY',
   estimatedTotal: 'Estimated total',
   paymentReceived: 'Payment received',
+  balanceRemaining: 'Balance remaining',
+  paidInFull: 'Paid in full',
   datePaid: 'Date paid',
   paidBy: 'Paid by',
   /** §E: a receipt names the invoice it is evidence against. */

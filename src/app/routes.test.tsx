@@ -2476,6 +2476,18 @@ describe('A receipt is evidence of a payment (§G, §K, §V)', () => {
       expect(receipt?.totalMinor).toBe(45_000_00)
       expect(receipt?.customerId).toBe('cus_1')
 
+      /*
+       * AND WHAT IS STILL OWED, FROZEN ONTO IT (§I, Rule #5).
+       *
+       * The invoice is ₦145,000 and ₦45,000 came in, so ₦100,000 is left.
+       * The app knew this and printed nothing, which left a customer holding
+       * a receipt unable to tell from it whether they were square.
+       *
+       * On the RECORD rather than recomputed at print time: later payments
+       * must not change what a copy already handed over says.
+       */
+      expect(receipt?.balanceAfterMinor, 'the receipt does not say what is left').toBe(100_000_00)
+
       // And the builder took over on the draft's own URL.
       expect(await screen.findByRole('button', { name: /Next/ })).toBeInTheDocument()
     })

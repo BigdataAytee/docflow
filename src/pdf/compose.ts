@@ -22,7 +22,7 @@ import {
   QUANTITY_SCALE,
   carriesMoney,
 } from '../domain/documents/types'
-import type { Money } from '../domain/money/money'
+import { type Money, money } from '../domain/money/money'
 import { type DocumentTotals, computeTotals, lineTotal } from '../domain/money/totals'
 import {
   type LocaleProfile,
@@ -107,6 +107,14 @@ export interface ComposableDocument {
   readonly paidAmount?: Money
   readonly paidAt?: string
   readonly paidMethod?: string
+  /**
+   * What was still owed on the linked invoice AFTER this payment, in minor
+   * units — frozen onto the record at issue (Rule #5), never recomputed.
+   *
+   * Undefined on a standalone receipt, which settles no debt. Zero means the
+   * payment cleared it, and prints "Paid in full" rather than a zero.
+   */
+  readonly balanceAfterMinor?: number
   /**
    * The reference of the invoice this receipt is evidence against.
    *
@@ -195,6 +203,31 @@ export interface ReceiptEvidence {
   /** Absent when no method was recorded — never an empty row. */
   readonly method?: string
   readonly methodLabel: string
+  /**
+   * WHAT IS STILL OWED AFTER THIS PAYMENT, frozen at issue.
+   *
+   * A customer holding a receipt for ₦500,000 against a ₦1,000,000 invoice
+   * needs to know they still owe ₦500,000 — and the app knew and did not say,
+   * so the paper answered half the question it exists to answer.
+   *
+   * FROZEN, like the reference and the labels (Rule #5). Computed live it
+   * would say something different every time the PDF was opened, as later
+   * payments arrived: a customer comparing the sheet in their hand with the
+   * one in their email would find two receipts for one payment disagreeing
+   * about a fact neither of them can have changed.
+   *
+   * Absent on a standalone receipt — there is no debt to report the state of,
+   * and a "Balance remaining: ₦0" on a cash sale invents one.
+   */
+  readonly balanceRemaining?: Money
+  readonly balanceRemainingLabel: string
+  /**
+   * Printed INSTEAD of the balance when this payment cleared the debt.
+   *
+   * "Balance remaining: ₦0.00" is arithmetically the same and reads as an
+   * oversight; "Paid in full" is what the person holding it wants to see.
+   */
+  readonly paidInFull?: string
 }
 
 export interface PageModel {
@@ -637,5 +670,22 @@ function buildReceiptEvidence(
       ? {}
       : { method: document.paidMethod }),
     methodLabel: terms.paidBy,
+    balanceRemainingLabel: terms.balanceRemaining,
+    /*
+     * FROZEN AT ISSUE, and read straight off the record.
+     *
+     * Not recomputed from the ledger here: a receipt recomputed at print time
+     * would say something different every time it was opened, as later
+     * payments arrived. The customer's copy and the owner's copy would then
+     * disagree about a figure neither of them can have changed.
+     *
+     * `undefined` is a standalone receipt — no debt, so no line. Zero is a
+     * debt this payment CLEARED, which says so in words.
+     */
+    ...(document.balanceAfterMinor === undefined
+      ? {}
+      : document.balanceAfterMinor <= 0
+        ? { paidInFull: terms.paidInFull }
+        : { balanceRemaining: money(document.currency, document.balanceAfterMinor) }),
   }
 }

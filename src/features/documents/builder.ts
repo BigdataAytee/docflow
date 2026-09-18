@@ -70,6 +70,16 @@ export interface DocumentDraft {
    * mapper looked right, the page stayed empty, and nothing failed.
    */
   readonly signerSignatureAssetId?: string
+  /**
+   * RECEIPTS: what the payment left owing, frozen at issue (Rule #5).
+   *
+   * Declared here because `composableOf` reads it on the way to the page, and
+   * a field this type does not declare is a field that silently DOES NOT
+   * ARRIVE — a conditional spread defeats excess-property checking, so the
+   * mapper looks right and the page stays empty. That is exactly how the
+   * recipient's signature went missing.
+   */
+  readonly balanceAfterMinor?: number
   readonly signerName?: string
   readonly signerRole?: string
   readonly signedAt?: string

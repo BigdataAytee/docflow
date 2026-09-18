@@ -39,7 +39,7 @@
  * it fails with "no such column". That is exactly what happened when the four
  * contact and reference columns were added and this still read 6.
  */
-export const SCHEMA_VERSION = 15
+export const SCHEMA_VERSION = 16
 
 /**
  * Applied in order, inside one transaction, by `migrate`.
@@ -428,6 +428,14 @@ export const MIGRATIONS: readonly string[] = [
   -- has to be asked for on a NEW document — and without this link the two read
   -- as two separate charges for the same goods. One debt, asked for twice.
   alter table documents add column bills_balance_of_id text;
+  `,
+  `
+  -- What a receipt's payment left owing on the invoice it settled (§I, Rule #5).
+  --
+  -- Frozen at issue. Recomputed at print time it would say something different
+  -- every time the PDF was opened, as later payments arrived — the customer's
+  -- copy and the owner's copy disagreeing about a figure neither can change.
+  alter table documents add column balance_after_minor integer;
   `,
 ]
 

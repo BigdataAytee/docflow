@@ -533,6 +533,39 @@ export function DocumentPage({
                         </dd>
                       </div>
                     )}
+
+                    {/*
+                      WHAT IS STILL OWED — the half of the question the paper
+                      did not answer.
+
+                      Somebody handed a receipt for ₦500,000 against a
+                      ₦1,000,000 invoice needs to know they still owe
+                      ₦500,000. The app knew and printed nothing.
+
+                      One line or the other, never both and never neither:
+                      "Balance remaining: ₦0.00" is arithmetically right and
+                      reads as an oversight, so a cleared debt says so in
+                      words. A standalone receipt shows neither — there is no
+                      debt whose state to report, and a zero would invent one.
+                    */}
+                    {model.receiptEvidence.balanceRemaining !== undefined && (
+                      <div className="flex gap-[8px]" data-balance-remaining>
+                        <dt className="w-[96px] shrink-0 opacity-60">
+                          {model.receiptEvidence.balanceRemainingLabel}
+                        </dt>
+                        <dd className="font-bold tabular-nums">
+                          {formatAmount(
+                            model.receiptEvidence.balanceRemaining.minor,
+                            model.receiptEvidence.balanceRemaining.currency,
+                          )}
+                        </dd>
+                      </div>
+                    )}
+                    {model.receiptEvidence.paidInFull !== undefined && (
+                      <div className="flex gap-[8px]" data-paid-in-full>
+                        <dd className="font-bold">{model.receiptEvidence.paidInFull}</dd>
+                      </div>
+                    )}
                   </dl>
                 </div>
               )}

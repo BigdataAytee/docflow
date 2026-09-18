@@ -22,6 +22,7 @@ import {
   receiptFor,
   receiptForPayment,
   receiptKeyFor,
+  receiptRecordFor,
   settleableInvoices,
   startReceipt,
 } from './receiptFlow'
@@ -243,5 +244,51 @@ describe('The picker offers only what this money could settle (§G, §K)', () =>
       'NGN',
     )
     expect(options.map((invoice) => invoice.id)).toEqual(['c', 'a', 'b'])
+  })
+})
+
+/**
+ * WHAT THE PAYMENT LEFT OWING, frozen onto the receipt (§I, Rule #5).
+ *
+ * The app knew what a payment left outstanding and printed nothing, so a
+ * customer handed a receipt for ₦500,000 against a ₦1,000,000 invoice could
+ * not tell from it whether they were square.
+ */
+describe('The balance a receipt reports', () => {
+  const made = (paidMinor: number, owedBefore?: number) =>
+    receiptRecordFor({
+      payment: {
+        id: 'pay_1',
+        customerId: 'cus_1',
+        amount: NGN(paidMinor),
+        paidAt: '2026-09-11T10:00:00.000Z',
+      },
+      description: 'Payment received',
+      ...(owedBefore === undefined
+        ? {}
+        : { linkedInvoiceId: 'doc_inv', invoiceOutstandingBefore: NGN(owedBefore) }),
+    })
+
+  it('reports what is left on a part payment', () => {
+    expect(made(500_000_00, 1_000_000_00).balanceAfterMinor).toBe(500_000_00)
+  })
+
+  it('reports zero — "paid in full" — when the payment clears it', () => {
+    expect(made(1_000_000_00, 1_000_000_00).balanceAfterMinor).toBe(0)
+  })
+
+  /**
+   * NEVER BELOW ZERO. Paying more than is owed settles the debt and leaves the
+   * surplus as customer credit (§K) — a receipt reporting a NEGATIVE balance
+   * would be telling somebody the business owes them, which is a different
+   * claim entirely and one this document is not entitled to make.
+   */
+  it('clamps an overpayment to nothing owed, never to a negative', () => {
+    expect(made(1_500_000_00, 1_000_000_00).balanceAfterMinor).toBe(0)
+  })
+
+  /** A standalone receipt settles no debt and reports the state of none. */
+  it('reports nothing at all on a standalone receipt', () => {
+    expect(made(500_000_00).balanceAfterMinor).toBeUndefined()
   })
 })

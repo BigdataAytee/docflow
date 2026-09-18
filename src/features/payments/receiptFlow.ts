@@ -192,6 +192,8 @@ export interface ReceiptRecordFields {
   readonly customerId?: string
   readonly paymentId: string
   readonly linkedInvoiceId?: string
+  /** What the linked invoice still owes after this payment. Frozen (Rule #5). */
+  readonly balanceAfterMinor?: number
 }
 
 /**
@@ -211,6 +213,14 @@ export function receiptRecordFor(input: {
   }
   readonly description: string
   readonly linkedInvoiceId?: string
+  /**
+   * What the invoice still owed BEFORE this payment, when there is one.
+   *
+   * Passed in rather than looked up: this module builds a record and knows
+   * nothing about the ledger, and the caller has already asked it — the same
+   * figure it capped the allocation against.
+   */
+  readonly invoiceOutstandingBefore?: Money
 }): ReceiptRecordFields {
   const { payment } = input
   return {
@@ -238,6 +248,24 @@ export function receiptRecordFor(input: {
     customerId: payment.customerId,
     paymentId: payment.id,
     ...(input.linkedInvoiceId === undefined ? {} : { linkedInvoiceId: input.linkedInvoiceId }),
+    /*
+     * WHAT IS LEFT AFTER THIS PAYMENT, frozen onto the receipt (§I, Rule #5).
+     *
+     * Never below zero: paying more than is owed settles the debt and leaves
+     * the surplus as customer credit (§K), so the receipt says "Paid in full"
+     * rather than reporting a negative balance nobody owes.
+     *
+     * Absent on a standalone receipt, which settles no debt and reports the
+     * state of none — a "Balance remaining: ₦0" on a cash sale invents one.
+     */
+    ...(input.linkedInvoiceId === undefined || input.invoiceOutstandingBefore === undefined
+      ? {}
+      : {
+          balanceAfterMinor: Math.max(
+            0,
+            input.invoiceOutstandingBefore.minor - payment.amount.minor,
+          ),
+        }),
   }
 }
 

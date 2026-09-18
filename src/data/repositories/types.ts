@@ -210,6 +210,20 @@ export interface DocumentRecord {
    */
   readonly billsBalanceOfId?: string
   /**
+   * RECEIPTS: what was still owed on the linked invoice after this payment.
+   *
+   * Minor units, FROZEN at issue like the reference and the labels (Rule #5).
+   * Recomputed at print time it would say something different every time the
+   * PDF was opened, as later payments arrived — so the customer's copy and
+   * the owner's copy would disagree about a figure neither of them can have
+   * changed.
+   *
+   * Undefined on a standalone receipt, which settles no debt and reports the
+   * state of none. Zero means this payment CLEARED it, and prints "Paid in
+   * full" rather than a zero that reads as an oversight.
+   */
+  readonly balanceAfterMinor?: number
+  /**
    * §E's "delivery photo asset" — the goods at the gate. Part of the same
    * evidence as the signature, so it seals when the delivery does (§P).
    */

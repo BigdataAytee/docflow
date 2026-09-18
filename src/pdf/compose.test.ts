@@ -226,6 +226,85 @@ describe('The payment box (§I, §J)', () => {
     expect(page.note?.body, `${type} lost its note`).toBe(terms)
   })
 
+  /**
+   * WHAT IS STILL OWED, on the paper (§I, Rule #5).
+   *
+   * The app knew what a payment left outstanding and printed nothing, so a
+   * customer handed a receipt for ₦500,000 against a ₦1,000,000 invoice could
+   * not tell from it whether they were square.
+   */
+  describe('The remaining balance, frozen at issue', () => {
+    const paid = (over: Record<string, unknown>) =>
+      doc('receipt', {
+        paidAmount: money('NGN', 500_000_00),
+        paidAt: '2026-09-11',
+        paidMethod: 'Bank transfer',
+        againstReference: 'INV-0004',
+        ...over,
+      })
+
+    it('says what is left on a part payment', () => {
+      const page = composeDocument(paid({ balanceAfterMinor: 500_000_00 }), options())
+      expect(page.receiptEvidence?.balanceRemaining).toEqual(money('NGN', 500_000_00))
+      expect(page.receiptEvidence?.paidInFull).toBeUndefined()
+    })
+
+    /**
+     * "Balance remaining: ₦0.00" is arithmetically right and reads as an
+     * oversight. A cleared debt says so in words.
+     */
+    it('says paid in full when the payment cleared it', () => {
+      const page = composeDocument(paid({ balanceAfterMinor: 0 }), options())
+      expect(page.receiptEvidence?.paidInFull).toBe('Paid in full')
+      expect(page.receiptEvidence?.balanceRemaining).toBeUndefined()
+    })
+
+    /** A cash sale settles no debt, so it reports the state of none. */
+    it('says neither on a standalone receipt', () => {
+      const page = composeDocument(paid({}), options())
+      expect(page.receiptEvidence?.balanceRemaining).toBeUndefined()
+      expect(page.receiptEvidence?.paidInFull).toBeUndefined()
+    })
+
+    /**
+     * THE ONE THAT MATTERS MOST. The figure comes off the RECORD, not the
+     * ledger — so later payments cannot change what a customer's copy says.
+     * Recomputed, the sheet in their hand and the one in their email would
+     * disagree about a fact neither of them can have changed (Rule #5).
+     */
+    /**
+     * THE FIGURE COMES OFF THE RECORD, and nothing else can reach it.
+     *
+     * My first attempt at this composed the same input twice and compared the
+     * results — which cannot fail, and proves only that the function is
+     * deterministic. What matters is the SOURCE: `composeDocument` is handed
+     * no payments and no ledger at all, so the only thing that can move this
+     * line is the frozen field itself.
+     *
+     * Asserted by moving it: the printed figure tracks the record exactly,
+     * and there is no other input that could.
+     */
+    it('prints the frozen figure and nothing but it', () => {
+      expect(
+        composeDocument(paid({ balanceAfterMinor: 500_000_00 }), options()).receiptEvidence
+          ?.balanceRemaining,
+      ).toEqual(money('NGN', 500_000_00))
+
+      expect(
+        composeDocument(paid({ balanceAfterMinor: 1 }), options()).receiptEvidence
+          ?.balanceRemaining,
+      ).toEqual(money('NGN', 1))
+    })
+
+    it('is localised like every other printed word (§D)', () => {
+      const page = composeDocument(
+        paid({ balanceAfterMinor: 500_000_00 }),
+        options({ profile: { locale: 'FR' } }),
+      )
+      expect(page.receiptEvidence?.balanceRemainingLabel).toBe('Solde restant')
+    })
+  })
+
   it('never tells a receipt holder to pay again (§I)', () => {
     const receipt = doc('receipt', {
       paidAmount: money('NGN', 50_000_00),

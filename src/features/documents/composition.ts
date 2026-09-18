@@ -108,6 +108,10 @@ export function draftOf(record: DocumentRecord): DocumentDraft {
     ...(record.signerSignatureAssetId === undefined
       ? {}
       : { signerSignatureAssetId: record.signerSignatureAssetId }),
+    /* The receipt's frozen balance, straight through to the page (Rule #5). */
+    ...(record.balanceAfterMinor === undefined
+      ? {}
+      : { balanceAfterMinor: record.balanceAfterMinor }),
     ...(record.signerName === undefined ? {} : { signerName: record.signerName }),
     ...(record.signerRole === undefined ? {} : { signerRole: record.signerRole }),
     ...(record.signedAt === undefined ? {} : { signedAt: record.signedAt }),
@@ -272,6 +276,9 @@ export function composableOf(input: ComposableInput): ComposableDocument {
     ...(draft.signerSignatureAssetId === undefined
       ? {}
       : { signerSignatureAssetId: draft.signerSignatureAssetId }),
+    ...(draft.balanceAfterMinor === undefined
+      ? {}
+      : { balanceAfterMinor: draft.balanceAfterMinor }),
     ...(draft.signerName === undefined ? {} : { signerName: draft.signerName }),
     ...(draft.signerRole === undefined ? {} : { signerRole: draft.signerRole }),
     ...(draft.signedAt === undefined ? {} : { signedAt: draft.signedAt }),

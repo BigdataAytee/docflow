@@ -211,6 +211,17 @@ function NewReceiptFlow({ today = todayIso() }: { today?: string }) {
                       ? strings.newReceipt.lineStandalone
                       : format(strings.newReceipt.lineAgainst, { reference: chosen.reference }),
                   ...(chosen === undefined ? {} : { linkedInvoiceId: chosen.id }),
+                  /*
+                   * The balance BEFORE this payment, so the receipt can freeze
+                   * what is left after it (§I, Rule #5).
+                   *
+                   * `chosen.outstanding` is the same figure the allocation was
+                   * capped against a few lines up, so the money the receipt
+                   * reports and the money the ledger moved cannot disagree.
+                   */
+                  ...(chosen === undefined
+                    ? {}
+                    : { invoiceOutstandingBefore: chosen.outstanding }),
                 }),
                 receiptKeyFor(recorded.id),
               ),
