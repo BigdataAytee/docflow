@@ -2681,7 +2681,7 @@ describe('A receipt is evidence of a payment (§G, §K, §V)', () => {
       await waitFor(() => expect(state.documents).toHaveLength(2))
 
       const line = state.documents.find((document) => document.type === 'receipt')?.lineItems[0]
-      expect(line?.description).toBe('Payment received against INV-0042')
+      expect(line?.description).toBe('Payment for invoice INV-0042')
       expect(line?.unitPriceMinor).toBe(50_000_00)
       // Not taxable: tax on money already received would print a total that
       // is not the payment (Rule #3, §V).
@@ -3625,9 +3625,21 @@ describe('Void and reissue a receipt (§G, Rule #5, §V)', () => {
       })
     })
 
-    for (let step = 0; step < 4; step += 1) {
-      await user.click(await screen.findByRole('button', { name: 'Next' }))
-    }
+    /*
+     * Walked to the end rather than counted: a receipt runs fewer steps now —
+     * no items when it settles an invoice, and no totals on either path,
+     * because its printed total IS the payment (§V).
+     */
+    /*
+     * Straight to the last step by name, not by counting Nexts.
+     *
+     * A receipt runs fewer steps than it used to — no items when it settles an
+     * invoice, and no totals on either path, because its printed total IS the
+     * payment (§V). A loop counting four clicks encoded the old shape; the
+     * step bar names the destination, which is also how a person gets there.
+     */
+    await user.click(await screen.findByRole('button', { name: 'Review' }))
+
     // The real page: no "Rev" on a receipt, just what it replaces.
     expect(await screen.findByText('Replaces REC-0003')).toBeInTheDocument()
   })

@@ -49,12 +49,26 @@ export const wantsItemsStep = (draft: {
   readonly linkedInvoiceId?: string
 }): boolean => !(draft.type === 'receipt' && draft.linkedInvoiceId !== undefined)
 
-/** The keys this document's builder actually runs, in order. */
+/**
+ * The keys this document's builder actually runs, in order.
+ *
+ * A RECEIPT HAS NO TOTALS STEP either, whichever path made it. §V: "a
+ * receipt's printed total IS the payment" — there is no subtotal, no tax and
+ * no discount to set, because the money already arrived and its amount is not
+ * a thing the owner computes. A step offering to adjust it would be offering
+ * to disagree with the ledger.
+ *
+ * That is what leaves the signature immediately before Save on both paths,
+ * with nothing in between.
+ */
 export const stepKeysFor = (draft: {
   readonly type: DocumentType
   readonly linkedInvoiceId?: string
 }): readonly StepKey[] =>
-  wantsItemsStep(draft) ? STEP_KEYS : STEP_KEYS.filter((key) => key !== 'items')
+  STEP_KEYS.filter(
+    (key) =>
+      !(key === 'items' && !wantsItemsStep(draft)) && !(key === 'totals' && draft.type === 'receipt'),
+  )
 
 /** The localised step names, in order, for this document (§G). */
 export const stepNames = (
@@ -63,9 +77,14 @@ export const stepNames = (
   draft?: { readonly type: DocumentType; readonly linkedInvoiceId?: string },
 ): readonly string[] => {
   const names = localisedSteps(profile, type)
-  if (draft === undefined || wantsItemsStep(draft)) return names
-  // Dropped by POSITION, because the key list and the name list are one order.
-  return names.filter((_, index) => STEP_KEYS[index] !== 'items')
+  if (draft === undefined) return names
+  /*
+   * Dropped by POSITION, because the key list and the name list are one
+   * order — and dropped together, so the bar can never label four steps with
+   * five names.
+   */
+  const keys = stepKeysFor(draft)
+  return names.filter((_, index) => keys.includes(STEP_KEYS[index] as StepKey))
 }
 
 export interface DocumentDraft {

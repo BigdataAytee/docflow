@@ -1709,7 +1709,18 @@ const EN: UiStrings = {
     standaloneNote: 'Nothing is billed for it. The money sits as customer credit.',
     pickWhoFirst: 'Say who paid, and anything they still owe appears here.',
     lineStandalone: 'Payment received',
-    lineAgainst: 'Payment received against {reference}',
+    /*
+     * THE DESCRIPTION COMES FROM THE INVOICE IT SETTLES.
+     *
+     * A receipt that settles an invoice asks for no line items — the goods
+     * were described on the document the customer is holding — so its one
+     * line names that document instead: "Payment for invoice INV-0004".
+     *
+     * `{label}` rather than the word: Rule #4 allows exactly one place for a
+     * type name, and it is not this file. A business whose invoices are
+     * called something else gets their word here.
+     */
+    lineAgainst: 'Payment for {label} {reference}',
     record: 'Record it',
     alreadyHasOne: 'This payment already has one.',
     openReceipt: 'Open it',

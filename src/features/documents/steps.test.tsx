@@ -886,11 +886,31 @@ describe('Which steps a receipt actually runs (§G)', () => {
   it('drops the items step when it settles an invoice', () => {
     const keys = stepKeysFor({ type: 'receipt', linkedInvoiceId: 'doc_inv' })
     expect(keys).not.toContain('items')
-    expect(keys).toEqual(['details', 'totals', 'design', 'review'])
+    expect(keys).toEqual(['details', 'design', 'review'])
   })
 
   it('keeps it on a cash receipt, which is the only record of the sale', () => {
     expect(stepKeysFor({ type: 'receipt' })).toContain('items')
+  })
+
+  /**
+   * NO TOTALS STEP ON EITHER RECEIPT PATH. §V: "a receipt's printed total IS
+   * the payment" — there is no subtotal, tax or discount to set, because the
+   * money already arrived and its amount is not something the owner computes.
+   * A step offering to adjust it would be offering to disagree with the
+   * ledger, and it is what used to sit between the signature and Save.
+   */
+  it.each([
+    ['settling an invoice', { type: 'receipt' as const, linkedInvoiceId: 'doc_inv' }],
+    ['standing alone', { type: 'receipt' as const }],
+  ])('gives a receipt %s no totals step', (_case, draft) => {
+    expect(stepKeysFor(draft)).not.toContain('totals')
+  })
+
+  it('leaves the totals step on everything that computes one', () => {
+    for (const type of ['invoice', 'quotation'] as const) {
+      expect(stepKeysFor({ type })).toContain('totals')
+    }
   })
 
   it.each(['invoice', 'quotation', 'waybill'] as const)('leaves a %s alone', (type) => {
@@ -900,8 +920,9 @@ describe('Which steps a receipt actually runs (§G)', () => {
   /** The NAMES drop with the key, or the bar would label four steps with five. */
   it('drops the name too, not just the body', () => {
     const named = stepNames(profile, 'receipt', { type: 'receipt', linkedInvoiceId: 'doc_inv' })
-    expect(named).toHaveLength(4)
+    expect(named).toHaveLength(3)
     expect(named).not.toContain('Items')
+    expect(named).not.toContain('Totals')
   })
 
   /**

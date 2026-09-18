@@ -22,7 +22,16 @@ import { useAppData } from '../store'
 import { HOME, documentPath, editDocumentPath, settingsPath } from '../paths'
 import { deviceId } from '../device'
 import { DOCUMENT_TYPES, type DocumentType } from '../../domain/documents/types'
-import { label as typeLabel, numberingPrefix } from '../../domain/locale/profile'
+/*
+ * The SENTENCE form: "Payment for invoice INV-0004" puts the word inside a
+ * sentence, and §D cases that by locale rather than by the call site. The
+ * standalone form would print "Payment for Invoice INV-0004".
+ */
+import {
+  label as typeLabel,
+  labelInSentence as typeInSentence,
+  numberingPrefix,
+} from '../../domain/locale/profile'
 import { format } from '../../domain/locale/data/strings'
 import { percentToPpm } from '../../domain/money/money'
 import { invoiceOutstanding } from '../../domain/payments/ledger'
@@ -239,7 +248,10 @@ function NewReceiptFlow({ today = todayIso() }: { today?: string }) {
             description:
               chosen === undefined
                 ? strings.newReceipt.lineStandalone
-                : format(strings.newReceipt.lineAgainst, { reference: chosen.reference }),
+                : format(strings.newReceipt.lineAgainst, {
+                    label: typeInSentence(profile, 'invoice'),
+                    reference: chosen.reference,
+                  }),
             ...(chosen === undefined ? {} : { linkedInvoiceId: chosen.id }),
             /*
              * The balance BEFORE this payment, so the receipt can freeze

@@ -89,7 +89,7 @@ import {
 import { draftChase } from '../../features/payments/chase'
 import { invoiceOutstanding } from '../../domain/payments/ledger'
 import { TYPE_PALETTE } from '../../ui/tokens'
-import { displayLabels } from '../../domain/locale/profile'
+import { displayLabels, labelInSentence as typeInSentence } from '../../domain/locale/profile'
 import { formatMoney } from '../../features/customers/formatMoney'
 import { format } from '../../domain/locale/data/strings'
 import { ShareSheet } from '../../share/ShareSheet'
@@ -178,6 +178,7 @@ export function DocumentScreen({ today = todayIso() }: { today?: string }) {
       plan = voidAndReissue(record, {
         payments,
         description: format(strings.newReceipt.lineAgainst, {
+          label: typeInSentence(profile, 'invoice'),
           reference: linkedInvoice?.issuedReference ?? '',
         }),
       })
@@ -1467,6 +1468,7 @@ export function DocumentScreen({ today = todayIso() }: { today?: string }) {
                     receiptRecordFor({
                       payment,
                       description: format(strings.newReceipt.lineAgainst, {
+                        label: typeInSentence(profile, 'invoice'),
                         reference: record.issuedReference ?? '',
                       }),
                       linkedInvoiceId: record.id,
