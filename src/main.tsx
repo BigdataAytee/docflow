@@ -49,7 +49,29 @@ const env = import.meta.env as unknown as Record<string, string | undefined>
  * up over a working app. See `app/start.ts`.
  */
 const loadLocalStore = async (native: boolean, shell: typeof import('./native/boot')) => {
-  if (native) {
+  /*
+   * THE SAMPLES COME BEFORE THE PLATFORM, and they have to.
+   *
+   * `VITE_SHOWCASE=1` exists so the twenty sample documents can be LOOKED at.
+   * On a phone they could not be: this function opened the encrypted SQLite
+   * store on native, which is empty, and `devState` — the only thing that ever
+   * calls `showcaseState` — lives in the browser branch below. So the showcase
+   * build installed, launched, and showed an empty app. The flag was in the
+   * bundle and reached nothing.
+   *
+   * In memory on a phone too, then. Durability is not what the samples are
+   * for, and a set that resets each launch is the honest thing anyway: the
+   * banner says these records are cleared, and with this branch that is true
+   * on both platforms rather than only on one.
+   *
+   * Never in an account build. `createBackend` reaches this function only when
+   * no Supabase project is configured, so twenty invented invoices cannot land
+   * in anybody's ledger (§R).
+   */
+  const showcase =
+    (import.meta.env as unknown as Record<string, string | undefined>).VITE_SHOWCASE === '1'
+
+  if (native && !showcase) {
     const store = await shell.openNativeBackend()
     // Encrypted SQLite: this survives closing the app, and the banner has to
     // say so rather than repeating the browser's answer.

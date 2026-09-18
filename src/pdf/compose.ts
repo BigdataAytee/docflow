@@ -461,8 +461,27 @@ export function composeDocument(
             label: totalsLabelFor(document.type, terms, options.totalsLabels) ?? '',
             amount: totals.payable,
           },
+    /*
+     * NOT ON A RECEIPT, which is the one type it contradicts.
+     *
+     * The note is the owner's PAYMENT TERMS — "Payment is due within 14 days"
+     * — printed on every document. A receipt is evidence that the money
+     * already arrived, so it was going out with proof of payment above and an
+     * instruction to pay below it, on the same sheet, about the same money.
+     *
+     * `buildReceiptEvidence` a few lines down already carries the rule in its
+     * own comment: "never an instruction to pay again (§I)". The evidence
+     * block obeyed it and the note block never knew about it.
+     *
+     * The owner writes ONE note, in Settings, for all their documents. Asking
+     * them to write a second one that says nothing about payment, for the one
+     * type where the first is wrong, would be a new required field (Rule #1)
+     * to solve a problem the document type already answers.
+     */
     note:
-      options.note === undefined || options.note.trim() === ''
+      document.type === 'receipt' ||
+      options.note === undefined ||
+      options.note.trim() === ''
         ? null
         : { label: options.noteLabel ?? 'NOTE TO CUSTOMER', body: options.note.trim() },
     subtotalLabel: options.totalsLabels?.subtotal ?? 'Subtotal',

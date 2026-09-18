@@ -200,6 +200,32 @@ describe('The payment box (§I, §J)', () => {
     expect(composeDocument(doc('quotation'), options()).paymentBox).toBeNull()
   })
 
+  /**
+   * THE NOTE IS AN INSTRUCTION TO PAY, and it was going on receipts (§I).
+   *
+   * `paymentBox` was correctly suppressed and `buildReceiptEvidence` carries
+   * the rule in its own comment — "never an instruction to pay again". The
+   * NOTE block never knew about it, so a receipt went out with proof the
+   * money had arrived above and "Payment is due within 14 days" below it, on
+   * the same sheet, about the same money.
+   */
+  it('keeps the payment-terms note off a receipt', () => {
+    const terms = 'Payment is due within 14 days.'
+    const paid = doc('receipt', {
+      paidAmount: money('NGN', 50_000_00),
+      paidAt: '2026-09-11',
+      paidMethod: 'Cash',
+    })
+    expect(composeDocument(paid, options({ note: terms })).note).toBeNull()
+  })
+
+  /** And every other type still prints it — this is one type's exception. */
+  it.each(['invoice', 'quotation', 'waybill'] as const)('still prints the note on a %s', (type) => {
+    const terms = 'Payment is due within 14 days.'
+    const page = composeDocument(doc(type), options({ note: terms }))
+    expect(page.note?.body, `${type} lost its note`).toBe(terms)
+  })
+
   it('never tells a receipt holder to pay again (§I)', () => {
     const receipt = doc('receipt', {
       paidAmount: money('NGN', 50_000_00),
