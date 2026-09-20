@@ -25,6 +25,7 @@ import { format } from '../../domain/locale/data/strings'
 import { printedLine, type SavedPaymentLink } from '../../domain/payments/links'
 import { providersFor, type PaymentProvider } from '../../domain/payments/providers'
 import { Icon } from '../../ui'
+import { ProviderLogo } from './ProviderLogo'
 import { PaymentLinkForm } from './PaymentLinkForm'
 
 export interface PaymentLinkSectionProps {
@@ -92,9 +93,9 @@ export function PaymentLinkSection({
     return (
       <li key={provider.id}>
         <div className="flex items-center gap-3 p-3">
-          <span className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-brand/10 text-brand">
-            <Icon name="credit-card" className="size-[18px]" />
-          </span>
+          {/* The provider's own mark where there is one, the same square
+              slot where there is not (§F, §J). */}
+          <ProviderLogo provider={provider.id} />
           <span className="min-w-0 flex-1">
             <span className="block text-sm font-medium">{provider.name}</span>
             {/*

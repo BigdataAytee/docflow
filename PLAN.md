@@ -3960,3 +3960,36 @@ Added by Phase 1:
   thirteen entries is the lesson being applied: an automatic choice is a
   default, never a gate. A guard asserts every provider stays reachable from
   every country, including one the table has never heard of.
+- **Provider marks are shown in Settings and NOT on printed documents — a
+  decision, not an oversight.** `src/domain/payments/logos.ts` bundles each
+  provider's own logo beside its name in "How you get paid", because a trader
+  scanning that list recognises a mark faster than a word. The printed payment
+  box shows **names only**. A customer-facing document is closer to public use
+  of a trademark than a private settings screen — it gets forwarded, printed
+  and filed — and each provider's guidelines set conditions on size, clear
+  space, colour and placement that have to be read one by one before their
+  mark goes on one. **Pending a per-provider guidelines review.** Asserted
+  rather than assumed: a guard checks that no mark reaches the page at one,
+  three and six methods across all sixteen templates, because "we did not add
+  it" is not a property anybody would notice breaking.
+
+- **The logo map is EMPTY, and that is the shipping state.** Every entry has
+  to be a real file taken from the provider's own brand or press page, and
+  none can be fetched from inside a build. An approximation drawn to look
+  close enough is not a cheaper version of that — it is the thing trademark
+  guidelines exist to stop. So `PROVIDER_LOGOS` starts empty, `logoFor`
+  returns null, and every row falls back to its name alone in a slot that is
+  the same size either way. Adding one is: drop the file in
+  `src/assets/providers/`, import it, and record the variant, the source URL
+  and the date fetched. Nothing about the interface changes when they arrive.
+
+- **Provider logos carry the same standing caution as the markets list.**
+  Brand guidelines change, marks are redrawn, and a mark used outside its
+  owner's guidelines is this app's problem rather than the trader's. Every
+  bundled asset records `variant`, `source` and `fetched`, and a guard
+  refuses an entry missing any of the three. Re-check at each launch, the
+  same discipline §J requires for the bank-field sets and this plan already
+  requires for `providers.ts`. Never recolour, crop, distort or invert a
+  mark: dark mode uses the provider's own dark variant where they supply one
+  and their light mark otherwise, and `dark:invert` on a trademark is a
+  modified trademark.

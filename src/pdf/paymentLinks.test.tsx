@@ -351,3 +351,46 @@ describe('No token, and nothing said twice (Rule #4, §I)', () => {
     expect(methodName(stringsFor('en'), 'pos_terminal')).toBe('pos_terminal')
   })
 })
+
+/**
+ * The printed page carries names, never marks (§I, and a decision).
+ *
+ * The Settings list shows each provider's logo; the invoice does not, and
+ * that is deliberate rather than unfinished. A customer-facing document is
+ * closer to public use of a trademark than a private settings screen — it
+ * gets forwarded, printed and filed — and each provider's guidelines set
+ * conditions on size, clear space and colour that need checking one by one
+ * before their mark goes on one. Recorded in PLAN.md as pending a
+ * per-provider guidelines review.
+ *
+ * Asserted rather than assumed, because "we did not add it" is not a
+ * property: somebody reusing the settings row on a page would be an easy
+ * afternoon's work and nothing here would notice.
+ */
+describe('No mark reaches a printed document (§I)', () => {
+  it.each([1, 3, 6])('prints %i methods with no image at all', (count) => {
+    for (const template of TEMPLATES) {
+      const { unmount } = drawIt(count, template.id)
+
+      // The names are there …
+      expect(screen.getByText('PayPal'), template.name).toBeInTheDocument()
+      // … and nothing draws a mark beside them.
+      expect(
+        document.querySelectorAll('[data-provider-logo]').length,
+        `${template.name} drew a provider mark on the page`,
+      ).toBe(0)
+
+      unmount()
+      cleanup()
+    }
+  })
+
+  /** Nor any image at all in the payment box, whatever it came from. */
+  it('renders no image inside HOW TO PAY', () => {
+    drawIt(3, 'classic')
+
+    const heading = screen.getByText('HOW TO PAY')
+    const box = heading.parentElement!
+    expect(box.querySelectorAll('img').length, 'the payment box drew an image').toBe(0)
+  })
+})
