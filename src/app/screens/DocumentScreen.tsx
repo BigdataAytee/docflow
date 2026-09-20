@@ -29,6 +29,7 @@ import {
   billBalanceKeyFor,
 } from '../../features/payments/billBalance'
 import { canBillBalance } from '../../domain/payments/supersession'
+import { nextSequence } from '../../features/documents/reference'
 import { PageHeader, SkeletonList, StatusBadge } from '../../ui'
 import { BuilderCard } from '../../features/documents/BuilderCard'
 import type { UiStrings } from '../../domain/locale/data/strings'
@@ -1413,8 +1414,33 @@ export function DocumentScreen({ today = todayIso() }: { today?: string }) {
                   reason,
                   issuedAt: new Date().toISOString(),
                   existing: mineCredits,
-                  prefix: company?.numberingPrefixes?.invoice ?? 'CRN',
-                  sequence: creditNotes.length + 1,
+                  /*
+                   * ITS OWN SERIES, never the invoice's (§M).
+                   *
+                   * This read the company's INVOICE prefix and fell back to
+                   * 'CRN'. §M's uniqueness is per series, and credit notes
+                   * are a different table — so an owner who renamed their
+                   * invoices to "SV" in Settings got credit notes numbered
+                   * SV-0001 too, and a credit note could print the exact
+                   * reference an invoice already carries. Two different
+                   * documents, the same number, and no constraint anywhere
+                   * that would catch it.
+                   *
+                   * Not made configurable: §M gives credit notes no prefix
+                   * of their own, Settings offers one per document type, and
+                   * a credit note is not a document type. Rule #1 says the
+                   * smallest thing that works.
+                   */
+                  prefix: 'CRN',
+                  /*
+                   * ONE PAST THE HIGHEST, not one past the count (§M).
+                   *
+                   * A credit note's reference is frozen at issue like a
+                   * document's and carries the same unique constraint, so the
+                   * count had the same hole: remove one of five and the sixth
+                   * is offered the fifth's number.
+                   */
+                  sequence: nextSequence(creditNotes.map((note) => note.reference)),
                   fromReservedBlock: false,
                   deviceId: deviceId(),
                 })
