@@ -89,6 +89,7 @@ import { StepBody } from './builderSteps'
 import { billedInvoices, documentsOf, totalOf } from '../derive'
 import { nextSequence } from '../../features/documents/reference'
 import { offeredReference } from '../../features/documents/draftReference'
+import type { SavedPaymentLink } from '../../domain/payments/links'
 import { localDay, todayIso } from '../../domain/dates/calendar'
 import { usableMethodCount } from '../../features/payments/readiness'
 
@@ -1738,6 +1739,24 @@ export function BuilderScreen({ now = () => new Date().toISOString() }: { now?: 
           setSigning(true)
         }}
         {...(signatureUrl === undefined ? {} : { signatureUrl })}
+        /*
+         * §J'S + , ON A DOCUMENT THAT CAN BE PAID INTO.
+         *
+         * Invoices only. A delivery carries no money at all, a receipt
+         * records a payment that already happened — printing "how to pay" on
+         * either would be an instruction to pay again — and §I has
+         * quotations omit payment instructions by default.
+         */
+        {...(company === null || state.draft.type !== 'invoice'
+          ? {}
+          : {
+              paymentLinks: {
+                country: company.localeRegion,
+                defaults: company.paymentLinks ?? [],
+                onDefaults: (links: readonly SavedPaymentLink[]) =>
+                  void actions.updateCompany({ paymentLinks: links }),
+              },
+            })}
         onOpenCatalogue={() => navigate(settingsPath('items'))}
         /*
          * §G step 2's per-line photo, stored before it is referenced (§P).

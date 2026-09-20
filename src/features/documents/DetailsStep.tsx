@@ -27,6 +27,8 @@ import { CustomerPicker } from '../customers/CustomerPicker'
 import type { NewCustomer } from '../customers/CustomerSheet'
 import type { BilledInvoice } from '../customers/balance'
 import type { DocumentDraft } from './builder'
+import type { SavedPaymentLink } from '../../domain/payments/links'
+import { DocumentPaymentLinks } from './DocumentPaymentLinks'
 
 export interface DetailsStepProps {
   readonly draft: DocumentDraft
@@ -42,6 +44,18 @@ export interface DetailsStepProps {
   readonly onSign: () => void
   /** The drawn signature itself, resolved from the draft's asset id (§G). */
   readonly signatureUrl?: string
+  /**
+   * §J's payment links, for the + on the document (§G).
+   *
+   * Absent hides the control entirely — a delivery carries no money and a
+   * receipt records one that already happened, so neither has anything to be
+   * paid into. The screen above decides that; this one only draws it.
+   */
+  readonly paymentLinks?: {
+    readonly country: string
+    readonly defaults: readonly SavedPaymentLink[]
+    readonly onDefaults: (links: readonly SavedPaymentLink[]) => void
+  }
   /**
    * Today, `YYYY-MM-DD`, in the phone's own calendar.
    *
@@ -168,6 +182,7 @@ export function DetailsStep({
   onSetUpPayment,
   onSign,
   signatureUrl,
+  paymentLinks,
   today = todayIso(),
 }: DetailsStepProps) {
   const { profile, strings } = useCompany()
@@ -425,6 +440,26 @@ export function DetailsStep({
               </button>
             )}
           </div>
+
+          {/*
+            §J'S + , ON THE DOCUMENT.
+
+            The card already says whether this invoice can be paid; this is
+            how to change the answer without leaving it. Inside the same card
+            rather than as a new one: it is the same subject, and Rule #1
+            caps a mid-invoice afterthought at a button rather than a section.
+          */}
+          {paymentLinks !== undefined && (
+            <div className="mt-2">
+              <DocumentPaymentLinks
+                country={paymentLinks.country}
+                defaults={paymentLinks.defaults}
+                own={draft.paymentLinks}
+                onDocument={(links) => onChange({ paymentLinks: links })}
+                onDefaults={paymentLinks.onDefaults}
+              />
+            </div>
+          )}
         </BuilderCard>
       )}
 

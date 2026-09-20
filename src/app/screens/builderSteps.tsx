@@ -14,6 +14,7 @@ import type { BilledInvoice } from '../../features/customers/balance'
 import type { NewCustomer } from '../../features/customers/CustomerSheet'
 import { type IssueProblem, type DocumentDraft, type StepIndex, stepKeysFor } from '../../features/documents/builder'
 import { DetailsStep } from '../../features/documents/DetailsStep'
+import type { SavedPaymentLink } from '../../domain/payments/links'
 import { ItemsStep } from '../../features/documents/ItemsStep'
 import { TotalsStep } from '../../features/documents/TotalsStep'
 import { DesignStep } from '../../features/documents/DesignStep'
@@ -58,6 +59,12 @@ export interface StepBodyProps {
   readonly onSetUpPayment: () => void
   readonly onSign: () => void
   readonly signatureUrl?: string
+  /** §J's + on the document. Absent on the types that carry no money. */
+  readonly paymentLinks?: {
+    readonly country: string
+    readonly defaults: readonly SavedPaymentLink[]
+    readonly onDefaults: (links: readonly SavedPaymentLink[]) => void
+  }
   readonly onRememberItem: (item: { name: string; unitPriceMinor?: number; unit?: string }) => void
   /** §G: "a list icon jumps to Settings → Saved items". */
   readonly onOpenCatalogue: () => void
@@ -89,6 +96,7 @@ export function StepBody(props: StepBodyProps) {
           onSetUpPayment={props.onSetUpPayment}
           onSign={props.onSign}
           {...(props.signatureUrl === undefined ? {} : { signatureUrl: props.signatureUrl })}
+          {...(props.paymentLinks === undefined ? {} : { paymentLinks: props.paymentLinks })}
         />
       )
     case 'items':

@@ -401,6 +401,12 @@ export interface UiStrings {
     readonly linkNoHandle: string
     readonly linkNotALink: string
     readonly removeLink: string
+    /** §J's + on the document itself. */
+    readonly addToThisDocument: string
+    readonly onlyThisDocument: string
+    readonly savedAsDefault: string
+    readonly undoDefault: string
+    readonly doneWithLinks: string
     readonly addBankTransfer: string
     readonly editBankTransfer: string
     readonly closeAccountForm: string
@@ -1457,6 +1463,11 @@ const EN: UiStrings = {
     linkNoHandle: 'Add your name or page after {prefix}',
     linkNotALink: 'That does not look like a web address.',
     removeLink: 'Remove {provider}',
+    addToThisDocument: 'Add a payment method',
+    onlyThisDocument: 'Changes here apply to this document only.',
+    savedAsDefault: 'Saved for your future documents too.',
+    undoDefault: 'Just this one',
+    doneWithLinks: 'Done',
     addBankTransfer: 'Add bank transfer',
     editBankTransfer: 'Edit account details',
     closeAccountForm: 'Close account details',
