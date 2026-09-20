@@ -29,6 +29,7 @@ import { printedLine, type SavedPaymentLink } from '../domain/payments/links'
 import type { ProviderId } from '../domain/payments/providers'
 import { composeOptionsOf, designOf } from '../features/documents/composition'
 import { stringsFor } from '../domain/locale/data/strings'
+import { methodName } from '../features/payments/methods'
 
 const BANK = {
   bank_name: 'Zenith Bank',
@@ -281,5 +282,72 @@ describe('Switched off means off the page (§J)', () => {
   it('carries the saved value through unchanged', () => {
     const shown = optionsFor(['paystack_page']).paymentLinks ?? []
     expect(shown[0]?.value).toBe('paystack.com/pay/dynamic')
+  })
+})
+
+/**
+ * A provider id never reaches a customer (Rule #4, §I).
+ *
+ * FOUND ON THE PHONE. A pasted link's provider id lives in
+ * `enabledPaymentMethods` like any other method, so it flowed into §I's
+ * "Other payment methods" list — and printed there raw. The invoice read:
+ *
+ *     HOW TO PAY
+ *     Paystack        paystack.com/pay/dynamic-renaissance
+ *     ----------------------------------------
+ *     OTHER PAYMENT METHODS
+ *     paystack_page
+ *
+ * Two failures in three lines: a database token on a piece of paper, which
+ * is the exact bug `bank_transfer` was fixed for once already, and the same
+ * method named twice with the second naming saying less than the first.
+ */
+describe('No token, and nothing said twice (Rule #4, §I)', () => {
+  const boxFor = (enabled: readonly string[]) =>
+    composeOptionsOf({
+      company: {
+        id: 'co_1',
+        name: 'Dynamic Renaissance',
+        localeRegion: 'NG',
+        localeLanguage: 'en',
+        currency: 'NGN',
+        numberingPrefixes: {},
+        bankFields: {},
+        enabledPaymentMethods: enabled,
+        paymentLinks: [{ provider: 'paystack_page', value: 'paystack.com/pay/dynamic' }],
+      },
+      design: designOf(undefined, null),
+      strings: stringsFor('en'),
+      assets: [],
+    })
+
+  it('never prints a provider id', () => {
+    const others = boxFor(['paystack_page']).otherPaymentMethods ?? []
+    expect(others, 'a database token reached the printed page').not.toContain('paystack_page')
+  })
+
+  it('does not name a link again under the divider', () => {
+    expect(
+      boxFor(['paystack_page']).otherPaymentMethods ?? [],
+      'the link has its own row and was named a second time',
+    ).toEqual([])
+  })
+
+  /** A method with no row of its own still prints there, in words. */
+  it('still names cash on delivery, and in words', () => {
+    const others = boxFor(['paystack_page', 'cash_on_delivery']).otherPaymentMethods ?? []
+    expect(others).toEqual(['Cash on delivery'])
+  })
+
+  /**
+   * AND THE FALLBACK IS A NAME. Even reached directly — a stale enabled id
+   * with no link behind it — a provider resolves to what a customer would
+   * recognise rather than to the token a database stores.
+   */
+  it('resolves a provider id to its name wherever it is asked', () => {
+    expect(methodName(stringsFor('en'), 'paystack_page')).toBe('Paystack')
+    expect(methodName(stringsFor('en'), 'paypal_me')).toBe('PayPal')
+    // And something nobody has heard of still prints rather than vanishing.
+    expect(methodName(stringsFor('en'), 'pos_terminal')).toBe('pos_terminal')
   })
 })

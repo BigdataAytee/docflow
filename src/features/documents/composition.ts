@@ -393,8 +393,20 @@ export function composeOptionsOf(input: ComposeOptionsInput): Omit<ComposeOption
      * changed nothing a customer ever saw. §J is explicit that "everything
      * switched on prints in invoice payment instructions".
      */
+    /*
+     * §I: "online methods under a dashed divider labelled 'Other payment
+     * methods', cash listed separately" — so everything switched on EXCEPT
+     * the ones that already have a row of their own.
+     *
+     * Bank transfer's rows ARE the box. And a pasted link prints its own
+     * labelled line with an address on it, so naming it again below the
+     * divider says the same thing twice and the second time says less — on
+     * the phone it printed "Paystack … paystack.com/pay/…" and then
+     * "paystack_page" underneath.
+     */
     otherPaymentMethods: (company?.enabledPaymentMethods ?? [])
       .filter((id) => id !== 'bank_transfer')
+      .filter((id) => !(company?.paymentLinks ?? []).some((link) => link.provider === id))
       .map((id) => methodName(strings, id)),
     /*
      * THE PASTED LINKS, RESOLVED TO WHAT PRINTS (§J).

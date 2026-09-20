@@ -12,6 +12,7 @@
  */
 
 import type { UiStrings } from '../../domain/locale/data/strings'
+import { PROVIDERS, type ProviderId } from '../../domain/payments/providers'
 
 export interface PaymentMethod {
   readonly id: string
@@ -41,8 +42,19 @@ export function methodName(strings: UiStrings, id: string): string {
       return strings.settings.bankTransfer
     case 'cash_on_delivery':
       return strings.settings.cashOnDelivery
-    default:
-      return id
+    default: {
+      /*
+       * §J'S LINK PROVIDERS, BY NAME (Rule #4).
+       *
+       * A pasted link's provider id lives in `enabledPaymentMethods` like any
+       * other method, so it reaches here — and the fallback below printed it
+       * raw. `paystack_page` went onto a customer's invoice under OTHER
+       * PAYMENT METHODS: a database token on a piece of paper, which is the
+       * exact bug `bank_transfer` was already fixed for once.
+       */
+      const provider = PROVIDERS[id as ProviderId]
+      return provider?.name ?? id
+    }
   }
 }
 
