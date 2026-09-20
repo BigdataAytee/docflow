@@ -182,13 +182,26 @@ describe('The country is the question, and the fields follow it (§J)', () => {
     expect(screen.queryByLabelText('Routing number')).toBeNull()
   })
 
-  /** §J: "switching currency re-renders the fields and says so." */
-  it('says which country the fields belong to', async () => {
+  /**
+   * §J: "switching currency re-renders the fields and says so."
+   *
+   * AND IT READS AS ENGLISH FOR EVERY COUNTRY. The line said "banks in
+   * United Kingdom use" on the phone: the definite article belongs to a
+   * handful of names and to nothing else, and an article table for 240
+   * countries would be inventing linguistic data in every language §D has to
+   * carry. The name leads and "there" points back at it, which is correct
+   * for all of them — so this asserts the awkward one, not the easy one.
+   */
+  it('names the country without tripping over its article', async () => {
     const user = userEvent.setup()
     screenWith({ accountCountry: 'GB' })
 
     await user.click(screen.getByRole('button', { name: 'Add bank transfer' }))
-    expect(screen.getByText(/banks in United Kingdom use/)).toBeInTheDocument()
+    expect(screen.getByText(/United Kingdom — the details banks there ask for/)).toBeInTheDocument()
+    expect(
+      screen.queryByText(/in United Kingdom/),
+      'the line needs an article it cannot know',
+    ).toBeNull()
   })
 
   /** Choosing one is a change to the company, not to this screen's state. */

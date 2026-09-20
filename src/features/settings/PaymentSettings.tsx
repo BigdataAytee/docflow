@@ -165,6 +165,14 @@ function AccountDetails({
         §J: "switching currency re-renders the fields and says so." Said as a
         statement about the fields below rather than as an alert, because
         nothing has gone wrong — the form has simply become the right one.
+
+        THE COUNTRY LEADS, and no preposition follows it. "banks in {country}"
+        printed "banks in United Kingdom" on the phone — the article is part
+        of a handful of English names (the United Kingdom, the Netherlands,
+        the Philippines) and of nothing else, and carrying an article table
+        for 240 countries would be inventing linguistic data in every
+        language §D has to be translated into. Leading with the name and
+        pointing back at it with "there" is correct for every one of them.
       */}
       <p className="text-xs opacity-65" data-fields-for={currency}>
         {format(strings.settings.accountFieldsFollowCountry, {

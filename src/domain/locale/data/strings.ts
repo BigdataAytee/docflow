@@ -1423,7 +1423,7 @@ const EN: UiStrings = {
     currencyChanged: 'Your currency changed, so these fields changed too.',
     accountCountry: 'Which country is the account in?',
     accountCountryHint: 'This decides which details your customers need.',
-    accountFieldsFollowCountry: 'These are the details banks in {country} use.',
+    accountFieldsFollowCountry: '{country} — the details banks there ask for.',
     saveAccount: 'Save and close',
     accountSaved: 'Saved.',
     addBankTransfer: 'Add bank transfer',
