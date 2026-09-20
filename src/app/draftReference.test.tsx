@@ -239,3 +239,70 @@ describe('A draft is called the same thing everywhere (§G, §M)', () => {
     expect(within(issued.closest('li') ?? issued).queryByText(OFFERED)).toBeNull()
   })
 })
+
+/**
+ * The receipt flow's own preview, which was the sixth surface (§M, §V).
+ *
+ * It is the one thing somebody looks at before pressing "Record payment" —
+ * the goods, the invoice total, what is being paid, what is left — and it
+ * printed `REC-…` at the top while the bill it settles, named two lines
+ * above on the same screen, read `INV-0005-0P`. One page, two conventions.
+ *
+ * Found by walking the quotation's "They've paid" on the phone, after the
+ * other five were already unified.
+ */
+describe('The receipt about to be issued knows its own number (§M, §V)', () => {
+  const owed = (state: MemoryState) => {
+    withDraft(state)
+    // A bill with money outstanding, so the flow has something to settle.
+    state.documents.push({
+      id: 'doc_owed',
+      companyId: DEV_COMPANY_ID,
+      type: 'invoice',
+      status: 'issued',
+      customerId: 'cus_1',
+      currency: 'NGN',
+      lineItems: [line],
+      issueDate: '2026-09-02',
+      issuedReference: 'INV-0011',
+      frozenLabels: {
+        printedTitle: 'INVOICE',
+        partyLabel: 'Bill to',
+        signatureCaption: 'Issued by',
+        language: 'en',
+      },
+      totalMinor: 100_000_00,
+    })
+    // And two receipts already issued, so the offer is not simply REC-0001.
+    for (const [index, reference] of ['REC-0001', 'REC-0006'].entries()) {
+      state.documents.push({
+        id: `doc_rec_${index}`,
+        companyId: DEV_COMPANY_ID,
+        type: 'receipt',
+        status: 'issued',
+        customerId: 'cus_1',
+        currency: 'NGN',
+        lineItems: [],
+        issueDate: '2026-09-03',
+        issuedReference: reference,
+        frozenLabels: null,
+        totalMinor: 1_000_00,
+      })
+    }
+  }
+
+  it('prints the number it will get, not an ellipsis', async () => {
+    const user = userEvent.setup()
+    renderAt('/new/receipt', owed)
+
+    // §G's first question: somebody paying a bill they already owe.
+    await user.click(await screen.findByRole('button', { name: /owe|bill/i }))
+    await user.click(await screen.findByText('Ade Stores'))
+    // The picker leads with the goods and carries the reference below them.
+    await user.click(await screen.findByText(/INV-0011 ·/))
+
+    // The bill names itself, and so does the receipt settling it.
+    expect(await screen.findByText(/^REC-0007(-[A-Z0-9]{2})?$/)).toBeInTheDocument()
+    expect(screen.queryByText(/^REC-…$/), 'the receipt still prints an ellipsis').toBeNull()
+  })
+})

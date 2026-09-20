@@ -956,7 +956,7 @@ function PayInvoicePreview({
   signatureAssetId?: string
 }) {
   const { profile, strings } = useCompany()
-  const { company, assets } = useAppData()
+  const { company, assets, documents } = useAppData()
   const design = useMemo(() => designOf(undefined, company), [company])
 
   const picture = frozenPicture({
@@ -982,6 +982,18 @@ function PayInvoicePreview({
     customer,
     profile,
     reference: null,
+    /*
+     * THE NUMBER THIS RECEIPT WILL GET (§M).
+     *
+     * The sixth surface. This preview is the one thing somebody looks at
+     * before pressing "Record payment", and it printed `REC-…` while the
+     * bill it settles — two lines above, on the same screen — named itself
+     * `INV-0005-0P`. One page, two conventions.
+     */
+    suggestedReference: offeredReference(
+      { documents, prefixes: company?.numberingPrefixes, profile, deviceId: deviceId() },
+      'receipt',
+    ),
     status: 'draft',
     frozenLabels: null,
     replaces: null,
