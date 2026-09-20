@@ -284,8 +284,16 @@ export interface DocumentRecord {
    */
   readonly recurrenceKey?: string
   /** Both null until issue, then frozen forever (§M). */
-  /** §G's pencil, kept on the draft until issue consumes it. */
-  readonly referenceOverride?: string
+  /**
+   * §G's pencil, kept on the draft until issue consumes it.
+   *
+   * `| undefined` is load-bearing under `exactOptionalPropertyTypes`: the
+   * owner can CLEAR a number they typed, and a patch has to be able to say
+   * so. Without it, "absent" and "cleared" are the same shape, a conditional
+   * spread skips the field, and the record keeps a number the card no longer
+   * shows.
+   */
+  readonly referenceOverride?: string | undefined
   /**
    * The rates this document is computed at, in parts per million (§K).
    *

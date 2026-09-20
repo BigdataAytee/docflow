@@ -188,6 +188,78 @@ describe('The number offered is one nothing already uses (§G, §M)', () => {
   })
 
   /**
+   * AND IT SURVIVES LEAVING THE SCREEN — which it did not, and which no
+   * jsdom test caught, because every one of them typed a number and then
+   * walked straight on to Save without ever leaving the builder.
+   *
+   * On the phone: type DR-INV-0413, press Enter, watch the card change,
+   * press Back, come back in — and the card reads INV-0005-0P again. The
+   * commit listed the fields it carried one by one, under a comment saying
+   * it carried everything, and the pencil was not on the list.
+   */
+  it('keeps the typed number when the builder is left', async () => {
+    const user = userEvent.setup()
+    const state = renderAt(
+      '/edit/doc_draft',
+      withGap('invoice', ['INV-0001', 'INV-0002', 'INV-0009']),
+    )
+
+    await user.click(await screen.findByRole('button', { name: 'Edit reference' }))
+    await user.type(
+      await screen.findByRole('textbox', { name: 'Edit reference' }),
+      'DR-INV-0413{Enter}',
+    )
+    // Out through the catalogue link: no step change, no Save, no Close.
+    await user.click(await screen.findByRole('button', { name: 'Items' }))
+    await user.click(await screen.findByRole('button', { name: 'Saved items' }))
+    await screen.findByText('Saved items')
+
+    await waitFor(() =>
+      expect(
+        state.documents.find((row) => row.id === 'doc_draft')?.referenceOverride,
+        'the number the owner typed was thrown away on the way out',
+      ).toBe('DR-INV-0413'),
+    )
+  })
+
+  /**
+   * AND CLEARING IT TRAVELS TOO, which is the same defect wearing the
+   * opposite sign: a conditional spread would skip the field when the owner
+   * emptied it, so the record would keep a number the card no longer shows.
+   */
+  it('lets the owner take their own number back off', async () => {
+    const user = userEvent.setup()
+    const state = renderAt('/edit/doc_draft', (seed) => {
+      withGap('invoice', ['INV-0001', 'INV-0002', 'INV-0009'])(seed)
+      const draft = seed.documents.find((row) => row.id === 'doc_draft')
+      if (draft !== undefined) {
+        seed.documents[seed.documents.indexOf(draft)] = {
+          ...draft,
+          referenceOverride: 'DR-INV-0413',
+        }
+      }
+    })
+
+    expect(await screen.findByText('DR-INV-0413')).toBeInTheDocument()
+    await user.click(screen.getByRole('button', { name: 'Edit reference' }))
+    await user.clear(await screen.findByRole('textbox', { name: 'Edit reference' }))
+    await user.keyboard('{Enter}')
+    // Back to the generated number, on the card.
+    expect(await numberShown('INV')).toContain('INV-0010')
+
+    await user.click(await screen.findByRole('button', { name: 'Items' }))
+    await user.click(await screen.findByRole('button', { name: 'Saved items' }))
+    await screen.findByText('Saved items')
+
+    await waitFor(() =>
+      expect(
+        state.documents.find((row) => row.id === 'doc_draft')?.referenceOverride,
+        'the record kept a number the card no longer showed',
+      ).toBeUndefined(),
+    )
+  })
+
+  /**
    * AND THE PENCIL STILL WINS. The offered number is a suggestion, not a
    * rule — §G lets the owner type their own, and what they typed is what
    * gets frozen.

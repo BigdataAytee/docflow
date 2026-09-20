@@ -300,7 +300,13 @@ export function fromDocument(patch: Partial<DocumentRecord>): Row {
   // These two are nullable on purpose: a draft HAS no reference, and writing
   // null is how it is created (§M).
   if (patch.issuedReference !== undefined) row['issued_reference'] = patch.issuedReference
-  if (patch.referenceOverride !== undefined) row['reference_override'] = patch.referenceOverride
+  /*
+   * `in`, not `!== undefined`: a CLEARED number has to travel. Asking whether
+   * the value is undefined cannot tell "the owner emptied this field" from
+   * "this patch does not mention it", so clearing never reached the server
+   * and the next device down the sync still had the old number.
+   */
+  if ('referenceOverride' in patch) row['reference_override'] = patch.referenceOverride ?? null
   if (patch.taxRatePpm !== undefined) row['tax_rate_ppm'] = patch.taxRatePpm
   if (patch.whtRatePpm !== undefined) row['wht_rate_ppm'] = patch.whtRatePpm
   if (patch.frozenLabels !== undefined) row['frozen_labels'] = patch.frozenLabels

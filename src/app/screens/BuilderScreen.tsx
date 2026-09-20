@@ -1108,6 +1108,23 @@ export function BuilderScreen({ now = () => new Date().toISOString() }: { now?: 
         ...(draft.vehicleNumber === undefined ? {} : { vehicleNumber: draft.vehicleNumber }),
         ...(draft.dispatchDate === undefined ? {} : { dispatchDate: draft.dispatchDate }),
         ...(draft.expectedDate === undefined ? {} : { expectedDate: draft.expectedDate }),
+        /*
+         * §G'S PENCIL, WHICH THIS LINE WAS LOSING.
+         *
+         * The comment above says "everything the draft holds, not a chosen
+         * subset", and the subset had grown back: somebody typed their own
+         * number, pressed Enter, watched the card change — and pressing
+         * Back threw it away, because the commit never carried it. Found on
+         * the phone, with every jsdom test green, because those tests type
+         * and then walk STRAIGHT to Save without ever leaving the screen.
+         *
+         * Unconditional, unlike the lines above it, because CLEARING has to
+         * travel too. A conditional spread would skip the field when the
+         * owner emptied it, leaving the old number in the record while the
+         * card showed the generated one — the same defect wearing the
+         * opposite sign.
+         */
+        referenceOverride: draft.referenceOverride,
         // The design travels with the document (§H). Four scalars, so the
         // saved record can draw itself without this screen being open.
         templateId: design.templateId,
