@@ -283,3 +283,29 @@ describe('A switched-on link reads back as on (§J)', () => {
     expect(screen.getByRole('button', { name: 'Paystack' })).toHaveTextContent('Off')
   })
 })
+
+/** And the header counts them too, which was the same bug a third time. */
+describe('The header counts everything switched on (§J)', () => {
+  it('counts a link alongside a method', () => {
+    screenWith({
+      methods: methods(true),
+      paymentLinks: [{ provider: 'paystack_page', value: 'paystack.com/pay/dynamic' }],
+      enabledMethodIds: ['bank_transfer', 'paystack_page'],
+      onPaymentLinks: vi.fn(),
+    })
+
+    expect(
+      screen.getByText(/switched on/),
+      'the header counted a list that cannot contain a link',
+    ).toHaveTextContent('2 switched on')
+  })
+
+  it('says none when none is on, whatever is saved', () => {
+    screenWith({
+      paymentLinks: [{ provider: 'paystack_page', value: 'paystack.com/pay/dynamic' }],
+      enabledMethodIds: [],
+      onPaymentLinks: vi.fn(),
+    })
+    expect(screen.getByText('None switched on yet')).toBeInTheDocument()
+  })
+})

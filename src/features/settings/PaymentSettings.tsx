@@ -254,7 +254,12 @@ export function PaymentSettings({
   onAccountCountry,
   onToggleMethod,
   paymentLinks = [],
-  enabledMethodIds = [],
+  /*
+   * Defaulted FROM `methods`, so a caller that has not been taught about
+   * links still gets the right answer for the rows it does draw. The screen
+   * passes the company's real list.
+   */
+  enabledMethodIds = methods.filter((method) => method.enabled).map((method) => method.id),
   onPaymentLinks,
 }: PaymentSettingsProps) {
   const { strings } = useCompany()
@@ -283,7 +288,15 @@ export function PaymentSettings({
   const accountCurrency = currencyForCountry(country, currency)
   const fields = fieldsFor(accountCurrency)
   const problems = validateBankDetails({ currency: accountCurrency, values: bankValues })
-  const enabledCount = methods.filter((method) => method.enabled).length
+  /*
+   * EVERYTHING SWITCHED ON, links included.
+   *
+   * This counted `methods`, which draws bank transfer and cash on delivery
+   * and never a link provider — so the header read "None switched on yet"
+   * over a Paystack row showing On. The third time on this feature that one
+   * half of a screen asked a list that could not contain the answer.
+   */
+  const enabledCount = enabledMethodIds.length
 
   const bankTransferOn = methods.some(
     (method) => method.id === 'bank_transfer' && method.enabled,
