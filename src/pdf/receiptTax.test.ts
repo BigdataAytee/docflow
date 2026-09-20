@@ -234,3 +234,33 @@ describe('The bill for a short-paid cash sale prints what it recorded', () => {
     )
   })
 })
+
+describe('A discount prints, so the paper adds up (§I)', () => {
+  const DISCOUNT = percentToPpm(10)
+
+  /**
+   * THE ONE THIS IS FOR. The builder has collected a discount for as long as
+   * it has existed and the page never drew a row for it, so a 10% reduction
+   * was applied to the total and shown nowhere: "Subtotal ₦100,000 / Tax
+   * ₦6,750 / Payable ₦96,750" is arithmetic a customer cannot follow, on the
+   * one document where following it is the point.
+   */
+  it('shows what came off between the subtotal and the tax', () => {
+    const page = compose(receipt({ discountRatePpm: DISCOUNT }))
+    expect(page.discountLabel, 'the discount was applied and never printed').not.toBeNull()
+    expect(page.totals?.discount).toEqual(money('NGN', 10_000_00))
+  })
+
+  /** And the three printed figures reach the printed total. */
+  it('adds up on the page', () => {
+    const page = compose(receipt({ discountRatePpm: DISCOUNT }))
+    const t = page.totals
+    if (t === null || t === undefined) throw new Error('no totals')
+    expect(t.subtotal.minor - t.discount.minor + t.tax.minor).toBe(t.payable.minor)
+  })
+
+  /** A bill with no discount gains no row reading "Discount —". */
+  it('draws no row when nothing came off', () => {
+    expect(compose(receipt()).discountLabel).toBeNull()
+  })
+})

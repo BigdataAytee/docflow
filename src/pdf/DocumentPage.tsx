@@ -417,6 +417,20 @@ export function DocumentPage({
                   label={model.subtotalLabel}
                   value={formatAmount(model.totals.subtotal.minor, currency)}
                 />
+                {/*
+                  WHAT CAME OFF, where the customer can see it.
+
+                  The builder has collected a discount for as long as it has
+                  existed and this row was never drawn, so the page showed a
+                  subtotal, a tax and a payable that did not add up — on the
+                  one document where a customer checks exactly that.
+                */}
+                {model.discountLabel !== null && (
+                  <Line
+                    label={model.discountLabel}
+                    value={`−${formatAmount(model.totals.discount.minor, currency)}`}
+                  />
+                )}
                 {model.taxLabel !== null && (
                   <Line
                     label={model.taxLabel}

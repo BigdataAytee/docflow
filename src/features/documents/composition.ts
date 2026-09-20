@@ -339,6 +339,7 @@ export function composeOptionsOf(input: ComposeOptionsInput): Omit<ComposeOption
     /* The words beside the figures above the total — see `ComposeOptions`. */
     totalsLabels: {
       subtotal: strings.totals.subtotal,
+      discount: strings.totals.discount,
       tax: strings.totals.tax,
       withholding: strings.totals.withholding,
       payable: strings.totals.payable,

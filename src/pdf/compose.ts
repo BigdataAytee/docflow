@@ -291,6 +291,17 @@ export interface PageModel {
    * from the UI catalogue that is already translated with the screen.
    */
   readonly subtotalLabel: string
+  /**
+   * The money coming OFF, when any does (§I).
+   *
+   * The Totals step has collected a discount since it was written and the
+   * page never had a row for it, so a 10% reduction was applied to the total
+   * and shown nowhere: "Subtotal ₦100,000 / Tax ₦6,750 / Payable ₦96,750" is
+   * arithmetic a customer cannot follow, on the one document where following
+   * it is the point. Null when there is none, so an ordinary bill gains no
+   * row reading "Discount —".
+   */
+  readonly discountLabel: string | null
   readonly taxLabel: string | null
   readonly whtLabel: string | null
   /** Invoices only. Quotations omit payment instructions by default (§I). */
@@ -387,6 +398,7 @@ export interface ComposeOptions {
   readonly noteLabel?: string
   readonly totalsLabels?: {
     readonly subtotal: string
+    readonly discount: string
     readonly tax: string
     readonly withholding: string
     readonly payable: string
@@ -617,6 +629,10 @@ export function composeDocument(
         ? null
         : { label: options.noteLabel ?? 'NOTE TO CUSTOMER', body: options.note.trim() },
     subtotalLabel: options.totalsLabels?.subtotal ?? 'Subtotal',
+    discountLabel:
+      totals === null || totals.discount.minor === 0
+        ? null
+        : (options.totalsLabels?.discount ?? 'Discount'),
     taxLabel:
       totals === null || totals.tax.minor === 0
         ? null
