@@ -15,7 +15,8 @@ import { useAppData } from '../store'
 import { HOME, documentPath, newDocumentPath } from '../paths'
 import { DocumentList } from '../../features/documents/DocumentList'
 import { DOCUMENT_TYPES, type DocumentType } from '../../domain/documents/types'
-import { numberingPrefix } from '../../domain/locale/profile'
+import { shownReference } from '../../features/documents/draftReference'
+import { deviceId } from '../device'
 import { format } from '../../domain/locale/data/strings'
 import { documentsOf, listRows } from '../derive'
 import { todayIso } from '../../domain/dates/calendar'
@@ -38,10 +39,22 @@ export function ListScreen({ today = todayIso() }: { today?: string }) {
       // A credited invoice owes less, so its row says so too (§E).
       creditNotes,
       statusWords: strings.statuses,
-      // §M: "drafts show provisional references". The company prefix wins,
-      // falling back to the locale's own (§D).
-      provisionalReference: (document) =>
-        `${company?.numberingPrefixes?.[document.type] ?? numberingPrefix(profile, document.type)}-…`,
+      /*
+       * §M: "drafts show provisional references" — and the provisional one
+       * is now the number the draft would actually get, not `INV-…`. The
+       * builder's card already showed it; this column showed something else,
+       * which is one document with two answers.
+       */
+      referenceOf: (document) =>
+        shownReference(
+          {
+            documents,
+            prefixes: company?.numberingPrefixes,
+            profile,
+            deviceId: deviceId(),
+          },
+          document,
+        ),
       // Two sent quotations look identical in a list, and only one of them
       // is the live offer — the same for a cancelled receipt beside the one
       // that replaced it. Only a quotation's chain is numbered (§G's Rev 2).

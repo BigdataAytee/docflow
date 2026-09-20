@@ -105,6 +105,7 @@ import { lastShared, shareCount, shareEventFor } from '../../share/events'
 // attach until §Q Phase 4's native PDF writer, and the sheet says so.
 import { shareTextFor } from '../../share/text'
 import { deviceId } from '../device'
+import { offeredReference } from '../../features/documents/draftReference'
 import { displayStatus, totalOf } from '../derive'
 import { localDay } from '../../domain/dates/calendar'
 
@@ -278,6 +279,18 @@ export function DocumentScreen({ today = todayIso() }: { today?: string }) {
     customer,
     profile,
     reference: record.issuedReference,
+    /*
+     * THE NUMBER A DRAFT WOULD GET, on the page that shows the draft (§M).
+     *
+     * This page fell through to `INV-…` while the builder one tap away
+     * showed `INV-0005-0P`. Same document, two answers, and the ellipsis is
+     * not a number anybody can read back over a phone. An issued document is
+     * untouched: `reference` above outranks this (Rule #5).
+     */
+    suggestedReference: offeredReference(
+      { documents, prefixes: company?.numberingPrefixes, profile, deviceId: deviceId() },
+      record.type,
+    ),
     status: record.status,
     frozenLabels: record.frozenLabels,
     replaces: replacesOf(documents, record),

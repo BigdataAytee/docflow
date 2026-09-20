@@ -20,7 +20,8 @@ import {
 } from '../../features/statements/PeriodPicker'
 import { composeStatement, statementCurrencies } from '../../features/statements/compose'
 import { PageHeader, SkeletonList } from '../../ui'
-import { numberingPrefix } from '../../domain/locale/profile'
+import { shownReference } from '../../features/documents/draftReference'
+import { deviceId } from '../device'
 import { billedInvoices, displayStatus, statementDocuments, totalOf } from '../derive'
 import { todayIso } from '../../domain/dates/calendar'
 import { localDay } from '../../domain/dates/calendar'
@@ -78,11 +79,21 @@ export function ContactScreen({ today = todayIso() }: { today?: string }) {
       .sort((a, b) => (b.issueDate ?? '').localeCompare(a.issueDate ?? '') || b.id.localeCompare(a.id))
       .map((document) => {
         const status = displayStatus(document, payments, today, creditNotes, documents)
+        /*
+         * THE SAME NUMBER THE LIST AND THE BUILDER SHOW (§M).
+         *
+         * This said `INV-…` while the builder's card said `INV-0005-0P`,
+         * so one document answered the question two ways depending on which
+         * screen you were standing on.
+         */
+        const shown = shownReference(
+          { documents, prefixes: company?.numberingPrefixes, profile, deviceId: deviceId() },
+          document,
+        )
         return {
           id: document.id,
-          reference:
-            document.issuedReference ??
-            `${company?.numberingPrefixes?.[document.type] ?? numberingPrefix(profile, document.type)}-…`,
+          reference: shown.text,
+          provisional: shown.provisional,
           status,
           statusLabel: strings.statuses[status] ?? status,
           ...(document.issueDate === undefined ? {} : { date: document.issueDate }),

@@ -42,6 +42,8 @@ import type { CreditNote, Payment } from '../../domain/payments/ledger'
 export interface HistoryRow {
   readonly id: string
   readonly reference: string
+  /** True while the number is only an offer, so the row can mute it (§M). */
+  readonly provisional?: boolean
   readonly status: string
   readonly statusLabel: string
   readonly date?: string
@@ -244,7 +246,15 @@ export function ContactPage({
                     className="flex min-h-tap w-full flex-wrap items-center gap-3 rounded-xl bg-surface px-3 py-2 text-start"
                   >
                     <span className="min-w-0 flex-1">
-                      <span className="block break-words text-sm font-semibold">{row.reference}</span>
+                      {/* Muted while it is an offer, like the list page. */}
+                      <span
+                        {...(row.provisional === true ? { 'data-provisional': 'true' } : {})}
+                        className={`block break-words text-sm ${
+                          row.provisional === true ? 'font-medium opacity-55' : 'font-semibold'
+                        }`}
+                      >
+                        {row.reference}
+                      </span>
                       {row.date !== undefined && (
                         <span className="block text-xs tabular-nums opacity-60">{row.date}</span>
                       )}

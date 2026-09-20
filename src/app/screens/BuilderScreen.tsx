@@ -87,7 +87,8 @@ import type { Customer } from '../../data/repositories'
 import { SkeletonList } from '../../ui'
 import { StepBody } from './builderSteps'
 import { billedInvoices, documentsOf, totalOf } from '../derive'
-import { nextSequence, suggestedReference } from '../../features/documents/reference'
+import { nextSequence } from '../../features/documents/reference'
+import { offeredReference } from '../../features/documents/draftReference'
 import { localDay, todayIso } from '../../domain/dates/calendar'
 import { usableMethodCount } from '../../features/payments/readiness'
 
@@ -1265,18 +1266,18 @@ export function BuilderScreen({ now = () => new Date().toISOString() }: { now?: 
          * out what it will be called. Computed from what is ALREADY issued,
          * so it steps over a voided one rather than into it (§M).
          */
-        ...(state === null || company === null
+        ...(state === null
           ? {}
           : {
-              suggestedReference: suggestedReference({
-                prefix:
-                  company.numberingPrefixes?.[state.draft.type] ??
-                  numberingPrefix(profile, state.draft.type),
-                references: documentsOf(documents, state.draft.type).map(
-                  (row) => row.issuedReference,
-                ),
-                deviceId: deviceId(),
-              }),
+              suggestedReference: offeredReference(
+                {
+                  documents,
+                  prefixes: company?.numberingPrefixes,
+                  profile,
+                  deviceId: deviceId(),
+                },
+                state.draft.type,
+              ),
             }),
         status: record?.status ?? 'draft',
         frozenLabels: record?.frozenLabels ?? null,

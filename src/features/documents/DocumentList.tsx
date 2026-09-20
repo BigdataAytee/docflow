@@ -21,6 +21,14 @@ import { formatMoney } from '../customers/formatMoney'
 export interface ListRow {
   readonly id: string
   readonly reference: string
+  /**
+   * True while the number is an OFFER rather than a frozen fact (§M).
+   *
+   * A draft now shows the number it would actually be given, the same one the
+   * builder's card shows — so it has to be visibly not-yet-real, or it reads
+   * as an issued number sitting in a column of issued ones.
+   */
+  readonly provisional?: boolean
   readonly status: string
   readonly statusLabel: string
   readonly customerName?: string
@@ -203,7 +211,22 @@ export function DocumentList({ type, rows, onOpen, onNew, onBack }: DocumentList
                 >
                   <span className="min-w-0 flex-1">
                     <span className="flex items-center gap-2">
-                      <span className="truncate text-[12.5px] font-semibold tabular-nums">
+                      {/*
+                        MUTED WHILE IT IS ONLY AN OFFER (§M).
+
+                        Not italic and not bracketed: the reference is read
+                        character by character, and either would change the
+                        glyphs somebody is trying to match. Weight and opacity
+                        say "not settled yet" without touching the number, and
+                        the Draft badge two millimetres to the right says the
+                        rest.
+                      */}
+                      <span
+                        {...(row.provisional === true ? { 'data-provisional': 'true' } : {})}
+                        className={`truncate text-[12.5px] tabular-nums ${
+                          row.provisional === true ? 'font-medium opacity-55' : 'font-semibold'
+                        }`}
+                      >
                         {row.reference}
                       </span>
                       <StatusBadge status={row.status} label={row.statusLabel} />

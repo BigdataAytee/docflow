@@ -16,7 +16,8 @@ import { useCompany } from './context'
 import { useAppData } from './store'
 import { totalOf } from './derive'
 import { buildIndex, type IndexEntry } from '../features/search'
-import { numberingPrefix } from '../domain/locale/profile'
+import { shownReference } from '../features/documents/draftReference'
+import { deviceId } from './device'
 
 /**
  * `customerName` is optional on the index entry and `exactOptionalPropertyTypes`
@@ -42,11 +43,18 @@ export function useSearchIndex(names: ReadonlyMap<string, string>): IndexEntry[]
         documents: documents.map((document) => ({
           id: document.id,
           type: document.type,
-          // A draft is findable by its provisional number, which is what the
-          // owner sees on the list page (§M).
-          reference:
-            document.issuedReference ??
-            `${company?.numberingPrefixes?.[document.type] ?? numberingPrefix(profile, document.type)}-…`,
+          /*
+           * A draft is findable by the number the owner sees (§M).
+           *
+           * Which was `INV-…` — a string nobody would ever type into a
+           * search box. Now it is the number the list, the customer's
+           * history and the builder all show, so searching for what is on
+           * screen finds the document that is on screen.
+           */
+          reference: shownReference(
+            { documents, prefixes: company?.numberingPrefixes, profile, deviceId: deviceId() },
+            document,
+          ).text,
           frozenLabels: document.frozenLabels,
           ...customerNameOf(names, document.customerId),
           // A delivery document carries no money, so it is not findable by one.

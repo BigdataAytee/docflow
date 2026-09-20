@@ -269,7 +269,26 @@ export function DetailsStep({
                 this document will actually be called, not a preview of a
                 guess.
               */
-              <span className="block truncate font-mono text-xs font-semibold">
+              /*
+                MUTED WHILE IT IS ONLY AN OFFER, solid once it is theirs.
+
+                The list page and the customer's history show this same
+                number now, muted the same way, so a draft looks like a
+                draft wherever somebody meets it. Here the mute does a
+                second job: it is the difference between "this is what you
+                will get" and "this is what you typed", which is the one
+                piece of feedback the pencil could not otherwise give.
+              */
+              <span
+                {...(draft.referenceOverride === undefined
+                  ? { 'data-provisional': 'true' }
+                  : {})}
+                className={`block truncate font-mono text-xs ${
+                  draft.referenceOverride === undefined
+                    ? 'font-medium opacity-55'
+                    : 'font-semibold'
+                }`}
+              >
                 {draft.referenceOverride ?? reference}
               </span>
             )}

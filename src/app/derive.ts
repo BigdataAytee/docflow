@@ -229,8 +229,19 @@ export interface ListRowOptions {
   readonly customers: readonly Customer[]
   readonly today: string
   readonly statusWords: Readonly<Record<string, string>>
-  /** For a draft, which has no issued reference yet (§M). */
-  readonly provisionalReference: (document: DocumentRecord) => string
+  /**
+   * What goes in the number column, and whether it is a fact yet (§M).
+   *
+   * A draft has no issued reference, and this used to return `INV-…` while
+   * the builder's own card showed the number the draft would actually get.
+   * One answer now — `shownReference` — carrying `provisional` so the row
+   * can mute it rather than sitting a real-looking number unmarked in a
+   * column of real ones.
+   */
+  readonly referenceOf: (document: DocumentRecord) => {
+    readonly text: string
+    readonly provisional: boolean
+  }
   readonly creditNotes?: readonly CreditNote[]
   /**
    * Renders the "this one was replaced" line. Passed the document's TYPE as
@@ -257,6 +268,7 @@ export function listRows(
       options.creditNotes ?? [],
     )
     const name = document.customerId === undefined ? undefined : names.get(document.customerId)
+    const shown = options.referenceOf(document)
 
     // §G's Rev 2, read from the chain rather than stored on the original.
     const newer = supersededBy(documents, document.id)
@@ -270,7 +282,8 @@ export function listRows(
 
     return {
       id: document.id,
-      reference: document.issuedReference ?? options.provisionalReference(document),
+      reference: shown.text,
+      provisional: shown.provisional,
       status,
       statusLabel: options.statusWords[status] ?? status,
       ...(name === undefined ? {} : { customerName: name }),
