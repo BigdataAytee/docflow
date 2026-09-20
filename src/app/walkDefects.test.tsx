@@ -324,6 +324,29 @@ describe('A line photo can come from the camera OR the gallery (§G)', () => {
     expect(screen.queryByRole('button', { name: 'Take a photo' })).toBeNull()
   })
 
+  /**
+   * AND IT IS DRAWN ABOVE THE ROWS, not inside one.
+   *
+   * Every row in the Items list is `glass`, and `backdrop-filter` makes each
+   * one a stacking context — so the menu, positioned inside its row, painted
+   * UNDER the card below it whatever z-index it carried. On the phone that
+   * was a white sliver trapped between two rows: the control worked, and
+   * there was nothing legible to press.
+   *
+   * Asserted as "outside the list", because that is the property. A z-index
+   * assertion would pass on the broken version, which had one.
+   */
+  it('draws the menu outside the row that opened it', async () => {
+    const user = userEvent.setup()
+    await openTheChooser(user)
+
+    const menu = screen.getByRole('button', { name: 'Take a photo' })
+    expect(
+      menu.closest('li'),
+      'the menu sits inside a row, under the card after it',
+    ).toBeNull()
+  })
+
   /** A menu with no way out is a trap on a phone; the screen behind it shuts it. */
   it('can be dismissed without choosing', async () => {
     const user = userEvent.setup()

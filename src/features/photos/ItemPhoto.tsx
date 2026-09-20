@@ -33,6 +33,7 @@
  */
 
 import { useId, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 
 import { useCompany } from '../../app/context'
 import { format } from '../../domain/locale/data/strings'
@@ -56,11 +57,20 @@ export function ItemPhoto({ itemName, currentUrl, onPhoto, onRemove }: ItemPhoto
   const id = useId()
   const [problem, setProblem] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
-  const [asking, setAsking] = useState(false)
+  /*
+   * WHERE TO DRAW THE MENU, measured rather than positioned relatively.
+   *
+   * Every row in the Items list is `glass`, and `backdrop-filter` creates a
+   * stacking context — so a menu inside a row paints UNDER the rows after it
+   * whatever its z-index, and on the phone it came out as a white sliver
+   * trapped between two cards. It is drawn into `document.body` instead,
+   * which is the only place outside all of them.
+   */
+  const [asking, setAsking] = useState<{ top: number; right: number } | null>(null)
 
   const accept = (file: File | undefined) => {
     if (file === undefined) return
-    setAsking(false)
+    setAsking(null)
     setProblem(null)
     setBusy(true)
     void shrinkItemPhoto(file)
@@ -77,7 +87,11 @@ export function ItemPhoto({ itemName, currentUrl, onPhoto, onRemove }: ItemPhoto
       .finally(() => setBusy(false))
   }
 
-  const pick = () => setAsking((open) => !open)
+  const pick = (event: { currentTarget: HTMLElement }) => {
+    if (asking !== null) return setAsking(null)
+    const box = event.currentTarget.getBoundingClientRect()
+    setAsking({ top: box.bottom + 4, right: window.innerWidth - box.right })
+  }
 
   return (
     <span className="relative shrink-0">
@@ -117,53 +131,60 @@ export function ItemPhoto({ itemName, currentUrl, onPhoto, onRemove }: ItemPhoto
       />
 
       {/*
-        ASKED ON THE ROW, not in a sheet. It is two words and two taps' worth
-        of decision, and a full-screen sheet for it would be the machinery
-        Rule #1 keeps out. Anchored to the end so it opens inward from the
-        edge of a phone rather than off it.
+        ASKED WHERE THE CONTROL IS, but drawn outside every row.
+
+        It is two words and two taps' worth of decision, so a full-screen
+        sheet for it would be the machinery Rule #1 keeps out — but it cannot
+        live INSIDE the row either: every row is `glass`, `backdrop-filter`
+        makes each one a stacking context, and on the phone the menu came out
+        as a white sliver trapped under the card below. A portal to the body
+        is the only place above all of them.
       */}
-      {asking && (
-        <>
-          {/*
-            A WAY OUT. A menu with two answers and no third is a trap on a
-            phone, where there is no Escape key to reach for — so the whole
-            screen behind it dismisses, which is what everybody already tries.
-          */}
-          <button
-            type="button"
-            aria-label={strings.photo.closeChoices}
-            onClick={() => setAsking(false)}
-            className="fixed inset-0 z-10 cursor-default"
-          />
-        </>
-      )}
-      {asking && (
-        <span className="absolute end-0 top-full z-20 mt-1 flex w-max flex-col overflow-hidden rounded-xl border border-edge/10 bg-surface shadow-lg">
-          <button
-            type="button"
-            onClick={() => camera.current?.click()}
-            className="flex min-h-tap items-center gap-2 px-3 text-start text-xs font-medium"
-          >
-            <Icon name="camera" size={0.8} />
-            {strings.photo.takeNow}
-          </button>
-          <button
-            type="button"
-            onClick={() => gallery.current?.click()}
-            className="flex min-h-tap items-center gap-2 border-t border-edge/10 px-3 text-start text-xs font-medium"
-          >
-            <Icon name="photo" size={0.8} />
-            {strings.photo.chooseExisting}
-          </button>
-        </span>
-      )}
+      {asking !== null &&
+        createPortal(
+          <>
+            {/*
+              A WAY OUT. A menu with two answers and no third is a trap on a
+              phone, where there is no Escape key to reach for — so the whole
+              screen behind it dismisses, which is what everybody tries.
+            */}
+            <button
+              type="button"
+              aria-label={strings.photo.closeChoices}
+              onClick={() => setAsking(null)}
+              className="fixed inset-0 z-[70] cursor-default"
+            />
+            <span
+              style={{ top: asking.top, right: asking.right }}
+              className="fixed z-[71] flex w-max flex-col overflow-hidden rounded-xl border border-edge/10 bg-surface shadow-lg"
+            >
+              <button
+                type="button"
+                onClick={() => camera.current?.click()}
+                className="flex min-h-tap items-center gap-2 px-3 text-start text-xs font-medium"
+              >
+                <Icon name="camera" size={0.8} />
+                {strings.photo.takeNow}
+              </button>
+              <button
+                type="button"
+                onClick={() => gallery.current?.click()}
+                className="flex min-h-tap items-center gap-2 border-t border-edge/10 px-3 text-start text-xs font-medium"
+              >
+                <Icon name="photo" size={0.8} />
+                {strings.photo.chooseExisting}
+              </button>
+            </span>
+          </>,
+          document.body,
+        )}
 
       {currentUrl === undefined ? (
         <button
           type="button"
           disabled={busy}
           onClick={pick}
-          aria-expanded={asking}
+          aria-expanded={asking !== null}
           data-add-photo
           aria-label={format(strings.photo.addToItem, { item: itemName })}
           className="tap-scale grid min-h-tap min-w-tap place-items-center rounded-lg opacity-45 disabled:opacity-20"
@@ -176,7 +197,7 @@ export function ItemPhoto({ itemName, currentUrl, onPhoto, onRemove }: ItemPhoto
             type="button"
             disabled={busy}
             onClick={pick}
-            aria-expanded={asking}
+            aria-expanded={asking !== null}
             data-item-photo
             aria-label={format(strings.photo.replaceOnItem, { item: itemName })}
             className="tap-scale block h-9 w-9 overflow-hidden rounded-lg border border-edge/10"
