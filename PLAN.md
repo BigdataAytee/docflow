@@ -272,7 +272,10 @@ report.
 
 ### Outstanding elsewhere
 
-* Eight `[[PLACEHOLDER]]` legal blanks.
+* Eight `[[PLACEHOLDER]]` legal blanks — the machinery is done, the answers
+  are not. They go in `legal/values.json` (copy `legal/values.example.json`);
+  `npm run policy` lists what each one is and why it cannot be guessed, and
+  `npm run site` now REFUSES to publish a page still carrying one.
 * `frame-ancestors` and HSTS: the values and every host's config are
   generated (`docs/deploy/web-headers.md`) and `dist/_headers` ships with the
   bundle. Applying them is one act on whichever host serves `dist/`.

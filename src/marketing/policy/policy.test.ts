@@ -124,9 +124,35 @@ describe('Both halves are required, and neither substitutes for the other', () =
     // Blocked questions are blocked by something no answer can supply, so
     // verification is tested against the questions that CAN be answered.
     const answerable = QUESTIONS.filter((question) => question.blockedBy === undefined)
-    const report = policyReport(NOW, all, passing, answerable)
+    // Every half, and the business facts are one of them: a policy with a
+    // blank where the entity name goes is not verified however clean the
+    // code is. Supplied here because the repository has none until a person
+    // writes them.
+    const report = policyReport(NOW, all, passing, answerable, [])
 
     expect(report.verified).toBe(true)
+  })
+
+  /**
+   * AND A BLANK BUSINESS FACT IS ENOUGH ON ITS OWN. The code can be perfect
+   * and every store answer signed, and a privacy policy that still says
+   * `[[SUPPORT_EMAIL]]` is not something to submit.
+   */
+  it('is not verified while a business fact is blank', () => {
+    const all = required().map((entry) =>
+      answer({
+        questionId: entry.question.id,
+        ...(entry.market === undefined ? {} : { market: entry.market }),
+        confirmedBy: 'a person',
+      }),
+    )
+    const answerable = QUESTIONS.filter((question) => question.blockedBy === undefined)
+    const report = policyReport(NOW, all, passing, answerable, [
+      { token: 'SUPPORT_EMAIL', what: 'the data-rights contact', why: 'it cannot be guessed' },
+    ])
+
+    expect(report.verified).toBe(false)
+    expect(reportOf(report)).toContain('SUPPORT_EMAIL')
   })
 
   it('is not verified while an answer has nobody standing behind it', () => {

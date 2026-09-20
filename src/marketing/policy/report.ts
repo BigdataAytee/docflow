@@ -20,6 +20,8 @@
  * rules those claims will be judged against.
  */
 
+import type { Placeholder } from '../../legal/placeholders'
+import { VALUES_FILE, missingValues } from '../../legal/values'
 import { type CheckResult, runChecks } from './checks'
 import {
   ANSWERS,
@@ -49,6 +51,14 @@ export interface PolicyReport {
   readonly unconfirmed: readonly { question: PolicyQuestion; market?: string; answer: Answer }[]
   /** Everything a store form can be filled in with, from evidence. */
   readonly declarations: readonly string[]
+  /**
+   * Business facts the legal documents still carry as `[[TOKEN]]` (§U).
+   *
+   * Beside `blocked` and `unconfirmed` rather than among the checks, because
+   * no amount of code can invent a registered address — and a check that can
+   * never pass holds the gate red on work that is not the code's to do.
+   */
+  readonly awaitingFacts: readonly Placeholder[]
   readonly codeClean: boolean
   readonly verified: boolean
 }
@@ -70,6 +80,8 @@ export function policyReport(
   answers: readonly Answer[] = ANSWERS,
   checks: readonly CheckResult[] = runChecks(),
   questions: readonly PolicyQuestion[] = QUESTIONS,
+  /* Injectable like the rest, so a test can describe a fully answered world. */
+  awaitingFacts: readonly Placeholder[] = missingValues(),
 ): PolicyReport {
   const open: OpenQuestion[] = []
   const blocked: OpenQuestion[] = []
@@ -126,11 +138,19 @@ export function policyReport(
     blocked,
     unconfirmed,
     declarations: checks.map((check) => check.declares),
+    awaitingFacts,
     codeClean,
     // Every half, and never one standing in for another. A machine-read
     // answer with a citation is a draft: §U asks for a person at submission
     // time, so `confirmedBy` is part of the gate and not a decoration.
-    verified: codeClean && open.length === 0 && blocked.length === 0 && unconfirmed.length === 0,
+    verified:
+      codeClean &&
+      open.length === 0 &&
+      blocked.length === 0 &&
+      unconfirmed.length === 0 &&
+      // A policy with a blank where the entity name goes is not verified,
+      // however clean the code is.
+      awaitingFacts.length === 0,
   }
 }
 
@@ -177,12 +197,24 @@ export function reportOf(report: PolicyReport): string {
     lines.push(`       source: ${entry.answer.source}`)
   }
 
+  /*
+   * THE FACTS NOBODY HERE MAY INVENT, listed with what each one is — so the
+   * person who can answer them sees the question rather than a token.
+   */
+  lines.push('', `Business facts still blank, for ${VALUES_FILE}:`)
+  if (report.awaitingFacts.length === 0) lines.push('  nothing')
+  for (const fact of report.awaitingFacts) {
+    lines.push(`  ${fact.token} — ${fact.what}`)
+    lines.push(`       why it cannot be guessed: ${fact.why}`)
+  }
+
   lines.push(
     '',
     report.verified
       ? 'Verified: the code is clean and every rule has been read recently.'
       : `NOT verified — ${report.open.length} unread, ${report.blocked.length} blocked, ` +
-          `${report.unconfirmed.length} awaiting a person` +
+          `${report.unconfirmed.length} awaiting a person, ` +
+          `${report.awaitingFacts.length} business facts blank` +
           (report.codeClean ? '' : ', and the code checks are failing'),
   )
   return lines.join('\n')

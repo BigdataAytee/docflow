@@ -12,6 +12,7 @@ import { dirname, join, resolve } from 'node:path'
 import { describe, expect, it } from 'vitest'
 
 import { buildSite, reportOf } from './site'
+import { publishableLegalPages } from './legalPages'
 import { isInside } from './outputPath'
 
 const OUT = join(process.cwd(), 'dist-site')
@@ -31,6 +32,21 @@ describe('Emitting the site', () => {
     }
 
     if (process.env.EMIT_SITE !== '1') return
+
+    /*
+     * NOTHING IS WRITTEN WITH A BUSINESS FACT STILL BLANK (§U).
+     *
+     * Building the site with a token visible is fine and deliberate — the
+     * report reads it, and a half-filled page is embarrassing in the way that
+     * gets it fixed. PUBLISHING one is a different act: that page is what a
+     * store reviewer opens and what a customer uses to exercise a data right,
+     * and "write to [[SUPPORT_EMAIL]]" is not a contact.
+     *
+     * Checked HERE, at the moment of writing to disk, so building and testing
+     * the site stay possible while it is unfinished. `dist-site` shipped with
+     * three such pages before this line existed.
+     */
+    publishableLegalPages()
 
     rmSync(OUT, { recursive: true, force: true })
     for (const file of site.files) {

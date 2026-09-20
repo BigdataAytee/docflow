@@ -18,6 +18,8 @@
  */
 
 import { LEGAL_DOCUMENTS, type LegalDocument } from '../legal/documents'
+import { fill, unfilled } from '../legal/placeholders'
+import { VALUES_FILE, legalValues } from '../legal/values'
 import { absolute } from './seo'
 
 const escapeHtml = (value: string): string =>
@@ -105,10 +107,56 @@ export interface LegalPage {
   readonly contents: string
 }
 
-export function legalPages(): LegalPage[] {
+/**
+ * The published pages, with the business facts filled in (§U).
+ *
+ * `documents.ts` writes `[[TOKEN]]` wherever a fact belongs that nobody in
+ * this repository may invent, and until now NOTHING filled them: the site
+ * shipped a privacy policy reading "write to [[SUPPORT_EMAIL]]", which is a
+ * data-rights contact that is not an address.
+ *
+ * What is still unanswered stays VISIBLE rather than being dropped. A page
+ * showing a token gets fixed; one that silently omitted the line would ship
+ * looking finished with a legal requirement missing — and the publish gate
+ * refuses a site that carries one, so it cannot reach a reader either way.
+ */
+export function legalPages(values = legalValues()): LegalPage[] {
   return LEGAL_DOCUMENTS.map((document) => ({
     file: `${document.slug}/index.html`,
     path: `/${document.slug}`,
-    contents: legalPageHtml(document),
+    contents: fill(legalPageHtml(document), values),
   }))
+}
+
+export class UnfilledLegalPageError extends Error {}
+
+/**
+ * The same pages, refusing to be PUBLISHED with a blank in them (§U).
+ *
+ * `legalPages` leaves a token visible on purpose — a half-filled policy that
+ * shows `[[SUPPORT_EMAIL]]` is embarrassing in the way that gets it fixed,
+ * and it is what the in-app renderer and the report read.
+ *
+ * Writing one to a public URL is a different act. That page is what a store
+ * reviewer opens and what a customer uses to exercise a data right, and
+ * "write to [[SUPPORT_EMAIL]]" is not a contact — it is a legal document
+ * published, under a company's own name, visibly unfinished. So the emit
+ * refuses, and says exactly which facts are missing and where they go.
+ */
+export function publishableLegalPages(values = legalValues()): LegalPage[] {
+  const pages = legalPages(values)
+  const blanks = pages.flatMap((page) =>
+    unfilled(page.contents).map((token) => `${page.path} → [[${token}]]`),
+  )
+  if (blanks.length > 0) {
+    throw new UnfilledLegalPageError(
+      [
+        `Refusing to publish ${blanks.length} unfilled business fact${blanks.length === 1 ? '' : 's'}:`,
+        ...blanks.map((blank) => `  ${blank}`),
+        '',
+        `Put the answers in ${VALUES_FILE}. \`npm run policy\` lists what each one is.`,
+      ].join('\n'),
+    )
+  }
+  return pages
 }

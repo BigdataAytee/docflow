@@ -22,6 +22,7 @@
     "test:rls": "vitest run --config vitest.rls.config.ts",
     "gate:hosted": "node --env-file-if-exists=.env --experimental-strip-types supabase/tests/hosted-gate.ts",
     "pentest": "node --experimental-strip-types tools/pentest/run.ts",
+    "legal": "cross-env UPDATE_LEGAL=1 vitest run src/legal/values.test.ts",
     "headers": "cross-env UPDATE_HEADERS=1 vitest run src/web/headers.test.ts",
     "discoverability": "cross-env UPDATE_DISCOVERABILITY=1 vitest run src/marketing/sheet.test.ts",
     "site": "cross-env EMIT_SITE=1 vitest run src/marketing/emit.test.ts",

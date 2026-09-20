@@ -1,0 +1,10 @@
+{
+  "LEGAL_ENTITY_NAME": "<The registered company or sole-trader name that publishes DocFlow>",
+  "REGISTERED_ADDRESS": "<The registered office or trading address, in full>",
+  "COMPANY_NUMBER": "<Company registration number, if the entity is registered>",
+  "SUPPORT_EMAIL": "<The address a person can actually write to about their data>",
+  "GOVERNING_LAW": "<The jurisdiction whose law governs the terms, and the courts that hear a dispute>",
+  "SUPABASE_REGION": "<The region the Supabase project runs in>",
+  "PRO_PRICE": "<The subscription price and interval, per store and per currency>",
+  "EFFECTIVE_DATE": "<The date these documents take effect>"
+}

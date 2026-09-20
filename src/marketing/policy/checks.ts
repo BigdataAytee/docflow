@@ -20,6 +20,10 @@ import { execFileSync } from 'node:child_process'
 import { existsSync, readFileSync, readdirSync } from 'node:fs'
 import { join } from 'node:path'
 
+import { PLACEHOLDERS, unfilled } from '../../legal/placeholders'
+import { VALUES_FILE, missingValues } from '../../legal/values'
+import { legalPages } from '../legalPages'
+
 export type Severity = 'blocker' | 'note'
 
 export interface Finding {
@@ -427,6 +431,64 @@ export function checkRatingsPrompt(files = trackedFiles(/^src\/.*\.tsx?$/)): Che
   }
 }
 
+/**
+ * No policy reaches a reader with a business fact still blank (§U, §P).
+ *
+ * `placeholders.ts` declares the eight facts nobody here may invent, and the
+ * documents carry `[[TOKEN]]` until somebody fills them. Nothing checked that
+ * they HAD been: the emitted site shipped a privacy policy reading "write to
+ * [[SUPPORT_EMAIL]]", which is not an address, on the page a store reviewer
+ * opens and a customer uses to exercise a data right.
+ *
+ * A BLOCKER, not a note. Every other unfinished thing here degrades what the
+ * app can claim; this one publishes a legal document that is visibly
+ * unfinished, under a company's own name.
+ *
+ * It reads the RENDERED pages rather than the source, because filling happens
+ * at render: checking `documents.ts` would report tokens that were about to
+ * be replaced, and checking nothing at all is where this started.
+ */
+export function checkLegalPlaceholders(
+  pages: readonly { readonly path: string; readonly contents: string }[] = legalPages(),
+): CheckResult {
+  const findings: Finding[] = pages.flatMap((page) =>
+    unfilled(page.contents).map((token) => ({
+      check: 'legal-placeholders',
+      severity: 'blocker' as const,
+      detail: `${page.path} still says [[${token}]] — ${
+        PLACEHOLDERS.find((placeholder) => placeholder.token === token)?.what ?? 'unknown fact'
+      }`,
+    })),
+  )
+
+  const missing = missingValues()
+  return {
+    check: 'legal-placeholders',
+    passed: findings.length === 0,
+    findings,
+    declares:
+      findings.length === 0
+        ? 'The published policy, terms and storage note carry no unfilled business facts.'
+        : `${missing.length} of ${PLACEHOLDERS.length} business facts are unanswered. Put them in ${VALUES_FILE}: ${missing
+            .map((placeholder) => placeholder.token)
+            .join(', ')}.`,
+  }
+}
+
+/*
+ * NOT IN `CHECKS`, and the distinction is the point.
+ *
+ * `codeClean` means the code is doing what it claims, and every check in that
+ * list is something this repository can fix. No amount of code can invent a
+ * registered address — so listing it there would hold `npm run verify` red
+ * forever on work that is not the code's to do, and a permanently red gate is
+ * a gate people learn to skip.
+ *
+ * It is reported as awaiting a PERSON, beside the store questions nobody has
+ * signed off, and it still keeps `verified` false. The hard refusal lives
+ * where publishing happens: `legalPages` will not render a page carrying an
+ * unfilled token into the emitted site.
+ */
 export const CHECKS = [
   checkDestinations,
   checkLocalAi,
