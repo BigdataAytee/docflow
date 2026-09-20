@@ -15,13 +15,19 @@
  * already arrived, and only an invoice says "Payable".
  */
 
+import { useEffect, useState } from 'react'
+
 import { useCompany } from '../../app/context'
 import { shared } from '../../domain/locale/profile'
 import { format } from '../../domain/locale/data/strings'
 import { TYPE_PALETTE } from '../../ui'
 import { carriesMoney, type DocumentType } from '../../domain/documents/types'
 import { computeTotals } from '../../domain/money/totals'
-import { percentToPpm } from '../../domain/money/money'
+import { type Money, percentToPpm } from '../../domain/money/money'
+import { parseAmount } from '../../domain/money/parse'
+import { minorUnitsFor } from '../../domain/locale/bank-fields'
+import { cashSaleSplit } from '../payments/cashSale'
+import { majorFor } from '../payments/PayInvoice'
 import { formatMoney } from '../customers/formatMoney'
 import { BuilderCard } from './BuilderCard'
 import type { DocumentDraft } from './builder'
@@ -154,7 +160,7 @@ export function TotalsStep({
     ...(draft.type === 'invoice' ? { whtRate: percentToPpm(whtPercent) } : {}),
   })
 
-  return (
+  const block = (
     <BuilderCard title={strings.totals.title} icon="calculator" accent={accent}>
       <div className="space-y-0">
         <Line label={strings.totals.subtotal} value={formatMoney(totals.subtotal)} />
@@ -237,7 +243,11 @@ export function TotalsStep({
           <span className="text-[13px] font-semibold">
             {totalLabel(draft.type, profile, strings)}
           </span>
-          <span className="text-[18px] font-bold tabular-nums" style={{ color: accent }}>
+          <span
+            data-totals-payable
+            className="text-[18px] font-bold tabular-nums"
+            style={{ color: accent }}
+          >
             {formatMoney(totals.payable)}
           </span>
         </div>
@@ -250,6 +260,104 @@ export function TotalsStep({
       >
         {strings.totals.ratesFromSettings}
       </p>
+    </BuilderCard>
+  )
+
+  /*
+   * A CASH SALE ALSO ASKS WHAT WAS HANDED OVER (§G, §K).
+   *
+   * Only on a receipt that stands on its own — Path A takes its figures from
+   * the invoice it settles and reaches no Totals step at all.
+   *
+   * A SEPARATE CARD, and the separation is the design. Everything in the
+   * block above is COMPUTED: what the goods cost. This is STATED: what the
+   * customer actually gave you. Putting it among the arithmetic would invite
+   * somebody to read it as another adjustment to the price — and the price is
+   * exactly what it must not touch.
+   */
+  if (draft.type !== 'receipt' || draft.linkedInvoiceId !== undefined) return block
+
+  return (
+    <>
+      {block}
+      <PaidNow draft={draft} total={totals.payable} onChange={onChange} />
+    </>
+  )
+}
+
+/**
+ * What the customer handed over, and what it leaves.
+ *
+ * PREFILLED TO THE TOTAL, because paying in full is the common case and must
+ * cost nothing — leave it alone and the receipt reads "Paid in full" and no
+ * second document appears. It follows the total while nobody has touched it
+ * and stops the moment somebody does: adding a line after typing "40000" must
+ * not silently raise what they said they were paid.
+ */
+function PaidNow({
+  draft,
+  total,
+  onChange,
+}: {
+  draft: DocumentDraft
+  total: Money
+  onChange: (patch: Partial<DocumentDraft>) => void
+}) {
+  const { strings } = useCompany()
+  const { accent } = TYPE_PALETTE[draft.type]
+  const scale = minorUnitsFor(draft.currency)
+
+  const [touched, setTouched] = useState(false)
+  const [typed, setTyped] = useState('')
+
+  const paidMinor = touched ? (parseAmount(typed, { scale }) ?? 0) : total.minor
+  const split = cashSaleSplit({ total, paidMinor })
+
+  /*
+   * The draft carries the figure, so the save path and the printed page read
+   * what this field shows. In an effect because writing it during render
+   * would be updating a parent mid-render, which React refuses.
+   */
+  useEffect(() => {
+    if (draft.paidAmountMinor !== paidMinor) onChange({ paidAmountMinor: paidMinor })
+  }, [draft.paidAmountMinor, paidMinor, onChange])
+
+  return (
+    <BuilderCard title={strings.totals.whatTheyPaid} icon="cash" accent={accent}>
+      <div data-paid-section>
+        <label className="block text-[11.5px] font-medium" htmlFor="receipt-paid-now">
+          {strings.totals.paidNow}
+        </label>
+        <input
+          id="receipt-paid-now"
+          data-paid-now
+          inputMode="decimal"
+          className="sunken mt-1.5 min-h-tap w-full rounded-[10px] px-3 text-[17px] font-semibold tabular-nums"
+          value={touched ? typed : majorFor(total)}
+          onChange={(event) => {
+            setTouched(true)
+            setTyped(event.target.value)
+          }}
+        />
+        <p className="mt-1.5 text-[10px] leading-relaxed opacity-60">
+          {strings.totals.paidNowHint}
+        </p>
+
+        {/*
+          WHAT HAPPENS NEXT, said before it happens rather than discovered in
+          the invoices list afterwards (§N).
+        */}
+        <p
+          data-paid-note
+          className={`mt-2 text-[11.5px] font-medium ${
+            split.paidInFull ? 'text-status-good' : 'text-status-warn'
+          }`}
+        >
+          {split.paidInFull
+            ? strings.newReceipt.clearsIt
+            : format(strings.newReceipt.willBill, { amount: formatMoney(split.balance) })}
+        </p>
+      </div>
     </BuilderCard>
   )
 }

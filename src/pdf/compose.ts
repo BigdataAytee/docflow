@@ -501,26 +501,26 @@ export function composeDocument(
   }))
 
   /*
-   * A RECEIPT COMPUTES NOTHING (§V, §I).
+   * A CASH SALE IS STILL A SALE (§G, §J).
    *
-   * No tax, no discount — money already received is not a tax base, and a
-   * receipt is evidence rather than a calculation. This applied the company's
-   * default rate to a cash sale, so one document printed two different totals:
-   * "Subtotal ₦100,000 / Tax ₦7,500 / Invoice total ₦107,500" above an
-   * evidence block reading "Invoice total ₦100,000", and the debt billed on
-   * the lower one. Found by walking it; every test agreed with both figures
-   * because no test had a company with a default rate and a receipt at once.
+   * A receipt computes its discount and its tax like every other money type:
+   * knocking something off at the counter is ordinary, and it has to print.
+   *
+   * WHAT WENT WRONG HERE WAS NOT THE TAX. One sale printed three figures —
+   * ₦107,500 on the goods table, ₦100,000 in the evidence block beneath it,
+   * ₦100,000 on the bill raised for the remainder — because the page computed
+   * one total and the domain computed another. The fix is one computation
+   * feeding every figure, not removing the arithmetic from the page; a
+   * receipt that quietly dropped the VAT a trader had charged would be a
+   * worse lie than a disagreement.
    */
-  const computesTax = document.type !== 'receipt'
   const totals: DocumentTotals | null = showsMoney
     ? computeTotals({
         type: document.type,
         currency: document.currency,
         lines: document.lineItems,
-        ...(document.discountRate === undefined || !computesTax
-          ? {}
-          : { discountRate: document.discountRate }),
-        ...(document.taxRate === undefined || !computesTax ? {} : { taxRate: document.taxRate }),
+        ...(document.discountRate === undefined ? {} : { discountRate: document.discountRate }),
+        ...(document.taxRate === undefined ? {} : { taxRate: document.taxRate }),
         ...(document.type === 'invoice' && document.whtRate !== undefined
           ? { whtRate: document.whtRate }
           : {}),

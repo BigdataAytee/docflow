@@ -39,9 +39,30 @@ export class CashSaleError extends Error {
   }
 }
 
-/** What a receipt's own goods come to. Never the payment (§V). */
-export function saleTotal(currency: string, lineItems: readonly LineItem[]): Money {
-  return computeTotals({ type: 'receipt', currency, lines: lineItems }).payable
+/**
+ * What a receipt's own goods come to. Never the payment (§V).
+ *
+ * THE RATES ARE ARGUMENTS, and that is the whole lesson of the three-figure
+ * bug. This computed a bare sum while the printed page applied the company's
+ * discount and tax, so one ₦100,000 sale read as ₦107,500 on the paper,
+ * ₦100,000 in its own evidence block, and ₦100,000 on the bill raised for the
+ * remainder — with the customer chased for the smallest of the three.
+ *
+ * Same function, same inputs, one answer: the Totals step, the record that is
+ * written, the bill for the remainder and the printed sheet all call this.
+ */
+export function saleTotal(
+  currency: string,
+  lineItems: readonly LineItem[],
+  rates: { readonly discountRate?: number; readonly taxRate?: number } = {},
+): Money {
+  return computeTotals({
+    type: 'receipt',
+    currency,
+    lines: lineItems,
+    ...(rates.discountRate === undefined ? {} : { discountRate: rates.discountRate }),
+    ...(rates.taxRate === undefined ? {} : { taxRate: rates.taxRate }),
+  }).payable
 }
 
 export interface CashSaleSplit {
@@ -119,12 +140,21 @@ export function invoiceForCashSale(input: {
   }
   readonly receiptId: string
   readonly today: string
+  /**
+   * The rates the SALE was computed at, carried onto the bill.
+   *
+   * Not the company's defaults read again here: a discount knocked off at the
+   * counter and the rate in force that day are facts about this sale, and the
+   * bill for what is still owed has to agree with the receipt that names it
+   * down to the kobo. Passing them means one computation, two documents.
+   */
+  readonly rates?: { readonly discountRate?: number; readonly taxRate?: number }
 }): CashSaleInvoice {
-  const { receipt } = input
+  const { receipt, rates = {} } = input
   if (receipt.customerId === undefined) throw new CashSaleError('no_customer')
   if (receipt.lineItems.length === 0) throw new CashSaleError('nothing_sold')
 
-  const total = saleTotal(receipt.currency, receipt.lineItems)
+  const total = saleTotal(receipt.currency, receipt.lineItems, rates)
   const paidMinor = receipt.paidAmountMinor ?? total.minor
   if (paidMinor <= 0) throw new CashSaleError('nothing_paid')
 
@@ -137,31 +167,25 @@ export function invoiceForCashSale(input: {
       currency: receipt.currency,
       customerId: receipt.customerId,
       /*
-       * THE SAME GOODS, with fresh line ids.
+       * THE SAME GOODS, taxable exactly as they were sold.
        *
        * Sharing ids with the receipt's lines would make two documents claim
-       * the same rows, which §E's line-item json has no way to express and
-       * which sync would have to guess at.
+       * the same rows, which §E's line-item json cannot express and sync
+       * would have to guess at — so the ids are fresh and nothing else moves.
        */
       lineItems: receipt.lineItems.map((line, index) => ({
         ...line,
         id: `${input.receiptId}:inv:${index}`,
-        /*
-         * NOT TAXABLE, and this is the sale's own arithmetic rather than a
-         * tax opinion.
-         *
-         * The price the trader typed is what was charged over the counter —
-         * ₦5,000 a bag, twenty bags, ₦100,000 — and the customer has already
-         * handed over part of it against that figure. Adding the company's
-         * default rate on top here would bill them ₦107,500 for a ₦100,000
-         * sale they were standing in front of, and would make this bill
-         * disagree with the receipt that names it.
-         */
-        taxable: false,
       })),
-      // For the same reason, and explicitly: this document carries no rate,
-      // so re-rendering it next year cannot find one (Rule #5).
-      taxRatePpm: 0,
+      /*
+       * AND THE RATES IT WAS COMPUTED AT, stored rather than left to fall
+       * back (Rule #5, §K).
+       *
+       * Without them the page reads whatever Settings says on the day it is
+       * re-rendered, so a bill raised today could ask for a different figure
+       * next year — beside a receipt frozen at today's.
+       */
+      ...(rates.taxRate === undefined ? {} : { taxRatePpm: rates.taxRate }),
       issueDate: input.today,
       dueDate: input.today,
     },

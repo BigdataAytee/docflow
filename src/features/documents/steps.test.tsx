@@ -894,17 +894,26 @@ describe('Which steps a receipt actually runs (§G)', () => {
   })
 
   /**
-   * NO TOTALS STEP ON EITHER RECEIPT PATH. §V: "a receipt's printed total IS
-   * the payment" — there is no subtotal, tax or discount to set, because the
-   * money already arrived and its amount is not something the owner computes.
-   * A step offering to adjust it would be offering to disagree with the
-   * ledger, and it is what used to sit between the signature and Save.
+   * A RECEIPT SETTLING AN INVOICE COMPUTES NOTHING. The price was set on the
+   * document the customer is holding, and a step offering to adjust it here
+   * would be offering to disagree with the bill it is evidence against. That
+   * is Path A, and it is why signing sits immediately before Save there.
    */
-  it.each([
-    ['settling an invoice', { type: 'receipt' as const, linkedInvoiceId: 'doc_inv' }],
-    ['standing alone', { type: 'receipt' as const }],
-  ])('gives a receipt %s no totals step', (_case, draft) => {
-    expect(stepKeysFor(draft)).not.toContain('totals')
+  it('gives a receipt settling an invoice no totals step', () => {
+    expect(stepKeysFor({ type: 'receipt', linkedInvoiceId: 'doc_inv' })).not.toContain('totals')
+  })
+
+  /**
+   * A CASH SALE DOES. Its goods were typed on that screen and nowhere else,
+   * so the subtotal, anything knocked off at the counter and the tax are all
+   * decisions being made right now — and all three have to print. It is also
+   * the only screen where "what the goods cost" and "what they handed over"
+   * are different numbers.
+   */
+  it('gives a cash receipt a totals step', () => {
+    const keys = stepKeysFor({ type: 'receipt' })
+    expect(keys).toContain('totals')
+    expect(keys).toEqual(['details', 'items', 'totals', 'design', 'review'])
   })
 
   it('leaves the totals step on everything that computes one', () => {

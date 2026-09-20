@@ -10,13 +10,17 @@
  *  · and the bill raised for the remainder printed ₦107,500 while the ledger
  *    recorded it at ₦100,000 and chased ₦60,000.
  *
- * The cause was one line: compose applied the company's default tax rate to a
- * receipt. Every test agreed with every figure, because no test had a company
- * with a default rate and a receipt in the same fixture — which is why the
- * fixture below has both, and why it is the point of the file.
+ * The cause was not the tax. The PAGE computed one total and the DOMAIN
+ * computed another, so every figure was somebody's honest answer to a
+ * different question. A cash sale is still a sale: a trader who knocked
+ * something off at the counter needs it to print, and one who charged VAT
+ * needs that to print too — a receipt that quietly dropped either would be a
+ * worse lie than the disagreement.
  *
- * §V settles it: a receipt is evidence that money arrived, not a calculation.
- * The goods are context; the printed total is the payment.
+ * So the fix is ONE COMPUTATION feeding every figure, and these are the
+ * places it has to reach. No fixture had a company with a default rate and a
+ * receipt at the same time, which is why nothing caught it, and why the one
+ * below has both.
  */
 
 import { describe, expect, it } from 'vitest'
@@ -121,23 +125,30 @@ const compose = (row: DocumentRecord) => {
   )
 }
 
-describe('A receipt computes no tax (§V, §I)', () => {
-  /**
-   * THE ONE THIS IS FOR. The goods table read ₦107,500 while the evidence
-   * block on the same sheet read ₦100,000.
-   */
-  it('prints the goods at what they came to, with nothing added', () => {
+describe('A cash sale is still a sale (§G, §J)', () => {
+  /** The tax a trader charged has to print. */
+  it('prints the tax it charged', () => {
     const page = compose(receipt())
-    expect(page.totals?.tax, 'a receipt added tax to money already received').toEqual(
-      money('NGN', 0),
-    )
-    expect(page.totals?.payable).toEqual(money('NGN', 100_000_00))
+    expect(page.totals?.tax).toEqual(money('NGN', 7_500_00))
+    expect(page.totals?.payable).toEqual(money('NGN', 107_500_00))
   })
 
-  /** And the two figures on one sheet agree, which is the whole complaint. */
+  /**
+   * THE ONE THIS IS FOR, and it is the AGREEMENT rather than the arithmetic:
+   * the goods table read ₦107,500 while the evidence block on the same sheet
+   * read ₦100,000.
+   */
   it('agrees with the invoice total in its own evidence block', () => {
+    const page = compose(receipt({ invoiceTotalMinor: 107_500_00, balanceAfterMinor: 67_500_00 }))
+    expect(page.totals?.payable, 'one sheet printed two totals for one sale').toEqual(
+      page.receiptEvidence?.invoiceTotal,
+    )
+  })
+
+  /** And the domain answers the same question the page does. */
+  it('computes the same total the page prints', () => {
     const page = compose(receipt())
-    expect(page.totals?.payable).toEqual(page.receiptEvidence?.invoiceTotal)
+    expect(saleTotal('NGN', goods, { taxRate: percentToPpm(7.5) })).toEqual(page.totals?.payable)
   })
 
   /** The headline stays the PAYMENT, not the goods and not the tax (§V). */
@@ -145,10 +156,7 @@ describe('A receipt computes no tax (§V, §I)', () => {
     expect(compose(receipt()).headline?.amount).toEqual(money('NGN', 40_000_00))
   })
 
-  /**
-   * AND EVERY OTHER TYPE STILL DOES CHARGE IT. A rule that switched tax off
-   * everywhere would be a much worse bug than the one it replaced.
-   */
+  /** An invoice is untouched by any of this. */
   it('leaves an invoice taxed', () => {
     const {
       paymentId: _p,
@@ -171,33 +179,41 @@ describe('A receipt computes no tax (§V, §I)', () => {
 })
 
 describe('The bill for a short-paid cash sale prints what it recorded', () => {
-  /**
-   * The customer handed over part of ₦100,000 at the counter. Billing them
-   * ₦107,500 for the sale they were standing in front of would be the app
-   * inventing a charge, and would make this bill disagree with the receipt
-   * that names it.
-   */
-  it('carries no rate and no taxable line', () => {
-    const billed = invoiceForCashSale({
+  const RATES = { taxRate: percentToPpm(7.5) }
+
+  const bill = () =>
+    invoiceForCashSale({
       receipt: { currency: 'NGN', customerId: 'cu', lineItems: goods, paidAmountMinor: 40_000_00 },
       receiptId: 'doc_rec',
       today: '2026-09-18',
+      rates: RATES,
     })
-    expect(billed.invoice.taxRatePpm).toBe(0)
-    expect(billed.invoice.lineItems.every((line) => !line.taxable)).toBe(true)
+
+  /**
+   * IT CARRIES THE RATES IT WAS COMPUTED AT (Rule #5, §K). Without them the
+   * page reads whatever Settings says on the day it is re-rendered, so a bill
+   * raised today could ask for a different figure next year — beside a
+   * receipt frozen at today's.
+   */
+  it('stores the rates the sale was computed at', () => {
+    expect(bill().invoice.taxRatePpm).toBe(percentToPpm(7.5))
+    expect(bill().invoice.lineItems.every((line) => line.taxable)).toBe(true)
+  })
+
+  /** The bill, the receipt and the split all say the same thing. */
+  it('is raised for the taxed total, and leaves the right balance', () => {
+    const billed = bill()
+    expect(billed.split.total).toEqual(money('NGN', 107_500_00))
+    expect(billed.split.paid).toEqual(money('NGN', 40_000_00))
+    expect(billed.split.balance).toEqual(money('NGN', 67_500_00))
   })
 
   /**
-   * AND IT PRINTS THE FIGURE IT WAS RECORDED AT, through the real chain. A
-   * stored rate of zero is what stops the page reaching for the company's
-   * default next year (Rule #5).
+   * AND IT PRINTS THE FIGURE IT WAS RECORDED AT, through the real chain —
+   * the assertion the three-figure bug would have failed.
    */
-  it('prints the sale, not the sale plus tax', () => {
-    const billed = invoiceForCashSale({
-      receipt: { currency: 'NGN', customerId: 'cu', lineItems: goods, paidAmountMinor: 40_000_00 },
-      receiptId: 'doc_rec',
-      today: '2026-09-18',
-    })
+  it('prints what it recorded', () => {
+    const billed = bill()
     const page = compose({
       id: 'doc_inv',
       companyId: 'co',
@@ -211,11 +227,10 @@ describe('The bill for a short-paid cash sale prints what it recorded', () => {
       issuedReference: 'INV-0006',
       frozenLabels: freezeLabels(profile, 'invoice'),
       totalMinor: billed.split.total.minor,
-      taxRatePpm: 0,
+      taxRatePpm: percentToPpm(7.5),
     })
-    expect(page.totals?.payable, 'the bill asks for more than it recorded').toEqual(
-      money('NGN', 100_000_00),
+    expect(page.totals?.payable, 'the bill asks for a figure it did not record').toEqual(
+      money('NGN', billed.split.total.minor),
     )
-    expect(page.totals?.payable.minor).toBe(saleTotal('NGN', goods).minor)
   })
 })

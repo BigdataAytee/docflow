@@ -29,7 +29,6 @@ import {
 } from '../../domain/documents/types'
 import { ItemPhoto } from '../photos/ItemPhoto'
 import { isGeneratedLine } from '../payments/receiptFlow'
-import { ReceiptTotals } from './ReceiptTotals'
 import type { SavedItem } from '../../data/repositories'
 import { lineTotal } from '../../domain/money/totals'
 import { money } from '../../domain/money/money'
@@ -445,20 +444,6 @@ export function ItemsStep({
             </li>
           ))}
         </ul>
-      )}
-
-      {/*
-        WHAT THE GOODS COME TO, and what was handed over (§G, §K).
-
-        Only on a receipt, and only one that stands on its own: a receipt
-        settling an invoice takes its figures from that invoice and asks
-        nothing, which is the whole of Path A.
-
-        Not a Totals step coming back — there is no tax, discount or subtotal
-        here, because none of them apply to money already received.
-      */}
-      {draft.type === 'receipt' && draft.linkedInvoiceId === undefined && (
-        <ReceiptTotals draft={draft} onChange={onChange} />
       )}
     </div>
   )

@@ -4102,20 +4102,31 @@ describe('Path B totals, and the bill a short payment produces', () => {
     await user.click(screen.getByRole('button', { name: 'Add' }))
   }
 
-  const totals = () => document.querySelector('[data-receipt-totals]')
-  const paidField = () => totals()?.querySelector('[data-paid-now]') as HTMLInputElement
+  /*
+   * PATH B RUNS A TOTALS STEP: Details -> Items -> Totals -> Design -> Review.
+   * Its goods were typed on this screen and nowhere else, so the subtotal,
+   * anything knocked off at the counter and the tax are all decisions being
+   * made right now — and all three have to print.
+   */
+  const openTotals = async (user: ReturnType<typeof userEvent.setup>) => {
+    await user.click(screen.getByRole('button', { name: 'Totals' }))
+    await screen.findByText('What they paid')
+  }
+  const paidSection = () => document.querySelector('[data-paid-section]')
+  const paidField = () => paidSection()?.querySelector('[data-paid-now]') as HTMLInputElement
 
   const sellFor = async (user: ReturnType<typeof userEvent.setup>) => {
     await cashPath(user, 'Mama Bisi', '100000')
     await user.click(screen.getByRole('button', { name: 'Items' }))
     await addGoods(user, 'Cement, 20 bags', '20', '5000')
+    await openTotals(user)
   }
 
   const shortPay = async (user: ReturnType<typeof userEvent.setup>) => {
     const paid = paidField()
     await user.clear(paid)
     await user.type(paid, '40000')
-    await waitFor(() => expect(totals()?.textContent).toContain('60,000.00'))
+    await waitFor(() => expect(paidSection()?.textContent).toContain('60,000.00'))
   }
 
   /**
@@ -4128,16 +4139,52 @@ describe('Path B totals, and the bill a short payment produces', () => {
     renderAt('/new/receipt')
 
     await sellFor(user)
-    await waitFor(() =>
-      expect(totals()?.querySelector('[data-sale-total]')?.textContent).toContain('100,000.00'),
-    )
+    // Subtotal from the items, and the total beneath it.
+    expect(screen.getByText('Subtotal')).toBeInTheDocument()
+    expect(paidField(), 'the payment was not prefilled to the total').toHaveValue('100000')
 
-    // A second line moves it, because the block reads the LIST rather than a
+    // A second line moves it, because the step reads the LIST rather than a
     // figure somebody typed once.
+    await user.click(screen.getByRole('button', { name: 'Items' }))
     await addGoods(user, 'Delivery', '1', '7500')
-    await waitFor(() =>
-      expect(totals()?.querySelector('[data-sale-total]')?.textContent).toContain('107,500.00'),
-    )
+    await openTotals(user)
+    expect(paidField()).toHaveValue('107500')
+  })
+
+  /**
+   * DISCOUNT AND TAX BELONG HERE. A cash sale often involves knocking
+   * something off at the point of sale, and it has to print.
+   */
+  it('applies a discount and a tax, and the payment follows the total', async () => {
+    const user = userEvent.setup()
+    renderAt('/new/receipt')
+
+    await sellFor(user)
+    const discount = screen.getByLabelText('Discount')
+    await user.clear(discount)
+    await user.type(discount, '10')
+
+    // ₦100,000 less 10% is ₦90,000, and the payment prefills to it.
+    await waitFor(() => expect(paidField()).toHaveValue('90000'))
+    expect(paidSection()?.textContent).toContain('This clears it')
+  })
+
+  /**
+   * AND THE PAYMENT FIELD NEVER MOVES THE PRICE. Everything above it is what
+   * the goods cost; this is what the customer handed over, and confusing the
+   * two is the one thing the layout exists to prevent.
+   */
+  it('never lets the payment change the total', async () => {
+    const user = userEvent.setup()
+    renderAt('/new/receipt')
+
+    await sellFor(user)
+    const before = document.querySelector('[data-totals-payable]')?.textContent
+    await shortPay(user)
+    expect(
+      document.querySelector('[data-totals-payable]')?.textContent,
+      'typing what they paid changed what the goods cost',
+    ).toBe(before)
   })
 
   /**
@@ -4150,7 +4197,7 @@ describe('Path B totals, and the bill a short payment produces', () => {
     const before = state.documents.filter((row) => row.type === 'invoice').length
 
     await sellFor(user)
-    expect(totals()?.textContent).toContain('This clears it')
+    expect(paidSection()?.textContent).toContain('This clears it')
 
     await user.click(screen.getByRole('button', { name: 'Review' }))
     await user.click(await screen.findByRole('button', { name: /Save/ }))

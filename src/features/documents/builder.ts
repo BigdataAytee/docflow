@@ -50,24 +50,33 @@ export const wantsItemsStep = (draft: {
 }): boolean => !(draft.type === 'receipt' && draft.linkedInvoiceId !== undefined)
 
 /**
- * The keys this document's builder actually runs, in order.
+ * Whether this document computes anything.
  *
- * A RECEIPT HAS NO TOTALS STEP either, whichever path made it. §V: "a
- * receipt's printed total IS the payment" — there is no subtotal, no tax and
- * no discount to set, because the money already arrived and its amount is not
- * a thing the owner computes. A step offering to adjust it would be offering
- * to disagree with the ledger.
+ * A RECEIPT SETTLING AN INVOICE DOES NOT. The price was set on the document
+ * the customer is holding, and a step offering to adjust it here would be
+ * offering to disagree with the bill it is evidence against. That is Path A,
+ * and it is why signing sits immediately before Save there.
  *
- * That is what leaves the signature immediately before Save on both paths,
- * with nothing in between.
+ * A CASH SALE DOES. Its goods were typed on this screen and nowhere else, so
+ * the subtotal, anything knocked off at the counter and the tax are all
+ * decisions being made right now — and all three have to print. It is also
+ * the only screen where "what the goods cost" and "what they handed over" are
+ * different numbers, which is the distinction the step is laid out to make.
  */
+export const wantsTotalsStep = (draft: {
+  readonly type: DocumentType
+  readonly linkedInvoiceId?: string
+}): boolean => !(draft.type === 'receipt' && draft.linkedInvoiceId !== undefined)
+
+/** The keys this document's builder actually runs, in order. */
 export const stepKeysFor = (draft: {
   readonly type: DocumentType
   readonly linkedInvoiceId?: string
 }): readonly StepKey[] =>
   STEP_KEYS.filter(
     (key) =>
-      !(key === 'items' && !wantsItemsStep(draft)) && !(key === 'totals' && draft.type === 'receipt'),
+      !(key === 'items' && !wantsItemsStep(draft)) &&
+      !(key === 'totals' && !wantsTotalsStep(draft)),
   )
 
 /** The localised step names, in order, for this document (§G). */

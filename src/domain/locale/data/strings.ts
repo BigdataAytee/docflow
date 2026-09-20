@@ -700,8 +700,6 @@ export interface UiStrings {
     readonly overpayingNote: string
     readonly recordPayment: string
     /** Path B's totals block, and the invoice a short payment produces. */
-    readonly saleTotal: string
-    readonly paidNow: string
     readonly willBill: string
     readonly billedAndPaid: string
     readonly standalone: string
@@ -929,6 +927,17 @@ export interface UiStrings {
     readonly atRate: string
     /** Where the tax rates come from, said once rather than guessed at (§J). */
     readonly ratesFromSettings: string
+    /**
+     * THE ONE STATED FIGURE, under a heading of its own.
+     *
+     * Everything above it on this step is COMPUTED — what the goods cost.
+     * This is what the customer actually handed over. Nobody should be able
+     * to think that changing it changes the price, so it does not sit in the
+     * same block as the arithmetic and does not read like another line of it.
+     */
+    readonly whatTheyPaid: string
+    readonly paidNow: string
+    readonly paidNowHint: string
     /**
      * WHERE THE RATE CAME FROM, beside the figure it explains.
      *
@@ -1768,8 +1777,6 @@ const EN: UiStrings = {
      * unannounced is the surprise §N exists to prevent, and the sentence is
      * also the reason the app is allowed to create one.
      */
-    saleTotal: 'Total',
-    paidNow: 'Amount paid now',
     willBill: '{amount} still owed — an invoice will record it',
     billedAndPaid:
       '{invoiceLabel} {invoice} records the {owed} still owed, {receiptLabel} {receipt} records the {paid} paid.',
@@ -2005,6 +2012,10 @@ const EN: UiStrings = {
     fromSettings: 'From Settings',
     onThisOne: 'Set on this one',
     ratesFromSettings: 'Tax rates come from Settings → Tax, and are saved onto the document when you issue it.',
+    whatTheyPaid: 'What they paid',
+    paidNow: 'How much did they pay now?',
+    paidNowHint:
+      'Leave as is if they paid everything. Enter less if they paid part and still owe you.',
     driver: 'Driver',
     vehicle: 'Vehicle',
     noMoneyOnDelivery: 'Delivery documents carry no prices.',

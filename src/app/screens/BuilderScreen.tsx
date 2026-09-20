@@ -1066,7 +1066,21 @@ export function BuilderScreen({ now = () => new Date().toISOString() }: { now?: 
     if (state.draft.linkedInvoiceId !== undefined) return null
     if (id === undefined || company === null) return null
 
-    const total = saleTotal(state.draft.currency, state.draft.lineItems)
+    /*
+     * THE RATES THE STEP SHOWED, not the company's defaults read again.
+     *
+     * A discount knocked off at the counter and the rate in force that day
+     * are facts about THIS sale. Recomputing from Settings here is how one
+     * sale ended up with three totals — the page, the record and the bill all
+     * asking a different question of the same goods.
+     */
+    const rates = {
+      ...(design.discountPercent === 0
+        ? {}
+        : { discountRate: percentToPpm(design.discountPercent) }),
+      ...(effectiveTaxPpm === undefined ? {} : { taxRate: effectiveTaxPpm }),
+    }
+    const total = saleTotal(state.draft.currency, state.draft.lineItems, rates)
     const paidMinor = state.draft.paidAmountMinor ?? total.minor
     const split = cashSaleSplit({ total, paidMinor })
     // Paid in full is the common case and costs nothing extra (§G).
@@ -1077,6 +1091,7 @@ export function BuilderScreen({ now = () => new Date().toISOString() }: { now?: 
       receipt: state.draft,
       receiptId: id,
       today: todayIso(),
+      rates,
     })
 
     /*
@@ -1098,13 +1113,17 @@ export function BuilderScreen({ now = () => new Date().toISOString() }: { now?: 
         dueDate: billed.invoice.dueDate ?? todayIso(),
         totalMinor: total.minor,
         /*
-         * NO RATE, stored rather than left to fall back (Rule #5, §K).
+         * THE RATES IT WAS COMPUTED AT, stored rather than left to fall back
+         * (Rule #5, §K).
          *
-         * Without it the page reads the company's default at print time, so
-         * this bill printed ₦107,500 while the ledger and the receipt that
-         * names it both said ₦100,000 — one sale, three figures.
+         * Without them the page reads whatever Settings says on the day it is
+         * re-rendered, so this bill printed ₦107,500 while the ledger and the
+         * receipt that names it both said ₦100,000 — one sale, three figures.
          */
-        taxRatePpm: 0,
+        ...(effectiveTaxPpm === undefined ? {} : { taxRatePpm: effectiveTaxPpm }),
+        ...(design.discountPercent === 0
+          ? {}
+          : { discountRatePpm: percentToPpm(design.discountPercent) }),
       },
       billed.idempotencyKey,
     )
@@ -1138,6 +1157,10 @@ export function BuilderScreen({ now = () => new Date().toISOString() }: { now?: 
       fromReservedBlock: false,
       deviceId: deviceId(),
       issuedAt: new Date().toISOString(),
+      // The same rates again: a total frozen at issue that disagrees with the
+      // record it was created from is the three-figure bug with extra steps.
+      ...(rates.discountRate === undefined ? {} : { discountRate: rates.discountRate }),
+      ...(rates.taxRate === undefined ? {} : { taxRate: rates.taxRate }),
     })
     await actions.issue(invoice.id, {
       reference: invoiceIssued.reference,
