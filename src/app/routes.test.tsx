@@ -4317,6 +4317,224 @@ describe('Path B totals, and the bill a short payment produces', () => {
   })
 })
 
+/**
+ * A paid quotation becomes a bill and its evidence (§G, §K, §V).
+ *
+ * An owner holding an accepted quote and a customer's cash had no route at
+ * all: they had to know that a quotation must be converted to an invoice
+ * before it can be paid for, and then do it by hand.
+ *
+ * THE INVOICE IS ALWAYS CREATED, and that is what these are mostly about. A
+ * receipt hanging off a quotation would be evidence of money against a
+ * document that never billed anybody — the sale would appear in nothing that
+ * was invoiced, the balance would be computed from thin air, and an OFFER
+ * would have a payment attached to it.
+ *
+ * REACHABLE FROM BOTH ENDS, and the same from either. The quotation's own
+ * "They've paid" and the receipt flow's accepted-quotation row run one
+ * implementation: the first navigates into the flow with the id, the second
+ * calls it directly. These check the property rather than the plumbing,
+ * because the plumbing is what would drift.
+ */
+describe('A paid quotation becomes a bill and its evidence (§G, §K)', () => {
+  const accepted = (state: MemoryState, over: Record<string, unknown> = {}) => {
+    state.customers.push(customer())
+    state.documents.push({
+      id: 'doc_quo',
+      companyId: DEV_COMPANY_ID,
+      type: 'quotation',
+      status: 'accepted',
+      customerId: 'cus_1',
+      currency: 'NGN',
+      lineItems: [
+        {
+          id: 'li_1',
+          description: 'Roofing sheets, 30 bundles',
+          quantityMilli: 1_000,
+          unitPriceMinor: 145_000_00,
+          taxable: false,
+        },
+      ],
+      issueDate: '2026-09-01',
+      issuedReference: 'QUO-0009',
+      frozenLabels: {
+        printedTitle: 'QUOTATION',
+        partyLabel: 'Bill to',
+        signatureCaption: 'Authorised signature',
+        language: 'en',
+      },
+      totalMinor: 145_000_00,
+      ...over,
+    })
+  }
+
+  const billsMade = (state: MemoryState) =>
+    state.documents.filter((row) => row.type === 'invoice')
+  const receipts = (state: MemoryState) => state.documents.filter((row) => row.type === 'receipt')
+
+  /** Door one: the quotation's own action, which only exists once accepted. */
+  const viaTheQuotation = async (user: ReturnType<typeof userEvent.setup>) => {
+    await user.click(await screen.findByRole('button', { name: /They.{0,3}ve paid/ }))
+    await screen.findByLabelText('Acknowledge a payment')
+  }
+
+  /** Door two: the accepted quotation offered beside the debtors. */
+  const viaThePicker = async (user: ReturnType<typeof userEvent.setup>) => {
+    await user.click(await screen.findByRole('button', { name: 'Payment towards money owed' }))
+    await user.click(await screen.findByRole('button', { name: /QUO-0009/ }))
+    await screen.findByLabelText('Acknowledge a payment')
+  }
+
+  describe('The action appears exactly when it can do something (§N)', () => {
+    it('offers it on an accepted quotation', async () => {
+      renderAt('/doc/doc_quo', accepted)
+      expect(await screen.findByRole('button', { name: /They.{0,3}ve paid/ })).toBeInTheDocument()
+    })
+
+    /**
+     * And it takes the ACCEPT LINK's slot, because that is the one pill on an
+     * accepted quotation that cannot do anything: it asks a customer for a
+     * decision they have already made.
+     */
+    it('replaces the accept link, keeping four actions', async () => {
+      renderAt('/doc/doc_quo', accepted)
+      await screen.findByRole('button', { name: /They.{0,3}ve paid/ })
+      expect(screen.queryByRole('button', { name: 'Ask them to accept' })).toBeNull()
+    })
+
+    /**
+     * A quotation nobody accepted is not a debt. Turning one into an invoice
+     * because money appeared would bill somebody for a price they never said
+     * yes to — and accepting it first is one tap away (§G).
+     */
+    it('offers it on nothing else', async () => {
+      renderAt('/doc/doc_quo', (state) => accepted(state, { status: 'sent' }))
+      await screen.findByRole('button', { name: 'Ask them to accept' })
+      expect(screen.queryByRole('button', { name: /They.{0,3}ve paid/ })).toBeNull()
+    })
+  })
+
+  describe('Either door produces the same thing (§G, §M)', () => {
+    /**
+     * THE ONE THIS IS FOR. An accepted quotation, money in hand, and the app
+     * had nothing to offer — so the sale existed on paper and nowhere in the
+     * ledger.
+     */
+    it.each([
+      ['from the quotation', viaTheQuotation, '/doc/doc_quo'],
+      ['from the picker', viaThePicker, '/new/receipt'],
+    ])('bills the quotation in full and settles it, %s', async (_case, door, path) => {
+      const user = userEvent.setup()
+      const state = renderAt(path, accepted)
+
+      await door(user)
+
+      // The bill exists, issued, for the WHOLE quotation.
+      await waitFor(() => expect(billsMade(state)).toHaveLength(1))
+      const invoice = billsMade(state)[0]
+      expect(invoice?.status).toBe('issued')
+      expect(invoice?.totalMinor, 'the bill is not what was quoted').toBe(145_000_00)
+      expect(invoice?.lineItems.map((row) => row.description)).toEqual([
+        'Roofing sheets, 30 bundles',
+      ])
+      // Linked BOTH ways: the link lives on the new document, and the
+      // quotation is never written to (§G).
+      expect(invoice?.convertedFromId).toBe('doc_quo')
+      expect(state.documents.find((row) => row.id === 'doc_quo')?.status).toBe('accepted')
+
+      // And the flow lands on the page where the money is recorded, already
+      // knowing who is paying and what for.
+      expect(await screen.findByLabelText('How much came in?')).toHaveValue('145000')
+      await user.click(screen.getByRole('button', { name: 'Record payment' }))
+
+      await waitFor(() => expect(receipts(state)).toHaveLength(1))
+      const receipt = receipts(state)[0]
+      expect(receipt?.status).toBe('issued')
+      expect(receipt?.linkedInvoiceId).toBe(invoice?.id)
+      expect(receipt?.totalMinor).toBe(145_000_00)
+      expect(state.payments).toHaveLength(1)
+      expect(state.payments[0]?.allocations[0]?.invoiceId).toBe(invoice?.id)
+    })
+
+    /**
+     * ONE INVOICE HOWEVER MANY TIMES IT RUNS (§M). The key is derived from
+     * the quotation, so both doors mint the same one and the second to run
+     * finds the first's bill rather than a rival.
+     */
+    it('never bills the same quotation twice', async () => {
+      const user = userEvent.setup()
+      const state = renderAt('/new/receipt', accepted)
+
+      await viaThePicker(user)
+      await waitFor(() => expect(billsMade(state)).toHaveLength(1))
+      const first = billsMade(state)[0]?.id
+
+      /*
+       * Back out to the debtors and pick the same quotation again, exactly as
+       * an owner who was not sure the first tap registered would.
+       */
+      await user.click(screen.getByRole('button', { name: 'Back' }))
+      await user.click(await screen.findByRole('button', { name: 'Back' }))
+      await user.click(await screen.findByRole('button', { name: /QUO-0009/ }))
+
+      await waitFor(() => expect(screen.getByLabelText('How much came in?')).toBeInTheDocument())
+      expect(billsMade(state), 'the customer was billed twice for one quotation').toHaveLength(1)
+      expect(billsMade(state)[0]?.id).toBe(first)
+    })
+  })
+
+  describe('A part payment behaves like any other debt (§K)', () => {
+    /**
+     * Nothing special about it: the bill is what was agreed, the receipt
+     * prints what arrived, and the remainder is chased like the rest.
+     */
+    it('leaves the balance owing on the bill', async () => {
+      const user = userEvent.setup()
+      const state = renderAt('/doc/doc_quo', accepted)
+
+      await viaTheQuotation(user)
+      const amount = await screen.findByLabelText('How much came in?')
+      await user.clear(amount)
+      await user.type(amount, '45000')
+      await user.click(screen.getByRole('button', { name: 'Record payment' }))
+
+      await waitFor(() => expect(receipts(state)).toHaveLength(1))
+      const invoice = billsMade(state)[0]
+      const receipt = receipts(state)[0]
+      expect(receipt?.invoiceTotalMinor).toBe(145_000_00)
+      expect(receipt?.balanceAfterMinor).toBe(100_000_00)
+      expect(
+        invoiceOutstanding(
+          invoice?.id ?? '',
+          NGN(invoice?.totalMinor ?? 0),
+          effectivePayments(state.payments),
+          [],
+        ),
+      ).toEqual(NGN(100_000_00))
+    })
+  })
+
+  describe('The receipt names all three (§N)', () => {
+    /**
+     * Two documents appear that the owner never asked for by name. Finding
+     * them in a list on Thursday is the surprise §N exists to prevent.
+     */
+    it('says what was made, and offers the way to each', async () => {
+      const user = userEvent.setup()
+      renderAt('/doc/doc_quo', accepted)
+
+      await viaTheQuotation(user)
+      await user.click(await screen.findByRole('button', { name: 'Record payment' }))
+
+      const card = await screen.findByTestId('from-quotation')
+      expect(card).toHaveTextContent(/INV-/)
+      expect(card).toHaveTextContent(/REC-/)
+      expect(within(card).getByRole('button', { name: 'Open the invoice' })).toBeInTheDocument()
+      expect(within(card).getByRole('button', { name: /QUO-0009/ })).toBeInTheDocument()
+    })
+  })
+})
+
 describe('The photo on a delivery (§G, §E, §P)', () => {
   /**
    * jsdom has no canvas and no `createImageBitmap`, so `shrinkImage` cannot

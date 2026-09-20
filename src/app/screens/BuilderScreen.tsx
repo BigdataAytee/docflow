@@ -65,6 +65,7 @@ import { InvoicePicker } from '../../features/payments/InvoicePicker'
 import { PayInvoice } from '../../features/payments/PayInvoice'
 import { SignaturePad } from '../../features/signature/SignaturePad'
 import { availableMethods } from '../../features/payments/methods'
+import { invoiceForPaidQuotation, quotationIsPayable } from '../../features/payments/quotationPaid'
 import {
   cashSalePaymentKeyFor,
   cashSaleSplit,
@@ -135,6 +136,14 @@ export function NewDocumentScreen() {
  */
 function NewReceiptFlow({ today = todayIso() }: { today?: string }) {
   const { profile, strings } = useCompany()
+  /**
+   * The quotation this route was opened for, if it was (§G).
+   *
+   * The quotation's own "They've paid" navigates here with its id rather than
+   * doing any of the work itself, so there is exactly one implementation of
+   * the journey and the two doors cannot drift apart.
+   */
+  const openedForQuotation = (useLocation().state as { quotationId?: string } | null)?.quotationId
   const { company, customers, documents, payments, creditNotes, assets, loading, actions } =
     useAppData()
   const navigate = useNavigate()
@@ -156,6 +165,8 @@ function NewReceiptFlow({ today = todayIso() }: { today?: string }) {
   const [payerId, setPayerId] = useState('')
   /** Path A's chosen bill, and the mark that will print on its receipt. */
   const [invoiceId, setInvoiceId] = useState('')
+  /** The quotation this began as, so the receipt can name all three (§G). */
+  const [fromQuotation, setFromQuotation] = useState<string | null>(null)
   const [signatureAssetId, setSignatureAssetId] = useState<string | undefined>(undefined)
   const [signProblem, setSignProblem] = useState<string | null>(null)
   // One id per submission, so a double tap collapses onto one payment and one
@@ -321,6 +332,31 @@ function NewReceiptFlow({ today = todayIso() }: { today?: string }) {
       })
   }
 
+  /**
+   * The accepted quotations, offered beside the debtors (§G).
+   *
+   * Money agreed and not yet billed is the same situation as an unpaid
+   * invoice from the payer's side. Leaving them out meant the owner had to
+   * know that a quotation must be converted before it can be paid for — a
+   * step the app can take itself, and does.
+   */
+  const payableQuotations = useMemo(
+    () =>
+      documents.flatMap((document) =>
+        quotationIsPayable(document) && document.customerId !== undefined
+          ? [
+              {
+                id: document.id,
+                customerId: document.customerId,
+                reference: document.issuedReference ?? '',
+                total: totalOf(document),
+              },
+            ]
+          : [],
+      ),
+    [documents],
+  )
+
   /*
    * The region's own date format, so a picked row reads like the printed
    * page (§D). Resolved the way the composed document resolves it, rather
@@ -333,6 +369,168 @@ function NewReceiptFlow({ today = todayIso() }: { today?: string }) {
       return undefined
     }
   }, [company])
+
+  /**
+   * A PAID QUOTATION BECOMES A BILL AND ITS EVIDENCE (§G, §K, §V).
+   *
+   * THE INVOICE IS ALWAYS CREATED, and that is the load-bearing decision. A
+   * receipt hanging off a quotation would be evidence of money against a
+   * document that never billed anybody: the sale would appear in nothing that
+   * was invoiced, the customer's balance would be computed from thin air, and
+   * an OFFER would have a payment attached to it. So the offer becomes a bill
+   * first, in full, and the payment settles the bill.
+   *
+   * ONE IMPLEMENTATION FOR BOTH DOORS. The quotation's own "They've paid" and
+   * the picker's accepted-quotation row both land here — the first by
+   * navigating to this route with the id in tow, the second by calling it
+   * directly. "Both entry points produce the same thing" is then true by
+   * construction rather than by test, which is the only way it stays true.
+   *
+   * It ends on Path A's page for the new invoice, so a part payment needs no
+   * special case: the amount is prefilled to the whole bill and anybody who
+   * changes it gets the balance printed and chased like any other debt.
+   */
+  const payQuotation = (quotationId: string): void => {
+    if (busy.current || company === null) return
+    const quotation = documents.find((row) => row.id === quotationId)
+    if (quotation === undefined) return
+    busy.current = true
+    setProblem(null)
+
+    let billed
+    try {
+      billed = invoiceForPaidQuotation(
+        { ...quotation, lineItems: quotation.lineItems, id: quotation.id },
+        today,
+      )
+    } catch (cause) {
+      busy.current = false
+      setProblem(
+        format(strings.newReceipt.failed, {
+          reason: cause instanceof Error ? cause.message : String(cause),
+        }),
+      )
+      return
+    }
+
+    void actions
+      .createDraftWithKey(
+        {
+          type: 'invoice',
+          status: 'draft',
+          currency: billed.invoice.currency,
+          ...(quotation.customerId === undefined ? {} : { customerId: quotation.customerId }),
+          lineItems: billed.invoice.lineItems,
+          issueDate: billed.invoice.issueDate ?? today,
+          ...(billed.invoice.dueDate === undefined ? {} : { dueDate: billed.invoice.dueDate }),
+          totalMinor: quotation.totalMinor,
+          /*
+           * THE LINK, ON THE NEW DOCUMENT. §G's conversion rule: the
+           * quotation is never written to, so an offer somebody accepted
+           * keeps saying exactly what it said.
+           */
+          convertedFromId: billed.convertedFromId,
+          /* The rates it was quoted at, so the bill asks for the quoted price. */
+          ...(quotation.taxRatePpm === undefined ? {} : { taxRatePpm: quotation.taxRatePpm }),
+          ...(quotation.discountRatePpm === undefined
+            ? {}
+            : { discountRatePpm: quotation.discountRatePpm }),
+        },
+        billed.idempotencyKey,
+      )
+      .then(async (invoice) => {
+        /*
+         * Issued through the ordinary path, and only if it is not already.
+         *
+         * THE REPLAY RETURNS THE ORIGINAL, not the current record: §M's
+         * idempotency log hands back whatever the first run produced, which
+         * was a DRAFT with no reference. Trusting its status meant a second
+         * tap tried to issue an invoice that was already issued — the
+         * lifecycle refused, the flow stopped, and because the picker draws
+         * no error the owner saw a tap that did nothing at all.
+         *
+         * So the live record decides. On the first run it is not in
+         * `documents` yet and the returned draft is the truth; on a replay it
+         * is, and it says issued.
+         */
+        const live = documents.find((row) => row.id === invoice.id) ?? invoice
+        if (live.status === 'draft') {
+          const issued = issueDocument({
+            draft: draftOf(invoice),
+            currentStatus: invoice.status,
+            /*
+             * The same exemption the cash sale's bill gets, for the same
+             * reason (§J, §K): this is the record of an agreement the
+             * customer is settling in front of you, not a bill about to be
+             * sent to somebody with no way to pay it. Refusing it would lose
+             * the act — and losing it is the failure this path exists to fix.
+             */
+            context: {
+              enabledPaymentMethodCount: 1,
+              usablePaymentMethodCount: 1,
+              paymentIsRecorded: false,
+              signatureRequired: false,
+            },
+            profile,
+            prefix: company.numberingPrefixes?.invoice ?? numberingPrefix(profile, 'invoice'),
+            sequence: documentsOf(documents, 'invoice').length + 1,
+            fromReservedBlock: false,
+            deviceId: deviceId(),
+            issuedAt: new Date().toISOString(),
+            ...(quotation.discountRatePpm === undefined
+              ? {}
+              : { discountRate: quotation.discountRatePpm }),
+            ...(quotation.taxRatePpm === undefined ? {} : { taxRate: quotation.taxRatePpm }),
+          })
+          await actions.issue(invoice.id, {
+            reference: issued.reference,
+            frozenLabels: issued.frozenLabels,
+            totalMinor: issued.totals?.payable.minor ?? quotation.totalMinor,
+          })
+        }
+        return invoice
+      })
+      .then((invoice) => {
+        busy.current = false
+        setPayerId(quotation.customerId ?? '')
+        setInvoiceId(invoice.id)
+        setFromQuotation(quotationId)
+        setStep('pay')
+      })
+      .catch((cause: unknown) => {
+        busy.current = false
+        setProblem(
+          format(strings.newReceipt.failed, {
+            reason: cause instanceof Error ? cause.message : String(cause),
+          }),
+        )
+      })
+  }
+
+  /*
+   * ARRIVING WITH A QUOTATION SKIPS THE CHOOSER.
+   *
+   * Somebody who pressed "They've paid" on a specific offer has already said
+   * who is paying and what for; asking again on the next screen would be the
+   * app forgetting what it was just told (Rule #1).
+   *
+   * Guarded by a ref rather than by state, so a re-render cannot bill the
+   * same quotation twice while the first write is still in flight — the
+   * idempotency key would collapse them, but a second run would still walk
+   * the flow forward under the owner's thumb.
+   */
+  const startedFromQuotation = useRef(false)
+  useEffect(() => {
+    if (openedForQuotation === undefined || startedFromQuotation.current) return
+    if (loading || company === null) return
+    startedFromQuotation.current = true
+    payQuotation(openedForQuotation)
+    /*
+     * `payQuotation` is deliberately not a dependency: it is recreated every
+     * render and depends on nothing that changes this decision. The ref is
+     * what makes the effect run once, not the dependency list.
+     */
+  }, [openedForQuotation, loading, company])
 
   /** Path A's chosen bill, and the customer it belongs to. */
   const chosenInvoice = invoices.find((invoice) => invoice.id === invoiceId)
@@ -463,9 +661,27 @@ function NewReceiptFlow({ today = todayIso() }: { today?: string }) {
         })
         return created
       })
-      // The DOCUMENT, not its builder: what was asked for is the PDF, and an
-      // issued document has nothing left to edit (Rule #5).
-      .then((created) => navigate(documentPath(created.id), { replace: true }))
+      /*
+       * The DOCUMENT, not its builder: what was asked for is the PDF, and an
+       * issued document has nothing left to edit (Rule #5).
+       *
+       * A receipt that began as a quotation carries the confirmation with it,
+       * so the page can name all three — the offer, the bill it became, and
+       * the evidence of the money. Two of those appeared without the owner
+       * asking for them by name, which is exactly what §N says to say.
+       */
+      .then((created) =>
+        navigate(documentPath(created.id), {
+          replace: true,
+          ...(fromQuotation === null
+            ? {}
+            : {
+                state: {
+                  fromQuotation: { quotationId: fromQuotation, invoiceId: invoice.id },
+                },
+              }),
+        }),
+      )
       .catch((cause: unknown) => {
         busy.current = false
         submission.current = null
@@ -483,7 +699,19 @@ function NewReceiptFlow({ today = todayIso() }: { today?: string }) {
     return (
       <div className="px-4 pt-4 pb-[max(1.25rem,env(safe-area-inset-bottom))]">
         <ReceiptStart
-          anyoneOwes={invoices.some((invoice) => invoice.outstanding.minor > 0)}
+          /*
+           * AN ACCEPTED QUOTATION IS MONEY OWED (§G, §N).
+           *
+           * The path was offered only when an unpaid INVOICE existed, so a
+           * business whose customer had accepted a quote and was standing
+           * there with cash met a dark pill reading "Nobody owes anything
+           * right now" — which was false, and shut the only door to the one
+           * act they wanted.
+           */
+          anyoneOwes={
+            invoices.some((invoice) => invoice.outstanding.minor > 0) ||
+            payableQuotations.length > 0
+          }
           onOwed={() => {
             setMode('owed')
             setStep('owed')
@@ -504,6 +732,9 @@ function NewReceiptFlow({ today = todayIso() }: { today?: string }) {
         <OwedPicker
           customers={customers}
           invoices={invoices}
+          quotations={payableQuotations}
+          onPickQuotation={payQuotation}
+          {...(problem === null ? {} : { error: problem })}
           currency={company.currency}
           onPick={(id) => {
             setPayerId(id)
@@ -534,6 +765,16 @@ function NewReceiptFlow({ today = todayIso() }: { today?: string }) {
       </div>
     )
   }
+
+  /*
+   * The skeleton, not a fall-through to the cash form.
+   *
+   * `payQuotation` sets the step before `documents` has caught up with the
+   * invoice it just made, so for a render or two there is no bill to show.
+   * Falling past this block would flash the wrong screen — a form asking who
+   * paid, in the middle of a journey that answered that two taps ago.
+   */
+  if (step === 'pay' && chosenInvoice === undefined) return <NewDocumentSkeleton />
 
   if (step === 'pay' && chosenInvoice !== undefined) {
     return (

@@ -21,7 +21,7 @@ import { Navigate, useLocation, useNavigate, useParams } from 'react-router-dom'
 
 import { useCompany } from '../context'
 import { useAppData } from '../store'
-import { HOME, documentPath, editDocumentPath, listPath } from '../paths'
+import { HOME, documentPath, editDocumentPath, listPath, newDocumentPath } from '../paths'
 import { useGoBack } from '../useGoBack'
 import {
   BillBalanceError,
@@ -118,9 +118,19 @@ export function DocumentScreen({ today = todayIso() }: { today?: string }) {
    * because it is a fact about how somebody ARRIVED — reopening this receipt
    * tomorrow is the same document and is not news.
    */
-  const billedAlso = (
-    useLocation().state as { billed?: { invoiceId: string; owedMinor: number; paidMinor: number } } | null
-  )?.billed
+  const arrivedWith = useLocation().state as {
+    billed?: { invoiceId: string; owedMinor: number; paidMinor: number }
+    fromQuotation?: { quotationId: string; invoiceId: string }
+  } | null
+  const billedAlso = arrivedWith?.billed
+  /**
+   * The offer this began as, when it began as one (§G).
+   *
+   * A paid quotation produces a bill AND its receipt in one act, so two
+   * documents appear that the owner never asked for by name. §N says that is
+   * said rather than discovered in a list on Thursday.
+   */
+  const cameFromQuotation = arrivedWith?.fromQuotation
   const { profile, strings } = useCompany()
   const review = useReview()
   const {
@@ -518,6 +528,52 @@ export function DocumentScreen({ today = todayIso() }: { today?: string }) {
         only the invoice carries a control: a link to the page you are already
         on is a control that does nothing.
       */}
+      {/*
+        THE OFFER, THE BILL AND THE EVIDENCE, named together (§G, §N).
+
+        "They've paid" on an accepted quotation produces two documents the
+        owner never asked for by name. Both are reachable from here, and the
+        sentence says which is which — a quotation that quietly grew an
+        invoice beside it is the surprise this exists to prevent.
+      */}
+      {cameFromQuotation !== undefined && (
+        <div data-testid="from-quotation" className="px-3.5 pt-3">
+          <section className="rounded-2xl border border-brand/20 bg-brand-tint p-3.5">
+            <p className="text-[13px] font-semibold leading-snug text-brand">
+              {format(strings.newReceipt.bothMade, {
+                invoiceLabel: typeInSentence(profile, 'invoice'),
+                invoice:
+                  documents.find((row) => row.id === cameFromQuotation.invoiceId)
+                    ?.issuedReference ?? '',
+                quotationLabel: typeInSentence(profile, 'quotation'),
+                receiptLabel: typeInSentence(profile, 'receipt'),
+                receipt: record.issuedReference ?? '',
+              })}
+            </p>
+            <div className="mt-2.5 flex gap-2">
+              <button
+                type="button"
+                onClick={() => navigate(documentPath(cameFromQuotation.invoiceId))}
+                className="raised tap-scale min-h-tap flex-1 rounded-xl bg-surface px-3 text-[13px] font-semibold text-brand"
+              >
+                {strings.savedDocument.action.openInvoice}
+              </button>
+              <button
+                type="button"
+                onClick={() => navigate(documentPath(cameFromQuotation.quotationId))}
+                className="raised tap-scale min-h-tap flex-1 rounded-xl bg-surface px-3 text-[13px] font-semibold text-brand"
+              >
+                {format(strings.convert.madeFrom, {
+                  reference:
+                    documents.find((row) => row.id === cameFromQuotation.quotationId)
+                      ?.issuedReference ?? '',
+                })}
+              </button>
+            </div>
+          </section>
+        </div>
+      )}
+
       {billedAlso !== undefined && (
         <div data-billed-also className="px-3.5 pt-3">
           <section className="rounded-2xl border border-brand/20 bg-brand-tint p-3.5">
@@ -636,6 +692,22 @@ export function DocumentScreen({ today = todayIso() }: { today?: string }) {
             })}
             strings={strings}
             onAction={(id) => {
+              /*
+               * THEY'VE PAID — one navigation, and no writing on this screen.
+               *
+               * The receipt flow does the whole act: it bills the quotation,
+               * issues that invoice, and drops onto the page where the money
+               * is recorded. Doing any of it here would be a second
+               * implementation of the same journey, free to disagree with the
+               * one the picker reaches — and "both entry points produce the
+               * same thing" is a property worth having by construction rather
+               * than by test.
+               */
+              if (id === 'they_paid') {
+                return navigate(newDocumentPath('receipt'), {
+                  state: { quotationId: record.id },
+                })
+              }
               if (id === 'share_pdf') return setSharing(true)
               if (id === 'convert') return setConverting(true)
               if (id === 'void_and_reissue') {

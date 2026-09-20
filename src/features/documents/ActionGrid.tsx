@@ -31,6 +31,7 @@ const LABEL: Record<ActionId, (s: UiStrings['savedDocument']['action']) => strin
   record_payment: (a) => a.recordPayment,
   chase: (a) => a.chase,
   copy_accept_link: (a) => a.copyAcceptLink,
+  they_paid: (a) => a.theyPaid,
   duplicate_rev2: (a) => a.duplicateRev2,
   void_and_reissue: (a) => a.voidAndReissue,
   open_invoice: (a) => a.openInvoice,

@@ -865,6 +865,7 @@ export interface UiStrings {
       readonly recordPayment: string
       readonly chase: string
       readonly copyAcceptLink: string
+      readonly theyPaid: string
       readonly duplicateRev2: string
       readonly voidAndReissue: string
       readonly openInvoice: string
@@ -1962,6 +1963,11 @@ const EN: UiStrings = {
        * hardest one to recognise.
        */
       copyAcceptLink: 'Ask them to accept',
+      /*
+       * The same words as the receipt flow's own row for this, because it is
+       * the same act reached from the other end (§G).
+       */
+      theyPaid: 'They’ve paid',
       duplicateRev2: 'Duplicate as Rev 2',
       voidAndReissue: 'Void and reissue',
       openInvoice: 'Open the invoice',

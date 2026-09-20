@@ -43,6 +43,14 @@ export interface OwedPickerProps {
    */
   readonly quotations?: readonly PayableQuotation[]
   readonly onPickQuotation?: (quotationId: string) => void
+  /**
+   * A failure, said rather than swallowed (§N).
+   *
+   * Picking an accepted quotation writes documents, and this screen drew
+   * nothing when that went wrong — so a tap that failed looked exactly like a
+   * tap that missed, which is the worst of both.
+   */
+  readonly error?: string
 }
 
 /** An accepted quotation, as this picker needs it. */
@@ -97,6 +105,7 @@ export function OwedPicker({
   onBack,
   quotations = [],
   onPickQuotation,
+  error,
 }: OwedPickerProps): ReactNode {
   const { profile, strings } = useCompany()
   const r = strings.newReceipt
@@ -173,6 +182,15 @@ export function OwedPicker({
             </li>
           ))}
         </ul>
+      )}
+
+      {error !== undefined && (
+        <p
+          className="mt-3 rounded-xl bg-status-warn-tint px-3 py-2.5 text-sm font-medium text-status-warn"
+          role="alert"
+        >
+          {error}
+        </p>
       )}
     </section>
   )

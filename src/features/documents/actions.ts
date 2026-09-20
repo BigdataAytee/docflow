@@ -29,6 +29,7 @@ export type ActionId =
   | 'record_payment'
   | 'chase'
   | 'copy_accept_link'
+  | 'they_paid'
   | 'duplicate_rev2'
   | 'void_and_reissue'
   | 'open_invoice'
@@ -167,11 +168,27 @@ export function documentActions(
         when(issued && !voided && input.owes === true, 'chase', voided ? 'voided' : issued ? 'nothing_owed' : 'not_issued'),
       ]
 
+    /*
+     * A QUOTATION THAT HAS BEEN ACCEPTED SWAPS ONE SLOT (§G, §N).
+     *
+     * "Copy accept link" asks a customer for a decision they have already
+     * made — on an accepted quotation it is the one pill in the grid that
+     * cannot do anything useful. The act that IS useful at that moment is the
+     * money arriving, and it had no route at all: an owner holding an
+     * accepted quote and cash had to know that a quotation must be converted
+     * to an invoice before it can be paid for.
+     *
+     * So the slot becomes "They've paid" exactly when the link stops meaning
+     * anything. Four actions, fixed order, each one live and meaningful —
+     * rather than five, or a pill that is dark for a reason nobody can fix.
+     */
     case 'quotation':
       return [
         share,
         convert,
-        when(issued, 'copy_accept_link', 'not_issued'),
+        input.status === 'accepted'
+          ? allow('they_paid')
+          : when(issued, 'copy_accept_link', 'not_issued'),
         when(issued, 'duplicate_rev2', 'not_issued'),
       ]
 
