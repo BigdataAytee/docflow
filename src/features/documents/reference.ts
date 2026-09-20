@@ -101,3 +101,54 @@ export function parseReference(reference: string): {
 /** True when this reference was minted offline — for the Settings explainer. */
 export const wasIssuedOffline = (reference: string): boolean =>
   parseReference(reference)?.deviceTag != null
+
+/**
+ * The next number that is not already taken (§G, §M).
+ *
+ * THE COUNT WAS NOT THE ANSWER. Every caller worked the sequence out as "how
+ * many documents of this type exist, plus one", which is only the next free
+ * number while nothing has ever been removed and nobody has ever typed their
+ * own. Void one of five invoices and the count says four — so the next
+ * document is offered INV-0004, which already exists. §M's unique constraint
+ * then refuses it at the worst possible moment, with the customer waiting.
+ *
+ * So it reads the references that were actually ISSUED and goes one past the
+ * highest. A reference the owner typed by hand counts too: `DR-INV-0413`
+ * parses to 413, and the next automatic number steps over it rather than
+ * walking into it.
+ *
+ * Drafts are ignored, because a draft has no reference yet — that is the
+ * whole reason this function exists.
+ */
+export function nextSequence(references: readonly (string | null | undefined)[]): number {
+  let highest = 0
+  for (const reference of references) {
+    if (reference === null || reference === undefined || reference === '') continue
+    const parsed = parseReference(reference)
+    if (parsed !== null && parsed.sequence > highest) highest = parsed.sequence
+  }
+  return highest + 1
+}
+
+/**
+ * The number this document would be given, shown before it is issued.
+ *
+ * The field sat EMPTY and the page said `INV-…`, so the one question an owner
+ * has about numbering — what is this going to be called — had no answer until
+ * after they committed. Offered rather than stored: leave it alone and the
+ * sequence is worked out again at issue, which is later and therefore more
+ * nearly right; type over it and it becomes the override.
+ */
+export function suggestedReference(input: {
+  readonly prefix: string
+  readonly references: readonly (string | null | undefined)[]
+  readonly deviceId: string
+  readonly fromReservedBlock?: boolean
+}): string {
+  return buildReference({
+    prefix: input.prefix,
+    sequence: nextSequence(input.references),
+    fromReservedBlock: input.fromReservedBlock ?? false,
+    deviceId: input.deviceId,
+  })
+}

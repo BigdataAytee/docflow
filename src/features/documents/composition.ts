@@ -183,6 +183,19 @@ export interface ComposableInput {
   readonly profile: LocaleProfile
   /** Set once issued; a draft shows a provisional reference instead. */
   readonly reference: string | null
+  /**
+   * The number this draft would actually be given, when the caller knows it.
+   *
+   * The page said `INV-…` and the field sat empty, so the one question an
+   * owner has about numbering — what is this going to be called — had no
+   * answer until after they had committed to it. The ellipsis is machinery
+   * showing through: it is not a number anybody can read back over a phone.
+   *
+   * OFFERED, NOT STORED. Leaving it alone changes nothing: the sequence is
+   * worked out again at issue, which is later and therefore more nearly
+   * right. Typing over it is what makes an override.
+   */
+  readonly suggestedReference?: string | undefined
   readonly status: string
   readonly frozenLabels: FrozenLabels | null
   readonly replaces: Replaces | null
@@ -241,7 +254,8 @@ export function composableOf(input: ComposableInput): ComposableDocument {
      * Order matters: issued first. A frozen reference outranks an override
      * that was only ever an instruction for the issue that already happened.
      */
-    reference: reference ?? draft.referenceOverride ?? provisional(draft.type),
+    reference:
+      reference ?? draft.referenceOverride ?? input.suggestedReference ?? provisional(draft.type),
     issueDate: draft.issueDate ?? today,
     ...(draft.dueDate === undefined ? {} : { dueDate: draft.dueDate }),
     lineItems: draft.lineItems,

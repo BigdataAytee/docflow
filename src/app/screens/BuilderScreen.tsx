@@ -87,8 +87,24 @@ import type { Customer } from '../../data/repositories'
 import { SkeletonList } from '../../ui'
 import { StepBody } from './builderSteps'
 import { billedInvoices, documentsOf, totalOf } from '../derive'
+import { nextSequence, suggestedReference } from '../../features/documents/reference'
 import { localDay, todayIso } from '../../domain/dates/calendar'
 import { usableMethodCount } from '../../features/payments/readiness'
+
+/**
+ * The next reference that is not already taken, for one type (§M).
+ *
+ * Every issue path used to work this out as "how many of this type exist,
+ * plus one", which is the next free number only while nothing has ever been
+ * removed and nobody has ever typed their own. Void one of five invoices and
+ * the count says four, so the next document is offered INV-0004 — which
+ * exists, and which §M's unique constraint refuses at the worst possible
+ * moment, with the customer waiting.
+ *
+ * Asked in one place now, so the four callers cannot drift apart.
+ */
+const sequenceFor = (documents: readonly DocumentRecord[], type: DocumentType): number =>
+  nextSequence(documentsOf(documents, type).map((row) => row.issuedReference))
 
 const isDocumentType = (value: string | undefined): value is DocumentType =>
   value !== undefined && (DOCUMENT_TYPES as readonly string[]).includes(value)
@@ -494,7 +510,7 @@ function NewReceiptFlow({ today = todayIso() }: { today?: string }) {
             },
             profile,
             prefix: company.numberingPrefixes?.invoice ?? numberingPrefix(profile, 'invoice'),
-            sequence: documentsOf(documents, 'invoice').length + 1,
+            sequence: sequenceFor(documents, 'invoice'),
             fromReservedBlock: false,
             deviceId: deviceId(),
             issuedAt: new Date().toISOString(),
@@ -670,7 +686,7 @@ function NewReceiptFlow({ today = todayIso() }: { today?: string }) {
            * made the first receipt of a business ask for sequence zero —
            * and `buildReference` refuses that rather than printing INV-0000.
            */
-          sequence: documentsOf(documents, 'receipt').length + 1,
+          sequence: sequenceFor(documents, 'receipt'),
           fromReservedBlock: false,
           deviceId: deviceId(),
           issuedAt: new Date().toISOString(),
@@ -1227,6 +1243,24 @@ export function BuilderScreen({ now = () => new Date().toISOString() }: { now?: 
         customer,
         profile,
         reference: record?.issuedReference ?? null,
+        /*
+         * The number it would get, so nobody has to issue a document to find
+         * out what it will be called. Computed from what is ALREADY issued,
+         * so it steps over a voided one rather than into it (§M).
+         */
+        ...(state === null || company === null
+          ? {}
+          : {
+              suggestedReference: suggestedReference({
+                prefix:
+                  company.numberingPrefixes?.[state.draft.type] ??
+                  numberingPrefix(profile, state.draft.type),
+                references: documentsOf(documents, state.draft.type).map(
+                  (row) => row.issuedReference,
+                ),
+                deviceId: deviceId(),
+              }),
+            }),
         status: record?.status ?? 'draft',
         frozenLabels: record?.frozenLabels ?? null,
         replaces,
@@ -1415,7 +1449,7 @@ export function BuilderScreen({ now = () => new Date().toISOString() }: { now?: 
       profile,
       prefix: company.numberingPrefixes?.invoice ?? numberingPrefix(profile, 'invoice'),
       // Plus one: the bill this screen just made is not in `documents` yet.
-      sequence: documentsOf(documents, 'invoice').length + 1,
+      sequence: sequenceFor(documents, 'invoice'),
       fromReservedBlock: false,
       deviceId: deviceId(),
       issuedAt: new Date().toISOString(),
@@ -1508,7 +1542,7 @@ export function BuilderScreen({ now = () => new Date().toISOString() }: { now?: 
           company?.numberingPrefixes?.[state.draft.type] ??
           numberingPrefix(profile, state.draft.type),
         // §M: a server-reserved block where available; offline, a device tag.
-        sequence: documentsOf(documents, state.draft.type).length,
+        sequence: sequenceFor(documents, state.draft.type),
         fromReservedBlock: false,
         deviceId: deviceId(),
         /*

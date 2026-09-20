@@ -225,7 +225,24 @@ export function DetailsStep({
               <input
                 autoFocus
                 value={referenceDraft}
-                onChange={(event) => setReferenceDraft(event.target.value)}
+                /*
+                 * UPPERCASE AS IT IS TYPED (§G, §M).
+                 *
+                 * A reference is an identifier a customer reads back over the
+                 * phone and a colleague searches for, and `dr-inv-0413` and
+                 * `DR-INV-0413` are the same number written two ways — which
+                 * is how one document ends up looking like two. Phone
+                 * keyboards start lower case, so left alone this is what
+                 * everybody would get.
+                 *
+                 * Done on the way IN rather than on the way out, so the owner
+                 * watches it happen instead of having their typing silently
+                 * rewritten when they look away.
+                 */
+                onChange={(event) => setReferenceDraft(event.target.value.toUpperCase())}
+                autoCapitalize="characters"
+                autoCorrect="off"
+                spellCheck={false}
                 onBlur={commitReference}
                 onKeyDown={(event) => {
                   if (event.key === 'Enter') commitReference()

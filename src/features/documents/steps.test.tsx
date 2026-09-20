@@ -274,6 +274,28 @@ describe('The pencil on the document number (§G)', () => {
     expect(onChange).toHaveBeenCalledWith({ referenceOverride: 'DR-INV-0413' })
   })
 
+  /**
+   * UPPERCASE AS IT IS TYPED (§M).
+   *
+   * A reference is an identifier a customer reads back over the phone and a
+   * colleague searches for, and `dr-inv-0413` and `DR-INV-0413` are the same
+   * number written two ways — which is how one document comes to look like
+   * two. Phone keyboards start lower case, so left alone this is what
+   * everybody would get.
+   */
+  it('puts the number in capitals as it is typed', async () => {
+    const user = userEvent.setup()
+    const onChange = detailsWith({})
+
+    await user.click(screen.getByRole('button', { name: 'Edit reference' }))
+    const box = screen.getByRole('textbox', { name: 'Edit reference' })
+    await user.type(box, 'dr-inv-0413')
+
+    expect(box, 'the owner cannot see it being capitalised').toHaveValue('DR-INV-0413')
+    await user.type(box, '{Enter}')
+    expect(onChange).toHaveBeenCalledWith({ referenceOverride: 'DR-INV-0413' })
+  })
+
   /** THE ONE THIS IS FOR. */
   it('shows the owner their own number back, not the provisional one', () => {
     detailsWith({ referenceOverride: 'DR-INV-0413' })
