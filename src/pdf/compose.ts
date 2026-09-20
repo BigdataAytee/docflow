@@ -164,9 +164,38 @@ export interface PaymentBoxRow {
   readonly value: string
 }
 
+/**
+ * How many labelled rows the box may print before it starts compacting.
+ *
+ * §I fixes the box inline beside the signature at ≤ 60% width, and the
+ * footer it sits in is `mt-auto` — so the box grows UPWARD into the page. A
+ * trader with a bank account and six links would push the totals and the
+ * signature off the bottom, and a document that loses its total to a list of
+ * payment links has been damaged by a convenience.
+ *
+ * Eight is the bank account's four plus four links, which is more than anyone
+ * has been seen to use. Past it the rest are still printed — as names on one
+ * compact line — because dropping a method the owner switched on would be
+ * the toggle that lies, and §J says "everything switched on prints".
+ */
+export const PAYMENT_BOX_MAX_ROWS = 8
+
 export interface PaymentBox {
   readonly heading: string
   readonly rows: readonly PaymentBoxRow[]
+  /**
+   * The pasted links, each under its provider's name (§J).
+   *
+   * A separate list from `rows` although both render as labelled rows: the
+   * bank account is one method spread over four rows, and these are one
+   * method each. Keeping them apart is what lets the cap count rows while
+   * still saying which METHODS were compacted.
+   */
+  readonly links: readonly PaymentBoxRow[]
+  /**
+   * Methods that print as a name and nothing else — cash on delivery, and
+   * any link past the cap. §I puts them under a dashed divider.
+   */
   readonly otherMethods: readonly string[]
   /** §I: the label on the dashed divider above them. */
   readonly otherMethodsLabel: string
@@ -426,6 +455,16 @@ export interface ComposeOptions {
   readonly bankValues?: Readonly<Record<string, string>>
   /** Other enabled methods, by display name (§I dashed divider). */
   readonly otherPaymentMethods?: readonly string[]
+  /**
+   * The pasted links this document prints, already normalised (§J).
+   *
+   * Handed over as {label, value} rather than as provider ids, so this module
+   * never looks a provider up: the settings form and the box read ONE
+   * declaration, and the composed page reads the value that declaration
+   * produced. That is §J's "cannot drift", kept by there being nothing here
+   * that could drift.
+   */
+  readonly paymentLinks?: readonly PaymentBoxRow[]
   /** Asset id → data URL, so the page can print the signature it names. */
   readonly assetUrls?: Readonly<Record<string, string>>
   /**
@@ -705,12 +744,33 @@ function buildPaymentBox(
     .map((field) => ({ label: field.label, value: values[field.kind]?.trim() ?? '' }))
     .filter((row) => row.value !== '')
 
-  if (rows.length === 0 && (options.otherPaymentMethods ?? []).length === 0) return null
+  const allLinks = options.paymentLinks ?? []
+  const named = options.otherPaymentMethods ?? []
+
+  if (rows.length === 0 && allLinks.length === 0 && named.length === 0) return null
+
+  /*
+   * THE CAP, APPLIED AS DATA rather than left to the layout (§I).
+   *
+   * The box is inline beside the signature in an `mt-auto` footer, so it
+   * grows upward into the page: enough rows and the totals and the signature
+   * go off the bottom. Truncating here means the limit is something a test
+   * can assert at one, three and six methods, instead of something that has
+   * to be noticed in a rendered PDF.
+   *
+   * What overflows is COMPACTED, never dropped. §J: "everything switched on
+   * prints in invoice payment instructions", and a method the owner enabled
+   * that appears nowhere is the toggle that lies.
+   */
+  const room = Math.max(0, PAYMENT_BOX_MAX_ROWS - rows.length)
+  const links = allLinks.slice(0, room)
+  const compacted = allLinks.slice(room).map((link) => link.label)
 
   return {
     heading: terms.howToPay,
     rows,
-    otherMethods: options.otherPaymentMethods ?? [],
+    links,
+    otherMethods: [...named, ...compacted],
     otherMethodsLabel: terms.otherPaymentMethods,
     maxWidthPercent: 60,
   }

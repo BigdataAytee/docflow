@@ -14,6 +14,7 @@
  */
 
 import type { DocumentType, LineItem } from '../../domain/documents/types'
+import type { SavedPaymentLink } from '../../domain/payments/links'
 import { carriesMoney } from '../../domain/documents/types'
 import { type LocaleProfile, steps as localisedSteps } from '../../domain/locale/profile'
 
@@ -116,6 +117,15 @@ export interface DocumentDraft {
    * "unchanged".
    */
   readonly referenceOverride?: string | undefined
+  /**
+   * The payment links THIS document prints, when it has its own (§J).
+   *
+   * Absent is the normal state and means "whatever the business has". A
+   * trader who added a method mid-invoice, or switched one off for this
+   * customer, gets a list here — and the business's defaults are untouched
+   * unless they said to save it.
+   */
+  readonly paymentLinks?: readonly SavedPaymentLink[] | undefined
   /**
    * A rate set on THIS document, overriding the company default (§K).
    *

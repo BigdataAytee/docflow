@@ -313,7 +313,14 @@ export function DocumentScreen({ today = todayIso() }: { today?: string }) {
     ...(receiptPayment === undefined ? {} : { payment: receiptPayment }),
     ...(againstReference === undefined ? {} : { againstReference }),
   })
-  const composeOptions = composeOptionsOf({ company, design, strings, assets })
+  const composeOptions = composeOptionsOf({
+    company,
+    design,
+    strings,
+    assets,
+    // This document's own list when it has one; the business's otherwise (§J).
+    ...(record.paymentLinks === undefined ? {} : { paymentLinks: record.paymentLinks }),
+  })
   const total = totalOf(record)
   const isInvoice = record.type === 'invoice'
   // Real credit notes, not an empty list: a credited invoice owes less, and

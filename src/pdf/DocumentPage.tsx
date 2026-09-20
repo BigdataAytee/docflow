@@ -501,6 +501,26 @@ export function DocumentPage({
                         <dd className="font-medium">{row.value}</dd>
                       </div>
                     ))}
+                    {/*
+                      EACH LINK UNDER ITS PROVIDER'S NAME, so the customer
+                      knows which app to open (§J).
+
+                      The same two-column row as the bank fields, not a
+                      different treatment: §I puts "labels in a left column so
+                      values align", and a link is a labelled value like any
+                      other. A second shape here would be a second thing to
+                      keep aligned across sixteen templates.
+
+                      `break-all` on the value alone: an address has no spaces
+                      to wrap at, and one long one would otherwise widen the
+                      box past §I's 60% and push the signature sideways.
+                    */}
+                    {model.paymentBox.links.map((row) => (
+                      <div key={`${row.label}:${row.value}`} className="flex gap-[8px]">
+                        <dt className="w-[96px] shrink-0 opacity-60">{row.label}</dt>
+                        <dd className="break-all font-medium">{row.value}</dd>
+                      </div>
+                    ))}
                   </dl>
                   {/*
                     §I: "online methods under a DASHED DIVIDER labelled 'Other

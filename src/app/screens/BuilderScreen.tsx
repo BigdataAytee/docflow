@@ -1138,6 +1138,12 @@ export function BuilderScreen({ now = () => new Date().toISOString() }: { now?: 
          * opposite sign.
          */
         referenceOverride: draft.referenceOverride,
+        /*
+         * The same rule, and for the same reason: a list this document once
+         * had and no longer has must be able to go back to "whatever the
+         * business has", which a conditional spread cannot say.
+         */
+        paymentLinks: draft.paymentLinks,
         // The design travels with the document (§H). Four scalars, so the
         // saved record can draw itself without this screen being open.
         templateId: design.templateId,
@@ -1321,8 +1327,18 @@ export function BuilderScreen({ now = () => new Date().toISOString() }: { now?: 
   )
 
   const composeOptions = useMemo(
-    () => composeOptionsOf({ company, design, strings, assets }),
-    [company, design, strings, assets],
+    () =>
+      composeOptionsOf({
+        company,
+        design,
+        strings,
+        assets,
+        // The draft's own list when it has one; the business's otherwise (§J).
+        ...(state?.draft.paymentLinks === undefined
+          ? {}
+          : { paymentLinks: state.draft.paymentLinks }),
+      }),
+    [company, design, strings, assets, state?.draft.paymentLinks],
   )
 
   if (loading) return <SkeletonList rows={4} label={strings.common.loading} />

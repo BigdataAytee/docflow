@@ -21,6 +21,7 @@ import type {
   Role,
 } from '../../domain/account/deletion'
 import type { DocumentType, FrozenLabels, LineItem } from '../../domain/documents/types'
+import type { SavedPaymentLink } from '../../domain/payments/links'
 import type { Money } from '../../domain/money/money'
 import type { Payment } from '../../domain/payments/ledger'
 import type { ShareEvent } from '../../share/events'
@@ -76,6 +77,15 @@ export interface Company {
   readonly bankFields: Record<string, string>
   readonly enabledPaymentMethods: readonly string[]
   /**
+   * The payment links the business has pasted in (§J).
+   *
+   * The DEFAULTS. A document may add to them or switch one off for itself
+   * without touching this — a trader mid-invoice who realises this customer
+   * should pay by MoMo is not editing their business, they are editing one
+   * piece of paper.
+   */
+  readonly paymentLinks?: readonly SavedPaymentLink[]
+  /**
    * The rest of §E's `companies` row: branding, the tax defaults and the
    * saved signature. These were missing while the screens that own them
    * took their values as props; a Settings screen with nowhere to save is
@@ -120,6 +130,21 @@ export interface DocumentRecord {
   readonly status: string
   readonly customerId?: string
   readonly currency: string
+  /**
+   * This document's own payment links, when it has any (§J).
+   *
+   * ABSENT means "whatever the business has", which is almost every document
+   * and costs a document that never thinks about it nothing. Present, it is
+   * the whole list for this page — added-here links included, switched-off
+   * ones excluded — so a default changed next month never rewrites what an
+   * issued invoice told a customer to do (Rule #5).
+   *
+   * `| undefined` is load-bearing under `exactOptionalPropertyTypes`, the
+   * same way it is on `referenceOverride`: a document that once had its own
+   * list and no longer does has to be able to go back to "whatever the
+   * business has", and a patch has to be able to say so.
+   */
+  readonly paymentLinks?: readonly SavedPaymentLink[] | undefined
   readonly lineItems: readonly LineItem[]
   readonly issueDate?: string
   readonly dueDate?: string

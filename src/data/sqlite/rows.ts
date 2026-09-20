@@ -27,6 +27,7 @@
  */
 
 import type { SqlRow, SqlValue } from './driver'
+import type { SavedPaymentLink } from '../../domain/payments/links'
 import type {
   AssetRecord,
   Company,
@@ -105,6 +106,7 @@ export const toCompany = (row: SqlRow): Company => ({
   numberingPrefixes: parseJson<Partial<Record<DocumentType, string>>>(row['numbering_prefixes'], {}),
   bankFields: parseJson<Record<string, string>>(row['bank_fields'], {}),
   enabledPaymentMethods: parseJson<string[]>(row['enabled_payment_methods'], []),
+  ...optional('paymentLinks', parseJson<SavedPaymentLink[] | undefined>(row['payment_links'], undefined)),
   ...optional('address', text(row['address'])),
   ...optional('phone', text(row['phone'])),
   ...optional('email', text(row['email'])),
@@ -133,6 +135,7 @@ export const companyColumns = (company: Company): Record<string, SqlValue> => ({
   numbering_prefixes: json(company.numberingPrefixes),
   bank_fields: json(company.bankFields),
   enabled_payment_methods: json(company.enabledPaymentMethods),
+  payment_links: company.paymentLinks === undefined ? null : json(company.paymentLinks),
   address: company.address ?? null,
   phone: company.phone ?? null,
   email: company.email ?? null,
@@ -188,6 +191,10 @@ export const toDocument = (row: SqlRow): DocumentRecord => ({
   // these are never omitted — a missing key would read as "not yet loaded".
   issuedReference: text(row['issued_reference']) ?? null,
   ...optional('referenceOverride', text(row['reference_override'])),
+  ...optional(
+    'paymentLinks',
+    parseJson<SavedPaymentLink[] | undefined>(row['payment_links'], undefined),
+  ),
   ...optional('taxRatePpm', int(row['tax_rate_ppm'])),
   ...optional('whtRatePpm', int(row['wht_rate_ppm'])),
   frozenLabels: parseJson<FrozenLabels | null>(row['frozen_labels'], null),
@@ -281,6 +288,7 @@ export const documentColumns = (document: DocumentRecord): Record<string, SqlVal
   recurrence_key: document.recurrenceKey ?? null,
   issued_reference: document.issuedReference,
   reference_override: document.referenceOverride ?? null,
+  payment_links: document.paymentLinks === undefined ? null : json(document.paymentLinks),
   tax_rate_ppm: document.taxRatePpm ?? null,
   wht_rate_ppm: document.whtRatePpm ?? null,
   frozen_labels: document.frozenLabels === null ? null : json(document.frozenLabels),

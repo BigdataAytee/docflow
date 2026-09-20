@@ -3940,3 +3940,23 @@ Added by Phase 1:
   `validated: false`. §W holds them open for per-market review, and the ES
   terminology split (presupuesto vs cotización) likely forces a currency and
   locale split together.
+- **§J provider links carry the same caution as its bank fields, and one more
+  of their own.** `src/domain/payments/providers.ts` declares which payment
+  providers are offered in which countries, and every `markets` list is
+  **current-as-written, not verified**: the table is `reviewStatus: 'draft'`
+  with `PROVIDERS_REVIEWED_ON = '2026-09-20'`, and nothing on it has been
+  confirmed with a provider. Providers change which markets they serve without
+  notice, so re-check before each market launch exactly as §J requires for the
+  bank-field sets. The `markets` lists are deliberately SHORT — a list
+  claiming forty countries is one nobody can check; a list claiming the
+  handful anybody has named is one a native of each can confirm in a sentence.
+  Being absent from a market costs a trader one extra tap, and being wrongly
+  present costs them a printed link that cannot take their money.
+
+  Detection choosing wrongly must never trap anyone. `providersFor` returns
+  both what to offer and everything else, and the Settings screen puts the
+  second behind "Use a different service" with an inline note when a provider
+  cannot receive where the trader is. The country list that shipped with
+  thirteen entries is the lesson being applied: an automatic choice is a
+  default, never a gate. A guard asserts every provider stays reachable from
+  every country, including one the table has never heard of.

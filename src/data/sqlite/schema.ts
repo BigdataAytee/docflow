@@ -444,6 +444,20 @@ export const MIGRATIONS: readonly string[] = [
   alter table documents add column invoice_total_minor integer;
   alter table documents add column paid_before_minor integer;
   `,
+  `
+  -- The payment links a trader pasted in, and the ones one document uses (§J).
+  --
+  -- JSON on both, like bank fields and line items, because the shape is a
+  -- LIST whose length is the point: "the trader can add as many as they
+  -- want". A column per provider would cap that at however many providers
+  -- happened to exist the day the table was written.
+  --
+  -- The document's column is NULL on every existing row and on almost every
+  -- new one, which is what "absent means whatever the business has" is
+  -- stored as. Only a document that added or switched one off carries a list.
+  alter table companies add column payment_links text;
+  alter table documents add column payment_links text;
+  `,
 ]
 
 /**

@@ -26,6 +26,7 @@
  * which is what proves the column names exist, rather than assuming.
  */
 
+import type { SavedPaymentLink } from '../../domain/payments/links'
 import type {
   AssetRecord,
   Company,
@@ -125,6 +126,9 @@ export function toCompany(row: Row): Company {
     numberingPrefixes: json(row['numbering_prefixes'], {}),
     bankFields: json(row['bank_fields'], {}),
     enabledPaymentMethods: json<string[]>(row['enabled_payment_methods'], []),
+    ...(row['payment_links'] === null || row['payment_links'] === undefined
+      ? {}
+      : { paymentLinks: json<SavedPaymentLink[]>(row['payment_links'], []) }),
     ...omitNull({
       address: text(row['address']),
       phone: text(row['phone']),
@@ -157,6 +161,7 @@ export function fromCompany(patch: Partial<Company>): Row {
       numbering_prefixes: patch.numberingPrefixes,
       bank_fields: patch.bankFields,
       enabled_payment_methods: patch.enabledPaymentMethods,
+      ...('paymentLinks' in patch ? { payment_links: patch.paymentLinks ?? null } : {}),
       address: patch.address,
       phone: patch.phone,
       email: patch.email,
@@ -232,6 +237,9 @@ export function toDocument(row: Row): DocumentRecord {
     ...(text(row['reference_override']) === undefined
       ? {}
       : { referenceOverride: text(row['reference_override']) as string }),
+    ...(row['payment_links'] === null || row['payment_links'] === undefined
+      ? {}
+      : { paymentLinks: json<SavedPaymentLink[]>(row['payment_links'], []) }),
     ...(row['tax_rate_ppm'] === null || row['tax_rate_ppm'] === undefined
       ? {}
       : { taxRatePpm: Number(row['tax_rate_ppm']) }),
@@ -307,6 +315,7 @@ export function fromDocument(patch: Partial<DocumentRecord>): Row {
    * and the next device down the sync still had the old number.
    */
   if ('referenceOverride' in patch) row['reference_override'] = patch.referenceOverride ?? null
+  if ('paymentLinks' in patch) row['payment_links'] = patch.paymentLinks ?? null
   if (patch.taxRatePpm !== undefined) row['tax_rate_ppm'] = patch.taxRatePpm
   if (patch.whtRatePpm !== undefined) row['wht_rate_ppm'] = patch.whtRatePpm
   if (patch.frozenLabels !== undefined) row['frozen_labels'] = patch.frozenLabels
