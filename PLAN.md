@@ -202,14 +202,17 @@ Three things nobody in this repository can do, each one setting:
    something else. Worth raising with Supabase support rather than guessing
    at the dashboard again.
 
-2. **`frame-ancestors` on the web host.** The app carries its own content
-   security policy in the built document (`src/web/csp.ts`), because the same
-   bundle is served by a host AND by Capacitor from the app's own assets — a
-   host header can never cover the second. A `<meta>` policy cannot carry
-   `frame-ancestors`, so clickjacking protection needs a real response header
-   from whatever serves `dist/`. Send `Content-Security-Policy:
-   frame-ancestors 'none'` and `Strict-Transport-Security` there; everything
-   else in the policy already travels with the document.
+2. **`frame-ancestors` and HSTS — written, not just noted.** The app carries
+   its own policy in the built document (`src/web/csp.ts`), because the same
+   bundle is served by a host AND by Capacitor — a host header can never cover
+   the second. The two directives a `<meta>` cannot carry now live in
+   `src/web/headers.ts`, and the build emits `dist/_headers` beside the bundle
+   (the format Netlify and Cloudflare Pages read). Every other server's
+   equivalent is generated into `docs/deploy/web-headers.md` from the same
+   values, so no snippet can disagree with what ships. **What is left is one
+   act by whoever owns the host:** point it at `dist/` on a host that reads
+   `_headers`, or paste the matching block from that page. No host is named
+   anywhere in this repository, so none is assumed here.
 3. **Push `0021_recurrences.sql`**, once CI's RLS run is green.
 
 ### Waiting on a device
@@ -270,7 +273,9 @@ report.
 ### Outstanding elsewhere
 
 * Eight `[[PLACEHOLDER]]` legal blanks.
-* `frame-ancestors` and HSTS on the web host.
+* `frame-ancestors` and HSTS: the values and every host's config are
+  generated (`docs/deploy/web-headers.md`) and `dist/_headers` ships with the
+  bundle. Applying them is one act on whichever host serves `dist/`.
 * The sign-in rate-limit ticket — stays red until the Dashboard is changed.
 
 ## Status board

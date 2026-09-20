@@ -51,6 +51,9 @@
     // The containment check both file-writing generators share.
     // The build-time policy: read by vite.config.ts, asserted by its own test.
     "src/web/csp.ts",
+    // And the two directives a meta policy cannot carry, which the same
+    // config emits beside the bundle as `_headers`.
+    "src/web/headers.ts",
     "src/marketing/outputPath.ts",
     "src/marketing/shots/spec.ts",
     "src/marketing/shots/plan.ts",

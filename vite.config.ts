@@ -3,6 +3,7 @@ import react from '@vitejs/plugin-react'
 import { fileURLToPath, URL } from 'node:url'
 
 import { securityMetaTags } from './src/web/csp'
+import { headersFile } from './src/web/headers'
 
 /**
  * The security meta tags, injected into the BUILT index.html only.
@@ -18,6 +19,24 @@ const securityHeaders = (): Plugin => ({
   apply: 'build',
   transformIndexHtml: (html) => html.replace('</head>', `  ${securityMetaTags()}
   </head>`),
+
+  /*
+   * `_headers`, beside the bundle it protects (§P).
+   *
+   * Two directives cannot travel in the document — `frame-ancestors`, which
+   * browsers ignore in a meta policy, and HSTS, whose whole purpose is the
+   * request before the document loads. Without them the clickjacking
+   * protection the app believes it has is, on the web, not there at all.
+   *
+   * Emitted rather than checked in, so it cannot be a stale copy of
+   * `src/web/headers.ts` — and so a host that reads this format finds it
+   * already in `dist/` without anybody remembering a step. Hosts that do not
+   * read it have their equivalents in `docs/deploy/web-headers.md`, written
+   * from the same values.
+   */
+  generateBundle() {
+    this.emitFile({ type: 'asset', fileName: '_headers', source: headersFile() })
+  },
 })
 
 // The web client is online-only (§B) but `npm run dev` boots against the
