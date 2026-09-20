@@ -21,7 +21,6 @@ import { describe, expect, it } from 'vitest'
 import { cleanup, render, screen } from '@testing-library/react'
 
 import { quantity } from '../domain/documents/types'
-import { freezeLabels } from '../domain/locale/profile'
 import { PAYMENT_BOX_MAX_ROWS, type ComposableDocument, composeDocument } from './compose'
 import { paginate } from './paginate'
 import { TEMPLATES, templateById } from './templates'
@@ -54,10 +53,16 @@ const invoice: ComposableDocument = {
   reference: 'INV-0042',
   issueDate: '2026-09-01',
   lineItems: [
-    { id: 'l1', description: 'Cement', quantityMilli: quantity(3), unitPriceMinor: 5_000_00 },
+    {
+      id: 'l1',
+      description: 'Cement',
+      quantityMilli: quantity(3),
+      unitPriceMinor: 5_000_00,
+      taxable: false,
+    },
   ],
   party: { name: 'Ade Stores' },
-  labels: freezeLabels({ locale: 'EN-NG' }, 'invoice'),
+  frozenLabels: null,
 }
 
 /** Real saved links, through the one function that turns them into lines. */
@@ -204,9 +209,9 @@ describe('The box holds its shape at any number of methods (§I)', () => {
     const model = withLinks(6)
     const many = {
       ...model,
-      rows: Array.from({ length: 45 }, (_, i) => model.rows[0]!).map((row, i) => ({
-        ...row,
-        description: `Item ${i}`,
+      rows: Array.from({ length: 45 }, (_, index) => ({
+        ...model.rows[0]!,
+        description: `Item ${index}`,
       })),
     }
     const pages = paginate(many, { rowsPerPage: 20, footerRowCost: 3 })

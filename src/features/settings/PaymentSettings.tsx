@@ -37,6 +37,8 @@ import { fieldsFor, validateBankDetails } from '../../domain/locale/bank-fields'
 import { COUNTRY_CURRENCY, countriesByName, countryName } from '../../domain/locale/data/countries'
 import type { BankField } from '../../domain/locale/data/currencies'
 import { Icon, type IconName } from '../../ui'
+import { PaymentLinkSection } from './PaymentLinkSection'
+import type { SavedPaymentLink } from '../../domain/payments/links'
 
 /** Fixed to the method, like every other icon pairing in the app (§F). */
 const METHOD_ICONS: Readonly<Record<string, IconName>> = {
@@ -95,6 +97,9 @@ export interface PaymentSettingsProps {
   readonly onBankValue: (kind: string, value: string) => void
   readonly onAccountCountry: (country: string) => void
   readonly onToggleMethod: (id: string, next: boolean) => void
+  /** §J's pasted links. Absent hides the section entirely. */
+  readonly paymentLinks?: readonly SavedPaymentLink[]
+  readonly onPaymentLinks?: (links: readonly SavedPaymentLink[]) => void
 }
 
 /**
@@ -240,6 +245,8 @@ export function PaymentSettings({
   onBankValue,
   onAccountCountry,
   onToggleMethod,
+  paymentLinks = [],
+  onPaymentLinks,
 }: PaymentSettingsProps) {
   const { strings } = useCompany()
 
@@ -431,6 +438,15 @@ export function PaymentSettings({
           </li>
         ))}
       </ul>
+
+      {/*
+        §J'S OTHER HALF. The bank account is one way to be paid; the links
+        are the rest of the list §J has always named, and until now the only
+        thing switching one on did was print its name with nothing behind it.
+      */}
+      {onPaymentLinks !== undefined && (
+        <PaymentLinkSection country={country} links={paymentLinks} onChange={onPaymentLinks} />
+      )}
     </section>
   )
 }

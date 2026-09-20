@@ -763,13 +763,13 @@ function buildPaymentBox(
    * that appears nowhere is the toggle that lies.
    */
   const room = Math.max(0, PAYMENT_BOX_MAX_ROWS - rows.length)
-  const links = allLinks.slice(0, room)
+  const shown = allLinks.slice(0, room)
   const compacted = allLinks.slice(room).map((link) => link.label)
 
   return {
     heading: terms.howToPay,
     rows,
-    links,
+    links: shown,
     otherMethods: [...named, ...compacted],
     otherMethodsLabel: terms.otherPaymentMethods,
     maxWidthPercent: 60,

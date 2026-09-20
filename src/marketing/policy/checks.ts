@@ -18,6 +18,7 @@
 
 import { execFileSync } from 'node:child_process'
 import { existsSync, readFileSync, readdirSync } from 'node:fs'
+import { ALL_PROVIDERS } from '../../domain/payments/providers'
 import { join } from 'node:path'
 
 import { PLACEHOLDERS, unfilled } from '../../legal/placeholders'
@@ -93,9 +94,53 @@ export const ALLOWED_DESTINATIONS: readonly Destination[] = [
       'until they act, and nothing is sent to DocFlow.',
     host: 'wa.me',
   },
+  /*
+   * THE PAYMENT PROVIDERS, WHICH THE APP NEVER CONTACTS (§J).
+   *
+   * Exactly `wa.me`'s case, and declared the same way rather than added to
+   * `NOT_A_DESTINATION` — because a reviewer who sees `paypal.me` inside the
+   * app deserves the answer in the privacy declaration, not an exemption
+   * buried in a scanner.
+   *
+   * What these are: an address the TRADER pasted in, printed on their
+   * invoice, read by their customer. DocFlow makes no request to any of them,
+   * holds no key for any of them and has no SDK from any of them. Nothing
+   * leaves the device to reach one; a customer types it into their own
+   * browser off a piece of paper.
+   *
+   * DERIVED FROM `PROVIDERS`, so this list cannot fall behind the app's. A
+   * provider added tomorrow is declared by having been added — which is the
+   * same "declared once, read by both" §J applies to the field sets.
+   */
+  ...ALL_PROVIDERS.flatMap((provider) => {
+    const host = provider.prefix.split('/')[0] ?? ''
+    return host === ''
+      ? []
+      : [
+          {
+            what: host,
+            why:
+              `a ${provider.name} payment address the trader pasted in, printed on their ` +
+              'invoice. A link, not a request: DocFlow never contacts it and sends it nothing.',
+            host,
+          },
+        ]
+  }),
 ]
 
 const HOST_PATTERN = /https?:\/\/([a-z0-9.-]+)/gi
+
+/**
+ * One spelling per host, on BOTH sides of every comparison.
+ *
+ * `www.paypal.me` and `paypal.me` are one destination by definition, and
+ * treating them as two meant a declared host could be flagged for whichever
+ * spelling somebody happened to copy. Normalising only the scanned side was
+ * worse than not doing it at all: it silently broke the `www.w3.org`
+ * exemption that had worked since this check was written, and the failure
+ * looked exactly like a real finding.
+ */
+const bareHost = (value: string): string => value.toLowerCase().replace(/^www\./, '')
 
 /**
  * Files that name a host but never reach a user.
@@ -162,13 +207,22 @@ export function readDestinationInputs(): DestinationInputs {
 export function checkDestinations(inputs = readDestinationInputs()): CheckResult {
   const findings: Finding[] = []
   const allowed = new Set<string>(
-    ALLOWED_DESTINATIONS.flatMap((entry) => (entry.host === undefined ? [] : [entry.host])),
+    ALLOWED_DESTINATIONS.flatMap((entry) =>
+      entry.host === undefined ? [] : [bareHost(entry.host)],
+    ),
   )
 
   for (const [file, contents] of Object.entries(inputs.sources)) {
     for (const match of contents.matchAll(HOST_PATTERN)) {
-      const host = (match[1] ?? '').toLowerCase()
-      if (NOT_A_DESTINATION.includes(host)) continue
+      /*
+       * `www.` IS NOT A DIFFERENT DESTINATION. `www.paypal.me` and
+       * `paypal.me` are one host by definition, and treating them as two
+       * meant a declared destination could be flagged for the spelling
+       * somebody happened to copy — which is a false alarm, and a check that
+       * cries wolf is one people learn to ignore.
+       */
+      const host = bareHost(match[1] ?? '')
+      if (NOT_A_DESTINATION.map(bareHost).includes(host)) continue
       if (allowed.has(host)) continue
 
       if (TEST_ONLY.includes(file) || isAboutTheApp(file)) {

@@ -387,6 +387,20 @@ export interface UiStrings {
     readonly accountFieldsFollowCountry: string
     readonly saveAccount: string
     readonly accountSaved: string
+    /** §J's pasted payment links. */
+    readonly paymentLinks: string
+    readonly addLink: string
+    readonly pasteIt: string
+    readonly nothingToPaste: string
+    readonly clipboardRefused: string
+    readonly thisPrints: string
+    readonly useAnother: string
+    readonly hideAnother: string
+    readonly notInCountry: string
+    readonly linkNotThisProvider: string
+    readonly linkNoHandle: string
+    readonly linkNotALink: string
+    readonly removeLink: string
     readonly addBankTransfer: string
     readonly editBankTransfer: string
     readonly closeAccountForm: string
@@ -1430,6 +1444,19 @@ const EN: UiStrings = {
     accountFieldsFollowCountry: '{country} — the details banks there ask for.',
     saveAccount: 'Save and close',
     accountSaved: 'Saved.',
+    paymentLinks: 'Payment links',
+    addLink: 'Add {provider}',
+    pasteIt: 'Paste',
+    nothingToPaste: 'Nothing copied yet.',
+    clipboardRefused: 'Could not read what you copied — paste it in by hand.',
+    thisPrints: 'This prints on your invoice as:',
+    useAnother: 'Use a different service',
+    hideAnother: 'Hide the other services',
+    notInCountry: 'This may not be able to receive money in {country}.',
+    linkNotThisProvider: 'That does not look like a {provider} link.',
+    linkNoHandle: 'Add your name or page after {prefix}',
+    linkNotALink: 'That does not look like a web address.',
+    removeLink: 'Remove {provider}',
     addBankTransfer: 'Add bank transfer',
     editBankTransfer: 'Edit account details',
     closeAccountForm: 'Close account details',

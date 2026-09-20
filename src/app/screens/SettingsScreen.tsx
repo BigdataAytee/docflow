@@ -353,6 +353,9 @@ function SettingsPanelBody() {
               bankFields: { ...company.bankFields, [ACCOUNT_COUNTRY_KEY]: country },
             })
           }
+          {...(company.paymentLinks === undefined ? {} : { paymentLinks: company.paymentLinks })}
+          /* §J's links are the business's DEFAULTS; a document may differ. */
+          onPaymentLinks={(paymentLinks) => void actions.updateCompany({ paymentLinks })}
           onToggleMethod={(methodId, next) =>
             void actions.updateCompany({
               enabledPaymentMethods: next

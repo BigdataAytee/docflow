@@ -367,7 +367,7 @@ gate:hosted" silently did nothing. One script now, with
 `--env-file-if-exists=.env`: exported shell variables and a gitignored `.env`
 both work, and `gate:hosted:local` is gone.
 
-**Thirty-one migrations** are written. `0021_recurrences` is applied on the
+**Thirty-two migrations** are written. `0021_recurrences` is applied on the
 remote (`migration list` shows `local 0021 -> remote 0021`) and its RLS suite
 is green in CI. `0022_company_contact` adds the business's own phone, email
 and website — the footer strip every document ends with (§I).
@@ -522,7 +522,7 @@ not start until they are.
 | §Q clause | Result |
 | --- | --- |
 | Two seeded companies cannot read or write each other | ✅ verified, local Postgres — 21 tests in `supabase/tests/rls.test.ts`, blocking in CI |
-| Money and transition property tests pass | ✅ verified — 79 tests across `src/domain/{money,documents,payments}`, blocking in CI |
+| Money and transition property tests pass | ✅ verified — 93 tests across `src/domain/{money,documents,payments}`, blocking in CI |
 | Label resolution passes its own property test; no hardcoded type name survives the lint rule | ✅ verified, both halves — 67 tests in `src/domain/locale`, plus the lint rule |
 | Encrypted SQLite opens on device | ⏸ **deferred to Phase 4** — needs the native shell and a physical device |
 | Login / register / Google / reset in ≤ legacy tap counts | ⛔ **unverified** — code complete, no reachable instance (S6; the tap count itself is D2) |
