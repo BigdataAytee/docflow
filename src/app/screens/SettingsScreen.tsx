@@ -44,6 +44,7 @@ import { useThemeChoice } from '../../features/theme/ThemeContext'
 import { runExport } from '../../features/export/action'
 import { createWebSharePort } from '../../share/web'
 import { applyRegion, regionProfile } from '../../features/settings/region'
+import { ACCOUNT_COUNTRY_KEY } from '../../domain/locale/bank-fields'
 import { PPM, percentToPpm } from '../../domain/money/money'
 import { type UiStrings, format } from '../../domain/locale/data/strings'
 import { ALWAYS_AVAILABLE, methodName } from '../../features/payments/methods'
@@ -333,10 +334,24 @@ function SettingsPanelBody() {
       return (
         <PaymentSettings
           currency={company.currency}
+          region={region}
+          {...(company.bankFields[ACCOUNT_COUNTRY_KEY] === undefined
+            ? {}
+            : { accountCountry: company.bankFields[ACCOUNT_COUNTRY_KEY] })}
           bankValues={company.bankFields}
           methods={paymentMethods(company, strings)}
           onBankValue={(kind, value) =>
             void actions.updateCompany({ bankFields: { ...company.bankFields, [kind]: value } })
+          }
+          /*
+           * §J: the account's country chooses the field set, so a change to
+           * it is a change to which fields exist. Stored beside them, under
+           * the reserved key, so it travels with the account it describes.
+           */
+          onAccountCountry={(country) =>
+            void actions.updateCompany({
+              bankFields: { ...company.bankFields, [ACCOUNT_COUNTRY_KEY]: country },
+            })
           }
           onToggleMethod={(methodId, next) =>
             void actions.updateCompany({

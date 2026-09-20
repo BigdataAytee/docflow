@@ -381,6 +381,15 @@ export interface UiStrings {
     readonly methodAdd: string
     readonly noAccountYet: string
     readonly currencyChanged: string
+    /** §J: the account's own country, which chooses the field set. */
+    readonly accountCountry: string
+    readonly accountCountryHint: string
+    readonly accountFieldsFollowCountry: string
+    readonly saveAccount: string
+    readonly accountSaved: string
+    readonly addBankTransfer: string
+    readonly editBankTransfer: string
+    readonly closeAccountForm: string
     readonly company: string
     readonly businessName: string
     readonly businessAddress: string
@@ -1412,6 +1421,14 @@ const EN: UiStrings = {
     methodAdd: 'Add',
     noAccountYet: 'No account details yet',
     currencyChanged: 'Your currency changed, so these fields changed too.',
+    accountCountry: 'Which country is the account in?',
+    accountCountryHint: 'This decides which details your customers need.',
+    accountFieldsFollowCountry: 'These are the details banks in {country} use.',
+    saveAccount: 'Save and close',
+    accountSaved: 'Saved.',
+    addBankTransfer: 'Add bank transfer',
+    editBankTransfer: 'Edit account details',
+    closeAccountForm: 'Close account details',
     company: 'Company & logo',
     businessName: 'Business name',
     businessPhone: 'Phone',

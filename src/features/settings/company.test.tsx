@@ -192,6 +192,21 @@ describe('The name preview is the chosen style (§F)', () => {
 })
 
 describe('An untouched settings screen reads empty, not invalid (§K)', () => {
+  /**
+   * The account fields live behind the method now (§J, Rule #1).
+   *
+   * The screen used to open with three empty bank fields above the list of
+   * methods — a form nobody had asked for. They belong to bank transfer and
+   * come out when it does, so a test about the FIELDS opens the form first.
+   * What each one asserts is unchanged; only the door in front of it is new.
+   */
+  const openAccountForm = async (): Promise<void> => {
+    const edit = screen.queryByRole('button', { name: /account details|Add bank transfer/i })
+    if (edit !== null && edit.getAttribute('aria-expanded') === 'false') {
+      await userEvent.click(edit)
+    }
+  }
+
   const methods = (bankOn: boolean) => [
     { id: 'bank_transfer', name: 'Bank transfer', enabled: bankOn },
     { id: 'cash_on_delivery', name: 'Cash on delivery', enabled: false },
@@ -202,16 +217,19 @@ describe('An untouched settings screen reads empty, not invalid (§K)', () => {
    * Account name is needed." — three red lines for the offence of having just
    * arrived. Nothing is wrong yet, because nothing has been claimed yet.
    */
-  it('says nothing about a field nobody has been near', () => {
+  it('says nothing about a field nobody has been near', async () => {
     wrap(
       <PaymentSettings
         currency="NGN"
+        region="NG"
+        onAccountCountry={vi.fn()}
         bankValues={{}}
         methods={methods(false)}
         onBankValue={vi.fn()}
         onToggleMethod={vi.fn()}
       />,
     )
+    await openAccountForm()
     expect(screen.queryByText('Bank is needed.')).not.toBeInTheDocument()
     expect(screen.getByLabelText('Bank')).not.toHaveAttribute('aria-invalid', 'true')
   })
@@ -220,6 +238,8 @@ describe('An untouched settings screen reads empty, not invalid (§K)', () => {
     wrap(
       <PaymentSettings
         currency="NGN"
+        region="NG"
+        onAccountCountry={vi.fn()}
         bankValues={{}}
         methods={methods(false)}
         onBankValue={vi.fn()}
@@ -227,6 +247,7 @@ describe('An untouched settings screen reads empty, not invalid (§K)', () => {
       />,
     )
 
+    await openAccountForm()
     const bank = screen.getByLabelText('Bank')
     await userEvent.click(bank)
     await userEvent.tab()
@@ -246,6 +267,8 @@ describe('An untouched settings screen reads empty, not invalid (§K)', () => {
     wrap(
       <PaymentSettings
         currency="NGN"
+        region="NG"
+        onAccountCountry={vi.fn()}
         bankValues={{}}
         methods={methods(true)}
         onBankValue={vi.fn()}
@@ -262,12 +285,15 @@ describe('An untouched settings screen reads empty, not invalid (§K)', () => {
     wrap(
       <PaymentSettings
         currency="NGN"
+        region="NG"
+        onAccountCountry={vi.fn()}
         bankValues={{ bank_name: 'Guaranty Trust Bank' }}
         methods={methods(true)}
         onBankValue={vi.fn()}
         onToggleMethod={vi.fn()}
       />,
     )
+    await openAccountForm()
     expect(screen.getByLabelText('Bank')).toHaveValue('Guaranty Trust Bank')
     expect(screen.queryByText('Bank is needed.')).not.toBeInTheDocument()
     expect(screen.getByText('Account number is needed.')).toBeInTheDocument()

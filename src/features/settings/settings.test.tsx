@@ -29,10 +29,32 @@ const METHODS = [
   { id: 'paystack', name: 'Paystack', enabled: false },
 ]
 
+/**
+ * The account fields live behind the method now (§J, Rule #1).
+ *
+ * The screen used to open with three empty bank fields above the list of
+ * methods — a form nobody had asked for, above where the decision actually
+ * is. They belong to bank transfer and they come out when it does, so every
+ * test about the FIELDS opens the form first. The property each one asserts
+ * is unchanged; only the door in front of it is new.
+ *
+ * Already open when bank transfer is on with nothing behind it: an enabled
+ * method with no account is a promise with nothing behind it, and §J has the
+ * row showing live details for the same reason.
+ */
+const openAccountForm = async (): Promise<void> => {
+  const edit = screen.queryByRole('button', { name: /account details|Add bank transfer/i })
+  if (edit !== null && edit.getAttribute('aria-expanded') === 'false') {
+    await userEvent.click(edit)
+  }
+}
+
 describe('One definition drives the form and the printed box (§J)', () => {
   it('renders NGN as exactly three fields, no sort code', () => {
     wrap(
       <PaymentSettings
+        region="NG"
+        onAccountCountry={vi.fn()}
         currency="NGN"
         bankValues={{}}
         methods={METHODS}
@@ -49,6 +71,8 @@ describe('One definition drives the form and the printed box (§J)', () => {
   it('renders GBP with a sort code', () => {
     wrap(
       <PaymentSettings
+        region="GB"
+        onAccountCountry={vi.fn()}
         currency="GBP"
         bankValues={{}}
         methods={METHODS}
@@ -59,10 +83,12 @@ describe('One definition drives the form and the printed box (§J)', () => {
     expect(screen.getByLabelText('Sort code')).toBeInTheDocument()
   })
 
-  it('shows the same fields the PDF will print', () => {
+  it('shows the same fields the PDF will print', async () => {
     const values = { bank_name: 'GTB', account_number: '0123456789', account_name: 'Ltd' }
     wrap(
       <PaymentSettings
+        region="NG"
+        onAccountCountry={vi.fn()}
         currency="NGN"
         bankValues={values}
         methods={METHODS}
@@ -70,6 +96,7 @@ describe('One definition drives the form and the printed box (§J)', () => {
         onToggleMethod={vi.fn()}
       />,
     )
+    await openAccountForm()
     // The form and paymentBoxRows read one definition, so the labels match.
     const printed = paymentBoxRows({ currency: 'NGN', values }).map((row) => row.label)
     for (const label of printed) expect(screen.getByLabelText(label)).toBeInTheDocument()
@@ -78,6 +105,8 @@ describe('One definition drives the form and the printed box (§J)', () => {
   it('says so when the currency changed the fields (§J)', () => {
     wrap(
       <PaymentSettings
+        region="GB"
+        onAccountCountry={vi.fn()}
         currency="GBP"
         currencyJustChanged
         bankValues={{}}
@@ -89,9 +118,11 @@ describe('One definition drives the form and the printed box (§J)', () => {
     expect(screen.getByRole('status')).toHaveTextContent(/currency changed/i)
   })
 
-  it('keeps an account number as text so a leading zero survives (§K)', () => {
+  it('keeps an account number as text so a leading zero survives (§K)', async () => {
     wrap(
       <PaymentSettings
+        region="NG"
+        onAccountCountry={vi.fn()}
         currency="NGN"
         bankValues={{ account_number: '0001234567' }}
         methods={METHODS}
@@ -99,6 +130,7 @@ describe('One definition drives the form and the printed box (§J)', () => {
         onToggleMethod={vi.fn()}
       />,
     )
+    await openAccountForm()
     const field = screen.getByLabelText('Account number')
     expect(field).toHaveAttribute('type', 'text')
     expect(field).toHaveValue('0001234567')
@@ -107,6 +139,8 @@ describe('One definition drives the form and the printed box (§J)', () => {
   it('counts what is switched on, for the builder chip (§J)', () => {
     wrap(
       <PaymentSettings
+        region="NG"
+        onAccountCountry={vi.fn()}
         currency="NGN"
         bankValues={{}}
         methods={METHODS}
@@ -122,6 +156,8 @@ describe('One definition drives the form and the printed box (§J)', () => {
     const onToggleMethod = vi.fn()
     wrap(
       <PaymentSettings
+        region="NG"
+        onAccountCountry={vi.fn()}
         currency="NGN"
         bankValues={{}}
         methods={METHODS}
@@ -295,16 +331,21 @@ describe('Saved items are a view of what the builder remembered (§L2)', () => {
 })
 
 /**
- * Changing the currency changes the FIELDS (§J).
+ * Changing the COUNTRY changes the fields (§J).
  *
- * The existing NGN case renders `PaymentSettings` once with a fixed prop, so
- * it proves the NGN definition is read — and could not catch a screen that
- * renders a fixed set and never looks again. §J's whole point is that one
- * definition feeds the form and the printed box so the two cannot drift, and
- * that only means anything if switching currency actually re-reads it.
+ * §J keys its table to the currency, which is the right key for a lookup and
+ * the wrong question for a person: nobody knows their account as "an NGN
+ * account", they know it is a Nigerian one. So the screen asks where the bank
+ * is and resolves the currency from it — §J's definition unchanged, still the
+ * only source of field sets.
+ *
+ * The property being proved is the same one as before the question changed: a
+ * single NGN case could not catch a screen that renders a fixed set and never
+ * looks again, and §J's "one definition feeds the form and the printed box"
+ * only means anything if changing the answer actually re-reads it.
  */
-describe('Selecting a currency re-renders the bank fields (§J)', () => {
-  const renderAt = (currency: string) => {
+describe('Selecting a country re-renders the bank fields (§J)', () => {
+  const renderAt = (country: string) => {
     const repositories = createMemoryRepositories(emptyState())
     return render(
       <CompanyProvider
@@ -314,7 +355,9 @@ describe('Selecting a currency re-renders the bank fields (§J)', () => {
         language="en"
       >
         <PaymentSettings
-          currency={currency}
+          region={country}
+          onAccountCountry={vi.fn()}
+          currency="NGN"
           bankValues={{}}
           methods={METHODS}
           onBankValue={vi.fn()}
@@ -328,20 +371,21 @@ describe('Selecting a currency re-renders the bank fields (§J)', () => {
     screen.getAllByRole('textbox').map((input) => input.getAttribute('aria-label') ?? '')
 
   it.each([
-    ['NGN', ['Bank', 'Account number', 'Account name'], ['Sort code', 'Routing number', 'IBAN']],
-    ['GBP', ['Bank', 'Sort code', 'Account number'], ['Routing number', 'IBAN']],
-    ['USD', ['Bank', 'Routing number', 'Account number'], ['Sort code', 'IBAN']],
-    ['EUR', ['Bank', 'IBAN', 'BIC/SWIFT'], ['Sort code', 'Routing number']],
-  ])('%s shows its own fields and none of the others', (currency, present, absent) => {
+    ['NG', ['Bank', 'Account number', 'Account name'], ['Sort code', 'Routing number', 'IBAN']],
+    ['GB', ['Bank', 'Sort code', 'Account number'], ['Routing number', 'IBAN']],
+    ['US', ['Bank', 'Routing number', 'Account number'], ['Sort code', 'IBAN']],
+    ['FR', ['Bank', 'IBAN', 'BIC/SWIFT'], ['Sort code', 'Routing number']],
+  ])('%s shows its own fields and none of the others', async (country, present, absent) => {
     cleanup()
-    renderAt(currency as string)
+    renderAt(country as string)
+    await openAccountForm()
     for (const label of present as string[]) {
-      expect(screen.getByLabelText(label), `${currency} is missing ${label}`).toBeInTheDocument()
+      expect(screen.getByLabelText(label), `${country} is missing ${label}`).toBeInTheDocument()
     }
     for (const label of absent as string[]) {
       expect(
         screen.queryByLabelText(label),
-        `${currency} shows ${label}, which belongs to another market`,
+        `${country} shows ${label}, which belongs to another market`,
       ).toBeNull()
     }
   })
@@ -352,10 +396,10 @@ describe('Selecting a currency re-renders the bank fields (§J)', () => {
    * company. A screen holding a fixed set built at mount passes every test
    * above and fails this one.
    */
-  it('swaps the fields on a live component, not only on a fresh mount', () => {
+  it('swaps the fields on a live component, not only on a fresh mount', async () => {
     cleanup()
     const repositories = createMemoryRepositories(emptyState())
-    const view = (currency: string) => (
+    const view = (country: string) => (
       <CompanyProvider
         companyId="co_1"
         repositories={repositories}
@@ -363,7 +407,9 @@ describe('Selecting a currency re-renders the bank fields (§J)', () => {
         language="en"
       >
         <PaymentSettings
-          currency={currency}
+          region={country}
+          onAccountCountry={vi.fn()}
+          currency="NGN"
           bankValues={{}}
           methods={METHODS}
           onBankValue={vi.fn()}
@@ -372,17 +418,18 @@ describe('Selecting a currency re-renders the bank fields (§J)', () => {
       </CompanyProvider>
     )
 
-    const { rerender } = render(view('NGN'))
+    const { rerender } = render(view('NG'))
+    await openAccountForm()
     expect(screen.queryByLabelText('Sort code')).toBeNull()
 
-    rerender(view('GBP'))
+    rerender(view('GB'))
     expect(screen.getByLabelText('Sort code')).toBeInTheDocument()
 
-    rerender(view('USD'))
+    rerender(view('US'))
     expect(screen.getByLabelText('Routing number')).toBeInTheDocument()
     expect(screen.queryByLabelText('Sort code')).toBeNull()
 
-    rerender(view('NGN'))
+    rerender(view('NG'))
     // Back to the home market's three, with nothing left over from the others.
     expect(labels()).toEqual(['Bank', 'Account number', 'Account name'])
   })
@@ -392,16 +439,20 @@ describe('Selecting a currency re-renders the bank fields (§J)', () => {
    * diverge, an owner fills in fields the invoice does not print, or the
    * invoice prints a row nobody was asked for.
    */
-  it.each(['NGN', 'GBP', 'USD', 'EUR', 'KES'])(
-    'prints exactly the fields it asked for, in %s',
-    (currency) => {
-      cleanup()
-      const values = Object.fromEntries(
-        fieldsFor(currency).map((field) => [field.kind, 'x'] as const),
-      )
-      const printed = paymentBoxRows({ currency, values }).map((row) => row.label)
-      renderAt(currency)
-      expect(labels()).toEqual(printed)
-    },
-  )
+  it.each([
+    ['NG', 'NGN'],
+    ['GB', 'GBP'],
+    ['US', 'USD'],
+    ['FR', 'EUR'],
+    ['KE', 'KES'],
+  ])('prints exactly the fields it asked for, in %s', async (country, currency) => {
+    cleanup()
+    const values = Object.fromEntries(
+      fieldsFor(currency).map((field) => [field.kind, 'x'] as const),
+    )
+    const printed = paymentBoxRows({ currency, values }).map((row) => row.label)
+    renderAt(country)
+    await openAccountForm()
+    expect(labels()).toEqual(printed)
+  })
 })

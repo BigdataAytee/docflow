@@ -47,6 +47,24 @@ export const fieldsFor = (code: string): readonly BankField[] =>
 export const symbolFor = (code: string): string => currencyDefinition(code).symbol
 export const minorUnitsFor = (code: string): number => currencyDefinition(code).minorUnits
 
+/**
+ * Where the account is held, kept beside the account's own fields (§J).
+ *
+ * NOT a §J field, and deliberately not a column either. It is one string
+ * that is almost always the business's own region, so a migration across
+ * three backends for it would be machinery in exchange for nothing — and
+ * `bankFields` is already a synced `Record<string, string>` going to the same
+ * place at the same time.
+ *
+ * SAFE TO PUT THERE because everything that reads `bankFields` iterates the
+ * DEFINITION rather than the map: `paymentBoxRows` and `validateBankDetails`
+ * both walk `fieldsFor(currency)`, so a key no currency declares is invisible
+ * to the printed box and to validation. The constant lives here, next to the
+ * definitions, so the one rule it depends on — that no field kind is ever
+ * called this — is checked where the kinds are.
+ */
+export const ACCOUNT_COUNTRY_KEY = 'account_country'
+
 export interface BankDetails {
   readonly currency: string
   readonly values: Readonly<Record<string, string>>
