@@ -103,3 +103,59 @@ describe('A method with nothing to configure is ready when it is on', () => {
     expect(usableMethodCount({ currency: 'NGN', enabled: [], bankValues: {} })).toBe(0)
   })
 })
+
+/**
+ * A PASTED LINK IS A WAY TO BE PAID (§J, §G step 5).
+ *
+ * Found on the phone, one screen after the in-document + shipped. A trader
+ * pasted their Paystack page into the control on the invoice, watched
+ * "Paystack — paystack.com/pay/dynamic-renaissance" appear in HOW TO PAY on
+ * the page in front of them, and was still told "Before you can issue this:
+ * set up how you get paid."
+ *
+ * The gate counted `enabledPaymentMethods`, and links do not live there. But
+ * the gate exists to stop an invoice a customer has no way to pay, and that
+ * customer had one — printed, in words, on the document. Refusing over it is
+ * the check mistaking its own bookkeeping for the thing it protects.
+ */
+describe('A pasted link is a way to be paid (§J, §G)', () => {
+  const noBank = { currency: 'NGN', enabled: [] as string[], bankValues: {} }
+
+  it('counts a link when nothing else is switched on', () => {
+    expect(
+      usableMethodCount({
+        ...noBank,
+        links: [{ provider: 'paystack_page', value: 'paystack.com/pay/dynamic' }],
+      }),
+      'an invoice printing a payment link was refused for having no way to pay',
+    ).toBe(1)
+  })
+
+  it('still counts nothing when there is nothing', () => {
+    expect(usableMethodCount(noBank)).toBe(0)
+    expect(usableMethodCount({ ...noBank, links: [] })).toBe(0)
+  })
+
+  /** An empty value cannot reach here through the form, and is refused anyway. */
+  it('does not count a link with nothing in it', () => {
+    expect(
+      usableMethodCount({ ...noBank, links: [{ provider: 'paypal_me', value: '  ' }] }),
+    ).toBe(0)
+  })
+
+  /** And it adds to a usable bank account rather than replacing it. */
+  it('counts alongside an account that is filled in', () => {
+    expect(
+      usableMethodCount({
+        currency: 'NGN',
+        enabled: ['bank_transfer'],
+        bankValues: {
+          bank_name: 'Zenith Bank',
+          account_number: '1234567890',
+          account_name: 'Dynamic Renaissance',
+        },
+        links: [{ provider: 'paystack_page', value: 'paystack.com/pay/dynamic' }],
+      }),
+    ).toBe(2)
+  })
+})

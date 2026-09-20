@@ -24,11 +24,26 @@
  */
 
 import { validateBankDetails } from '../../domain/locale/bank-fields'
+import type { SavedPaymentLink } from '../../domain/payments/links'
 
 export interface PaymentReadiness {
   readonly currency: string
   readonly enabled: readonly string[]
   readonly bankValues: Readonly<Record<string, string>>
+  /**
+   * §J's pasted links, which are a way to be paid like any other.
+   *
+   * FOUND ON THE PHONE. A trader pasted their Paystack page into the new
+   * control on the invoice, watched "Paystack — paystack.com/pay/…" appear
+   * in HOW TO PAY on the page in front of them, and was still told "Before
+   * you can issue this: set up how you get paid".
+   *
+   * The gate counted `enabledPaymentMethods` and links do not live there. But
+   * the gate exists to stop an invoice a customer has no way to pay, and that
+   * customer had one — printed, in words, on the document. Refusing over it
+   * is the check mistaking its own bookkeeping for the thing it protects.
+   */
+  readonly links?: readonly SavedPaymentLink[]
 }
 
 /** Enabled methods that cannot be used yet, by id. Empty means all are ready. */
@@ -46,5 +61,12 @@ export function unusableMethods(state: PaymentReadiness): string[] {
  * on and nothing filled has one enabled method and zero usable ones.
  */
 export function usableMethodCount(state: PaymentReadiness): number {
-  return state.enabled.length - unusableMethods(state).length
+  /*
+   * A LINK COUNTS, and only one with something in it. An empty value cannot
+   * be saved through the form, so this is belt and braces rather than a
+   * second rule — the same posture `unusableMethods` takes to a bank
+   * transfer switched on over three empty fields.
+   */
+  const usableLinks = (state.links ?? []).filter((link) => link.value.trim() !== '').length
+  return state.enabled.length - unusableMethods(state).length + usableLinks
 }

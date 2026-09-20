@@ -1199,13 +1199,27 @@ export function BuilderScreen({ now = () => new Date().toISOString() }: { now?: 
    */
   const paymentContext = useMemo(() => {
     const enabled = company?.enabledPaymentMethods ?? []
+    /*
+     * THIS DOCUMENT'S LINKS, not the business's, when it has its own (§J).
+     *
+     * A trader who added a method on the invoice has given this customer a
+     * way to pay, and the gate has to be asking about THIS document — the
+     * one about to be issued — rather than about the defaults it may have
+     * deliberately departed from.
+     */
+    const links = state?.draft.paymentLinks ?? company?.paymentLinks ?? []
+    const count = usableMethodCount({
+      currency: company?.currency ?? state?.draft.currency ?? '',
+      enabled,
+      bankValues: company?.bankFields ?? {},
+      links,
+    })
     return {
-      enabledPaymentMethodCount: enabled.length,
-      usablePaymentMethodCount: usableMethodCount({
-        currency: company?.currency ?? state?.draft.currency ?? '',
-        enabled,
-        bankValues: company?.bankFields ?? {},
-      }),
+      // The chip counts what a customer could use, links included: a card
+      // reading "no payment method" over a printed Paystack line is the
+      // screen disagreeing with the page it is previewing.
+      enabledPaymentMethodCount: enabled.length + links.length,
+      usablePaymentMethodCount: count,
     }
   }, [company, state])
 
