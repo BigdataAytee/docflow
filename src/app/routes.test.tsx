@@ -4461,25 +4461,111 @@ describe('A paid quotation becomes a bill and its evidence (§G, §K)', () => {
      * the quotation, so both doors mint the same one and the second to run
      * finds the first's bill rather than a rival.
      */
+    /**
+     * AN IMPATIENT TAP BILLS ONCE (§M).
+     *
+     * Two taps before the first write comes back is the retry that actually
+     * happens on a slow phone — and money is the one place a retry must never
+     * add (Rule #3). The key is derived from the quotation, so both taps land
+     * on one invoice; the mount guard stops the journey running twice.
+     */
     it('never bills the same quotation twice', async () => {
       const user = userEvent.setup()
-      const state = renderAt('/new/receipt', accepted)
+      const state = renderAt('/doc/doc_quo', accepted)
 
-      await viaThePicker(user)
+      const act = await screen.findByRole('button', { name: /They.{0,3}ve paid/ })
+      fireEvent.click(act)
+      fireEvent.click(act)
+
+      await screen.findByLabelText('Acknowledge a payment')
       await waitFor(() => expect(billsMade(state)).toHaveLength(1))
-      const first = billsMade(state)[0]?.id
+      expect(await screen.findByLabelText('How much came in?')).toHaveValue('145000')
 
-      /*
-       * Back out to the debtors and pick the same quotation again, exactly as
-       * an owner who was not sure the first tap registered would.
-       */
-      await user.click(screen.getByRole('button', { name: 'Back' }))
-      await user.click(await screen.findByRole('button', { name: 'Back' }))
-      await user.click(await screen.findByRole('button', { name: /QUO-0009/ }))
-
-      await waitFor(() => expect(screen.getByLabelText('How much came in?')).toBeInTheDocument())
+      // And recording still produces exactly one of each.
+      await user.click(screen.getByRole('button', { name: 'Record payment' }))
+      await waitFor(() => expect(receipts(state)).toHaveLength(1))
       expect(billsMade(state), 'the customer was billed twice for one quotation').toHaveLength(1)
-      expect(billsMade(state)[0]?.id).toBe(first)
+      expect(state.payments).toHaveLength(1)
+    })
+  })
+
+  /**
+   * A QUOTATION ALREADY BILLED IS NOT OFFERED AGAIN (§N).
+   *
+   * Found by walking it: picking one that had been paid for landed on a form
+   * with the amount at zero, "This clears it" underneath, and a button that
+   * could not be pressed — offered, then blocked at the end of a journey
+   * somebody had already taken.
+   */
+  /**
+   * A QUOTATION ALREADY BILLED IS NOT OFFERED AGAIN (§N).
+   *
+   * Found by walking it: picking one that had been paid for landed on a form
+   * with the amount at zero, "This clears it" underneath, and a button that
+   * could not be pressed — offered, then blocked at the end of a journey
+   * somebody had already taken.
+   *
+   * Once an invoice exists from it the debt lives on THAT document: part
+   * paid, it appears among the debtors like any other; settled, there is
+   * nothing to pay. Either way the quotation row is redundant, and the
+   * redundant version is the one that misleads.
+   */
+  describe('The picker stops offering it once it has been billed (§N)', () => {
+    const alreadyBilled = (state: MemoryState) => {
+      accepted(state)
+      state.documents.push({
+        id: 'doc_inv_from_quo',
+        companyId: DEV_COMPANY_ID,
+        type: 'invoice',
+        status: 'issued',
+        customerId: 'cus_1',
+        currency: 'NGN',
+        lineItems: [
+          {
+            id: 'li_1',
+            description: 'Roofing sheets, 30 bundles',
+            quantityMilli: 1_000,
+            unitPriceMinor: 145_000_00,
+            taxable: false,
+          },
+        ],
+        issueDate: '2026-09-20',
+        issuedReference: 'INV-0090',
+        frozenLabels: null,
+        totalMinor: 145_000_00,
+        convertedFromId: 'doc_quo',
+      })
+    }
+
+    it('drops the row once an invoice has been made from it', async () => {
+      const user = userEvent.setup()
+      renderAt('/new/receipt', alreadyBilled)
+
+      await user.click(await screen.findByRole('button', { name: 'Payment towards money owed' }))
+      await screen.findByText('Who is paying?')
+      expect(
+        screen.queryByRole('button', { name: /QUO-0009/ }),
+        'a quotation that has been billed was offered again',
+      ).toBeNull()
+    })
+
+    /** And the debt it left is reachable as an ordinary one, on the bill. */
+    it('leaves the debt among the debtors instead', async () => {
+      const user = userEvent.setup()
+      renderAt('/new/receipt', alreadyBilled)
+
+      await user.click(await screen.findByRole('button', { name: 'Payment towards money owed' }))
+      await user.click(await screen.findByRole('button', { name: /Ade Stores/ }))
+      expect(await screen.findByRole('button', { name: /INV-0090/ })).toBeInTheDocument()
+    })
+
+    /** It is still offered while nothing has billed it. */
+    it('keeps the row while no bill exists', async () => {
+      const user = userEvent.setup()
+      renderAt('/new/receipt', accepted)
+
+      await user.click(await screen.findByRole('button', { name: 'Payment towards money owed' }))
+      expect(await screen.findByRole('button', { name: /QUO-0009/ })).toBeInTheDocument()
     })
   })
 

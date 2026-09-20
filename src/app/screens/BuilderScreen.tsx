@@ -340,22 +340,43 @@ function NewReceiptFlow({ today = todayIso() }: { today?: string }) {
    * know that a quotation must be converted before it can be paid for — a
    * step the app can take itself, and does.
    */
-  const payableQuotations = useMemo(
-    () =>
+  const payableQuotations = useMemo(() => {
+    /*
+     * ONE THAT HAS ALREADY BEEN BILLED IS NOT OFFERED (§N).
+     *
+     * Found by walking it: picking a quotation that had been paid for landed
+     * on a form with the amount at zero, "This clears it" underneath, and a
+     * button that could not be pressed. §N's rule is that an unavailable
+     * capability is SAID — not offered and then blocked at the end of a
+     * journey somebody has already taken.
+     *
+     * Once an invoice exists from it, the debt lives on THAT document: part
+     * paid, it appears among the debtors like any other; settled, there is
+     * nothing to pay. Either way the quotation row is redundant, and the
+     * redundant version is the one that misleads.
+     */
+    const billed = new Set(
       documents.flatMap((document) =>
-        quotationIsPayable(document) && document.customerId !== undefined
-          ? [
+        document.type === 'invoice' && document.convertedFromId !== undefined
+          ? [document.convertedFromId]
+          : [],
+      ),
+    )
+    return documents.flatMap((document) =>
+      quotationIsPayable(document) &&
+      document.customerId !== undefined &&
+      !billed.has(document.id)
+        ? [
               {
                 id: document.id,
                 customerId: document.customerId,
                 reference: document.issuedReference ?? '',
-                total: totalOf(document),
-              },
-            ]
-          : [],
-      ),
-    [documents],
-  )
+              total: totalOf(document),
+            },
+          ]
+        : [],
+    )
+  }, [documents])
 
   /*
    * The region's own date format, so a picked row reads like the printed
