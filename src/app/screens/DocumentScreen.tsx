@@ -318,8 +318,6 @@ export function DocumentScreen({ today = todayIso() }: { today?: string }) {
     design,
     strings,
     assets,
-    // This document's own list when it has one; the business's otherwise (§J).
-    ...(record.paymentLinks === undefined ? {} : { paymentLinks: record.paymentLinks }),
   })
   const total = totalOf(record)
   const isInvoice = record.type === 'invoice'

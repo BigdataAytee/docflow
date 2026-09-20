@@ -27,8 +27,6 @@ import { CustomerPicker } from '../customers/CustomerPicker'
 import type { NewCustomer } from '../customers/CustomerSheet'
 import type { BilledInvoice } from '../customers/balance'
 import type { DocumentDraft } from './builder'
-import type { SavedPaymentLink } from '../../domain/payments/links'
-import { DocumentPaymentLinks } from './DocumentPaymentLinks'
 
 export interface DetailsStepProps {
   readonly draft: DocumentDraft
@@ -44,18 +42,8 @@ export interface DetailsStepProps {
   readonly onSign: () => void
   /** The drawn signature itself, resolved from the draft's asset id (§G). */
   readonly signatureUrl?: string
-  /**
-   * §J's payment links, for the + on the document (§G).
-   *
-   * Absent hides the control entirely — a delivery carries no money and a
-   * receipt records one that already happened, so neither has anything to be
-   * paid into. The screen above decides that; this one only draws it.
-   */
-  readonly paymentLinks?: {
-    readonly country: string
-    readonly defaults: readonly SavedPaymentLink[]
-    readonly onDefaults: (links: readonly SavedPaymentLink[]) => void
-  }
+  /** Every currency §J defines, for §G's picker. */
+  readonly currencies: readonly string[]
   /**
    * Today, `YYYY-MM-DD`, in the phone's own calendar.
    *
@@ -182,7 +170,7 @@ export function DetailsStep({
   onSetUpPayment,
   onSign,
   signatureUrl,
-  paymentLinks,
+  currencies,
   today = todayIso(),
 }: DetailsStepProps) {
   const { profile, strings } = useCompany()
@@ -424,8 +412,34 @@ export function DetailsStep({
       */}
       {showsMoney && draft.type !== 'quotation' && draft.type !== 'receipt' && (
         <BuilderCard title={strings.details.currencyAndPayment} icon="credit-card" accent={accent}>
-          <div className="flex items-center gap-3">
-            <span className="text-sm font-semibold">{draft.currency}</span>
+          <div className="flex items-center gap-2.5">
+            {/*
+              §G: "currency picker left (defaulted from region, freely
+              changeable)". This printed the code as plain text — the default
+              was there and the PICKER was not, so a trader billing a customer
+              abroad had the one field §G puts first on this card, and no way
+              to change it.
+
+              Every currency §J defines, not only the ones this business has
+              used: the point of the control is the invoice that has not been
+              written yet.
+            */}
+            <label className="shrink-0">
+              <span className="sr-only">{strings.details.currency}</span>
+              <select
+                value={draft.currency}
+                onChange={(event) => onChange({ currency: event.target.value })}
+                aria-label={strings.details.currency}
+                className="sunken min-h-tap rounded-lg px-2.5 text-sm font-semibold"
+              >
+                {currencies.map((code) => (
+                  <option key={code} value={code}>
+                    {code}
+                  </option>
+                ))}
+              </select>
+            </label>
+
             {enabledPaymentMethodCount > 0 ? (
               <span className="rounded-full bg-status-good-tint px-3 py-1 text-xs font-semibold text-status-good">
                 {format(strings.details.paymentReady, { count: enabledPaymentMethodCount })}
@@ -439,27 +453,27 @@ export function DetailsStep({
                 {strings.details.setUpPayment}
               </button>
             )}
+
+            {/*
+              THE SAME `+` AS BILL TO'S, and it does the same kind of thing:
+              goes where that is set up. The list of ways to be paid belongs
+              in Settings — it is a fact about the business, not about this
+              invoice — and what is switched ON there is what prints here.
+
+              An inline list on the card was tried and was wrong: it put a
+              business-wide setting inside one document's editing area, where
+              a trader would reasonably read a change as belonging to the
+              document in front of them.
+            */}
+            <button
+              type="button"
+              onClick={onSetUpPayment}
+              aria-label={strings.settings.addToThisDocument}
+              className="raised tap-scale ms-auto grid h-9 w-9 shrink-0 place-items-center rounded-full bg-gradient-to-b from-brand-light to-brand text-lg font-bold text-white"
+            >
+              +
+            </button>
           </div>
-
-          {/*
-            §J'S + , ON THE DOCUMENT.
-
-            The card already says whether this invoice can be paid; this is
-            how to change the answer without leaving it. Inside the same card
-            rather than as a new one: it is the same subject, and Rule #1
-            caps a mid-invoice afterthought at a button rather than a section.
-          */}
-          {paymentLinks !== undefined && (
-            <div className="mt-2">
-              <DocumentPaymentLinks
-                country={paymentLinks.country}
-                defaults={paymentLinks.defaults}
-                own={draft.paymentLinks}
-                onDocument={(links) => onChange({ paymentLinks: links })}
-                onDefaults={paymentLinks.onDefaults}
-              />
-            </div>
-          )}
         </BuilderCard>
       )}
 

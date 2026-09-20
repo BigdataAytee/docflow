@@ -401,6 +401,9 @@ export interface UiStrings {
     readonly linkNoHandle: string
     readonly linkNotALink: string
     readonly removeLink: string
+    readonly editLink: string
+    readonly linkField: string
+    readonly methodOff: string
     /** §J's + on the document itself. */
     readonly addToThisDocument: string
     readonly onlyThisDocument: string
@@ -1463,6 +1466,9 @@ const EN: UiStrings = {
     linkNoHandle: 'Add your name or page after {prefix}',
     linkNotALink: 'That does not look like a web address.',
     removeLink: 'Remove {provider}',
+    editLink: 'Edit the {provider} link',
+    linkField: '{provider} link',
+    methodOff: 'Off',
     addToThisDocument: 'Add a payment method',
     onlyThisDocument: 'Changes here apply to this document only.',
     savedAsDefault: 'Saved for your future documents too.',

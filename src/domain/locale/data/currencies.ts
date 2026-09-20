@@ -208,3 +208,12 @@ export const REGION_DEFAULT_CURRENCY: Readonly<Record<string, string>> = {
   FR: 'EUR', CI: 'XOF', ES: 'EUR', MX: 'MXN', IN: 'INR', AE: 'AED',
   KE: 'KES', ZA: 'ZAR', AU: 'AUD', BR: 'BRL', EG: 'EGP', SG: 'SGD', CN: 'CNY',
 }
+
+/**
+ * Every currency §J defines, for §G's picker on the Details card.
+ *
+ * Sorted, so the list reads the same every time it is opened — and derived
+ * from `CURRENCIES` rather than written out, so a currency added to §J's
+ * table is offered by having been added.
+ */
+export const CURRENCY_CODES: readonly string[] = Object.keys(CURRENCIES).sort()

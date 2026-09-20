@@ -46,6 +46,7 @@ function wrap(node: React.ReactNode, state?: MemoryState, profile?: LocaleProfil
 const details = (type: DocumentType, methods = 1, over: Partial<DocumentDraft> = {}) =>
   wrap(
     <DetailsStep
+      currencies={['NGN', 'GBP']}
       draft={draftFor(type, over)}
       reference="INV-0001"
       enabledPaymentMethodCount={methods}
@@ -92,6 +93,7 @@ describe('A delivery never shows what the customer owes (§V, §G)', () => {
   const withDebt = (type: DocumentType) =>
     wrap(
       <DetailsStep
+        currencies={['NGN', 'GBP']}
         draft={draftFor(type, { customerId: 'cus_1' })}
         reference="WB-0007"
         enabledPaymentMethodCount={1}
@@ -212,6 +214,7 @@ describe('Details: the per-type differences §G spells out', () => {
   it('uses the localised party label as the card heading (Rule #5)', () => {
     wrap(
       <DetailsStep
+        currencies={['NGN', 'GBP']}
         draft={draftFor('waybill')}
         reference="WAY-0001"
         enabledPaymentMethodCount={1}
@@ -247,6 +250,7 @@ describe('The pencil on the document number (§G)', () => {
   const detailsWith = (over: Partial<DocumentDraft>, onChange = vi.fn()) => {
     wrap(
       <DetailsStep
+        currencies={['NGN', 'GBP']}
         draft={draftFor('invoice', over)}
         reference="INV-…"
         enabledPaymentMethodCount={1}

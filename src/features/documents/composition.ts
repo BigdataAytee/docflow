@@ -24,7 +24,7 @@ import { percentToPpm, ppmToPercent } from '../../domain/money/money'
 import type { ComposableDocument, ComposeOptions } from '../../pdf/compose'
 import { DEFAULT_TEMPLATE, type TemplateId, templateById } from '../../pdf/templates'
 import type { DocumentDraft } from './builder'
-import { printedLine, type SavedPaymentLink } from '../../domain/payments/links'
+import { printedLine } from '../../domain/payments/links'
 import { methodName } from '../payments/methods'
 import { revisionNumberOf } from './revision'
 
@@ -340,16 +340,6 @@ export interface ComposeOptionsInput {
   readonly design: Design
   readonly strings: UiStrings
   readonly assets: readonly AssetRecord[]
-  /**
-   * This document's own payment links, when it has any (§J).
-   *
-   * Absent means "whatever the business has", which is almost every document.
-   * Present, it is the whole list for this page — so a trader who added one
-   * mid-invoice, or switched one off for this customer, gets exactly that,
-   * and a default changed next month never rewrites what an issued invoice
-   * already told somebody to do (Rule #5).
-   */
-  readonly paymentLinks?: readonly SavedPaymentLink[] | undefined
 }
 
 export function composeOptionsOf(input: ComposeOptionsInput): Omit<ComposeOptions, 'profile'> {
@@ -415,7 +405,16 @@ export function composeOptionsOf(input: ComposeOptionsInput): Omit<ComposeOption
      * customer reads. §J's "declared once, read by both", held by there
      * being one function rather than two renderings of one fact.
      */
-    paymentLinks: (input.paymentLinks ?? company?.paymentLinks ?? []).map(printedLine),
+    /*
+     * ONLY WHAT IS SWITCHED ON, which is what the owner asked the chips in
+     * Settings to mean. A saved link is a link the trader KEEPS; an enabled
+     * one is a link they want every customer to see. §J says the same thing
+     * of every other method: "each off until added … everything switched on
+     * prints in invoice payment instructions".
+     */
+    paymentLinks: (company?.paymentLinks ?? [])
+      .filter((link) => (company?.enabledPaymentMethods ?? []).includes(link.provider))
+      .map(printedLine),
     // The page prints the mark it names, so it needs the bytes behind the id.
     // Every signature the company owns, not just this one's: the preview
     // follows the pad without a reload (§I).

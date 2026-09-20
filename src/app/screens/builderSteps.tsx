@@ -14,7 +14,6 @@ import type { BilledInvoice } from '../../features/customers/balance'
 import type { NewCustomer } from '../../features/customers/CustomerSheet'
 import { type IssueProblem, type DocumentDraft, type StepIndex, stepKeysFor } from '../../features/documents/builder'
 import { DetailsStep } from '../../features/documents/DetailsStep'
-import type { SavedPaymentLink } from '../../domain/payments/links'
 import { ItemsStep } from '../../features/documents/ItemsStep'
 import { TotalsStep } from '../../features/documents/TotalsStep'
 import { DesignStep } from '../../features/documents/DesignStep'
@@ -59,12 +58,10 @@ export interface StepBodyProps {
   readonly onSetUpPayment: () => void
   readonly onSign: () => void
   readonly signatureUrl?: string
-  /** §J's + on the document. Absent on the types that carry no money. */
-  readonly paymentLinks?: {
-    readonly country: string
-    readonly defaults: readonly SavedPaymentLink[]
-    readonly onDefaults: (links: readonly SavedPaymentLink[]) => void
-  }
+  /** What a customer could actually pay through — links included (§J). */
+  readonly paymentMethodCount: number
+  /** Every currency §J defines, for §G's picker on the Details card. */
+  readonly currencies: readonly string[]
   readonly onRememberItem: (item: { name: string; unitPriceMinor?: number; unit?: string }) => void
   /** §G: "a list icon jumps to Settings → Saved items". */
   readonly onOpenCatalogue: () => void
@@ -87,7 +84,16 @@ export function StepBody(props: StepBodyProps) {
         <DetailsStep
           draft={props.draft}
           reference={props.reference}
-          enabledPaymentMethodCount={props.company?.enabledPaymentMethods.length ?? 0}
+          /*
+           * COUNTED ONCE, by the screen that knows what this DOCUMENT has.
+           *
+           * This read `company.enabledPaymentMethods.length` directly, so a
+           * payment link added on the invoice — printed on the page one tap
+           * away — left the card still saying "Set up payment". The gate had
+           * already been taught to count links; the chip beside it had not,
+           * because it was working the number out for itself.
+           */
+          enabledPaymentMethodCount={props.paymentMethodCount}
           customers={props.customers}
           invoices={props.invoices}
           payments={props.payments}
@@ -96,7 +102,7 @@ export function StepBody(props: StepBodyProps) {
           onSetUpPayment={props.onSetUpPayment}
           onSign={props.onSign}
           {...(props.signatureUrl === undefined ? {} : { signatureUrl: props.signatureUrl })}
-          {...(props.paymentLinks === undefined ? {} : { paymentLinks: props.paymentLinks })}
+          currencies={props.currencies}
         />
       )
     case 'items':

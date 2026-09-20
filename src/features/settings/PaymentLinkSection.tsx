@@ -32,9 +32,27 @@ export interface PaymentLinkSectionProps {
   readonly country: string
   readonly links: readonly SavedPaymentLink[]
   readonly onChange: (links: readonly SavedPaymentLink[]) => void
+  /**
+   * Which providers are switched ON, and therefore print (§J).
+   *
+   * SAVED AND ON ARE TWO DIFFERENT THINGS. A trader who has pasted their
+   * PayPal link has not necessarily decided every invoice should carry it —
+   * §J's whole list works this way ("each off until added"), and the row's
+   * own chip is where that is said. Switching one off keeps the link: it is
+   * still theirs, and having to paste it again to turn it back on would be
+   * the app losing their work to save a boolean.
+   */
+  readonly enabled: readonly string[]
+  readonly onToggle: (provider: string, next: boolean) => void
 }
 
-export function PaymentLinkSection({ country, links, onChange }: PaymentLinkSectionProps) {
+export function PaymentLinkSection({
+  country,
+  links,
+  onChange,
+  enabled,
+  onToggle,
+}: PaymentLinkSectionProps) {
   const { strings } = useCompany()
   const [open, setOpen] = useState<string | null>(null)
   const [showingOthers, setShowingOthers] = useState(false)
@@ -53,11 +71,18 @@ export function PaymentLinkSection({ country, links, onChange }: PaymentLinkSect
   const visible = [...offered, ...fromOthers]
   const stillHidden = others.filter((provider) => !saved.has(provider.id))
 
-  const put = (provider: PaymentProvider, value: string) =>
+  const put = (provider: PaymentProvider, value: string) => {
     onChange([
       ...links.filter((link) => link.provider !== provider.id),
       { provider: provider.id, value },
     ])
+    /*
+     * PASTING ONE SWITCHES IT ON. Somebody who went and found their PayPal
+     * link wants it used; leaving it saved-but-off would be a second step
+     * for a decision they already made by doing the first.
+     */
+    if (!enabled.includes(provider.id)) onToggle(provider.id, true)
+  }
 
   const drop = (provider: PaymentProvider) =>
     onChange(links.filter((link) => link.provider !== provider.id))
@@ -83,22 +108,55 @@ export function PaymentLinkSection({ country, links, onChange }: PaymentLinkSect
                 : printedLine({ provider: provider.id, value }).value}
             </span>
           </span>
+          {/*
+            TWO CONTROLS ONCE THERE IS A LINK, and they do different things.
+
+            The pencil opens what was pasted; the chip decides whether it
+            PRINTS. Both were one button, so "On" meant "has a value" and a
+            trader had no way to keep a link without putting it on every
+            invoice — they would have had to delete it and paste it back.
+
+            Before there is a link there is only one thing to do, so there is
+            only one control: Add.
+          */}
+          {value !== undefined && (
+            <button
+              type="button"
+              aria-expanded={open === provider.id}
+              aria-label={format(strings.settings.editLink, { provider: provider.name })}
+              onClick={() => setOpen((current) => (current === provider.id ? null : provider.id))}
+              className="glass-pill min-h-tap min-w-tap shrink-0 rounded-full px-2 text-brand"
+            >
+              <Icon name="pencil" className="size-[15px]" />
+            </button>
+          )}
           <button
             type="button"
-            aria-expanded={open === provider.id}
+            {...(value === undefined
+              ? { 'aria-expanded': open === provider.id }
+              : { 'aria-pressed': enabled.includes(provider.id) })}
             aria-label={
               value === undefined
                 ? format(strings.settings.addLink, { provider: provider.name })
-                : format(strings.settings.removeLink, { provider: provider.name })
+                : provider.name
             }
-            onClick={() => setOpen((current) => (current === provider.id ? null : provider.id))}
+            onClick={() => {
+              if (value === undefined) {
+                return setOpen((current) => (current === provider.id ? null : provider.id))
+              }
+              onToggle(provider.id, !enabled.includes(provider.id))
+            }}
             className={`min-h-tap shrink-0 rounded-full px-3 text-xs font-semibold ${
-              value === undefined
-                ? 'glass-pill text-brand'
-                : 'bg-status-good-tint text-status-good'
+              value !== undefined && enabled.includes(provider.id)
+                ? 'bg-status-good-tint text-status-good'
+                : 'glass-pill text-brand'
             }`}
           >
-            {value === undefined ? strings.settings.methodAdd : strings.settings.methodOn}
+            {value === undefined
+              ? strings.settings.methodAdd
+              : enabled.includes(provider.id)
+                ? strings.settings.methodOn
+                : strings.settings.methodOff}
           </button>
         </div>
 

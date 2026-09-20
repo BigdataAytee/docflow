@@ -89,7 +89,7 @@ import { StepBody } from './builderSteps'
 import { billedInvoices, documentsOf, totalOf } from '../derive'
 import { nextSequence } from '../../features/documents/reference'
 import { offeredReference } from '../../features/documents/draftReference'
-import type { SavedPaymentLink } from '../../domain/payments/links'
+import { CURRENCY_CODES } from '../../domain/locale/data/currencies'
 import { localDay, todayIso } from '../../domain/dates/calendar'
 import { usableMethodCount } from '../../features/payments/readiness'
 
@@ -1207,7 +1207,14 @@ export function BuilderScreen({ now = () => new Date().toISOString() }: { now?: 
      * one about to be issued — rather than about the defaults it may have
      * deliberately departed from.
      */
-    const links = state?.draft.paymentLinks ?? company?.paymentLinks ?? []
+    /*
+     * ONLY WHAT IS SWITCHED ON, the same list the page prints. A gate
+     * counting a link the invoice does not carry would let through exactly
+     * the bill §J's gate exists to stop.
+     */
+    const links = (company?.paymentLinks ?? []).filter((link) =>
+      enabled.includes(link.provider),
+    )
     const count = usableMethodCount({
       currency: company?.currency ?? state?.draft.currency ?? '',
       enabled,
@@ -1348,10 +1355,6 @@ export function BuilderScreen({ now = () => new Date().toISOString() }: { now?: 
         design,
         strings,
         assets,
-        // The draft's own list when it has one; the business's otherwise (§J).
-        ...(state?.draft.paymentLinks === undefined
-          ? {}
-          : { paymentLinks: state.draft.paymentLinks }),
       }),
     [company, design, strings, assets, state?.draft.paymentLinks],
   )
@@ -1753,25 +1756,9 @@ export function BuilderScreen({ now = () => new Date().toISOString() }: { now?: 
           setSigning(true)
         }}
         {...(signatureUrl === undefined ? {} : { signatureUrl })}
-        /*
-         * §J'S + , ON A DOCUMENT THAT CAN BE PAID INTO.
-         *
-         * Invoices only. A delivery carries no money at all, a receipt
-         * records a payment that already happened — printing "how to pay" on
-         * either would be an instruction to pay again — and §I has
-         * quotations omit payment instructions by default.
-         */
-        {...(company === null || state.draft.type !== 'invoice'
-          ? {}
-          : {
-              paymentLinks: {
-                country: company.localeRegion,
-                defaults: company.paymentLinks ?? [],
-                onDefaults: (links: readonly SavedPaymentLink[]) =>
-                  void actions.updateCompany({ paymentLinks: links }),
-              },
-            })}
-        onOpenCatalogue={() => navigate(settingsPath('items'))}
+        paymentMethodCount={paymentContext.enabledPaymentMethodCount}
+        currencies={CURRENCY_CODES}
+                onOpenCatalogue={() => navigate(settingsPath('items'))}
         /*
          * §G step 2's per-line photo, stored before it is referenced (§P).
          *

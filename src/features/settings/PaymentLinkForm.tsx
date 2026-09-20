@@ -130,7 +130,13 @@ export function PaymentLinkForm({
               setProblem(null)
             }}
             onBlur={save}
-            aria-label={provider.name}
+            /*
+              "Paystack link", not "Paystack": the On/Off chip on the row
+              above is named for the provider, and two controls with one name
+              is a screen reader reading the same word twice for two
+              different things.
+            */
+            aria-label={format(strings.settings.linkField, { provider: provider.name })}
             aria-invalid={problem !== null}
             className="sunken min-h-tap w-full flex-1 rounded-lg px-3 text-sm"
           />

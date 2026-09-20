@@ -38,14 +38,31 @@ const section = (
   country: string,
   links: readonly SavedPaymentLink[] = [],
   onChange = vi.fn(),
+  onToggle = vi.fn(),
+  enabled: readonly string[] = links.map((link) => link.provider),
 ) => {
-  wrap(<PaymentLinkSection country={country} links={links} onChange={onChange} />)
+  wrap(
+    <PaymentLinkSection
+      country={country}
+      links={links}
+      onChange={onChange}
+      enabled={enabled}
+      onToggle={onToggle}
+    />,
+  )
   return onChange
 }
 
+/**
+ * Every provider row on screen, however its chip is labelled.
+ *
+ * A row without a link says "Add <provider>"; one with a link has a pencil
+ * and an On/Off chip named for the provider itself. Both shapes are rows, so
+ * this reads the name off either.
+ */
 const listed = (): string[] =>
   screen
-    .queryAllByRole('button', { name: /^Add |^Remove /i })
+    .queryAllByRole('button', { name: /^Add |^Edit the /i })
     .map((button) => button.getAttribute('aria-label') ?? '')
 
 describe('Only what can receive money here is offered (§J, §N)', () => {
@@ -120,7 +137,7 @@ describe('Only what can receive money here is offered (§J, §N)', () => {
     const user = userEvent.setup()
     section('NG', [{ provider: 'paypal_me', value: 'paypal.me/ade' }])
 
-    await user.click(screen.getByRole('button', { name: /Remove PayPal/ }))
+    await user.click(screen.getByRole('button', { name: /Edit the PayPal link/ }))
     expect(screen.getByText(/may not be able to receive money in Nigeria/)).toBeInTheDocument()
   })
 
@@ -144,7 +161,7 @@ describe('Pasting a link, and being told what is wrong (§J, §K)', () => {
     section('NG')
 
     await user.click(screen.getByRole('button', { name: /Add Paystack/ }))
-    expect(screen.getByLabelText('Paystack')).toHaveAttribute(
+    expect(screen.getByLabelText('Paystack link')).toHaveAttribute(
       'placeholder',
       'paystack.com/pay/your-page',
     )
@@ -169,7 +186,7 @@ describe('Pasting a link, and being told what is wrong (§J, §K)', () => {
 
     await user.click(screen.getByRole('button', { name: /Add Paystack/ }))
     await user.type(
-      screen.getByLabelText('Paystack'),
+      screen.getByLabelText('Paystack link'),
       'https://www.paystack.com/pay/dynamic/?utm_source=wa',
     )
     await user.click(screen.getByRole('button', { name: 'Save and close' }))
@@ -188,7 +205,7 @@ describe('Pasting a link, and being told what is wrong (§J, §K)', () => {
     section('NG')
 
     await user.click(screen.getByRole('button', { name: /Add Paystack/ }))
-    await user.type(screen.getByLabelText('Paystack'), 'dynamic')
+    await user.type(screen.getByLabelText('Paystack link'), 'dynamic')
 
     const preview = document.querySelector('[data-link-preview]')
     expect(preview?.textContent).toContain('Paystack — paystack.com/pay/dynamic')
@@ -203,10 +220,10 @@ describe('Pasting a link, and being told what is wrong (§J, §K)', () => {
     const onChange = section('NG')
 
     await user.click(screen.getByRole('button', { name: /Add Paystack/ }))
-    await user.type(screen.getByLabelText('Paystack'), 'wise.com/pay/me/ade')
+    await user.type(screen.getByLabelText('Paystack link'), 'wise.com/pay/me/ade')
     await user.click(screen.getByRole('button', { name: 'Save and close' }))
 
-    expect(screen.getByLabelText('Paystack')).toHaveValue('wise.com/pay/me/ade')
+    expect(screen.getByLabelText('Paystack link')).toHaveValue('wise.com/pay/me/ade')
     expect(screen.getByRole('alert').textContent).toContain('Paystack')
     expect(onChange, 'a link that was refused was saved anyway').not.toHaveBeenCalled()
   })
@@ -227,10 +244,68 @@ describe('Pasting a link, and being told what is wrong (§J, §K)', () => {
       { provider: 'paystack_page', value: 'paystack.com/pay/dynamic' },
     ])
 
-    await user.click(screen.getByRole('button', { name: /Remove Paystack/ }))
-    await user.clear(screen.getByLabelText('Paystack'))
+    await user.click(screen.getByRole('button', { name: /Edit the Paystack link/ }))
+    await user.clear(screen.getByLabelText('Paystack link'))
     await user.click(screen.getByRole('button', { name: 'Save and close' }))
 
     expect(onChange).toHaveBeenCalledWith([])
+  })
+})
+
+/**
+ * Saved and switched on are two different things (§J).
+ *
+ * The owner's rule: "the on and off determines the ones that shows". A trader
+ * who pasted their PayPal link has not necessarily decided every invoice
+ * should carry it, and §J says the same of every other method — "each off
+ * until added". Both were one button, so "On" only meant "has a value", and
+ * the only way to stop printing a link was to delete it and paste it back.
+ */
+describe('On and off decides what prints (§J)', () => {
+  it('switches a saved link off without losing it', async () => {
+    const user = userEvent.setup()
+    const onChange = vi.fn()
+    const onToggle = vi.fn()
+    section('NG', [{ provider: 'paystack_page', value: 'paystack.com/pay/dynamic' }], onChange, onToggle)
+
+    await user.click(screen.getByRole('button', { name: 'Paystack' }))
+
+    expect(onToggle).toHaveBeenCalledWith('paystack_page', false)
+    expect(onChange, 'switching it off deleted the link').not.toHaveBeenCalled()
+  })
+
+  it('shows Off, and the link, when one is saved but not switched on', () => {
+    section(
+      'NG',
+      [{ provider: 'paystack_page', value: 'paystack.com/pay/dynamic' }],
+      vi.fn(),
+      vi.fn(),
+      [],
+    )
+
+    expect(screen.getByRole('button', { name: 'Paystack' })).toHaveTextContent('Off')
+    expect(screen.getByText('paystack.com/pay/dynamic')).toBeInTheDocument()
+  })
+
+  /** Pasting one is saying you want it used; a second step would be a toll. */
+  it('switches a newly pasted link on', async () => {
+    const user = userEvent.setup()
+    const onToggle = vi.fn()
+    section('NG', [], vi.fn(), onToggle, [])
+
+    await user.click(screen.getByRole('button', { name: /Add Paystack/ }))
+    await user.type(screen.getByLabelText('Paystack link'), 'paystack.com/pay/dynamic')
+    await user.click(screen.getByRole('button', { name: 'Save and close' }))
+
+    expect(onToggle).toHaveBeenCalledWith('paystack_page', true)
+  })
+
+  /** And the pencil is a separate control from the switch. */
+  it('opens the link from the pencil, not from the switch', async () => {
+    const user = userEvent.setup()
+    section('NG', [{ provider: 'paystack_page', value: 'paystack.com/pay/dynamic' }])
+
+    await user.click(screen.getByRole('button', { name: 'Edit the Paystack link' }))
+    expect(screen.getByLabelText('Paystack link')).toHaveValue('paystack.com/pay/dynamic')
   })
 })

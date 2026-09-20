@@ -445,7 +445,17 @@ export function PaymentSettings({
         thing switching one on did was print its name with nothing behind it.
       */}
       {onPaymentLinks !== undefined && (
-        <PaymentLinkSection country={country} links={paymentLinks} onChange={onPaymentLinks} />
+        <PaymentLinkSection
+          country={country}
+          links={paymentLinks}
+          onChange={onPaymentLinks}
+          /*
+           * The SAME switch §J already gives every other method. A link that
+           * is saved and off is a link the trader keeps and does not print.
+           */
+          enabled={methods.filter((method) => method.enabled).map((method) => method.id)}
+          onToggle={onToggleMethod}
+        />
       )}
     </section>
   )

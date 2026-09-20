@@ -27,6 +27,8 @@ import { TEMPLATES, templateById } from './templates'
 import { DocumentPage } from './DocumentPage'
 import { printedLine, type SavedPaymentLink } from '../domain/payments/links'
 import type { ProviderId } from '../domain/payments/providers'
+import { composeOptionsOf, designOf } from '../features/documents/composition'
+import { stringsFor } from '../domain/locale/data/strings'
 
 const BANK = {
   bank_name: 'Zenith Bank',
@@ -220,5 +222,64 @@ describe('The box holds its shape at any number of methods (§I)', () => {
     const withFooter = pages.filter((page) => page.showsFooter)
     expect(withFooter, 'the payment box would print on more than one page').toHaveLength(1)
     expect(pages[pages.length - 1]?.showsFooter).toBe(true)
+  })
+})
+
+/**
+ * A saved link that is switched OFF does not print (§J).
+ *
+ * The owner's rule: "the on and off determines the ones that shows". Saved
+ * and enabled are two different things — a trader keeps a PayPal link without
+ * necessarily wanting it on every invoice — and §J says the same of every
+ * other method: "each off until added … everything switched on prints in
+ * invoice payment instructions".
+ *
+ * THIS TEST EXISTS BECAUSE ITS MUTATION PASSED. Removing the filter from
+ * `composeOptionsOf` left all 365 document tests green: the printing suite
+ * was handed an already-filtered list and so could never notice who filtered
+ * it. Asserting on the composed OPTIONS is what closes that, because the
+ * filter is the thing under test rather than an assumption the fixture bakes
+ * in.
+ */
+describe('Switched off means off the page (§J)', () => {
+  const optionsFor = (enabled: readonly string[]) =>
+    composeOptionsOf({
+      company: {
+        id: 'co_1',
+        name: 'Dynamic Renaissance',
+        localeRegion: 'NG',
+        localeLanguage: 'en',
+        currency: 'NGN',
+        numberingPrefixes: {},
+        bankFields: {},
+        enabledPaymentMethods: enabled,
+        paymentLinks: [
+          { provider: 'paystack_page', value: 'paystack.com/pay/dynamic' },
+          { provider: 'flutterwave_page', value: 'flutterwave.com/pay/dynamic' },
+        ],
+      },
+      design: designOf(undefined, null),
+      strings: stringsFor('en'),
+      assets: [],
+    })
+
+  it('prints only the links that are switched on', () => {
+    const shown = optionsFor(['paystack_page']).paymentLinks ?? []
+    expect(shown.map((row) => row.label)).toEqual(['Paystack'])
+  })
+
+  it('prints none of them when none is switched on', () => {
+    expect(optionsFor([]).paymentLinks ?? []).toEqual([])
+  })
+
+  it('prints both when both are', () => {
+    const shown = optionsFor(['paystack_page', 'flutterwave_page']).paymentLinks ?? []
+    expect(shown.map((row) => row.label)).toEqual(['Paystack', 'Flutterwave'])
+  })
+
+  /** And the value that prints is the one that was saved (§J). */
+  it('carries the saved value through unchanged', () => {
+    const shown = optionsFor(['paystack_page']).paymentLinks ?? []
+    expect(shown[0]?.value).toBe('paystack.com/pay/dynamic')
   })
 })
