@@ -12,6 +12,11 @@
  *
  *  · Every token used in a document must be declared here, so the list handed
  *    to the user is complete rather than whatever somebody remembered.
+ *
+ * `COMPANY_NUMBER` used to be here. The entity has no registration, so the
+ * terms no longer carry the line at all — rather than printing an empty
+ * bracket, which reads as a number somebody forgot. A token nothing uses
+ * would also sit in the list of what is still to answer, unanswerable.
  *  · Nothing may be given a plausible default. A default is an invention that
  *    survives review because it does not look like one.
  */
@@ -33,11 +38,6 @@ export const PLACEHOLDERS: readonly Placeholder[] = [
     token: 'REGISTERED_ADDRESS',
     what: 'The registered office or trading address, in full',
     why: 'Required on the policy, in the app stores, and in the footer of any commercial email',
-  },
-  {
-    token: 'COMPANY_NUMBER',
-    what: 'Company registration number, if the entity is registered',
-    why: 'Jurisdiction-specific and impossible to derive. Omit the line entirely if there is no registration',
   },
   {
     token: 'SUPPORT_EMAIL',

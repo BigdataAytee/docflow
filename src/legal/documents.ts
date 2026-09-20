@@ -172,8 +172,8 @@ before it takes effect, rather than only changing the date at the top.`
 function termsBody(): string {
   return `Last updated: [[EFFECTIVE_DATE]]
 
-These terms are between you and [[LEGAL_ENTITY_NAME]], [[REGISTERED_ADDRESS]]
-([[COMPANY_NUMBER]]). Using DocFlow means accepting them.
+These terms are between you and [[LEGAL_ENTITY_NAME]], [[REGISTERED_ADDRESS]].
+Using DocFlow means accepting them.
 
 ## What DocFlow is
 
