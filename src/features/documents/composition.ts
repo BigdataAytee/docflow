@@ -228,7 +228,20 @@ export function composableOf(input: ComposableInput): ComposableDocument {
     type: draft.type,
     status,
     currency: draft.currency,
-    reference: reference ?? provisional(draft.type),
+    /*
+     * §G'S PENCIL, ON THE PAGE (Rule #5).
+     *
+     * An issued document keeps its frozen reference and nothing may move it.
+     * A DRAFT had no such reference, so the page fell straight through to the
+     * provisional `INV-…` — and an owner who typed their own `DR-INV-0413`
+     * saw the field keep it and every preview ignore it. The write worked the
+     * whole time; the pencil simply looked dead on the one screen where
+     * somebody checks the document before issuing it.
+     *
+     * Order matters: issued first. A frozen reference outranks an override
+     * that was only ever an instruction for the issue that already happened.
+     */
+    reference: reference ?? draft.referenceOverride ?? provisional(draft.type),
     issueDate: draft.issueDate ?? today,
     ...(draft.dueDate === undefined ? {} : { dueDate: draft.dueDate }),
     lineItems: draft.lineItems,

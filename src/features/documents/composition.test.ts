@@ -595,3 +595,38 @@ describe('The recipient’s signature reaches the page it is printed on', () => 
     expect(model.signature.signerName, 'the recipient is named on the sender’s block').toBeUndefined()
   })
 })
+
+/**
+ * §G's pencil, on the page (Rule #5).
+ *
+ * The board called this done because the WRITE worked and the field showed
+ * the typed value back. Walking it found the other half: every preview still
+ * printed the provisional `INV-…`, so an owner who typed their own
+ * `DR-INV-0413` — the number their paper book is already on — checked the
+ * document before issuing and saw the app had ignored them.
+ */
+describe('The owner\u2019s own number reaches the page', () => {
+  /** THE ONE THIS IS FOR. A draft has no frozen reference, so it fell through. */
+  it('prints the override on a draft', () => {
+    const page = compose(
+      record({ status: 'draft', issuedReference: null, referenceOverride: 'DR-INV-0413' }),
+    )
+    expect(page.reference, 'the pencil still looks dead on the page').toBe('DR-INV-0413')
+  })
+
+  /** Without one, the provisional still stands in — nothing else moved. */
+  it('still shows the provisional when nobody typed one', () => {
+    const page = compose(record({ status: 'draft', issuedReference: null }))
+    expect(page.reference).toContain('-\u2026')
+  })
+
+  /**
+   * AND AN ISSUED REFERENCE OUTRANKS IT (Rule #5). The frozen number is what
+   * the customer was given; an override is an instruction for an issue that
+   * has already happened.
+   */
+  it('never lets an override move an issued reference', () => {
+    const page = compose(record({ issuedReference: 'INV-0007', referenceOverride: 'DR-INV-0413' }))
+    expect(page.reference).toBe('INV-0007')
+  })
+})
