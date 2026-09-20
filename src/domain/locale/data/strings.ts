@@ -777,6 +777,10 @@ export interface UiStrings {
     readonly onItem: string
     readonly replaceOnItem: string
     readonly removeFromItem: string
+    /** The two ways to get one, asked once the owner has asked for a photo. */
+    readonly takeNow: string
+    readonly chooseExisting: string
+    readonly closeChoices: string
   }
   readonly signature: {
     readonly title: string
@@ -1881,6 +1885,9 @@ const EN: UiStrings = {
     onItem: 'Photo of {item}',
     replaceOnItem: 'Change the photo of {item}',
     removeFromItem: 'Remove the photo of {item}',
+    takeNow: 'Take a photo',
+    chooseExisting: 'Choose a picture',
+    closeChoices: 'Close the photo choices',
   },
   signature: {
     title: 'Sign',

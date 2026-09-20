@@ -264,27 +264,72 @@ describe('The last control on a page is not under the system bar (§G)', () => {
   })
 })
 
-describe('A line photo can come from the gallery, not only the camera (§G)', () => {
+describe('A line photo can come from the camera OR the gallery (§G)', () => {
   afterEach(() => vi.restoreAllMocks())
 
   /**
-   * `capture="environment"` does not offer the camera, it GOES to it. A trader
-   * who photographed the goods that morning had no way to reach the shot.
+   * THIS GUARD WAS WRONG ONCE, AND THAT IS THE LESSON.
+   *
+   * It used to assert that no file input carried `capture`, under the
+   * heading "leave the chooser to the phone". That was true, and it was not
+   * the property anybody wanted: absence of an attribute is a claim about
+   * OUR markup, and "the phone will offer a choice" is a claim about
+   * SOMEBODY ELSE'S software. The second one changed. A WebView file input
+   * on this Android now opens the system photo picker, which is the gallery
+   * and nothing else — so camera-only became gallery-only, the guard stayed
+   * green through both, and the second walk found it by eye like the first.
+   *
+   * What is asserted now is the thing §G actually asks for: both routes are
+   * reachable from the row, whatever any OS decides to do with a bare input.
    */
-  it('leaves the chooser to the phone', async () => {
+  const openTheChooser = async (user: ReturnType<typeof userEvent.setup>) => {
+    renderAt('/edit/doc_draft', draftInvoice)
+    await user.click(await screen.findByRole('button', { name: 'Items' }))
+    await user.click(
+      await screen.findByRole('button', { name: /Add a photo to Roofing sheets/ }),
+    )
+  }
+
+  it('offers both, rather than hoping the phone will', async () => {
+    const user = userEvent.setup()
+    await openTheChooser(user)
+
+    expect(screen.getByRole('button', { name: 'Take a photo' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Choose a picture' })).toBeInTheDocument()
+  })
+
+  /**
+   * AND EACH ONE GOES WHERE IT SAYS. `capture="environment"` is what opens a
+   * viewfinder rather than a picker, so "Take a photo" must have it and
+   * "Choose a picture" must not — the two file inputs are the two answers.
+   */
+  it('wires the camera to capture and the gallery to none', async () => {
+    const user = userEvent.setup()
+    await openTheChooser(user)
+
+    const inputs = [...document.querySelectorAll('input[type="file"]')]
+    const captures = inputs.map((input) => input.getAttribute('capture'))
+    expect(captures, 'one route to the camera and one past it').toContain('environment')
+    expect(captures).toContain(null)
+    for (const input of inputs) expect(input.getAttribute('accept')).toBe('image/*')
+  })
+
+  /** And the row is unchanged for somebody who never attaches a photo. */
+  it('asks nothing until the photo control is pressed', async () => {
     const user = userEvent.setup()
     renderAt('/edit/doc_draft', draftInvoice)
     await user.click(await screen.findByRole('button', { name: 'Items' }))
     await screen.findByRole('button', { name: /Add a photo to Roofing sheets/ })
 
-    const inputs = [...document.querySelectorAll('input[type="file"]')]
-    expect(inputs.length).toBeGreaterThan(0)
-    for (const input of inputs) {
-      expect(
-        input.getAttribute('capture'),
-        'the control skips the gallery and opens the camera',
-      ).toBeNull()
-      expect(input.getAttribute('accept')).toBe('image/*')
-    }
+    expect(screen.queryByRole('button', { name: 'Take a photo' })).toBeNull()
+  })
+
+  /** A menu with no way out is a trap on a phone; the screen behind it shuts it. */
+  it('can be dismissed without choosing', async () => {
+    const user = userEvent.setup()
+    await openTheChooser(user)
+
+    await user.click(screen.getByRole('button', { name: 'Close the photo choices' }))
+    expect(screen.queryByRole('button', { name: 'Take a photo' })).toBeNull()
   })
 })

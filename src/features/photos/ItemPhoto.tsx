@@ -15,6 +15,21 @@
  * It shrinks HARD before handing anything over: `shrinkItemPhoto` puts a
  * printed thumbnail at 320px, because these documents go out over WhatsApp on
  * metered data and a several-megabyte PDF is not slow, it is unsent.
+ *
+ * CAMERA *OR* GALLERY, ASKED EXPLICITLY, and it took two walks to get here.
+ * The first found `capture="environment"` going straight to the viewfinder,
+ * so a trader who had photographed the goods that morning could not reach the
+ * shot. Removing the attribute was supposed to make Android show its own
+ * chooser — and on this phone it does not: a WebView file input now opens
+ * the system PHOTO PICKER, which is the gallery and nothing else. Camera-only
+ * became gallery-only, and §G asks for both.
+ *
+ * So the app asks, rather than hoping the OS will. Two hidden inputs, one
+ * with `capture` and one without, behind one quiet control — the row is
+ * unchanged for somebody who never attaches a photo, and the extra tap only
+ * exists for somebody who has already decided to. Nothing here depends on
+ * what a given Android version does with a bare file input, which is the
+ * assumption that broke twice.
  */
 
 import { useId, useRef, useState } from 'react'
@@ -36,64 +51,119 @@ export interface ItemPhotoProps {
 
 export function ItemPhoto({ itemName, currentUrl, onPhoto, onRemove }: ItemPhotoProps) {
   const { strings } = useCompany()
-  const input = useRef<HTMLInputElement | null>(null)
+  const camera = useRef<HTMLInputElement | null>(null)
+  const gallery = useRef<HTMLInputElement | null>(null)
   const id = useId()
   const [problem, setProblem] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
+  const [asking, setAsking] = useState(false)
 
-  const pick = () => input.current?.click()
+  const accept = (file: File | undefined) => {
+    if (file === undefined) return
+    setAsking(false)
+    setProblem(null)
+    setBusy(true)
+    void shrinkItemPhoto(file)
+      .then((dataUrl) => onPhoto(dataUrl))
+      .catch((cause: unknown) => {
+        setProblem(
+          cause instanceof PhotoError && cause.field === 'not_an_image'
+            ? strings.photo.notAnImage
+            : format(strings.photo.failed, {
+                reason: cause instanceof Error ? cause.message : String(cause),
+              }),
+        )
+      })
+      .finally(() => setBusy(false))
+  }
+
+  const pick = () => setAsking((open) => !open)
 
   return (
     <span className="relative shrink-0">
+      {/*
+        TWO INPUTS, ONE PER ANSWER.
+
+        `capture="environment"` does not mean "offer the camera", it means GO
+        STRAIGHT TO IT — which is exactly what is wanted once somebody has
+        said "take a photo". The bare one is the other answer; on this phone
+        it opens the system photo picker, which is the gallery.
+      */}
       <input
-        ref={input}
-        id={id}
+        ref={camera}
+        id={`${id}-camera`}
         type="file"
         accept={ACCEPTED}
-        /*
-         * NO `capture`, and that is the whole difference from the delivery
-         * photo's control.
-         *
-         * `capture="environment"` does not mean "offer the camera" — it means
-         * GO STRAIGHT TO IT. Walking the phone showed exactly that: tapping
-         * the camera on a line went to the viewfinder, and a trader who had
-         * already photographed the goods that morning had no way to reach the
-         * shot. §G asked for camera or gallery; without the attribute Android
-         * shows its own chooser, which offers both.
-         *
-         * A delivery photo keeps `capture`, and should: it is taken at the
-         * gate, of what is in front of you, and a picker there would be a
-         * detour past the only answer.
-         */
+        capture="environment"
         className="sr-only"
         onChange={(event) => {
           const file = event.target.files?.[0]
           // Cleared, so choosing the SAME file twice still fires a change.
           event.target.value = ''
-          if (file === undefined) return
-
-          setProblem(null)
-          setBusy(true)
-          void shrinkItemPhoto(file)
-            .then((dataUrl) => onPhoto(dataUrl))
-            .catch((cause: unknown) => {
-              setProblem(
-                cause instanceof PhotoError && cause.field === 'not_an_image'
-                  ? strings.photo.notAnImage
-                  : format(strings.photo.failed, {
-                      reason: cause instanceof Error ? cause.message : String(cause),
-                    }),
-              )
-            })
-            .finally(() => setBusy(false))
+          accept(file)
         }}
       />
+      <input
+        ref={gallery}
+        id={`${id}-gallery`}
+        type="file"
+        accept={ACCEPTED}
+        className="sr-only"
+        onChange={(event) => {
+          const file = event.target.files?.[0]
+          event.target.value = ''
+          accept(file)
+        }}
+      />
+
+      {/*
+        ASKED ON THE ROW, not in a sheet. It is two words and two taps' worth
+        of decision, and a full-screen sheet for it would be the machinery
+        Rule #1 keeps out. Anchored to the end so it opens inward from the
+        edge of a phone rather than off it.
+      */}
+      {asking && (
+        <>
+          {/*
+            A WAY OUT. A menu with two answers and no third is a trap on a
+            phone, where there is no Escape key to reach for — so the whole
+            screen behind it dismisses, which is what everybody already tries.
+          */}
+          <button
+            type="button"
+            aria-label={strings.photo.closeChoices}
+            onClick={() => setAsking(false)}
+            className="fixed inset-0 z-10 cursor-default"
+          />
+        </>
+      )}
+      {asking && (
+        <span className="absolute end-0 top-full z-20 mt-1 flex w-max flex-col overflow-hidden rounded-xl border border-edge/10 bg-surface shadow-lg">
+          <button
+            type="button"
+            onClick={() => camera.current?.click()}
+            className="flex min-h-tap items-center gap-2 px-3 text-start text-xs font-medium"
+          >
+            <Icon name="camera" size={0.8} />
+            {strings.photo.takeNow}
+          </button>
+          <button
+            type="button"
+            onClick={() => gallery.current?.click()}
+            className="flex min-h-tap items-center gap-2 border-t border-edge/10 px-3 text-start text-xs font-medium"
+          >
+            <Icon name="photo" size={0.8} />
+            {strings.photo.chooseExisting}
+          </button>
+        </span>
+      )}
 
       {currentUrl === undefined ? (
         <button
           type="button"
           disabled={busy}
           onClick={pick}
+          aria-expanded={asking}
           data-add-photo
           aria-label={format(strings.photo.addToItem, { item: itemName })}
           className="tap-scale grid min-h-tap min-w-tap place-items-center rounded-lg opacity-45 disabled:opacity-20"
@@ -106,6 +176,7 @@ export function ItemPhoto({ itemName, currentUrl, onPhoto, onRemove }: ItemPhoto
             type="button"
             disabled={busy}
             onClick={pick}
+            aria-expanded={asking}
             data-item-photo
             aria-label={format(strings.photo.replaceOnItem, { item: itemName })}
             className="tap-scale block h-9 w-9 overflow-hidden rounded-lg border border-edge/10"
