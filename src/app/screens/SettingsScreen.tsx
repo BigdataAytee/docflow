@@ -354,6 +354,7 @@ function SettingsPanelBody() {
             })
           }
           {...(company.paymentLinks === undefined ? {} : { paymentLinks: company.paymentLinks })}
+          enabledMethodIds={company.enabledPaymentMethods}
           /* §J's links are the business's DEFAULTS; a document may differ. */
           onPaymentLinks={(paymentLinks) => void actions.updateCompany({ paymentLinks })}
           onToggleMethod={(methodId, next) =>

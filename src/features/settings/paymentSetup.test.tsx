@@ -233,3 +233,53 @@ describe('The country is the question, and the fields follow it (§J)', () => {
     expect(screen.getByLabelText('Sort code')).toBeInTheDocument()
   })
 })
+
+/**
+ * The seam between the two halves of this screen (§J).
+ *
+ * FOUND ON THE PHONE, and invisible to every test above it. `PaymentSettings`
+ * told `PaymentLinkSection` which providers were on by filtering `methods` —
+ * the curated set §J calls always available, bank transfer and cash on
+ * delivery — and a link provider is never in that list. So switching Paystack
+ * on wrote `paystack_page` into `enabledPaymentMethods` and the chip read
+ * back "Off", because it was asking a list that could not contain the answer.
+ *
+ * The link tests passed `enabled` straight into the section, which is exactly
+ * why they could not see it: the bug was in who computes that prop, and they
+ * supplied it themselves. Asserted here, one level up, where the two halves
+ * actually meet.
+ */
+describe('A switched-on link reads back as on (§J)', () => {
+  const LINK = { provider: 'paystack_page' as const, value: 'paystack.com/pay/dynamic' }
+
+  it('shows On for a link the company has enabled', () => {
+    screenWith({
+      paymentLinks: [LINK],
+      enabledMethodIds: ['paystack_page'],
+      onPaymentLinks: vi.fn(),
+    })
+
+    expect(
+      screen.getByRole('button', { name: 'Paystack' }),
+      'the chip asked a list that cannot contain a link provider',
+    ).toHaveTextContent('On')
+  })
+
+  it('shows Off for one it has not', () => {
+    screenWith({ paymentLinks: [LINK], enabledMethodIds: [], onPaymentLinks: vi.fn() })
+    expect(screen.getByRole('button', { name: 'Paystack' })).toHaveTextContent('Off')
+  })
+
+  /** And the methods above it are unaffected by any of this. */
+  it('still reads the methods’ own state', () => {
+    screenWith({
+      methods: methods(true),
+      paymentLinks: [LINK],
+      enabledMethodIds: ['bank_transfer'],
+      onPaymentLinks: vi.fn(),
+    })
+
+    expect(screen.getByRole('button', { name: 'Bank transfer' })).toHaveTextContent('On')
+    expect(screen.getByRole('button', { name: 'Paystack' })).toHaveTextContent('Off')
+  })
+})

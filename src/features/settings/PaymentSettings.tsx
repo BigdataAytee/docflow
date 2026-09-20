@@ -99,6 +99,14 @@ export interface PaymentSettingsProps {
   readonly onToggleMethod: (id: string, next: boolean) => void
   /** §J's pasted links. Absent hides the section entirely. */
   readonly paymentLinks?: readonly SavedPaymentLink[]
+  /**
+   * Every id switched on, links included (§J).
+   *
+   * Separate from `methods` on purpose: that list is what the screen DRAWS
+   * as rows, and this is what the company has actually enabled. A link
+   * provider appears in the second and never in the first.
+   */
+  readonly enabledMethodIds?: readonly string[]
   readonly onPaymentLinks?: (links: readonly SavedPaymentLink[]) => void
 }
 
@@ -246,6 +254,7 @@ export function PaymentSettings({
   onAccountCountry,
   onToggleMethod,
   paymentLinks = [],
+  enabledMethodIds = [],
   onPaymentLinks,
 }: PaymentSettingsProps) {
   const { strings } = useCompany()
@@ -450,10 +459,18 @@ export function PaymentSettings({
           links={paymentLinks}
           onChange={onPaymentLinks}
           /*
-           * The SAME switch §J already gives every other method. A link that
-           * is saved and off is a link the trader keeps and does not print.
+           * THE COMPANY'S OWN LIST, not the methods rendered above it.
+           *
+           * This read `methods`, which is the curated set §J calls always
+           * available — bank transfer and cash on delivery — and a link
+           * provider is never in it. So toggling Paystack on wrote
+           * `paystack_page` into `enabledPaymentMethods` and the chip read
+           * back Off, because it was asking a list that could not contain
+           * the answer. Found on the phone; the jsdom test passed `enabled`
+           * straight in, so the seam between these two components was the
+           * one thing it could not see.
            */
-          enabled={methods.filter((method) => method.enabled).map((method) => method.id)}
+          enabled={enabledMethodIds}
           onToggle={onToggleMethod}
         />
       )}
