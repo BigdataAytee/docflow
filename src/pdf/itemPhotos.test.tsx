@@ -44,9 +44,9 @@ const strings = stringsFor('en')
  *
  * `data:,x` would satisfy every assertion below and prove nothing about the
  * size budget — the guard that exists because these documents go out over
- * metered data. This is roughly what 320px at quality 0.6 produces.
+ * metered data. This is roughly what 640px at quality 0.7 produces.
  */
-const THUMB = `data:image/jpeg;base64,${'A'.repeat(20_000)}`
+const THUMB = `data:image/jpeg;base64,${'A'.repeat(70_000)}`
 
 const PHOTO: AssetRecord = {
   id: 'ast_photo',
@@ -215,17 +215,33 @@ describe('The thumbnail reaches the page (§E, §G step 2, §I)', () => {
 
 describe('A thumbnail never distorts the table (§I)', () => {
   /**
-   * FIXED, SQUARE AND CROPPED. A portrait photograph, a landscape one and a
-   * square one all occupy the same space, so nothing a phone camera produces
-   * can widen the description column or push the totals off the page.
+   * BIG ENOUGH FOR THE PERSON RECEIVING IT (§I).
+   *
+   * This drew at 34px beside the text, which on a page whose coordinate space
+   * is A4 at 96dpi — 794px across — is nine millimetres. The picture exists
+   * so somebody opening the PDF can look at it and recognise the goods; at a
+   * postage stamp they cannot, and a picture nobody can make out is weight in
+   * the file for nothing.
    */
-  it('draws at a fixed size whatever shape the photo was', () => {
+  it('draws large enough to make the goods out', () => {
     draw(record('invoice'))
     const image = thumbnails()[0]
-    expect(image?.className).toContain('h-[34px]')
-    expect(image?.className).toContain('w-[34px]')
+    const width = Number(/w-\[(\d+)px\]/.exec(image?.className ?? '')?.[1] ?? 0)
+    // A4 is 210mm across this page's 794px, so a millimetre is ~3.78px.
+    expect(width / 3.78, 'the picture is too small to see').toBeGreaterThan(30)
+  })
+
+  /**
+   * FIXED AND CROPPED, whatever shape the photo was. A portrait photograph, a
+   * landscape one and a square one occupy the same box, so nothing a phone
+   * camera produces can widen the column or push the totals off the page.
+   */
+  it('keeps one shape whatever shape the photo was', () => {
+    draw(record('invoice'))
+    const image = thumbnails()[0]
+    expect(image?.className).toMatch(/h-\[\d+px\]/)
+    expect(image?.className).toMatch(/w-\[\d+px\]/)
     expect(image?.className, 'an uncropped photo can stretch the column').toContain('object-cover')
-    expect(image?.className).toContain('shrink-0')
   })
 
   /** In the description cell, not a column of its own that every row pays for. */

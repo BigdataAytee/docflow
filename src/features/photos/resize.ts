@@ -112,38 +112,42 @@ async function shrinkAs(
 /* ------------------------------------------------------- line-item photos */
 
 /**
- * A picture of the goods, sized for the table it prints in (§I, §M, Rule #1).
+ * A picture of the goods, sized for the page it prints on (§I, §M, Rule #1).
  *
- * MUCH SMALLER THAN A DELIVERY PHOTO, and deliberately so. A delivery photo
- * is evidence — the stack of bags, the plate number — and wants detail. A
- * line-item thumbnail is drawn about 40pt wide in the description column and
- * needs to be RECOGNISABLE, not readable: at 320px it is already four times
- * the resolution the page can print.
+ * SIZED FOR WHAT THE RECIPIENT DOES WITH IT. The picture is drawn 180px wide
+ * on a page whose coordinate space is A4 at 96dpi — about 47mm on paper — and
+ * the person receiving the PDF opens it to look at the goods and, often
+ * enough, zooms in to check them. 640px across that box is roughly three and
+ * a half times the print resolution, which stays clean when they do.
  *
- * The reason is the trader, not the byte count. These go out over WhatsApp on
- * metered data with poor signal, and a document with eight photographs in it
- * at delivery-photo size is several megabytes — which is not a slow PDF, it
- * is a PDF that never gets sent. A tenth of that, and the picture still does
- * its job on the page.
+ * It was 320px, for a 34px stamp of a thumbnail that nobody could make out.
+ * A picture too small to read is weight in the file for nothing, so growing
+ * the one on the page had to bring this with it.
+ *
+ * STILL A FRACTION OF THE ORIGINAL, and the reason is the trader rather than
+ * the byte count. These go out over WhatsApp on metered data with poor
+ * signal: a phone photograph is 3–8MB, and a document carrying eight of them
+ * is not a slow PDF, it is a PDF that never gets sent. 640px at quality 0.7
+ * lands around a twentieth of that and still bears zooming.
  *
  * ONE ASSET, not an original and a thumbnail. Keeping the full-resolution
  * photograph as well would double what syncs for the people who can least
- * afford it, to serve a zoom nothing in the app offers. If a "see it bigger"
- * ever arrives, 320px is still larger than a phone draws it in a list.
+ * afford it, to serve a zoom this size already covers.
  */
-export const ITEM_PHOTO_MAX_EDGE = 320
-/** Lower than a delivery photo's: a thumbnail hides its own artefacts. */
-export const ITEM_PHOTO_QUALITY = 0.6
+export const ITEM_PHOTO_MAX_EDGE = 640
+/** Still below a delivery photo's: the page is not an archive. */
+export const ITEM_PHOTO_QUALITY = 0.7
 
 /**
- * The ceiling a stored thumbnail must come in under, in data-URL characters.
+ * The ceiling a stored picture must come in under, in data-URL characters.
  *
- * Roughly 60 KB of base64, which is about 45 KB of JPEG — comfortably above
- * what 320px at quality 0.6 produces for a photograph, and far below what a
- * document full of them could cost. It exists so the budget is a number
- * something can fail against rather than an intention in a comment.
+ * Roughly 120 KB of base64, about 90 KB of JPEG — comfortably above what
+ * 640px at quality 0.7 produces for a photograph, and still low enough that a
+ * document carrying several of them sends over a bad connection. It exists so
+ * the budget is a number something can fail against rather than an intention
+ * in a comment, and it moved when the picture did.
  */
-export const ITEM_PHOTO_BUDGET = 60_000
+export const ITEM_PHOTO_BUDGET = 120_000
 
 export async function shrinkItemPhoto(file: Blob): Promise<string> {
   return shrinkAs(file, ITEM_PHOTO_MAX_EDGE, 'image/jpeg', ITEM_PHOTO_QUALITY)

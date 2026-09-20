@@ -42,12 +42,14 @@ export class PaginationError extends Error {}
 /**
  * What one photographed row costs, in ordinary rows.
  *
- * A thumbnail is drawn 34pt square and a text row is around 20pt, so a
- * photographed line is a little over twice as tall. Two is the honest count
- * and is deliberately not generous: rounding up wastes a page on every
- * document that has one picture on it.
+ * The picture is 135px tall under its description and a text row is around
+ * 26px, so a photographed line is roughly six rows. Counted honestly rather
+ * than generously: every row of slack here is a page break somebody did not
+ * need. It was TWO while the picture was a 34px stamp — growing the image to
+ * something a recipient can actually see had to move this with it, or a page
+ * of photographed goods would run off the bottom.
  */
-export const PHOTO_ROW_COST = 2
+export const PHOTO_ROW_COST = 6
 
 /** A row with a picture of the goods is taller than one without (§I). */
 export const costOf = (row: TableRow): number =>

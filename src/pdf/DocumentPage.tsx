@@ -132,28 +132,36 @@ function Cell({ row, column, formatAmount, currency }: {
             cell rather than as a column of its own.
 
             A column would exist on every row of every document to serve the
-            few that have a picture, and would have to be sized for the
-            widest thumbnail whether or not one was there — which is how a
-            table gets wider than the page. In the cell, a row with no photo
-            is exactly the row it was before.
+            few that have a picture, and would have to be sized for the widest
+            one whether or not it was there — which is how a table gets wider
+            than the page. In the cell, a row with no photo is exactly the row
+            it was before.
 
-            FIXED at 34pt square and `object-cover`, so a portrait
-            photograph, a landscape one and a square one all occupy the same
-            space: nothing a phone camera produces can stretch the column or
-            push the totals off the page. `shrink-0` because the description
-            beside it is the part that should wrap.
+            BIG ENOUGH TO SEE, and it was not. This sat beside the text at
+            34px, which on a page whose own coordinate space is A4 at 96dpi
+            (794px across) is NINE MILLIMETRES — a postage stamp. The picture
+            exists so the person receiving the PDF can look at it and
+            recognise the goods; at that size they cannot, and a picture
+            nobody can make out is weight in the file for nothing.
+
+            So it goes UNDER the description rather than beside it, which is
+            what buys the size: 180 × 135px is about 47 × 36mm on the paper,
+            and it costs the column no width at all. `object-cover` keeps a
+            portrait photograph, a landscape one and a square one in the same
+            box, so nothing a phone camera produces can stretch the table or
+            push the totals off the page.
           */}
           {row.imageUrl === undefined ? (
             row.description
           ) : (
-            <span className="flex items-center gap-[8px]">
+            <span className="block">
+              <span className="block">{row.description}</span>
               <img
                 src={row.imageUrl}
                 alt=""
                 data-item-photo
-                className="h-[34px] w-[34px] shrink-0 rounded-[3px] border border-current/15 object-cover"
+                className="mt-[6px] block h-[135px] w-[180px] rounded-[4px] border border-current/15 object-cover"
               />
-              <span className="min-w-0">{row.description}</span>
             </span>
           )}
         </td>

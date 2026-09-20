@@ -4003,12 +4003,12 @@ describe('A photo on a line item (§E, §G step 2)', () => {
     expect(state.assets[0]?.dataUrl).toBe('data:image/jpeg;base64,THUMB')
 
     /*
-     * SHRUNK MUCH HARDER than a delivery photo. A thumbnail is drawn 34pt
-     * wide on the page; a document full of evidence-quality photographs is
-     * several megabytes over metered data, which is a PDF that never gets
-     * sent.
+     * STILL SHRUNK HARD. The picture prints about 47mm wide and bears
+     * zooming at 640px, while a phone original is 3–8MB — and a document
+     * carrying eight of those is not a slow PDF, it is one that never gets
+     * sent over metered data.
      */
-    expect(toDataURL).toHaveBeenCalledWith('image/jpeg', 0.6)
+    expect(toDataURL).toHaveBeenCalledWith('image/jpeg', 0.7)
 
     // And the row draws the picture rather than saying one is attached.
     expect(await screen.findByRole('img', { name: /Roofing sheets/ })).toBeInTheDocument()
