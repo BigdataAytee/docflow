@@ -427,7 +427,7 @@ export function Home({
             </p>
           )}
 
-          <ul className="grid grid-cols-2 gap-2.5 pt-3">
+          <ul className="grid grid-cols-2 gap-3 pt-3">
             {DOCUMENT_TYPES.map((type) => {
               const palette = TYPE_PALETTE[type]
               return (
@@ -439,6 +439,7 @@ export function Home({
                   <button
                     type="button"
                     onClick={() => onOpenType(type)}
+                    data-type-card={type}
                     // Read aloud, the plate and the chip run together as
                     // "Invoice 3", which sounds like a reference number. The
                     // count line says it properly in every language.
@@ -456,22 +457,34 @@ export function Home({
                     // theme. Inline they could not — and a hex reached
                     // through a variable is invisible to the dark-mode sweep,
                     // so this is the one place where the class IS the check.
-                    className={`tile ${TILE_CLASS[type]} sheen tap-scale relative flex w-full min-w-0 flex-col items-start rounded-[18px] p-3 text-start`}
+                    /*
+                      BIGGER, because these four are the front door.
+                      
+                      `min-h` rather than a fixed height: the floor is what a
+                      thumb needs, and the card grows past it when a label
+                      wraps to three lines at 200% text. A fixed height would
+                      clip "Bons de livraison" — the longest label any locale
+                      has — which is the failure this is sized around rather
+                      than around English.
+                    */
+                    className={`tile ${TILE_CLASS[type]} sheen tap-scale relative flex min-h-[104px] w-full min-w-0 flex-col items-start rounded-[20px] p-3.5 text-start`}
                   >
                     {/* The count, out of the label's way (see the file note). */}
                     <span
                       aria-hidden="true"
-                      className="tile-chip tile-ink absolute end-2.5 top-2.5 rounded-full px-2 py-0.5 text-[9.5px] font-semibold tabular-nums"
+                      data-type-count
+                      className="tile-chip tile-ink absolute end-3 top-3 rounded-full px-2.5 py-0.5 text-[12px] font-semibold tabular-nums"
                     >
                       {counts[type]}
                     </span>
 
                     <span
                       aria-hidden="true"
-                      className="tile-plate grid h-[37px] w-[37px] place-items-center rounded-[13px]"
+                      data-type-plate
+                      className="tile-plate grid h-[46px] w-[46px] place-items-center rounded-[15px]"
                       style={{ color: palette.accent }}
                     >
-                      <Icon name={palette.icon} size={1.125} />
+                      <Icon name={palette.icon} size={1.4} />
                     </span>
 
                     {/*
@@ -482,7 +495,10 @@ export function Home({
                       at 200% text still held the tile 157px wide in a 151px
                       column. `anywhere` does shrink it.
                     */}
-                    <span className="tile-ink mt-2 text-xs font-semibold leading-tight [overflow-wrap:anywhere]">
+                    <span
+                      data-type-label
+                      className="tile-ink mt-2.5 text-[14px] font-semibold leading-tight [overflow-wrap:anywhere]"
+                    >
                       {pluralLabel(profile, type)}
                     </span>
                   </button>

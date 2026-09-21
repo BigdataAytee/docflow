@@ -33,7 +33,7 @@ import {
   inversionOf,
   reportOf as orderReportOf,
 } from './readingorder'
-import { BUILD, ROUTES, serve } from './responsive.test'
+import { BUILD, ROUTES, serve } from './serve'
 
 /** Where the spoken-order transcripts live, for the D12 pass to read. */
 const TRANSCRIPTS = join(process.cwd(), 'docs', 'a11y', 'transcripts')

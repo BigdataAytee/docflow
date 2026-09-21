@@ -59,12 +59,16 @@ export function ListScreen({ today = todayIso() }: { today?: string }) {
       // is the live offer — the same for a cancelled receipt beside the one
       // that replaced it. Only a quotation's chain is numbered (§G's Rev 2).
       /*
-       * The words, from the catalogue (§D, Rule #4). "Record payment" and
-       * "Sign" are the same two the document's own action grid uses, so the
-       * list and the document say the same thing about the same next step.
+       * The words, from the catalogue (§D, Rule #4).
+       *
+       * The SHORT form — "Record payment", not "Record a payment". On a
+       * 320px phone the long one pushed the row past the edge: reference,
+       * badge, amount and a wide pill do not fit, and the responsive sweep
+       * said so. The document's own grid keeps the longer wording, where
+       * there is a whole button width for it.
        */
       actionLabel: (kind) =>
-        kind === 'record_payment' ? strings.payments.recordPayment : strings.home.sign,
+        kind === 'record_payment' ? strings.newReceipt.recordPayment : strings.home.sign,
       supersededLabel: ({ type: rowType, revisionNumber }) =>
         rowType === 'quotation'
           ? format(strings.revision.supersededBy, { number: String(revisionNumber) })

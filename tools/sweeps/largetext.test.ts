@@ -13,7 +13,7 @@ import { describe, expect, it } from 'vitest'
 import { chromium } from 'playwright'
 
 import { LARGE_TEXT_PX, type Clipped, applyLargeText, clippedAt, reportOf } from './largetext'
-import { BUILD, ROUTES, serve } from './responsive.test'
+import { BUILD, ROUTES, serve } from './serve'
 
 describe.runIf(process.env.SWEEP === '1')(`Nothing is clipped at ${LARGE_TEXT_PX}px text (§V)`, () => {
   it('checks every route with records in it', async () => {

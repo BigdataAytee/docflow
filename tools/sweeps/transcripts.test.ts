@@ -16,7 +16,7 @@ import { join } from 'node:path'
 
 import { describe, expect, it } from 'vitest'
 
-import { ROUTES } from './responsive.test'
+import { ROUTES } from './serve'
 
 const TRANSCRIPTS = join(process.cwd(), 'docs', 'a11y', 'transcripts')
 

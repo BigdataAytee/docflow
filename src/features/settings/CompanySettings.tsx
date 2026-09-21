@@ -261,10 +261,20 @@ export function CompanySettings({
 
       {/* ------------------------------------------------- name style */}
       <p className="px-1 text-xs font-bold uppercase tracking-wide opacity-60">{s.nameStyle}</p>
-      <fieldset className="glass-solid rounded-2xl p-3">
+      {/*
+        `min-w-0` on the FIELDSET, not only on the strip inside it.
+        
+        A fieldset is a flex item of the column above, and a flex item's
+        default `min-width: auto` is its content's — so the scrolling strip
+        inside held the fieldset open to its full scroll width and the card
+        itself ran past the edge of a 320px phone. The strip scrolled
+        correctly; the box around it did not know it was allowed to be
+        narrower. Found by the responsive sweep.
+      */}
+      <fieldset className="glass-solid min-w-0 rounded-2xl p-3">
         <legend className="sr-only">{s.nameStyle}</legend>
         {/* A strip that scrolls rather than wraps, so the five stay in order. */}
-        <div className="flex gap-1.5 overflow-x-auto p-0.5">
+        <div className="flex min-w-0 gap-1.5 overflow-x-auto p-0.5">
           {NAME_STYLES.map((style) => (
             <button
               key={style}

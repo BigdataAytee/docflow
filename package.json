@@ -37,7 +37,8 @@
     "gate:hosted:api": "cross-env GATE_PART=api npm run gate:hosted",
     "dev:demo": "vite --mode demo --port 5174",
     "build:showcase": "vite build --mode demo",
-    "dev:showcase": "vite --mode demo --port 5175"
+    "dev:showcase": "vite --mode demo --port 5175",
+    "sweep:homecards": "npm run shots:build && cross-env SWEEP=1 vitest run tools/sweeps/homecards.test.ts"
   },
   "dependencies": {
     "@aparajita/capacitor-biometric-auth": "^10.0.0",

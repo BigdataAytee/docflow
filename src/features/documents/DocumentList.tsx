@@ -329,7 +329,18 @@ export function DocumentList({
                     type="button"
                     data-row-action={row.action.kind}
                     onClick={() => onAction?.(row.id, row.action!.kind)}
-                    className="glass-pill tap-scale me-[13px] min-h-tap shrink-0 rounded-full px-3 text-[11px] font-semibold text-brand"
+                    /*
+                      `shrink` and a cap, not `shrink-0`.
+                      
+                      At 320px a reference, a badge, an amount and a fixed
+                      pill do not fit on one line, and the pill was the thing
+                      that would not give — so it pushed the row off the
+                      edge. It may now wrap its own label to two lines inside
+                      a tap-sized target, which is what a narrow phone has
+                      room for.
+                    */
+                    className="glass-pill tap-scale me-[13px] min-h-tap max-w-[38%] shrink rounded-full px-2.5 py-1 text-[11px] font-semibold leading-tight text-brand"
+                  
                   >
                     {row.action.label}
                   </button>

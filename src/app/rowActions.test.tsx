@@ -150,7 +150,7 @@ describe('The row draws its action, and the status drives it (§G)', () => {
   it('offers Record payment on an unpaid invoice row', async () => {
     renderAt('/list/invoice', unpaidInvoice)
 
-    const action = await screen.findByRole('button', { name: /Record a payment/i })
+    const action = await screen.findByRole('button', { name: 'Record payment' })
     expect(action.getAttribute('data-row-action')).toBe('record_payment')
   })
 
@@ -183,7 +183,7 @@ describe('The row draws its action, and the status drives it (§G)', () => {
     })
 
     await screen.findByText('INV-0001')
-    expect(screen.queryByRole('button', { name: /Record a payment/i })).toBeNull()
+    expect(screen.queryByRole('button', { name: 'Record payment' })).toBeNull()
   })
 
   /** And the row still opens the document, as its own target. */
@@ -209,7 +209,7 @@ describe('A row action never changes a status (§G, §V)', () => {
     const state = renderAt('/list/invoice', unpaidInvoice)
     const before = state.documents[0]
 
-    await user.click(await screen.findByRole('button', { name: /Record a payment/i }))
+    await user.click(await screen.findByRole('button', { name: 'Record payment' }))
 
     expect(state.documents[0], 'the row wrote to the document').toBe(before)
     expect(state.payments, 'the row invented a payment').toHaveLength(0)
@@ -237,7 +237,7 @@ describe('A row action never changes a status (§G, §V)', () => {
     // rather than a status quietly moved on a list.
     expect((await screen.findAllByText('WAY-0001')).length).toBeGreaterThan(0)
     expect(
-      screen.queryByRole('button', { name: /Record a payment/i }),
+      screen.queryByRole('button', { name: 'Record payment' }),
       'a delivery offered a money action',
     ).toBeNull()
   })
