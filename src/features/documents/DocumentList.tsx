@@ -8,7 +8,7 @@
  * (delivery documents show no amount), customer on the second line."
  */
 
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 
 import { useCompany } from '../../app/context'
 import { labelInSentence, pluralInSentence, pluralLabel } from '../../domain/locale/profile'
@@ -17,6 +17,11 @@ import { EmptyState, Icon, SkeletonList, StatusBadge, TYPE_PALETTE } from '../..
 import { carriesMoney, type DocumentType } from '../../domain/documents/types'
 import type { Money } from '../../domain/money/money'
 import { formatMoney } from '../customers/formatMoney'
+import type { RowActionKind } from './rowAction'
+import { hasSeen, markSeen } from './seenOnce'
+
+/** One key for the whole list page: the lesson is the same on every type. */
+const HINT_KEY = 'row-actions'
 
 export interface ListRow {
   readonly id: string
@@ -49,12 +54,29 @@ export interface ListRow {
    * question making a Rev 2 creates.
    */
   readonly note?: string
+  /**
+   * The one thing this row offers to do, derived at read time (§G).
+   *
+   * Absent on most rows. Present, it is a JOURNEY — "Record payment" opens
+   * the payment flow, "Sign" opens the signing sheet — and never a write: a
+   * row that marks an invoice paid is a status changed by a thumb brushing a
+   * scroll, on the one screen where the document is not in front of anybody.
+   */
+  readonly action?: { readonly kind: RowActionKind; readonly label: string }
 }
 
 export interface DocumentListProps {
   readonly type: DocumentType
   readonly rows: readonly ListRow[] | null
   readonly onOpen: (id: string) => void
+  /**
+   * Takes the owner to where the row's action happens (§G).
+   *
+   * A JOURNEY, never a write. The list has no business moving a status: the
+   * document itself is not on screen, and §V's evidence rules mean a receipt
+   * records a real payment rather than a tap on a scrolling list.
+   */
+  readonly onAction?: (id: string, kind: RowActionKind) => void
   readonly onNew: () => void
   /**
    * Back to Home, as the prototype draws it.
@@ -67,7 +89,25 @@ export interface DocumentListProps {
   readonly onBack?: () => void
 }
 
-export function DocumentList({ type, rows, onOpen, onNew, onBack }: DocumentListProps) {
+export function DocumentList({
+  type,
+  rows,
+  onOpen,
+  onAction,
+  onNew,
+  onBack,
+}: DocumentListProps) {
+  /*
+   * Read ONCE at mount and never again: reading it on every render would
+   * make the hint vanish mid-glance the instant it was marked seen.
+   */
+  const [hint] = useState(
+    () => !hasSeen(HINT_KEY) && (rows ?? []).some((row) => row.action !== undefined),
+  )
+  useEffect(() => {
+    if (hint) markSeen(HINT_KEY)
+  }, [hint])
+
   const { profile, strings } = useCompany()
   const [query, setQuery] = useState('')
 
@@ -200,14 +240,29 @@ export function DocumentList({ type, rows, onOpen, onNew, onBack }: DocumentList
           />
         )}
 
+        {/*
+          SHOWN ONCE, and only where there is an action to explain (§G).
+          
+          A hint over a list with no buttons on it is a sentence about
+          nothing, and a hint that comes back every week is a nag.
+        */}
+        {hint && (
+          <p className="mb-2 rounded-xl bg-brand/[0.06] px-3 py-2 text-[11px] opacity-75" role="status">
+            {strings.lists.rowActionHint}
+          </p>
+        )}
+
         {visible !== null && visible.length > 0 && (
           <ul className="glass overflow-hidden rounded-[18px]">
             {visible.map((row) => (
-              <li key={row.id} className="border-b border-brand/[0.07] last:border-0">
+              <li
+                key={row.id}
+                className="flex items-center border-b border-brand/[0.07] last:border-0"
+              >
                 <button
                   type="button"
                   onClick={() => onOpen(row.id)}
-                  className="flex min-h-tap w-full items-center gap-[11px] px-[13px] py-3 text-start"
+                  className="flex min-h-tap flex-1 items-center gap-[11px] px-[13px] py-3 text-start"
                 >
                   <span className="min-w-0 flex-1">
                     <span className="flex items-center gap-2">
@@ -255,6 +310,30 @@ export function DocumentList({ type, rows, onOpen, onNew, onBack }: DocumentList
                     )}
                   </span>
                 </button>
+
+                {/*
+                  THE ROW'S ONE ACTION, beside it rather than inside it.
+
+                  §G's commonest next move for an unpaid invoice is not "open
+                  it and read it", it is "the money came in" — and making
+                  somebody open the document to reach a button they were
+                  always going to press is three taps for one decision.
+
+                  OUTSIDE the open-button, so it is its own target and a
+                  mis-tap opens the document rather than starting a journey.
+                  And it is a journey: pressing it navigates, and the status
+                  moves only when somebody finishes what they were taken to.
+                */}
+                {row.action !== undefined && (
+                  <button
+                    type="button"
+                    data-row-action={row.action.kind}
+                    onClick={() => onAction?.(row.id, row.action!.kind)}
+                    className="glass-pill tap-scale me-[13px] min-h-tap shrink-0 rounded-full px-3 text-[11px] font-semibold text-brand"
+                  >
+                    {row.action.label}
+                  </button>
+                )}
               </li>
             ))}
           </ul>

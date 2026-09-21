@@ -23,6 +23,7 @@ import type { StatementDocument } from '../features/statements/compose'
 import type { BilledInvoice } from '../features/customers/balance'
 import type { ListRow } from '../features/documents/DocumentList'
 import { revisionNumberOf, supersededBy } from '../features/documents/revision'
+import { type RowActionKind, rowActionFor } from '../features/documents/rowAction'
 
 export const totalOf = (document: DocumentRecord): Money =>
   money(document.currency, document.totalMinor)
@@ -251,6 +252,14 @@ export interface ListRowOptions {
    * module holds none.
    */
   readonly supersededLabel?: (input: { type: DocumentType; revisionNumber: number }) => string
+  /**
+   * What the row's one action is CALLED, given what it does (§G, §D).
+   *
+   * A function rather than a map, for the same reason every other label on
+   * this page is one: the words live in the catalogue and this module holds
+   * none. Absent means the list draws no action at all.
+   */
+  readonly actionLabel?: (kind: RowActionKind) => string
 }
 
 /** One row per document, in the shape §G's list page draws. */
@@ -294,6 +303,18 @@ export function listRows(
         ? { ...(goodsSummary(document) === null ? {} : { goodsSummary: goodsSummary(document)! }) }
         : { amount: totalOf(document) }),
       ...(note === undefined ? {} : { note }),
+      /*
+       * THE ROW'S ONE ACTION, from the DERIVED status rather than the stored
+       * one. An invoice that is overdue is unpaid; a delivery marked
+       * delivered is finished. Reading `document.status` here would offer
+       * "Record payment" on a settled invoice and "Sign" on a signed
+       * delivery, because the stored word is `issued` in both cases.
+       */
+      ...(() => {
+        if (options.actionLabel === undefined) return {}
+        const kind = rowActionFor({ type: document.type, status })
+        return kind === null ? {} : { action: { kind, label: options.actionLabel(kind) } }
+      })(),
     }
   })
 }

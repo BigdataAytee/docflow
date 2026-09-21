@@ -16,7 +16,7 @@
  *    payment that already exists and cannot invent an amount.
  */
 
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { Navigate, useLocation, useNavigate, useParams } from 'react-router-dom'
 
 import { useCompany } from '../context'
@@ -123,6 +123,8 @@ export function DocumentScreen({ today = todayIso() }: { today?: string }) {
   const arrivedWith = useLocation().state as {
     billed?: { invoiceId: string; owedMinor: number; paidMinor: number }
     fromQuotation?: { quotationId: string; invoiceId: string }
+    /** The list row that sent us here, and what it offered (§G). */
+    rowAction?: 'record_payment' | 'sign'
   } | null
   const billedAlso = arrivedWith?.billed
   /**
@@ -133,6 +135,7 @@ export function DocumentScreen({ today = todayIso() }: { today?: string }) {
    * said rather than discovered in a list on Thursday.
    */
   const cameFromQuotation = arrivedWith?.fromQuotation
+  const rowAction = arrivedWith?.rowAction
   const { profile, strings } = useCompany()
   const review = useReview()
   const {
@@ -157,6 +160,18 @@ export function DocumentScreen({ today = todayIso() }: { today?: string }) {
   const [billProblem, setBillProblem] = useState<string | null>(null)
   const [voidProblem, setVoidProblem] = useState<string | null>(null)
   const [signing, setSigning] = useState(false)
+  /*
+   * WHAT THE ROW SENT US TO DO (§G).
+   *
+   * The list row NAVIGATES and never writes — so arriving here is the moment
+   * the thing it offered actually opens, with the document on screen behind
+   * it. "Record payment" reveals the action panel where that button lives;
+   * "Sign" opens the signing sheet.
+   *
+   * A ref, not a dependency: this must happen once on arrival and never
+   * again, and re-running it would reopen a sheet somebody had just closed.
+   */
+  const actedOnArrival = useRef(false)
   const [signProblem, setSignProblem] = useState<string | null>(null)
   const [revisionProblem, setRevisionProblem] = useState<string | null>(null)
   const [reissueProblem, setReissueProblem] = useState<string | null>(null)
@@ -167,6 +182,20 @@ export function DocumentScreen({ today = todayIso() }: { today?: string }) {
   const [photoOpen, setPhotoOpen] = useState(false)
   /* Cancel is a correction, not a primary action — it sits behind More. */
   const [more, setMore] = useState(false)
+
+  /*
+   * The row's offer, opened once the document is here (§G).
+   *
+   * This is where the journey ends and the real control appears — with the
+   * document on screen behind it, which is the whole reason the list itself
+   * never writes.
+   */
+  useEffect(() => {
+    if (rowAction === undefined || actedOnArrival.current) return
+    actedOnArrival.current = true
+    if (rowAction === 'record_payment') setMore(true)
+    if (rowAction === 'sign') setSigning(true)
+  }, [rowAction])
   const [creditProblem, setCreditProblem] = useState<string | null>(null)
 
   // One port per mount. Phase 4 swaps the Capacitor plugin in behind it and no

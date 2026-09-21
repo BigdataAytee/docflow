@@ -563,6 +563,8 @@ export interface UiStrings {
     readonly none: string
     readonly noneBody: string
     readonly noMatch: string
+    /** §G's first-run nudge that a row does more than open. */
+    readonly rowActionHint: string
   }
   readonly search: {
     readonly documents: string
@@ -1611,6 +1613,7 @@ const EN: UiStrings = {
     none: 'Nothing here yet',
     noneBody: 'Make your first one — it takes a minute.',
     noMatch: 'Nothing matched that search.',
+    rowActionHint: 'Tap a row to open it, or use the button to go straight there.',
   },
   search: {
     documents: 'Documents',
