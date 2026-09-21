@@ -260,7 +260,7 @@ export function CompanySettings({
       </section>
 
       {/* ------------------------------------------------- name style */}
-      <p className="px-1 text-xs font-bold uppercase tracking-wide opacity-70">{s.nameStyle}</p>
+      <p className="px-1 text-xs font-bold uppercase tracking-wide ">{s.nameStyle}</p>
       {/*
         `min-w-0` on the FIELDSET, not only on the strip inside it.
         
@@ -307,7 +307,7 @@ export function CompanySettings({
       </fieldset>
 
       {/* -------------------------------------------------- logo size */}
-      <p className="px-1 text-xs font-bold uppercase tracking-wide opacity-70">{s.logoSize}</p>
+      <p className="px-1 text-xs font-bold uppercase tracking-wide ">{s.logoSize}</p>
       <fieldset className="glass-solid rounded-2xl p-3">
         <legend className="sr-only">{s.logoSize}</legend>
         <div className="flex gap-1.5">
@@ -328,7 +328,7 @@ export function CompanySettings({
       </fieldset>
 
       {/* ---------------------------------------------------- prefixes */}
-      <p className="px-1 text-xs font-bold uppercase tracking-wide opacity-70">
+      <p className="px-1 text-xs font-bold uppercase tracking-wide ">
         {s.numberingPrefixes}
       </p>
       <section className="glass-solid rounded-2xl p-3">

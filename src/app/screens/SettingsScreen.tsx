@@ -125,7 +125,7 @@ export function SettingsIndexScreen() {
 
       {settingsGroups(strings).map((group) => (
         <section key={group.id} className="mt-4 px-4">
-          <h2 className="mb-2 px-1 text-[10px] font-semibold uppercase tracking-[0.14em] opacity-70">
+          <h2 className="mb-2 px-1 text-[10px] font-semibold uppercase tracking-[0.14em] ">
             {group.title}
           </h2>
           {/* One card per group, its rows divided — not a row per card (§F). */}

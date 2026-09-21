@@ -104,7 +104,7 @@ export function RegionSettings({ settings, onRegion, onLanguage }: RegionSetting
         and the screen says so rather than pretending to offer a choice.
       */}
       <section className="glass-solid rounded-2xl p-4">
-        <h2 className="text-xs font-bold uppercase tracking-wide opacity-70">
+        <h2 className="text-xs font-bold uppercase tracking-wide ">
           {strings.settings.appLanguage}
         </h2>
         <ul className="mt-2 divide-y divide-ink/10">
@@ -157,7 +157,7 @@ export function RegionSettings({ settings, onRegion, onLanguage }: RegionSetting
         does. Change the country and these four words change with it.
       */}
       <section className="glass-solid space-y-2 rounded-2xl p-4" data-document-names>
-        <h2 className="text-xs font-bold uppercase tracking-wide opacity-70">
+        <h2 className="text-xs font-bold uppercase tracking-wide ">
           {strings.settings.documentsAreCalled}
         </h2>
         {/*

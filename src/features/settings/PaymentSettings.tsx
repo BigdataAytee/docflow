@@ -349,7 +349,7 @@ export function PaymentSettings({
         </p>
       )}
 
-      <p className="px-1 text-xs font-bold uppercase tracking-wide opacity-70">
+      <p className="px-1 text-xs font-bold uppercase tracking-wide ">
         {strings.settings.paymentMethods}
       </p>
       <ul className="glass-solid divide-y divide-ink/10 overflow-hidden rounded-2xl">

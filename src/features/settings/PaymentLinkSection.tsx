@@ -209,7 +209,7 @@ export function PaymentLinkSection({
   const group = (heading: string, rows: readonly PaymentProvider[]) =>
     rows.length === 0 ? null : (
       <div className="space-y-1.5">
-        <p className="px-1 text-xs font-bold uppercase tracking-wide opacity-70">{heading}</p>
+        <p className="px-1 text-xs font-bold uppercase tracking-wide ">{heading}</p>
         <ul className="glass-solid divide-y divide-ink/10 overflow-hidden rounded-2xl">
           {rows.map(row)}
         </ul>

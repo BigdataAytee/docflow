@@ -38,38 +38,68 @@
 import { DOCUMENT_TYPES, type DocumentType } from '../domain/documents/types'
 
 /**
- * Where each orb sits and how strongly it shows, per the prototype.
+ * Where each orb sits, how strongly it shows, and how it drifts.
  *
  * Fixed rather than random: a background that differs on every launch is a
  * background somebody files a bug about, and no screenshot test can hold it
  * still. Keyed by internal type, because §F fixes colour to the type and a
  * positional array would silently re-pair them if the type order ever moved.
+ *
+ * PLACED IN THE CONTENT AREA, not at the corners of the viewport.
+ *
+ * These were transcribed from the prototype, which has no app header. The
+ * blue one — the strongest at .34 — sat at `top: -70px` and the app's header
+ * is opaque for the first ~110px, so it was painted entirely behind it. The
+ * owner reported the glow had stopped showing, and sampling the screen
+ * proved it: the pixels where the blue orb should be read (236,242,251)
+ * against a page of (238,242,251). It was contributing nothing at all.
+ *
+ * Percentages now, so they sit in the part of the screen a person is
+ * actually looking at whatever the viewport is, and so a taller phone does
+ * not push the lower two off the bottom.
+ *
+ * AND THEY MOVE, which they never did. §F asks for ambient orbs and the
+ * whole point of glass is colour shifting behind it; four gradients pinned
+ * in place are a texture, not an atmosphere. The drift is deliberately
+ * slower than anything else on screen — 34 to 52 seconds edge to edge, at
+ * amplitudes under a fifth of each orb's own blur radius — so nothing ever
+ * appears to move while you are looking at it, only to have moved. Each has
+ * its own duration so they never fall into step, which is what would make it
+ * read as an animation rather than as weather.
  */
-const ORBS: Readonly<Record<DocumentType, { rgb: string; alpha: number; css: React.CSSProperties }>> =
-  {
-    invoice: {
-      rgb: '74,96,238',
-      alpha: 0.34,
-      css: { width: '300px', height: '300px', insetInlineStart: '-90px', top: '-70px' },
-    },
-    quotation: {
-      rgb: '83,74,183',
-      alpha: 0.26,
-      css: { width: '260px', height: '260px', insetInlineEnd: '-80px', top: '200px' },
-    },
-    // The lower two are anchored to the BOTTOM, which is the difference
-    // between a wash and a green haze across the middle of a short page.
-    receipt: {
-      rgb: '15,110,86',
-      alpha: 0.16,
-      css: { width: '240px', height: '240px', insetInlineStart: '-60px', bottom: '120px' },
-    },
-    waybill: {
-      rgb: '186,117,23',
-      alpha: 0.15,
-      css: { width: '220px', height: '220px', insetInlineEnd: '-50px', bottom: '-60px' },
-    },
-  }
+const ORBS: Readonly<
+  Record<
+    DocumentType,
+    { rgb: string; alpha: number; drift: { x: string; y: string; seconds: number }; css: React.CSSProperties }
+  >
+> = {
+  invoice: {
+    rgb: '74,96,238',
+    alpha: 0.34,
+    drift: { x: '26px', y: '34px', seconds: 41 },
+    css: { width: '320px', height: '320px', insetInlineStart: '-86px', top: '12%' },
+  },
+  quotation: {
+    rgb: '83,74,183',
+    alpha: 0.26,
+    drift: { x: '-30px', y: '26px', seconds: 52 },
+    css: { width: '280px', height: '280px', insetInlineEnd: '-84px', top: '38%' },
+  },
+  // The lower two are anchored to the BOTTOM, which is the difference
+  // between a wash and a green haze across the middle of a short page.
+  receipt: {
+    rgb: '15,110,86',
+    alpha: 0.16,
+    drift: { x: '22px', y: '-28px', seconds: 34 },
+    css: { width: '250px', height: '250px', insetInlineStart: '-56px', bottom: '16%' },
+  },
+  waybill: {
+    rgb: '186,117,23',
+    alpha: 0.15,
+    drift: { x: '-24px', y: '-20px', seconds: 46 },
+    css: { width: '230px', height: '230px', insetInlineEnd: '-52px', bottom: '-40px' },
+  },
+}
 
 export function Orbs() {
   return (
@@ -80,11 +110,17 @@ export function Orbs() {
           <span
             key={type}
             className="orb"
-            style={{
-              ...orb.css,
-              // The gradient, not a flat fill — see the note above.
-              backgroundImage: `radial-gradient(circle, rgba(${orb.rgb},${orb.alpha}), transparent 70%)`,
-            }}
+            style={
+              {
+                ...orb.css,
+                // The gradient, not a flat fill — see the note above.
+                backgroundImage: `radial-gradient(circle, rgba(${orb.rgb},${orb.alpha}), transparent 70%)`,
+                // Read by the `orb-drift` keyframes; see `src/index.css`.
+                '--orb-x': orb.drift.x,
+                '--orb-y': orb.drift.y,
+                '--orb-seconds': `${orb.drift.seconds}s`,
+              } as React.CSSProperties
+            }
           />
         )
       })}

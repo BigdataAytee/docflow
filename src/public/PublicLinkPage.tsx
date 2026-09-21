@@ -146,7 +146,7 @@ export function PublicLinkPage({ kind, transport }: PublicLinkPageProps) {
       {view !== null && (
         <>
           <header className="mb-3 text-center">
-            <p className="text-xs uppercase tracking-wide opacity-70">
+            <p className="text-xs uppercase tracking-wide ">
               {format(s.from, { business: view.businessName })}
             </p>
           </header>

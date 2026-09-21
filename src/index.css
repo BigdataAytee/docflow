@@ -316,13 +316,45 @@
     --glass-image: linear-gradient(163deg, #ffffff 0%, #f4f7ff 55%, #eaf0ff 100%);
     --glass-border: rgb(255 255 255 / 0.72);
     --glass-blur: blur(20px) saturate(1.55);
-    --glass-shadow: 0 14px 30px -8px rgb(43 63 214 / 0.28), 0 3px 8px rgb(43 63 214 / 0.1),
-      inset 0 1px 0 #ffffff, inset 0 -1px 0 rgb(43 63 214 / 0.06);
+    /*
+     * GLOSSIER IN THE SHADOW AND THE LIT EDGE, never in the fill.
+     *
+     * A pane reads as glass because of what happens at its EDGES: a bright
+     * hairline catching light along the top, and a deep coloured shadow
+     * under it lifting it off the page. Both are outside the area any text
+     * sits on, so deepening them costs no contrast — which is the constraint
+     * that matters, because the obvious way to make a surface glossier is to
+     * make it more transparent, and that changes what every word on it is
+     * read against.
+     *
+     * Three layers now rather than two: a wide soft throw, a tight contact
+     * shadow, and a second bloom further out. Deeper blue in the throw — §F's
+     * shadows are the brand colour, not grey, which is what keeps the page
+     * feeling lit from one direction.
+     */
+    --glass-shadow: 0 22px 44px -12px rgb(43 63 214 / 0.34), 0 8px 18px -6px rgb(43 63 214 / 0.18),
+      0 2px 5px rgb(43 63 214 / 0.1), inset 0 1px 0 #ffffff,
+      inset 0 -1px 0 rgb(43 63 214 / 0.07);
     /* The flat paint the fallback drops to — same layout, cheaper paint. */
     --glass-flat: #fbfcff;
 
-    /* The gloss, over the top 38%, at .9 — the strongest value in the file. */
-    --sheen-image: linear-gradient(180deg, rgb(255 255 255 / 0.9), rgb(255 255 255 / 0));
+    /*
+     * THE GLOSS, over the top of a pane.
+     *
+     * Full white at the very top now, falling away faster — a highlight is
+     * brightest where the light hits and gone a third of the way down. The
+     * old single stop faded evenly and read as a wash rather than as a
+     * reflection.
+     *
+     * It makes the surface LIGHTER, never darker, so it cannot reduce the
+     * contrast of dark text on it.
+     */
+    --sheen-image: linear-gradient(
+      180deg,
+      rgb(255 255 255 / 1),
+      rgb(255 255 255 / 0.55) 42%,
+      rgb(255 255 255 / 0)
+    );
 
     /* A pill: the search field, and any chip-shaped pane. */
     --pill-image: linear-gradient(180deg, #ffffff, #f2f5fd);
@@ -418,12 +450,18 @@
   .dark {
     --glass-image: linear-gradient(163deg, #38426f 0%, #333d69 55%, #2e3761 100%);
     --glass-border: rgb(255 255 255 / 0.1);
-    --glass-shadow: 0 14px 30px -8px rgb(0 0 0 / 0.55), 0 3px 8px rgb(0 0 0 / 0.35),
-      inset 0 1px 0 rgb(255 255 255 / 0.08), inset 0 -1px 0 rgb(0 0 0 / 0.25);
+    --glass-shadow: 0 22px 44px -12px rgb(0 0 0 / 0.62), 0 8px 18px -6px rgb(0 0 0 / 0.42),
+      0 2px 5px rgb(0 0 0 / 0.3), inset 0 1px 0 rgb(255 255 255 / 0.14),
+      inset 0 -1px 0 rgb(0 0 0 / 0.3);
     --glass-flat: #333d69;
 
     /* A gloss is light. On a dark pane it is a hint, or it reads as a border. */
-    --sheen-image: linear-gradient(180deg, rgb(255 255 255 / 0.09), rgb(255 255 255 / 0));
+    --sheen-image: linear-gradient(
+      180deg,
+      rgb(255 255 255 / 0.16),
+      rgb(255 255 255 / 0.07) 42%,
+      rgb(255 255 255 / 0)
+    );
 
     --pill-image: linear-gradient(180deg, #3a4475, #333d69);
     --pill-border: rgb(255 255 255 / 0.12);
@@ -942,6 +980,44 @@
     position: absolute;
     border-radius: 50%;
     filter: blur(52px);
+    /*
+     * SLOWER THAN ANYTHING ELSE ON SCREEN, and that is the whole design.
+     *
+     * §F asks for ambient orbs; four gradients pinned in place are a texture
+     * rather than an atmosphere, and the point of glass is colour MOVING
+     * behind it. Each orb carries its own duration and offsets from
+     * `Orbs.tsx`, so they never fall into step — four things drifting
+     * together reads as an animation, four drifting independently reads as
+     * weather.
+     *
+     * `alternate` rather than a loop: a gradient that snaps back to its start
+     * every cycle is a flicker at the one moment nobody is watching for it.
+     * Amplitudes stay under a fifth of the 52px blur, so no edge ever
+     * appears; what changes is where the colour pools.
+     */
+    animation: orb-drift var(--orb-seconds, 44s) ease-in-out infinite alternate;
+    will-change: transform;
+  }
+
+  @keyframes orb-drift {
+    from {
+      transform: translate3d(0, 0, 0);
+    }
+    to {
+      transform: translate3d(var(--orb-x, 0), var(--orb-y, 0), 0);
+    }
+  }
+
+  /*
+   * §F, and the phone's own setting: movement is the first thing to go.
+   *
+   * The orbs STAY — they are colour, not motion, and removing them would
+   * take the glass with them. Only the drift stops.
+   */
+  @media (prefers-reduced-motion: reduce) {
+    .orb {
+      animation: none;
+    }
   }
 
   .no-glass .orbs {

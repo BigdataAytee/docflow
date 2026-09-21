@@ -222,7 +222,7 @@ export function CommandPalette({ open, onClose, onGo, index }: CommandPalettePro
                 }`}
               >
                 <span className="min-w-0 flex-1 truncate">{row.label}</span>
-                <span className="shrink-0 text-[11px] font-medium uppercase tracking-wide opacity-70">
+                <span className="shrink-0 text-[11px] font-medium uppercase tracking-wide ">
                   {row.group}
                 </span>
               </li>
