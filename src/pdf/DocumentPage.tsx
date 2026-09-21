@@ -467,15 +467,51 @@ export function DocumentPage({
                     value={`−${formatAmount(model.totals.wht.minor, currency)}`}
                   />
                 )}
+                {/*
+                  A BALANCE INVOICE'S STATEMENT TAIL (§K).
+
+                  The lines above are the ORIGINAL's goods, so they come to
+                  the ORIGINAL's total — and printing that as "Payable" would
+                  bill the whole job a second time, which is the misreading
+                  this whole document is shaped to prevent. So the payable row
+                  is replaced by three:
+
+                      Total billed ......... ₦145,000
+                      Less: paid on 21 Sep ...... −₦50,000
+                      Balance due .......... ₦95,000
+
+                  The customer sees what they bought, sees that part of it is
+                  already handled, and is asked only for the remainder.
+                */}
+                {model.balanceStatement !== null && (
+                  <div className="mt-[4px] border-t pt-[4px]" data-balance-statement>
+                    <Line
+                      label={model.balanceStatement.billedLabel}
+                      value={formatAmount(model.balanceStatement.billed.minor, currency)}
+                    />
+                    {model.balanceStatement.deductions.map((deduction, index) => (
+                      <Line
+                        key={`${deduction.label}-${index}`}
+                        label={deduction.label}
+                        value={`−${formatAmount(deduction.amount.minor, currency)}`}
+                      />
+                    ))}
+                  </div>
+                )}
                 <div className="mt-[4px] border-t-2 pt-[4px]" style={{ borderColor: ink }}>
                   <div
                     className="flex justify-between text-[19px] font-black"
                     data-total-row
                     style={{ color: ink }}
                   >
-                    <span>{model.totalsLabel ?? ''}</span>
+                    <span>
+                      {model.balanceStatement?.dueLabel ?? model.totalsLabel ?? ''}
+                    </span>
                     <span className="tabular-nums" data-total-figure>
-                      {formatAmount(model.totals.payable.minor, currency)}
+                      {formatAmount(
+                        (model.balanceStatement?.due ?? model.totals.payable).minor,
+                        currency,
+                      )}
                     </span>
                   </div>
                 </div>

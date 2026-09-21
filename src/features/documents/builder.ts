@@ -183,6 +183,18 @@ export interface DocumentDraft {
    * sum of the lines is never allowed to stand in for it.
    */
   readonly paidAmountMinor?: number
+  /**
+   * BALANCE INVOICES: the original's frozen total, and what has been paid off
+   * it (§K, Rule #5).
+   *
+   * Present together or not at all. They reach the page so it can print the
+   * statement tail — invoice total, each payment with its date, balance due —
+   * and so the figure asked for is the frozen total minus the deductions
+   * rather than the sum of the carried lines, which come to the ORIGINAL's
+   * total because they are the original's goods.
+   */
+  readonly billedTotalMinor?: number
+  readonly deductions?: readonly { readonly paidAt: string; readonly amountMinor: number }[]
   readonly signerName?: string
   readonly signerRole?: string
   readonly signedAt?: string

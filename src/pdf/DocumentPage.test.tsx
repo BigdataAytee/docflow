@@ -592,3 +592,65 @@ describe('Every design renders a COMPLETE document (§I)', () => {
     ).toBeNull()
   })
 })
+
+/**
+ * THE STATEMENT TAIL ON PAPER (§K).
+ *
+ * `compose.test.ts` proves the model carries the right numbers. This proves
+ * the page DRAWS them — the distinction that has cost this project a printed
+ * receipt with no evidence on it, a payment box that never showed its other
+ * methods, and a RECEIVED BY block that could not fill. A figure in a model
+ * nothing renders is a figure nobody sees.
+ */
+describe('A balance invoice prints its statement (§K)', () => {
+  const BILLED = 145_000_00
+  const PAID = 50_000_00
+
+  const balanceDoc: ComposableDocument = {
+    ...invoice,
+    billedTotal: { currency: 'NGN', minor: BILLED },
+    deductions: [{ paidAt: '2026-09-21', amount: { currency: 'NGN', minor: PAID } }],
+  }
+
+  it.each(TEMPLATES.map((t) => [t.id] as const))('%s draws the tail', (id) => {
+    cleanup()
+    const { container } = draw(balanceDoc, id, 20).render()
+    expect(
+      container.querySelector('[data-balance-statement]'),
+      `${id}: no statement tail`,
+    ).not.toBeNull()
+  })
+
+  /**
+   * THE FIGURE ASKED FOR IS THE REMAINDER.
+   *
+   * The carried lines are the original's goods, so the ordinary payable is
+   * the ORIGINAL's total. Printing that would bill the whole job twice — on
+   * the one document whose entire shape exists to say it is not doing that.
+   */
+  it('asks for the balance, not the original total', () => {
+    cleanup()
+    const { container } = draw(balanceDoc, 'classic', 20).render()
+    const total = container.querySelector('[data-total-figure]')?.textContent ?? ''
+    expect(total, 'the total row printed the original total').toContain('95,000')
+    expect(total, 'the total row billed the whole job again').not.toContain('145,000')
+  })
+
+  /** And the words: what was billed, what came off, what is left. */
+  it('names what was billed and what came off', () => {
+    cleanup()
+    const { container } = draw(balanceDoc, 'classic', 20).render()
+    const tail = container.querySelector('[data-balance-statement]')?.textContent ?? ''
+    expect(tail).toContain('Total billed')
+    expect(tail).toContain('145,000')
+    expect(tail, 'the deduction was not shown as coming off').toContain('−')
+    expect(tail).toContain('50,000')
+  })
+
+  /** An ordinary invoice grows no tail and keeps its payable. */
+  it('leaves every other document alone', () => {
+    cleanup()
+    const { container } = draw(invoice, 'classic', 20).render()
+    expect(container.querySelector('[data-balance-statement]')).toBeNull()
+  })
+})

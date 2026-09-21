@@ -25,6 +25,7 @@ import {
 } from '../domain/documents/types'
 import { type Money, money } from '../domain/money/money'
 import { type DocumentTotals, computeTotals, lineTotal } from '../domain/money/totals'
+import { balanceDue } from '../domain/payments/balanceStatement'
 import {
   type LocaleProfile,
   displayLabels,
@@ -91,6 +92,18 @@ export interface ComposableDocument {
    */
   readonly replaces?: { readonly reference: string; readonly revisionNumber?: number }
   readonly lineItems: readonly LineItem[]
+  /**
+   * BALANCE INVOICES: the original's frozen total, and what has been paid
+   * off it (§K, Rule #5).
+   *
+   * Present together or not at all. When they are present the page prints a
+   * statement tail — invoice total, each payment deducted with its date,
+   * balance due — and the figure asked for is `billedTotal` minus those
+   * deductions rather than the sum of the lines above, which come to the
+   * ORIGINAL's total because they are the original's goods.
+   */
+  readonly billedTotal?: Money
+  readonly deductions?: readonly { readonly paidAt: string; readonly amount: Money }[]
   readonly party: PartySnapshot
   /** Set at issue and never rewritten (§M). Null on a draft. */
   readonly frozenLabels: FrozenLabels | null
@@ -391,6 +404,28 @@ export interface PageModel {
    * under it says less than no heading (Rule #1).
    */
   readonly note: { readonly label: string; readonly body: string } | null
+  /**
+   * A BALANCE INVOICE'S STATEMENT TAIL (§K).
+   *
+   * Drawn under the ordinary subtotal and tax lines, in place of the payable
+   * row:
+   *
+   *     Total billed ......... ₦145,000
+   *     Less: paid on 21 Sep ...... −₦50,000
+   *     Balance due .......... ₦95,000
+   *
+   * `billed` is the ORIGINAL's frozen total, which is also what the carried
+   * lines above come to — they are the original's goods. `due` is that minus
+   * the deductions, and is the figure the document asks for. Null on every
+   * document that is not following up a part-paid invoice.
+   */
+  readonly balanceStatement: {
+    readonly billedLabel: string
+    readonly billed: Money
+    readonly deductions: readonly { readonly label: string; readonly amount: Money }[]
+    readonly dueLabel: string
+    readonly due: Money
+  } | null
 }
 
 export interface ComposeOptions {
@@ -432,6 +467,10 @@ export interface ComposeOptions {
     readonly withholding: string
     readonly payable: string
     readonly received: string
+    /** A balance invoice's three extra lines (§K). */
+    readonly totalBilled?: string
+    readonly lessPaidOn?: string
+    readonly balanceDue?: string
   }
   /**
    * Column headings, already in the active language.
@@ -486,6 +525,42 @@ export interface ComposeOptions {
 const asksForPayment = (type: DocumentType): boolean =>
   type === 'invoice' || type === 'quotation'
 
+/**
+ * The statement tail a balance invoice prints, or null (§K).
+ *
+ * THE FIGURE ASKED FOR IS THE FROZEN TOTAL MINUS THE PAYMENTS, never the sum
+ * of the lines above it — those are the ORIGINAL's goods and come to the
+ * ORIGINAL's total. A balance invoice that recomputed from them would ask for
+ * the whole job again, which is exactly the misreading this layout exists to
+ * prevent.
+ *
+ * Dates are printed through the same formatter as every other date on the
+ * page, so a document does not carry two date orders (§D).
+ */
+function buildBalanceStatement(
+  document: ComposableDocument,
+  options: ComposeOptions,
+  formatDay: (day: string) => string,
+): PageModel['balanceStatement'] {
+  const { billedTotal, deductions } = document
+  if (billedTotal === undefined || deductions === undefined) return null
+
+  const labels = options.totalsLabels
+  return {
+    billedLabel: labels?.totalBilled ?? 'Total billed',
+    billed: billedTotal,
+    deductions: deductions.map((deduction) => ({
+      label: (labels?.lessPaidOn ?? 'Less: paid on {date}').replace(
+        '{date}',
+        formatDay(deduction.paidAt),
+      ),
+      amount: deduction.amount,
+    })),
+    dueLabel: labels?.balanceDue ?? 'Balance due',
+    due: balanceDue(billedTotal, deductions),
+  }
+}
+
 export function composeDocument(
   document: ComposableDocument,
   options: ComposeOptions,
@@ -494,6 +569,10 @@ export function composeDocument(
   const labels = displayLabels(profile, document.type, document.frozenLabels)
   const terms = sharedTerms(profile)
   const showsMoney = carriesMoney(document.type)
+  /* Null on everything that is not following up a part-paid invoice (§K). */
+  const statement = buildBalanceStatement(document, options, (day) =>
+    formatDocumentDate(day, options.dateFormat),
+  )
 
   const columns: TableColumn[] = showsMoney
     ? [
@@ -642,15 +721,29 @@ export function composeDocument(
      * With the invoice's own goods on the page that accident breaks, and the
      * big figure at the top of a ₦95,000 receipt would read ₦190,000.
      */
+    balanceStatement: statement,
     headline:
       totals === null
         ? null
         : {
-            label: totalsLabelFor(document.type, terms, options.totalsLabels) ?? '',
+            /*
+             * A BALANCE INVOICE ASKS FOR THE REMAINDER, and says so at the
+             * top as well as at the bottom. Reading `totals.payable` here
+             * would print the ORIGINAL's total as the headline — the carried
+             * lines are the original's goods — so the big figure on a
+             * ₦95,000 follow-up would say ₦145,000, which is the whole
+             * misreading this document is shaped to prevent.
+             */
+            label:
+              statement === null
+                ? (totalsLabelFor(document.type, terms, options.totalsLabels) ?? '')
+                : statement.dueLabel,
             amount:
-              document.type === 'receipt' && document.paidAmount !== undefined
-                ? document.paidAmount
-                : totals.payable,
+              statement !== null
+                ? statement.due
+                : document.type === 'receipt' && document.paidAmount !== undefined
+                  ? document.paidAmount
+                  : totals.payable,
           },
     /*
      * ONLY WHERE THE DOCUMENT ASKS FOR MONEY.

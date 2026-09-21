@@ -968,6 +968,28 @@ export interface UiStrings {
     readonly payable: string
     /** A receipt states what arrived; it is not asking for anything (§H). */
     readonly received: string
+    /**
+     * A BALANCE INVOICE'S THREE EXTRA LINES (§K).
+     *
+     * It carries the original's goods, states what the original came to,
+     * deducts each payment with the day it arrived, and asks for what is
+     * left — so the customer sees a remainder rather than a second bill:
+     *
+     *     Total billed ......... ₦145,000
+     *     Less: paid on 21 Sep ...... −₦50,000
+     *     Balance due .......... ₦95,000
+     *
+     * `payable` is the wrong word on this document: nothing here is being
+     * charged that was not charged on the original.
+     *
+     * NO TYPE NAME IN ANY OF THEM. "Invoice total" was the obvious wording
+     * and the Rule #4 lint rule refused it, correctly — a business whose
+     * documents are called Bills would have read "Invoice total" on its own
+     * paper. "Total billed" says the same thing and belongs to no type.
+     */
+    readonly totalBilled: string
+    readonly lessPaidOn: string
+    readonly balanceDue: string
     /** "VAT 7.5%" — the rate beside the word, so no figure is unexplained. */
     readonly atRate: string
     /** Where the tax rates come from, said once rather than guessed at (§J). */
@@ -2096,6 +2118,9 @@ const EN: UiStrings = {
     withholding: 'Less withholding tax',
     payable: 'Payable',
     received: 'Received',
+    totalBilled: 'Total billed',
+    lessPaidOn: 'Less: paid on {date}',
+    balanceDue: 'Balance due',
     atRate: '{label} {rate}%',
     noteToCustomer: 'NOTE TO CUSTOMER',
     fromSettings: 'From Settings',

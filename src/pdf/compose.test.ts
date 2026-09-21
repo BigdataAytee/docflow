@@ -504,3 +504,87 @@ describe('Composition holds for every type', () => {
     }
   })
 })
+
+/**
+ * A BALANCE INVOICE READS AS A STATEMENT (§K, Rule #3, Rule #5).
+ *
+ * It carries the ORIGINAL's goods, so the lines above come to the ORIGINAL's
+ * total. Everything here exists to stop that total being the figure the
+ * customer is asked for.
+ */
+describe('The balance invoice states what was billed and what was paid (§K)', () => {
+  const BILLED = 145_000_00
+  const PAID = 50_000_00
+
+  const balance = (deductions: { paidAt: string; amountMinor: number }[]) =>
+    composeDocument(
+      {
+        ...doc('invoice'),
+        billedTotal: money('NGN', BILLED),
+        deductions: deductions.map((row) => ({
+          paidAt: row.paidAt,
+          amount: money('NGN', row.amountMinor),
+        })),
+      },
+      options(),
+    )
+
+  it('prints what was billed, what was paid, and what is left', () => {
+    const page = balance([{ paidAt: '2026-09-21', amountMinor: PAID }])
+    expect(page.balanceStatement?.billed.minor).toBe(BILLED)
+    expect(page.balanceStatement?.deductions).toHaveLength(1)
+    expect(page.balanceStatement?.deductions[0]?.amount.minor).toBe(PAID)
+    expect(page.balanceStatement?.due.minor).toBe(BILLED - PAID)
+  })
+
+  /**
+   * THE ONE THAT WOULD HAVE SHIPPED A SECOND BILL.
+   *
+   * The carried lines are the original's goods, so `totals.payable` is the
+   * ORIGINAL's total. The headline is the big figure at the top of the page,
+   * and reading the payable there would print ₦145,000 on a document asking
+   * for ₦95,000.
+   */
+  it('asks for the remainder at the top of the page, not the original total', () => {
+    const page = balance([{ paidAt: '2026-09-21', amountMinor: PAID }])
+    expect(page.headline?.amount.minor).toBe(BILLED - PAID)
+    expect(page.headline?.label).toBe(page.balanceStatement?.dueLabel)
+  })
+
+  /** Each instalment is its own line, so the statement reads as a history. */
+  it('deducts every instalment separately, with its date', () => {
+    const page = balance([
+      { paidAt: '2026-09-01', amountMinor: 10_000_00 },
+      { paidAt: '2026-09-08', amountMinor: 20_000_00 },
+      { paidAt: '2026-09-15', amountMinor: 30_000_00 },
+    ])
+    expect(page.balanceStatement?.deductions.map((row) => row.amount.minor)).toEqual([
+      10_000_00, 20_000_00, 30_000_00,
+    ])
+    expect(page.balanceStatement?.due.minor).toBe(BILLED - 60_000_00)
+    /* The dates are on the labels, through the page's own date formatter. */
+    for (const row of page.balanceStatement?.deductions ?? []) {
+      expect(row.label, 'a deduction did not say when the money arrived').toMatch(/\d/)
+    }
+  })
+
+  /** Rule #4: not one of the three words names a document type. */
+  it('names no document type in any of its words', () => {
+    const page = balance([{ paidAt: '2026-09-21', amountMinor: PAID }])
+    const words = [
+      page.balanceStatement?.billedLabel ?? '',
+      page.balanceStatement?.dueLabel ?? '',
+      ...(page.balanceStatement?.deductions ?? []).map((row) => row.label),
+    ].join(' ')
+    for (const type of ['Invoice', 'Quotation', 'Receipt', 'Waybill']) {
+      expect(words, `${type} leaked into a totals label`).not.toContain(type)
+    }
+  })
+
+  /** Every other document is unaffected: no tail, and the payable stands. */
+  it('leaves an ordinary invoice alone', () => {
+    const page = composeDocument(doc('invoice'), options())
+    expect(page.balanceStatement).toBeNull()
+    expect(page.headline?.amount.minor).toBe(page.totals?.payable.minor)
+  })
+})

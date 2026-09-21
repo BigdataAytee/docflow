@@ -20,7 +20,7 @@ import type { Money } from '../../domain/money/money'
 import type { IsoDay } from '../../domain/dates/calendar'
 import { type LocaleProfile, numberingPrefix } from '../../domain/locale/profile'
 import { type UiStrings, format } from '../../domain/locale/data/strings'
-import { percentToPpm, ppmToPercent } from '../../domain/money/money'
+import { money, percentToPpm, ppmToPercent } from '../../domain/money/money'
 import type { ComposableDocument, ComposeOptions } from '../../pdf/compose'
 import { DEFAULT_TEMPLATE, type TemplateId, templateById } from '../../pdf/templates'
 import type { DocumentDraft } from './builder'
@@ -116,6 +116,11 @@ export function draftOf(record: DocumentRecord): DocumentDraft {
      * the full amount for a part payment.
      */
     ...(record.type === 'receipt' ? { paidAmountMinor: record.totalMinor } : {}),
+    /* A balance invoice's statement tail, straight through (§K). */
+    ...(record.billedTotalMinor === undefined
+      ? {}
+      : { billedTotalMinor: record.billedTotalMinor }),
+    ...(record.deductions === undefined ? {} : { deductions: record.deductions }),
     /* The receipt's frozen balance, straight through to the page (Rule #5). */
     ...(record.balanceAfterMinor === undefined
       ? {}
@@ -281,6 +286,22 @@ export function composableOf(input: ComposableInput): ComposableDocument {
           ...(input.payment.method === undefined ? {} : { paidMethod: input.payment.method }),
         }
       : {}),
+    /*
+     * A BALANCE INVOICE'S STATEMENT TAIL (§K).
+     *
+     * Both or neither: the page draws the tail only when it has the frozen
+     * total AND the payments to take off it, because either alone would print
+     * a figure with nothing to explain it.
+     */
+    ...(draft.billedTotalMinor === undefined || draft.deductions === undefined
+      ? {}
+      : {
+          billedTotal: money(draft.currency, draft.billedTotalMinor),
+          deductions: draft.deductions.map((deduction) => ({
+            paidAt: deduction.paidAt,
+            amount: money(draft.currency, deduction.amountMinor),
+          })),
+        }),
     ...(draft.type === 'receipt' && input.againstReference !== undefined
       ? { againstReference: input.againstReference }
       : {}),
@@ -373,6 +394,10 @@ export function composeOptionsOf(input: ComposeOptionsInput): Omit<ComposeOption
       withholding: strings.totals.withholding,
       payable: strings.totals.payable,
       received: strings.totals.received,
+      /* A balance invoice's three extra lines (§K, Rule #4). */
+      totalBilled: strings.totals.totalBilled,
+      lessPaidOn: strings.totals.lessPaidOn,
+      balanceDue: strings.totals.balanceDue,
     },
     columnLabels: {
       description: strings.items.description,
