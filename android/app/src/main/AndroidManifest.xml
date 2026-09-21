@@ -92,4 +92,18 @@
     <!-- The optional app lock, default OFF (§Q Phase 4). -->
     <uses-permission android:name="android.permission.USE_BIOMETRIC" />
 
+    <!-- Dictating a document (§N). Refusable; typing remains, and the button
+         explains itself rather than failing when pressed. The recogniser is
+         the ON-DEVICE one: nothing recorded here reaches a network. -->
+    <uses-permission android:name="android.permission.RECORD_AUDIO" />
+
+    <!-- Asking the platform which speech services exist, so the app can tell
+         an unsupported phone that it is unsupported rather than guessing
+         (§N: "never relabelled 'needs internet'"). -->
+    <queries>
+        <intent>
+            <action android:name="android.speech.RecognitionService" />
+        </intent>
+    </queries>
+
 </manifest>

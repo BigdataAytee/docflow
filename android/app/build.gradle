@@ -56,6 +56,15 @@ repositories {
 
 dependencies {
     implementation fileTree(include: ['*.jar'], dir: 'libs')
+    /*
+     * ML Kit's Latin text recognition, BUNDLED rather than downloaded.
+     *
+     * The `text-recognition` artifact ships the model inside the app;
+     * the Play-services variant fetches it on first use, which is a network
+     * dependency on a feature whose whole promise is that it has none
+     * (v6 §N, Rule #2). Costs about 4MB and is worth every byte.
+     */
+    implementation "com.google.mlkit:text-recognition:16.0.1"
     implementation "androidx.appcompat:appcompat:$androidxAppCompatVersion"
     implementation "androidx.coordinatorlayout:coordinatorlayout:$androidxCoordinatorLayoutVersion"
     implementation "androidx.core:core-splashscreen:$coreSplashScreenVersion"
