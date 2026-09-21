@@ -4100,3 +4100,52 @@ short list of things only a person can do.
 - **Marks still on lettered badges**: MTN MoMo, M-Pesa, Wave, OPay, PalmPay.
 - **The six `[[PLACEHOLDER]]` legal facts** remain unanswered.
 - **`frame-ancestors` / HSTS**: one act by whoever owns the web host.
+
+## The visibility and legibility pass (2026-09-21)
+
+Full write-up, with every before-and-after figure: `docs/a11y/visibility-pass.md`.
+
+| Part | What | State |
+| --- | --- | --- |
+| A | WCAG 2.2 AA in both themes, measured on composited pixels | Done. 435 failures of 1,702 → none. |
+| B | Printed type across all sixteen designs and four types | Done. Nothing under 8pt; body 10.1pt; the payable 14.3pt bold. |
+| C | The Home document cards | Done. 86 → 104px tall, label 12 → 14px, count 9.5 → 12px. |
+| D | Guards, each mutation-proved | Done. Eleven mutations, eleven red guards. |
+| E | The report | Written. **Device walks outstanding.** |
+
+Three new sweeps, none in `npm run verify` — each needs a browser:
+`sweep:contrast`, `sweep:pdfsizes`, `sweep:homecards`.
+
+### Standing cautions from this pass
+
+- **The dark accent inks are calculated, not reviewed.** `--brand-ink` and
+  the four type inks were chosen to clear 4.5:1 against the palest surface
+  each appears on, and the sweep confirms they do. Nobody has looked at them
+  as a palette. They keep §F's hues and they are pale — a designer may want
+  them tuned, and tuning them is one line each in `src/index.css`.
+- **The hero bands changed direction.** `typeBand` now runs deep → accent →
+  light instead of the reverse, on five surfaces, because every band puts its
+  words in the corner the gradient used to START at. Same three stops, same
+  hue, but it is a visible change and it has not been seen on a phone.
+- **A long document now takes more pages.** `ROWS_PER_PAGE` fell 18 → 16,
+  because a 10pt row is taller than a 9pt one. Measured: 17 fits and 18 runs
+  Aria's header off the paper. An eighteen-line invoice that used to print on
+  one page now prints on two.
+- **`prefers-contrast: more` is implemented and unwalked.** It switches off
+  glass translucency and every text opacity in the app. The sweep asserts
+  nothing regresses and that more than forty things get at least a quarter
+  stronger, but no one has turned the setting on on a real phone and looked.
+- **The 200%-text case is guarded on Home only.** `sweep:homecards` measures
+  clipping at 200% for the four document cards. Nothing measures it for the
+  builder, the lists or Settings; `sweep:largetext` covers reflow, not
+  clipping.
+
+### Device walks waiting, from this pass
+
+8. Both themes at low screen brightness, on: Home, a list, the builder, a
+   document, and Settings.
+9. One PDF of each type — invoice, quotation, receipt, waybill — opened and
+   read on the phone, checking the totals block, the payment box and the
+   signature are all on the paper at the new sizes.
+10. The high-contrast setting turned on in Android's accessibility settings,
+    then Home and one document.
