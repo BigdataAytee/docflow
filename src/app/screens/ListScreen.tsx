@@ -69,10 +69,17 @@ export function ListScreen({ today = todayIso() }: { today?: string }) {
        */
       actionLabel: (kind) =>
         kind === 'record_payment' ? strings.newReceipt.recordPayment : strings.home.sign,
-      supersededLabel: ({ type: rowType, revisionNumber }) =>
-        rowType === 'quotation'
-          ? format(strings.revision.supersededBy, { number: String(revisionNumber) })
-          : strings.reissue.replacedBy,
+      /*
+       * NAMED, NOT JUST MARKED (§G).
+       *
+       * It read "Cancelled — a newer one replaces this", which is wrong
+       * twice over: the document was not cancelled, it was answered — and a
+       * row that does not say WHICH document took over leaves the owner
+       * hunting for it. Both types read the same way now, so nothing has to
+       * remember which one gets a number.
+       */
+      supersededLabel: ({ reference }) =>
+        format(strings.reissue.replacedBy, { reference }),
     })
   }, [type, documents, payments, customers, today, strings, company, profile, creditNotes])
 

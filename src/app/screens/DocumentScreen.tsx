@@ -106,6 +106,12 @@ import { lastShared, shareCount, shareEventFor } from '../../share/events'
 // attach until §Q Phase 4's native PDF writer, and the sheet says so.
 import { shareTextFor } from '../../share/text'
 import { deviceId } from '../device'
+import { buildReference } from '../../features/documents/reference'
+import { freezeLabels, numberingPrefix } from '../../domain/locale/profile'
+import { balanceDue } from '../../domain/payments/balanceStatement'
+import { planSettlement } from '../../features/payments/settleAndBill'
+import type { DocumentRecord } from '../../data/repositories'
+import type { DocumentType } from '../../domain/documents/types'
 import { offeredReference } from '../../features/documents/draftReference'
 import { displayStatus, totalOf } from '../derive'
 import { localDay } from '../../domain/dates/calendar'
@@ -158,6 +164,15 @@ export function DocumentScreen({ today = todayIso() }: { today?: string }) {
   const [converting, setConverting] = useState(false)
   const [convertProblem, setConvertProblem] = useState<string | null>(null)
   const [voiding, setVoiding] = useState(false)
+  /*
+   * WHAT A RECORDED PAYMENT JUST PRODUCED, so the confirmation can name both
+   * documents and let the owner open either (§K).
+   */
+  const [settled, setSettled] = useState<{
+    receiptId: string
+    balanceId: string | null
+  } | null>(null)
+  const [settlementProblem, setSettlementProblem] = useState<string | null>(null)
   const [billProblem, setBillProblem] = useState<string | null>(null)
   const [voidProblem, setVoidProblem] = useState<string | null>(null)
   const [signing, setSigning] = useState(false)
@@ -390,6 +405,142 @@ export function DocumentScreen({ today = todayIso() }: { today?: string }) {
     if (bar.left.minor <= 0 || bar.paid.minor <= 0) return null
     return bar.left
   })()
+
+  /**
+   * What a recorded payment produces, performed (§K, §V).
+   *
+   * `planSettlement` decides; this writes. Split that way because the
+   * decisions — settled exactly, a fifth instalment, an invoice already
+   * followed up — are the part worth testing without a store or a clock.
+   *
+   * EACH DOCUMENT IS CREATED THEN ISSUED THROUGH THE ORDINARY PATH.
+   * `issueDocument` is where the reference, the frozen labels and the total
+   * settle together (§M, Rule #5); a document issued by a shortcut beside it
+   * would be the one in the app whose numbering came from somewhere else.
+   *
+   * ISSUED, NOT LEFT AS DRAFTS. A draft asks for nothing — the balance
+   * invoice has to be live for `supersession.ts` to move the debt onto it,
+   * and a draft receipt is evidence nobody has been given. The owner asked
+   * for both to exist without another tap, and a document that exists but
+   * does not count would not be that.
+   */
+  /** One past the highest ISSUED reference of this type (§M). */
+  const sequenceFor = (type: DocumentType): number =>
+    nextSequence(
+      documents.filter((row) => row.type === type).map((row) => row.issuedReference),
+    )
+
+  const settleAndBill = async ({
+    input,
+    customerId,
+  }: {
+    input: { amount: ReturnType<typeof money>; method: string; reference?: string }
+    customerId: string
+  }): Promise<void> => {
+    setSettlementProblem(null)
+    const owedBefore = paidSoFar(record.id, total, payments, mineCredits).left
+
+    const recorded = await actions.recordPayment(
+      recordPayment({
+        // The repository mints the real id; this one only needs to be stable
+        // for the allocation it builds below.
+        id: `pending:${record.id}:${Date.now()}`,
+        customerId,
+        amount: input.amount,
+        paidAt: new Date().toISOString(),
+        method: input.method,
+        invoiceId: record.id,
+        invoiceTotal: total,
+        existingPayments: payments,
+        creditNotes: mineCredits,
+        ...(input.reference === undefined ? {} : { reference: input.reference }),
+      }),
+    )
+
+    if (company === null || record.type !== 'invoice') return
+
+    const plan = planSettlement({
+      invoice: record,
+      payment: recorded,
+      /*
+       * Every payment INCLUDING the one just recorded, as calendar days in
+       * the company's own calendar (§E) — a payment stores an instant and a
+       * document prints a date.
+       */
+      deductions: deductionsFrom(
+        allocationsAgainstInvoice(record.id, record.currency, [...payments, recorded]).map(
+          (allocation) => ({ ...allocation, paidAt: localDay(allocation.paidAt) }),
+        ),
+        record.currency,
+      ),
+      outstandingBefore: owedBefore,
+      documents,
+      today: localDay(new Date().toISOString()),
+      receiptDescription: format(strings.newReceipt.lineAgainst, {
+        label: typeInSentence(profile, 'invoice'),
+        reference: record.issuedReference ?? '',
+      }),
+    })
+
+    const issueNow = async (
+      fields: Parameters<typeof actions.createDraftWithKey>[0],
+      key: string,
+      type: DocumentType,
+      totalMinor: number,
+    ): Promise<DocumentRecord> => {
+      const created = await actions.createDraftWithKey(fields, key)
+      // Already issued by an earlier attempt: the key returned that one (§M).
+      if (created.status !== 'draft') return created
+      const issued = buildReference({
+        prefix: company.numberingPrefixes?.[type] ?? numberingPrefix(profile, type),
+        sequence: sequenceFor(type),
+        fromReservedBlock: false,
+        deviceId: deviceId(),
+      })
+      await actions.issue(created.id, {
+        reference: issued,
+        frozenLabels: freezeLabels(profile, type),
+        totalMinor,
+      })
+      return created
+    }
+
+    try {
+      const receipt = await issueNow(
+        plan.receipt.fields as Parameters<typeof actions.createDraftWithKey>[0],
+        plan.receipt.key,
+        'receipt',
+        recorded.amount.minor,
+      )
+      const balance =
+        plan.balance === null
+          ? null
+          : await issueNow(
+              plan.balance.fields as Parameters<typeof actions.createDraftWithKey>[0],
+              plan.balance.key,
+              'invoice',
+              balanceDue(
+                money(record.currency, plan.balance.fields.billedTotalMinor),
+                plan.balance.fields.deductions.map((row: { paidAt: string; amountMinor: number }) => ({
+                  paidAt: row.paidAt,
+                  amount: money(record.currency, row.amountMinor),
+                })),
+              ).minor,
+            )
+      setSettled({ receiptId: receipt.id, balanceId: balance?.id ?? null })
+    } catch (cause) {
+      /*
+       * THE MONEY LANDED. Whatever went wrong here, the payment is recorded
+       * and Outstanding is right — so this says what is missing rather than
+       * anything that reads like a failed payment.
+       */
+      setSettlementProblem(
+        format(strings.payments.billBalanceFailed, {
+          reason: cause instanceof Error ? cause.message : String(cause),
+        }),
+      )
+    }
+  }
 
   const billTheBalance = (): void => {
     if (billable === null) return
@@ -1081,12 +1232,11 @@ export function DocumentScreen({ today = todayIso() }: { today?: string }) {
             className="w-full rounded-2xl bg-status-warn-tint p-4 text-start text-sm text-status-warn"
             onClick={() => navigate(documentPath(newerRevision.id))}
           >
+            {/* NAMED, so nobody sends or pays from the wrong one (§G). */}
             <span className="font-semibold">
-              {record.type === 'quotation'
-                ? format(strings.revision.supersededBy, {
-                    number: String(revisionNumberOf(documents, newerRevision)),
-                  })
-                : strings.reissue.replacedBy}
+              {format(strings.reissue.replacedBy, {
+                reference: newerRevision.issuedReference ?? '',
+              })}
             </span>
             <span className="mt-0.5 block text-xs opacity-80">{strings.revision.openIt}</span>
           </button>
@@ -1646,6 +1796,52 @@ export function DocumentScreen({ today = todayIso() }: { today?: string }) {
               </p>
             )}
 
+            {/*
+              WHAT THE PAYMENT JUST MADE (§K, §V).
+
+              Two documents were created and issued without another tap, so
+              the owner is told which two and can open either. Without this
+              the app would quietly mint and number paperwork nobody saw —
+              and a receipt the customer is owed would sit unnoticed.
+            */}
+            {settled !== null && (
+              <div
+                className="glass space-y-2 rounded-2xl p-3.5"
+                role="status"
+                data-settlement
+              >
+                <p className="text-[12.5px] font-semibold">{strings.payments.settledMade}</p>
+                <button
+                  type="button"
+                  className="glass-pill min-h-tap w-full rounded-full px-4 text-[12.5px] font-semibold text-brand-ink"
+                  onClick={() => navigate(documentPath(settled.receiptId))}
+                >
+                  {format(strings.payments.settledReceipt, {
+                    reference:
+                      documents.find((row) => row.id === settled.receiptId)?.issuedReference ?? '',
+                  })}
+                </button>
+                {settled.balanceId !== null && (
+                  <button
+                    type="button"
+                    className="glass-pill min-h-tap w-full rounded-full px-4 text-[12.5px] font-semibold text-brand-ink"
+                    onClick={() => navigate(documentPath(settled.balanceId as string))}
+                  >
+                    {format(strings.payments.settledBalance, {
+                      reference:
+                        documents.find((row) => row.id === settled.balanceId)?.issuedReference ??
+                        '',
+                    })}
+                  </button>
+                )}
+              </div>
+            )}
+            {settlementProblem !== null && (
+              <p role="alert" className="text-[12px] leading-relaxed text-status-bad">
+                {settlementProblem}
+              </p>
+            )}
+
             <BuilderCard
               title={strings.payments.title}
               icon="cash"
@@ -1656,22 +1852,28 @@ export function DocumentScreen({ today = todayIso() }: { today?: string }) {
               prefill={prefillAmount(record.id, total, payments, mineCredits)}
               onRecord={(input) => {
                 if (customer === undefined) return
-                void actions.recordPayment(
-                  recordPayment({
-                    // The repository mints the real id; this one only needs to
-                    // be stable for the allocation it builds below.
-                    id: `pending:${record.id}:${Date.now()}`,
-                    customerId: customer.id,
-                    amount: input.amount,
-                    paidAt: new Date().toISOString(),
-                    method: input.method,
-                    invoiceId: record.id,
-                    invoiceTotal: total,
-                    existingPayments: payments,
-                    creditNotes: mineCredits,
-                    ...(input.reference === undefined ? {} : { reference: input.reference }),
-                  }),
-                )
+                /*
+                 * ONE ACT, TWO DOCUMENTS (§K, §V).
+                 *
+                 * The money lands, and the receipt and the balance invoice
+                 * follow it without another tap. It used to take three
+                 * gestures — record, then a button for the receipt, then a
+                 * third for the balance — and the last two were easy to
+                 * forget, so a customer who paid half got no evidence and no
+                 * bill for the rest.
+                 *
+                 * THE PAYMENT IS WRITTEN FIRST, always. The money is the fact
+                 * and the documents describe it: if the app dies between
+                 * them the ledger is still right, because Outstanding is
+                 * computed from payments and the original still carries the
+                 * debt while no live follow-up exists. Pressing again is
+                 * idempotent on both keys (§M). The other order would leave
+                 * a receipt for money nothing had recorded.
+                 */
+                void settleAndBill({
+                  input,
+                  customerId: customer.id,
+                })
               }}
               onReceipt={(payment) => {
                 // §G: "originals are never altered; links persist". The link

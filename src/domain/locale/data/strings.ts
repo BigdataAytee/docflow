@@ -634,6 +634,21 @@ export interface UiStrings {
     readonly billBalance: string
     readonly billBalanceLine: string
     readonly billBalanceFailed: string
+    /**
+     * WHAT A RECORDED PAYMENT JUST MADE (§K, §V).
+     *
+     * A part payment produces two documents without another tap, so the
+     * owner is told plainly which two and can open either — otherwise the
+     * app has quietly created and issued paperwork they never saw.
+     *
+     * NO TYPE WORD IN EITHER. "Invoice for the balance" would be wrong for
+     * a business whose documents are called Bills (Rule #4), and the
+     * sentence-case form read as a lowercase "invoice" starting a line.
+     * The heading above already says two documents were made.
+     */
+    readonly settledMade: string
+    readonly settledReceipt: string
+    readonly settledBalance: string
     readonly billBalanceWhy: Readonly<Record<string, string>>
     readonly billsBalanceOf: string
     readonly splitReceived: string
@@ -1692,6 +1707,9 @@ const EN: UiStrings = {
     billBalance: 'Invoice the balance',
     billBalanceLine: 'Balance of {reference}',
     billBalanceFailed: 'That could not be drawn up: {reason}',
+    settledMade: 'Payment saved. Two documents were made:',
+    settledReceipt: 'Receipt {reference}',
+    settledBalance: 'For the balance: {reference}',
     /*
      * The reasons, in words, keyed by the code the domain throws.
      *
@@ -2025,7 +2043,7 @@ const EN: UiStrings = {
     action: 'Cancel and draw a new one',
     explain: 'This one is cancelled and a fresh copy is drawn for the same money.',
     openInvoice: 'Open what it paid for',
-    replacedBy: 'Cancelled — a newer one replaces this',
+    replacedBy: 'Replaced by {reference}',
     replaces: 'Replaces {reference}',
     moneyStays: 'The money stays exactly as recorded. Nothing is received twice.',
     paymentReversed: 'That payment was reversed, so there is nothing left to acknowledge. Cancel this one on its own.',

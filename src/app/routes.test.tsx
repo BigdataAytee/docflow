@@ -3344,7 +3344,7 @@ describe('Duplicate as Rev 2 (§G, Rule #5, §M)', () => {
     expect(screen.queryByRole('button', { name: /Make Rev/ })).not.toBeInTheDocument()
     expect(screen.queryByRole('button', { name: 'Open it' })).not.toBeInTheDocument()
 
-    await user.click(await screen.findByRole('button', { name: /Replaced by Rev 2/ }))
+    await user.click(await screen.findByRole('button', { name: /Replaced by QUO-0014/ }))
 
     expect(within(await pageHeader()).getByText('QUO-0014')).toBeInTheDocument()
     expect(state.documents).toHaveLength(2)
@@ -3375,9 +3375,15 @@ describe('Duplicate as Rev 2 (§G, Rule #5, §M)', () => {
       })
     })
 
-    // The replaced offer says so, and the link goes forward.
-    expect(await screen.findByText('Replaced by Rev 2')).toBeInTheDocument()
-    await user.click(screen.getByText('Replaced by Rev 2'))
+    /*
+     * The replaced offer says so BY NAME, and the link goes forward.
+     *
+     * It used to read "Replaced by Rev 2" — jargon, and it did not say which
+     * document. A row that does not name the replacement leaves the owner
+     * hunting for it, and "Rev" is a word no first-time user has to learn.
+     */
+    expect(await screen.findByText('Replaced by QUO-0014')).toBeInTheDocument()
+    await user.click(screen.getByText('Replaced by QUO-0014'))
 
     // The replacement says what it replaces, and the link goes back.
     expect(await screen.findByText('Rev 2')).toBeInTheDocument()
@@ -3413,7 +3419,7 @@ describe('Duplicate as Rev 2 (§G, Rule #5, §M)', () => {
     expect(await screen.findByText('QUO-0009')).toBeInTheDocument()
     expect(screen.getByText('QUO-0014')).toBeInTheDocument()
     // Exactly one row is marked: the one that was replaced.
-    expect(screen.getAllByText('Replaced by Rev 2')).toHaveLength(1)
+    expect(screen.getAllByText('Replaced by QUO-0014')).toHaveLength(1)
   })
 
   it('makes Rev 3 from Rev 2, counting the chain', async () => {
@@ -3691,12 +3697,18 @@ describe('Void and reissue a receipt (§G, Rule #5, §V)', () => {
       })
     })
 
-    // A receipt chain is not numbered — §G's Rev 2 is a quotation idea, and
-    // numbering a reissue would say more than is true.
-    expect(await screen.findByText('Cancelled — a newer one replaces this')).toBeInTheDocument()
+    /*
+     * NAMED, AND NOT CALLED CANCELLED.
+     *
+     * It read "Cancelled — a newer one replaces this", which is wrong twice:
+     * the receipt was not cancelled, it was replaced — and the row did not
+     * say by what. Numbering stays out of it either way: a receipt chain is
+     * not a quotation's, and "Rev" is jargon on any of them.
+     */
+    expect(await screen.findByText('Replaced by REC-0004')).toBeInTheDocument()
     expect(screen.queryByText(/Rev \d/)).not.toBeInTheDocument()
 
-    await user.click(screen.getByText('Cancelled — a newer one replaces this'))
+    await user.click(screen.getByText('Replaced by REC-0004'))
     // The link BACK, not the line the page prints — the A4 preview says the
     // same words, and only one of the two can be followed.
     expect(
@@ -3733,7 +3745,7 @@ describe('Void and reissue a receipt (§G, Rule #5, §V)', () => {
 
     expect(await screen.findByText('REC-0003')).toBeInTheDocument()
     expect(screen.getByText('REC-0004')).toBeInTheDocument()
-    expect(screen.getAllByText('Cancelled — a newer one replaces this')).toHaveLength(1)
+    expect(screen.getAllByText(/^Replaced by /)).toHaveLength(1)
     expect(screen.queryByText(/Replaced by Rev/)).not.toBeInTheDocument()
   })
 

@@ -305,7 +305,12 @@ export interface ListRowOptions {
    * would say more than is true. The words live in the catalogue (§S); this
    * module holds none.
    */
-  readonly supersededLabel?: (input: { type: DocumentType; revisionNumber: number }) => string
+  readonly supersededLabel?: (input: {
+    type: DocumentType
+    revisionNumber: number
+    /** The document that took over, so the row can NAME it (§G). */
+    reference: string
+  }) => string
   /**
    * What the row's one action is CALLED, given what it does (§G, §D).
    *
@@ -341,6 +346,7 @@ export function listRows(
         : options.supersededLabel({
             type: document.type,
             revisionNumber: revisionNumberOf(documents, newer),
+            reference: newer.issuedReference ?? '',
           })
 
     return {
