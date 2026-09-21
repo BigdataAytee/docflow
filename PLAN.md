@@ -4030,3 +4030,24 @@ Added by Phase 1:
   brand asset rather than redrawn from a glyph set. Its guidelines page
   (`paystack.frontify.com`) should be checked in case the current mark has
   moved on from the one published on their earlier website.
+- **CAPTCHA is wired on the client and OFF until somebody enables it in the
+  Supabase dashboard.** `src/features/auth/captcha.ts` names the two moments a
+  challenge may appear — a deliberate sign-in and a deliberate sign-up, where
+  somebody is at a form waiting for an answer they asked for — and refuses
+  every other auth call by table rather than by everybody remembering. An
+  operation with no entry is refused, not allowed.
+
+  The three that must never be challenged, and why each would be a bug:
+  a **silent refresh** happens mid-invoice with no form on screen, so a
+  challenge there is an app that stops working for reasons the person cannot
+  see; **restoring a session** is how the app opens, offline, and Rule #2 says
+  every core journey passes in airplane mode while a CAPTCHA is a network
+  round trip by definition; and a **confirmation link** has already proved
+  intent.
+
+  **Needs a human:** turn on CAPTCHA protection in Supabase → Authentication →
+  Attack Protection, and provide the site key to whatever host supplies a
+  `CaptchaPort`. Until then `captchaToken` is undefined, both calls are byte
+  for byte what they were, and nothing about the app differs — which is what
+  makes this safe to ship ahead of the switch. The server enforces the token;
+  this is only the client's half.

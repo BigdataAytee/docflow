@@ -4,7 +4,7 @@
  * supabase/tests/hosted-gate.ts and run against the project.
  */
 
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 
 import {
   type AuthError,
@@ -176,5 +176,91 @@ describe('A refusal carries what the provider said (§P, §S)', () => {
       message: 'Email not confirmed',
     })
     expect(classifyAuthFailure(error).kind).toBe('email_unconfirmed')
+  })
+})
+
+/**
+ * The CAPTCHA token, and the calls that must never carry one (§R, Rule #2).
+ *
+ * The table of which moments may be challenged lives in
+ * `src/features/auth/captcha.ts` and is asserted there. These are the calls
+ * that read it — beside the client, because §C forbids a feature file
+ * importing one.
+ */
+describe('The calls that must stay clean (Rule #2, §M)', () => {
+  const clientWith = (calls: Record<string, unknown[]>) => ({
+    auth: {
+      signInWithPassword: vi.fn((arg: unknown) => {
+        calls['signInWithPassword']?.push(arg)
+        return Promise.resolve({ data: { session: null }, error: null })
+      }),
+      signUp: vi.fn((arg: unknown) => {
+        calls['signUp']?.push(arg)
+        return Promise.resolve({ data: { session: null }, error: null })
+      }),
+      refreshSession: vi.fn((arg: unknown) => {
+        calls['refreshSession']?.push(arg)
+        return Promise.resolve({ data: { session: null }, error: null })
+      }),
+      getSession: vi.fn(() => {
+        calls['getSession']?.push({})
+        return Promise.resolve({ data: { session: null }, error: null })
+      }),
+      onAuthStateChange: vi.fn(() => ({ data: { subscription: { unsubscribe: () => undefined } } })),
+      signOut: vi.fn(() => Promise.resolve({ error: null })),
+    },
+  })
+
+  /** A deliberate sign-in carries it. */
+  it('attaches the token to a sign-in', async () => {
+    const calls: Record<string, unknown[]> = { signInWithPassword: [] }
+    const auth = createAuthService(clientWith(calls) as never)
+
+    await auth.signInWithPassword('a@b.test', 'pw', 'tok_123')
+
+    expect(calls['signInWithPassword']?.[0]).toMatchObject({
+      options: { captchaToken: 'tok_123' },
+    })
+  })
+
+  /** And a sign-up, alongside the redirect rather than instead of it. */
+  it('attaches it to a sign-up without losing the redirect', async () => {
+    const calls: Record<string, unknown[]> = { signUp: [] }
+    const auth = createAuthService(clientWith(calls) as never)
+
+    await auth.signUpWithPassword('a@b.test', 'pw', 'https://app.test/confirm', 'tok_123')
+
+    expect(calls['signUp']?.[0]).toMatchObject({
+      options: { emailRedirectTo: 'https://app.test/confirm', captchaToken: 'tok_123' },
+    })
+  })
+
+  /** Neither option is sent when neither exists. */
+  it('sends no options at all when there is nothing to send', async () => {
+    const calls: Record<string, unknown[]> = { signUp: [] }
+    const auth = createAuthService(clientWith(calls) as never)
+
+    await auth.signUpWithPassword('a@b.test', 'pw')
+
+    expect(calls['signUp']?.[0]).not.toHaveProperty('options')
+  })
+
+  /**
+   * THE ONE THAT WOULD BREAK THE PRODUCT. A refresh happens while somebody
+   * is halfway through an invoice, and reading a stored session is how the
+   * app opens with no network at all. Neither may ever carry a challenge.
+   */
+  it('never puts a token anywhere near a refresh or a restore', async () => {
+    const calls: Record<string, unknown[]> = { refreshSession: [], getSession: [] }
+    const auth = createAuthService(clientWith(calls) as never)
+
+    await auth.currentState()
+
+    for (const call of [...(calls['refreshSession'] ?? []), ...(calls['getSession'] ?? [])]) {
+      expect(
+        JSON.stringify(call ?? {}),
+        'a silent call carried a captcha token',
+      ).not.toContain('captcha')
+    }
   })
 })

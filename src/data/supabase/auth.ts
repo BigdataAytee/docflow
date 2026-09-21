@@ -10,6 +10,7 @@
  *    encrypted account-scoped local store rather than wiping it.
  */
 
+import { captchaOptions } from '../../features/auth/captcha'
 import type { Session, SupabaseClient, User } from '@supabase/supabase-js'
 
 import {
@@ -40,11 +41,24 @@ export const mayDeleteLocalData = (_state: AuthState): false => false
 
 export interface AuthService {
   currentState(): Promise<AuthState>
-  signInWithPassword(email: string, password: string): Promise<AuthState>
+  /**
+   * A DELIBERATE sign-in. `captchaToken` is one of the two places a challenge
+   * is allowed (see `features/auth/captcha.ts`): somebody is at a form, they
+   * pressed a button, and they are waiting for an answer they asked for.
+   *
+   * Optional, and undefined until CAPTCHA protection is switched on in the
+   * Supabase dashboard — the call is then byte for byte what it was.
+   */
+  signInWithPassword(
+    email: string,
+    password: string,
+    captchaToken?: string,
+  ): Promise<AuthState>
   signUpWithPassword(
     email: string,
     password: string,
     emailRedirectTo?: string,
+    captchaToken?: string,
   ): Promise<AuthState>
   /** Exchanges the code on a returning confirmation/reset link for a session. */
   completeFromUrl(code: string): Promise<void>
@@ -188,13 +202,19 @@ export function createAuthService(
       return state.kind === 'signed_out' ? await fromStoredSession() : state
     },
 
-    async signInWithPassword(email, password) {
-      const { data, error } = await client.auth.signInWithPassword({ email, password })
+    async signInWithPassword(email, password, captchaToken) {
+      const { data, error } = await client.auth.signInWithPassword({
+        email,
+        password,
+        ...(captchaOptions('sign_in', captchaToken).captchaToken === undefined
+          ? {}
+          : { options: captchaOptions('sign_in', captchaToken) }),
+      })
       if (error !== null) throw providerRefusal(error)
       return toState(data.session)
     },
 
-    async signUpWithPassword(email, password, emailRedirectTo) {
+    async signUpWithPassword(email, password, emailRedirectTo, captchaToken) {
       /*
        * `emailRedirectTo` is the whole of the fix for a confirmation link
        * that opened a dev server. Without it GoTrue uses the project's Site
@@ -203,7 +223,19 @@ export function createAuthService(
       const { data, error } = await client.auth.signUp({
         email,
         password,
-        ...(emailRedirectTo === undefined ? {} : { options: { emailRedirectTo } }),
+        /*
+         * Both options travel together or neither does. GoTrue takes ONE
+         * `options` object, so building it in two places would mean the
+         * second quietly replacing the first — and the one that lost would
+         * be whichever was written second, silently.
+         */
+        ...(() => {
+          const options = {
+            ...(emailRedirectTo === undefined ? {} : { emailRedirectTo }),
+            ...captchaOptions('sign_up', captchaToken),
+          }
+          return Object.keys(options).length === 0 ? {} : { options }
+        })(),
       })
       if (error !== null) throw providerRefusal(error)
       return toState(data.session)
