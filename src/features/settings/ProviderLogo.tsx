@@ -68,7 +68,7 @@ export function ProviderLogo({ provider, name }: ProviderLogoProps) {
          * NOT A LETTER for the escape hatch. "Payment link" is not a company,
          * and a P in a circle would read as a brand this row does not have.
          */
-        <Icon name="credit-card" className="size-[18px] text-ink/45" aria-hidden />
+        <Icon name="credit-card" className="size-[18px] text-logo-tile-ink" aria-hidden />
       ) : (
         /*
          * THE PROVIDER'S FIRST LETTER, in a neutral grey.
@@ -78,7 +78,7 @@ export function ProviderLogo({ provider, name }: ProviderLogoProps) {
          * is worse than carrying none. This is a placeholder that looks like
          * a placeholder, at exactly the size of the ones that are not.
          */
-        <span aria-hidden className="text-sm font-semibold text-ink/45">
+        <span aria-hidden className="text-sm font-semibold text-logo-tile-ink">
           {[...name.trim()][0]?.toUpperCase() ?? '?'}
         </span>
       )}

@@ -334,3 +334,45 @@ describe('Paystack carries its own mark (§F)', () => {
     },
   )
 })
+
+/**
+ * A lettered badge stays legible in dark mode (§F).
+ *
+ * FOUND BY WALKING DARK MODE. The tile is deliberately fixed light so a
+ * brand glyph keeps its colour — and the LETTER on it used `text-ink`, which
+ * inverts. So Flutterwave's F and MTN MoMo's M became pale marks on a white
+ * circle and read as empty ones.
+ *
+ * A foreground on a background that does not move must not move either. The
+ * mark tests above could never have caught this: they assert what is drawn,
+ * and this was about what colour it was drawn in.
+ */
+describe('What sits on the fixed tile is fixed too (§F)', () => {
+  it('never colours the letter with a token that inverts', async () => {
+    const user = userEvent.setup()
+    list()
+    await user.click(screen.getByRole('button', { name: 'Use a different service' }))
+
+    for (const slot of slots()) {
+      if (slot.getAttribute('data-has-mark') === 'true') continue
+      const drawn = slot.querySelector('span[aria-hidden], svg')
+      expect(drawn, 'a badge with no mark drew nothing at all').not.toBeNull()
+      const classes = drawn?.getAttribute('class') ?? ''
+      expect(
+        classes,
+        `${slot.getAttribute('data-provider-logo')} letters with a theme token`,
+      ).not.toMatch(/text-ink/)
+      expect(classes).toContain('text-logo-tile-ink')
+    }
+  })
+
+  /** And there IS a lettered badge to check, or this asserts nothing. */
+  it('has badges without marks to be legible', async () => {
+    const user = userEvent.setup()
+    list()
+    await user.click(screen.getByRole('button', { name: 'Use a different service' }))
+
+    const lettered = slots().filter((slot) => slot.getAttribute('data-has-mark') === 'false')
+    expect(lettered.length, 'every provider has a mark — this test is vacuous').toBeGreaterThan(2)
+  })
+})

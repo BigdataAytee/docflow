@@ -27,6 +27,8 @@
     --surface: 255 255 255; /* §F: glass is translucent white */
     /* The tile a brand mark sits on. Light in BOTH themes — see the config. */
     --logo-tile: 255 255 255;
+    /* And what sits on it, which cannot invert either. */
+    --logo-tile-ink: 100 116 139;
     --ink: 29 36 82; /* #1d2452 — §F text-navy */
     --edge: 0 0 0; /* hairlines are black at low alpha in light */
 
@@ -91,8 +93,14 @@
      * disappears. Recolouring one to suit our background is modifying
      * somebody's trademark, which every set of brand guidelines forbids. So
      * the tile stays light and the mark stays true.
+     *
+     * Its FOREGROUND is fixed for the same reason, and that half was missed
+     * until dark mode was walked: the lettered badge used `text-ink`, which
+     * inverts, so a pale letter landed on a white circle and read as an
+     * empty one.
      */
     --logo-tile: 255 255 255;
+    --logo-tile-ink: 100 116 139;
 
     /*
      * Tints become dark washes of the SAME hue. Derived by keeping §F's hue

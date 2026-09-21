@@ -41,6 +41,16 @@ export default {
          * than as a literal somebody reached for.
          */
         'logo-tile': 'rgb(var(--logo-tile) / <alpha-value>)',
+        /**
+         * What sits ON the fixed tile (§F).
+         *
+         * FIXED FOR THE SAME REASON THE TILE IS, and found by walking dark
+         * mode: the lettered badge used `text-ink`, which inverts — so a
+         * pale letter landed on a white circle and Flutterwave's F and MTN
+         * MoMo's M were all but invisible. A foreground on a background that
+         * does not move must not move either.
+         */
+        'logo-tile-ink': 'rgb(var(--logo-tile-ink) / <alpha-value>)',
         // ACCENTS AND DEEPS ARE FIXED, in both themes.
         //
         // §F: "colours belong to the internal type and never change with the
