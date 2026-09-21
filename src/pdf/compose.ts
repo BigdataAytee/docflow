@@ -478,6 +478,14 @@ export interface ComposeOptions {
   }) => string
 }
 
+/**
+ * Whether this type ASKS for money, which is what payment terms are for.
+ *
+ * Not `carriesMoney`: a receipt carries an amount and asks for nothing.
+ */
+const asksForPayment = (type: DocumentType): boolean =>
+  type === 'invoice' || type === 'quotation'
+
 export function composeDocument(
   document: ComposableDocument,
   options: ComposeOptions,
@@ -645,7 +653,7 @@ export function composeDocument(
                 : totals.payable,
           },
     /*
-     * NOT ON A RECEIPT, which is the one type it contradicts.
+     * ONLY WHERE THE DOCUMENT ASKS FOR MONEY.
      *
      * The note is the owner's PAYMENT TERMS — "Payment is due within 14 days"
      * — printed on every document. A receipt is evidence that the money
@@ -656,13 +664,24 @@ export function composeDocument(
      * own comment: "never an instruction to pay again (§I)". The evidence
      * block obeyed it and the note block never knew about it.
      *
+     * AND NOT ON A DELIVERY, for a stronger version of the same reason, found
+     * by reading a printed waybill on the phone. §I drops every money column
+     * from a delivery and the page carries no amount anywhere — and then
+     * printed "Payment is due within 14 days" under the goods. An instruction
+     * to pay, on the one document that never says what to pay.
+     *
+     * So it is neither a list of exceptions nor `carriesMoney`, which a
+     * receipt passes: the note is the owner's PAYMENT TERMS, and terms belong
+     * on the documents that ASK. An invoice asks. A quotation asks, later.
+     * A receipt is the answer and a delivery is a different question.
+     *
      * The owner writes ONE note, in Settings, for all their documents. Asking
-     * them to write a second one that says nothing about payment, for the one
-     * type where the first is wrong, would be a new required field (Rule #1)
-     * to solve a problem the document type already answers.
+     * them to write a second one for each type where the first is wrong would
+     * be a new required field (Rule #1) to solve a problem the document type
+     * already answers.
      */
     note:
-      document.type === 'receipt' ||
+      !asksForPayment(document.type) ||
       options.note === undefined ||
       options.note.trim() === ''
         ? null

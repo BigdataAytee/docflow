@@ -14,6 +14,7 @@
  *    reference or a label on its own.
  */
 
+import { rememberStep, takeStep } from '../../features/documents/builderStep'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Navigate, useLocation, useNavigate, useParams } from 'react-router-dom'
 
@@ -1064,7 +1065,13 @@ export function BuilderScreen({ now = () => new Date().toISOString() }: { now?: 
   useEffect(() => {
     if (state !== null || record === undefined) return
     setState({
-      step: 0,
+      /*
+       * THE STEP SOMEBODY LEFT ON, if they went to the saved items and came
+       * back. That trip leaves this screen entirely — the catalogue is a
+       * Settings route — and remounting at zero returned them to Details
+       * from Items, past two steps they had already done.
+       */
+      step: clampStep(takeStep(record.id), stepKeysFor(draftOf(record)).length),
       draft: draftOf(record),
       dirty: false,
     })
@@ -1758,7 +1765,11 @@ export function BuilderScreen({ now = () => new Date().toISOString() }: { now?: 
         {...(signatureUrl === undefined ? {} : { signatureUrl })}
         paymentMethodCount={paymentContext.enabledPaymentMethodCount}
         currencies={CURRENCY_CODES}
-                onOpenCatalogue={() => navigate(settingsPath('items'))}
+                onOpenCatalogue={() => {
+                  // Remember where we are: this leaves the builder screen.
+                  rememberStep(id ?? '', state.step)
+                  navigate(settingsPath('items'))
+                }}
         /*
          * §G step 2's per-line photo, stored before it is referenced (§P).
          *

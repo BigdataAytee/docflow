@@ -219,8 +219,24 @@ describe('The payment box (§I, §J)', () => {
     expect(composeDocument(paid, options({ note: terms })).note).toBeNull()
   })
 
-  /** And every other type still prints it — this is one type's exception. */
-  it.each(['invoice', 'quotation', 'waybill'] as const)('still prints the note on a %s', (type) => {
+  /**
+   * AND OFF A DELIVERY, for a stronger version of the same reason.
+   *
+   * This test used to assert the OPPOSITE — a waybill was in the list of
+   * types that "still print the note" — and it passed every run while a
+   * printed delivery said "Payment is due within 14 days" under the goods.
+   * §I drops every money column from a delivery; the page carries no amount
+   * anywhere, and then instructed somebody to pay one. Found by reading a
+   * waybill on the phone, not here: the test asserted the shape it found
+   * rather than asking whether the shape was right.
+   */
+  it('keeps the payment-terms note off a delivery', () => {
+    const terms = 'Payment is due within 14 days.'
+    expect(composeDocument(doc('waybill'), options({ note: terms })).note).toBeNull()
+  })
+
+  /** The two that ASK for money still print it. That is what terms are for. */
+  it.each(['invoice', 'quotation'] as const)('still prints the note on a %s', (type) => {
     const terms = 'Payment is due within 14 days.'
     const page = composeDocument(doc(type), options({ note: terms }))
     expect(page.note?.body, `${type} lost its note`).toBe(terms)

@@ -11,11 +11,12 @@
  */
 
 import type { DocumentRecord, Customer, Payment } from '../data/repositories'
-import { type DocumentType, QUANTITY_SCALE } from '../domain/documents/types'
+import { type DocumentType, QUANTITY_SCALE, carriesMoney } from '../domain/documents/types'
 import { deriveInvoiceState, deriveQuotationState } from '../domain/documents/lifecycle'
 import { type CurrencyCode, type Money, money } from '../domain/money/money'
+import { computeTotals } from '../domain/money/totals'
 import { type CreditNote, invoiceOutstanding } from '../domain/payments/ledger'
-import { supersededBalanceIds } from '../domain/payments/supersession'
+import { replacedFollowUpIds, supersededBalanceIds } from '../domain/payments/supersession'
 import type { StatDocument } from '../features/home/stats'
 import type { AgeingDocument } from '../features/analytics/ageing'
 import type { SoldDocument } from '../features/analytics/topItems'
@@ -28,6 +29,41 @@ import { type RowActionKind, rowActionFor } from '../features/documents/rowActio
 export const totalOf = (document: DocumentRecord): Money =>
   money(document.currency, document.totalMinor)
 
+/**
+ * What a row should SHOW as this document's amount.
+ *
+ * THE STORED TOTAL IS ONLY TRUE ONCE ISSUED. `totalMinor` is what issuing
+ * computes and freezes (Rule #5), so on a draft it is zero — and the list
+ * printed that zero beside a draft holding ten items and most of a million
+ * naira. "Draft · ₦0.00" tells the owner the draft is worth nothing, which is
+ * the one thing it is not. Found by billing a balance on the phone and
+ * watching the follow-up land in the list at ₦0.00 while its own Totals step
+ * said ₦637,794.38.
+ *
+ * So a draft's figure is DERIVED from its lines, like every other derived
+ * state in the app (Rule #3, §E), and issued documents keep reading the
+ * frozen total — which is the whole point of freezing it.
+ *
+ * Returns null when there is nothing honest to show: a delivery carries no
+ * money at all (§V), and a draft whose lines carry no prices yet has no
+ * figure rather than a zero.
+ */
+export function shownTotalOf(document: DocumentRecord): Money | null {
+  if (!carriesMoney(document.type)) return null
+  if (document.status !== 'draft') return totalOf(document)
+
+  const priced = document.lineItems.some((line) => line.unitPriceMinor !== undefined)
+  if (!priced) return null
+
+  return computeTotals({
+    type: document.type,
+    currency: document.currency,
+    lines: document.lineItems,
+    ...(document.taxRatePpm === undefined ? {} : { taxRate: document.taxRatePpm }),
+    ...(document.whtRatePpm === undefined ? {} : { whtRate: document.whtRatePpm }),
+  }).payable
+}
+
 /*
  * WORKED OUT ONCE, FOR ALL THREE PROJECTIONS.
  *
@@ -36,7 +72,25 @@ export const totalOf = (document: DocumentRecord): Money =>
  * money. Computing it per projection would be three chances to disagree about
  * one number — which is the shape of the bug this exists to prevent.
  */
-const supersededIn = (documents: readonly DocumentRecord[]) => supersededBalanceIds(documents)
+const supersededIn = (documents: readonly DocumentRecord[]): ReadonlySet<string> => {
+  /*
+   * TWO WAYS TO STOP BEING THE DOCUMENT THAT ASKS, and both have to be here
+   * or the debt is counted twice:
+   *
+   *  · an ORIGINAL whose balance moved to a live follow-up;
+   *  · a FOLLOW-UP that a newer follow-up has replaced.
+   *
+   * The second arrives with instalments. Every part payment produces a new
+   * balance invoice, so paying in three leaves three follow-ups — and until
+   * this line, the two older ones each still contributed their own stale
+   * remainder to Home's Outstanding. That is the ₦190,000 bug
+   * `supersession.ts` was written to kill, coming back through a door the
+   * original fix did not cover.
+   */
+  const union = new Set(supersededBalanceIds(documents))
+  for (const id of replacedFollowUpIds(documents)) union.add(id)
+  return union
+}
 
 export const statDocuments = (documents: readonly DocumentRecord[]): StatDocument[] => {
   const superseded = supersededIn(documents)
@@ -301,7 +355,14 @@ export function listRows(
       // its own tells nobody which delivery this is.
       ...(document.type === 'waybill'
         ? { ...(goodsSummary(document) === null ? {} : { goodsSummary: goodsSummary(document)! }) }
-        : { amount: totalOf(document) }),
+        : /*
+           * DERIVED ON A DRAFT, frozen once issued — see `shownTotalOf`.
+           * Absent rather than zero when there is nothing honest to show.
+           */
+          (() => {
+            const shownTotal = shownTotalOf(document)
+            return shownTotal === null ? {} : { amount: shownTotal }
+          })()),
       ...(note === undefined ? {} : { note }),
       /*
        * THE ROW'S ONE ACTION, from the DERIVED status rather than the stored

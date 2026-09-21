@@ -16,7 +16,7 @@
  * up carrying, is the thing being asserted.
  */
 
-import { describe, expect, it } from 'vitest'
+import { beforeEach, describe, expect, it } from 'vitest'
 import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 
@@ -53,6 +53,24 @@ const seeded = (over?: (state: MemoryState) => void) => {
   over?.(state)
   return { state, repositories: createMemoryRepositories(state) }
 }
+
+/*
+ * A FRESH SESSION PER TEST.
+ *
+ * The builder remembers which step you were on across the one trip out of it
+ * — to the saved items and back — in `sessionStorage`, keyed by document id.
+ * Two tests here open the same `doc_draft`, and one of them walks to the
+ * saved items, so without this the NEXT test's builder opened on Items and
+ * could not find the reference card on Details. An order dependency that
+ * passes alone and fails in a suite.
+ */
+beforeEach(() => {
+  try {
+    globalThis.sessionStorage?.clear()
+  } catch {
+    // A runner without storage is a runner that remembers no step anyway.
+  }
+})
 
 const renderAt = (path: string, over?: (state: MemoryState) => void) => {
   const { state, repositories } = seeded(over)

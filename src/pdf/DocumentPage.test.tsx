@@ -570,12 +570,25 @@ describe('Every design renders a COMPLETE document (§I)', () => {
     }
   })
 
-  /** A delivery has no money, so no headline — and still everything else (§V). */
+  /**
+   * A delivery has no money, so no headline AND NO NOTE — and still
+   * everything else (§V).
+   *
+   * The note assertion used to be `not.toBeNull()`, and it passed on every
+   * design while a printed waybill said "Payment is due within 14 days"
+   * under the goods. §I drops every money column from a delivery: the page
+   * carries no amount anywhere and then instructed somebody to pay one.
+   * Found by reading a waybill on the phone — the test asserted the shape it
+   * found rather than asking whether the shape was right.
+   */
   it.each(TEMPLATES.map((t) => [t.id] as const))('%s gives a delivery no headline', (id) => {
     cleanup()
     const { container } = draw(delivery, id, 20, full).render()
     expect(container.querySelector('[data-headline]'), `${id}: a delivery grew a total`).toBeNull()
     expect(container.querySelector('[data-contact-strip]'), `${id}: no footer`).not.toBeNull()
-    expect(container.querySelector('[data-note-block]'), `${id}: no note`).not.toBeNull()
+    expect(
+      container.querySelector('[data-note-block]'),
+      `${id}: a delivery printed payment terms`,
+    ).toBeNull()
   })
 })

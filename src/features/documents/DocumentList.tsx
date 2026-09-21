@@ -287,7 +287,20 @@ export function DocumentList({
                       <StatusBadge status={row.status} label={row.statusLabel} />
                       {/* No amount on a delivery document, in any locale (§G). */}
                       {showsMoney && row.amount !== undefined && (
-                        <span className="ms-auto shrink-0 text-[12.5px] font-semibold tabular-nums">
+                        /*
+                          A DRAFT'S FIGURE IS QUIETER, and it is the same
+                          treatment its reference already gets two cells to
+                          the left. The number is real — it is computed from
+                          the lines — but nobody is being asked for it yet,
+                          and a column of identical-weight figures where some
+                          are owed and some are not is a column that has to be
+                          read twice.
+                        */
+                        <span
+                          className={`ms-auto shrink-0 text-[12.5px] tabular-nums ${
+                            row.provisional === true ? 'font-medium opacity-70' : 'font-semibold'
+                          }`}
+                        >
                           {formatMoney(row.amount)}
                         </span>
                       )}
