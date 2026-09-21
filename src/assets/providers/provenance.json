@@ -50,6 +50,16 @@
     "fetched": "2026-09-21"
   },
   {
+    "provider": "paystack",
+    "name": "Paystack",
+    "file": "paystack.png",
+    "variant": "light",
+    "brandHex": "#09A5DB",
+    "source": "Official Paystack brand asset \u2014 github.com/PaystackHQ/website-v1 images/brand/logo/mark.png (page text: \"Choose the ideal Paystack logo to display on your site or app\")",
+    "guidelines": "https://paystack.frontify.com/d/5HvMw0IF9blo/paystack-media-kit \u2014 confirm this is the current mark; the file comes from their earlier website",
+    "fetched": "2026-09-21"
+  },
+  {
     "provider": "pix",
     "name": "Pix",
     "file": "pix.svg",

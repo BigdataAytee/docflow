@@ -4014,3 +4014,19 @@ Added by Phase 1:
   launch, as §J requires for the bank-field sets. Being absent costs a trader
   one tap through "Use a different service"; being wrongly present costs them
   a number their customer cannot send to.
+- **Flutterwave's mark needs two downloads nobody here can make.** Their
+  press kit publishes icon-only files at
+  `flutterwave.com/brand/Logo pack/Icon_FullColor.svg` and
+  `Icon_MonochromeInverted.svg`. Save them as `flutterwave.svg` and
+  `flutterwave-dark.svg` in `src/assets/providers/`, import them in
+  `src/features/payments/logos.ts`, and record the provenance — the row picks
+  the mark up with nothing else changing. Flutterwave will be the **first
+  provider with a real dark variant**, which is what the `dark` field has
+  been waiting for: their rules say to use the supplied inverted version on
+  dark backgrounds, and forbid outlines, filters, stretching, recolouring,
+  and any suggestion that they sponsor or partner with the app.
+
+  Paystack's mark IS bundled, and is the only one taken from a provider's own
+  brand asset rather than redrawn from a glyph set. Its guidelines page
+  (`paystack.frontify.com`) should be checked in case the current mark has
+  moved on from the one published on their earlier website.

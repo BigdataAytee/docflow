@@ -300,3 +300,37 @@ describe('The tile stays light in dark mode (§F)', () => {
     }
   })
 })
+
+/**
+ * A mark from the provider's own brand page (§F, §J).
+ *
+ * Paystack's is the only entry not redrawn from a glyph set — it is their own
+ * file, from their own site. Asserted because the distinction is the whole
+ * basis on which any of these may be shown at all: a glyph somebody traced
+ * and a mark its owner published are different things to have on screen.
+ */
+describe('Paystack carries its own mark (§F)', () => {
+  it('is bundled, and says whose it is', () => {
+    const logo = PROVIDER_LOGOS['paystack_page']
+    expect(logo, 'Paystack fell back to a letter').toBeDefined()
+    expect(logo?.source, 'the mark is not attributed to Paystack').toMatch(/Paystack/i)
+    expect(logo?.guidelines, 'no guidelines page to re-check').toMatch(/^https:\/\//)
+  })
+
+  it('draws rather than lettering', () => {
+    expect(logoFor('paystack_page', 'light')).not.toBeNull()
+    expect(logoFor('paystack_page', 'dark')).not.toBeNull()
+  })
+
+  /**
+   * AND THE ONES STILL MISSING FALL BACK, which is the state PLAN.md
+   * records. Named individually so this test fails the day one is added
+   * without its provenance — a silent half-wiring is the thing to catch.
+   */
+  it.each(['flutterwave_page', 'mtn_momo', 'mpesa', 'wave', 'opay', 'palmpay'] as const)(
+    'leaves %s on its lettered badge until a file arrives',
+    (id) => {
+      expect(logoFor(id, 'light'), `${id} has a mark now — record its provenance`).toBeNull()
+    },
+  )
+})

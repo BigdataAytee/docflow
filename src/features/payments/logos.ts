@@ -47,6 +47,7 @@ import cashApp from '../../assets/providers/cashapp.svg'
 import monzo from '../../assets/providers/monzo.svg'
 import orange from '../../assets/providers/orange.svg'
 import paypal from '../../assets/providers/paypal.svg'
+import paystack from '../../assets/providers/paystack.png'
 import revolut from '../../assets/providers/revolut.svg'
 import square from '../../assets/providers/square.svg'
 import stripe from '../../assets/providers/stripe.svg'
@@ -85,13 +86,24 @@ const simpleIcons = (owner: string) =>
 /**
  * The marks that are bundled.
  *
- * Ten of the eighteen providers. Paystack, Flutterwave, MTN MoMo, M-Pesa,
- * Wave, OPay and PalmPay have no free source and keep the lettered fallback,
+ * Eleven of the eighteen. Flutterwave, MTN MoMo, M-Pesa, Wave, OPay and
+ * PalmPay have no bundled file yet and keep the lettered fallback,
  * which is the documented working state rather than a gap — drop a file in
  * `src/assets/providers`, import it, record its provenance, and the row picks
  * it up with nothing else changing.
  */
 export const PROVIDER_LOGOS: Partial<Record<ProviderId, ProviderLogo>> = {
+  paystack_page: {
+    light: paystack,
+    /*
+     * PAYSTACK'S OWN MARK, not a simple-icons glyph — the only entry here
+     * taken from the provider's own brand asset rather than redrawn.
+     */
+    variant: 'Paystack mark, full colour',
+    source: "Paystack's own brand asset (PaystackHQ/website-v1, images/brand/logo/mark.png)",
+    guidelines: 'https://paystack.frontify.com/d/5HvMw0IF9blo/paystack-media-kit',
+    fetched: LOGOS_FETCHED,
+  },
   paypal_me: {
     light: paypal,
     variant: 'PayPal monogram, brand blue',
