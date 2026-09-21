@@ -18,18 +18,43 @@
  * moment the draft is made, not a live link to it — a draft whose total moved
  * every time a payment landed would be a document that says something
  * different each time it is opened, and §M freezes a document at issue for
- * exactly that reason. If more money arrives before this one is issued, the
- * owner edits it like any other draft.
+ * exactly that reason. If more money arrives, a NEW balance invoice replaces
+ * this one rather than editing it (see `supersedesId`).
+ *
+ * IT READS AS A STATEMENT, NOT AS A SECOND BILL. This file used to emit ONE
+ * line — "Balance of INV-0002" at the outstanding amount — defended on the
+ * grounds that re-listing the original's items "would read as a second
+ * request for the whole job". The fear was right; hiding the goods was the
+ * wrong answer. The document carries the goods AND what has been paid:
+ *
+ *     Cement 50kg × 20 ........ ₦100,000
+ *     Labour 6 hrs .............. ₦45,000
+ *     Invoice total ........ ₦145,000
+ *     Less: paid on 21 Sep ...... −₦50,000
+ *     Balance due .......... ₦95,000
+ *
+ * so a customer recognises what they bought and can see, in one line, that
+ * part of it is already handled. The single-line version asked them to take
+ * ₦95,000 on trust.
+ *
+ * THE FROZEN TOTAL IS THE AUTHORITY. `billedTotalMinor` is the ORIGINAL's
+ * `totalMinor`, and the balance is that minus the deductions — never a
+ * recomputation from the carried lines. Re-pricing ten items and re-applying
+ * a tax rate would be a second computation of a number that already settled
+ * at issue (Rule #5), and the day the two disagree the customer is holding
+ * two documents that contradict each other.
  */
 
-import type { Money } from '../../domain/money/money'
-import { type DocumentType, type LineItem, quantity } from '../../domain/documents/types'
+import { money } from '../../domain/money/money'
+import { type Deduction, balanceDue, storedDeductions } from '../../domain/payments/balanceStatement'
+import type { DocumentType, LineItem } from '../../domain/documents/types'
 
 /** The record fields a follow-up invoice is created with (§M). */
 export interface BalanceInvoiceFields {
   readonly type: DocumentType
   readonly status: 'draft'
   readonly currency: string
+  /** The ORIGINAL's items, carried across so the customer sees the goods. */
   readonly lineItems: readonly LineItem[]
   /**
    * Zero, like every other draft. A total is what ISSUING computes and
@@ -41,6 +66,26 @@ export interface BalanceInvoiceFields {
   readonly issueDate: string
   readonly customerId?: string
   readonly billsBalanceOfId: string
+  /**
+   * THE ORIGINAL'S FROZEN TOTAL — the "Invoice total" line, and the figure
+   * the balance is computed from. Not recomputed from the lines above: see
+   * the note at the top of this file.
+   */
+  readonly billedTotalMinor: number
+  /** Every payment already received, in the order the money arrived. */
+  readonly deductions: readonly { readonly paidAt: string; readonly amountMinor: number }[]
+  /**
+   * The original's frozen rates, carried so the printed breakdown of the
+   * carried items matches the invoice total stated beneath them.
+   */
+  readonly taxRatePpm?: number
+  readonly whtRatePpm?: number
+  /**
+   * The balance invoice this one takes over from, when a further payment has
+   * arrived (§G, Rule #5). Only one balance invoice is ever live per
+   * original — see `supersession.ts`.
+   */
+  readonly supersedesId?: string
 }
 
 /**
@@ -96,13 +141,25 @@ export interface BillBalanceInput {
     readonly currency: string
     readonly customerId?: string
     readonly issuedReference?: string | null
+    /** Carried across so the customer sees the goods, not just a figure. */
+    readonly lineItems: readonly LineItem[]
+    /** Frozen at issue (Rule #5), and the authority for the balance. */
+    readonly totalMinor: number
+    readonly taxRatePpm?: number
+    readonly whtRatePpm?: number
   }
-  /** What is still owed RIGHT NOW, from the ledger. */
-  readonly outstanding: Money
+  /** Every payment received against the original, oldest first (§K). */
+  readonly deductions: readonly Deduction[]
   /** Today, in the document's own calendar (§E). */
   readonly today: string
-  /** "Balance of {reference}" — the line's description, already localised. */
-  readonly description: string
+  /**
+   * The live balance invoice this one takes over from, when there is one.
+   *
+   * Absent on the first follow-up. Present on every one after it, so a
+   * customer paying in five instalments ends with one live document rather
+   * than five each asking for a different remainder.
+   */
+  readonly replacesId?: string
 }
 
 /**
@@ -118,7 +175,9 @@ export interface BillBalanceInput {
  *    invoice for zero is a document with no purpose.
  */
 export function balanceInvoiceDraft(input: BillBalanceInput): BalanceInvoiceFields {
-  const { invoice, outstanding, today, description } = input
+  const { invoice, deductions, today } = input
+  const billed = money(invoice.currency, invoice.totalMinor)
+  const outstanding = balanceDue(billed, deductions)
 
   // Only the money-owing type has a balance to chase. A quotation has not
   // been billed yet and a delivery carries no money at all (§V).
@@ -129,10 +188,6 @@ export function balanceInvoiceDraft(input: BillBalanceInput): BalanceInvoiceFiel
   if (invoice.status === 'void') throw new BillBalanceError('voided')
   // Settled in full: no remainder, and a document for zero has no purpose.
   if (outstanding.minor <= 0) throw new BillBalanceError('nothing_owed')
-  // Money is never mixed across currencies (Rule #3).
-  if (outstanding.currency !== invoice.currency) {
-    throw new BillBalanceError('currency_mismatch')
-  }
 
   return {
     type: BILLABLE_TYPE,
@@ -142,27 +197,28 @@ export function balanceInvoiceDraft(input: BillBalanceInput): BalanceInvoiceFiel
     ...(invoice.customerId === undefined ? {} : { customerId: invoice.customerId }),
     issueDate: today,
     /*
-     * ONE LINE, at the exact outstanding amount, quantity one.
+     * THE ORIGINAL'S ITEMS, copied.
      *
-     * Not a copy of the original's items: those were already billed, and
-     * re-listing them would read as a second request for the whole job rather
-     * than for what is left of it. One line naming the invoice it follows is
-     * what a customer can reconcile against their own records.
+     * Fresh ids: these are lines on a new document, and reusing the
+     * original's would make two records claim one line — which matters the
+     * moment anything is keyed by line id, and costs nothing to avoid.
      *
-     * `taxable: false` because the tax was computed and charged on the
-     * original. Charging it again on the remainder would tax the same goods
-     * twice — the balance is a portion of a total that already includes it.
+     * The rates come across with them, so the printed breakdown of these
+     * lines adds up to the invoice total stated beneath it rather than to
+     * some other number. What the BALANCE is computed from is the frozen
+     * total, always: see the note at the top of this file.
      */
-    lineItems: [
-      {
-        id: `line_balance_${invoice.id}`,
-        description,
-        quantityMilli: quantity(1),
-        unitPriceMinor: outstanding.minor,
-        taxable: false,
-      },
-    ],
+    lineItems: invoice.lineItems.map((line, index) => ({
+      ...line,
+      id: `line_bal_${invoice.id}_${index}`,
+    })),
+    billedTotalMinor: invoice.totalMinor,
+    deductions: storedDeductions(deductions),
+    ...(invoice.taxRatePpm === undefined ? {} : { taxRatePpm: invoice.taxRatePpm }),
+    ...(invoice.whtRatePpm === undefined ? {} : { whtRatePpm: invoice.whtRatePpm }),
     /** Both documents name each other; see the note at the top of this file. */
     billsBalanceOfId: invoice.id,
+    /** And this one names the balance invoice it takes over from (§G). */
+    ...(input.replacesId === undefined ? {} : { supersedesId: input.replacesId }),
   }
 }

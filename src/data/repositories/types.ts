@@ -235,6 +235,31 @@ export interface DocumentRecord {
    */
   readonly billsBalanceOfId?: string
   /**
+   * BALANCE INVOICES: the original's total, frozen (§K, Rule #5).
+   *
+   * A balance invoice carries the ORIGINAL's items so the customer can see
+   * what they bought, states this figure as the invoice total, deducts every
+   * payment with its date, and asks for the remainder. The balance is this
+   * number minus those deductions — never a recomputation from the carried
+   * lines, because that total settled when the original was issued and the
+   * customer is already holding a document that says so.
+   *
+   * Absent on an ordinary invoice, which bills its own lines.
+   */
+  readonly billedTotalMinor?: number
+  /**
+   * BALANCE INVOICES: what has already been paid, one entry per payment.
+   *
+   * In the order the money arrived, with the calendar day it arrived on (§E)
+   * — never a stored instant, which would date a payment in UTC and put the
+   * last hours of a Lagos evening on tomorrow.
+   *
+   * Minor units, like every other amount in the app (Rule #3). Frozen at
+   * issue with everything else: a printed statement that gained a line each
+   * time it was reopened would be a document that changes after it is sent.
+   */
+  readonly deductions?: readonly { readonly paidAt: string; readonly amountMinor: number }[]
+  /**
    * RECEIPTS: what was still owed on the linked invoice after this payment.
    *
    * Minor units, FROZEN at issue like the reference and the labels (Rule #5).

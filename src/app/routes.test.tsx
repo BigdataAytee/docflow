@@ -324,9 +324,27 @@ describe('Invoice the balance (§G, §K)', () => {
     expect(follow?.status).toBe('draft')
     expect(follow?.customerId).toBe('cus_1')
 
-    // The amount the bar was showing: 145,000 − 50,000.
-    expect(follow?.lineItems).toHaveLength(1)
-    expect(follow?.lineItems[0]?.unitPriceMinor).toBe(95_000_00)
+    /*
+     * THE GOODS, AND WHAT HAS BEEN PAID — not one "balance" line.
+     *
+     * This used to assert a single line at 95,000: the balance, with nothing
+     * on the document saying what the 95,000 was for. A customer received a
+     * bill they could not reconcile against anything. It carries the
+     * original's items now, states the frozen invoice total, and deducts each
+     * payment with its date, so the balance is shown to be a remainder rather
+     * than asserted as one.
+     *
+     * The lines therefore come to the ORIGINAL's total, and the money owed is
+     * the frozen total minus the deductions — never a recomputation from
+     * these lines (§K, Rule #5).
+     */
+    expect(follow?.lineItems).toHaveLength(state.documents[0]?.lineItems.length ?? 0)
+    expect(follow?.billedTotalMinor).toBe(145_000_00)
+    /*
+     * The calendar DAY the money arrived, not the stored instant (§E).
+     * The fixture pays at 09:00Z on the 10th.
+     */
+    expect(follow?.deductions).toEqual([{ paidAt: '2026-09-10', amountMinor: 50_000_00 }])
 
     // Both ends name each other, so the pair never reads as two debts.
     expect(follow?.billsBalanceOfId).toBe('doc_inv')

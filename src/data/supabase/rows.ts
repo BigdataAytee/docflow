@@ -240,6 +240,12 @@ export function toDocument(row: Row): DocumentRecord {
     ...(row['payment_links'] === null || row['payment_links'] === undefined
       ? {}
       : { paymentLinks: json<SavedPaymentLink[]>(row['payment_links'], []) }),
+    /* A balance invoice's deductions — absent on every ordinary invoice. */
+    ...(row['deductions'] === null || row['deductions'] === undefined
+      ? {}
+      : {
+          deductions: json<{ paidAt: string; amountMinor: number }[]>(row['deductions'], []),
+        }),
     ...(row['tax_rate_ppm'] === null || row['tax_rate_ppm'] === undefined
       ? {}
       : { taxRatePpm: Number(row['tax_rate_ppm']) }),
@@ -265,6 +271,7 @@ export function toDocument(row: Row): DocumentRecord {
       signerRole: text(row['signer_role']),
       signerSignatureAssetId: text(row['signer_signature_asset_id']),
       billsBalanceOfId: text(row['bills_balance_of_id']),
+      billedTotalMinor: minor(row['billed_total_minor']),
       balanceAfterMinor: minor(row['balance_after_minor']),
       invoiceTotalMinor: minor(row['invoice_total_minor']),
       paidBeforeMinor: minor(row['paid_before_minor']),
@@ -299,6 +306,7 @@ export function fromDocument(patch: Partial<DocumentRecord>): Row {
     signer_role: patch.signerRole,
     signer_signature_asset_id: patch.signerSignatureAssetId,
     bills_balance_of_id: patch.billsBalanceOfId,
+    billed_total_minor: patch.billedTotalMinor,
     balance_after_minor: patch.balanceAfterMinor,
     invoice_total_minor: patch.invoiceTotalMinor,
     paid_before_minor: patch.paidBeforeMinor,
@@ -316,6 +324,13 @@ export function fromDocument(patch: Partial<DocumentRecord>): Row {
    */
   if ('referenceOverride' in patch) row['reference_override'] = patch.referenceOverride ?? null
   if ('paymentLinks' in patch) row['payment_links'] = patch.paymentLinks ?? null
+  /*
+   * `'deductions' in patch`, not `!== undefined`, for the same reason the two
+   * lines above use it: a conditional spread cannot tell "clear this" from
+   * "this patch does not mention it", so clearing would never reach the
+   * server.
+   */
+  if ('deductions' in patch) row['deductions'] = patch.deductions ?? null
   if (patch.taxRatePpm !== undefined) row['tax_rate_ppm'] = patch.taxRatePpm
   if (patch.whtRatePpm !== undefined) row['wht_rate_ppm'] = patch.whtRatePpm
   if (patch.frozenLabels !== undefined) row['frozen_labels'] = patch.frozenLabels

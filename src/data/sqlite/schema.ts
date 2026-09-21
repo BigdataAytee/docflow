@@ -39,7 +39,7 @@
  * it fails with "no such column". That is exactly what happened when the four
  * contact and reference columns were added and this still read 6.
  */
-export const SCHEMA_VERSION = 18
+export const SCHEMA_VERSION = 19
 
 /**
  * Applied in order, inside one transaction, by `migrate`.
@@ -457,6 +457,17 @@ export const MIGRATIONS: readonly string[] = [
   -- stored as. Only a document that added or switched one off carries a list.
   alter table companies add column payment_links text;
   alter table documents add column payment_links text;
+  `,
+
+  // 19 — a balance invoice states the original's frozen total and deducts
+  // every payment from it (§K). Both columns are NULL on every ordinary
+  // invoice; only a follow-up carries them. Stored rather than recomputed
+  // because they freeze at issue with everything else (Rule #5): a printed
+  // statement that gained a line each time it was reopened would be a
+  // document that changes after it has been sent.
+  `
+  alter table documents add column billed_total_minor integer;
+  alter table documents add column deductions text;
   `,
 ]
 

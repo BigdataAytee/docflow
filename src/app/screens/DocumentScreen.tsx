@@ -28,7 +28,8 @@ import {
   balanceInvoiceDraft,
   billBalanceKeyFor,
 } from '../../features/payments/billBalance'
-import { canBillBalance } from '../../domain/payments/supersession'
+import { deductionsFrom } from '../../domain/payments/balanceStatement'
+import { canBillBalance, liveFollowUpFor } from '../../domain/payments/supersession'
 import { nextSequence } from '../../features/documents/reference'
 import { PageHeader, SkeletonList, StatusBadge } from '../../ui'
 import { BuilderCard } from '../../features/documents/BuilderCard'
@@ -88,7 +89,7 @@ import {
   receiptRecordFor,
 } from '../../features/payments/receiptFlow'
 import { draftChase } from '../../features/payments/chase'
-import { invoiceOutstanding } from '../../domain/payments/ledger'
+import { allocationsAgainstInvoice, invoiceOutstanding } from '../../domain/payments/ledger'
 import { TYPE_PALETTE } from '../../ui/tokens'
 import { displayLabels, labelInSentence as typeInSentence } from '../../domain/locale/profile'
 import { formatMoney } from '../../features/customers/formatMoney'
@@ -397,11 +398,34 @@ export function DocumentScreen({ today = todayIso() }: { today?: string }) {
     try {
       next = balanceInvoiceDraft({
         invoice: record,
-        outstanding: billable,
+        /*
+         * EVERY payment against this invoice, with its date — the document
+         * prints them one line each, so the customer can see that this is a
+         * remainder rather than a second bill for the whole job.
+         */
+        deductions: deductionsFrom(
+          /*
+           * THE DAY THE MONEY ARRIVED, in the company's calendar (§E) — a
+           * payment stores an instant, and a document prints a date. Slicing
+           * the instant would date a payment in UTC, which west of Greenwich
+           * is tomorrow for the last hours of every evening.
+           */
+          allocationsAgainstInvoice(record.id, record.currency, payments).map((allocation) => ({
+            ...allocation,
+            paidAt: localDay(allocation.paidAt),
+          })),
+          record.currency,
+        ),
         today: localDay(new Date().toISOString()),
-        description: format(strings.payments.billBalanceLine, {
-          reference: record.issuedReference ?? '',
-        }),
+        /*
+         * The live balance invoice this one takes over from, if any. The
+         * manual action is gated on there being none (see `billable` above),
+         * so this is undefined here — it is the automatic path on recording a
+         * part payment that replaces.
+         */
+        ...(liveFollowUpFor(record.id, documents) === undefined
+          ? {}
+          : { replacesId: liveFollowUpFor(record.id, documents)!.id }),
       })
     } catch (cause) {
       // The domain hands back a CODE; the words are the catalogue's (Rule #4).

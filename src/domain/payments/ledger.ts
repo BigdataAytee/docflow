@@ -149,6 +149,37 @@ export function paidAgainstInvoice(
 }
 
 /**
+ * Every effective allocation against one invoice, with the day it arrived.
+ *
+ * `paidAgainstInvoice` sums them; a balance invoice has to PRINT them, one
+ * line each with its date, so a customer can see the history rather than a
+ * single netted figure. The date lives on the payment and the amount on the
+ * allocation, so this is the one place the two are put back together.
+ *
+ * Reversals are already gone: `effectivePayments` drops a payment and its
+ * reversal as a pair, so a reversed instalment never prints as a deduction
+ * that was later undone (§K).
+ */
+export function allocationsAgainstInvoice(
+  invoiceId: string,
+  currency: CurrencyCode,
+  payments: readonly Payment[],
+): { readonly id: string; readonly paidAt: string; readonly amount: Money }[] {
+  return effectivePayments(payments).flatMap((payment) =>
+    payment.allocations
+      .filter(
+        (allocation) =>
+          allocation.invoiceId === invoiceId && allocation.amount.currency === currency,
+      )
+      .map((allocation) => ({
+        id: allocation.id,
+        paidAt: payment.paidAt,
+        amount: allocation.amount,
+      })),
+  )
+}
+
+/**
  * What is still owed on an issued invoice: total, less effective allocations,
  * less credit notes. Computed at read time, never stored as truth (§C).
  */
