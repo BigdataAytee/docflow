@@ -125,13 +125,36 @@ export function PaymentLinkForm({
       .catch(() => setClipboardRefused(true))
   }
 
-  const save = () => {
-    if (typed.trim() === '') return onRemove()
+  /**
+   * Stores what is in the form. Does NOT close it.
+   *
+   * FOUND ON THE PHONE, and it made the second field unreachable. `onBlur`
+   * called a save that also closed — so on a mobile-money row, tapping the
+   * "Name on the account" box blurred the number, which saved, which shut the
+   * form before the tap landed. The wallet stored its number, never its name,
+   * and there was no way to get at the field from the interface at all.
+   *
+   * Closing is what the button is for. Leaving a field is only ever a reason
+   * to keep what is in it.
+   */
+  const commit = (): boolean => {
+    if (typed.trim() === '') {
+      onRemove()
+      return true
+    }
     const outcome = normaliseProviderLink(providerId, typed)
-    if (outcome.value === undefined) return setProblem(outcome.problem)
+    if (outcome.value === undefined) {
+      setProblem(outcome.problem)
+      return false
+    }
     setProblem(null)
     onSave(outcome.value, isWallet ? walletName.trim() : undefined)
-    onClose()
+    return true
+  }
+
+  /** The explicit way out: store it, then go. */
+  const saveAndClose = () => {
+    if (commit()) onClose()
   }
 
   return (
@@ -165,7 +188,11 @@ export function PaymentLinkForm({
               setTyped(event.target.value)
               setProblem(null)
             }}
-            onBlur={save}
+            /*
+              KEEPS, NEVER CLOSES. Leaving a field is a reason to store what
+              is in it and nothing more — see `commit`.
+            */
+            onBlur={() => commit()}
             /*
               "Paystack link", not "Paystack": the On/Off chip on the row
               above is named for the provider, and two controls with one name
@@ -274,7 +301,7 @@ export function PaymentLinkForm({
       <div className="flex gap-2">
         <button
           type="button"
-          onClick={save}
+          onClick={saveAndClose}
           className="raised tap-scale min-h-tap flex-1 rounded-xl bg-gradient-to-b from-brand-light to-brand px-4 text-sm font-semibold text-white"
         >
           {strings.settings.saveAccount}

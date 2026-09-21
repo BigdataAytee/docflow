@@ -313,3 +313,71 @@ describe('The header counts everything switched on (§J)', () => {
     expect(screen.getByText('None switched on yet')).toBeInTheDocument()
   })
 })
+
+/**
+ * The second field has to be reachable (§J, §K).
+ *
+ * FOUND ON THE PHONE. `onBlur` called a save that also CLOSED the form — so
+ * on a mobile-money row, tapping "Name on the account" blurred the number,
+ * which saved, which shut the form before the tap landed. The wallet stored
+ * its number and never its name, and there was no way to reach the field
+ * from the interface at all.
+ *
+ * Every jsdom test missed it because they all filled one field and pressed
+ * the button. Nobody moved between two.
+ */
+describe('Leaving a field keeps it, and does not close the form (§K)', () => {
+  const wallet = () => {
+    const onPaymentLinks = vi.fn()
+    screenWith({ region: 'NG', enabledMethodIds: [], paymentLinks: [], onPaymentLinks })
+    return onPaymentLinks
+  }
+
+  it('lets somebody move from the number to the name', async () => {
+    const user = userEvent.setup()
+    const onPaymentLinks = wallet()
+
+    await user.click(screen.getByRole('button', { name: /^Airtel Money\./ }))
+    await user.type(screen.getByLabelText('Airtel Money number'), '0803 456 7890')
+
+    // The tap that used to shut the form.
+    await user.click(screen.getByLabelText('Name on the account'))
+    expect(
+      screen.getByLabelText('Name on the account'),
+      'the form closed before the second field could be reached',
+    ).toBeInTheDocument()
+
+    await user.type(screen.getByLabelText('Name on the account'), 'Sola Ventures')
+    await user.click(screen.getByRole('button', { name: 'Save and close' }))
+
+    expect(onPaymentLinks).toHaveBeenLastCalledWith([
+      { provider: 'airtel_money', value: '0803 456 7890', accountName: 'Sola Ventures' },
+    ])
+  })
+
+  /** And the form only shuts when somebody says so. */
+  it('stays open when a field is left', async () => {
+    const user = userEvent.setup()
+    wallet()
+
+    await user.click(screen.getByRole('button', { name: /^Airtel Money\./ }))
+    await user.type(screen.getByLabelText('Airtel Money number'), '0803 456 7890')
+    await user.tab()
+
+    expect(screen.getByRole('button', { name: 'Save and close' })).toBeInTheDocument()
+  })
+
+  /** A link row has one field, and still closes on the button alone. */
+  it('closes a link row only on the button', async () => {
+    const user = userEvent.setup()
+    wallet()
+
+    await user.click(screen.getByRole('button', { name: /^Paystack\./ }))
+    await user.type(screen.getByLabelText('Paystack link'), 'paystack.com/pay/x')
+    await user.tab()
+    expect(screen.getByLabelText('Paystack link')).toBeInTheDocument()
+
+    await user.click(screen.getByRole('button', { name: 'Save and close' }))
+    expect(screen.queryByLabelText('Paystack link')).toBeNull()
+  })
+})
