@@ -4051,3 +4051,52 @@ Added by Phase 1:
   for byte what they were, and nothing about the app differs — which is what
   makes this safe to ship ahead of the switch. The server enforces the token;
   this is only the client's half.
+
+---
+
+## Where the eleven-item run left things (2026-09-21)
+
+Every code item is built, guarded and mutation-proved. What remains is
+**device walks** — held back deliberately, to be done in one sitting — and a
+short list of things only a person can do.
+
+| # | Item | State |
+| --- | --- | --- |
+| 1 | Invoice the balance (option A) | Done. `supersession.ts` holds the total at all six stages: issued, part paid, follow-up drafted, issued, settled, cancelled. One live follow-up at a time; cancelling returns the balance. |
+| 2 | Quotation → They've paid → invoice + receipt | Done, both doors, one implementation. |
+| 3 | Path B totals step | Done. Computed figures above, the stated one below. |
+| 4 | Aurora / Ledger / Prism / Aria + design strip names | Code done; the strip shows §H's names. **Walk outstanding.** |
+| 5 | Waybill UNIT column, signature landing | Done. Dropped from table, Goods step and row summary together. |
+| 6 | Unified draft reference | Done, across six surfaces. |
+| 7 | Per-item photos | Done. Invoices, quotations, waybills; never receipts. |
+| 8 | Settings save confirmation | Done. Per-field tick driven by the promise settling. |
+| 9 | Visible row actions | Done. Never writes — the row navigates and the status moves where the document is. |
+| 10 | Payment-method rows, Invoice Fly layout | Done. 40px badge, subtitle, state, chevron, grouped. Eleven marks bundled. |
+| 11 | CAPTCHA | Client half done and inert. **Needs the dashboard switch.** |
+| — | Mobile money declared | Done. Seven operators, phone number + account name. |
+
+### Device walks waiting
+
+1. Aurora, Ledger, Prism and Aria rendering, and the design strip's names.
+2. The mobile-money rows: grouping, the two-field form, the printed line.
+3. Row actions: "Record a payment" on an unpaid invoice row, "Sign" on an
+   undelivered waybill, and the first-run hint appearing once.
+4. The payment-method list with Paystack's real mark and the lettered badges
+   beside it, in dark mode as well as light.
+5. Item 1 end to end: bill a balance, check Home's Outstanding and the
+   customer balance at each stage, cancel the follow-up, check them again.
+6. Path B: Details → Items → Totals → Design → Review, with a short payment.
+7. The photo surviving a trip to Saved items.
+
+### Needs a person
+
+- **Supabase → Authentication → Attack Protection**: enable CAPTCHA, and
+  supply the site key to whatever provides the `CaptchaPort`. Nothing in the
+  app changes until this is done.
+- **Flutterwave's mark**: two files from their press kit
+  (`Icon_FullColor.svg`, `Icon_MonochromeInverted.svg`) into
+  `src/assets/providers/`. They will be the first provider with a real dark
+  variant.
+- **Marks still on lettered badges**: MTN MoMo, M-Pesa, Wave, OPay, PalmPay.
+- **The six `[[PLACEHOLDER]]` legal facts** remain unanswered.
+- **`frame-ancestors` / HSTS**: one act by whoever owns the web host.
