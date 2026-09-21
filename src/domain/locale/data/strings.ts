@@ -396,6 +396,8 @@ export interface UiStrings {
     readonly thisPrints: string
     readonly useAnother: string
     readonly hideAnother: string
+    readonly otherServices: string
+    readonly printOnInvoices: string
     readonly notInCountry: string
     readonly linkNotThisProvider: string
     readonly linkNoHandle: string
@@ -1461,6 +1463,8 @@ const EN: UiStrings = {
     thisPrints: 'This prints on your invoice as:',
     useAnother: 'Use a different service',
     hideAnother: 'Hide the other services',
+    otherServices: 'Other services',
+    printOnInvoices: 'Show this on my invoices',
     notInCountry: 'This may not be able to receive money in {country}.',
     linkNotThisProvider: 'That does not look like a {provider} link.',
     linkNoHandle: 'Add your name or page after {prefix}',

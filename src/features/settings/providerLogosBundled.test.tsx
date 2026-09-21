@@ -30,9 +30,9 @@ const pixel = () =>
 const darkPixel = () =>
   'data:image/gif;base64,R0lGODlhAQABAIABAAAAAP///yH5BAEAAAEALAAAAAABAAEAAAICTAEAOw=='
 
-vi.mock('../../domain/payments/logos', async () => {
-  const actual = await vi.importActual<typeof import('../../domain/payments/logos')>(
-    '../../domain/payments/logos',
+vi.mock('../payments/logos', async () => {
+  const actual = await vi.importActual<typeof import('../payments/logos')>(
+    '../payments/logos',
   )
   const bundled = {
     // One with both variants, one with only a light mark.
@@ -65,7 +65,7 @@ vi.mock('../../domain/payments/logos', async () => {
 import { CompanyProvider } from '../../app/context'
 import { createMemoryRepositories, emptyState } from '../../data/repositories'
 import { PaymentLinkSection } from './PaymentLinkSection'
-import { logoFor } from '../../domain/payments/logos'
+import { logoFor } from '../payments/logos'
 
 const openAll = async () => {
   render(
@@ -116,8 +116,8 @@ describe('A bundled mark actually draws (§F)', () => {
   it('draws both at the same size', async () => {
     await openAll()
 
-    expect(slotFor('paystack_page').className).toContain('size-9')
-    expect(slotFor('flutterwave_page').className).toContain('size-9')
+    expect(slotFor('paystack_page').className).toContain('size-10')
+    expect(slotFor('flutterwave_page').className).toContain('size-10')
     expect(slotFor('paystack_page').querySelector('img')?.className).toContain('size-[22px]')
   })
 

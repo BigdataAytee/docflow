@@ -260,14 +260,16 @@ describe('A switched-on link reads back as on (§J)', () => {
     })
 
     expect(
-      screen.getByRole('button', { name: 'Paystack' }),
-      'the chip asked a list that cannot contain a link provider',
-    ).toHaveTextContent('On')
+      screen.getByRole('button', { name: /^Paystack\./ }).getAttribute('aria-label'),
+      'the row asked a list that cannot contain a link provider',
+    ).toContain('On')
   })
 
   it('shows Off for one it has not', () => {
     screenWith({ paymentLinks: [LINK], enabledMethodIds: [], onPaymentLinks: vi.fn() })
-    expect(screen.getByRole('button', { name: 'Paystack' })).toHaveTextContent('Off')
+    expect(
+      screen.getByRole('button', { name: /^Paystack\./ }).getAttribute('aria-label'),
+    ).toContain('Off')
   })
 
   /** And the methods above it are unaffected by any of this. */
@@ -280,7 +282,9 @@ describe('A switched-on link reads back as on (§J)', () => {
     })
 
     expect(screen.getByRole('button', { name: 'Bank transfer' })).toHaveTextContent('On')
-    expect(screen.getByRole('button', { name: 'Paystack' })).toHaveTextContent('Off')
+    expect(
+      screen.getByRole('button', { name: /^Paystack\./ }).getAttribute('aria-label'),
+    ).toContain('Off')
   })
 })
 

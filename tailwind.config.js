@@ -26,6 +26,21 @@ export default {
         ink: themed('ink'),
         /** §F's hairline borders: black in light, white in dark. */
         edge: themed('edge'),
+        /**
+         * The light tile a provider's trademark sits on (§F, §J).
+         *
+         * FIXED IN BOTH THEMES, deliberately. Every other surface follows the
+         * theme; this one cannot. The marks are single-colour brand glyphs in
+         * their owner's own hex — Monzo's navy, Revolut's near-black — and on
+         * a dark surface they disappear. Recolouring one to suit our
+         * background is modifying somebody's trademark, which every set of
+         * brand guidelines forbids, so the background moves instead.
+         *
+         * A token rather than `bg-white` so it is declared once, named for
+         * what it is for, and visible to the §F sweep as a decision rather
+         * than as a literal somebody reached for.
+         */
+        'logo-tile': 'rgb(var(--logo-tile) / <alpha-value>)',
         // ACCENTS AND DEEPS ARE FIXED, in both themes.
         //
         // §F: "colours belong to the internal type and never change with the

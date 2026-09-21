@@ -25,6 +25,8 @@
 
     --page: 238 242 251; /* #eef2fb — §F */
     --surface: 255 255 255; /* §F: glass is translucent white */
+    /* The tile a brand mark sits on. Light in BOTH themes — see the config. */
+    --logo-tile: 255 255 255;
     --ink: 29 36 82; /* #1d2452 — §F text-navy */
     --edge: 0 0 0; /* hairlines are black at low alpha in light */
 
@@ -78,6 +80,19 @@
      */
     --surface: 47 56 104;
     --edge: 255 255 255; /* hairlines invert: §F's "white inner borders" */
+
+    /*
+     * THE ONE TOKEN THAT DOES NOT MOVE, and it is stated here rather than
+     * omitted so the "every token has a dark value" sweep sees a decision
+     * instead of an oversight.
+     *
+     * A provider's mark is a single-colour glyph in its owner's own hex —
+     * Monzo's navy, Revolut's near-black — and on a dark surface it
+     * disappears. Recolouring one to suit our background is modifying
+     * somebody's trademark, which every set of brand guidelines forbids. So
+     * the tile stays light and the mark stays true.
+     */
+    --logo-tile: 255 255 255;
 
     /*
      * Tints become dark washes of the SAME hue. Derived by keeping §F's hue

@@ -19,6 +19,7 @@
 import { execFileSync } from 'node:child_process'
 import { existsSync, readFileSync, readdirSync } from 'node:fs'
 import { ALL_PROVIDERS } from '../../domain/payments/providers'
+import { PROVIDER_LOGOS } from '../../features/payments/logos'
 import { join } from 'node:path'
 
 import { PLACEHOLDERS, unfilled } from '../../legal/placeholders'
@@ -112,6 +113,29 @@ export const ALLOWED_DESTINATIONS: readonly Destination[] = [
    * provider added tomorrow is declared by having been added — which is the
    * same "declared once, read by both" §J applies to the field sets.
    */
+  /*
+   * BRAND-GUIDELINES PAGES, RECORDED AS PROVENANCE (§F).
+   *
+   * `logos.ts` notes where each provider publishes its own rules for using
+   * its mark, so the next person can re-check them. DocFlow never opens one:
+   * they are citations in a data file, the same kind of thing a footnote is.
+   *
+   * Declared rather than exempted, and derived from the same map the app
+   * reads, so a provider added tomorrow is covered by having been added.
+   */
+  ...Object.values(PROVIDER_LOGOS).flatMap((logo) => {
+    if (logo?.guidelines === undefined) return []
+    const host = logo.guidelines.replace(/^https?:\/\//, '').split('/')[0] ?? ''
+    return host === ''
+      ? []
+      : [
+          {
+            what: host,
+            why: 'a brand-guidelines page recorded as provenance for a bundled mark. Never opened by the app; a citation, not a request.',
+            host,
+          },
+        ]
+  }),
   ...ALL_PROVIDERS.flatMap((provider) => {
     const host = provider.prefix.split('/')[0] ?? ''
     return host === ''

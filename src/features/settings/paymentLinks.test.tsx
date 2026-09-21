@@ -54,16 +54,29 @@ const section = (
 }
 
 /**
- * Every provider row on screen, however its chip is labelled.
+ * Every provider row on screen.
  *
- * A row without a link says "Add <provider>"; one with a link has a pencil
- * and an On/Off chip named for the provider itself. Both shapes are rows, so
- * this reads the name off either.
+ * A row is one button now — the whole thing opens that method's fields — so
+ * its accessible name is composed from what it shows: the provider, the line
+ * under it, and the state. Reading the provider off the front of that is what
+ * these assertions want.
  */
-const listed = (): string[] =>
+const listed = (): string =>
   screen
-    .queryAllByRole('button', { name: /^Add |^Edit the /i })
-    .map((button) => button.getAttribute('aria-label') ?? '')
+    .queryAllByRole('button')
+    .map((button) => button.getAttribute('aria-label') ?? button.textContent ?? '')
+    .join(' | ')
+
+/**
+ * Opens one provider's fields by tapping its row.
+ *
+ * By ACCESSIBLE NAME, not `textContent`: the lettered fallback badge is
+ * `aria-hidden`, so a row for Paystack reads "PPaystack …" to `textContent`
+ * and "Paystack …" to anybody using the page. The second one is the row.
+ */
+const openRow = async (user: ReturnType<typeof userEvent.setup>, name: string) => {
+  await user.click(screen.getByRole('button', { name: new RegExp(`^${name}\\.`) }))
+}
 
 describe('Only what can receive money here is offered (§J, §N)', () => {
   /**
@@ -73,17 +86,17 @@ describe('Only what can receive money here is offered (§J, §N)', () => {
   it('offers a Nigerian trader Paystack and Flutterwave, and not PayPal', () => {
     section('NG')
 
-    expect(listed().join(' ')).toContain('Paystack')
-    expect(listed().join(' ')).toContain('Flutterwave')
+    expect(listed()).toContain('Paystack')
+    expect(listed()).toContain('Flutterwave')
     expect(
-      listed().join(' '),
+      listed(),
       'a service that cannot receive in Nigeria was offered by default',
     ).not.toContain('PayPal')
   })
 
   it('offers a German trader PayPal, Wise, Revolut and Stripe', () => {
     section('DE')
-    const names = listed().join(' ')
+    const names = listed()
     for (const provider of ['PayPal', 'Wise', 'Revolut', 'Stripe']) {
       expect(names, `${provider} was missing in Germany`).toContain(provider)
     }
@@ -99,7 +112,7 @@ describe('Only what can receive money here is offered (§J, §N)', () => {
     section(country)
 
     await user.click(screen.getByRole('button', { name: 'Use a different service' }))
-    const names = listed().join(' ')
+    const names = listed()
     for (const provider of ['PayPal', 'Wise', 'Paystack', 'Payment link']) {
       expect(names, `${provider} unreachable from ${country}`).toContain(provider)
     }
@@ -111,10 +124,10 @@ describe('Only what can receive money here is offered (§J, §N)', () => {
     section('NG')
 
     await user.click(screen.getByRole('button', { name: 'Use a different service' }))
-    expect(listed().join(' ')).toContain('PayPal')
+    expect(listed()).toContain('PayPal')
 
     await user.click(screen.getByRole('button', { name: 'Hide the other services' }))
-    expect(listed().join(' ')).not.toContain('PayPal')
+    expect(listed()).not.toContain('PayPal')
   })
 
   /**
@@ -125,7 +138,7 @@ describe('Only what can receive money here is offered (§J, §N)', () => {
   it('keeps showing a link added from the full list', () => {
     section('NG', [{ provider: 'paypal_me', value: 'paypal.me/ade' }])
 
-    expect(listed().join(' ')).toContain('PayPal')
+    expect(listed()).toContain('PayPal')
     expect(screen.getByText('paypal.me/ade')).toBeInTheDocument()
   })
 
@@ -137,7 +150,7 @@ describe('Only what can receive money here is offered (§J, §N)', () => {
     const user = userEvent.setup()
     section('NG', [{ provider: 'paypal_me', value: 'paypal.me/ade' }])
 
-    await user.click(screen.getByRole('button', { name: /Edit the PayPal link/ }))
+    await openRow(user, 'PayPal')
     expect(screen.getByText(/may not be able to receive money in Nigeria/)).toBeInTheDocument()
   })
 
@@ -145,7 +158,7 @@ describe('Only what can receive money here is offered (§J, §N)', () => {
     const user = userEvent.setup()
     section('NG')
 
-    await user.click(screen.getByRole('button', { name: /Add Paystack/ }))
+    await openRow(user, 'Paystack')
     expect(screen.queryByText(/may not be able to receive/)).toBeNull()
   })
 })
@@ -160,7 +173,7 @@ describe('Pasting a link, and being told what is wrong (§J, §K)', () => {
     const user = userEvent.setup()
     section('NG')
 
-    await user.click(screen.getByRole('button', { name: /Add Paystack/ }))
+    await openRow(user, 'Paystack')
     expect(screen.getByLabelText('Paystack link')).toHaveAttribute(
       'placeholder',
       'paystack.com/pay/your-page',
@@ -172,7 +185,7 @@ describe('Pasting a link, and being told what is wrong (§J, §K)', () => {
     const user = userEvent.setup()
     section('NG')
 
-    await user.click(screen.getByRole('button', { name: /Add Paystack/ }))
+    await openRow(user, 'Paystack')
     expect(screen.getByRole('button', { name: 'Paste' })).toBeInTheDocument()
   })
 
@@ -184,7 +197,7 @@ describe('Pasting a link, and being told what is wrong (§J, §K)', () => {
     const user = userEvent.setup()
     const onChange = section('NG')
 
-    await user.click(screen.getByRole('button', { name: /Add Paystack/ }))
+    await openRow(user, 'Paystack')
     await user.type(
       screen.getByLabelText('Paystack link'),
       'https://www.paystack.com/pay/dynamic/?utm_source=wa',
@@ -204,7 +217,7 @@ describe('Pasting a link, and being told what is wrong (§J, §K)', () => {
     const user = userEvent.setup()
     section('NG')
 
-    await user.click(screen.getByRole('button', { name: /Add Paystack/ }))
+    await openRow(user, 'Paystack')
     await user.type(screen.getByLabelText('Paystack link'), 'dynamic')
 
     const preview = document.querySelector('[data-link-preview]')
@@ -219,7 +232,7 @@ describe('Pasting a link, and being told what is wrong (§J, §K)', () => {
     const user = userEvent.setup()
     const onChange = section('NG')
 
-    await user.click(screen.getByRole('button', { name: /Add Paystack/ }))
+    await openRow(user, 'Paystack')
     await user.type(screen.getByLabelText('Paystack link'), 'wise.com/pay/me/ade')
     await user.click(screen.getByRole('button', { name: 'Save and close' }))
 
@@ -233,7 +246,7 @@ describe('Pasting a link, and being told what is wrong (§J, §K)', () => {
     const user = userEvent.setup()
     section('DE')
 
-    await user.click(screen.getByRole('button', { name: /Add PayPal/ }))
+    await openRow(user, 'PayPal')
     expect(screen.getByText(/Send & Request/)).toBeInTheDocument()
   })
 
@@ -244,7 +257,7 @@ describe('Pasting a link, and being told what is wrong (§J, §K)', () => {
       { provider: 'paystack_page', value: 'paystack.com/pay/dynamic' },
     ])
 
-    await user.click(screen.getByRole('button', { name: /Edit the Paystack link/ }))
+    await openRow(user, 'Paystack')
     await user.clear(screen.getByLabelText('Paystack link'))
     await user.click(screen.getByRole('button', { name: 'Save and close' }))
 
@@ -262,18 +275,28 @@ describe('Pasting a link, and being told what is wrong (§J, §K)', () => {
  * the only way to stop printing a link was to delete it and paste it back.
  */
 describe('On and off decides what prints (§J)', () => {
-  it('switches a saved link off without losing it', async () => {
+  /**
+   * THE SWITCH MOVED, and the rule did not.
+   *
+   * The row is one tap target now — it opens the method's fields — so the
+   * switch lives inside them, beside the account it governs. Two competing
+   * targets in a 56px row is how somebody switches a method off while
+   * reaching for its details.
+   */
+  it('switches a saved link off from inside its fields', async () => {
     const user = userEvent.setup()
     const onChange = vi.fn()
     const onToggle = vi.fn()
     section('NG', [{ provider: 'paystack_page', value: 'paystack.com/pay/dynamic' }], onChange, onToggle)
 
-    await user.click(screen.getByRole('button', { name: 'Paystack' }))
+    await openRow(user, 'Paystack')
+    await user.click(screen.getByRole('switch'))
 
     expect(onToggle).toHaveBeenCalledWith('paystack_page', false)
     expect(onChange, 'switching it off deleted the link').not.toHaveBeenCalled()
   })
 
+  /** The row says which state it is in, without being the control. */
   it('shows Off, and the link, when one is saved but not switched on', () => {
     section(
       'NG',
@@ -283,8 +306,13 @@ describe('On and off decides what prints (§J)', () => {
       [],
     )
 
-    expect(screen.getByRole('button', { name: 'Paystack' })).toHaveTextContent('Off')
+    expect(listed(), 'the row does not say it is off').toContain('Off')
     expect(screen.getByText('paystack.com/pay/dynamic')).toBeInTheDocument()
+  })
+
+  it('shows On when it is', () => {
+    section('NG', [{ provider: 'paystack_page', value: 'paystack.com/pay/dynamic' }])
+    expect(listed()).toContain('Paystack. paystack.com/pay/dynamic. On')
   })
 
   /** Pasting one is saying you want it used; a second step would be a toll. */
@@ -293,19 +321,19 @@ describe('On and off decides what prints (§J)', () => {
     const onToggle = vi.fn()
     section('NG', [], vi.fn(), onToggle, [])
 
-    await user.click(screen.getByRole('button', { name: /Add Paystack/ }))
+    await openRow(user, 'Paystack')
     await user.type(screen.getByLabelText('Paystack link'), 'paystack.com/pay/dynamic')
     await user.click(screen.getByRole('button', { name: 'Save and close' }))
 
     expect(onToggle).toHaveBeenCalledWith('paystack_page', true)
   })
 
-  /** And the pencil is a separate control from the switch. */
-  it('opens the link from the pencil, not from the switch', async () => {
+  /** And a row with no link yet has nothing to switch. */
+  it('offers no switch before there is a link', async () => {
     const user = userEvent.setup()
-    section('NG', [{ provider: 'paystack_page', value: 'paystack.com/pay/dynamic' }])
+    section('NG', [], vi.fn(), vi.fn(), [])
 
-    await user.click(screen.getByRole('button', { name: 'Edit the Paystack link' }))
-    expect(screen.getByLabelText('Paystack link')).toHaveValue('paystack.com/pay/dynamic')
+    await openRow(user, 'Paystack')
+    expect(screen.queryByRole('switch')).toBeNull()
   })
 })

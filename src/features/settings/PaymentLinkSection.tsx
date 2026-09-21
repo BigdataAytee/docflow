@@ -21,7 +21,6 @@
 import { useState } from 'react'
 
 import { useCompany } from '../../app/context'
-import { format } from '../../domain/locale/data/strings'
 import { printedLine, type SavedPaymentLink } from '../../domain/payments/links'
 import { providersFor, type PaymentProvider } from '../../domain/payments/providers'
 import { Icon } from '../../ui'
@@ -88,84 +87,94 @@ export function PaymentLinkSection({
   const drop = (provider: PaymentProvider) =>
     onChange(links.filter((link) => link.provider !== provider.id))
 
+  /**
+   * ONE ROW, ONE TAP TARGET.
+   *
+   * The whole row is the button and it opens that method's fields — which is
+   * what the reference does, and what a thumb expects from a row with a
+   * chevron on the end. The on/off control moved INSIDE the form, where the
+   * thing being switched is visible: two competing tap targets in a 56px row
+   * is how somebody switches a method off while reaching for its details.
+   *
+   * Left to right: a 40px round badge, the name with one muted line under it,
+   * the state in a word, a chevron.
+   */
   const row = (provider: PaymentProvider) => {
     const value = saved.get(provider.id)
+    const isOpen = open === provider.id
+    const isOn = value !== undefined && enabled.includes(provider.id)
+
+    const subtitle =
+      value === undefined ? provider.blurb : printedLine({ provider: provider.id, value }).value
+    const state =
+      value === undefined
+        ? strings.settings.methodAdd
+        : isOn
+          ? strings.settings.methodOn
+          : strings.settings.methodOff
+
     return (
       <li key={provider.id}>
-        <div className="flex items-center gap-3 p-3">
-          {/* The provider's own mark where there is one, the same square
-              slot where there is not (§F, §J). */}
-          <ProviderLogo provider={provider.id} />
+        <button
+          type="button"
+          aria-expanded={isOpen}
+          /*
+           * COMPOSED, not left to the DOM.
+           *
+           * The name a browser builds from these spans runs the words
+           * together — "PaystackPaste your Paystack page linkAdd" — because
+           * nothing between them is a space. Written out, it reads as three
+           * facts: which service, what it holds, whether it prints.
+           */
+          aria-label={`${provider.name}. ${subtitle}. ${state}`}
+          onClick={() => setOpen((current) => (current === provider.id ? null : provider.id))}
+          className="flex w-full items-center gap-3 p-3 text-start"
+        >
+          <ProviderLogo provider={provider.id} name={provider.name} />
+
           <span className="min-w-0 flex-1">
             <span className="block text-sm font-medium">{provider.name}</span>
             {/*
-              THE LIVE LINE, exactly as it prints — the same rule §J gives the
-              bank-transfer row. A stale link is visible here rather than
-              discovered on an invoice already sent.
+              THE LIVE LINE once there is one — exactly as it prints, which is
+              the rule §J gives the bank-transfer row. A stale link is visible
+              here rather than discovered on an invoice already sent. Before
+              there is one, the blurb says what this row will ask for.
             */}
-            <span className="block truncate text-xs opacity-65">
-              {value === undefined
-                ? provider.sample
-                : printedLine({ provider: provider.id, value }).value}
-            </span>
+            <span className="block truncate text-[11.5px] opacity-60">{subtitle}</span>
           </span>
+
           {/*
-            TWO CONTROLS ONCE THERE IS A LINK, and they do different things.
-
-            The pencil opens what was pasted; the chip decides whether it
-            PRINTS. Both were one button, so "On" meant "has a value" and a
-            trader had no way to keep a link without putting it on every
-            invoice — they would have had to delete it and paste it back.
-
-            Before there is a link there is only one thing to do, so there is
-            only one control: Add.
+            THE STATE IN A WORD, not a control. Tapping it would be tapping
+            the row, and the row opens the fields — so this reads rather than
+            acts, and the switch itself lives where the account does.
           */}
-          {value !== undefined && (
-            <button
-              type="button"
-              aria-expanded={open === provider.id}
-              aria-label={format(strings.settings.editLink, { provider: provider.name })}
-              onClick={() => setOpen((current) => (current === provider.id ? null : provider.id))}
-              className="glass-pill min-h-tap min-w-tap shrink-0 rounded-full px-2 text-brand"
-            >
-              <Icon name="pencil" className="size-[15px]" />
-            </button>
-          )}
-          <button
-            type="button"
-            {...(value === undefined
-              ? { 'aria-expanded': open === provider.id }
-              : { 'aria-pressed': enabled.includes(provider.id) })}
-            aria-label={
-              value === undefined
-                ? format(strings.settings.addLink, { provider: provider.name })
-                : provider.name
-            }
-            onClick={() => {
-              if (value === undefined) {
-                return setOpen((current) => (current === provider.id ? null : provider.id))
-              }
-              onToggle(provider.id, !enabled.includes(provider.id))
-            }}
-            className={`min-h-tap shrink-0 rounded-full px-3 text-xs font-semibold ${
-              value !== undefined && enabled.includes(provider.id)
-                ? 'bg-status-good-tint text-status-good'
-                : 'glass-pill text-brand'
+          <span
+            data-provider-state={provider.id}
+            className={`shrink-0 text-xs font-semibold ${
+              isOn ? 'text-status-good' : 'opacity-55'
             }`}
           >
-            {value === undefined
-              ? strings.settings.methodAdd
-              : enabled.includes(provider.id)
-                ? strings.settings.methodOn
-                : strings.settings.methodOff}
-          </button>
-        </div>
+            {state}
+          </span>
+          <Icon
+            name="chevron-right"
+            className={`size-[15px] shrink-0 opacity-35 ${isOpen ? 'rotate-90' : ''}`}
+            aria-hidden
+          />
+        </button>
 
-        {open === provider.id && (
+        {isOpen && (
           <PaymentLinkForm
             provider={provider.id}
             {...(value === undefined ? {} : { current: value })}
             country={country}
+            /* The switch, beside the thing it switches (§J). */
+            {...(value === undefined
+              ? {}
+              : {
+                  enabled: enabled.includes(provider.id),
+                  onToggle: (next: boolean) => onToggle(provider.id, next),
+                })}
             onSave={(next) => put(provider, next)}
             onRemove={() => drop(provider)}
             onClose={() => setOpen(null)}
@@ -175,17 +184,28 @@ export function PaymentLinkSection({
     )
   }
 
-  return (
-    <>
-      <p className="px-1 text-xs font-bold uppercase tracking-wide opacity-60">
-        {strings.settings.paymentLinks}
-      </p>
-
-      {visible.length > 0 && (
+  /**
+   * A HEADING AND A CARD, per group.
+   *
+   * §G's own pattern on this screen, and the reference's: a plain grey
+   * heading over a rounded card of hairline-divided rows. Grouping is what
+   * makes eleven rows scannable — "Payment links" is a different KIND of
+   * answer from "Bank transfer", and a trader looking for one is not reading
+   * the other.
+   */
+  const group = (heading: string, rows: readonly PaymentProvider[]) =>
+    rows.length === 0 ? null : (
+      <div className="space-y-1.5">
+        <p className="px-1 text-xs font-bold uppercase tracking-wide opacity-55">{heading}</p>
         <ul className="glass-solid divide-y divide-ink/10 overflow-hidden rounded-2xl">
-          {visible.map(row)}
+          {rows.map(row)}
         </ul>
-      )}
+      </div>
+    )
+
+  return (
+    <div className="space-y-4">
+      {group(strings.settings.paymentLinks, visible)}
 
       {/*
         THE QUIET LINE. A text button, not a card and not a chevron row:
@@ -200,11 +220,7 @@ export function PaymentLinkSection({
         {showingOthers ? strings.settings.hideAnother : strings.settings.useAnother}
       </button>
 
-      {showingOthers && stillHidden.length > 0 && (
-        <ul className="glass-solid divide-y divide-ink/10 overflow-hidden rounded-2xl">
-          {stillHidden.map(row)}
-        </ul>
-      )}
-    </>
+      {showingOthers && group(strings.settings.otherServices, stillHidden)}
+    </div>
   )
 }

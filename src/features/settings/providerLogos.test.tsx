@@ -23,7 +23,7 @@ import userEvent from '@testing-library/user-event'
 import { CompanyProvider } from '../../app/context'
 import { createMemoryRepositories, emptyState } from '../../data/repositories'
 import { PaymentLinkSection } from './PaymentLinkSection'
-import { PROVIDER_LOGOS, logoFor, variantFor } from '../../domain/payments/logos'
+import { PROVIDER_LOGOS, logoFor, variantFor } from '../payments/logos'
 import { ALL_PROVIDERS } from '../../domain/payments/providers'
 import type { ProviderId } from '../../domain/payments/providers'
 
@@ -62,7 +62,7 @@ describe('Every provider gets a slot, marked or not (§F)', () => {
 
     expect(slots().length).toBe(ALL_PROVIDERS.length)
     for (const slot of slots()) {
-      expect(slot.className, 'a slot is a different size from its neighbours').toContain('size-9')
+      expect(slot.className, 'a slot is a different size from its neighbours').toContain('size-10')
     }
   })
 
@@ -192,8 +192,111 @@ describe('A mark is never modified (§F)', () => {
     for (const [id, logo] of Object.entries(PROVIDER_LOGOS)) {
       if (logo === undefined) continue
       expect(logo.variant.length, `${id} does not say which variant it is`).toBeGreaterThan(3)
-      expect(logo.source, `${id} does not say where it came from`).toMatch(/^https:\/\//)
+      expect(logo.source.length, `${id} does not say where it came from`).toBeGreaterThan(10)
+      // And the owner's own guidelines page, where they publish one.
+      if (logo.guidelines !== undefined) {
+        expect(logo.guidelines, `${id}'s guidelines link is not a URL`).toMatch(/^https:\/\//)
+      }
       expect(logo.fetched, `${id} does not say when it was fetched`).toMatch(/^\d{4}-\d{2}-\d{2}$/)
+    }
+  })
+})
+
+/**
+ * The row, as the reference lays it out (§F, §G).
+ *
+ * Left to right: a 40px round badge, the name with one muted line under it,
+ * the state in a word, a chevron — and the whole row is the button.
+ */
+describe('One row, one tap target (§F)', () => {
+  const rows = () =>
+    screen.queryAllByRole('button').filter((b) => /\. .+\. (Add|On|Off)$/.test(b.getAttribute('aria-label') ?? ''))
+
+  it('makes the whole row the control', async () => {
+    const user = userEvent.setup()
+    list()
+    await user.click(screen.getByRole('button', { name: 'Use a different service' }))
+
+    expect(rows().length).toBe(ALL_PROVIDERS.length)
+    for (const row of rows()) {
+      // The badge is inside the button, so the badge is not its own target.
+      expect(row.querySelector('[data-provider-logo]'), 'the badge sits outside the row').not.toBeNull()
+      // And nothing else in the row competes for the tap.
+      expect(
+        row.querySelectorAll('button').length,
+        `${row.getAttribute('aria-label')} has a control inside the row`,
+      ).toBe(0)
+    }
+  })
+
+  /**
+   * THE NAME READS AS THREE FACTS. Left to the DOM it runs together —
+   * "PaystackPaste your Paystack page linkAdd" — because nothing between the
+   * spans is a space.
+   */
+  it('names each row as service, detail, state', async () => {
+    const user = userEvent.setup()
+    list()
+    await user.click(screen.getByRole('button', { name: 'Use a different service' }))
+
+    const paypal = screen.getByRole('button', { name: /^PayPal\./ })
+    expect(paypal.getAttribute('aria-label')).toBe('PayPal. Paste your PayPal.me link. Add')
+  })
+
+  /** Every provider carries a one-line subtitle worth reading. */
+  it('gives every provider a subtitle', () => {
+    for (const provider of ALL_PROVIDERS) {
+      expect(provider.blurb.length, `${provider.id} has no subtitle`).toBeGreaterThan(8)
+      expect(provider.blurb, `${provider.id} repeats its own name`).not.toBe(provider.name)
+    }
+  })
+
+  /**
+   * AND IT SURVIVES 200% TEXT. §G's a11y floor: the name and the state stay
+   * readable rather than being truncated away, so the row still says which
+   * service it is and whether it prints.
+   */
+  it('keeps the name and the state un-truncated at any text size', async () => {
+    const user = userEvent.setup()
+    list()
+    await user.click(screen.getByRole('button', { name: 'Use a different service' }))
+
+    for (const row of rows()) {
+      const [name, state] = [
+        row.querySelector('.font-medium'),
+        row.querySelector('[data-provider-state]'),
+      ]
+      expect(name?.className, 'the name is clipped').not.toContain('truncate')
+      expect(state?.className, 'the state is clipped').not.toContain('truncate')
+      // The subtitle may truncate — a pasted link can be any length.
+      expect(state?.className).toContain('shrink-0')
+    }
+  })
+})
+
+/**
+ * Dark mode keeps the tile, never the filter (§F).
+ *
+ * These marks are single-colour brand glyphs in their owner's own hex —
+ * Monzo's navy and Revolut's near-black vanish on a dark surface. So the
+ * circle stays light and the mark keeps its colour, which is what the
+ * guidelines contemplate. Recolouring one to suit our background is
+ * modifying it.
+ */
+describe('The tile stays light in dark mode (§F)', () => {
+  it('holds a light tile behind every mark', async () => {
+    const user = userEvent.setup()
+    list()
+    await user.click(screen.getByRole('button', { name: 'Use a different service' }))
+
+    for (const slot of slots()) {
+      expect(slot.className, 'the tile follows the theme instead of staying light').toContain(
+        'bg-logo-tile',
+      )
+      // Nothing that would flip or tint it in the dark.
+      for (const forbidden of ['dark:bg-', 'dark:invert', 'invert']) {
+        expect(slot.className, `the tile is ${forbidden} in dark mode`).not.toContain(forbidden)
+      }
     }
   })
 })

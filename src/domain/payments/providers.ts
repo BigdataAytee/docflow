@@ -57,6 +57,14 @@ export interface PaymentProvider {
   /** The example, with the handle filled in — `paypal.me/yourname`. */
   readonly sample: string
   /**
+   * One line under the name, where it earns its place (§G).
+   *
+   * Not a description of the company — a trader knows what PayPal is. What
+   * they may not know is what this ROW will ask them for, which is the one
+   * thing worth six words before they tap it.
+   */
+  readonly blurb: string
+  /**
    * True when a bare handle alone is enough — "ade" becoming
    * `paypal.me/ade`. False for the ones whose codes are opaque: a Stripe
    * payment link is `buy.stripe.com/aEU5kC1x2`, and accepting "aEU5kC1x2"
@@ -100,6 +108,7 @@ export const PROVIDERS: Readonly<Record<ProviderId, PaymentProvider>> = {
     name: 'Paystack',
     prefix: 'paystack.com/pay/',
     sample: 'paystack.com/pay/your-page',
+    blurb: 'Paste your Paystack page link',
     acceptsBareHandle: true,
     findIt: 'Paystack Dashboard → Payment Pages → your page → Copy link.',
     markets: ['NG', 'GH', 'ZA', 'KE'],
@@ -109,6 +118,7 @@ export const PROVIDERS: Readonly<Record<ProviderId, PaymentProvider>> = {
     name: 'Flutterwave',
     prefix: 'flutterwave.com/pay/',
     sample: 'flutterwave.com/pay/your-page',
+    blurb: 'Paste your Flutterwave link',
     acceptsBareHandle: true,
     findIt: 'Flutterwave Dashboard → Payment Links → Copy link.',
     markets: ['NG', 'GH', 'KE', 'UG', 'TZ', 'ZA', 'RW'],
@@ -118,6 +128,7 @@ export const PROVIDERS: Readonly<Record<ProviderId, PaymentProvider>> = {
     name: 'PayPal',
     prefix: 'paypal.me/',
     sample: 'paypal.me/yourname',
+    blurb: 'Paste your PayPal.me link',
     acceptsBareHandle: true,
     findIt: 'Find yours in the PayPal app under Send & Request.',
     markets: ['GB', 'US', 'DE', 'FR', 'ES', 'IT', 'NL', 'IE', 'CA', 'AU', 'AE'],
@@ -127,6 +138,7 @@ export const PROVIDERS: Readonly<Record<ProviderId, PaymentProvider>> = {
     name: 'Wise',
     prefix: 'wise.com/pay/me/',
     sample: 'wise.com/pay/me/yourname',
+    blurb: 'Paste your Wise payment link',
     acceptsBareHandle: true,
     findIt: 'Wise app → Receive → Share payment link.',
     markets: ['GB', 'DE', 'FR', 'ES', 'IT', 'NL', 'IE', 'US', 'CA', 'AU'],
@@ -136,6 +148,7 @@ export const PROVIDERS: Readonly<Record<ProviderId, PaymentProvider>> = {
     name: 'Revolut',
     prefix: 'revolut.me/',
     sample: 'revolut.me/yourname',
+    blurb: 'Paste your Revolut link',
     acceptsBareHandle: true,
     findIt: 'Revolut app → your profile → Share your @RevTag.',
     markets: ['GB', 'DE', 'FR', 'ES', 'IT', 'NL', 'IE', 'PL'],
@@ -145,6 +158,7 @@ export const PROVIDERS: Readonly<Record<ProviderId, PaymentProvider>> = {
     name: 'Monzo',
     prefix: 'monzo.me/',
     sample: 'monzo.me/yourname',
+    blurb: 'Paste your Monzo.me link',
     acceptsBareHandle: true,
     findIt: 'Monzo app → Payments → Get paid → Share monzo.me link.',
     markets: ['GB'],
@@ -154,6 +168,7 @@ export const PROVIDERS: Readonly<Record<ProviderId, PaymentProvider>> = {
     name: 'Cash App',
     prefix: 'cash.app/$',
     sample: 'cash.app/$yourcashtag',
+    blurb: 'Paste your $Cashtag',
     acceptsBareHandle: true,
     findIt: 'Cash App → your profile → your $Cashtag.',
     markets: ['US', 'GB'],
@@ -163,6 +178,7 @@ export const PROVIDERS: Readonly<Record<ProviderId, PaymentProvider>> = {
     name: 'Venmo',
     prefix: 'venmo.com/u/',
     sample: 'venmo.com/u/yourname',
+    blurb: 'Paste your Venmo username',
     acceptsBareHandle: true,
     findIt: 'Venmo app → Me → your username.',
     markets: ['US'],
@@ -172,6 +188,7 @@ export const PROVIDERS: Readonly<Record<ProviderId, PaymentProvider>> = {
     name: 'Stripe',
     prefix: 'buy.stripe.com/',
     sample: 'buy.stripe.com/xxxxxxxx',
+    blurb: 'Paste a Stripe payment link',
     // An opaque code. "xxxxxxxx" on its own is not a claim anybody can check.
     acceptsBareHandle: false,
     findIt: 'Stripe Dashboard → Payment Links → Copy link.',
@@ -182,6 +199,7 @@ export const PROVIDERS: Readonly<Record<ProviderId, PaymentProvider>> = {
     name: 'Square',
     prefix: 'square.link/u/',
     sample: 'square.link/u/xxxxxxxx',
+    blurb: 'Paste a Square checkout link',
     acceptsBareHandle: false,
     findIt: 'Square Dashboard → Online checkout → Copy link.',
     markets: ['US', 'GB', 'CA', 'AU', 'IE'],
@@ -196,6 +214,7 @@ export const PROVIDERS: Readonly<Record<ProviderId, PaymentProvider>> = {
     name: 'Payment link',
     prefix: '',
     sample: 'example.com/pay/you',
+    blurb: 'Any other payment address',
     acceptsBareHandle: false,
     markets: [],
   },

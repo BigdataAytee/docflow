@@ -1,0 +1,112 @@
+[
+  {
+    "provider": "airtel",
+    "name": "Airtel",
+    "file": "airtel.svg",
+    "variant": "light",
+    "brandHex": "#E40000",
+    "source": "simple-icons@16.32.0 (CC0) \u2014 glyph; brand owner source: https://www.airtel.in/logo-tune",
+    "guidelines": "not published by simple-icons \u2014 check the provider brand page before any public use",
+    "fetched": "2026-09-21"
+  },
+  {
+    "provider": "cashapp",
+    "name": "Cash App",
+    "file": "cashapp.svg",
+    "variant": "light",
+    "brandHex": "#00C244",
+    "source": "simple-icons@16.32.0 (CC0) \u2014 glyph; brand owner source: https://cash.app/press",
+    "guidelines": "not published by simple-icons \u2014 check the provider brand page before any public use",
+    "fetched": "2026-09-21"
+  },
+  {
+    "provider": "monzo",
+    "name": "Monzo",
+    "file": "monzo.svg",
+    "variant": "light",
+    "brandHex": "#14233C",
+    "source": "simple-icons@16.32.0 (CC0) \u2014 glyph; brand owner source: https://monzo.com/press/",
+    "guidelines": "not published by simple-icons \u2014 check the provider brand page before any public use",
+    "fetched": "2026-09-21"
+  },
+  {
+    "provider": "orange",
+    "name": "Orange Money",
+    "file": "orange.svg",
+    "variant": "light",
+    "brandHex": "#FF7900",
+    "source": "simple-icons@16.32.0 (CC0) \u2014 glyph; brand owner source: https://brand.orange.com",
+    "guidelines": "https://system.design.orange.com/0c1af118d/p/494474-guidelines",
+    "fetched": "2026-09-21"
+  },
+  {
+    "provider": "paypal",
+    "name": "PayPal",
+    "file": "paypal.svg",
+    "variant": "light",
+    "brandHex": "#002991",
+    "source": "simple-icons@16.32.0 (CC0) \u2014 glyph; brand owner source: https://newsroom.paypal-corp.com/media-resources",
+    "guidelines": "https://newsroom.paypal-corp.com/media-resources",
+    "fetched": "2026-09-21"
+  },
+  {
+    "provider": "pix",
+    "name": "Pix",
+    "file": "pix.svg",
+    "variant": "light",
+    "brandHex": "#77B6A8",
+    "source": "simple-icons@16.32.0 (CC0) \u2014 glyph; brand owner source: https://www.bcb.gov.br/estabilidadefinanceira/pix",
+    "guidelines": "https://www.bcb.gov.br/content/estabilidadefinanceira/pix/Regulamento_Pix/I_manual_uso_marca_pix.pdf",
+    "fetched": "2026-09-21"
+  },
+  {
+    "provider": "revolut",
+    "name": "Revolut",
+    "file": "revolut.svg",
+    "variant": "light",
+    "brandHex": "#191C1F",
+    "source": "simple-icons@16.32.0 (CC0) \u2014 glyph; brand owner source: https://developer.revolut.com/docs/resources/marketing-assets-guidelines/marketing-guidelines",
+    "guidelines": "https://developer.revolut.com/docs/resources/marketing-assets-guidelines/marketing-guidelines",
+    "fetched": "2026-09-21"
+  },
+  {
+    "provider": "square",
+    "name": "Square",
+    "file": "square.svg",
+    "variant": "light",
+    "brandHex": "#3E4348",
+    "source": "simple-icons@16.32.0 (CC0) \u2014 glyph; brand owner source: https://squareup.com",
+    "guidelines": "not published by simple-icons \u2014 check the provider brand page before any public use",
+    "fetched": "2026-09-21"
+  },
+  {
+    "provider": "stripe",
+    "name": "Stripe",
+    "file": "stripe.svg",
+    "variant": "light",
+    "brandHex": "#635BFF",
+    "source": "simple-icons@16.32.0 (CC0) \u2014 glyph; brand owner source: https://stripe.com/newsroom/information",
+    "guidelines": "not published by simple-icons \u2014 check the provider brand page before any public use",
+    "fetched": "2026-09-21"
+  },
+  {
+    "provider": "venmo",
+    "name": "Venmo",
+    "file": "venmo.svg",
+    "variant": "light",
+    "brandHex": "#008CFF",
+    "source": "simple-icons@16.32.0 (CC0) \u2014 glyph; brand owner source: https://venmo.com/about/brand",
+    "guidelines": "https://venmo.com/about/brand",
+    "fetched": "2026-09-21"
+  },
+  {
+    "provider": "wise",
+    "name": "Wise",
+    "file": "wise.svg",
+    "variant": "light",
+    "brandHex": "#9FE870",
+    "source": "simple-icons@16.32.0 (CC0) \u2014 glyph; brand owner source: https://wise.design/foundations/logo",
+    "guidelines": "https://wise.design/foundations/logo",
+    "fetched": "2026-09-21"
+  }
+]

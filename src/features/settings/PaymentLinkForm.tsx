@@ -35,6 +35,19 @@ export interface PaymentLinkFormProps {
   readonly current?: string
   /** Where the trader is, for the note on a provider that cannot receive. */
   readonly country: string
+  /**
+   * Whether this method PRINTS, and how to change it (§J).
+   *
+   * The switch lives here rather than on the row because the row is one tap
+   * target that opens these fields — two competing targets in a 56px row is
+   * how somebody switches a method off while reaching for its details. Beside
+   * the account it governs is also simply where it means the most.
+   *
+   * Absent until there is something to switch: a provider with no link yet
+   * has nothing to put on an invoice.
+   */
+  readonly enabled?: boolean
+  readonly onToggle?: (next: boolean) => void
   readonly onSave: (value: string) => void
   readonly onRemove: () => void
   readonly onClose: () => void
@@ -44,6 +57,8 @@ export function PaymentLinkForm({
   provider: providerId,
   current,
   country,
+  enabled,
+  onToggle,
   onSave,
   onRemove,
   onClose,
@@ -180,6 +195,39 @@ export function PaymentLinkForm({
       {/* One sentence, in the app. Never a help article, never a link out. */}
       {provider.findIt !== undefined && (
         <p className="text-[11px] opacity-55">{provider.findIt}</p>
+      )}
+
+      {/*
+        THE SWITCH, BESIDE WHAT IT SWITCHES (§J).
+        
+        §J gives every method this: "each off until added … everything
+        switched on prints in invoice payment instructions". A link that is
+        saved and off is a link the trader KEEPS and does not print, and
+        turning it off must never mean deleting it — pasting it again to turn
+        it back on would be the app losing their work to save a boolean.
+      */}
+      {enabled !== undefined && onToggle !== undefined && (
+        <button
+          type="button"
+          role="switch"
+          aria-checked={enabled}
+          onClick={() => onToggle(!enabled)}
+          className="flex min-h-tap w-full items-center justify-between gap-3 rounded-xl bg-ink/[0.04] px-3 text-start text-xs font-medium"
+        >
+          {strings.settings.printOnInvoices}
+          <span
+            aria-hidden
+            className={`grid h-6 w-10 shrink-0 items-center rounded-full px-0.5 motion-safe:transition-colors ${
+              enabled ? 'bg-status-good' : 'bg-ink/20'
+            }`}
+          >
+            <span
+              className={`block size-5 rounded-full bg-surface motion-safe:transition-transform ${
+                enabled ? 'translate-x-4' : ''
+              }`}
+            />
+          </span>
+        </button>
       )}
 
       <div className="flex gap-2">
