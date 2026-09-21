@@ -36,7 +36,7 @@ import type { Repositories } from '../data/repositories'
 import type { CheckResult } from './gate'
 import { TEMPLATES } from '../pdf/templates'
 import { type ComposableDocument, composeDocument } from '../pdf/compose'
-import { paginate } from '../pdf/paginate'
+import { FOOTER_ROW_COST, ROWS_PER_PAGE, paginate } from '../pdf/paginate'
 import { DocumentPage } from '../pdf/DocumentPage'
 import { freezeLabels, label, printedTitle } from '../domain/locale/profile'
 import { quantity } from '../domain/documents/types'
@@ -309,7 +309,7 @@ async function previewsInSixteen(
       branding: BRANDING,
       columnLabels: COLUMN_LABELS,
     })
-    const pages = paginate(model, { rowsPerPage: 18, footerRowCost: 6 })
+    const pages = paginate(model, { rowsPerPage: ROWS_PER_PAGE, footerRowCost: FOOTER_ROW_COST })
     const page = pages[0]
     if (page === undefined) throw new Error('the invoice paginated to nothing')
 

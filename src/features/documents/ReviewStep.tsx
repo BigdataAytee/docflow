@@ -12,7 +12,7 @@
 import { useCompany } from '../../app/context'
 import { format } from '../../domain/locale/data/strings'
 import { composeDocument, type ComposableDocument, type ComposeOptions } from '../../pdf/compose'
-import { paginate } from '../../pdf/paginate'
+import { FOOTER_ROW_COST, ROWS_PER_PAGE, paginate } from '../../pdf/paginate'
 import { DocumentPage } from '../../pdf/DocumentPage'
 import { templateById, type TemplateId } from '../../pdf/templates'
 import { TYPE_PALETTE } from '../../ui'
@@ -32,9 +32,6 @@ export interface ReviewStepProps {
   readonly composeOptions: Omit<ComposeOptions, 'profile'>
 }
 
-/** Rows that fit a page of the preview. Tuned per design in Phase 4 on device. */
-const ROWS_PER_PAGE = 18
-const FOOTER_ROW_COST = 4
 
 export function ReviewStep({
   document,

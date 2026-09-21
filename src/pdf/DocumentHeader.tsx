@@ -64,7 +64,7 @@ const Name = ({ model, className = '' }: { model: PageModel; className?: string 
     {model.branding.address !== undefined && model.branding.address.trim() !== '' && (
       <p
         data-business-address
-        className="mt-[3px] break-words text-[9.5px] leading-snug opacity-65"
+        className="mt-[3px] break-words text-[12.5px] leading-snug opacity-65"
       >
         {model.branding.address}
       </p>
@@ -86,7 +86,7 @@ const SidebarContact = ({ model }: { model: PageModel }) => {
   )
   if (lines.length === 0) return null
   return (
-    <div className="mt-auto space-y-[3px] text-[9px] leading-snug opacity-75">
+    <div className="mt-auto space-y-[3px] text-[11.5px] leading-snug opacity-75">
       {lines.map((line) => (
         <p key={line} className="break-words">
           {line}
@@ -147,7 +147,7 @@ const Headline = ({
       className={`shrink-0 ${align === 'end' ? 'text-end' : ''}`}
       data-headline
     >
-      <p className="text-[8.5px] font-bold uppercase tracking-[0.16em] opacity-55">
+      <p className="text-[11.5px] font-bold uppercase tracking-[0.16em] opacity-55">
         {model.headline.label}
       </p>
       {/*
@@ -198,9 +198,9 @@ const Title = ({
  */
 const Ref = ({ model, className = '' }: { model: PageModel; className?: string }) => (
   <>
-    <p className={`text-[12px] tabular-nums opacity-70 ${className}`}>{model.reference}</p>
+    <p className={`text-[15px] tabular-nums opacity-70 ${className}`}>{model.reference}</p>
     {model.replacesLine !== null && (
-      <p className={`text-[12px] font-semibold opacity-80 ${className}`}>{model.replacesLine}</p>
+      <p className={`text-[13.5px] font-semibold opacity-80 ${className}`}>{model.replacesLine}</p>
     )}
   </>
 )
@@ -319,7 +319,7 @@ export function DocumentHeader({ model, template, ink, logo, formatAmount }: Doc
                 model.branding.address.trim() !== '' ? (
                   <p
                     data-business-address
-                    className="min-w-0 break-words text-[9.5px] leading-snug opacity-65"
+                    className="min-w-0 break-words text-[12.5px] leading-snug opacity-65"
                   >
                     {model.branding.address}
                   </p>
@@ -360,13 +360,13 @@ export function DocumentHeader({ model, template, ink, logo, formatAmount }: Doc
                 quietest design its own name — Minimal's entire argument is
                 that the document does not announce itself.
               */}
-              <h2 className="break-words text-[13px] font-semibold uppercase tracking-[0.3em] text-[#8a93a6]">
+              <h2 className="break-words text-[15px] font-semibold uppercase tracking-[0.3em] text-[#8a93a6]">
                 {model.title}
               </h2>
               <Ref model={model} className="mt-[2px]" />
-              <p className="mt-[4px] text-[9.5px] tabular-nums opacity-60">{model.issueDate}</p>
+              <p className="mt-[4px] text-[12.5px] tabular-nums opacity-60">{model.issueDate}</p>
               {model.dueDate !== undefined && (
-                <p className="text-[9.5px] tabular-nums opacity-60">{model.dueDate}</p>
+                <p className="text-[12.5px] tabular-nums opacity-60">{model.dueDate}</p>
               )}
             </div>
           </header>
@@ -564,7 +564,7 @@ export function DocumentHeader({ model, template, ink, logo, formatAmount }: Doc
             Compact's whole idea is that the facts sit in one band; lifting
             the amount out of it would be every other design's header.
           */}
-          <div className="mt-[8px] grid grid-cols-4 gap-[8px] text-[10px]">
+          <div className="mt-[8px] grid grid-cols-4 gap-[8px] text-[12.5px]">
             {[
               [model.partyLabel, model.party.name],
               ['', model.reference],
@@ -687,7 +687,7 @@ export function DocumentHeader({ model, template, ink, logo, formatAmount }: Doc
             <div className="mt-[9px] flex w-full items-center gap-[6px]">
               <span className="h-px flex-1" style={{ backgroundColor: ink, opacity: 0.35 }} />
               <span
-                className="shrink-0 whitespace-nowrap text-[13px] uppercase tracking-[0.24em]"
+                className="shrink-0 whitespace-nowrap text-[15px] uppercase tracking-[0.24em]"
                 style={{ color: ink }}
               >
                 {model.title}
@@ -817,7 +817,7 @@ export function DocumentHeader({ model, template, ink, logo, formatAmount }: Doc
             <div className="mt-[9px] flex w-full items-center gap-[5px]">
               <span className="h-px flex-1" style={{ backgroundColor: '#F0D7E0' }} />
               <span
-                className="shrink-0 whitespace-nowrap text-[13px] uppercase tracking-[0.25em]"
+                className="shrink-0 whitespace-nowrap text-[15px] uppercase tracking-[0.25em]"
                 style={{ color: '#B4577E' }}
               >
                 {model.title}
@@ -869,7 +869,7 @@ export function DocumentHeader({ model, template, ink, logo, formatAmount }: Doc
             <div className="shrink-0">{logo}</div>
             {model.branding.address !== undefined && model.branding.address.trim() !== '' && (
               <div
-                className="max-w-[46%] shrink-0 ps-[6px] text-end text-[10.5px] leading-snug opacity-75"
+                className="max-w-[46%] shrink-0 ps-[6px] text-end text-[12.5px] leading-snug opacity-75"
                 style={{ borderInlineStart: `2px solid ${ink}` }}
               >
                 <p className="font-bold uppercase tracking-wide">{model.partyLabel}</p>
@@ -961,7 +961,7 @@ export function DocumentHeader({ model, template, ink, logo, formatAmount }: Doc
             {model.branding.address !== undefined && model.branding.address.trim() !== '' && (
               <p
                 data-business-address
-                className="mt-[4px] break-words text-[9.5px] leading-snug opacity-60"
+                className="mt-[4px] break-words text-[12.5px] leading-snug opacity-60"
               >
                 {model.branding.address}
               </p>

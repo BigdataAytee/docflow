@@ -18,7 +18,7 @@
 
 import { useCompany } from '../../app/context'
 import { composeDocument, type ComposableDocument, type ComposeOptions } from '../../pdf/compose'
-import { paginate } from '../../pdf/paginate'
+import { FOOTER_ROW_COST, ROWS_PER_PAGE, paginate } from '../../pdf/paginate'
 import { DocumentPage } from '../../pdf/DocumentPage'
 import { templateById, type TemplateId } from '../../pdf/templates'
 import { TYPE_PALETTE } from '../../ui'
@@ -32,9 +32,6 @@ export interface LivePreviewProps {
   readonly brandColour?: string
 }
 
-/** Matches Review, so the preview breaks where the printed page breaks. */
-const ROWS_PER_PAGE = 18
-const FOOTER_ROW_COST = 4
 
 export function LivePreview({
   document,

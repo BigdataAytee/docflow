@@ -64,7 +64,12 @@
     "src/share/events.ts",
     "src/share/port.ts",
     "src/features/credits/issue.ts",
-    "src/features/documents/reference.ts"
+    "src/features/documents/reference.ts",
+    // The printed type scale, which the size sweep reads to check the two
+    // spellings of it agree. Pure arithmetic and constants: no DOM, no React,
+    // no asset import, so it belongs to both projects without dragging
+    // anything into this one.
+    "src/pdf/typeScale.ts"
   ],
   "exclude": ["legacy"]
 }

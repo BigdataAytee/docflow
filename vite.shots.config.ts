@@ -16,6 +16,18 @@ export default defineConfig({
   build: {
     outDir: 'dist-shots',
     emptyOutDir: true,
-    rollupOptions: { input: resolve(process.cwd(), 'shots.html') },
+    rollupOptions: {
+      input: {
+        /* The store screenshots (§T). */
+        shots: resolve(process.cwd(), 'shots.html'),
+        /*
+         * Every design at A4, for the printed-type sweep. A second entry
+         * rather than a route inside the app: nothing a customer can reach
+         * shows sixteen designs at once, and adding one so a test could look
+         * would be app code that exists for the test.
+         */
+        sizes: resolve(process.cwd(), 'sizes.html'),
+      },
+    },
   },
 })

@@ -309,7 +309,7 @@ export function DocumentPage({
         {model.headline !== null && !HEADER_DRAWS_HEADLINE.has(template.headerStyle) && (
           <div className="mt-[10px] flex justify-end" data-headline>
             <div className="text-end">
-              <p className="text-[8.5px] font-bold uppercase tracking-[0.16em] opacity-55">
+              <p className="text-[11.5px] font-bold uppercase tracking-[0.16em] opacity-55">
                 {model.headline.label}
               </p>
               {/* Never wrapped — an amount broken across two lines stops
@@ -340,11 +340,11 @@ export function DocumentPage({
         */}
         {!headerCarriesParty(template) && (
         <section
-          className="mt-[14px] flex justify-between gap-[24px] px-[12px] py-[10px] text-[12px]"
+          className="mt-[14px] flex justify-between gap-[24px] px-[12px] py-[10px] text-[13.5px]"
           style={{ backgroundColor: `${ink}0f` }}
         >
           <div className="min-w-0">
-            <p className="text-[9px] font-bold uppercase tracking-[0.14em] opacity-60">
+            <p className="text-[11.5px] font-bold uppercase tracking-[0.14em] opacity-60">
               {model.partyLabel}
             </p>
             <p className="mt-[3px] font-semibold">{model.party.name}</p>
@@ -361,7 +361,7 @@ export function DocumentPage({
         </section>
         )}
 
-        <table className="mt-[16px] w-full border-collapse text-[12px]">
+        <table className="mt-[16px] w-full border-collapse text-[13.5px]">
           {/* Repeated on every page (§I). */}
           <thead>
             {/*
@@ -377,7 +377,7 @@ export function DocumentPage({
                 <th
                   key={column.key}
                   style={{ textAlign: column.align }}
-                  className="px-[8px] py-[6px] text-[9.5px] font-bold uppercase tracking-[0.1em]"
+                  className="px-[8px] py-[6px] text-[12.5px] font-bold uppercase tracking-[0.1em]"
                 >
                   {column.label}
                 </th>
@@ -402,14 +402,14 @@ export function DocumentPage({
         </table>
 
         {page.continued && continuedLabel !== undefined && (
-          <p className="mt-[8px] text-[10px] italic opacity-60">{continuedLabel}</p>
+          <p className="mt-[8px] text-[12.5px] italic opacity-60">{continuedLabel}</p>
         )}
 
         {page.showsFooter && (
           <>
             {model.totals !== null && (
               <section
-                className="mt-[12px] self-end text-[12px]"
+                className="mt-[12px] self-end text-[13.5px]"
                 style={{ width: `${model.totalsWidthPercent}%` }}
               >
                 {/*
@@ -452,9 +452,13 @@ export function DocumentPage({
                   />
                 )}
                 <div className="mt-[4px] border-t-2 pt-[4px]" style={{ borderColor: ink }}>
-                  <div className="flex justify-between text-[14px] font-black" style={{ color: ink }}>
+                  <div
+                    className="flex justify-between text-[19px] font-black"
+                    data-total-row
+                    style={{ color: ink }}
+                  >
                     <span>{model.totalsLabel ?? ''}</span>
-                    <span className="tabular-nums">
+                    <span className="tabular-nums" data-total-figure>
                       {formatAmount(model.totals.payable.minor, currency)}
                     </span>
                   </div>
@@ -475,18 +479,18 @@ export function DocumentPage({
             {model.note !== null && (
               <section className="mt-[14px]" data-note-block>
                 <p
-                  className="text-[8.5px] font-bold uppercase tracking-[0.14em] opacity-55"
+                  className="text-[11.5px] font-bold uppercase tracking-[0.14em] opacity-55"
                   style={{ color: ink }}
                 >
                   {model.note.label}
                 </p>
-                <p className="mt-[3px] text-[10px] leading-relaxed opacity-75">
+                <p className="mt-[3px] text-[13.5px] leading-relaxed opacity-75">
                   {model.note.body}
                 </p>
               </section>
             )}
 
-            <footer className="mt-auto flex items-end justify-between gap-[24px] pt-[16px] text-[10px]">
+            <footer className="mt-auto flex items-end justify-between gap-[24px] pt-[16px] text-[13.5px]">
               {/* §I: the payment box is inline beside the signature, never a
                   full-width band — and a delivery document has none at all. */}
               {model.paymentBox !== null && (
@@ -497,7 +501,18 @@ export function DocumentPage({
                   <dl className="mt-[4px]">
                     {model.paymentBox.rows.map((row) => (
                       <div key={row.label} className="flex gap-[8px]">
-                        <dt className="w-[96px] shrink-0 opacity-60">{row.label}</dt>
+                        {/*
+                          WIDE ENOUGH FOR THE LONGEST LABEL, on one line.
+
+                          It was 96px, which held "Account number" while the
+                          footer printed at 10px. Raising the body to clear
+                          the 10pt print floor made the same words 112px wide
+                          and "Account number" and "Balance remaining" both
+                          broke over two lines — on the block telling somebody
+                          where to send money. A size guard cannot see that:
+                          the type was the right size, and the column was not.
+                        */}
+                        <dt className="w-[124px] shrink-0 opacity-60">{row.label}</dt>
                         <dd className="font-medium">{row.value}</dd>
                       </div>
                     ))}
@@ -517,7 +532,7 @@ export function DocumentPage({
                     */}
                     {model.paymentBox.links.map((row) => (
                       <div key={`${row.label}:${row.value}`} className="flex gap-[8px]">
-                        <dt className="w-[96px] shrink-0 opacity-60">{row.label}</dt>
+                        <dt className="w-[124px] shrink-0 opacity-60">{row.label}</dt>
                         <dd className="break-all font-medium">{row.value}</dd>
                       </div>
                     ))}
@@ -579,7 +594,7 @@ export function DocumentPage({
                     <span className="block uppercase tracking-wide opacity-60">
                       {model.receiptEvidence.paidNowLabel}
                     </span>
-                    <span className="text-[14px] font-black tabular-nums">
+                    <span className="text-[19px] font-black tabular-nums" data-total-figure>
                       {formatAmount(
                         model.receiptEvidence.amount.minor,
                         model.receiptEvidence.amount.currency,
@@ -588,14 +603,14 @@ export function DocumentPage({
                   </p>
                   <dl className="mt-[4px]">
                     <div className="flex gap-[8px]">
-                      <dt className="w-[96px] shrink-0 opacity-60">
+                      <dt className="w-[124px] shrink-0 opacity-60">
                         {model.receiptEvidence.datePaidLabel}
                       </dt>
                       <dd className="font-medium tabular-nums">{model.receiptEvidence.paidAt}</dd>
                     </div>
                     {model.receiptEvidence.method !== undefined && (
                       <div className="flex gap-[8px]">
-                        <dt className="w-[96px] shrink-0 opacity-60">
+                        <dt className="w-[124px] shrink-0 opacity-60">
                           {model.receiptEvidence.methodLabel}
                         </dt>
                         <dd className="font-medium">{model.receiptEvidence.method}</dd>
@@ -613,7 +628,7 @@ export function DocumentPage({
                     */}
                     {model.receiptEvidence.against !== undefined && (
                       <div className="flex gap-[8px]">
-                        <dt className="w-[96px] shrink-0 opacity-60">
+                        <dt className="w-[124px] shrink-0 opacity-60">
                           {model.receiptEvidence.againstLabel}
                         </dt>
                         <dd className="font-medium tabular-nums">
@@ -646,7 +661,7 @@ export function DocumentPage({
                     */}
                     {model.receiptEvidence.invoiceTotal !== undefined && (
                       <div className="flex gap-[8px]" data-invoice-total>
-                        <dt className="w-[96px] shrink-0 opacity-60">
+                        <dt className="w-[124px] shrink-0 opacity-60">
                           {model.receiptEvidence.invoiceTotalLabel}
                         </dt>
                         <dd className="font-medium tabular-nums">
@@ -659,7 +674,7 @@ export function DocumentPage({
                     )}
                     {model.receiptEvidence.paidBefore !== undefined && (
                       <div className="flex gap-[8px]" data-paid-before>
-                        <dt className="w-[96px] shrink-0 opacity-60">
+                        <dt className="w-[124px] shrink-0 opacity-60">
                           {model.receiptEvidence.paidBeforeLabel}
                         </dt>
                         <dd className="font-medium tabular-nums">
@@ -673,7 +688,7 @@ export function DocumentPage({
 
                     {model.receiptEvidence.balanceRemaining !== undefined && (
                       <div className="flex gap-[8px]" data-balance-remaining>
-                        <dt className="w-[96px] shrink-0 opacity-60">
+                        <dt className="w-[124px] shrink-0 opacity-60">
                           {model.receiptEvidence.balanceRemainingLabel}
                         </dt>
                         <dd className="font-bold tabular-nums">
@@ -783,7 +798,7 @@ export function DocumentPage({
         <ContactStrip branding={model.branding} showsFooter={page.showsFooter} ink={template.ink} />
 
         {totalPages > 1 && (
-          <p className="mt-[8px] text-center text-[10px] tabular-nums opacity-50">
+          <p className="mt-[8px] text-center text-[11.5px] tabular-nums opacity-50">
             {page.pageNumber} / {totalPages}
           </p>
         )}
@@ -840,7 +855,7 @@ function ContactStrip({
     */
     <div data-contact-strip className="pt-[10px]">
       <div className="border-t opacity-25" style={{ borderColor: ink }} />
-      <p className="mt-[6px] text-center text-[9px] tracking-[0.02em] opacity-70">
+      <p className="mt-[6px] text-center text-[11.5px] tracking-[0.02em] opacity-70">
         {parts.join('  ·  ')}
       </p>
     </div>

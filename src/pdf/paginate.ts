@@ -49,6 +49,42 @@ export class PaginationError extends Error {}
  * something a recipient can actually see had to move this with it, or a page
  * of photographed goods would run off the bottom.
  */
+/**
+ * How many ordinary rows a page holds, and what the block beneath them costs.
+ *
+ * DECLARED ONCE, because it is a fact about the rendered page rather than a
+ * preference. It was written out three times — the live preview, the review
+ * step and the device journey — with the journey disagreeing about the footer
+ * (6 against 4), so the run that was supposed to prove the printed page fit
+ * was pagingating a different page from the one people were looking at.
+ *
+ * TIED TO THE TYPE SCALE. A row is a line of `TYPE.body` plus its padding, so
+ * raising the body size to clear the 10pt print floor made every row taller
+ * and this number smaller: it was 18 when the table printed at 9pt.
+ *
+ * MEASURED, NOT CHOSEN. `tools/sweeps/pdfsizes.ts` renders a full page in all
+ * sixteen designs and fails if the content runs past the bottom of the A4
+ * box. Seventeen fits; eighteen runs Aria's framed header off the paper by
+ * 3px. Sixteen is one row inside the measured limit, because the device
+ * substitutes its own fonts and 3px is not a margin. Being needlessly low
+ * would be its own cost — every row of slack here is a page break in
+ * somebody's PDF that did not need to happen.
+ *
+ * The box is `overflow-hidden`, so an overrun is SILENT: the last row, the
+ * signature or the payment box is simply not there. Nothing but a
+ * measurement can find that.
+ */
+export const ROWS_PER_PAGE = 16
+
+/**
+ * Row-equivalents the totals, payment box and signature occupy together.
+ *
+ * Four rows of totals, a payment box beside a signature, and the contact
+ * strip under both. Counted against the same rows the table uses, so the two
+ * numbers are in one unit.
+ */
+export const FOOTER_ROW_COST = 5
+
 export const PHOTO_ROW_COST = 6
 
 /** A row with a picture of the goods is taller than one without (§I). */
