@@ -57,6 +57,9 @@ export function PaymentLinkSection({
   const [open, setOpen] = useState<string | null>(null)
   const [showingOthers, setShowingOthers] = useState(false)
 
+  const isWallet = (provider: PaymentProvider) => provider.kind === 'mobile_money'
+  const isLink = (provider: PaymentProvider) => !isWallet(provider)
+
   const { offered, others } = providersFor(country)
   const saved = new Map(links.map((link) => [link.provider, link.value]))
 
@@ -71,10 +74,14 @@ export function PaymentLinkSection({
   const visible = [...offered, ...fromOthers]
   const stillHidden = others.filter((provider) => !saved.has(provider.id))
 
-  const put = (provider: PaymentProvider, value: string) => {
+  const put = (provider: PaymentProvider, value: string, accountName?: string) => {
     onChange([
       ...links.filter((link) => link.provider !== provider.id),
-      { provider: provider.id, value },
+      {
+        provider: provider.id,
+        value,
+        ...(accountName === undefined || accountName === '' ? {} : { accountName }),
+      },
     ])
     /*
      * PASTING ONE SWITCHES IT ON. Somebody who went and found their PayPal
@@ -175,7 +182,13 @@ export function PaymentLinkSection({
                   enabled: enabled.includes(provider.id),
                   onToggle: (next: boolean) => onToggle(provider.id, next),
                 })}
-            onSave={(next) => put(provider, next)}
+            {...(saved.get(provider.id) === undefined
+              ? {}
+              : (() => {
+                  const held = links.find((link) => link.provider === provider.id)
+                  return held?.accountName === undefined ? {} : { currentName: held.accountName }
+                })())}
+            onSave={(next, accountName) => put(provider, next, accountName)}
             onRemove={() => drop(provider)}
             onClose={() => setOpen(null)}
           />
@@ -205,7 +218,13 @@ export function PaymentLinkSection({
 
   return (
     <div className="space-y-4">
-      {group(strings.settings.paymentLinks, visible)}
+      {/*
+        GROUPED BY WHAT THEY ASK FOR, which is the difference a trader cares
+        about: a link is pasted, a wallet is a number and a name. §G's own
+        pattern on this screen — a plain heading over a card of rows.
+      */}
+      {group(strings.settings.paymentLinks, visible.filter(isLink))}
+      {group(strings.settings.mobileMoney, visible.filter(isWallet))}
 
       {/*
         THE QUIET LINE. A text button, not a card and not a chevron row:
@@ -220,7 +239,8 @@ export function PaymentLinkSection({
         {showingOthers ? strings.settings.hideAnother : strings.settings.useAnother}
       </button>
 
-      {showingOthers && group(strings.settings.otherServices, stillHidden)}
+      {showingOthers && group(strings.settings.otherServices, stillHidden.filter(isLink))}
+      {showingOthers && group(strings.settings.mobileMoney, stillHidden.filter(isWallet))}
     </div>
   )
 }

@@ -40,12 +40,33 @@ export type ProviderId =
   | 'paystack_page'
   | 'flutterwave_page'
   | 'square_link'
+  // Mobile money: a phone number and the name on the account, not a link.
+  | 'mtn_momo'
+  | 'mpesa'
+  | 'airtel_money'
+  | 'orange_money'
+  | 'wave'
+  | 'opay'
+  | 'palmpay'
   | 'other_link'
+
+/**
+ * What a trader has to supply, and therefore what the row asks for.
+ *
+ * `link` is an address they paste. `mobile_money` is a PHONE NUMBER and the
+ * NAME ON THE ACCOUNT — two facts, not a URL, and the difference is not
+ * cosmetic: a customer sending to a wallet types the number and then checks
+ * the name that comes back before confirming. Printing one without the other
+ * is printing half of what they need to be sure.
+ */
+export type ProviderKind = 'link' | 'mobile_money'
 
 export interface PaymentProvider {
   readonly id: ProviderId
   /** What a customer sees printed above the link (§I, §D). */
   readonly name: string
+  /** What this row collects. Defaults to a link, which most of them are. */
+  readonly kind?: ProviderKind
   /**
    * The host and path a link of this kind has, minus the handle.
    *
@@ -70,7 +91,7 @@ export interface PaymentProvider {
    * payment link is `buy.stripe.com/aEU5kC1x2`, and accepting "aEU5kC1x2"
    * on its own would be accepting anything at all.
    */
-  readonly acceptsBareHandle: boolean
+  readonly acceptsBareHandle?: boolean
   /**
    * Where to find the link, for the providers that hide it (§G, §N).
    *
@@ -203,6 +224,91 @@ export const PROVIDERS: Readonly<Record<ProviderId, PaymentProvider>> = {
     acceptsBareHandle: false,
     findIt: 'Square Dashboard → Online checkout → Copy link.',
     markets: ['US', 'GB', 'CA', 'AU', 'IE'],
+  },
+  /*
+   * MOBILE MONEY — A NUMBER AND A NAME, NOT A LINK.
+   *
+   * How a very large share of this app's market is actually paid, and the
+   * reason the list above was not enough: a trader in Kumasi is not pasting a
+   * URL, they are telling a customer a phone number. §J's methods have always
+   * been a mixture of arrangements and addresses; this is the third kind.
+   *
+   * ⚠ THE SAME MARKETS CAUTION AS EVERY OTHER ENTRY, and it bites harder
+   * here. Operators launch, merge and withdraw — MTN MoMo's Nigerian licence
+   * and Vodafone Cash becoming Telecel in Ghana both happened inside a couple
+   * of years. These lists are short and current-as-written, never verified.
+   * Being absent costs a trader one tap through "Use a different service";
+   * being wrongly present costs them a number their customer cannot send to.
+   */
+  mtn_momo: {
+    id: 'mtn_momo',
+    kind: 'mobile_money',
+    name: 'MTN MoMo',
+    prefix: '',
+    sample: '024 123 4567',
+    blurb: 'Phone number and account name',
+    findIt: 'The number your MoMo wallet is registered to.',
+    markets: ['GH', 'UG', 'RW', 'CM', 'CI', 'ZM', 'BJ', 'NG'],
+  },
+  mpesa: {
+    id: 'mpesa',
+    kind: 'mobile_money',
+    name: 'M-Pesa',
+    prefix: '',
+    sample: '0712 345 678',
+    blurb: 'Phone number and account name',
+    findIt: 'The number your M-Pesa is registered to.',
+    markets: ['KE', 'TZ', 'GH', 'MZ', 'CD', 'LS', 'EG'],
+  },
+  airtel_money: {
+    id: 'airtel_money',
+    kind: 'mobile_money',
+    name: 'Airtel Money',
+    prefix: '',
+    sample: '0750 123 456',
+    blurb: 'Phone number and account name',
+    findIt: 'The number your Airtel Money is registered to.',
+    markets: ['KE', 'UG', 'TZ', 'RW', 'ZM', 'MW', 'NG', 'CD', 'MG', 'NE', 'TD'],
+  },
+  orange_money: {
+    id: 'orange_money',
+    kind: 'mobile_money',
+    name: 'Orange Money',
+    prefix: '',
+    sample: '07 12 34 56 78',
+    blurb: 'Phone number and account name',
+    findIt: 'The number your Orange Money is registered to.',
+    markets: ['CI', 'SN', 'ML', 'BF', 'CM', 'GN', 'MG', 'NE'],
+  },
+  wave: {
+    id: 'wave',
+    kind: 'mobile_money',
+    name: 'Wave',
+    prefix: '',
+    sample: '77 123 45 67',
+    blurb: 'Phone number and account name',
+    findIt: 'The number your Wave account is registered to.',
+    markets: ['SN', 'CI', 'ML', 'BF', 'UG'],
+  },
+  opay: {
+    id: 'opay',
+    kind: 'mobile_money',
+    name: 'OPay',
+    prefix: '',
+    sample: '0803 456 7890',
+    blurb: 'Phone number and account name',
+    findIt: 'The number your OPay wallet is registered to.',
+    markets: ['NG'],
+  },
+  palmpay: {
+    id: 'palmpay',
+    kind: 'mobile_money',
+    name: 'PalmPay',
+    prefix: '',
+    sample: '0803 456 7890',
+    blurb: 'Phone number and account name',
+    findIt: 'The number your PalmPay wallet is registered to.',
+    markets: ['NG'],
   },
   /**
    * ANYTHING ELSE. A trader whose provider nobody here has heard of types the

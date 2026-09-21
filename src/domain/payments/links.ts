@@ -38,7 +38,13 @@ import { type PaymentProvider, PROVIDERS, type ProviderId } from './providers'
  */
 const TRACKING = /^(utm_|fbclid$|gclid$|igshid$|mc_|ref$|source$|si$)/i
 
-export type LinkProblem = 'empty' | 'not_this_provider' | 'no_handle' | 'not_a_link'
+export type LinkProblem =
+  | 'empty'
+  | 'not_this_provider'
+  | 'no_handle'
+  | 'not_a_link'
+  /** A mobile-money wallet that is not a phone number. */
+  | 'not_a_number'
 
 export interface LinkResult {
   /** The single value: stored, shown back, and printed (§J). */
@@ -100,6 +106,13 @@ export function normaliseProviderLink(
   raw: string,
 ): LinkResult | LinkRejected {
   const provider: PaymentProvider = PROVIDERS[providerId]
+  /*
+   * A WALLET IS NOT AN ADDRESS. Sending a phone number through the URL
+   * cleaner would strip the punctuation somebody wrote it with and then
+   * reject it for having no dot in it. `normaliseWalletNumber` is the
+   * question to ask about a wallet.
+   */
+  if (provider.kind === 'mobile_money') return normaliseWalletNumber(raw)
   const text = stripped(raw)
   if (text === '') return { problem: 'empty' }
 
@@ -137,7 +150,7 @@ export function normaliseProviderLink(
     return { problem: 'not_this_provider' }
   }
 
-  if (!provider.acceptsBareHandle) return { problem: 'not_this_provider' }
+  if (provider.acceptsBareHandle !== true) return { problem: 'not_this_provider' }
   return { value: `${provider.prefix}${text}` }
 }
 
@@ -152,10 +165,54 @@ export function normaliseProviderLink(
 export interface SavedPaymentLink {
   readonly provider: ProviderId
   readonly value: string
+  /**
+   * The name on a mobile-money wallet (§J).
+   *
+   * A second field rather than two facts crammed into `value`, because a
+   * customer sending to a wallet types the NUMBER and then checks the NAME
+   * that comes back before confirming. They are two things, they are checked
+   * separately, and joining them with a bullet in storage would mean parsing
+   * a bullet back out to edit either one.
+   *
+   * Absent on every link, which is what most of these are.
+   */
+  readonly accountName?: string
 }
 
-/** What prints under HOW TO PAY: the provider's name, then the address (§I). */
+/**
+ * What prints under HOW TO PAY: the provider's name, then what to use (§I).
+ *
+ * A mobile-money wallet prints the number AND the name — "0803 456 7890 ·
+ * Dynamic Renaissance" — because a customer confirms the second before
+ * sending to the first. Printing the number alone asks them to send money
+ * somewhere and check nothing.
+ */
 export const printedLine = (link: SavedPaymentLink): { label: string; value: string } => ({
   label: PROVIDERS[link.provider].name,
-  value: link.value,
+  value:
+    link.accountName === undefined || link.accountName.trim() === ''
+      ? link.value
+      : `${link.value} · ${link.accountName.trim()}`,
 })
+
+/**
+ * A phone number, kept as the person typed it (§K).
+ *
+ * NOT REFORMATTED. §K is explicit that identifiers are strings with leading
+ * zeroes kept and "spaces/hyphens allowed for readability" — and a wallet
+ * number is read aloud down a phone in whatever grouping its owner is used
+ * to. Rewriting `0803 456 7890` into `08034567890` is the app deciding it
+ * knows their number better than they do.
+ *
+ * What is refused is something that cannot be a number at all: a customer
+ * cannot send money to a sentence.
+ */
+export function normaliseWalletNumber(raw: string): LinkResult | LinkRejected {
+  const text = raw.trim().replace(/\s+/g, ' ')
+  if (text === '') return { problem: 'empty' }
+  // Digits, and the punctuation people write between them.
+  if (!/^[+(0-9][0-9 ()+-]*$/.test(text)) return { problem: 'not_a_number' }
+  // Enough digits to be a number somebody could actually send to.
+  if ((text.match(/[0-9]/g) ?? []).length < 6) return { problem: 'not_a_number' }
+  return { value: text }
+}

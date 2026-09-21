@@ -42,8 +42,10 @@
  * trademark is a modified trademark.
  */
 
+import airtel from '../../assets/providers/airtel.svg'
 import cashApp from '../../assets/providers/cashapp.svg'
 import monzo from '../../assets/providers/monzo.svg'
+import orange from '../../assets/providers/orange.svg'
 import paypal from '../../assets/providers/paypal.svg'
 import revolut from '../../assets/providers/revolut.svg'
 import square from '../../assets/providers/square.svg'
@@ -83,9 +85,11 @@ const simpleIcons = (owner: string) =>
 /**
  * The marks that are bundled.
  *
- * Eight of the eleven providers. Paystack, Flutterwave and the mobile-money
- * operators have no free source and keep the lettered fallback, which is the
- * documented working state rather than a gap.
+ * Ten of the eighteen providers. Paystack, Flutterwave, MTN MoMo, M-Pesa,
+ * Wave, OPay and PalmPay have no free source and keep the lettered fallback,
+ * which is the documented working state rather than a gap — drop a file in
+ * `src/assets/providers`, import it, record its provenance, and the row picks
+ * it up with nothing else changing.
  */
 export const PROVIDER_LOGOS: Partial<Record<ProviderId, ProviderLogo>> = {
   paypal_me: {
@@ -136,6 +140,20 @@ export const PROVIDER_LOGOS: Partial<Record<ProviderId, ProviderLogo>> = {
     variant: 'Stripe glyph, brand indigo',
     source: simpleIcons('Stripe'),
     guidelines: 'https://stripe.com/newsroom/information',
+    fetched: LOGOS_FETCHED,
+  },
+  airtel_money: {
+    light: airtel,
+    variant: 'Airtel glyph, brand red',
+    source: simpleIcons('Airtel'),
+    guidelines: 'https://www.airtel.in/logo-tune',
+    fetched: LOGOS_FETCHED,
+  },
+  orange_money: {
+    light: orange,
+    variant: 'Orange glyph, brand orange',
+    source: simpleIcons('Orange'),
+    guidelines: 'https://system.design.orange.com/0c1af118d/p/494474-guidelines',
     fetched: LOGOS_FETCHED,
   },
   square_link: {

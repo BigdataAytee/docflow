@@ -48,7 +48,9 @@ export interface PaymentLinkFormProps {
    */
   readonly enabled?: boolean
   readonly onToggle?: (next: boolean) => void
-  readonly onSave: (value: string) => void
+  /** The name on a mobile-money wallet, when there is one. */
+  readonly currentName?: string
+  readonly onSave: (value: string, accountName?: string) => void
   readonly onRemove: () => void
   readonly onClose: () => void
 }
@@ -56,6 +58,7 @@ export interface PaymentLinkFormProps {
 export function PaymentLinkForm({
   provider: providerId,
   current,
+  currentName,
   country,
   enabled,
   onToggle,
@@ -66,11 +69,27 @@ export function PaymentLinkForm({
   const { strings } = useCompany()
   const provider = PROVIDERS[providerId]
   const [typed, setTyped] = useState(current ?? '')
+  /*
+   * THE NAME ON THE WALLET, for the providers that have one.
+   *
+   * A customer sending to a mobile-money number types it and then checks the
+   * name that comes back before confirming. Printing the number without the
+   * name asks them to send money somewhere and check nothing.
+   */
+  const [walletName, setWalletName] = useState(currentName ?? '')
+  const isWallet = provider.kind === 'mobile_money'
   const [problem, setProblem] = useState<LinkProblem | null>(null)
   const [clipboardRefused, setClipboardRefused] = useState(false)
 
   const result = typed.trim() === '' ? null : normaliseProviderLink(providerId, typed)
-  const preview = result?.value === undefined ? null : printedLine({ provider: providerId, value: result.value })
+  const preview =
+    result?.value === undefined
+      ? null
+      : printedLine({
+          provider: providerId,
+          value: result.value,
+          ...(isWallet && walletName.trim() !== '' ? { accountName: walletName.trim() } : {}),
+        })
 
   /** §K: said beside the field, and the input is never touched. */
   const message = (kind: LinkProblem): string => {
@@ -81,6 +100,8 @@ export function PaymentLinkForm({
         return format(strings.settings.linkNoHandle, { prefix: provider.prefix })
       case 'not_a_link':
         return strings.settings.linkNotALink
+      case 'not_a_number':
+        return strings.settings.walletNotANumber
       default:
         return strings.settings.linkNotALink
     }
@@ -109,7 +130,7 @@ export function PaymentLinkForm({
     const outcome = normaliseProviderLink(providerId, typed)
     if (outcome.value === undefined) return setProblem(outcome.problem)
     setProblem(null)
-    onSave(outcome.value)
+    onSave(outcome.value, isWallet ? walletName.trim() : undefined)
     onClose()
   }
 
@@ -132,7 +153,7 @@ export function PaymentLinkForm({
         <span className="flex gap-2">
           <input
             type="text"
-            inputMode="url"
+            inputMode={isWallet ? 'tel' : 'url'}
             autoCapitalize="off"
             autoCorrect="off"
             spellCheck={false}
@@ -151,7 +172,11 @@ export function PaymentLinkForm({
               is a screen reader reading the same word twice for two
               different things.
             */
-            aria-label={format(strings.settings.linkField, { provider: provider.name })}
+            aria-label={
+              isWallet
+                ? format(strings.settings.walletNumber, { provider: provider.name })
+                : format(strings.settings.linkField, { provider: provider.name })
+            }
             aria-invalid={problem !== null}
             className="sunken min-h-tap w-full flex-1 rounded-lg px-3 text-sm"
           />
@@ -176,6 +201,22 @@ export function PaymentLinkForm({
         <p className="text-[11px] font-medium text-status-warn" role="alert">
           {strings.settings.clipboardRefused}
         </p>
+      )}
+
+      {isWallet && (
+        <label className="block">
+          <span className="mb-1 block text-xs font-medium opacity-70">
+            {strings.settings.walletName}
+          </span>
+          <input
+            type="text"
+            value={walletName}
+            onChange={(event) => setWalletName(event.target.value)}
+            placeholder={strings.settings.walletName}
+            aria-label={strings.settings.walletName}
+            className="sunken min-h-tap w-full rounded-lg px-3 text-sm"
+          />
+        </label>
       )}
 
       {/*

@@ -522,7 +522,7 @@ not start until they are.
 | §Q clause | Result |
 | --- | --- |
 | Two seeded companies cannot read or write each other | ✅ verified, local Postgres — 21 tests in `supabase/tests/rls.test.ts`, blocking in CI |
-| Money and transition property tests pass | ✅ verified — 93 tests across `src/domain/{money,documents,payments}`, blocking in CI |
+| Money and transition property tests pass | ✅ verified — 105 tests across `src/domain/{money,documents,payments}`, blocking in CI |
 | Label resolution passes its own property test; no hardcoded type name survives the lint rule | ✅ verified, both halves — 67 tests in `src/domain/locale`, plus the lint rule |
 | Encrypted SQLite opens on device | ⏸ **deferred to Phase 4** — needs the native shell and a physical device |
 | Login / register / Google / reset in ≤ legacy tap counts | ⛔ **unverified** — code complete, no reachable instance (S6; the tap count itself is D2) |
@@ -3993,3 +3993,24 @@ Added by Phase 1:
   mark: dark mode uses the provider's own dark variant where they supply one
   and their light mark otherwise, and `dark:invert` on a trademark is a
   modified trademark.
+- **Mobile money is declared, with the same markets caution as everything
+  else in §J.** `providers.ts` now carries seven wallet operators — MTN MoMo,
+  M-Pesa, Airtel Money, Orange Money, Wave, OPay, PalmPay — under a
+  `kind: 'mobile_money'` that changes what the row asks for: a **phone number
+  and the name on the account**, not a link. That is not cosmetic. A customer
+  sending to a wallet types the number, waits for a name to come back, and
+  checks it before confirming; printing the number alone asks them to send
+  money somewhere and check nothing.
+
+  The number is kept **exactly as typed** (§K: strings, leading zeroes kept,
+  spaces and hyphens allowed) — `0803 456 7890` is how its owner reads it
+  aloud, and reformatting it is the app deciding it knows their number better
+  than they do. Only runs of whitespace are collapsed.
+
+  ⚠ The market lists are short and **current-as-written, never verified**,
+  and this is the entry where that bites hardest: operators launch, merge and
+  withdraw, and MTN MoMo's Nigerian licence and Vodafone Cash becoming Telecel
+  in Ghana both happened inside a couple of years. Re-check before each market
+  launch, as §J requires for the bank-field sets. Being absent costs a trader
+  one tap through "Use a different service"; being wrongly present costs them
+  a number their customer cannot send to.

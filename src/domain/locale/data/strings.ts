@@ -398,6 +398,10 @@ export interface UiStrings {
     readonly hideAnother: string
     readonly otherServices: string
     readonly printOnInvoices: string
+    readonly mobileMoney: string
+    readonly walletNumber: string
+    readonly walletName: string
+    readonly walletNotANumber: string
     readonly notInCountry: string
     readonly linkNotThisProvider: string
     readonly linkNoHandle: string
@@ -1465,6 +1469,10 @@ const EN: UiStrings = {
     hideAnother: 'Hide the other services',
     otherServices: 'Other services',
     printOnInvoices: 'Show this on my invoices',
+    mobileMoney: 'Mobile money',
+    walletNumber: '{provider} number',
+    walletName: 'Name on the account',
+    walletNotANumber: 'That does not look like a phone number.',
     notInCountry: 'This may not be able to receive money in {country}.',
     linkNotThisProvider: 'That does not look like a {provider} link.',
     linkNoHandle: 'Add your name or page after {prefix}',
