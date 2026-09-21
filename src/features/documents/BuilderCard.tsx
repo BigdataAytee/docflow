@@ -9,6 +9,11 @@
  *
  * Shared by every step rather than copied per step — the strip, its hairline
  * and its type-coloured title are the shape a reader learns once.
+ *
+ * ITS COLOUR PROP IS `ink`, NOT `accent`. Everything this card paints with it
+ * is a letterform or a glyph — the small-caps title and the icon beside it —
+ * and in dark mode the locked accent on a navy card measured 1.27:1. `ink`
+ * is the same hue themed for what is behind it (§F, `src/index.css`).
  */
 
 import type { ReactNode } from 'react'
@@ -18,13 +23,14 @@ import { Icon, type IconName } from '../../ui'
 export interface BuilderCardProps {
   readonly title: string
   readonly icon: IconName
-  readonly accent: string
+  /** The type's colour AS INK — see the note above. */
+  readonly ink: string
   /** The small control some strips carry — adding a contact, a method, a list. */
   readonly action?: ReactNode
   readonly children: ReactNode
 }
 
-export function BuilderCard({ title, icon, accent, action, children }: BuilderCardProps) {
+export function BuilderCard({ title, icon, ink, action, children }: BuilderCardProps) {
   return (
     <section className="glass-solid overflow-hidden rounded-2xl">
       {/*
@@ -34,12 +40,12 @@ export function BuilderCard({ title, icon, accent, action, children }: BuilderCa
         sweep, which reads Chromium's accessibility tree rather than the DOM.
       */}
       <div className="card-strip flex items-center gap-2 px-3 py-2">
-        <span style={{ color: accent }}>
+        <span style={{ color: ink }}>
           <Icon name={icon} size={0.9} />
         </span>
         <h2
           className="min-w-0 flex-1 text-[10px] font-bold uppercase tracking-[0.5px]"
-          style={{ color: accent }}
+          style={{ color: ink }}
         >
           {title}
         </h2>

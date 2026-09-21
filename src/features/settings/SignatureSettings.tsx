@@ -36,7 +36,7 @@ export function SignatureSettings({
       <p className="text-xs opacity-70">{strings.settings.signatureHint}</p>
 
       {signatureUrl === undefined ? (
-        <p className="glass rounded-2xl px-4 py-6 text-center text-sm opacity-60">
+        <p className="glass rounded-2xl px-4 py-6 text-center text-sm opacity-70">
           {strings.signature.nothingDrawn}
         </p>
       ) : (

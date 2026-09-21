@@ -134,7 +134,7 @@ export function DeleteAccount({
             // label because the number a person is told and the number the
             // purge counts to must be the same number.
             disabled={typed.trim().toLocaleLowerCase() !== companyName.trim().toLocaleLowerCase()}
-            className="min-h-tap w-full rounded-xl bg-status-bad text-sm font-semibold text-white disabled:opacity-40"
+            className="min-h-tap w-full rounded-xl bg-status-bad text-sm font-semibold text-white disabled:opacity-70"
           >
             {format(d.confirm, { days: GRACE_DAYS })}
           </button>

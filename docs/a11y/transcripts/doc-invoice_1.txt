@@ -3,15 +3,18 @@ StaticText: Demo
 StaticText: ·
 StaticText: This is a demo with sample records on this device only. Nothing is saved to an account, and it is cleared when you close the tab.
 main
+button: Back
 StaticText: INV-001
 heading: INVOICE
 StaticText: Okoro & Sons
 StaticText: Not paid
 StaticText: INVOICE · Classic · A4 portrait
-button: Share the PDF
-button: Turn this into something else
-button: Cancel this document
-button: Credit some of this back
+group: Actions
+button: Share PDF
+button: Convert to…
+button: Record a payment
+button: Chase this money
+button: Actions
 StaticText: ₦0.00 paid of ₦185,000.00
 StaticText: ₦185,000.00 left
 progressbar: ₦0.00 paid of ₦185,000.00
@@ -25,9 +28,3 @@ button: Firmer
 StaticText: Repeat
 StaticText: This one is a one-off.
 button: Not repeating
-button: Statement
-navigation: Sections
-link: Home
-link: Customers
-link: Business
-link: Settings

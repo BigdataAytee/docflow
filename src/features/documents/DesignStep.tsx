@@ -54,7 +54,7 @@ export function DesignStep({
 }: DesignStepProps) {
   const { strings } = useCompany()
   const current = templateById(selected)
-  const { accent, tint } = TYPE_PALETTE[type]
+  const { accent, ink, tint } = TYPE_PALETTE[type]
   const strip = useRef<HTMLUListElement>(null)
 
   /*
@@ -85,7 +85,7 @@ export function DesignStep({
           className="shrink-0 rounded-[11px] px-2.5 py-1.5 text-[10.5px] font-semibold"
           style={{
             backgroundImage: `linear-gradient(180deg, rgb(var(--surface)), ${tint})`,
-            color: accent,
+            color: ink,
             boxShadow: `0 3px 8px ${accent}24`,
           }}
         >
@@ -176,10 +176,10 @@ export function DesignStep({
                   */}
                   <span
                     className="mt-1 block text-[8.5px] font-semibold leading-tight [overflow-wrap:anywhere]"
-                    // The accent is locked in both themes (§F); its opposite
-                    // is a token, because a grey picked to read quietly on a
-                    // white card is illegible on a dark one.
-                    style={{ color: chosen ? accent : 'var(--step-pending-ink)' }}
+                    // Both are tokens: the accent is locked as a fill, but a
+                    // design's name painted in it is a letterform, and on a
+                    // dark card the locked colour cannot be read.
+                    style={{ color: chosen ? ink : 'var(--step-pending-ink)' }}
                   >
                     {template.name}
                   </span>
@@ -201,7 +201,7 @@ export function DesignStep({
         </ul>
       </div>
 
-      <p className="text-[10px] leading-relaxed opacity-45">
+      <p className="text-[10px] leading-relaxed opacity-70">
         {showLogo ? strings.design.logoOnHint : strings.design.logoOffHint}
       </p>
     </div>

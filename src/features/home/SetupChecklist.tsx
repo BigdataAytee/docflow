@@ -57,12 +57,12 @@ export function SetupChecklist({ items, onStart, onGuide, onHide }: SetupCheckli
           ANOTHER screen, so the count changes without this card being
           touched. Announcing it is how that lands for a reader.
         */}
-        <span className="text-[10px] opacity-55" aria-live="polite">
+        <span className="text-[10px] opacity-70" aria-live="polite">
           {format(strings.setup.progress, { done, total: items.length })}
         </span>
       </div>
 
-      <p className="mb-2.5 mt-1.5 text-[10.5px] leading-relaxed opacity-55">{strings.setup.body}</p>
+      <p className="mb-2.5 mt-1.5 text-[10.5px] leading-relaxed opacity-70">{strings.setup.body}</p>
 
       <ul>
         {items.map((item) => (
@@ -75,7 +75,7 @@ export function SetupChecklist({ items, onStart, onGuide, onHide }: SetupCheckli
               <span
                 aria-hidden="true"
                 className={`grid h-6 w-6 shrink-0 place-items-center rounded-lg ${
-                  item.done ? 'bg-status-good-tint text-status-good' : 'bg-brand-tint text-brand'
+                  item.done ? 'bg-status-good-tint text-status-good' : 'bg-brand-tint text-brand-ink'
                 }`}
               >
                 <Icon name={item.done ? 'file-check' : ICONS[item.id]} size={0.8} />
@@ -88,14 +88,16 @@ export function SetupChecklist({ items, onStart, onGuide, onHide }: SetupCheckli
               */}
               <span
                 className={`min-w-0 flex-1 [overflow-wrap:anywhere] ${
-                  item.done ? 'line-through opacity-45' : ''
+                  // Struck through is what says 'done'; fading it to 2.67:1
+                  // says 'gone', and the list is a record of what was done.
+                  item.done ? 'line-through opacity-70' : ''
                 }`}
               >
                 {labels[item.id]}
               </span>
 
               {!item.done && (
-                <span className="ms-auto shrink-0 text-[10px] font-medium text-brand">
+                <span className="ms-auto shrink-0 text-[10px] font-medium text-brand-ink">
                   {strings.setup.start} →
                 </span>
               )}
@@ -108,14 +110,14 @@ export function SetupChecklist({ items, onStart, onGuide, onHide }: SetupCheckli
         <button
           type="button"
           onClick={onGuide}
-          className="min-h-tap text-[11px] text-brand underline underline-offset-[3px]"
+          className="min-h-tap text-[11px] text-brand-ink underline underline-offset-[3px]"
         >
           {strings.setup.viewGuide}
         </button>
         <button
           type="button"
           onClick={onHide}
-          className="min-h-tap text-[11px] text-brand underline underline-offset-[3px]"
+          className="min-h-tap text-[11px] text-brand-ink underline underline-offset-[3px]"
         >
           {strings.setup.hide}
         </button>

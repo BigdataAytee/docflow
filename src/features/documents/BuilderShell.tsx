@@ -15,7 +15,7 @@ import type { ReactNode } from 'react'
 import { useCompany } from '../../app/context'
 import { label as typeLabel, labelInSentence } from '../../domain/locale/profile'
 import { format } from '../../domain/locale/data/strings'
-import { Icon, TYPE_PALETTE } from '../../ui'
+import { Icon, TYPE_PALETTE, typeBand, typeFill } from '../../ui'
 import type { DocumentType } from '../../domain/documents/types'
 import {
   type IssueProblem,
@@ -100,7 +100,7 @@ export function BuilderShell({
           // The type's three stops, at 158deg. No rounded edge and no corner
           // circle here: this band is a toolbar, and the hero treatment would
           // make it compete with the document being built.
-          backgroundImage: `linear-gradient(158deg, ${palette.light}, ${palette.accent} 58%, ${palette.deep})`,
+          backgroundImage: typeBand(palette, 158),
           boxShadow: `0 8px 22px -6px ${palette.accent}80`,
         }}
       >
@@ -115,7 +115,7 @@ export function BuilderShell({
         <div className="min-w-0 flex-1">
           <h1 className="break-words text-[13px] font-semibold leading-tight">{title}</h1>
           {/* Only ever claims a save that actually committed (§C). */}
-          <p className="text-[9.5px] text-white/70">
+          <p className="text-[9.5px] text-white">
             {dirty || lastSavedAt === undefined
               ? strings.common.savingAutomatically
               : strings.common.saved}
@@ -144,10 +144,13 @@ export function BuilderShell({
               onClick={() => onStep(index)}
               aria-current={index === step ? 'step' : undefined}
               className="min-w-0 flex-1 text-center text-[8.5px] font-semibold leading-tight"
-              // The accent is fine inline — §F locks it in both themes. Its
-              // opposite is a token, because a grey that reads as "quiet" on
-              // a white page reads as "invisible" on a dark one.
-              style={{ color: reached ? palette.accent : 'var(--step-pending-ink)' }}
+              // BOTH sides are tokens. The accent is locked as a FILL (§F),
+              // but a step name painted in it is a letterform, and on a dark
+              // shell the locked blue measured 1.75:1. Its opposite was
+              // already a token, for the mirror-image reason: a grey that
+              // reads as "quiet" on a white page reads as "invisible" on a
+              // dark one.
+              style={{ color: reached ? palette.ink : 'var(--step-pending-ink)' }}
             >
               <span
                 aria-hidden="true"
@@ -187,7 +190,7 @@ export function BuilderShell({
           type="button"
           onClick={() => onStep(step - 1)}
           disabled={step === 0}
-          className="glass-pill tap-scale min-h-tap flex-1 rounded-full text-[11.5px] font-semibold text-ink/60 disabled:opacity-40"
+          className="glass-pill tap-scale min-h-tap flex-1 rounded-full text-[11.5px] font-semibold text-ink/60 disabled:opacity-70"
         >
           {strings.common.back}
         </button>
@@ -196,7 +199,9 @@ export function BuilderShell({
           onClick={() => (isLastStep(step, names.length) ? onSave() : onStep(step + 1))}
           className="tap-scale min-h-tap flex-[2] rounded-full text-[11.5px] font-semibold text-white"
           style={{
-            backgroundImage: `linear-gradient(160deg, ${palette.light}, ${palette.accent} 60%, ${palette.deep})`,
+            // A CONTROL, not a band: its whole surface carries a white
+            // label, so the accent's light end must never arrive on it.
+            backgroundImage: typeFill(palette, 160),
             boxShadow: `0 10px 22px -6px ${palette.accent}8c, inset 0 1px 0 rgb(255 255 255 / 0.35)`,
           }}
         >

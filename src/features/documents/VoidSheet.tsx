@@ -58,7 +58,7 @@ export function VoidSheet({
           type="button"
           onClick={onClose}
           aria-label={strings.common.cancel}
-          className="min-h-tap min-w-tap text-lg leading-none opacity-60"
+          className="min-h-tap min-w-tap text-lg leading-none opacity-70"
         >
           ✕
         </button>

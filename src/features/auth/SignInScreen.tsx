@@ -134,7 +134,7 @@ export function SignInScreen({
         {mode === 'up' && (
           <p
             id={`${ids}-password-rule`}
-            className={`mt-1 text-xs ${tooShort ? 'text-status-warn' : 'opacity-60'}`}
+            className={`mt-1 text-xs ${tooShort ? 'text-status-warn' : 'opacity-70'}`}
           >
             {format(a.passwordRule, { count: PASSWORD_MIN_LENGTH })}
           </p>
@@ -144,7 +144,7 @@ export function SignInScreen({
           type="submit"
           disabled={!canSubmit}
           aria-busy={busy !== null}
-          className="raised tap-scale mt-5 min-h-tap w-full rounded-xl bg-gradient-to-b from-brand-light to-brand px-4 text-sm font-semibold text-white disabled:opacity-40"
+          className="raised tap-scale mt-5 min-h-tap w-full rounded-xl bg-gradient-to-b from-brand-light to-brand px-4 text-sm font-semibold text-white disabled:opacity-70"
         >
           {busy === null
             ? mode === 'in'
@@ -160,7 +160,7 @@ export function SignInScreen({
         <button
           type="button"
           disabled={busy !== null}
-          className="mt-3 min-h-tap w-full rounded-xl border border-edge/10 px-4 text-sm font-semibold disabled:opacity-40"
+          className="mt-3 min-h-tap w-full rounded-xl border border-edge/10 px-4 text-sm font-semibold disabled:opacity-70"
           onClick={() => void run('google', onGoogle)}
         >
           {a.continueWithGoogle}
@@ -183,7 +183,7 @@ export function SignInScreen({
         <button
           type="button"
           disabled={email.trim() === '' || busy !== null}
-          className="min-h-tap text-xs font-medium underline opacity-70 disabled:opacity-30"
+          className="min-h-tap text-xs font-medium underline opacity-70 disabled:opacity-70"
           onClick={() =>
             void run('reset', async () => {
               await onReset(email.trim())
@@ -203,7 +203,7 @@ export function SignInScreen({
         for initial auth, and §N says an unavailable capability is stated
         plainly rather than dressed up as something else.
       */}
-      <p className="mt-6 text-[11px] opacity-60">{a.needsConnection}</p>
+      <p className="mt-6 text-[11px] opacity-70">{a.needsConnection}</p>
 
       {notice !== null && (
         <p className="mt-3 rounded-xl bg-ink/5 px-3 py-2.5 text-sm" role="status">

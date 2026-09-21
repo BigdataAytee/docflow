@@ -3,22 +3,23 @@ StaticText: Demo
 StaticText: ·
 StaticText: This is a demo with sample records on this device only. Nothing is saved to an account, and it is cleared when you close the tab.
 main
+button: Back
 heading: How you get paid
 StaticText: None switched on yet
-heading: BANK TRANSFER
-StaticText: Bank
-textbox: Bank
-StaticText: Bank is needed.
-StaticText: Account number
-textbox: Account number
-StaticText: Account number is needed.
-StaticText: Account name
-textbox: Account name
-StaticText: Account name is needed.
+StaticText: PAYMENT METHODS
 StaticText: Bank transfer
-switch: Bank transfer
-navigation: Sections
-link: Home
-link: Customers
-link: Business
-link: Settings
+StaticText: No account details yet
+button: Add bank transfer
+StaticText: Cash on delivery
+StaticText: Pay the driver
+button: Cash on delivery
+StaticText: Add
+StaticText: PAYMENT LINKS
+button: Paystack. Paste your Paystack page link. Add
+button: Flutterwave. Paste your Flutterwave link. Add
+StaticText: MOBILE MONEY
+button: MTN MoMo. Phone number and account name. Add
+button: Airtel Money. Phone number and account name. Add
+button: OPay. Phone number and account name. Add
+button: PalmPay. Phone number and account name. Add
+button: Use a different service

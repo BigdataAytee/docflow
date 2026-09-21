@@ -11,10 +11,13 @@ button: + New waybill
 searchbox: Search Waybills…
 button: WAY-001 Okoro & Sons
 StaticText: Sent out
+button: Sign
 button: WAY-002 Adeyemi Hardware
 StaticText: Sent out
+button: Sign
 button: WAY-003 Chukwu Building Supplies
 StaticText: Sent out
+button: Sign
 button: + New waybill
 navigation: Sections
 link: Home

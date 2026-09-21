@@ -221,7 +221,7 @@ function CustomerCard({
       className="glass flex min-h-tap w-full items-center gap-3 rounded-2xl p-3 text-start"
     >
       <span
-        className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-brand-tint text-sm font-bold text-brand"
+        className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-brand-tint text-sm font-bold text-brand-ink"
         aria-hidden="true"
       >
         {customer.name.trim().charAt(0).toLocaleUpperCase()}
@@ -236,7 +236,7 @@ function CustomerCard({
             {customer.labels.map((label) => (
               <span
                 key={label}
-                className="rounded-full bg-brand-tint px-2 py-0.5 text-[10px] font-medium text-brand"
+                className="rounded-full bg-brand-tint px-2 py-0.5 text-[10px] font-medium text-brand-ink"
               >
                 {label}
               </span>

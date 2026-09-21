@@ -208,7 +208,7 @@ export function NewReceiptSheet({
           type="button"
           onClick={onClose}
           aria-label={strings.common.cancel}
-          className="min-h-tap min-w-tap text-lg leading-none opacity-60"
+          className="min-h-tap min-w-tap text-lg leading-none opacity-70"
         >
           ✕
         </button>
@@ -360,7 +360,7 @@ export function NewReceiptSheet({
         <button
           type="button"
           onClick={() => setShowReference(true)}
-          className="mt-3 min-h-tap text-[12.5px] font-semibold text-brand"
+          className="mt-3 min-h-tap text-[12.5px] font-semibold text-brand-ink"
         >
           {r.addReference}
         </button>
@@ -381,15 +381,15 @@ export function NewReceiptSheet({
         control.
       */}
       {mode === 'cash' ? null : customerId === '' ? (
-        <p className="mt-3 text-[11px] opacity-60">{r.pickWhoFirst}</p>
+        <p className="mt-3 text-[11px] opacity-70">{r.pickWhoFirst}</p>
       ) : options.length === 0 ? (
-        <p className="mt-3 text-[11px] opacity-60">{r.standaloneNote}</p>
+        <p className="mt-3 text-[11px] opacity-70">{r.standaloneNote}</p>
       ) : (
         <section
           data-owes-card
           className="mt-4 rounded-2xl border border-brand/20 bg-brand-tint p-3.5"
         >
-          <p className="text-[13px] font-semibold leading-snug text-brand">
+          <p className="text-[13px] font-semibold leading-snug text-brand-ink">
             {format(options.length === 1 ? r.owesOne : r.owesMany, {
               name: customers.find((c) => c.id === customerId)?.name ?? '',
               amount: formatMoney(totalOwed),
@@ -401,7 +401,7 @@ export function NewReceiptSheet({
             <button
               type="button"
               onClick={() => setApplying(true)}
-              className="raised tap-scale mt-2.5 min-h-tap w-full rounded-xl bg-surface px-3 text-[13px] font-semibold text-brand"
+              className="raised tap-scale mt-2.5 min-h-tap w-full rounded-xl bg-surface px-3 text-[13px] font-semibold text-brand-ink"
             >
               {r.applyToInvoice}
             </button>
@@ -464,7 +464,7 @@ export function NewReceiptSheet({
 
       <button
         type="button"
-        className="raised tap-scale mt-4 min-h-tap w-full rounded-xl bg-gradient-to-b from-brand-light to-brand px-4 text-sm font-semibold text-white disabled:opacity-40"
+        className="raised tap-scale mt-4 min-h-tap w-full rounded-xl bg-gradient-to-b from-brand-light to-brand px-4 text-sm font-semibold text-white disabled:opacity-70"
         disabled={!canRecord}
         onClick={() => {
           /*

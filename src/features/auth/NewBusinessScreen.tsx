@@ -120,14 +120,14 @@ export function NewBusinessScreen({
           §R's "one confirmation". Currency and tax label are named because
           they are the two the owner will notice first if they are wrong.
         */}
-        <p className="mt-1 text-[11px] opacity-60">
+        <p className="mt-1 text-[11px] opacity-70">
           {profile.currency} · {profile.taxLabel} · {profile.dateFormat}
         </p>
 
         <button
           type="submit"
           disabled={!canCreate}
-          className="raised tap-scale mt-5 min-h-tap w-full rounded-xl bg-gradient-to-b from-brand-light to-brand px-4 text-sm font-semibold text-white disabled:opacity-40"
+          className="raised tap-scale mt-5 min-h-tap w-full rounded-xl bg-gradient-to-b from-brand-light to-brand px-4 text-sm font-semibold text-white disabled:opacity-70"
         >
           {busy ? a.creating : a.createBusiness}
         </button>

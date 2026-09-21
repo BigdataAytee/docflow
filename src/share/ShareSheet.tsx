@@ -78,7 +78,7 @@ export function ShareSheet({
           type="button"
           onClick={onClose}
           aria-label={strings.common.cancel}
-          className="min-h-tap min-w-tap text-lg leading-none opacity-60"
+          className="min-h-tap min-w-tap text-lg leading-none opacity-70"
         >
           ✕
         </button>
@@ -91,14 +91,14 @@ export function ShareSheet({
       </pre>
 
       {fileName === undefined && (
-        <p className="mt-2 text-[11px] opacity-60">{s.fileComingWithApp}</p>
+        <p className="mt-2 text-[11px] opacity-70">{s.fileComingWithApp}</p>
       )}
 
       <div className="mt-4 flex flex-col gap-2">
         {can.sheet && (
           <button
             type="button"
-            className="raised tap-scale min-h-tap w-full rounded-xl bg-gradient-to-b from-brand-light to-brand text-sm font-semibold text-white disabled:opacity-40"
+            className="raised tap-scale min-h-tap w-full rounded-xl bg-gradient-to-b from-brand-light to-brand text-sm font-semibold text-white disabled:opacity-70"
             disabled={busy}
             onClick={run}
           >
@@ -111,7 +111,7 @@ export function ShareSheet({
         {!can.sheet && can.clipboard && (
           <button
             type="button"
-            className="raised tap-scale min-h-tap w-full rounded-xl bg-gradient-to-b from-brand-light to-brand text-sm font-semibold text-white disabled:opacity-40"
+            className="raised tap-scale min-h-tap w-full rounded-xl bg-gradient-to-b from-brand-light to-brand text-sm font-semibold text-white disabled:opacity-70"
             disabled={busy}
             onClick={run}
           >
@@ -136,7 +136,7 @@ export function ShareSheet({
       )}
 
       {sharedCount > 0 && (
-        <p className="mt-3 text-[11px] opacity-60">
+        <p className="mt-3 text-[11px] opacity-70">
           {sharedCount === 1 ? s.sharedOnce : format(s.sharedTimes, { count: sharedCount })}
           {lastSharedAt !== undefined && ` · ${format(s.lastSharedOn, { date: lastSharedAt })}`}
         </p>

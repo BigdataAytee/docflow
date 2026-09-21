@@ -115,7 +115,7 @@ export function PublicLinkPage({ kind, transport }: PublicLinkPageProps) {
 
   return (
     <main className="mx-auto min-h-screen max-w-lg bg-paper px-4 py-8" lang={view?.language ?? 'en'}>
-      {screen.state === 'loading' && <p className="text-center text-sm opacity-60">{s.checking}</p>}
+      {screen.state === 'loading' && <p className="text-center text-sm opacity-70">{s.checking}</p>}
 
       {screen.state === 'refused' && (
         <section className="glass rounded-2xl p-6 text-center" aria-label={s.wrong}>
@@ -146,7 +146,7 @@ export function PublicLinkPage({ kind, transport }: PublicLinkPageProps) {
       {view !== null && (
         <>
           <header className="mb-3 text-center">
-            <p className="text-xs uppercase tracking-wide opacity-60">
+            <p className="text-xs uppercase tracking-wide opacity-70">
               {format(s.from, { business: view.businessName })}
             </p>
           </header>
@@ -199,7 +199,7 @@ export function PublicLinkPage({ kind, transport }: PublicLinkPageProps) {
               <button
                 type="button"
                 disabled={busy}
-                className="raised tap-scale min-h-tap w-full rounded-xl bg-gradient-to-b from-brand-light to-brand px-4 text-sm font-semibold text-white disabled:opacity-40"
+                className="raised tap-scale min-h-tap w-full rounded-xl bg-gradient-to-b from-brand-light to-brand px-4 text-sm font-semibold text-white disabled:opacity-70"
                 onClick={() => void submit({ answer: 'accepted' })}
               >
                 {busy ? s.sending : s.accept}
@@ -207,7 +207,7 @@ export function PublicLinkPage({ kind, transport }: PublicLinkPageProps) {
               <button
                 type="button"
                 disabled={busy}
-                className="min-h-tap w-full rounded-xl border border-edge/10 bg-surface px-4 text-sm font-medium disabled:opacity-40"
+                className="min-h-tap w-full rounded-xl border border-edge/10 bg-surface px-4 text-sm font-medium disabled:opacity-70"
                 onClick={() => void submit({ answer: 'rejected' })}
               >
                 {s.reject}
@@ -216,7 +216,7 @@ export function PublicLinkPage({ kind, transport }: PublicLinkPageProps) {
               <button
                 type="button"
                 disabled={busy}
-                className="min-h-tap w-full rounded-xl px-4 text-xs font-medium opacity-70 disabled:opacity-40"
+                className="min-h-tap w-full rounded-xl px-4 text-xs font-medium opacity-70 disabled:opacity-70"
                 onClick={() => setSigning(true)}
               >
                 {s.optionalSignature}

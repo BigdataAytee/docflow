@@ -91,7 +91,7 @@ export function ActionGrid({ actions, strings, onAction }: ActionGridProps): Rea
             onClick={() => onAction(action.id)}
             className={`min-h-tap rounded-2xl px-3 py-2.5 text-center text-[12.5px] font-semibold ${
               action.enabled
-                ? 'raised tap-scale bg-surface text-brand'
+                ? 'raised tap-scale bg-surface text-brand-ink'
                 : 'cursor-not-allowed border border-edge/10 bg-ink/[0.04] text-ink/35'
             }`}
           >

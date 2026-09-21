@@ -105,7 +105,7 @@ export function SearchResults({
         <p className="text-xs font-medium opacity-70">
           {format(strings.search.matches, { count: results.length })}
         </p>
-        <button type="button" className="text-xs font-medium text-brand" onClick={onClear}>
+        <button type="button" className="text-xs font-medium text-brand-ink" onClick={onClear}>
           {strings.search.clear}
         </button>
       </div>
@@ -132,7 +132,7 @@ export function SearchResults({
                         <span className="w-full break-words text-xs opacity-70">{detail}</span>
                       )}
                       {entry.kind === 'item' && (
-                        <span className="text-[11px] opacity-60">{strings.search.openInSettings}</span>
+                        <span className="text-[11px] opacity-70">{strings.search.openInSettings}</span>
                       )}
                     </button>
                   </li>

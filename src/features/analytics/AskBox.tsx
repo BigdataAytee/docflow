@@ -68,7 +68,7 @@ export function AskBox({ facts, chipLabels, bucketLabels }: AskBoxProps) {
         </p>
       )}
       {answer !== null && answer.kind !== 'unavailable' && (
-        <p className="mt-1 text-[11px] opacity-60">{strings.analytics.askOffline}</p>
+        <p className="mt-1 text-[11px] opacity-70">{strings.analytics.askOffline}</p>
       )}
     </section>
   )

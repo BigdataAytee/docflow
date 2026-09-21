@@ -32,6 +32,49 @@
     --ink: 29 36 82; /* #1d2452 — §F text-navy */
     --edge: 0 0 0; /* hairlines are black at low alpha in light */
 
+    /*
+     * THE ACCENT USED AS INK, which is a different job from the accent used
+     * as a fill (§F).
+     *
+     * §F locks the accents and says a dark theme "may only change what the
+     * brand sits on". That is about the brand as a SURFACE — a button, a
+     * band, a hero — and it is kept: `bg-brand` is #2b3fd6 in both themes
+     * and nothing below touches it.
+     *
+     * Ink is the other direction. A word PAINTED in the accent has to be
+     * read off whatever is behind it, and the contrast pass found that in
+     * dark mode almost none of it could be: brand blue on a navy glass pill
+     * measured 1.24:1, and the row actions, the section headings, "Share
+     * PDF", "Add", "Start" and "View guide" were all that colour.
+     *
+     * So the fill stays locked and the INK is themed, keeping each hue:
+     *
+     *  · LIGHT is the accent itself where that already reads — brand blue is
+     *    7.0:1 on a pale surface — and the DEEP stop where it does not.
+     *    Waybill amber on white is 3.5:1, which is why the delivery type is
+     *    the one that moves.
+     *  · DARK is a pale stop of the same hue, chosen so the palest common
+     *    surface still clears 4.5:1. They have to be much lighter than the
+     *    `light` gradient stop: #4a60ee on a navy pill is 2.1:1.
+     *
+     * Same hue, both themes, and a Delivery note is still amber everywhere a
+     * Waybill is.
+     */
+    --brand-ink: 43 63 214; /* §F brand — 7.0:1 on a pale surface */
+    --invoice-ink: 30 47 174; /* invoice deep */
+    --quotation-ink: 60 52 137; /* quotation deep */
+    --receipt-ink: 8 80 65; /* receipt deep */
+    /*
+     * DARKER THAN THE DEEP STOP, and the only one of the four that is.
+     *
+     * Amber is the hue that loses this argument every time: the accent is
+     * 3.5:1 on white and the deep stop measures 4.4:1 against a pale blue
+     * tint once a browser has anti-aliased a 12px letterform, which is
+     * lighter than the colour it was given. Measured, not calculated — the
+     * colour on the screen is the one that has to clear the line.
+     */
+    --waybill-ink: 111 66 9;
+
     --brand-tint: 238 241 255; /* #eef1ff */
     --invoice-tint: 230 235 255;
     --quotation-tint: 238 237 254;
@@ -64,6 +107,21 @@
      * Identical in both themes, deliberately. That is the whole point of it.
      */
     --on-accent: 255 255 255;
+
+    /*
+     * ITS OPPOSITE, for a pill that sits INSIDE an accent band.
+     *
+     * §G asks the hero's button to be translucent rather than raised, and it
+     * was translucent WHITE — which lightens the band under it, and a band
+     * is already the lightest thing on the screen. On a delivery hero that
+     * made white-on-amber-lightened-further, at 2.04:1, on the one control
+     * the hero exists for.
+     *
+     * Shading instead of lightening keeps §G's inset look and the hue, and
+     * gives the white label something to be read against. Locked in both
+     * themes for the same reason `--on-accent` is: what it sits on is locked.
+     */
+    --on-accent-shade: 0 0 0;
   }
 
   .dark {
@@ -108,6 +166,13 @@
      * amber wash still reads as the amber that belongs to a delivery
      * document, and a Delivery note is still amber everywhere a Waybill is.
      */
+    /* Pale stops of §F's own hues. See the note in `:root`. */
+    --brand-ink: 166 180 255;
+    --invoice-ink: 166 180 255;
+    --quotation-ink: 185 179 242;
+    --receipt-ink: 111 215 182;
+    --waybill-ink: 232 177 105;
+
     --brand-tint: 34 43 96;
     --invoice-tint: 32 42 100;
     --quotation-tint: 45 40 88;
@@ -124,8 +189,9 @@
     --status-bad: 240 168 141;
     --status-bad-tint: 74 33 20;
 
-    /* Locked, like the accent it sits on. See the note in `:root`. */
+    /* Locked, like the accent they sit on. See the note in `:root`. */
     --on-accent: 255 255 255;
+    --on-accent-shade: 0 0 0;
   }
 
   body {
@@ -299,7 +365,8 @@
     --header-image-soft: linear-gradient(155deg, #91a9e9 0%, #a9beee 60%, #ccd9f5 100%);
     --header-shadow-soft: 0 7px 18px -15px rgb(55 81 160 / 0.2);
     --header-ink: #24345f;
-    --header-ink-muted: #52658d;
+    /* Muted, and still 4.6:1 on the header it sits on. */
+    --header-ink-muted: #2f4068;
     --stat-image: linear-gradient(155deg, rgb(255 255 255 / 0.87), rgb(250 252 255 / 0.6));
     --stat-border: rgb(255 255 255 / 0.92);
     --stat-shadow: 0 6px 16px -12px rgb(41 65 140 / 0.3), inset 0 1px 0 #ffffff;
@@ -328,7 +395,15 @@
      * chosen to sit quietly on a white page is nearly invisible on a dark
      * one, and "quiet" is the whole job of this colour.
      */
-    --step-pending-ink: #a6adcd;
+    /*
+     * A STEP NOT REACHED YET, and it still has to be readable.
+     *
+     * It was #a6adcd, which is 1.72:1 on the shell behind it — the five step
+     * names are the only thing saying where you are in the builder, and four
+     * of them were invisible. Quiet is a job a colour can do at 4.8:1;
+     * invisible is not a stronger version of quiet.
+     */
+    --step-pending-ink: #4b527a;
     --step-pending-bar: #dfe4f5;
   }
 
@@ -376,11 +451,11 @@
     --header-image-soft: linear-gradient(155deg, #2c3a6b 0%, #333f72 60%, #3b477e 100%);
     --header-shadow-soft: 0 7px 18px -15px rgb(0 0 0 / 0.5);
     --header-ink: #e7ecff;
-    --header-ink-muted: rgb(231 236 255 / 0.62);
+    --header-ink-muted: rgb(231 236 255 / 0.76);
     --stat-image: linear-gradient(155deg, rgb(255 255 255 / 0.12), rgb(255 255 255 / 0.05));
     --stat-border: rgb(255 255 255 / 0.14);
     --stat-shadow: 0 6px 16px -12px rgb(0 0 0 / 0.5), inset 0 1px 0 rgb(255 255 255 / 0.1);
-    --stat-label: rgb(231 236 255 / 0.62);
+    --stat-label: rgb(231 236 255 / 0.78);
     /* Lightened to stay legible on a dark card; the hues are unchanged. */
     /* The welcome, inverted: the ink lightens, the chosen ring keeps §F's
        blue, and the pending rule darkens rather than glowing. */
@@ -391,7 +466,7 @@
     --money-in: #5fc8a3;
     --money-owed: #8ba0ff;
 
-    --step-pending-ink: rgb(255 255 255 / 0.38);
+    --step-pending-ink: rgb(255 255 255 / 0.62);
     --step-pending-bar: rgb(255 255 255 / 0.14);
   }
 
@@ -941,5 +1016,89 @@
     .tap-scale {
       transition: none;
     }
+  }
+}
+
+/*
+ * UNLAYERED, AND LAST, on purpose.
+ *
+ * Everything above sits in a Tailwind cascade layer, and unlayered rules beat
+ * layered ones however specific the layered one is. That is what lets the
+ * block below override a `.opacity-60` utility without `!important` — and it
+ * has to, because the whole point of it is switching those utilities off.
+ */
+/*
+ * WHEN THE PHONE ASKS FOR MORE CONTRAST (§G).
+ *
+ * Android and iOS both carry the setting, and a browser reports it as
+ * `prefers-contrast: more`. Somebody who has turned it on has told every
+ * app on their phone something specific, and answering "our palette
+ * already passes AA" misses what they said: AA is a floor for the general
+ * case, and they are saying the general case does not work for them.
+ *
+ * Three things, each the strongest lever available rather than a tweak:
+ *
+ *  · THE MUTED TOKENS GO TO FULL STRENGTH. A secondary line stops being
+ *    secondary by colour; it is still secondary by size, position and
+ *    weight, which is the part that survives.
+ *  · GLASS STOPS BEING GLASS. A translucent surface has whatever is
+ *    behind it in its contrast, which is the opposite of what this setting
+ *    asks for. Opaque surfaces, no blur.
+ *  · HAIRLINES GET DARKER, so the edge of a field or a row is a line
+ *    somebody can see rather than infer.
+ *
+ * §F's hues are untouched, and so are the locked accents. This changes
+ * how strongly things are stated, never what colour they are.
+ */
+@media (prefers-contrast: more) {
+  :root {
+    --step-pending-ink: rgb(var(--ink));
+    --glass-border: rgb(var(--edge) / 0.45);
+    --field-border: rgb(var(--edge) / 0.55);
+    /*
+     * PER THEME, not shared — and the sweep is why.
+     *
+     * The first version pushed both of these to `--on-accent`, reasoning
+     * that a muted label on a header is white text on a coloured band. In
+     * LIGHT it is not: the soft header is a pale blue, and white on it
+     * measures 1.9:1. A rule written to raise contrast had lowered it, on
+     * the one line of the Home header that says what the screen is for.
+     *
+     * So each theme goes to its own strongest end: darker on a pale header,
+     * lighter on a dark one.
+     */
+    --header-ink-muted: #16203f;
+    --stat-label: #16203f;
+  }
+
+  .dark {
+    --step-pending-ink: rgb(var(--ink));
+    --glass-border: rgb(var(--edge) / 0.45);
+    --field-border: rgb(var(--edge) / 0.55);
+    --header-ink-muted: rgb(231 236 255);
+    --stat-label: rgb(231 236 255);
+  }
+
+  /*
+   * Opaque, and without the blur. The image still carries the design's
+   * gradient; what goes is the part of the colour that came from whatever
+   * happened to be underneath.
+   */
+  .glass,
+  .glass-solid,
+  .glass-nav,
+  .glass-pill {
+    background-color: rgb(var(--surface));
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+
+  /*
+   * And nothing is faded. `opacity` on a text node is exactly the
+   * mechanism this setting exists to switch off — it is contrast given
+   * away for tone — so the app's muted lines come back to full ink.
+   */
+  [class*='opacity-']:not([class~='opacity-0']) {
+    opacity: 1;
   }
 }

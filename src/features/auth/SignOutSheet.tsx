@@ -99,7 +99,7 @@ export function SignOutSheet({ onConfirm, onCancel }: SignOutSheetProps) {
         <h2 id="signout-title" className="text-center text-[14.5px] font-semibold">
           {a.signOutTitle}
         </h2>
-        <p className="mb-4 mt-1.5 text-center text-[11px] leading-relaxed opacity-65">
+        <p className="mb-4 mt-1.5 text-center text-[11px] leading-relaxed opacity-70">
           {a.signOutBody}
         </p>
 

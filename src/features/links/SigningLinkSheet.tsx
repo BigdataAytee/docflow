@@ -67,7 +67,7 @@ export function SigningLinkSheet({
       <h2 className="text-sm font-semibold">
         {format(p.signingLinkTitle, { label: typeLabel })}
       </h2>
-      <p className="mt-1.5 text-xs leading-relaxed opacity-65">{p.signingLinkBody}</p>
+      <p className="mt-1.5 text-xs leading-relaxed opacity-70">{p.signingLinkBody}</p>
 
       <div className="recessed mt-3 rounded-xl px-3 py-2.5">
         <p className="text-xs font-semibold tabular-nums">{reference}</p>
@@ -80,13 +80,13 @@ export function SigningLinkSheet({
         by any route at all.
       */}
       <p className="mt-2 break-all rounded-lg bg-surface/70 px-2 py-1.5 text-[11px]">{url}</p>
-      <p className="mt-1 text-[11px] opacity-60">{p.copied}</p>
+      <p className="mt-1 text-[11px] opacity-70">{p.copied}</p>
 
       {capability.sheet && (
         <button
           type="button"
           disabled={busy}
-          className="raised tap-scale mt-3 min-h-tap w-full rounded-xl bg-gradient-to-b from-brand-light to-brand px-4 text-sm font-semibold text-white disabled:opacity-40"
+          className="raised tap-scale mt-3 min-h-tap w-full rounded-xl bg-gradient-to-b from-brand-light to-brand px-4 text-sm font-semibold text-white disabled:opacity-70"
           onClick={() => {
             setBusy(true)
             void port
@@ -119,7 +119,7 @@ export function SigningLinkSheet({
       <button
         type="button"
         onClick={onClose}
-        className="mt-2 min-h-tap w-full text-xs font-medium opacity-65"
+        className="mt-2 min-h-tap w-full text-xs font-medium opacity-70"
       >
         {format(p.backTo, { label: typeLabel })}
       </button>

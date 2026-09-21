@@ -137,7 +137,7 @@ export function OnboardingScreen() {
           </button>
 
           {/* Rule #2, said before anything is asked for. */}
-          <p className="mt-4 text-center text-[10.5px] leading-relaxed opacity-55">
+          <p className="mt-4 text-center text-[10.5px] leading-relaxed opacity-70">
             {w.offlineNote}
           </p>
         </div>
@@ -151,11 +151,11 @@ export function OnboardingScreen() {
         <button
           type="button"
           onClick={() => setState(back(state))}
-          className="min-h-tap text-[11px] font-semibold text-brand"
+          className="min-h-tap text-[11px] font-semibold text-brand-ink"
         >
           {w.back}
         </button>
-        <span className="text-[11px] opacity-50">{w.setupTitle}</span>
+        <span className="text-[11px] opacity-70">{w.setupTitle}</span>
       </div>
 
       <ol className="mb-5 flex gap-1.5" aria-label={w.progressLabel}>
@@ -189,7 +189,7 @@ export function OnboardingScreen() {
           }}
         >
           <h1 className="mb-2 text-xl font-semibold tracking-tight">{w.businessTitle}</h1>
-          <p className="mb-5 text-xs leading-relaxed opacity-60">{w.businessBody}</p>
+          <p className="mb-5 text-xs leading-relaxed opacity-70">{w.businessBody}</p>
 
           {/*
             `htmlFor`/`id` rather than relying on the wrapper.
@@ -222,7 +222,7 @@ export function OnboardingScreen() {
               placeholder={w.namePlaceholder}
               className="glass-solid mt-1.5 block min-h-tap w-full rounded-xl px-3 py-3 text-[13px] text-ink"
             />
-            <small id="ob-name-help" className="mt-1.5 block text-[10px] opacity-55">
+            <small id="ob-name-help" className="mt-1.5 block text-[10px] opacity-70">
               {w.nameHelp}
             </small>
           </div>
@@ -262,7 +262,7 @@ export function OnboardingScreen() {
                 </option>
               ))}
             </select>
-            <small id="ob-country-help" className="mt-1.5 block text-[10px] opacity-55">
+            <small id="ob-country-help" className="mt-1.5 block text-[10px] opacity-70">
               {w.countryHelp}
             </small>
           </div>
@@ -279,7 +279,7 @@ export function OnboardingScreen() {
           <button
             type="button"
             onClick={() => setState(skipBusiness(state))}
-            className="mt-2.5 block min-h-tap w-full text-[11px] text-brand underline underline-offset-[3px]"
+            className="mt-2.5 block min-h-tap w-full text-[11px] text-brand-ink underline underline-offset-[3px]"
           >
             {w.skipBusiness}
           </button>
@@ -289,7 +289,7 @@ export function OnboardingScreen() {
       {state.page === 'task' && (
         <>
           <h1 className="mb-2 text-xl font-semibold tracking-tight">{w.taskTitle}</h1>
-          <p className="mb-5 text-xs leading-relaxed opacity-60">{w.taskBody}</p>
+          <p className="mb-5 text-xs leading-relaxed opacity-70">{w.taskBody}</p>
 
           {DOCUMENT_TYPES.map((type) => {
             const chosen = state.type === type
@@ -315,12 +315,12 @@ export function OnboardingScreen() {
                   <strong className="block text-[12.5px] font-semibold">
                     {typeLabel(profile, type)}
                   </strong>
-                  <small className="block text-[11px] leading-snug opacity-60">
+                  <small className="block text-[11px] leading-snug opacity-70">
                     {w.hints[type]}
                   </small>
                 </span>
                 {/* A tick as well as the ring: never colour alone (§F, §V). */}
-                <span aria-hidden="true" className="shrink-0 text-brand">
+                <span aria-hidden="true" className="shrink-0 text-brand-ink">
                   {chosen ? <Icon name="check" size={1} /> : null}
                 </span>
               </button>
@@ -336,7 +336,7 @@ export function OnboardingScreen() {
       {state.page === 'ready' && (
         <>
           <h1 className="mb-2 text-xl font-semibold tracking-tight">{w.readyTitle}</h1>
-          <p className="mb-5 text-xs leading-relaxed opacity-60">
+          <p className="mb-5 text-xs leading-relaxed opacity-70">
             {format(w.readyBody, { label: labelInSentence(profile, state.type) })}
           </p>
 
@@ -390,13 +390,13 @@ function Row({ icon, title, body }: { icon: IconName; title: string; body: strin
     <div className="ob-row flex items-start gap-3 py-3.5">
       <span
         aria-hidden="true"
-        className="grid h-[34px] w-[34px] shrink-0 place-items-center rounded-[11px] bg-brand-tint text-brand"
+        className="grid h-[34px] w-[34px] shrink-0 place-items-center rounded-[11px] bg-brand-tint text-brand-ink"
       >
         <Icon name={icon} size={1.1} />
       </span>
       <div className="min-w-0">
         <strong className="mb-0.5 block text-xs font-semibold">{title}</strong>
-        <p className="text-[11px] leading-snug opacity-60">{body}</p>
+        <p className="text-[11px] leading-snug opacity-70">{body}</p>
       </div>
     </div>
   )

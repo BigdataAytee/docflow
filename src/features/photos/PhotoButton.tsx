@@ -82,7 +82,7 @@ export function PhotoButton({ onPhoto, currentUrl, label }: PhotoButtonProps) {
       <button
         type="button"
         disabled={busy}
-        className="min-h-tap w-full rounded-xl border border-edge/10 bg-surface px-3 text-sm font-medium disabled:opacity-40"
+        className="min-h-tap w-full rounded-xl border border-edge/10 bg-surface px-3 text-sm font-medium disabled:opacity-70"
         onClick={() => input.current?.click()}
       >
         {label ?? (currentUrl === undefined ? strings.photo.add : strings.photo.change)}

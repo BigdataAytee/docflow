@@ -169,7 +169,7 @@ function AccountDetails({
             </option>
           ))}
         </select>
-        <span className="mt-1 block text-xs opacity-60">
+        <span className="mt-1 block text-xs opacity-70">
           {strings.settings.accountCountryHint}
         </span>
       </label>
@@ -187,7 +187,7 @@ function AccountDetails({
         language §D has to be translated into. Leading with the name and
         pointing back at it with "there" is correct for every one of them.
       */}
-      <p className="text-xs opacity-65" data-fields-for={currency}>
+      <p className="text-xs opacity-70" data-fields-for={currency}>
         {format(strings.settings.accountFieldsFollowCountry, {
           country: countryName(country),
         })}
@@ -349,14 +349,14 @@ export function PaymentSettings({
         </p>
       )}
 
-      <p className="px-1 text-xs font-bold uppercase tracking-wide opacity-60">
+      <p className="px-1 text-xs font-bold uppercase tracking-wide opacity-70">
         {strings.settings.paymentMethods}
       </p>
       <ul className="glass-solid divide-y divide-ink/10 overflow-hidden rounded-2xl">
         {methods.map((method) => (
           <li key={method.id}>
             <div className="flex items-center gap-3 p-3">
-              <span className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-brand/10 text-brand">
+              <span className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-brand/10 text-brand-ink">
                 <Icon name={METHOD_ICONS[method.id] ?? 'credit-card'} className="size-[18px]" />
               </span>
               <span className="min-w-0 flex-1">
@@ -367,7 +367,7 @@ export function PaymentSettings({
                   into, so a stale or empty account is visible here rather
                   than discovered on a sent invoice.
                 */}
-                <span className="block truncate text-xs opacity-65">
+                <span className="block truncate text-xs opacity-70">
                   {sublabelFor(method.id, fields, bankValues, strings)}
                 </span>
               </span>
@@ -386,7 +386,7 @@ export function PaymentSettings({
                   aria-expanded={openForm}
                   aria-label={strings.settings.addBankTransfer}
                   onClick={() => setOpenForm((open) => !open)}
-                  className="glass-pill min-h-tap shrink-0 rounded-full px-3 text-xs font-semibold text-brand"
+                  className="glass-pill min-h-tap shrink-0 rounded-full px-3 text-xs font-semibold text-brand-ink"
                 >
                   {strings.settings.methodAdd}
                 </button>
@@ -402,7 +402,7 @@ export function PaymentSettings({
                           : strings.settings.editBankTransfer
                       }
                       onClick={() => setOpenForm((open) => !open)}
-                      className="glass-pill min-h-tap min-w-tap shrink-0 rounded-full px-2 text-brand"
+                      className="glass-pill min-h-tap min-w-tap shrink-0 rounded-full px-2 text-brand-ink"
                     >
                       <Icon name="pencil" className="size-[15px]" />
                     </button>
@@ -422,7 +422,7 @@ export function PaymentSettings({
                     className={`min-h-tap shrink-0 rounded-full px-3 text-xs font-semibold ${
                       method.enabled
                         ? 'bg-status-good-tint text-status-good'
-                        : 'glass-pill text-brand'
+                        : 'glass-pill text-brand-ink'
                     }`}
                   >
                     {method.enabled ? strings.settings.methodOn : strings.settings.methodAdd}

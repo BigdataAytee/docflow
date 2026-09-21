@@ -88,7 +88,7 @@ export function StatementPage({
             */}
             <table className="w-full min-w-[17rem] text-xs">
               <thead>
-              <tr className="text-start opacity-60">
+              <tr className="text-start opacity-70">
                 <th scope="col" className="py-1 text-start font-medium">
                   {s.date}
                 </th>
@@ -147,7 +147,7 @@ export function StatementPage({
           </div>
         </div>
 
-        <p className="mt-4 text-[10px] opacity-60">
+        <p className="mt-4 text-[10px] opacity-70">
           {format(s.currencyNote, { currency: statement.currency })}
         </p>
       </div>

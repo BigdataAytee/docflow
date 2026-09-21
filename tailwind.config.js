@@ -66,6 +66,15 @@ export default {
           // page is a glare. Themed.
           tint: themed('brand-tint'),
         },
+        /*
+         * The accents used as INK rather than as a fill, themed.
+         *
+         * A separate key from `brand` on purpose: `bg-brand` must stay §F's
+         * locked #2b3fd6 in both themes, and it does. Only the word painted
+         * in that colour moves, because a word has to be read off what is
+         * behind it. See the long note in `src/index.css`.
+         */
+        'brand-ink': themed('brand-ink'),
         navy: '#1d2452',
         /**
          * White on a locked accent — a hero's sheen, a step bar's fill, the
@@ -73,10 +82,12 @@ export default {
          * it; see the note in `src/index.css`.
          */
         'on-accent': themed('on-accent'),
-        invoice: { accent: '#2b3fd6', tint: themed('invoice-tint'), deep: '#1e2fae' },
-        quotation: { accent: '#534AB7', tint: themed('quotation-tint'), deep: '#3C3489' },
-        receipt: { accent: '#0F6E56', tint: themed('receipt-tint'), deep: '#085041' },
-        waybill: { accent: '#BA7517', tint: themed('waybill-tint'), deep: '#854F0B' },
+        /** And its opposite, for a pill inset INTO an accent band. */
+        'on-accent-shade': themed('on-accent-shade'),
+        invoice: { accent: '#2b3fd6', tint: themed('invoice-tint'), deep: '#1e2fae', ink: themed('invoice-ink') },
+        quotation: { accent: '#534AB7', tint: themed('quotation-tint'), deep: '#3C3489', ink: themed('quotation-ink') },
+        receipt: { accent: '#0F6E56', tint: themed('receipt-tint'), deep: '#085041', ink: themed('receipt-ink') },
+        waybill: { accent: '#BA7517', tint: themed('waybill-tint'), deep: '#854F0B', ink: themed('waybill-ink') },
         // Status inks are themed as well as their tints: §F's warn ink is a
         // dark brown chosen to read on a pale wash, and it disappears on the
         // dark one. The HUE is kept; only the lightness moves.

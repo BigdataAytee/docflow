@@ -58,7 +58,7 @@ export function HelpSettings({ onGettingStarted }: HelpSettingsProps) {
           </span>
           <span className="min-w-0 flex-1">
             <span className="block text-[12.5px] font-semibold">{h.chatWithSupport}</span>
-            <span className="mt-0.5 block text-[10px] opacity-55">{h.onWhatsApp}</span>
+            <span className="mt-0.5 block text-[10px] opacity-70">{h.onWhatsApp}</span>
           </span>
           <span aria-hidden="true" className="shrink-0 opacity-35">
             <Icon name="chevron-right" size={0.9} />
@@ -83,13 +83,13 @@ export function HelpSettings({ onGettingStarted }: HelpSettingsProps) {
         >
           <span
             aria-hidden="true"
-            className="grid size-9 shrink-0 place-items-center rounded-xl bg-brand-tint text-brand"
+            className="grid size-9 shrink-0 place-items-center rounded-xl bg-brand-tint text-brand-ink"
           >
             <Icon name="help" size={0.95} />
           </span>
           <span className="min-w-0 flex-1">
             <span className="block text-[12.5px] font-semibold">{h.gettingStarted}</span>
-            <span className="mt-0.5 block text-[10px] opacity-55">{h.gettingStartedHint}</span>
+            <span className="mt-0.5 block text-[10px] opacity-70">{h.gettingStartedHint}</span>
           </span>
           <span aria-hidden="true" className="shrink-0 opacity-35">
             <Icon name="chevron-right" size={0.9} />
@@ -109,7 +109,7 @@ export function HelpSettings({ onGettingStarted }: HelpSettingsProps) {
               <span className="min-w-0 flex-1">
                 <span className="block text-[12.5px] font-medium">{entry.question}</span>
                 {open === index && (
-                  <span className="mt-1.5 block text-[11px] leading-relaxed opacity-65">
+                  <span className="mt-1.5 block text-[11px] leading-relaxed opacity-70">
                     {entry.answer}
                   </span>
                 )}

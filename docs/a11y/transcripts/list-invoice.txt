@@ -9,12 +9,16 @@ heading: Invoices
 StaticText: 3 invoices
 button: + New invoice
 searchbox: Search Invoices…
+StaticText: Tap a row to open it, or use the button to go straight there.
 button: INV-001 ₦185,000.00 Okoro & Sons
 StaticText: Not paid
+button: Record payment
 button: INV-002 ₦42,500.00 Adeyemi Hardware
 StaticText: Not paid
+button: Record payment
 button: INV-003 ₦96,000.00 Chukwu Building Supplies
 StaticText: Not paid
+button: Record payment
 button: + New invoice
 navigation: Sections
 link: Home

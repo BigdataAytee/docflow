@@ -122,7 +122,7 @@ export function Analytics(props: AnalyticsProps) {
                   <Card title={strings.analytics.moneyOut} amount={row.moneyOut} />
                   <Card title={strings.analytics.kept} amount={row.kept} emphasis />
                 </div>
-                <p className="mt-1.5 px-1 text-[11px] opacity-60">{strings.analytics.keptHelp}</p>
+                <p className="mt-1.5 px-1 text-[11px] opacity-70">{strings.analytics.keptHelp}</p>
                 <Bars
                   currency={row.currency}
                   payments={props.payments}
@@ -211,7 +211,7 @@ export function Analytics(props: AnalyticsProps) {
                       <span className="min-w-0 break-words">
                         {line.description === '' ? strings.expenses.fromPhoto : line.description}
                         {line.category !== undefined && (
-                          <span className="ms-2 text-[11px] opacity-60">{line.category}</span>
+                          <span className="ms-2 text-[11px] opacity-70">{line.category}</span>
                         )}
                       </span>
                       <span className="shrink-0 tabular-nums font-medium">{formatMoney(line.amount)}</span>
@@ -282,7 +282,7 @@ function Bars({
                 role="img"
               />
             </div>
-            <span className="text-[10px] opacity-60">{bar.month.slice(5)}</span>
+            <span className="text-[10px] opacity-70">{bar.month.slice(5)}</span>
           </div>
         ))}
       </div>

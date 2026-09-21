@@ -145,7 +145,7 @@ function StatCard({
       aria-label={title}
     >
       {entries.length === 0 ? (
-        <p className="text-[23px] font-semibold leading-tight opacity-40">{emptyLabel}</p>
+        <p className="text-[23px] font-semibold leading-tight opacity-85">{emptyLabel}</p>
       ) : (
         // One line per currency — never a combined figure (§G, §V).
         entries.map(([currency, amount]) => (
@@ -384,7 +384,7 @@ export function Home({
               type="button"
               onClick={onVoice}
               aria-label={strings.common.voice}
-              className="raised-soft tap-scale grid h-11 w-11 place-items-center rounded-full border border-on-accent/90 text-brand"
+              className="raised-soft tap-scale grid h-11 w-11 place-items-center rounded-full border border-on-accent/90 text-brand-ink"
               style={{ backgroundImage: 'linear-gradient(180deg,#fff,#e9eeff)' }}
             >
               <Icon name="microphone" size={1.25} />
@@ -393,7 +393,7 @@ export function Home({
               type="button"
               onClick={onScan}
               aria-label={strings.common.scan}
-              className="raised-soft tap-scale grid h-11 w-11 place-items-center rounded-full border border-on-accent/90 text-brand"
+              className="raised-soft tap-scale grid h-11 w-11 place-items-center rounded-full border border-on-accent/90 text-brand-ink"
               style={{ backgroundImage: 'linear-gradient(180deg,#fff,#e9eeff)' }}
             >
               <Icon name="camera" size={1.25} />
@@ -564,7 +564,7 @@ export function Home({
                             the whole point of the list (§G).
                           */}
                           {item.detail !== undefined && (
-                            <span className="mt-0.5 block truncate text-[10px] opacity-60">
+                            <span className="mt-0.5 block truncate text-[10px] opacity-70">
                               {item.detail}
                             </span>
                           )}

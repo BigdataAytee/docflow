@@ -125,7 +125,7 @@ function SignaturePadView({
           type="button"
           onClick={onClose}
           aria-label={strings.common.cancel}
-          className="min-h-tap min-w-tap text-lg leading-none opacity-60"
+          className="min-h-tap min-w-tap text-lg leading-none opacity-70"
         >
           ✕
         </button>
@@ -169,12 +169,12 @@ function SignaturePadView({
           />
         ))}
       </svg>
-      <p className="mt-1 text-center text-[11px] opacity-50">{ready ? s.drawn : s.hint}</p>
+      <p className="mt-1 text-center text-[11px] opacity-70">{ready ? s.drawn : s.hint}</p>
 
       <div className="mt-3 flex gap-2">
         <button
           type="button"
-          className="min-h-tap flex-1 rounded-xl border border-edge/10 px-3 text-sm font-medium disabled:opacity-40"
+          className="min-h-tap flex-1 rounded-xl border border-edge/10 px-3 text-sm font-medium disabled:opacity-70"
           disabled={strokes.length === 0}
           onClick={() => setStrokes(undoStroke(strokes))}
         >
@@ -182,7 +182,7 @@ function SignaturePadView({
         </button>
         <button
           type="button"
-          className="min-h-tap flex-1 rounded-xl border border-edge/10 px-3 text-sm font-medium disabled:opacity-40"
+          className="min-h-tap flex-1 rounded-xl border border-edge/10 px-3 text-sm font-medium disabled:opacity-70"
           disabled={strokes.length === 0}
           onClick={() => setStrokes([])}
         >
@@ -192,7 +192,7 @@ function SignaturePadView({
 
       <button
         type="button"
-        className="raised tap-scale mt-2 min-h-tap w-full rounded-xl bg-gradient-to-b from-brand-light to-brand px-4 text-sm font-semibold text-white disabled:opacity-40"
+        className="raised tap-scale mt-2 min-h-tap w-full rounded-xl bg-gradient-to-b from-brand-light to-brand px-4 text-sm font-semibold text-white disabled:opacity-70"
         disabled={!ready}
         onClick={() => {
           const rendered = renderSignature(strokes)

@@ -147,7 +147,7 @@ export function PaymentLinkSection({
               here rather than discovered on an invoice already sent. Before
               there is one, the blurb says what this row will ask for.
             */}
-            <span className="block truncate text-[11.5px] opacity-60">{subtitle}</span>
+            <span className="block truncate text-[11.5px] opacity-70">{subtitle}</span>
           </span>
 
           {/*
@@ -158,7 +158,7 @@ export function PaymentLinkSection({
           <span
             data-provider-state={provider.id}
             className={`shrink-0 text-xs font-semibold ${
-              isOn ? 'text-status-good' : 'opacity-55'
+              isOn ? 'text-status-good' : 'opacity-70'
             }`}
           >
             {state}
@@ -209,7 +209,7 @@ export function PaymentLinkSection({
   const group = (heading: string, rows: readonly PaymentProvider[]) =>
     rows.length === 0 ? null : (
       <div className="space-y-1.5">
-        <p className="px-1 text-xs font-bold uppercase tracking-wide opacity-55">{heading}</p>
+        <p className="px-1 text-xs font-bold uppercase tracking-wide opacity-70">{heading}</p>
         <ul className="glass-solid divide-y divide-ink/10 overflow-hidden rounded-2xl">
           {rows.map(row)}
         </ul>
@@ -234,7 +234,7 @@ export function PaymentLinkSection({
         type="button"
         aria-expanded={showingOthers}
         onClick={() => setShowingOthers((shown) => !shown)}
-        className="min-h-tap px-1 text-xs font-semibold text-brand underline"
+        className="min-h-tap px-1 text-xs font-semibold text-brand-ink underline"
       >
         {showingOthers ? strings.settings.hideAnother : strings.settings.useAnother}
       </button>

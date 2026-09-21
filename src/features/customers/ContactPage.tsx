@@ -121,7 +121,7 @@ export function ContactPage({
             <ul className="mt-2 flex flex-wrap gap-2">
               {customer.labels.map((label) => (
                 <li key={label}>
-                  <span className="inline-flex items-center gap-1 rounded-full bg-brand-tint px-2.5 py-1 text-xs font-medium text-brand">
+                  <span className="inline-flex items-center gap-1 rounded-full bg-brand-tint px-2.5 py-1 text-xs font-medium text-brand-ink">
                     {label}
                     <button
                       type="button"
@@ -250,13 +250,13 @@ export function ContactPage({
                       <span
                         {...(row.provisional === true ? { 'data-provisional': 'true' } : {})}
                         className={`block break-words text-sm ${
-                          row.provisional === true ? 'font-medium opacity-55' : 'font-semibold'
+                          row.provisional === true ? 'font-medium opacity-70' : 'font-semibold'
                         }`}
                       >
                         {row.reference}
                       </span>
                       {row.date !== undefined && (
-                        <span className="block text-xs tabular-nums opacity-60">{row.date}</span>
+                        <span className="block text-xs tabular-nums opacity-70">{row.date}</span>
                       )}
                     </span>
                     <StatusBadge status={row.status} label={row.statusLabel} />

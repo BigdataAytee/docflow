@@ -92,7 +92,7 @@ function DateField({
     // side by side pushed the builder past the edge of a 320px phone. Found by
     // the sweeps.
     <span className="block min-w-0 flex-1">
-      <span className="mb-1 block text-[9.5px] opacity-55">{label}</span>
+      <span className="mb-1 block text-[9.5px] opacity-70">{label}</span>
       <button
         type="button"
         onClick={onToggle}
@@ -174,7 +174,7 @@ export function DetailsStep({
   today = todayIso(),
 }: DetailsStepProps) {
   const { profile, strings } = useCompany()
-  const { accent, tint } = TYPE_PALETTE[draft.type]
+  const { accent, ink, tint } = TYPE_PALETTE[draft.type]
   /*
    * §G's pencil. `referenceDraft` is what is being typed; `referenceOverride`
    * on the draft is what has been accepted. Keeping them apart is what lets
@@ -204,10 +204,10 @@ export function DetailsStep({
 
   return (
     <div className="space-y-3">
-      <BuilderCard title={strings.details.numberAndDates} icon="hash" accent={accent}>
+      <BuilderCard title={strings.details.numberAndDates} icon="hash" ink={ink}>
         <div className="flex items-center gap-2">
           <span className="min-w-0 flex-1">
-            <span className="mb-0.5 block text-[9.5px] opacity-55">
+            <span className="mb-0.5 block text-[9.5px] opacity-70">
               {strings.details.numberLabel}
             </span>
             {/*
@@ -288,7 +288,7 @@ export function DetailsStep({
                   : {})}
                 className={`block truncate font-mono text-xs ${
                   draft.referenceOverride === undefined
-                    ? 'font-medium opacity-55'
+                    ? 'font-medium opacity-70'
                     : 'font-semibold'
                 }`}
               >
@@ -374,7 +374,7 @@ export function DetailsStep({
 
       {/* The title is the localised party word — Bill to / Deliver to / Client /
           Received from — resolved through the locale layer (§D, Rule #4). */}
-      <BuilderCard title={partyLabel(profile, draft.type)} icon="user" accent={accent}>
+      <BuilderCard title={partyLabel(profile, draft.type)} icon="user" ink={ink}>
         <CustomerPicker
           customers={customers}
           {...(draft.customerId === undefined ? {} : { selectedId: draft.customerId })}
@@ -411,7 +411,7 @@ export function DetailsStep({
         a capability nothing here needs.
       */}
       {showsMoney && draft.type !== 'quotation' && draft.type !== 'receipt' && (
-        <BuilderCard title={strings.details.currencyAndPayment} icon="credit-card" accent={accent}>
+        <BuilderCard title={strings.details.currencyAndPayment} icon="credit-card" ink={ink}>
           <div className="flex items-center gap-2.5">
             {/*
               §G: "currency picker left (defaulted from region, freely
@@ -483,7 +483,7 @@ export function DetailsStep({
         the document will say — and a delivery's "DISPATCHED BY" is a
         different promise from an invoice's "AUTHORISED SIGNATURE".
       */}
-      <BuilderCard title={signatureCaption(profile, draft.type)} icon="signature" accent={accent}>
+      <BuilderCard title={signatureCaption(profile, draft.type)} icon="signature" ink={ink}>
         {/*
           §G: "a dashed tap-to-sign box, OR the drawn signature". A tick is
           neither — it says a signature exists without showing which one, and

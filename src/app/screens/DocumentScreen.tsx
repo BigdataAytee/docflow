@@ -545,6 +545,7 @@ export function DocumentScreen({ today = todayIso() }: { today?: string }) {
         title={labels.printedTitle}
         eyebrow={record.issuedReference ?? strings.savedDocument.notIssuedYet}
         accent={TYPE_PALETTE[record.type].accent}
+        deep={TYPE_PALETTE[record.type].deep}
         /*
          * THE WAY OFF THIS SCREEN. It had none: the floating nav pill was the
          * only exit, and it was also the thing sitting on top of the four
@@ -587,7 +588,7 @@ export function DocumentScreen({ today = todayIso() }: { today?: string }) {
       {cameFromQuotation !== undefined && (
         <div data-testid="from-quotation" className="px-3.5 pt-3">
           <section className="rounded-2xl border border-brand/20 bg-brand-tint p-3.5">
-            <p className="text-[13px] font-semibold leading-snug text-brand">
+            <p className="text-[13px] font-semibold leading-snug text-brand-ink">
               {format(strings.newReceipt.bothMade, {
                 invoiceLabel: typeInSentence(profile, 'invoice'),
                 invoice:
@@ -602,14 +603,14 @@ export function DocumentScreen({ today = todayIso() }: { today?: string }) {
               <button
                 type="button"
                 onClick={() => navigate(documentPath(cameFromQuotation.invoiceId))}
-                className="raised tap-scale min-h-tap flex-1 rounded-xl bg-surface px-3 text-[13px] font-semibold text-brand"
+                className="raised tap-scale min-h-tap flex-1 rounded-xl bg-surface px-3 text-[13px] font-semibold text-brand-ink"
               >
                 {strings.savedDocument.action.openInvoice}
               </button>
               <button
                 type="button"
                 onClick={() => navigate(documentPath(cameFromQuotation.quotationId))}
-                className="raised tap-scale min-h-tap flex-1 rounded-xl bg-surface px-3 text-[13px] font-semibold text-brand"
+                className="raised tap-scale min-h-tap flex-1 rounded-xl bg-surface px-3 text-[13px] font-semibold text-brand-ink"
               >
                 {format(strings.convert.madeFrom, {
                   reference:
@@ -625,7 +626,7 @@ export function DocumentScreen({ today = todayIso() }: { today?: string }) {
       {billedAlso !== undefined && (
         <div data-billed-also className="px-3.5 pt-3">
           <section className="rounded-2xl border border-brand/20 bg-brand-tint p-3.5">
-            <p className="text-[13px] font-semibold leading-snug text-brand">
+            <p className="text-[13px] font-semibold leading-snug text-brand-ink">
               {format(strings.newReceipt.billedAndPaid, {
                 invoiceLabel: typeInSentence(profile, 'invoice'),
                 invoice:
@@ -639,7 +640,7 @@ export function DocumentScreen({ today = todayIso() }: { today?: string }) {
             <button
               type="button"
               onClick={() => navigate(documentPath(billedAlso.invoiceId))}
-              className="raised tap-scale mt-2.5 min-h-tap w-full rounded-xl bg-surface px-3 text-[13px] font-semibold text-brand"
+              className="raised tap-scale mt-2.5 min-h-tap w-full rounded-xl bg-surface px-3 text-[13px] font-semibold text-brand-ink"
             >
               {strings.savedDocument.action.openInvoice}
             </button>
@@ -658,7 +659,7 @@ export function DocumentScreen({ today = todayIso() }: { today?: string }) {
       */}
       <section className="px-4 pt-4">
         {/* `opacity`, not a colour: the ink token is what inverts in dark. */}
-        <p className="mb-2 text-[10.5px] opacity-55">
+        <p className="mb-2 text-[10.5px] opacity-70">
           {format(strings.design.caption, {
             // The printed title, so an issued document uses its FROZEN word
             // (§D.2) and the design its own un-localised name (§H).
@@ -833,7 +834,7 @@ export function DocumentScreen({ today = todayIso() }: { today?: string }) {
         {!signing && deliveryStatusStep(record) !== null && (
           <>
             {canSign(record) && (
-              <p className="text-center text-xs opacity-60">{strings.signature.onItsWay}</p>
+              <p className="text-center text-xs opacity-70">{strings.signature.onItsWay}</p>
             )}
             <button
               type="button"
@@ -1225,7 +1226,7 @@ export function DocumentScreen({ today = todayIso() }: { today?: string }) {
         {canRevise(record) && newerRevision === null && (
           <button
             type="button"
-            className="doc-action min-h-tap rounded-full border-brand/30 px-3 text-[12.5px] font-semibold text-brand"
+            className="doc-action min-h-tap rounded-full border-brand/30 px-3 text-[12.5px] font-semibold text-brand-ink"
             onClick={() => {
               setRevisionProblem(null)
               let revised
@@ -1360,7 +1361,7 @@ export function DocumentScreen({ today = todayIso() }: { today?: string }) {
         {canVoidOrCredit && !voiding && !crediting && !more && (
           <button
             type="button"
-            className="min-h-tap w-full rounded-full px-4 text-xs font-medium opacity-60"
+            className="min-h-tap w-full rounded-full px-4 text-xs font-medium opacity-70"
             onClick={() => setMore(true)}
           >
             {strings.savedDocument.actions}
@@ -1385,7 +1386,7 @@ export function DocumentScreen({ today = todayIso() }: { today?: string }) {
             {isInvoice && record.status !== 'void' && (
               <button
                 type="button"
-                className="doc-action min-h-tap rounded-full border-brand/30 px-3 text-[12.5px] font-semibold text-brand"
+                className="doc-action min-h-tap rounded-full border-brand/30 px-3 text-[12.5px] font-semibold text-brand-ink"
                 onClick={() => {
                   setCreditProblem(null)
                   setCrediting(true)
@@ -1610,7 +1611,7 @@ export function DocumentScreen({ today = todayIso() }: { today?: string }) {
               <button
                 type="button"
                 onClick={billTheBalance}
-                className="raised tap-scale min-h-tap w-full rounded-2xl bg-surface px-4 text-[13px] font-semibold text-brand"
+                className="raised tap-scale min-h-tap w-full rounded-2xl bg-surface px-4 text-[13px] font-semibold text-brand-ink"
               >
                 {strings.payments.billBalance}
               </button>
@@ -1624,7 +1625,7 @@ export function DocumentScreen({ today = todayIso() }: { today?: string }) {
             <BuilderCard
               title={strings.payments.title}
               icon="cash"
-              accent={TYPE_PALETTE[record.type].accent}
+              ink={TYPE_PALETTE[record.type].ink}
             >
             <PaymentList
               payments={mine}
@@ -1679,7 +1680,7 @@ export function DocumentScreen({ today = todayIso() }: { today?: string }) {
             <BuilderCard
               title={strings.chase.title}
               icon="bell"
-              accent={TYPE_PALETTE[record.type].accent}
+              ink={TYPE_PALETTE[record.type].ink}
             >
               {outstanding.minor <= 0 ? (
                 <p className="mt-1 text-xs opacity-70">{strings.chase.nothingToChase}</p>
@@ -1705,7 +1706,7 @@ export function DocumentScreen({ today = todayIso() }: { today?: string }) {
                       <pre className="mt-3 whitespace-pre-wrap rounded-xl bg-ink/[0.04] p-3 text-xs">
                         {chase.text}
                       </pre>
-                      <p className="mt-2 text-[11px] opacity-60">{strings.chase.nothingSendsUnseen}</p>
+                      <p className="mt-2 text-[11px] opacity-70">{strings.chase.nothingSendsUnseen}</p>
                     </>
                   )}
                 </>
@@ -1841,7 +1842,7 @@ function CopyLinkRow({
 
   if (!online) {
     return (
-      <p id={anchorId} className="text-center text-[11px] opacity-60">
+      <p id={anchorId} className="text-center text-[11px] opacity-70">
         {strings.publicLink.needsInternet}
       </p>
     )

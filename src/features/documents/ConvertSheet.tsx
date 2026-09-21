@@ -65,7 +65,7 @@ export function ConvertSheet({
           type="button"
           onClick={onClose}
           aria-label={strings.common.cancel}
-          className="min-h-tap min-w-tap text-lg leading-none opacity-60"
+          className="min-h-tap min-w-tap text-lg leading-none opacity-70"
         >
           ✕
         </button>
@@ -114,7 +114,7 @@ export function ConvertSheet({
                   )}
 
                   {made === undefined && willNeedPrices && (
-                    <p className="mt-1 px-1 text-[11px] opacity-60">
+                    <p className="mt-1 px-1 text-[11px] opacity-70">
                       {format(strings.convert.needsPrices, { label: word })}
                     </p>
                   )}

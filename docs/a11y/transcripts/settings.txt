@@ -4,16 +4,22 @@ StaticText: ·
 StaticText: This is a demo with sample records on this device only. Nothing is saved to an account, and it is cleared when you close the tab.
 main
 heading: Settings
-link: Region & language
-link: Company & logo
+heading: YOUR BUSINESS
+link: Company & logo Not set
 link: Tax
-link: How you get paid
-link: Saved items
-link: Default signature
+link: How you get paid Not set up yet
+link: Saved items 0 items
+link: Default signature Not set
+heading: YOU & YOUR DATA
+link: Your account No account on this device
+link: Region & language Nigeria
 link: Dark mode
-link: DocFlow Pro
 link: Data & sync
+link: DocFlow Pro
+link: Help & support
+link: Privacy & terms
 link: Delete this business
+StaticText: 12
 navigation: Sections
 link: Home
 link: Customers

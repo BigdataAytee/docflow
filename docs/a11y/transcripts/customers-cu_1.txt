@@ -36,8 +36,3 @@ StaticText: Not paid
 heading: Notes
 StaticText: Only you see this. It never prints on a document.
 textbox: Notes
-navigation: Sections
-link: Home
-link: Customers
-link: Business
-link: Settings

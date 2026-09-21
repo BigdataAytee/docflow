@@ -128,7 +128,7 @@ export function CompanySettings({
             />
           )}
         </div>
-        {logoUrl === undefined && <p className="mt-2 text-xs opacity-60">{s.noLogoYet}</p>}
+        {logoUrl === undefined && <p className="mt-2 text-xs opacity-70">{s.noLogoYet}</p>}
 
         <input
           ref={file}
@@ -163,7 +163,7 @@ export function CompanySettings({
             type="button"
             disabled={busy}
             onClick={() => file.current?.click()}
-            className="glass-pill tap-scale min-h-tap rounded-full px-4 text-xs font-semibold text-brand disabled:opacity-40"
+            className="glass-pill tap-scale min-h-tap rounded-full px-4 text-xs font-semibold text-brand-ink disabled:opacity-70"
           >
             {logoUrl === undefined ? s.uploadLogo : s.replaceLogo}
           </button>
@@ -191,7 +191,7 @@ export function CompanySettings({
             {s.createLogo}
           </button>
         </div>
-        <p id="logo-ai-note" className="mt-2 text-xs leading-relaxed opacity-60">
+        <p id="logo-ai-note" className="mt-2 text-xs leading-relaxed opacity-70">
           {s.createLogoLater}
         </p>
 
@@ -260,7 +260,7 @@ export function CompanySettings({
       </section>
 
       {/* ------------------------------------------------- name style */}
-      <p className="px-1 text-xs font-bold uppercase tracking-wide opacity-60">{s.nameStyle}</p>
+      <p className="px-1 text-xs font-bold uppercase tracking-wide opacity-70">{s.nameStyle}</p>
       {/*
         `min-w-0` on the FIELDSET, not only on the strip inside it.
         
@@ -307,7 +307,7 @@ export function CompanySettings({
       </fieldset>
 
       {/* -------------------------------------------------- logo size */}
-      <p className="px-1 text-xs font-bold uppercase tracking-wide opacity-60">{s.logoSize}</p>
+      <p className="px-1 text-xs font-bold uppercase tracking-wide opacity-70">{s.logoSize}</p>
       <fieldset className="glass-solid rounded-2xl p-3">
         <legend className="sr-only">{s.logoSize}</legend>
         <div className="flex gap-1.5">
@@ -328,7 +328,7 @@ export function CompanySettings({
       </fieldset>
 
       {/* ---------------------------------------------------- prefixes */}
-      <p className="px-1 text-xs font-bold uppercase tracking-wide opacity-60">
+      <p className="px-1 text-xs font-bold uppercase tracking-wide opacity-70">
         {s.numberingPrefixes}
       </p>
       <section className="glass-solid rounded-2xl p-3">
@@ -354,7 +354,7 @@ export function CompanySettings({
             </label>
           ))}
         </div>
-        <p className="mt-2 text-xs opacity-60">{s.prefixHint}</p>
+        <p className="mt-2 text-xs opacity-70">{s.prefixHint}</p>
       </section>
     </section>
   )

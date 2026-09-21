@@ -62,7 +62,7 @@ export function ProSettings({
         type="button"
         onClick={onManage}
         disabled={!billingAvailable}
-        className="min-h-tap w-full rounded-xl bg-surface text-sm font-semibold disabled:opacity-40"
+        className="min-h-tap w-full rounded-xl bg-surface text-sm font-semibold disabled:opacity-70"
       >
         {p.managePlan}
       </button>
@@ -76,7 +76,7 @@ export function ProSettings({
         type="button"
         onClick={onRestore}
         disabled={!billingAvailable}
-        className="min-h-tap w-full rounded-xl bg-surface text-sm font-semibold disabled:opacity-40"
+        className="min-h-tap w-full rounded-xl bg-surface text-sm font-semibold disabled:opacity-70"
       >
         {p.restore}
       </button>

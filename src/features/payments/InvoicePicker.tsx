@@ -66,7 +66,7 @@ export function InvoicePicker({
         <button
           type="button"
           onClick={onBack}
-          className="min-h-tap shrink-0 text-[13px] font-semibold text-brand"
+          className="min-h-tap shrink-0 text-[13px] font-semibold text-brand-ink"
         >
           {strings.common.back}
         </button>
@@ -88,7 +88,7 @@ export function InvoicePicker({
               <p className="truncate text-sm font-semibold leading-snug">
                 {whatItWasFor(invoice.lineItems, r.andMoreItems)}
               </p>
-              <p className="mt-0.5 truncate text-[11.5px] opacity-65">
+              <p className="mt-0.5 truncate text-[11.5px] opacity-70">
                 {invoice.reference} · {formatDocumentDate(invoice.issueDate, dateFormat)}
               </p>
               {/*
@@ -100,7 +100,7 @@ export function InvoicePicker({
                 <span className="opacity-65">
                   {format(r.originalTotal, { amount: formatMoney(invoice.total) })}
                 </span>
-                <span className="font-semibold text-brand">
+                <span className="font-semibold text-brand-ink">
                   {format(r.owingLine, { amount: formatMoney(invoice.outstanding) })}
                 </span>
               </p>

@@ -13,7 +13,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { useCompany } from '../../app/context'
 import { labelInSentence, pluralInSentence, pluralLabel } from '../../domain/locale/profile'
 import { format } from '../../domain/locale/data/strings'
-import { EmptyState, Icon, SkeletonList, StatusBadge, TYPE_PALETTE } from '../../ui'
+import { EmptyState, Icon, SkeletonList, StatusBadge, TYPE_PALETTE, typeBand } from '../../ui'
 import { carriesMoney, type DocumentType } from '../../domain/documents/types'
 import type { Money } from '../../domain/money/money'
 import { formatMoney } from '../customers/formatMoney'
@@ -147,7 +147,7 @@ export function DocumentList({
           type="button"
           onClick={onBack}
           className="tap-scale mb-2.5 inline-flex min-h-tap items-center gap-1.5 text-[12.5px] font-semibold"
-          style={{ color: palette.accent }}
+          style={{ color: palette.ink }}
         >
           <Icon name="arrow-left" size={1} className="flip-rtl" />
           {strings.nav.home}
@@ -163,7 +163,7 @@ export function DocumentList({
       <div
         className="sheen-strong relative overflow-hidden rounded-[22px] p-[15px] text-white"
         style={{
-          backgroundImage: `linear-gradient(140deg, ${palette.light}, ${palette.accent} 68%, ${palette.deep})`,
+          backgroundImage: typeBand(palette),
           boxShadow: `0 18px 34px -10px ${palette.accent}88, inset 0 1px 0 rgb(255 255 255 / 0.3)`,
         }}
       >
@@ -179,7 +179,7 @@ export function DocumentList({
           className="pointer-events-none absolute -top-[30px] end-[-25px] h-[118px] w-[118px] rounded-full bg-on-accent/15"
         />
 
-        <p className="relative text-[10px] font-medium uppercase tracking-[1.5px] text-white/75">
+        <p className="relative text-[10px] font-medium uppercase tracking-[1.5px] text-white">
           {strings.lists.eyebrow}
         </p>
         {/* Wraps rather than clipping — §F tests the longest shipped label. */}
@@ -187,7 +187,7 @@ export function DocumentList({
           <Icon name={palette.icon} size={1.3} className="shrink-0" />
           <span className="min-w-0 [overflow-wrap:anywhere]">{plural}</span>
         </h1>
-        <p className="relative mb-[11px] text-[11.5px] text-white/80">
+        <p className="relative mb-[11px] text-[11.5px] text-white">
           {format(strings.lists.countLine, { count: rows?.length ?? 0, label: pluralInline })}
         </p>
         <button
@@ -196,7 +196,7 @@ export function DocumentList({
           // Inset, not raised: §G calls it a translucent button INSIDE the
           // hero, and a second raised surface on a card that is already
           // lifted reads as two cards fighting.
-          className="tap-scale relative inline-flex min-h-tap items-center rounded-full border border-on-accent/40 bg-on-accent/25 px-[17px] text-[12.5px] font-semibold shadow-[inset_0_1px_0_rgb(255_255_255/0.4)]"
+          className="tap-scale relative inline-flex min-h-tap items-center rounded-full border border-on-accent/40 bg-on-accent-shade/25 px-[17px] text-[12.5px] font-semibold shadow-[inset_0_1px_0_rgb(255_255_255/0.4)]"
         >
           {/*
             No plus GLYPH here: the catalogue's own string is "+ New {label}",
@@ -299,7 +299,7 @@ export function DocumentList({
                       )}
                     </span>
                     {row.customerName !== undefined && (
-                      <span className="mt-0.5 block truncate text-[10px] opacity-60">
+                      <span className="mt-0.5 block truncate text-[10px] opacity-70">
                         {row.customerName}
                       </span>
                     )}
@@ -339,7 +339,7 @@ export function DocumentList({
                       a tap-sized target, which is what a narrow phone has
                       room for.
                     */
-                    className="glass-pill tap-scale me-[13px] min-h-tap max-w-[38%] shrink rounded-full px-2.5 py-1 text-[11px] font-semibold leading-tight text-brand"
+                    className="glass-pill tap-scale me-[13px] min-h-tap max-w-[38%] shrink rounded-full px-2.5 py-1 text-[11px] font-semibold leading-tight text-brand-ink"
                   
                   >
                     {row.action.label}
@@ -358,7 +358,7 @@ export function DocumentList({
         aria-label={format(strings.lists.newDocument, { label })}
         className="tap-scale fixed bottom-[112px] end-4 z-10 grid h-[54px] w-[54px] place-items-center rounded-full text-white"
         style={{
-          backgroundImage: `linear-gradient(158deg, ${palette.light}, ${palette.accent} 55%, ${palette.deep})`,
+          backgroundImage: typeBand(palette, 158),
           // The prototype leaves this shadow blue for every type, which is
           // the one place its own rule slips: an amber button throwing a blue
           // glow, directly under a hero that throws an amber one. Taken from

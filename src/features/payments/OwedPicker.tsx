@@ -119,14 +119,14 @@ export function OwedPicker({
         <button
           type="button"
           onClick={onBack}
-          className="min-h-tap text-[13px] font-semibold text-brand"
+          className="min-h-tap text-[13px] font-semibold text-brand-ink"
         >
           {strings.common.back}
         </button>
       </div>
 
       {debtors.length === 0 && offers.length === 0 ? (
-        <p className="mt-3 text-xs opacity-60">{r.nobodyOwes}</p>
+        <p className="mt-3 text-xs opacity-70">{r.nobodyOwes}</p>
       ) : (
         <ul className="mt-3 space-y-1.5" role="list">
           {debtors.map((debtor) => (

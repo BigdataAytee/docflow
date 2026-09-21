@@ -125,7 +125,7 @@ export function SettingsIndexScreen() {
 
       {settingsGroups(strings).map((group) => (
         <section key={group.id} className="mt-4 px-4">
-          <h2 className="mb-2 px-1 text-[10px] font-semibold uppercase tracking-[0.14em] opacity-50">
+          <h2 className="mb-2 px-1 text-[10px] font-semibold uppercase tracking-[0.14em] opacity-70">
             {group.title}
           </h2>
           {/* One card per group, its rows divided — not a row per card (§F). */}
@@ -142,14 +142,14 @@ export function SettingsIndexScreen() {
                   >
                     <span
                       aria-hidden="true"
-                      className="grid h-[26px] w-[26px] shrink-0 place-items-center rounded-[9px] bg-brand-tint text-brand"
+                      className="grid h-[26px] w-[26px] shrink-0 place-items-center rounded-[9px] bg-brand-tint text-brand-ink"
                     >
                       <Icon name={PANEL_ICONS[panel]} size={0.85} />
                     </span>
                     <span className="min-w-0 flex-1">
                       <span className="block truncate text-[12.5px] font-medium">{row.label}</span>
                       {sublabel !== undefined && (
-                        <span className="mt-0.5 block truncate text-[10px] opacity-55">
+                        <span className="mt-0.5 block truncate text-[10px] opacity-70">
                           {sublabel}
                         </span>
                       )}
@@ -233,7 +233,7 @@ export function SettingsPanelScreen() {
           <button
             type="button"
             onClick={goBack}
-            className="tap-scale -ms-1 flex min-h-tap items-center gap-1 text-[13px] font-semibold text-brand"
+            className="tap-scale -ms-1 flex min-h-tap items-center gap-1 text-[13px] font-semibold text-brand-ink"
           >
             <span aria-hidden="true">←</span>
             {strings.common.back}

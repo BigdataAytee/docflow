@@ -77,7 +77,7 @@ export function ItemsStep({
    * page cannot come to different conclusions about the same document.
    */
   const showsPhotos = carriesItemPhotos(draft.type) && onStorePhoto !== undefined
-  const { accent, tint } = TYPE_PALETTE[draft.type]
+  const { accent, ink, tint } = TYPE_PALETTE[draft.type]
 
   const [description, setDescription] = useState('')
   const [qty, setQty] = useState('1')
@@ -187,7 +187,7 @@ export function ItemsStep({
       <BuilderCard
         title={title}
         icon="package"
-        accent={accent}
+        ink={ink}
         action={
           onOpenCatalogue === undefined ? undefined : (
             <TinyButton
@@ -260,7 +260,7 @@ export function ItemsStep({
                       {item.name}
                     </span>
                     {showsMoney && item.lastPrice !== undefined && (
-                      <span className="shrink-0 text-[10px] tabular-nums opacity-60">
+                      <span className="shrink-0 text-[10px] tabular-nums opacity-70">
                         {formatMoney(item.lastPrice)}
                       </span>
                     )}
@@ -302,7 +302,7 @@ export function ItemsStep({
             ambiguity costs the document.
           */}
           <label className="block min-w-0 flex-1">
-            <span className="mb-1 block text-[9.5px] opacity-55">{strings.items.quantity}</span>
+            <span className="mb-1 block text-[9.5px] opacity-70">{strings.items.quantity}</span>
             <input
               inputMode="decimal"
               value={qty}
@@ -324,7 +324,7 @@ export function ItemsStep({
           */}
           {showsMoney && (
             <label className="block min-w-0 flex-[1.4]">
-              <span className="mb-1 block text-[9.5px] opacity-55">
+              <span className="mb-1 block text-[9.5px] opacity-70">
                 {strings.items.unitPrice}
               </span>
               <input
@@ -342,7 +342,7 @@ export function ItemsStep({
             onClick={add}
             disabled={!canAdd}
             aria-label={strings.items.add}
-            className="tap-scale grid h-[34px] w-[34px] shrink-0 place-items-center rounded-[10px] text-white disabled:opacity-40"
+            className="tap-scale grid h-[34px] w-[34px] shrink-0 place-items-center rounded-[10px] text-white disabled:opacity-70"
             style={{
               backgroundImage: `linear-gradient(160deg, ${accent}, ${accent})`,
               boxShadow: `0 3px 8px ${accent}4d, inset 0 1px 0 rgb(255 255 255 / 0.3)`,
@@ -374,7 +374,7 @@ export function ItemsStep({
                   under a document whose table prints "3" — the builder
                   promising a column the page does not have.
                 */}
-                <span className="mt-0.5 block truncate text-[10px] opacity-55">
+                <span className="mt-0.5 block truncate text-[10px] opacity-70">
                   {[
                     `${line.quantityMilli / 1000}${
                       !showsMoney || line.unit === undefined ? '' : ` ${line.unit}`

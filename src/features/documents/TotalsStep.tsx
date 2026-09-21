@@ -77,7 +77,7 @@ function Line({
       <span className="min-w-0">
         <span className="block opacity-70">{label}</span>
         {note !== undefined && (
-          <span className="block text-[9.5px] opacity-45">{note}</span>
+          <span className="block text-[9.5px] opacity-70">{note}</span>
         )}
       </span>
       <span className="flex shrink-0 items-center gap-2">
@@ -109,16 +109,16 @@ export function TotalsStep({
   onRates,
 }: TotalsStepProps) {
   const { profile, strings } = useCompany()
-  const { accent, tint } = TYPE_PALETTE[draft.type]
+  const { accent, ink, tint } = TYPE_PALETTE[draft.type]
 
   // A delivery document reaches this step for driver and vehicle only. There
   // is no money branch below it — not a zero total, no totals block at all.
   if (!carriesMoney(draft.type)) {
     return (
-      <BuilderCard title={strings.totals.dispatch} icon="truck-delivery" accent={accent}>
+      <BuilderCard title={strings.totals.dispatch} icon="truck-delivery" ink={ink}>
         <div className="flex gap-2.5">
           <label className="block min-w-0 flex-1">
-            <span className="mb-1 block text-[9.5px] opacity-55">{strings.totals.driver}</span>
+            <span className="mb-1 block text-[9.5px] opacity-70">{strings.totals.driver}</span>
             <input
               value={draft.driverName ?? ''}
               onChange={(event) => onChange({ driverName: event.target.value })}
@@ -127,7 +127,7 @@ export function TotalsStep({
             />
           </label>
           <label className="block min-w-0 flex-1">
-            <span className="mb-1 block text-[9.5px] opacity-55">{strings.totals.vehicle}</span>
+            <span className="mb-1 block text-[9.5px] opacity-70">{strings.totals.vehicle}</span>
             {/*
               A plate is NOT a name. §H's validation rule is that a driver is
               letters and spaces, while a registration mixes letters, digits
@@ -143,7 +143,7 @@ export function TotalsStep({
             />
           </label>
         </div>
-        <p className="text-[10px] leading-relaxed opacity-45">
+        <p className="text-[10px] leading-relaxed opacity-70">
           {strings.totals.noMoneyOnDelivery}
         </p>
       </BuilderCard>
@@ -161,7 +161,7 @@ export function TotalsStep({
   })
 
   const block = (
-    <BuilderCard title={strings.totals.title} icon="calculator" accent={accent}>
+    <BuilderCard title={strings.totals.title} icon="calculator" ink={ink}>
       <div className="space-y-0">
         <Line label={strings.totals.subtotal} value={formatMoney(totals.subtotal)} />
 
@@ -246,7 +246,7 @@ export function TotalsStep({
           <span
             data-totals-payable
             className="text-[18px] font-bold tabular-nums"
-            style={{ color: accent }}
+            style={{ color: ink }}
           >
             {formatMoney(totals.payable)}
           </span>
@@ -304,7 +304,7 @@ function PaidNow({
   onChange: (patch: Partial<DocumentDraft>) => void
 }) {
   const { strings } = useCompany()
-  const { accent } = TYPE_PALETTE[draft.type]
+  const { ink } = TYPE_PALETTE[draft.type]
   const scale = minorUnitsFor(draft.currency)
 
   const [touched, setTouched] = useState(false)
@@ -323,7 +323,7 @@ function PaidNow({
   }, [draft.paidAmountMinor, paidMinor, onChange])
 
   return (
-    <BuilderCard title={strings.totals.whatTheyPaid} icon="cash" accent={accent}>
+    <BuilderCard title={strings.totals.whatTheyPaid} icon="cash" ink={ink}>
       <div data-paid-section>
         <label className="block text-[11.5px] font-medium" htmlFor="receipt-paid-now">
           {strings.totals.paidNow}
@@ -339,7 +339,7 @@ function PaidNow({
             setTyped(event.target.value)
           }}
         />
-        <p className="mt-1.5 text-[10px] leading-relaxed opacity-60">
+        <p className="mt-1.5 text-[10px] leading-relaxed opacity-70">
           {strings.totals.paidNowHint}
         </p>
 

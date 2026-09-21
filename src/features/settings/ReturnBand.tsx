@@ -51,7 +51,7 @@ export function ReturnBand({ errand, onBack }: ReturnBandProps) {
       <button
         type="button"
         onClick={onBack}
-        className="min-h-tap shrink-0 rounded-full bg-on-accent/20 px-3 text-[11px] font-semibold"
+        className="min-h-tap shrink-0 rounded-full bg-on-accent-shade/25 px-3 text-[11px] font-semibold"
       >
         {strings.details.backToDraft}
       </button>

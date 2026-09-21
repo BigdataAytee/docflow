@@ -211,7 +211,7 @@ export function PaymentLinkForm({
             type="button"
             onClick={paste}
             aria-label={strings.settings.pasteIt}
-            className="glass-pill tap-scale flex min-h-tap shrink-0 items-center gap-1.5 rounded-lg px-3 text-xs font-semibold text-brand"
+            className="glass-pill tap-scale flex min-h-tap shrink-0 items-center gap-1.5 rounded-lg px-3 text-xs font-semibold text-brand-ink"
           >
             <Icon name="list" size={0.8} />
             {strings.settings.pasteIt}
@@ -262,7 +262,7 @@ export function PaymentLinkForm({
 
       {/* One sentence, in the app. Never a help article, never a link out. */}
       {provider.findIt !== undefined && (
-        <p className="text-[11px] opacity-55">{provider.findIt}</p>
+        <p className="text-[11px] opacity-70">{provider.findIt}</p>
       )}
 
       {/*

@@ -15,10 +15,10 @@ button: Review
 main
 heading: NUMBER & DATES
 StaticText: Number
-StaticText: INV-…
+StaticText: INV-0004-4A
 button: Edit reference
 StaticText: Date
-button: Date: Choose a date
+button: Date: 21 Sept 2026
 StaticText: Due
 button: Due: Choose a date
 heading: BILL TO
@@ -27,8 +27,28 @@ StaticText: Nobody chosen yet
 button: Add a customer
 StaticText: +
 heading: CURRENCY & PAYMENT
-StaticText: NGN
+StaticText: Currency
+combobox: Currency
+option: AED
+option: AUD
+option: BRL
+option: CAD
+option: CNY
+option: EGP
+option: EUR
+option: GBP
+option: GHS
+option: INR
+option: KES
+option: NGN
+option: SGD
+option: USD
+option: XAF
+option: XOF
+option: ZAR
 button: Set up payment
+button: Add a payment method
+StaticText: +
 heading: AUTHORISED SIGNATURE
 button: Tap to sign
 StaticText: Invoice

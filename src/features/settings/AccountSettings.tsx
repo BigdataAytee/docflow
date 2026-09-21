@@ -61,12 +61,12 @@ export function AccountSettings({ email, onSignOut, onChangePassword }: AccountS
         */}
         <span
           aria-hidden="true"
-          className="mx-auto grid size-14 place-items-center rounded-[18px] bg-brand-tint text-xl font-bold text-brand"
+          className="mx-auto grid size-14 place-items-center rounded-[18px] bg-brand-tint text-xl font-bold text-brand-ink"
         >
           {email === undefined ? <Icon name="user" size={1.1} /> : initialOf(email)}
         </span>
         <p className="mt-2 break-all text-sm font-semibold">{email ?? a.noSession}</p>
-        <p className="mt-0.5 text-xs opacity-65">{email === undefined ? a.noSessionBody : a.signedIn}</p>
+        <p className="mt-0.5 text-xs opacity-70">{email === undefined ? a.noSessionBody : a.signedIn}</p>
       </section>
 
       {/* -------------------------------------------- change password */}
@@ -81,17 +81,17 @@ export function AccountSettings({ email, onSignOut, onChangePassword }: AccountS
                 .then(() => setState('sent'))
                 .catch(() => setState('failed'))
             }}
-            className="flex min-h-tap w-full items-center gap-3 px-3.5 py-3 text-start disabled:opacity-50"
+            className="flex min-h-tap w-full items-center gap-3 px-3.5 py-3 text-start disabled:opacity-70"
           >
             <span
               aria-hidden="true"
-              className="grid size-[26px] shrink-0 place-items-center rounded-[9px] bg-brand-tint text-brand"
+              className="grid size-[26px] shrink-0 place-items-center rounded-[9px] bg-brand-tint text-brand-ink"
             >
               <Icon name="shield" size={0.85} />
             </span>
             <span className="min-w-0 flex-1">
               <span className="block text-[12.5px] font-medium">{a.changePassword}</span>
-              <span className="mt-0.5 block text-[10px] opacity-55">{a.changePasswordHint}</span>
+              <span className="mt-0.5 block text-[10px] opacity-70">{a.changePasswordHint}</span>
             </span>
             <span aria-hidden="true" className="shrink-0 opacity-35">
               <Icon name="chevron-right" size={0.9} />

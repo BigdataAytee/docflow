@@ -68,7 +68,7 @@ export function RegionSettings({ settings, onRegion, onLanguage }: RegionSetting
             </option>
           ))}
         </select>
-        <span className="mt-2 block text-xs opacity-60">{strings.settings.countryHint}</span>
+        <span className="mt-2 block text-xs opacity-70">{strings.settings.countryHint}</span>
       </label>
 
       {/* The consequences, beside the cause. */}
@@ -104,7 +104,7 @@ export function RegionSettings({ settings, onRegion, onLanguage }: RegionSetting
         and the screen says so rather than pretending to offer a choice.
       */}
       <section className="glass-solid rounded-2xl p-4">
-        <h2 className="text-xs font-bold uppercase tracking-wide opacity-60">
+        <h2 className="text-xs font-bold uppercase tracking-wide opacity-70">
           {strings.settings.appLanguage}
         </h2>
         <ul className="mt-2 divide-y divide-ink/10">
@@ -118,7 +118,7 @@ export function RegionSettings({ settings, onRegion, onLanguage }: RegionSetting
               >
                 <span
                   aria-hidden="true"
-                  className="grid size-8 shrink-0 place-items-center rounded-xl bg-brand-tint text-[11px] font-bold uppercase text-brand"
+                  className="grid size-8 shrink-0 place-items-center rounded-xl bg-brand-tint text-[11px] font-bold uppercase text-brand-ink"
                 >
                   {language.code}
                 </span>
@@ -135,7 +135,7 @@ export function RegionSettings({ settings, onRegion, onLanguage }: RegionSetting
           ))}
         </ul>
         {languages.length === 1 && (
-          <p className="mt-1 text-xs leading-relaxed opacity-60">
+          <p className="mt-1 text-xs leading-relaxed opacity-70">
             {strings.settings.oneLanguageOnly}
           </p>
         )}
@@ -157,7 +157,7 @@ export function RegionSettings({ settings, onRegion, onLanguage }: RegionSetting
         does. Change the country and these four words change with it.
       */}
       <section className="glass-solid space-y-2 rounded-2xl p-4" data-document-names>
-        <h2 className="text-xs font-bold uppercase tracking-wide opacity-60">
+        <h2 className="text-xs font-bold uppercase tracking-wide opacity-70">
           {strings.settings.documentsAreCalled}
         </h2>
         {/*
@@ -180,12 +180,12 @@ export function RegionSettings({ settings, onRegion, onLanguage }: RegionSetting
             </li>
           ))}
         </ul>
-        <p className="text-xs leading-relaxed opacity-60">
+        <p className="text-xs leading-relaxed opacity-70">
           {strings.settings.namesFollowCountry}
         </p>
       </section>
 
-      <p className="text-xs opacity-60">{strings.settings.effectiveImmediately}</p>
+      <p className="text-xs opacity-70">{strings.settings.effectiveImmediately}</p>
     </section>
   )
 }

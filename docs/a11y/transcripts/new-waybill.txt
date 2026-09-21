@@ -15,12 +15,12 @@ button: Review
 main
 heading: NUMBER & DATES
 StaticText: Number
-StaticText: WAY-…
+StaticText: WAY-0004-4A
 button: Edit reference
-StaticText: Date
-button: Date: Choose a date
-StaticText: Dispatch date
-button: Dispatch date: Choose a date
+StaticText: Dispatch
+button: Dispatch: Choose a date
+StaticText: Expected
+button: Expected: Choose a date
 heading: DELIVER TO
 button: Choose who this is for
 StaticText: Nobody chosen yet

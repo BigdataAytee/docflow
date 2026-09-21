@@ -106,7 +106,7 @@ export function PaymentList({ payments, prefill, onRecord, onReceipt }: PaymentL
               className="sunken min-h-tap w-full rounded-lg px-3 text-sm"
             />
           </label>
-          <p className="text-xs opacity-60">{strings.payments.partPaymentNote}</p>
+          <p className="text-xs opacity-70">{strings.payments.partPaymentNote}</p>
           <button
             type="button"
             onClick={() => {

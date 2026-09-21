@@ -203,7 +203,7 @@ export function CommandPalette({ open, onClose, onGo, index }: CommandPalettePro
         </p>
 
         {rows.length === 0 ? (
-          <p className="px-4 py-6 text-center text-sm opacity-60">{p.noMatch}</p>
+          <p className="px-4 py-6 text-center text-sm opacity-70">{p.noMatch}</p>
         ) : (
           <ul id={listId} role="listbox" aria-label={p.results} className="max-h-[50vh] overflow-y-auto">
             {rows.map((row, position) => (
@@ -222,7 +222,7 @@ export function CommandPalette({ open, onClose, onGo, index }: CommandPalettePro
                 }`}
               >
                 <span className="min-w-0 flex-1 truncate">{row.label}</span>
-                <span className="shrink-0 text-[11px] font-medium uppercase tracking-wide opacity-50">
+                <span className="shrink-0 text-[11px] font-medium uppercase tracking-wide opacity-70">
                   {row.group}
                 </span>
               </li>

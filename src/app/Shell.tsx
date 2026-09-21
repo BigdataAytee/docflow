@@ -138,7 +138,7 @@ export function Shell({ nav = true }: ShellProps) {
                   end={tab.path === '/'}
                   className={({ isActive }) =>
                     `flex min-h-tap items-center gap-3 rounded-xl px-3 text-sm font-medium ${
-                      isActive ? 'bg-brand-tint text-brand' : 'opacity-70'
+                      isActive ? 'bg-brand-tint text-brand-ink' : 'opacity-70'
                     }`
                   }
                 >

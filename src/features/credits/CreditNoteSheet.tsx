@@ -69,7 +69,7 @@ export function CreditNoteSheet({
           type="button"
           onClick={onClose}
           aria-label={strings.common.cancel}
-          className="min-h-tap min-w-tap text-lg leading-none opacity-60"
+          className="min-h-tap min-w-tap text-lg leading-none opacity-70"
         >
           ✕
         </button>
@@ -115,11 +115,11 @@ export function CreditNoteSheet({
             />
           </label>
 
-          <p className="mt-3 text-[11px] opacity-60">{c.neverMovesIncome}</p>
+          <p className="mt-3 text-[11px] opacity-70">{c.neverMovesIncome}</p>
 
           <button
             type="button"
-            className="raised tap-scale mt-3 min-h-tap w-full rounded-xl bg-gradient-to-b from-brand-light to-brand px-4 text-sm font-semibold text-white disabled:opacity-40"
+            className="raised tap-scale mt-3 min-h-tap w-full rounded-xl bg-gradient-to-b from-brand-light to-brand px-4 text-sm font-semibold text-white disabled:opacity-70"
             disabled={!canIssue}
             onClick={() =>
               onIssue({

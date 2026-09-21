@@ -95,7 +95,7 @@ export function ExpenseSheet({
         value={major}
         onChange={(event) => setMajor(event.target.value)}
       />
-      <p className="mt-1 text-[11px] opacity-60">{strings.expenses.photoNeverSetsAmount}</p>
+      <p className="mt-1 text-[11px] opacity-70">{strings.expenses.photoNeverSetsAmount}</p>
 
       <label className="mt-3 block text-xs font-medium opacity-70" htmlFor={`${ids}-date`}>
         {strings.expenses.date}
@@ -163,7 +163,7 @@ export function ExpenseSheet({
         </button>
         <button
           type="button"
-          className="raised tap-scale flex-1 rounded-xl bg-gradient-to-b from-brand-light to-brand px-3 py-2.5 text-sm font-semibold text-white disabled:opacity-40"
+          className="raised tap-scale flex-1 rounded-xl bg-gradient-to-b from-brand-light to-brand px-3 py-2.5 text-sm font-semibold text-white disabled:opacity-70"
           disabled={!canSave}
           onClick={save}
         >

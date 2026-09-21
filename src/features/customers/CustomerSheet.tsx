@@ -107,7 +107,7 @@ export function CustomerSheet({ initialName = '', onSave, onCancel }: CustomerSh
         </button>
         <button
           type="submit"
-          className="raised tap-scale min-h-tap flex-1 rounded-xl bg-gradient-to-b from-brand-light to-brand text-sm font-semibold text-white disabled:opacity-40"
+          className="raised tap-scale min-h-tap flex-1 rounded-xl bg-gradient-to-b from-brand-light to-brand text-sm font-semibold text-white disabled:opacity-70"
           disabled={trimmed === ''}
         >
           {strings.customers.save}

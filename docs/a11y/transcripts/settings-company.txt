@@ -3,22 +3,38 @@ StaticText: Demo
 StaticText: ·
 StaticText: This is a demo with sample records on this device only. Nothing is saved to an account, and it is cleared when you close the tab.
 main
+button: Back
 heading: Company & logo
+StaticText: No logo yet
+button: Choose File
+button: Upload
+button: Create with AI
+StaticText: Coming soon — upload an image for now.
 StaticText: Business name
 textbox: Business name
 StaticText: Dynamic Renaissance Ltd
-group: NAME STYLE
+StaticText: Address
+textbox: Address
+StaticText: Phone
+textbox: Phone
+StaticText: Email
+textbox: Email
+StaticText: Website
+textbox: Website
+StaticText: NAME STYLE
+group: Name style
 button: classic
 button: serif
 button: stacked
 button: ruled
 button: monogram
 StaticText: Dynamic Renaissance Ltd
-group: LOGO SIZE
+StaticText: LOGO SIZE
+group: Logo size
 button: S
 button: M
 button: L
-heading: NUMBERING PREFIXES
+StaticText: NUMBERING PREFIXES
 StaticText: Invoice
 textbox: Invoice
 StaticText: Quotation
@@ -28,8 +44,3 @@ textbox: Receipt
 StaticText: Waybill
 textbox: Waybill
 StaticText: Your prefix is always used, whatever the region suggests.
-navigation: Sections
-link: Home
-link: Customers
-link: Business
-link: Settings

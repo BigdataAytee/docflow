@@ -9,7 +9,7 @@ import { useCompany } from '../../app/context'
 import { format } from '../../domain/locale/data/strings'
 import { formatMoney } from '../customers/formatMoney'
 import type { PaidSoFar } from './record'
-import { TYPE_PALETTE } from '../../ui'
+import { TYPE_PALETTE, typeBand } from '../../ui'
 
 /** The bar is invoice-only, so its colour is the invoice's (§F). */
 const invoice = TYPE_PALETTE.invoice
@@ -41,7 +41,7 @@ export function PaidSoFarBar({ bar }: { bar: PaidSoFar }) {
     <section
       className="relative overflow-hidden rounded-[18px] p-[13px] text-white"
       style={{
-        backgroundImage: `linear-gradient(140deg, ${invoice.light}, ${invoice.accent} 68%, ${invoice.deep})`,
+        backgroundImage: typeBand(invoice),
         boxShadow: `0 16px 30px -10px ${invoice.accent}99, inset 0 1px 0 rgb(255 255 255 / 0.3)`,
       }}
     >
@@ -74,7 +74,7 @@ export function PaidSoFarBar({ bar }: { bar: PaidSoFar }) {
       {bar.credited.minor !== 0 && (
         // Its own line, never folded into "paid": a credit is money written
         // off, not money received (Rule #3, §V).
-        <p className="mt-1.5 text-[10px] text-white/80">
+        <p className="mt-1.5 text-[10px] text-white">
           {format(strings.payments.creditedLine, { amount: formatMoney(bar.credited) })}
         </p>
       )}

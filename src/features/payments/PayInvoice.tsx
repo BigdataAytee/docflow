@@ -131,7 +131,7 @@ export function PayInvoice({
         <button
           type="button"
           onClick={onBack}
-          className="min-h-tap shrink-0 text-[13px] font-semibold text-brand"
+          className="min-h-tap shrink-0 text-[13px] font-semibold text-brand-ink"
         >
           {strings.common.back}
         </button>
@@ -220,7 +220,7 @@ export function PayInvoice({
         <button
           type="button"
           onClick={() => setShowReference(true)}
-          className="mt-3 min-h-tap text-[12.5px] font-semibold text-brand"
+          className="mt-3 min-h-tap text-[12.5px] font-semibold text-brand-ink"
         >
           {r.addReference}
         </button>
@@ -278,7 +278,7 @@ export function PayInvoice({
       <button
         type="button"
         data-record
-        className="raised tap-scale mt-4 min-h-tap w-full rounded-xl bg-gradient-to-b from-brand-light to-brand px-4 text-sm font-semibold text-white disabled:opacity-40"
+        className="raised tap-scale mt-4 min-h-tap w-full rounded-xl bg-gradient-to-b from-brand-light to-brand px-4 text-sm font-semibold text-white disabled:opacity-70"
         disabled={minor <= 0}
         onClick={() =>
           onRecord({

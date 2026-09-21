@@ -84,7 +84,7 @@ export function TaxSettings({
         </label>
       </div>
 
-      <p className="rounded-2xl bg-brand-tint p-3 text-xs text-brand-deep" role="status">
+      <p className="rounded-2xl bg-brand-tint p-3 text-xs text-brand-ink" role="status">
         {format(strings.settings.workedExample, {
           subtotal: formatMoney(totals.subtotal),
           tax: formatMoney(totals.tax),

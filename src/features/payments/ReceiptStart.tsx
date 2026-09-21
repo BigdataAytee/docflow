@@ -54,7 +54,7 @@ export function ReceiptStart({ onOwed, onCash, onClose, anyoneOwes }: ReceiptSta
           type="button"
           onClick={onClose}
           aria-label={strings.common.cancel}
-          className="min-h-tap min-w-tap text-lg leading-none opacity-60"
+          className="min-h-tap min-w-tap text-lg leading-none opacity-70"
         >
           ✕
         </button>
@@ -67,7 +67,7 @@ export function ReceiptStart({ onOwed, onCash, onClose, anyoneOwes }: ReceiptSta
           disabled={!anyoneOwes}
           className={`min-h-tap w-full rounded-2xl px-4 py-3.5 text-start text-sm font-semibold ${
             anyoneOwes
-              ? 'raised tap-scale bg-surface text-brand'
+              ? 'raised tap-scale bg-surface text-brand-ink'
               : 'cursor-not-allowed border border-edge/10 bg-ink/[0.04] text-ink/35'
           }`}
         >
@@ -81,7 +81,7 @@ export function ReceiptStart({ onOwed, onCash, onClose, anyoneOwes }: ReceiptSta
         <button
           type="button"
           onClick={onCash}
-          className="raised tap-scale min-h-tap w-full rounded-2xl bg-surface px-4 py-3.5 text-start text-sm font-semibold text-brand"
+          className="raised tap-scale min-h-tap w-full rounded-2xl bg-surface px-4 py-3.5 text-start text-sm font-semibold text-brand-ink"
         >
           {r.pathCash}
         </button>

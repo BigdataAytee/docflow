@@ -37,7 +37,7 @@ export function SavedItems({ onRemove }: { onRemove?: (id: string) => void }) {
       <header>
         <h1 className="text-lg font-bold">{strings.settings.savedItems}</h1>
         {/* The reference's line, and it is the whole explanation of §L2. */}
-        <p className="mt-0.5 text-xs leading-relaxed opacity-65">
+        <p className="mt-0.5 text-xs leading-relaxed opacity-70">
           {strings.settings.savedItemsHint}
         </p>
       </header>
@@ -57,7 +57,7 @@ export function SavedItems({ onRemove }: { onRemove?: (id: string) => void }) {
             <li key={item.id} className="flex items-center gap-3 p-3">
               <span
                 aria-hidden="true"
-                className="grid size-9 shrink-0 place-items-center rounded-xl bg-brand-tint text-brand"
+                className="grid size-9 shrink-0 place-items-center rounded-xl bg-brand-tint text-brand-ink"
               >
                 <Icon name="package" size={0.85} />
               </span>

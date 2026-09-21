@@ -97,7 +97,7 @@ export function CustomerPicker({
           onClick={() => setOpen((was) => !was)}
         >
           <span
-            className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-brand-tint text-xs font-bold text-brand"
+            className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-brand-tint text-xs font-bold text-brand-ink"
             aria-hidden="true"
           >
             {selected === undefined ? '?' : selected.name.trim().charAt(0).toLocaleUpperCase()}
@@ -110,7 +110,7 @@ export function CustomerPicker({
               <span className="block truncate text-xs opacity-70">{selected.address}</span>
             )}
           </span>
-          <span className="shrink-0 text-xs font-medium opacity-60">
+          <span className="shrink-0 text-xs font-medium opacity-70">
             {selected === undefined ? '' : strings.details.change}
           </span>
         </button>
@@ -158,7 +158,7 @@ export function CustomerPicker({
                 >
                   <span className="break-words text-sm font-medium">{row.name}</span>
                   {row.address !== undefined && (
-                    <span className="break-words text-xs opacity-60">{row.address}</span>
+                    <span className="break-words text-xs opacity-70">{row.address}</span>
                   )}
                 </button>
               </li>
@@ -173,7 +173,7 @@ export function CustomerPicker({
           {typed !== '' && (
             <button
               type="button"
-              className="mt-1 min-h-tap w-full rounded-lg bg-brand-tint px-3 text-start text-sm font-semibold text-brand"
+              className="mt-1 min-h-tap w-full rounded-lg bg-brand-tint px-3 text-start text-sm font-semibold text-brand-ink"
               onClick={() => setAdding(true)}
             >
               {format(strings.details.addNamed, { name: typed })}

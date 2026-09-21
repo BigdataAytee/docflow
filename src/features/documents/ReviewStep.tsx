@@ -68,7 +68,7 @@ export function ReviewStep({
         to answer from the page alone — and the shape being A4 is the other
         half of what the preview is claiming.
       */}
-      <p className="text-xs opacity-65">
+      <p className="text-xs opacity-70">
         {format(strings.builder.designAndSize, { design: template.name })}
       </p>
 

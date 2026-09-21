@@ -62,8 +62,3 @@ StaticText: ₦0.00
 StaticText: Balance carried forward
 StaticText: ₦185,000.00
 StaticText: All amounts in NGN.
-navigation: Sections
-link: Home
-link: Customers
-link: Business
-link: Settings

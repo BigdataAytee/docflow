@@ -169,7 +169,7 @@ export function InlineCalendar({
 
       <div aria-hidden="true" className="grid grid-cols-7 gap-0.5">
         {weekdays.map((day, index) => (
-          <span key={index} className="py-0.5 text-center text-[8.5px] font-semibold opacity-45">
+          <span key={index} className="py-0.5 text-center text-[8.5px] font-semibold opacity-70">
             {day}
           </span>
         ))}
