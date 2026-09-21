@@ -105,7 +105,7 @@ function DateField({
         className="sunken tap-scale flex min-h-tap w-full items-center gap-2 rounded-[10px] px-2.5 text-start"
         style={open ? { borderColor: accent, boxShadow: `0 0 0 3px ${accent}1a` } : undefined}
       >
-        <Icon name="calendar" size={0.85} className="shrink-0 opacity-45" />
+        <Icon name="calendar" size={0.85} className="shrink-0 opacity-70" />
         <span className="min-w-0 flex-1 truncate text-[11px] font-medium">{shown}</span>
       </button>
     </span>

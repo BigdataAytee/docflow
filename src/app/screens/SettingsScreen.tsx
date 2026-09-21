@@ -154,7 +154,7 @@ export function SettingsIndexScreen() {
                         </span>
                       )}
                     </span>
-                    <span aria-hidden="true" className="shrink-0 opacity-35">
+                    <span aria-hidden="true" className="shrink-0 opacity-70">
                       <Icon name="chevron-right" size={0.9} />
                     </span>
                   </NavLink>

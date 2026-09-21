@@ -187,7 +187,7 @@ export function ItemPhoto({ itemName, currentUrl, onPhoto, onRemove }: ItemPhoto
           aria-expanded={asking !== null}
           data-add-photo
           aria-label={format(strings.photo.addToItem, { item: itemName })}
-          className="tap-scale grid min-h-tap min-w-tap place-items-center rounded-lg opacity-45 disabled:opacity-20"
+          className="tap-scale grid min-h-tap min-w-tap place-items-center rounded-lg opacity-70 disabled:opacity-70"
         >
           <Icon name="camera" size={0.85} />
         </button>

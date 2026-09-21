@@ -195,7 +195,7 @@ function LogoHolder({
 }) {
   const inner =
     logoUrl === undefined ? (
-      <Icon name="photo" size={1.05} className="opacity-40" />
+      <Icon name="photo" size={1.05} className="opacity-70" />
     ) : (
       <img src={logoUrl} alt="" className="h-full w-full object-contain" />
     )
@@ -346,7 +346,7 @@ export function Home({
             it, and an inversion is what a duplicate label looks like from the
             outside.
           */}
-          <Icon name="search" size={0.95} className="shrink-0 opacity-45" />
+          <Icon name="search" size={0.95} className="shrink-0 opacity-70" />
           <input
             type="search"
             value={searchQuery ?? ''}
@@ -379,13 +379,28 @@ export function Home({
             ladder is what they SAY: with no model installed they explain
             that plainly rather than pretending to record anything.
           */}
+          {/*
+            THE TILE IS THEMED, and it has to be because the ink on it is.
+
+            These were a hardcoded `linear-gradient(#fff,#e9eeff)` — a light
+            pill in both themes — carrying `text-brand-ink`, which is a pale
+            blue in dark. Pale blue on white is 2.0:1, under §F's floor for a
+            glyph, and it was found by looking at the phone rather than by the
+            contrast sweep, which walks TEXT nodes and these are icons.
+
+            `--pill-image` is the same shape in both themes: a lit pill,
+            light over a light page and a lifted navy over a dark one.
+          */}
           <div className="my-3 flex justify-between px-0.5">
             <button
               type="button"
               onClick={onVoice}
               aria-label={strings.common.voice}
-              className="raised-soft tap-scale grid h-11 w-11 place-items-center rounded-full border border-on-accent/90 text-brand-ink"
-              style={{ backgroundImage: 'linear-gradient(180deg,#fff,#e9eeff)' }}
+              className="raised-soft tap-scale grid h-11 w-11 place-items-center rounded-full text-brand-ink"
+              style={{
+                backgroundImage: 'var(--pill-image)',
+                border: '1px solid var(--pill-border)',
+              }}
             >
               <Icon name="microphone" size={1.25} />
             </button>
@@ -393,8 +408,11 @@ export function Home({
               type="button"
               onClick={onScan}
               aria-label={strings.common.scan}
-              className="raised-soft tap-scale grid h-11 w-11 place-items-center rounded-full border border-on-accent/90 text-brand-ink"
-              style={{ backgroundImage: 'linear-gradient(180deg,#fff,#e9eeff)' }}
+              className="raised-soft tap-scale grid h-11 w-11 place-items-center rounded-full text-brand-ink"
+              style={{
+                backgroundImage: 'var(--pill-image)',
+                border: '1px solid var(--pill-border)',
+              }}
             >
               <Icon name="camera" size={1.25} />
             </button>
@@ -482,7 +500,18 @@ export function Home({
                       aria-hidden="true"
                       data-type-plate
                       className="tile-plate grid h-[46px] w-[46px] place-items-center rounded-[15px]"
-                      style={{ color: palette.accent }}
+                      /*
+                        INK, NOT THE ACCENT.
+                        
+                        The plate is the type's own tint, which is a pale
+                        wash in light and a DARK one in dark — and the glyph
+                        on it was §F's locked accent either way. On a dark
+                        plate that is 1.09:1: the four cards on the front
+                        screen of the app had nothing visible in them, and
+                        the owner reported it before any guard did, because
+                        the contrast sweep walked text and an icon has none.
+                      */
+                      style={{ color: palette.ink }}
                     >
                       <Icon name={palette.icon} size={1.4} />
                     </span>

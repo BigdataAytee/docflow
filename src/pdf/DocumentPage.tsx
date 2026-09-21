@@ -67,6 +67,22 @@ function LogoHolder({
 
   const fit = natural === null ? null : fitLogo(natural, holder, margin)
 
+  /*
+   * NO LOGO, NO HOLDER.
+   *
+   * The holder is white paper for a mark to sit on, so a dark logo reads on
+   * a dark band (§F). With no mark there is nothing to hold, and it drew the
+   * white square anyway — invisible on the ten designs printed on white, and
+   * a blank white box on Aria, Botanic and Bloom, which are printed on
+   * cream. Found by looking at Aria on the phone.
+   *
+   * The switch stays what it is: `showLogo` is the owner saying "print my
+   * logo", and this is the page saying there is not one yet. Turning the
+   * switch on before uploading anything must not put a box on a document
+   * somebody is about to send a customer.
+   */
+  if (url === undefined) return null
+
   return (
     <div
       className="relative shrink-0 rounded-xl bg-white"

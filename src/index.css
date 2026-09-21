@@ -339,7 +339,15 @@
     /* The tile inside the pill — lighter than the pill, so it reads as raised. */
     --nav-tile-a: #ffffff;
     --nav-tile-b: #f1f3f8;
-    --nav-tile-ink: #9aa0b4;
+    /*
+     * A TAB NOT SELECTED, and it still has to be seen.
+     *
+     * It was #9aa0b4, which is 2.4:1 against the tile under it — below
+     * WCAG 1.4.11's 3:1 for a glyph, on the app's primary navigation. Three
+     * of the four tabs are in this state at any moment, and the icon is all
+     * there is: the nav carries no labels.
+     */
+    --nav-tile-ink: #6f7590;
     --nav-tile-ink-active: #1d2452;
     --nav-tile-shadow: 0 4px 10px -3px rgb(13 16 36 / 0.2), inset 0 1px 0 #ffffff;
     --nav-tile-shadow-active: 0 15px 24px -7px rgb(13 16 36 / 0.42), inset 0 1px 0 #ffffff;
@@ -427,7 +435,7 @@
     --nav-shadow: 0 26px 40px -12px rgb(0 0 0 / 0.66), inset 0 2px 0 rgb(255 255 255 / 0.12);
     --nav-tile-a: #4a558c;
     --nav-tile-b: #3b4576;
-    --nav-tile-ink: #9aa0b4;
+    --nav-tile-ink: #b4bad0;
     --nav-tile-ink-active: #eef2fb;
     --nav-tile-shadow: 0 4px 10px -3px rgb(0 0 0 / 0.4), inset 0 1px 0 rgb(255 255 255 / 0.12);
     --nav-tile-shadow-active: 0 15px 24px -7px rgb(0 0 0 / 0.6),

@@ -165,7 +165,7 @@ export function PaymentLinkSection({
           </span>
           <Icon
             name="chevron-right"
-            className={`size-[15px] shrink-0 opacity-35 ${isOpen ? 'rotate-90' : ''}`}
+            className={`size-[15px] shrink-0 opacity-70 ${isOpen ? 'rotate-90' : ''}`}
             aria-hidden
           />
         </button>

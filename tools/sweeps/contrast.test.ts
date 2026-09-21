@@ -33,7 +33,14 @@ import { describe, expect, it } from 'vitest'
 import { chromium } from 'playwright'
 
 import { BUILD, ROUTES, serve } from './serve'
-import { contrastRatio, format, requiredRatio, separate, type Rgb } from './contrast'
+import {
+  NON_TEXT_RATIO,
+  contrastRatio,
+  format,
+  requiredRatio,
+  separate,
+  type Rgb,
+} from './contrast'
 
 /** A phone, at the width the rest of the sweeps use. */
 const VIEWPORT = { width: 390, height: 844 }
@@ -140,6 +147,47 @@ const COLLECT = [
   '      })',
   '    }',
   '  }',
+  '  /*',
+  '   * AND THE ICONS (WCAG 2.2 1.4.11).',
+  '   *',
+  '   * An icon is an inline SVG with no text node in it, so the walk above',
+  '   * cannot see one. That was the whole blind spot: every glyph in the app',
+  '   * - the Home card plates, the round controls, the row icons, the nav -',
+  '   * was outside what this sweep measured, while the pass it backed claimed',
+  '   * WCAG AA. The owner found the card plates by opening the app in dark',
+  '   * mode and seeing nothing in them.',
+  '   */',
+  "  for (const svg of document.querySelectorAll('svg')) {",
+  '    const rect = svg.getBoundingClientRect()',
+  '    if (rect.width < 10 || rect.height < 10) continue',
+  '    if (rect.width > 120 || rect.height > 120) continue',
+  '    if (rect.bottom <= 0 || rect.top >= innerHeight) continue',
+  '    if (rect.right <= 0 || rect.left >= innerWidth) continue',
+  '    const iconStyle = getComputedStyle(svg)',
+  "    if (iconStyle.visibility === 'hidden' || iconStyle.display === 'none') continue",
+  '    if (parseFloat(iconStyle.opacity) === 0) continue',
+  '    const owner = svg.parentElement',
+  '    if (owner === null) continue',
+  "    if (owner.closest('[disabled], [aria-disabled=\"true\"]') !== null) continue",
+  '    const iconX = Math.min(innerWidth - 1, Math.max(0, rect.left + rect.width / 2))',
+  '    const iconY = Math.min(innerHeight - 1, Math.max(0, rect.top + rect.height / 2))',
+  '    const over = document.elementFromPoint(iconX, iconY)',
+  '    if (over !== null && over !== svg && !svg.contains(over) && !over.contains(svg)) continue',
+  "    const named = owner.getAttribute('aria-label') || owner.textContent || ''",
+  '    const cls = owner.className',
+  "    const clsText = typeof cls === 'string' ? cls : cls && cls.baseVal ? cls.baseVal : ''",
+  '    out.push({',
+  "      label: named.trim().slice(0, 44) || 'icon',",
+  "      kind: 'icon',",
+  '      x: Math.max(0, Math.floor(rect.left)),',
+  '      y: Math.max(0, Math.floor(rect.top)),',
+  '      width: Math.ceil(Math.min(rect.width, innerWidth - rect.left)),',
+  '      height: Math.ceil(Math.min(rect.height, innerHeight - rect.top)),',
+  '      px: 0,',
+  '      weight: 0,',
+  "      source: 'svg in ' + owner.tagName.toLowerCase() + '.' + clsText.slice(0, 80),",
+  '    })',
+  '  }',
   '  return out',
   '})()',
 ].join('\n')
@@ -226,7 +274,11 @@ const scan = async (
               label: patch.label,
               kind: patch.kind,
               ratio,
-              required: requiredRatio(patch.px, patch.weight),
+              /* WCAG 1.4.11: a glyph is non-text, and its floor is 3:1. */
+              required:
+                patch.kind === 'icon'
+                  ? NON_TEXT_RATIO
+                  : requiredRatio(patch.px, patch.weight),
               foreground: found.foreground,
               background: found.background,
               source: patch.source,
@@ -342,6 +394,30 @@ describe.runIf(process.env.SWEEP === '1')('The app can be read, in both themes (
     expect(
       failing.length,
       `${failing.length} of ${rows.length} fail AA in ${theme}:\n  ${report(failing)}`,
+    ).toBe(0)
+  }, 600_000)
+
+  /**
+   * THE ICONS (WCAG 2.2 1.4.11), which this sweep could not see at all.
+   *
+   * It walked text nodes. An icon has none — it is an inline SVG — so every
+   * glyph in the app was outside the measurement while the pass it backed
+   * reported WCAG AA. Two of them were badly wrong and neither was found
+   * here: the Home card plates, which paint the LOCKED accent on that type's
+   * dark tint and are near-invisible in dark mode, and Home's two round
+   * controls, which a change in this very pass had put at 2.0:1.
+   *
+   * A guard that measures one half of a rule and is described by the whole
+   * rule's name is the shape that passes while the bug ships.
+   */
+  it.each(['light', 'dark'] as const)('clears 3:1 for every icon in %s', async (theme) => {
+    const rows = (await measured())[theme].filter((row) => row.kind === 'icon')
+    expect(rows.length, `no icons were measured in ${theme}`).toBeGreaterThan(80)
+
+    const failing = rows.filter((row) => row.ratio < row.required - 0.005)
+    expect(
+      failing.length,
+      `${failing.length} of ${rows.length} icons fail 3:1 in ${theme}:\n  ${report(failing)}`,
     ).toBe(0)
   }, 600_000)
 

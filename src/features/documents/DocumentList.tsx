@@ -219,7 +219,7 @@ export function DocumentList({
           it, and an inversion is what a duplicate label looks like from the
           outside.
         */}
-        <Icon name="search" size={0.9} className="shrink-0 opacity-45" />
+        <Icon name="search" size={0.9} className="shrink-0 opacity-70" />
         <input
           type="search"
           value={query}

@@ -93,7 +93,7 @@ export function AccountSettings({ email, onSignOut, onChangePassword }: AccountS
               <span className="block text-[12.5px] font-medium">{a.changePassword}</span>
               <span className="mt-0.5 block text-[10px] opacity-70">{a.changePasswordHint}</span>
             </span>
-            <span aria-hidden="true" className="shrink-0 opacity-35">
+            <span aria-hidden="true" className="shrink-0 opacity-70">
               <Icon name="chevron-right" size={0.9} />
             </span>
           </button>

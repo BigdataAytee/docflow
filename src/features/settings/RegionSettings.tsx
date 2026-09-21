@@ -172,7 +172,7 @@ export function RegionSettings({ settings, onRegion, onLanguage }: RegionSetting
           {DOCUMENT_TYPES.map((type, index) => (
             <li key={type} className="flex items-baseline gap-2 text-sm font-semibold">
               {index > 0 && (
-                <span aria-hidden="true" className="opacity-30">
+                <span aria-hidden="true" className="opacity-70">
                   ·
                 </span>
               )}
