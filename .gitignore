@@ -61,3 +61,9 @@ ios/App/Pods/
 # Supabase CLI scratch state: machine-local, churns on every command, and
 # the kind of directory a future CLI version could start writing a token to.
 supabase/.temp/
+
+# Scratch output from local verify runs.
+tc.txt
+l.txt
+out*.txt
+verify.txt
